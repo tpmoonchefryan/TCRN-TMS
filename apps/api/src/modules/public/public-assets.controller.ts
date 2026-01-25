@@ -1,7 +1,7 @@
 
-import { Controller, Get, Logger, NotFoundException, Param, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Logger, NotFoundException, Param, Req, Res, StreamableFile } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { lookup } from 'mime-types';
 import { BUCKETS, MinioService } from '../minio/minio.service';
 
@@ -19,17 +19,22 @@ export class PublicAssetsController {
   @ApiOperation({ summary: 'Get public asset' })
   async getAsset(
     @Param('bucket') bucket: string,
-    @Param('key') key: string, // This captures the first segment, we need the "rest"
     @Res({ passthrough: true }) res: Response,
-    @Param() params: Record<string, string>,
+    @Req() req: Request,
   ) {
-    // In NestJS, wildcard parameters are often captured in params['0']
-    let fullKey = params['0'] || key;
-    if (Array.isArray(fullKey)) {
-      fullKey = fullKey.join('/');
-    } 
+    // Manually extract key from URL to avoid parameter parsing issues (commas vs slashes)
+    // URL format: /api/v1/public/assets/:bucket/:key
+    // We want everything after the bucket name
+    const urlParts = req.path.split(`/${bucket}/`);
+    if (urlParts.length < 2) {
+      this.logger.warn(`Invalid path format: ${req.path}`);
+      throw new NotFoundException('Invalid path');
+    }
     
-    this.logger.log(`Received request for public asset: bucket=${bucket}, key=${fullKey}`);
+    // Decode URI component to handle spaces, special chars
+    const fullKey = decodeURIComponent(urlParts[1]);
+    
+    this.logger.log(`Received request for public asset: bucket=${bucket}, rawUrl=${req.path}, extractedKey=${fullKey}`);
 
     // Security check: Only allow specific public buckets
     const ALLOWED_BUCKETS = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
