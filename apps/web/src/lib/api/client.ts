@@ -898,7 +898,8 @@ export const marshmallowApi = {
       throw new Error('Upload failed');
     }
     
-    return await response.json();
+    const result = await response.json();
+    return result.data;
   },
 
   getMessages: (talentId: string, status?: string, pageSize: number = 100) =>
