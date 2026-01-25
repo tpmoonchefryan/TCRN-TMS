@@ -130,10 +130,7 @@ export async function seedMembershipConfigs(prisma: PrismaClient) {
   for (const membershipType of membershipTypes) {
     const created = await prisma.membershipType.upsert({
       where: {
-        membershipClassId_code: {
-          membershipClassId: membershipType.membershipClassId,
-          code: membershipType.code,
-        },
+        code: membershipType.code,
       },
       update: membershipType,
       create: membershipType,
@@ -293,10 +290,7 @@ export async function seedMembershipConfigs(prisma: PrismaClient) {
   for (const level of membershipLevels) {
     await prisma.membershipLevel.upsert({
       where: {
-        membershipTypeId_code: {
-          membershipTypeId: level.membershipTypeId,
-          code: level.code,
-        },
+        code: level.code,
       },
       update: level,
       create: level,
