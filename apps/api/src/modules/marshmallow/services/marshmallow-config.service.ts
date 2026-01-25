@@ -113,9 +113,13 @@ export class MarshmallowConfigService {
     let config = configs[0];
 
     if (!config) {
-      // First verify talent exists in the tenant schema
-      const talents = await prisma.$queryRawUnsafe<Array<{ id: string; homepagePath: string | null }>>(`
-        SELECT id, homepage_path as "homepagePath"
+      // First verify talent exists in the tenant schema and get settings
+      const talents = await prisma.$queryRawUnsafe<Array<{ 
+        id: string; 
+        homepagePath: string | null;
+        settings: Record<string, unknown> | null;
+      }>>(`
+        SELECT id, homepage_path as "homepagePath", settings
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid AND is_active = true
       `, talentId);
@@ -126,6 +130,10 @@ export class MarshmallowConfigService {
           message: `Talent with ID ${talentId} not found`,
         });
       }
+
+      // Check talent settings for marshmallowEnabled (default to true if not set)
+      const talentSettings = talents[0].settings || {};
+      const marshmallowEnabled = talentSettings.marshmallowEnabled !== false; // Default to true
 
       // Create default config using raw SQL (gen_random_uuid() for id, now() for timestamps)
       const insertResult = await prisma.$queryRawUnsafe<MarshmallowConfigRow[]>(`
@@ -159,7 +167,7 @@ export class MarshmallowConfigService {
           created_at as "createdAt", updated_at as "updatedAt", version
       `,
         talentId,
-        DEFAULT_CONFIG.isEnabled,
+        marshmallowEnabled, // Use talent settings instead of DEFAULT_CONFIG.isEnabled
         DEFAULT_CONFIG.title,
         DEFAULT_CONFIG.welcomeText,
         DEFAULT_CONFIG.placeholderText,

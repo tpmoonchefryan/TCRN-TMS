@@ -206,28 +206,41 @@ export class TenantController {
 
     // Seeding essential RBAC data for schema
 
-    // System-defined resources
+    // System-defined resources (matching 03-roles-resources.ts format)
     const resources = [
+      // Organization
+      { code: 'subsidiary', module: 'organization', nameEn: 'Subsidiary', nameZh: '分级目录', nameJa: '組織' },
+      { code: 'talent', module: 'organization', nameEn: 'Talent', nameZh: '艺人', nameJa: 'タレント' },
+      // User Management
+      { code: 'system_user', module: 'user', nameEn: 'System User', nameZh: '系统用户', nameJa: 'システムユーザー' },
+      { code: 'role', module: 'user', nameEn: 'Role', nameZh: '角色', nameJa: 'ロール' },
+      // Customer Management
       { code: 'customer.profile', module: 'customer', nameEn: 'Customer Profile', nameZh: '客户档案', nameJa: '顧客プロファイル' },
-      { code: 'customer.membership', module: 'customer', nameEn: 'Membership Management', nameZh: '会员管理', nameJa: '会員管理' },
+      { code: 'customer.pii', module: 'customer', nameEn: 'Customer PII', nameZh: '客户敏感信息', nameJa: '顧客PII' },
+      { code: 'customer.membership', module: 'customer', nameEn: 'Customer Membership', nameZh: '会员记录', nameJa: 'メンバーシップ' },
       { code: 'customer.import', module: 'customer', nameEn: 'Customer Import', nameZh: '客户导入', nameJa: '顧客インポート' },
-      { code: 'org.subsidiary', module: 'organization', nameEn: 'Subsidiary Management', nameZh: '分级目录管理', nameJa: '組織管理' },
-      { code: 'org.talent', module: 'organization', nameEn: 'Talent Management', nameZh: '艺人管理', nameJa: 'タレント管理' },
-      { code: 'system_user.manage', module: 'user', nameEn: 'User Management', nameZh: '用户管理', nameJa: 'ユーザー管理' },
-      { code: 'system_user.self', module: 'user', nameEn: 'Personal Profile', nameZh: '个人资料', nameJa: '個人設定' },
-      { code: 'role.manage', module: 'user', nameEn: 'Role Management', nameZh: '角色管理', nameJa: 'ロール管理' },
-      { code: 'config.entity', module: 'config', nameEn: 'Configuration Entity', nameZh: '配置实体', nameJa: '設定エンティティ' },
-      { code: 'config.blocklist', module: 'config', nameEn: 'Blocklist Management', nameZh: '屏蔽词管理', nameJa: 'ブロックリスト管理' },
-      { code: 'talent.homepage', module: 'page', nameEn: 'Homepage Management', nameZh: '主页管理', nameJa: 'ホームページ管理' },
-      { code: 'talent.marshmallow', module: 'page', nameEn: 'Marshmallow Management', nameZh: '棉花糖管理', nameJa: 'マシュマロ管理' },
-      { code: 'report.mfr', module: 'report', nameEn: 'Membership Feedback Report', nameZh: '会员回馈报表', nameJa: '会員フィードバックレポート' },
-      { code: 'integration.adapter', module: 'integration', nameEn: 'Integration Adapter', nameZh: '接口适配器', nameJa: '連携アダプター' },
-      { code: 'integration.webhook', module: 'integration', nameEn: 'Webhook Management', nameZh: 'Webhook管理', nameJa: 'Webhook管理' },
-      { code: 'log.change_log', module: 'log', nameEn: 'Change Log', nameZh: '变更日志', nameJa: '変更ログ' },
-      { code: 'log.tech_log', module: 'log', nameEn: 'Technical Event Log', nameZh: '技术事件日志', nameJa: '技術イベントログ' },
-      { code: 'log.integration_log', module: 'log', nameEn: 'Integration Log', nameZh: '集成日志', nameJa: '連携ログ' },
+      // Configuration
+      { code: 'config.customer_status', module: 'config', nameEn: 'Customer Status', nameZh: '客户状态', nameJa: '顧客ステータス' },
+      { code: 'config.membership', module: 'config', nameEn: 'Membership Config', nameZh: '会员配置', nameJa: 'メンバーシップ設定' },
+      { code: 'config.platform', module: 'config', nameEn: 'Platform Config', nameZh: '平台配置', nameJa: 'プラットフォーム設定' },
       { code: 'config.pii_service', module: 'config', nameEn: 'PII Service Config', nameZh: 'PII服务配置', nameJa: 'PIIサービス設定' },
-      { code: 'config.profile_store', module: 'config', nameEn: 'Profile Store', nameZh: '档案存储', nameJa: 'プロファイルストア' },
+      // External Pages
+      { code: 'homepage', module: 'external', nameEn: 'Homepage', nameZh: '个人主页', nameJa: 'ホームページ' },
+      { code: 'marshmallow', module: 'external', nameEn: 'Marshmallow', nameZh: '棉花糖', nameJa: 'マシュマロ' },
+      // Reports
+      { code: 'report.mfr', module: 'report', nameEn: 'MFR Report', nameZh: 'MFR报表', nameJa: 'MFRレポート' },
+      // Integration
+      { code: 'integration.adapter', module: 'integration', nameEn: 'Integration Adapter', nameZh: '集成适配器', nameJa: '連携アダプター' },
+      { code: 'integration.webhook', module: 'integration', nameEn: 'Webhook', nameZh: 'Webhook', nameJa: 'Webhook' },
+      { code: 'integration.consumer', module: 'integration', nameEn: 'API Consumer', nameZh: 'API消费者', nameJa: 'APIコンシューマー' },
+      // Security
+      { code: 'security.blocklist', module: 'security', nameEn: 'Blocklist', nameZh: '屏蔽词', nameJa: 'ブロックリスト' },
+      { code: 'security.ip_rules', module: 'security', nameEn: 'IP Rules', nameZh: 'IP规则', nameJa: 'IPルール' },
+      { code: 'security.external_blocklist', module: 'security', nameEn: 'External Blocklist', nameZh: '外部屏蔽名单', nameJa: '外部ブロックリスト' },
+      // Logs
+      { code: 'log.change', module: 'log', nameEn: 'Change Log', nameZh: '变更日志', nameJa: '変更ログ' },
+      { code: 'log.security', module: 'log', nameEn: 'Security Log', nameZh: '安全日志', nameJa: 'セキュリティログ' },
+      { code: 'log.integration', module: 'log', nameEn: 'Integration Log', nameZh: '集成日志', nameJa: '連携ログ' },
     ];
 
     // Insert resources
@@ -239,81 +252,124 @@ export class TenantController {
       `, resource.code, resource.module, resource.nameEn, resource.nameZh, resource.nameJa);
     }
 
-    // System-defined roles with their policies
+    // System-defined roles with their policies (matching 03-roles-resources.ts format)
+    // Actions: read, write, delete, admin (no more 'execute')
+    const actions = ['read', 'write', 'delete', 'admin'];
+    
+    // Build all policies for ADMIN role (all resources, all actions)
+    const adminPolicies: Array<{ resource: string; action: string }> = [];
+    for (const resource of resources) {
+      for (const action of actions) {
+        adminPolicies.push({ resource: resource.code, action });
+      }
+    }
+
     const roles = [
+      {
+        code: 'ADMIN',
+        nameEn: 'Administrator',
+        nameZh: '管理员',
+        nameJa: '管理者',
+        description: 'Full access within assigned scope (tenant/subsidiary/talent)',
+        isSystem: true,
+        policies: adminPolicies,
+      },
       {
         code: 'TENANT_ADMIN',
         nameEn: 'Tenant Administrator',
         nameZh: '租户管理员',
         nameJa: 'テナント管理者',
-        description: 'Full access to all tenant resources',
+        description: 'Full access to all tenant resources (alias for ADMIN)',
         isSystem: true,
-        policies: resources.map(r => ({ resource: r.code, action: 'admin' })),
+        policies: adminPolicies,
       },
       {
-        code: 'TENANT_READONLY',
-        nameEn: 'Tenant Read-Only',
-        nameZh: '租户只读',
-        nameJa: 'テナント読み取り専用',
-        description: 'Read-only access to all tenant resources',
+        code: 'VIEWER',
+        nameEn: 'Viewer',
+        nameZh: '只读访问者',
+        nameJa: '閲覧者',
+        description: 'Read-only access to resources within assigned scope',
         isSystem: true,
         policies: resources.map(r => ({ resource: r.code, action: 'read' })),
       },
       {
         code: 'TALENT_MANAGER',
         nameEn: 'Talent Manager',
-        nameZh: '艺人管理员',
+        nameZh: '艺人经理',
         nameJa: 'タレントマネージャー',
-        description: 'Can manage assigned talent and their customers',
+        description: 'Manage talent operations, organization structure, and user assignments',
         isSystem: true,
         policies: [
-          { resource: 'customer.profile', action: 'admin' },
-          { resource: 'customer.membership', action: 'admin' },
-          { resource: 'customer.import', action: 'execute' },
-          { resource: 'talent.homepage', action: 'admin' },
-          { resource: 'talent.marshmallow', action: 'admin' },
-          { resource: 'report.mfr', action: 'read' },
-          { resource: 'report.mfr', action: 'execute' },
+          { resource: 'subsidiary', action: 'read' },
+          { resource: 'subsidiary', action: 'write' },
+          { resource: 'subsidiary', action: 'admin' },
+          { resource: 'talent', action: 'read' },
+          { resource: 'talent', action: 'write' },
+          { resource: 'talent', action: 'admin' },
+          { resource: 'system_user', action: 'read' },
+          { resource: 'system_user', action: 'write' },
+          { resource: 'role', action: 'read' },
+          { resource: 'role', action: 'write' },
+          { resource: 'log.change', action: 'read' },
         ],
       },
       {
-        code: 'SUBSIDIARY_MANAGER',
-        nameEn: 'Subsidiary Manager',
-        nameZh: '分级目录管理员',
-        nameJa: '組織管理者',
-        description: 'Can manage subsidiary and all talents within',
+        code: 'CONTENT_MANAGER',
+        nameEn: 'Content Manager',
+        nameZh: '内容管理员',
+        nameJa: 'コンテンツマネージャー',
+        description: 'Homepage and Marshmallow management',
         isSystem: true,
         policies: [
-          { resource: 'org.subsidiary', action: 'read' },
-          { resource: 'org.talent', action: 'admin' },
-          { resource: 'customer.profile', action: 'admin' },
-          { resource: 'customer.membership', action: 'admin' },
-          { resource: 'customer.import', action: 'execute' },
-          { resource: 'config.entity', action: 'read' },
-          { resource: 'report.mfr', action: 'admin' },
+          { resource: 'homepage', action: 'read' },
+          { resource: 'homepage', action: 'write' },
+          { resource: 'homepage', action: 'delete' },
+          { resource: 'homepage', action: 'admin' },
+          { resource: 'marshmallow', action: 'read' },
+          { resource: 'marshmallow', action: 'write' },
+          { resource: 'marshmallow', action: 'delete' },
+          { resource: 'marshmallow', action: 'admin' },
         ],
       },
       {
-        code: 'REPORT_VIEWER',
-        nameEn: 'Report Viewer',
-        nameZh: '报表查看者',
-        nameJa: 'レポート閲覧者',
-        description: 'Can view reports',
+        code: 'CUSTOMER_MANAGER',
+        nameEn: 'Customer Manager',
+        nameZh: '客户经理',
+        nameJa: '顧客マネージャー',
+        description: 'Customer profile and membership management',
         isSystem: true,
         policies: [
-          { resource: 'report.mfr', action: 'read' },
+          { resource: 'customer.profile', action: 'read' },
+          { resource: 'customer.profile', action: 'write' },
+          { resource: 'customer.pii', action: 'read' },
+          { resource: 'customer.pii', action: 'write' },
+          { resource: 'customer.membership', action: 'read' },
+          { resource: 'customer.membership', action: 'write' },
+          { resource: 'customer.import', action: 'read' },
+          { resource: 'customer.import', action: 'write' },
         ],
       },
       {
-        code: 'REPORT_OPERATOR',
-        nameEn: 'Report Operator',
-        nameZh: '报表操作员',
-        nameJa: 'レポートオペレーター',
-        description: 'Can generate and export reports',
+        code: 'INTEGRATION_MANAGER',
+        nameEn: 'Integration Manager',
+        nameZh: '集成管理员',
+        nameJa: '連携マネージャー',
+        description: 'Full access to integration adapters, webhooks, and API consumers',
         isSystem: true,
         policies: [
-          { resource: 'report.mfr', action: 'read' },
-          { resource: 'report.mfr', action: 'execute' },
+          { resource: 'integration.adapter', action: 'read' },
+          { resource: 'integration.adapter', action: 'write' },
+          { resource: 'integration.adapter', action: 'delete' },
+          { resource: 'integration.adapter', action: 'admin' },
+          { resource: 'integration.webhook', action: 'read' },
+          { resource: 'integration.webhook', action: 'write' },
+          { resource: 'integration.webhook', action: 'delete' },
+          { resource: 'integration.webhook', action: 'admin' },
+          { resource: 'integration.consumer', action: 'read' },
+          { resource: 'integration.consumer', action: 'write' },
+          { resource: 'integration.consumer', action: 'delete' },
+          { resource: 'integration.consumer', action: 'admin' },
+          { resource: 'log.integration', action: 'read' },
         ],
       },
     ];
@@ -326,24 +382,24 @@ export class TenantController {
         ON CONFLICT (code) DO NOTHING
       `, role.code, role.nameEn, role.nameZh, role.nameJa, role.description, role.isSystem);
 
-      // Create policies and link to role
+      // Create policies and link to role with 'grant' effect
       for (const policy of role.policies) {
         await prisma.$executeRawUnsafe(`
           WITH resource_lookup AS (
             SELECT id FROM "${schemaName}".resource WHERE code = $1
           ),
           inserted_policy AS (
-            INSERT INTO "${schemaName}".policy (id, resource_id, action, effect, is_active, created_at, updated_at)
-            SELECT gen_random_uuid(), r.id, $2, 'allow', true, now(), now()
+            INSERT INTO "${schemaName}".policy (id, resource_id, action, is_active, created_at, updated_at)
+            SELECT gen_random_uuid(), r.id, $2, true, now(), now()
             FROM resource_lookup r
-            ON CONFLICT (resource_id, action, effect) DO UPDATE SET updated_at = now()
+            ON CONFLICT (resource_id, action) DO UPDATE SET updated_at = now()
             RETURNING id
           ),
           role_lookup AS (
             SELECT id FROM "${schemaName}".role WHERE code = $3
           )
-          INSERT INTO "${schemaName}".role_policy (id, role_id, policy_id, created_at)
-          SELECT gen_random_uuid(), rl.id, ip.id, now()
+          INSERT INTO "${schemaName}".role_policy (id, role_id, policy_id, effect, created_at)
+          SELECT gen_random_uuid(), rl.id, ip.id, 'grant', now()
           FROM inserted_policy ip, role_lookup rl
           ON CONFLICT DO NOTHING
         `, policy.resource, policy.action, role.code);

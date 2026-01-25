@@ -382,6 +382,14 @@ export class TalentService {
       path = `/${data.code}/`;
     }
 
+    // Default settings - features should be enabled by default
+    const defaultSettings = {
+      homepageEnabled: true,
+      marshmallowEnabled: true,
+      inheritTimezone: true,
+    };
+    const mergedSettings = { ...defaultSettings, ...(data.settings || {}) };
+
     // Insert
     const results = await prisma.$queryRawUnsafe<TalentData[]>(`
       INSERT INTO "${tenantSchema}".talent 
@@ -406,7 +414,7 @@ export class TalentService {
       data.nameEn, data.nameZh || null, data.nameJa || null, data.displayName,
       data.descriptionEn || null, data.descriptionZh || null, data.descriptionJa || null,
       data.avatarUrl || null, data.homepagePath || null, data.timezone || 'UTC',
-      JSON.stringify(data.settings || {}), userId
+      JSON.stringify(mergedSettings), userId
     );
 
     return results[0];

@@ -1,22 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
-import { LogSeverity } from '@tcrn/shared';
-import { ErrorCodes, TechEventType } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
 import {
-  SubmitMessageDto,
-  PublicMessagesQueryDto,
-  CaptchaMode,
+    CaptchaMode,
+    PublicMessagesQueryDto,
+    SubmitMessageDto,
 } from '../dto/marshmallow.dto';
 
-import { CaptchaService, CaptchaContext } from './captcha.service';
+import { CaptchaContext, CaptchaService } from './captcha.service';
 import { MarshmallowRateLimitService } from './marshmallow-rate-limit.service';
 import { MarshmallowReactionService } from './marshmallow-reaction.service';
 import { ProfanityFilterService } from './profanity-filter.service';
