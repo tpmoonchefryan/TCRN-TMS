@@ -4,28 +4,29 @@
 
 import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { EmojiPicker } from '@/components/marshmallow/public/EmojiPicker';
+import { ImageUploader } from '@/components/shared/ImageUploader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -460,20 +461,14 @@ export function MarshmallowConfigDialog({
                 {t('customAvatarDescription')}
               </p>
               <div className="flex items-center gap-4">
-                {localConfig.avatarUrl && (
-                  <img 
-                    src={localConfig.avatarUrl} 
-                    alt="Avatar preview" 
-                    className="w-16 h-16 rounded-full object-cover border"
-                  />
-                )}
-                <div className="flex-1">
-                  <Input
-                    id="avatarUrl"
-                    value={localConfig.avatarUrl || ''}
-                    onChange={(e) => updateField('avatarUrl', e.target.value || null)}
-                    placeholder={t('avatarUrlPlaceholder')}
-                  />
+                <ImageUploader 
+                  value={localConfig.avatarUrl || null}
+                  onChange={(url) => updateField('avatarUrl', url)}
+                  onUpload={(file) => marshmallowApi.uploadAvatar(talentId, file).then(res => res.url)}
+                />
+                <div className="flex-1 text-sm text-muted-foreground">
+                  <p>{t('avatarUploadHint')}</p>
+                  <p className="text-xs mt-1 text-muted-foreground/80">Max 5MB. JPG, PNG, GIF, WEBP.</p>
                 </div>
               </div>
             </div>

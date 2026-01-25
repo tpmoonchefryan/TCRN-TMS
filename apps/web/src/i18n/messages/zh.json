@@ -283,6 +283,7 @@
     "timezone": "时区",
     "defaultLanguage": "默认语言",
     "avatarUrl": "头像URL",
+    "avatarUploadHint": "点击上传头像",
     "entityTypes": "实体类型",
     "dictionaryTypes": "词典类型",
     "systemDictionaryDesc": "系统级参考数据",

@@ -283,6 +283,7 @@
     "timezone": "タイムゾーン",
     "defaultLanguage": "デフォルト言語",
     "avatarUrl": "アバターURL",
+    "avatarUploadHint": "クリックしてアバターをアップロード",
     "entityTypes": "エンティティタイプ",
     "dictionaryTypes": "辞書タイプ",
     "systemDictionaryDesc": "システム全体の参照データ",

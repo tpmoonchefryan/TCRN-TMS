@@ -283,6 +283,7 @@
     "timezone": "Timezone",
     "defaultLanguage": "Default Language",
     "avatarUrl": "Avatar URL",
+    "avatarUploadHint": "Click to upload avatar",
     "entityTypes": "Entity Types",
     "dictionaryTypes": "Dictionary Types",
     "systemDictionaryDesc": "System-wide reference data",

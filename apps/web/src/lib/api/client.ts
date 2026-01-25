@@ -874,6 +874,32 @@ export const marshmallowApi = {
 
   updateConfig: (talentId: string, config: any) =>
     apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/config`, config),
+    
+  uploadAvatar: async (talentId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    // Use raw fetch for multipart/form-data because JSON stringification in ApiClient breaks FormData
+    // Alternatively, extend ApiClient to support FormData, but using fetch here is simpler for now
+    // We need to manually add Authorization header
+    const token = apiClient.getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // Note: Do NOT set Content-Type header manually for FormData, let browser set it with boundary
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/talents/${talentId}/marshmallow/avatar`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+    
+    return await response.json();
+  },
 
   getMessages: (talentId: string, status?: string, pageSize: number = 100) =>
     apiClient.get<any[]>(`/api/v1/talents/${talentId}/marshmallow/messages`, { 

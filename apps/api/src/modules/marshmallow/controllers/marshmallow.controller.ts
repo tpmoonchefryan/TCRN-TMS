@@ -1,34 +1,40 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Patch,
-  Post,
-  Param,
-  Body,
-  Query,
-  Req,
-  ParseUUIDPipe,
+    BadRequestException,
+    Body,
+    Controller,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Req,
+    UploadedFile,
+    UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { TokenService } from '../../auth/token.service';
+import { BUCKETS, MinioService } from '../../minio/minio.service';
 import {
-  UpdateConfigDto,
-  MessageListQueryDto,
-  RejectMessageDto,
-  ReplyMessageDto,
-  BatchActionDto,
-  UpdateMessageDto,
-  ExportMessagesDto,
+    BatchActionDto,
+    ExportMessagesDto,
+    MessageListQueryDto,
+    RejectMessageDto,
+    ReplyMessageDto,
+    UpdateConfigDto,
+    UpdateMessageDto,
 } from '../dto/marshmallow.dto';
 import { MarshmallowConfigService } from '../services/marshmallow-config.service';
-import { MarshmallowMessageService } from '../services/marshmallow-message.service';
 import { MarshmallowExportService } from '../services/marshmallow-export.service';
+import { MarshmallowMessageService } from '../services/marshmallow-message.service';
 
 // Authenticated user type with tenantSchema
 interface AuthenticatedUser {
@@ -48,6 +54,8 @@ export class MarshmallowController {
     private readonly messageService: MarshmallowMessageService,
     private readonly exportService: MarshmallowExportService,
     private readonly tokenService: TokenService,
+    private readonly minioService: MinioService,
+    private readonly appConfigService: ConfigService,
   ) {}
 
   // =========================================================================
@@ -75,6 +83,61 @@ export class MarshmallowController {
   ) {
     const context = this.buildContext(user, req);
     return this.configService.update(talentId, user.tenantSchema, dto, context);
+  }
+
+  @Post('avatar')
+  @RequirePermissions({ resource: 'talent.marshmallow', action: 'update' })
+  @ApiOperation({ summary: 'Upload avatar for marshmallow page' })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    // Validate file type
+    if (!file.mimetype.match(/^image\/(jpg|jpeg|png|gif|webp)$/)) {
+      throw new BadRequestException('Invalid file type. Only images are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('File size exceeds 5MB limit');
+    }
+
+    const context = this.buildContext(user, req);
+    const extension = file.mimetype.split('/')[1];
+    const objectName = `${user.tenantSchema}/${talentId}/avatar-${Date.now()}.${extension}`;
+
+    // Upload to MinIO
+    await this.minioService.uploadFile(
+      BUCKETS.AVATARS,
+      objectName,
+      file.buffer,
+      file.mimetype,
+    );
+
+    // Generate public URL
+    // In production, this should be the CDN URL or public MinIO URL
+    // For now, we'll construct it based on the APP_URL or MINIO_PUBLIC_URL
+    const minioPublicUrl = this.appConfigService.get<string>('MINIO_PUBLIC_URL') 
+      || this.appConfigService.get<string>('APP_URL') + '/api/v1/public/assets';
+
+    const avatarUrl = `${minioPublicUrl}/${BUCKETS.AVATARS}/${objectName}`;
+    
+    // Update config with new avatar URL
+    // We create a partial DTO update
+    const dto = new UpdateConfigDto();
+    dto.avatarUrl = avatarUrl;
+    // Need to fetch current version first or handle concurrency properly
+    // For simplicity here, we'll let the frontend trigger the config update, 
+    // OR we can just return the URL and let frontend call updateConfig
+    
+    return { url: avatarUrl };
   }
 
   // =========================================================================
