@@ -259,7 +259,7 @@ export default function ReportsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('reportType')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
+                  <TableHead>{t('statusLabel')}</TableHead>
                   <TableHead>{t('rows')}</TableHead>
                   <TableHead>{t('fileSize')}</TableHead>
                   <TableHead>{t('createdAt')}</TableHead>

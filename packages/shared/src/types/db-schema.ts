@@ -1,34 +1,34 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { 
-  TenantTier, 
-  OwnerType, 
-  ScopeType, 
-  ProfileType, 
-  ChannelCategory, 
-  ActionType, 
-  EffectType, 
-  ChangeAction, 
-  LogSeverity, 
-  JobStatus, 
-  ReportStatus, 
-  MessageStatus, 
-  VersionStatus, 
-  IdentityChangeType, 
-  DirectionType, 
-  PiiAuthType, 
-  CustomerAccessAction, 
-  CaptchaMode, 
-  RejectionReason, 
-  BlocklistPatternType, 
-  BlocklistAction, 
-  ExternalPatternType, 
-  IpRuleType, 
-  IpRuleScope, 
-  IpRuleSource, 
-  AdapterType, 
-  ConsumerCategory, 
-  SeverityLevel 
+import {
+    ActionType,
+    AdapterType,
+    BlocklistAction,
+    BlocklistPatternType,
+    CaptchaMode,
+    ChangeAction,
+    ChannelCategory,
+    ConsumerCategory,
+    CustomerAccessAction,
+    DirectionType,
+    EffectType,
+    ExternalPatternType,
+    IdentityChangeType,
+    IpRuleScope,
+    IpRuleSource,
+    IpRuleType,
+    JobStatus,
+    LogSeverity,
+    MessageStatus,
+    OwnerType,
+    PiiAuthType,
+    ProfileType,
+    RejectionReason,
+    ReportStatus,
+    ScopeType,
+    SeverityLevel,
+    TenantTier,
+    VersionStatus
 } from './enums';
 
 // Base Interfaces
@@ -97,7 +97,7 @@ export interface Talent extends SoftDeletableEntity, LocalizableEntity {
   avatar_url?: string;
   homepage_path?: string;
   timezone?: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 // ------------------------------------------------------------------
@@ -145,7 +145,7 @@ export interface Policy extends SoftDeletableEntity {
   resource_id: string;
   action: ActionType;
   effect: EffectType;
-  conditions?: Record<string, any>;
+  conditions?: Record<string, unknown>;
   description?: string;
 }
 
@@ -203,7 +203,7 @@ export interface CustomerAccessLog extends BaseEntity {
   profile_store_id: string;
   talent_id: string;
   action: CustomerAccessAction;
-  field_changes?: Record<string, any>;
+  field_changes?: Record<string, unknown>;
   operator_id?: string;
   operator_name?: string;
   occurred_at: string;
@@ -435,7 +435,7 @@ export interface ChangeLog extends BaseEntity {
   object_type: string;
   object_id: string;
   object_name?: string;
-  diff?: Record<string, any>;
+  diff?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
   request_id?: string;
@@ -450,7 +450,7 @@ export interface TechnicalEventLog extends BaseEntity {
   span_id?: string;
   source?: string;
   message?: string;
-  payload_json?: any;
+  payload_json?: unknown;
   error_code?: string;
   error_stack?: string;
 }
@@ -462,10 +462,10 @@ export interface IntegrationLog extends BaseEntity {
   direction: DirectionType;
   endpoint: string;
   method?: string;
-  request_headers?: any;
-  request_body?: any;
+  request_headers?: Record<string, unknown>;
+  request_body?: unknown;
   response_status?: number;
-  response_body?: any;
+  response_body?: unknown;
   latency_ms?: number;
   error_message?: string;
   trace_id?: string;
@@ -487,15 +487,15 @@ export interface TalentHomepage extends AuditableEntity {
   seo_description?: string;
   og_image_url?: string;
   analytics_id?: string;
-  theme?: Record<string, any>;
+  theme?: Record<string, unknown>;
   version: number;
 }
 
 export interface HomepageVersion extends AuditableEntity {
   homepage_id: string;
   version_number: number;
-  content: any;
-  theme?: any;
+  content: unknown;
+  theme?: unknown;
   status: VersionStatus;
   content_hash?: string;
   published_at?: string;
@@ -522,7 +522,7 @@ export interface MarshmallowConfig extends AuditableEntity {
   rate_limit_window_hours: number;
   reactions_enabled: boolean;
   allowed_reactions: string[];
-  theme?: any;
+  theme?: unknown;
   version: number;
 }
 
@@ -584,7 +584,7 @@ export interface ImportJob extends BaseEntity {
   processed_rows: number;
   success_rows: number;
   failed_rows: number;
-  errors?: any[];
+  errors?: unknown[];
   started_at?: string;
   completed_at?: string;
   created_by: string;
@@ -595,7 +595,7 @@ export interface ReportJob extends BaseEntity {
   talent_id: string;
   profile_store_id: string;
   report_type: string; // 'mfr'
-  filter_criteria: any;
+  filter_criteria: unknown;
   format: string;
   status: ReportStatus;
   retry_count: number;
@@ -641,8 +641,8 @@ export interface Webhook extends SoftDeletableEntity, LocalizableEntity {
   url: string;
   // secret not exposed
   events: string[];
-  headers?: any;
-  retry_policy?: any;
+  headers?: Record<string, unknown>;
+  retry_policy?: unknown;
   last_triggered_at?: string;
   last_status?: number;
   consecutive_failures: number;
