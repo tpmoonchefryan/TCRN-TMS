@@ -24,8 +24,13 @@ export class PublicAssetsController {
     @Param() params: Record<string, string>,
   ) {
     // In NestJS, wildcard parameters are often captured in params['0']
-    const fullKey = params['0'] || key; 
+    let fullKey = params['0'] || key;
+    if (Array.isArray(fullKey)) {
+      fullKey = fullKey.join('/');
+    } 
     
+    this.logger.log(`Received request for public asset: bucket=${bucket}, key=${fullKey}`);
+
     // Security check: Only allow specific public buckets
     const ALLOWED_BUCKETS = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
     if (!ALLOWED_BUCKETS.includes(bucket as any)) {
