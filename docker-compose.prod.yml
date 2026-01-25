@@ -1,0 +1,144 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# TCRN TMS Docker Compose - Production Environment
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+
+  # Next.js Web Application
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: tcrn-web
+    restart: always
+    networks:
+      - app-network
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_ENV: production
+      # In production Docker network, API is at http://api:4000
+      # But strictly for server-side calls. Client-side calls use NEXT_PUBLIC_API_URL from .env
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # NestJS API Server
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: tcrn-api
+    restart: always
+    networks:
+      - app-network
+      - pii-network # Needs access to PII service
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tcrn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tcrn_tms}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      NATS_URL: nats://nats:4222
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # PII Service (Internal Docker URL)
+      PII_SERVICE_URL: http://pii-service:5000
+      # Secrets
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      FINGERPRINT_SECRET_KEY: ${FINGERPRINT_SECRET_KEY}
+      # Email
+      TENCENT_SES_SECRET_ID: ${TENCENT_SES_SECRET_ID}
+      TENCENT_SES_SECRET_KEY: ${TENCENT_SES_SECRET_KEY}
+      TENCENT_SES_FROM_ADDRESS: ${TENCENT_SES_FROM_ADDRESS}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # BullMQ Worker
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/worker.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: tcrn-worker
+    restart: always
+    networks:
+      - app-network
+      - pii-network
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tcrn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tcrn_tms}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      NATS_URL: nats://nats:4222
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      PII_SERVICE_URL: http://pii-service:5000
+      # Email
+      TENCENT_SES_SECRET_ID: ${TENCENT_SES_SECRET_ID}
+      TENCENT_SES_SECRET_KEY: ${TENCENT_SES_SECRET_KEY}
+      TENCENT_SES_FROM_ADDRESS: ${TENCENT_SES_FROM_ADDRESS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # Infrastructure Overrides for Production
+  # =============================================================================
+  
+  # Ensure Redis has password in production
+  redis:
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
