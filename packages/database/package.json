@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && pnpm db:generate",
+    "build": "pnpm db:generate && tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
