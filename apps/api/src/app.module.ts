@@ -63,6 +63,7 @@ import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiModule } from './modules/pii';
 import { PiiConfigModule } from './modules/pii-config';
+import { PublicModule } from './modules/public';
 import { RedisModule } from './modules/redis';
 import { RoleModule } from './modules/role';
 
