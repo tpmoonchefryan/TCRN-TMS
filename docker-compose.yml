@@ -249,3 +249,9 @@ volumes:
     name: tcrn-loki-data
   tempo-data:
     name: tcrn-tempo-data
+  caddy-data:
+    name: tcrn-caddy-data
+  caddy-config:
+    name: tcrn-caddy-config
+  caddy-logs:
+    name: tcrn-caddy-logs

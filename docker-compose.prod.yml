@@ -6,6 +6,40 @@ version: '3.8'
 
 services:
   # =============================================================================
+  # Reverse Proxy with Auto HTTPS (Caddy)
+  # =============================================================================
+  
+  caddy:
+    image: caddy:2-alpine
+    container_name: tcrn-caddy
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@tcrn-tms.com}
+    depends_on:
+      - web
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
   # Application Services
   # =============================================================================
 
@@ -27,8 +61,9 @@ services:
       # But strictly for server-side calls. Client-side calls use NEXT_PUBLIC_API_URL from .env
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-    ports:
-      - "3000:3000"
+    # No port exposure - accessed via Caddy
+    expose:
+      - "3000"
     depends_on:
       - api
     deploy:
@@ -62,8 +97,8 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      # PII Service (Internal Docker URL)
-      PII_SERVICE_URL: http://pii-service:5000
+      # PII Service (External server URL)
+      PII_SERVICE_URL: ${PII_SERVICE_URL}
       # Secrets
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
@@ -72,8 +107,9 @@ services:
       TENCENT_SES_SECRET_ID: ${TENCENT_SES_SECRET_ID}
       TENCENT_SES_SECRET_KEY: ${TENCENT_SES_SECRET_KEY}
       TENCENT_SES_FROM_ADDRESS: ${TENCENT_SES_FROM_ADDRESS}
-    ports:
-      - "4000:4000"
+    # No port exposure - accessed via Caddy
+    expose:
+      - "4000"
     depends_on:
       postgres:
         condition: service_healthy
