@@ -2072,19 +2072,25 @@ export default function TenantSettingsPage() {
               </>
             )}
             
-            {/* Profile Store: PII Service Config selector */}
+            {/* Profile Store: PII Service Config selector (optional) */}
             {selectedEntityType === 'profile-store' && (
               <>
                 <div className="space-y-2">
-                  <Label>PII Service Config *</Label>
+                  <Label>PII Service Config</Label>
                   <Select
-                    value={newEntity.piiServiceConfigCode}
-                    onValueChange={(value) => setNewEntity({ ...newEntity, piiServiceConfigCode: value })}
+                    value={newEntity.piiServiceConfigCode || '_none'}
+                    onValueChange={(value) => setNewEntity({ ...newEntity, piiServiceConfigCode: value === '_none' ? '' : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a PII service config" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="_none">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Database size={12} />
+                          None (Local Only)
+                        </div>
+                      </SelectItem>
                       {piiServiceConfigs.map((config) => (
                         <SelectItem key={config.id} value={config.code}>
                           <div className="flex items-center gap-2">
@@ -2099,7 +2105,7 @@ export default function TenantSettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">PII proxy service for customer data encryption</p>
+                  <p className="text-xs text-muted-foreground">PII proxy service for customer data encryption (optional for local-only stores)</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>

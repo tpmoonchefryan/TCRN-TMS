@@ -39,7 +39,7 @@ export class PiiServiceConfigController {
   @ApiResponse({ status: 200, description: 'Returns PII service config list' })
   async list(
     @Query() query: PaginationQueryDto,
-    @CurrentUser() user: { id: string; username: string },
+    @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
@@ -55,7 +55,7 @@ export class PiiServiceConfigController {
   @ApiResponse({ status: 200, description: 'Returns PII service config' })
   async getById(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string; username: string },
+    @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
@@ -71,7 +71,7 @@ export class PiiServiceConfigController {
   @ApiResponse({ status: 201, description: 'Config created' })
   async create(
     @Body() dto: CreatePiiServiceConfigDto,
-    @CurrentUser() user: { id: string; username: string },
+    @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
@@ -88,7 +88,7 @@ export class PiiServiceConfigController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePiiServiceConfigDto,
-    @CurrentUser() user: { id: string; username: string },
+    @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
@@ -104,7 +104,7 @@ export class PiiServiceConfigController {
   @ApiResponse({ status: 200, description: 'Returns connection test result' })
   async testConnection(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string; username: string },
+    @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
@@ -115,12 +115,13 @@ export class PiiServiceConfigController {
    * Build request context
    */
   private buildContext(
-    user: { id: string; username: string },
+    user: { id: string; username: string; tenantSchema?: string },
     req: Request,
   ): RequestContext {
     return {
       userId: user.id,
       userName: user.username,
+      tenantSchema: user.tenantSchema || 'public',
       ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
       userAgent: req.headers['user-agent'],
       requestId: req.headers['x-request-id'] as string,
