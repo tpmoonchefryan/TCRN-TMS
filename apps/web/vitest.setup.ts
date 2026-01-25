@@ -61,5 +61,5 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock environment variables
-Object.defineProperty(process.env, 'NEXT_PUBLIC_API_URL', { value: 'http://localhost:4000', writable: true });
-Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:4000';
+process.env.NODE_ENV = 'test';
