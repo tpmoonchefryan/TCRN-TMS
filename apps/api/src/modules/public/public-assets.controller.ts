@@ -22,43 +22,43 @@ export class PublicAssetsController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    // Manually extract key from URL to avoid parameter parsing issues (commas vs slashes)
-    // URL format: /api/v1/public/assets/:bucket/:key
-    // We want everything after the bucket name
-    const urlParts = req.path.split(`/${bucket}/`);
-    if (urlParts.length < 2) {
-      this.logger.warn(`Invalid path format: ${req.path}`);
-      throw new NotFoundException('Invalid path');
-    }
-    
-    // Decode URI component to handle spaces, special chars
-    const fullKey = decodeURIComponent(urlParts[1]);
-    
-    this.logger.log(`Received request for public asset: bucket=${bucket}, rawUrl=${req.path}, extractedKey=${fullKey}`);
-
-    // Security check: Only allow specific public buckets
-    const ALLOWED_BUCKETS = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
-    if (!ALLOWED_BUCKETS.includes(bucket as any)) {
-      throw new NotFoundException('Bucket not found or not public');
-    }
-
     try {
+      this.logger.log(`Debugging 500: path=${req?.path}, url=${req?.url}, bucket=${bucket}`);
+
+      // Manually extract key from URL
+      const urlParts = (req.path || req.url).split(`/${bucket}/`);
+      if (urlParts.length < 2) {
+        this.logger.warn(`Invalid path format: ${req.path}`);
+        throw new NotFoundException('Invalid path');
+      }
+      
+      const fullKey = decodeURIComponent(urlParts[1]);
+      this.logger.log(`Extracted key: ${fullKey}`);
+  
+      // Security check
+      const ALLOWED_BUCKETS = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
+      if (!ALLOWED_BUCKETS.includes(bucket as any)) {
+        throw new NotFoundException('Bucket not found or not public');
+      }
+  
       const stream = await this.minioService.getFileStream(bucket as any, fullKey);
-      
       const stats = await this.minioService.getFileStats(bucket as any, fullKey);
-      
+        
       if (stats) {
         res.set({
             'Content-Length': stats.size,
             'Content-Type': lookup(fullKey) || 'application/octet-stream',
-            'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+            'Cache-Control': 'public, max-age=31536000', 
         });
       }
-
+  
       return new StreamableFile(stream);
     } catch (error) {
-      this.logger.warn(`Failed to serve asset: ${bucket}/${fullKey} - ${error.message}`);
-      throw new NotFoundException('File not found');
+      this.logger.error(`Failed to serve asset: ${error.message}`, error.stack);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotFoundException('File not found (Internal Error)');
     }
   }
 }

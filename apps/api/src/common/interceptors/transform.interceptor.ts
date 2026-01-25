@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
+    CallHandler,
+    ExecutionContext,
+    Injectable,
+    NestInterceptor,
+    StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -20,6 +21,11 @@ export class TransformInterceptor implements NestInterceptor {
   intercept(_context: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
       map((data) => {
+        // If it is a StreamableFile, return as-is
+        if (data instanceof StreamableFile) {
+          return data;
+        }
+
         // If already wrapped in success/error format, return as-is
         if (data && typeof data === 'object' && 'success' in data) {
           return data;
