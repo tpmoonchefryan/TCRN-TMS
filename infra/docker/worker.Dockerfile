@@ -39,6 +39,9 @@ RUN pnpm --filter @tcrn/shared build && \
     pnpm --filter @tcrn/database build && \
     pnpm --filter @tcrn/worker build
 
+# Create production deployment using pnpm deploy
+RUN pnpm --filter @tcrn/worker deploy --prod /app/deploy
+
 # Production stage
 FROM node:20-alpine AS runner
 
@@ -51,9 +54,8 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 worker
 
-# Copy built application
-COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist ./dist
-COPY --from=builder --chown=worker:nodejs /app/node_modules ./node_modules
+# Copy deployed application (includes all dependencies)
+COPY --from=builder --chown=worker:nodejs /app/deploy ./
 
 USER worker
 
