@@ -142,3 +142,16 @@ services:
   # Ensure Redis has password in production
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+
+  # =============================================================================
+  # Disable Internal PII Services (Separated Deployment)
+  # =============================================================================
+  
+  # When using this production file, we assume PII services are on a separate server.
+  # We use profiles to disable these services from starting locally.
+  
+  pii-postgres:
+    profiles: ["disabled-in-main-prod"]
+  
+  pii-service:
+    profiles: ["disabled-in-main-prod"]
