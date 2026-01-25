@@ -15,6 +15,8 @@ export const configValidationSchema = Joi.object({
   // Application
   API_PORT: Joi.number().default(4000),
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+  FRONTEND_URL: Joi.string().default('http://localhost:3000'), // URL for email links (password reset, verification, etc.)
+  APP_URL: Joi.string().default('http://localhost:3000'), // Public-facing app URL (homepage, marshmallow, etc.)
 
   // Database
   DATABASE_URL: Joi.string().required(),

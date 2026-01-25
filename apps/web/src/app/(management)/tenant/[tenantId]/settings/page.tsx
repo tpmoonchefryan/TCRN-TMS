@@ -763,10 +763,7 @@ export default function TenantSettingsPage() {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
     }
-    if (selectedEntityType === 'profile-store' && !newEntity.piiServiceConfigCode) {
-      toast.error(te('VALIDATION_FIELD_REQUIRED'));
-      return;
-    }
+    // Note: piiServiceConfigCode is optional for profile-store (local-only mode)
     if (selectedEntityType === 'pii-service-config' && !newEntity.apiUrl) {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
@@ -806,7 +803,10 @@ export default function TenantSettingsPage() {
           nameZh: newEntity.nameZh || undefined,
           nameJa: newEntity.nameJa || undefined,
           descriptionEn: newEntity.descriptionEn || undefined,
-          piiServiceConfigCode: newEntity.piiServiceConfigCode,
+          // piiServiceConfigCode is optional - only send if a valid value is selected
+          piiServiceConfigCode: newEntity.piiServiceConfigCode && newEntity.piiServiceConfigCode !== '_none' 
+            ? newEntity.piiServiceConfigCode 
+            : undefined,
           isDefault: newEntity.isDefault || false,
         });
         

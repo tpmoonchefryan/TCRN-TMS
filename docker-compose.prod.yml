@@ -104,6 +104,10 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       # PII Service (External server URL)
       PII_SERVICE_URL: ${PII_SERVICE_URL}
+      # Frontend URL for email links (password reset, verification, etc.)
+      FRONTEND_URL: ${NEXT_PUBLIC_APP_URL}
+      APP_URL: ${NEXT_PUBLIC_APP_URL}
+      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL}
       # Secrets
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}

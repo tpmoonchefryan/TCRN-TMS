@@ -61,6 +61,10 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       PII_SERVICE_URL: http://pii-service:4100
+      # Frontend URL for email links
+      FRONTEND_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
     ports:
       - "4000:4000"
     depends_on:
