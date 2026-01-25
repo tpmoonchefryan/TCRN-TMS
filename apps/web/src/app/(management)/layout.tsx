@@ -68,7 +68,7 @@ export default function ManagementLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, _hasHydrated: authHydrated, isAcTenant } = useAuthStore();
+  const { isAuthenticated, _hasHydrated: authHydrated, isAcTenant, checkAuth } = useAuthStore();
   const { 
     _hasHydrated: talentHydrated, 
     setUIMode, 
@@ -80,9 +80,11 @@ export default function ManagementLayout({
   
   const [isLoadingTree, setIsLoadingTree] = useState(false);
   const [treeError, setTreeError] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
   
   // Use ref to track if we've already fetched to prevent infinite loops
   const hasFetchedRef = useRef(false);
+  const hasVerifiedRef = useRef(false);
 
   // Calculate top offset for staging banner
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
@@ -93,6 +95,27 @@ export default function ManagementLayout({
     setUIMode('management');
   }, [setUIMode]);
 
+  // Verify session and restore access token
+  useEffect(() => {
+    if (!authHydrated) return;
+    if (hasVerifiedRef.current) return;
+    if (!isAuthenticated) return;
+
+    hasVerifiedRef.current = true;
+
+    const verifySession = async () => {
+      const valid = await checkAuth();
+      if (valid) {
+        setIsVerified(true);
+      } else {
+        hasVerifiedRef.current = false;
+        router.push('/login');
+      }
+    };
+
+    verifySession();
+  }, [authHydrated, isAuthenticated, checkAuth, router]);
+
   // Redirect AC tenant to admin
   useEffect(() => {
     if (authHydrated && isAuthenticated && isAcTenant) {
@@ -100,9 +123,9 @@ export default function ManagementLayout({
     }
   }, [authHydrated, isAuthenticated, isAcTenant, router]);
 
-  // Fetch organization tree from API (only once)
+  // Fetch organization tree from API (only once, after verification)
   useEffect(() => {
-    if (!authHydrated || !isAuthenticated || isAcTenant) return;
+    if (!authHydrated || !isAuthenticated || isAcTenant || !isVerified) return;
     if (hasFetchedRef.current) return;
     if (organizationTree.length > 0) return;
     
@@ -139,7 +162,7 @@ export default function ManagementLayout({
     };
     
     fetchOrganizationTree();
-  }, [authHydrated, isAuthenticated, isAcTenant, organizationTree.length, setOrganizationTree, setAccessibleTalents, setCurrentTalent]);
+  }, [authHydrated, isAuthenticated, isAcTenant, isVerified, organizationTree.length, setOrganizationTree, setAccessibleTalents, setCurrentTalent]);
 
   // Auth check
   useEffect(() => {
@@ -148,8 +171,8 @@ export default function ManagementLayout({
     }
   }, [authHydrated, isAuthenticated, router]);
 
-  // Wait for hydration
-  if (!authHydrated || !talentHydrated) {
+  // Wait for hydration and verification
+  if (!authHydrated || !talentHydrated || (isAuthenticated && !isVerified)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
