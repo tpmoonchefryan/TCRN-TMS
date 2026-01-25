@@ -5,6 +5,8 @@ import { Response } from 'express';
 import { lookup } from 'mime-types';
 import { BUCKETS, MinioService } from '../minio/minio.service';
 
+import { Public } from '../../common/decorators/public.decorator';
+
 @ApiTags('Public Assets')
 @Controller('public/assets')
 export class PublicAssetsController {
@@ -12,6 +14,7 @@ export class PublicAssetsController {
 
   constructor(private readonly minioService: MinioService) {}
 
+  @Public()
   @Get(':bucket/*key')
   @ApiOperation({ summary: 'Get public asset' })
   async getAsset(
