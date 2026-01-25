@@ -1337,6 +1337,16 @@ model MarshmallowConfig {
   reactionsEnabled              Boolean  @default(true) @map("reactions_enabled")
   allowedReactions              String[] @default(["❤️", "👍", "😊", "🎉", "💯"]) @map("allowed_reactions") @db.VarChar(32)
   theme                         Json     @default("{}") @db.JsonB
+  // Custom avatar for marshmallow page
+  avatarUrl                     String?  @map("avatar_url") @db.VarChar(512)
+  // Terms content (multi-language)
+  termsContentEn                String?  @map("terms_content_en") @db.Text
+  termsContentZh                String?  @map("terms_content_zh") @db.Text
+  termsContentJa                String?  @map("terms_content_ja") @db.Text
+  // Privacy content (multi-language)
+  privacyContentEn              String?  @map("privacy_content_en") @db.Text
+  privacyContentZh              String?  @map("privacy_content_zh") @db.Text
+  privacyContentJa              String?  @map("privacy_content_ja") @db.Text
   // Custom domain settings
   customDomain                  String?  @unique @map("custom_domain") @db.VarChar(255)
   customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
