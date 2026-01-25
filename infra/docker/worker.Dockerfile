@@ -54,7 +54,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copy built application
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist ./dist
 COPY --from=builder --chown=worker:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=worker:nodejs /app/packages/database/node_modules/.prisma ./node_modules/.prisma
 
 USER worker
 
