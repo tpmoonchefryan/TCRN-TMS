@@ -36,11 +36,10 @@ BEGIN
 
   -- 2. 查找用户（通过用户名）
   EXECUTE format('
-    SELECT id INTO user_id_val
-    FROM %I.system_user
+    SELECT id FROM %I.system_user
     WHERE username = $1 AND is_active = true
     LIMIT 1
-  ', tenant_schema_name) USING :'username';
+  ', tenant_schema_name) INTO user_id_val USING :'username';
 
   IF user_id_val IS NULL THEN
     RAISE EXCEPTION '用户 "%" 在租户 "%" 中不存在或未激活', :'username', :'tenant_code';
@@ -50,11 +49,10 @@ BEGIN
 
   -- 3. 查找 PLATFORM_ADMIN 角色
   EXECUTE format('
-    SELECT id INTO role_id_val
-    FROM %I.role
+    SELECT id FROM %I.role
     WHERE code = ''PLATFORM_ADMIN'' AND is_active = true
     LIMIT 1
-  ', tenant_schema_name);
+  ', tenant_schema_name) INTO role_id_val;
 
   IF role_id_val IS NULL THEN
     -- 尝试创建 PLATFORM_ADMIN 角色（如果不存在）
@@ -64,17 +62,14 @@ BEGIN
       VALUES (gen_random_uuid(), ''PLATFORM_ADMIN'', ''Platform Administrator'', ''平台管理员'', ''プラットフォーム管理者'', 
               ''AC tenant administrator with platform-wide access'', true, true, now(), now(), 1)
       ON CONFLICT (code) DO UPDATE SET is_active = true
-      RETURNING id INTO role_id_val
     ', tenant_schema_name);
     
-    IF role_id_val IS NULL THEN
-      EXECUTE format('
-        SELECT id INTO role_id_val
-        FROM %I.role
-        WHERE code = ''PLATFORM_ADMIN''
-        LIMIT 1
-      ', tenant_schema_name);
-    END IF;
+    -- 重新查询角色 ID
+    EXECUTE format('
+      SELECT id FROM %I.role
+      WHERE code = ''PLATFORM_ADMIN''
+      LIMIT 1
+    ', tenant_schema_name) INTO role_id_val;
   END IF;
 
   IF role_id_val IS NULL THEN
@@ -85,14 +80,13 @@ BEGIN
 
   -- 4. 检查是否已存在角色分配
   EXECUTE format('
-    SELECT id INTO existing_assignment_id
-    FROM %I.user_role
+    SELECT id FROM %I.user_role
     WHERE user_id = $1
       AND role_id = $2
       AND scope_type = ''tenant''
       AND COALESCE(scope_id, ''00000000-0000-0000-0000-000000000000'') = COALESCE($3, ''00000000-0000-0000-0000-000000000000'')
     LIMIT 1
-  ', tenant_schema_name) USING user_id_val, role_id_val, tenant_id;
+  ', tenant_schema_name) INTO existing_assignment_id USING user_id_val, role_id_val, tenant_id;
 
   IF existing_assignment_id IS NOT NULL THEN
     RAISE NOTICE '用户 "%" 已经拥有 PLATFORM_ADMIN 角色（分配 ID: %）', :'username', existing_assignment_id;
