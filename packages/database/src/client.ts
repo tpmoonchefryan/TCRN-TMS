@@ -86,8 +86,16 @@ export async function createTenantSchema(tenantId: string): Promise<string> {
     `);
   }
   
-  // Copy seed data for reference tables (resources, social_platforms, roles, policies)
-  const seedTables = ['resource', 'social_platform', 'role', 'policy', 'role_policy'];
+  // Copy seed data for reference tables (resources, platforms, roles, policies, config entities)
+  const seedTables = [
+    'resource', 
+    'social_platform', 
+    'role', 
+    'policy', 
+    'role_policy',
+    'pii_service_config',  // PII service configurations
+    'profile_store',       // Profile store configurations
+  ];
   for (const table of seedTables) {
     if (tables.some(t => t.tablename === table)) {
       await prisma.$executeRawUnsafe(`

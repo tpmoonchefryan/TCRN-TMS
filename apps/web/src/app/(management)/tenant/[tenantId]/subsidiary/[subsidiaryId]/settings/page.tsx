@@ -72,7 +72,6 @@ import { cn } from '@/lib/utils';
 
 // Configuration Entity Types (using singular kebab-case format to match backend API)
 const CONFIG_ENTITY_TYPES = [
-  { code: 'social-platform', name: 'Social Platform', nameZh: '社交平台', description: 'Social platform definitions', icon: '📱' },
   { code: 'customer-status', name: 'Customer Status', nameZh: '客户状态', description: 'Customer lifecycle status definitions', icon: '👤' },
   { code: 'business-segment', name: 'Business Segment', nameZh: '业务分类', description: 'Business segment definitions', icon: '📊' },
   { code: 'reason-category', name: 'Reason Category', nameZh: '原因分类', description: 'Reason category definitions', icon: '📋' },
@@ -84,7 +83,7 @@ const CONFIG_ENTITY_TYPES = [
   { code: 'blocklist-entry', name: 'Blocklist Entry', nameZh: '屏蔽词条', description: 'Content blocklist patterns', icon: '🛡️' },
 ];
 
-// System Dictionary Types (Read-only, managed by AC tenant)
+// System Dictionary Types
 const DICTIONARY_TYPES = [
   { code: 'countries', name: 'Countries', nameZh: '国家/地区', icon: '🌍' },
   { code: 'languages', name: 'Languages', nameZh: '语言', icon: '🗣️' },
@@ -92,6 +91,7 @@ const DICTIONARY_TYPES = [
   { code: 'currencies', name: 'Currencies', nameZh: '货币', icon: '💰' },
   { code: 'genders', name: 'Genders', nameZh: '性别', icon: '⚧️' },
   { code: 'profile_types', name: 'Profile Types', nameZh: '档案类型', icon: '📋' },
+  { code: 'social_platforms', name: 'Social Platforms', nameZh: '社交平台', icon: '📱' },
 ];
 
 // Type definitions

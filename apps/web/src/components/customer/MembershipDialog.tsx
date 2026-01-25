@@ -25,7 +25,7 @@ import {
     Switch,
     Textarea,
 } from '@/components/ui';
-import { configurationEntityApi, membershipApi } from '@/lib/api/client';
+import { configurationEntityApi, membershipApi, systemDictionaryApi } from '@/lib/api/client';
 
 interface Platform {
   id?: string;
@@ -121,22 +121,19 @@ export function MembershipDialog({
     const loadData = async () => {
       setIsLoading(true);
       
-      // Load platforms from configuration entity API (social-platform)
+      // Load platforms from system dictionary API (social_platforms)
       try {
-        const platformsResponse = await configurationEntityApi.list('social-platform', {
-          includeInherited: true,
-          includeInactive: false,
-        });
+        const platformsResponse = await systemDictionaryApi.get('social_platforms');
         if (platformsResponse.success && platformsResponse.data) {
-          // Configuration entity API returns array of entities
+          // System dictionary API returns paginated data, extract items array
           const items = Array.isArray(platformsResponse.data) 
             ? platformsResponse.data 
-            : (platformsResponse.data as any).items || [];
+            : (platformsResponse.data.items || platformsResponse.data);
           if (items.length > 0) {
             setPlatforms(items.map((item: any) => ({
               id: item.id,
               code: item.code,
-              displayName: item.displayName || item.nameEn || item.name || item.code,
+              displayName: item.extraData?.displayName || item.nameEn || item.name_en || item.code,
             })));
           } else {
             // Empty response, use fallback
@@ -147,7 +144,7 @@ export function MembershipDialog({
           }
         }
       } catch (error) {
-        console.error('Failed to load platforms from configuration entity API:', error);
+        console.error('Failed to load platforms from system dictionary:', error);
         // Use default platforms if API fails
         setPlatforms([
           { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },

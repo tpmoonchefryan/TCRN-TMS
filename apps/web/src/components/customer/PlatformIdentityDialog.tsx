@@ -24,7 +24,7 @@ import {
   SelectValue,
   Switch,
 } from '@/components/ui';
-import { platformIdentityApi, configurationEntityApi } from '@/lib/api/client';
+import { platformIdentityApi, systemDictionaryApi } from '@/lib/api/client';
 
 interface Platform {
   id: string;
@@ -77,23 +77,20 @@ export function PlatformIdentityDialog({
 
   const isEdit = !!identity;
 
-  // Load platforms from configuration entity API (social-platform)
+  // Load platforms from system dictionary API
   useEffect(() => {
     const loadPlatforms = async () => {
       setIsLoading(true);
       try {
-        // Use configuration entity API with 'social-platform' entity type
-        const response = await configurationEntityApi.list('social-platform', {
-          includeInherited: true,
-          includeInactive: false,
-        });
+        // Use system dictionary API with 'social_platforms' type code
+        const response = await systemDictionaryApi.get('social_platforms');
         if (response.success && response.data) {
-          // Configuration entity API returns array of entities
-          const items = Array.isArray(response.data) ? response.data : ((response.data as any).items || []);
+          // System dictionary API returns paginated data, extract items array
+          const items = Array.isArray(response.data) ? response.data : (response.data.items || response.data);
           setPlatforms(items.map((item: any) => ({
             id: item.id,
             code: item.code,
-            displayName: item.displayName || item.nameEn || item.name || item.code,
+            displayName: item.extraData?.displayName || item.nameEn || item.name_en || item.code,
           })));
         }
       } catch (error) {

@@ -67,6 +67,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   currencies: Coins,
   genders: User,
   profile_types: User,
+  social_platforms: Globe,
   adapter_types: Plug,
   webhook_events: Webhook,
   job_statuses: Clock,

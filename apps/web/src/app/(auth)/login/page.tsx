@@ -2,17 +2,44 @@
 
 'use client';
 
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Globe, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
+import { 
+  Button, 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle, 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input, 
+  Label 
+} from '@/components/ui';
+import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
+import { setUserLocale } from '@/i18n/locale';
+import { userApi } from '@/lib/api/client';
+import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
+
+// Language options
+const LANGUAGES = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'zh', name: '简体中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+] as const;
+
+type LocaleCode = 'en' | 'zh' | 'ja';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
   const router = useRouter();
+  const currentLocale = useLocale();
   const { login, verifyTotp, isLoading, error, clearError, tenantCode: savedTenantCode, _hasHydrated } = useAuthStore();
   
   // Steps: 'credentials' | 'totp'
@@ -26,6 +53,9 @@ export default function LoginPage() {
   // TOTP State
   const [totpCode, setTotpCode] = useState('');
   const [sessionToken, setSessionToken] = useState('');
+  
+  // Language selection state - default to current locale
+  const [selectedLanguage, setSelectedLanguage] = useState<LocaleCode>(currentLocale as LocaleCode);
 
   // Sync saved tenant code after hydration
   useEffect(() => {
@@ -33,6 +63,30 @@ export default function LoginPage() {
       setTenantCode(savedTenantCode);
     }
   }, [_hasHydrated, savedTenantCode]);
+
+  // Handle language change
+  const handleLanguageChange = async (code: LocaleCode) => {
+    setSelectedLanguage(code);
+    // Update cookie immediately so UI refreshes
+    await setUserLocale(code);
+    router.refresh();
+  };
+
+  // Update user preference after successful login
+  const updateLanguagePreference = async () => {
+    try {
+      await userApi.update({ preferredLanguage: selectedLanguage });
+      // Ensure cookie is set
+      await setUserLocale(selectedLanguage);
+    } catch {
+      // Silently fail - language preference update is not critical
+    }
+  };
+
+  const currentLang = LANGUAGES.find(l => l.code === selectedLanguage) || LANGUAGES[0];
+  
+  // Calculate top offset for staging banner
+  const topOffset = isStaging() ? STAGING_BANNER_HEIGHT + 16 : 16; // 16px base margin
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +108,9 @@ export default function LoginPage() {
         setSessionToken(result.sessionToken);
         setStep('totp');
       } else {
+        // Update language preference after successful login
+        await updateLanguagePreference();
+        
         // AC tenant goes to admin console, others go to home
         const normalizedTenantCode = tenantCode.toUpperCase();
         if (normalizedTenantCode === 'AC') {
@@ -73,6 +130,9 @@ export default function LoginPage() {
 
     const success = await verifyTotp(sessionToken, totpCode);
     if (success) {
+      // Update language preference after successful TOTP verification
+      await updateLanguagePreference();
+      
       // AC tenant goes to admin console, others go to home
       const normalizedTenantCode = tenantCode.toUpperCase();
       if (normalizedTenantCode === 'AC') {
@@ -96,6 +156,38 @@ export default function LoginPage() {
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-300/20 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Language Switcher - Top Right (adjusts for staging banner) */}
+      <div 
+        className="absolute right-4 z-20"
+        style={{ top: topOffset }}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2 bg-white/60 backdrop-blur-sm hover:bg-white/80 text-slate-600 shadow-sm"
+            >
+              <Globe size={14} />
+              <span>{currentLang.flag}</span>
+              <span className="hidden sm:inline">{currentLang.name}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="z-[200]">
+            {LANGUAGES.map(lang => (
+              <DropdownMenuItem
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={lang.code === selectedLanguage ? 'bg-slate-100' : ''}
+              >
+                <span className="mr-2">{lang.flag}</span>
+                {lang.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card className="w-full max-w-md bg-white/80 backdrop-blur-md shadow-medium border-white/50 animate-fade-in z-10 transition-all duration-300">

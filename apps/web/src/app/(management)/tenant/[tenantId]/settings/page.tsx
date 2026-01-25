@@ -79,13 +79,6 @@ import { useAuthStore } from '@/stores/auth-store';
 // Configuration Entity Types (using singular kebab-case format to match backend API)
 const CONFIG_ENTITY_TYPES = [
   { 
-    code: 'social-platform', 
-    name: 'Social Platform',
-    nameZh: '社交平台',
-    description: 'Social platform definitions',
-    icon: '📱',
-  },
-  { 
     code: 'customer-status', 
     name: 'Customer Status',
     nameZh: '客户状态',
@@ -237,7 +230,7 @@ const INITIAL_CONFIG_ENTITIES: Record<string, ConfigEntityBase[]> = {
 const INITIAL_MEMBERSHIP_TYPES: MembershipTypeEntity[] = [];
 const INITIAL_MEMBERSHIP_LEVELS: MembershipLevelEntity[] = [];
 
-// System Dictionary Types (counts are loaded from API, read-only managed by AC tenant)
+// System Dictionary Types (counts are loaded from API)
 const DICTIONARY_TYPES = [
   { code: 'countries', name: 'Countries/Regions', nameZh: '国家/地区', count: 0, icon: '🌍' },
   { code: 'languages', name: 'Languages', nameZh: '语言', count: 0, icon: '🗣️' },
@@ -245,6 +238,7 @@ const DICTIONARY_TYPES = [
   { code: 'currencies', name: 'Currencies', nameZh: '货币', count: 0, icon: '💰' },
   { code: 'genders', name: 'Genders', nameZh: '性别', count: 0, icon: '⚧️' },
   { code: 'profile_types', name: 'Profile Types', nameZh: '档案类型', count: 0, icon: '📋' },
+  { code: 'social_platforms', name: 'Social Platforms', nameZh: '社交平台', count: 0, icon: '📱' },
   { code: 'adapter_types', name: 'Adapter Types', nameZh: '适配器类型', count: 0, icon: '🔌' },
   { code: 'webhook_events', name: 'Webhook Events', nameZh: 'Webhook事件', count: 0, icon: '🔔' },
 ];

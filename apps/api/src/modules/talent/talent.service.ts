@@ -331,7 +331,7 @@ export class TalentService {
     },
     userId: string
   ): Promise<TalentData> {
-    // Validate Profile Store exists
+    // Validate Profile Store exists in tenant schema
     const profileStore = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
       SELECT id FROM "${tenantSchema}".profile_store WHERE id = $1::uuid AND is_active = true
     `, data.profileStoreId);
