@@ -56,13 +56,6 @@ interface MarshmallowConfigRow {
   reactionsEnabled: boolean;
   allowedReactions: string[];
   theme: Record<string, unknown>;
-  avatarUrl: string | null;
-  termsContentEn: string | null;
-  termsContentZh: string | null;
-  termsContentJa: string | null;
-  privacyContentEn: string | null;
-  privacyContentZh: string | null;
-  privacyContentJa: string | null;
   createdAt: Date;
   updatedAt: Date;
   version: number;
@@ -102,10 +95,7 @@ export class MarshmallowConfigService {
         max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
         rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
         reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions",
-        theme, avatar_url as "avatarUrl",
-        terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-        privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa",
-        created_at as "createdAt", updated_at as "updatedAt", version
+        theme, created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".marshmallow_config
       WHERE talent_id = $1::uuid
     `, talentId);
@@ -142,13 +132,10 @@ export class MarshmallowConfigService {
           allow_anonymous, captcha_mode, moderation_enabled, auto_approve,
           profanity_filter_enabled, external_blocklist_enabled, max_message_length,
           min_message_length, rate_limit_per_ip, rate_limit_window_hours,
-          reactions_enabled, allowed_reactions, theme, avatar_url,
-          terms_content_en, terms_content_zh, terms_content_ja,
-          privacy_content_en, privacy_content_zh, privacy_content_ja,
+          reactions_enabled, allowed_reactions, theme,
           version, created_at, updated_at
         ) VALUES (
           gen_random_uuid(), $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::text[], $19::jsonb, 
-          NULL, NULL, NULL, NULL, NULL, NULL, NULL,
           1, now(), now()
         )
         RETURNING 
@@ -161,10 +148,7 @@ export class MarshmallowConfigService {
           max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
           rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
           reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions",
-          theme, avatar_url as "avatarUrl",
-          terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-          privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa",
-          created_at as "createdAt", updated_at as "updatedAt", version
+          theme, created_at as "createdAt", updated_at as "updatedAt", version
       `,
         talentId,
         marshmallowEnabled, // Use talent settings instead of DEFAULT_CONFIG.isEnabled
@@ -223,13 +207,6 @@ export class MarshmallowConfigService {
       reactionsEnabled: config.reactionsEnabled,
       allowedReactions: config.allowedReactions,
       theme: config.theme,
-      avatarUrl: config.avatarUrl,
-      termsContentEn: config.termsContentEn,
-      termsContentZh: config.termsContentZh,
-      termsContentJa: config.termsContentJa,
-      privacyContentEn: config.privacyContentEn,
-      privacyContentZh: config.privacyContentZh,
-      privacyContentJa: config.privacyContentJa,
       stats,
       marshmallowUrl: `${appUrl}/m/${talents[0]?.homepagePath}`,
       createdAt: config.createdAt instanceof Date ? config.createdAt.toISOString() : config.createdAt,
@@ -264,10 +241,7 @@ export class MarshmallowConfigService {
         max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
         rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
         reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions",
-        theme, avatar_url as "avatarUrl",
-        terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-        privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa",
-        created_at as "createdAt", updated_at as "updatedAt", version
+        theme, created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".marshmallow_config
       WHERE talent_id = $1::uuid
     `, talentId);
@@ -299,9 +273,7 @@ export class MarshmallowConfigService {
       'allowAnonymous', 'captchaMode', 'moderationEnabled', 'autoApprove',
       'profanityFilterEnabled', 'externalBlocklistEnabled', 'maxMessageLength',
       'minMessageLength', 'rateLimitPerIp', 'rateLimitWindowHours',
-      'reactionsEnabled', 'allowedReactions', 'theme', 'avatarUrl',
-      'termsContentEn', 'termsContentZh', 'termsContentJa',
-      'privacyContentEn', 'privacyContentZh', 'privacyContentJa',
+      'reactionsEnabled', 'allowedReactions', 'theme',
     ];
 
     for (const field of fields) {
