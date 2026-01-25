@@ -42,9 +42,6 @@ RUN pnpm --filter @tcrn/shared build && \
 # Create production deployment using pnpm deploy
 RUN pnpm --filter @tcrn/api deploy --prod /app/deploy
 
-# Copy Prisma generated client to deploy directory
-RUN cp -r /app/node_modules/.prisma /app/deploy/node_modules/.prisma
-
 # Production stage
 FROM node:20-alpine AS runner
 
@@ -53,12 +50,19 @@ WORKDIR /app
 # Set environment
 ENV NODE_ENV=production
 
+# Install prisma CLI for generate
+RUN npm install -g prisma@6.14.0
+
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# Copy deployed application (includes all dependencies and Prisma client)
+# Copy deployed application
 COPY --from=builder --chown=nestjs:nodejs /app/deploy ./
+
+# Copy Prisma schema and generate client
+COPY --from=builder --chown=nestjs:nodejs /app/packages/database/prisma ./prisma
+RUN prisma generate --schema=./prisma/schema.prisma
 
 USER nestjs
 
