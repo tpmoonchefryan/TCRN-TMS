@@ -24,12 +24,35 @@ export async function seedUatOrganization(
   // ==========================================================================
   const corpSchema = uatTenants.corpSchemaName;
 
-  // First, create a profile store for the tenant
-  const corpProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${corpSchema}".profile_store (id, code, name_en, name_zh, name_ja, is_active, created_at, updated_at, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Store', '默认存储', 'デフォルトストア', true, now(), now(), 1)
+  // First, create a PII Service Config for the tenant
+  const corpPiiConfigResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${corpSchema}".pii_service_config 
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
+      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
+      created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
+      'Default PII service for UAT testing', '用于UAT测试的默认PII服务', 'UATテスト用のデフォルトPIIサービス',
+      'http://localhost:4001', 'mtls', 'http://localhost:4001/health', 60, true, true,
+      now(), now(), $1::uuid, $1::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET name_en = EXCLUDED.name_en
-     RETURNING id`
+     RETURNING id`,
+    systemUserId
+  );
+  const corpPiiConfigId = corpPiiConfigResult[0].id;
+
+  // Then, create a profile store linked to the PII Service Config
+  const corpProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${corpSchema}".profile_store 
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
+      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
+      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
+      $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET 
+       name_en = EXCLUDED.name_en,
+       pii_service_config_id = EXCLUDED.pii_service_config_id
+     RETURNING id`,
+    corpPiiConfigId, systemUserId
   );
   const corpProfileStoreId = corpProfileStoreResult[0].id;
 
@@ -99,12 +122,35 @@ export async function seedUatOrganization(
   // ==========================================================================
   const soloSchema = uatTenants.soloSchemaName;
 
-  // Create profile store for solo tenant
-  const soloProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".profile_store (id, code, name_en, name_zh, name_ja, is_active, created_at, updated_at, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Store', '默认存储', 'デフォルトストア', true, now(), now(), 1)
+  // First, create a PII Service Config for the solo tenant
+  const soloPiiConfigResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${soloSchema}".pii_service_config 
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
+      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
+      created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
+      'Default PII service for UAT testing', '用于UAT测试的默认PII服务', 'UATテスト用のデフォルトPIIサービス',
+      'http://localhost:4001', 'mtls', 'http://localhost:4001/health', 60, true, true,
+      now(), now(), $1::uuid, $1::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET name_en = EXCLUDED.name_en
-     RETURNING id`
+     RETURNING id`,
+    systemUserId
+  );
+  const soloPiiConfigId = soloPiiConfigResult[0].id;
+
+  // Create profile store for solo tenant linked to PII Service Config
+  const soloProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${soloSchema}".profile_store 
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
+      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
+      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
+      $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET 
+       name_en = EXCLUDED.name_en,
+       pii_service_config_id = EXCLUDED.pii_service_config_id
+     RETURNING id`,
+    soloPiiConfigId, systemUserId
   );
   const soloProfileStoreId = soloProfileStoreResult[0].id;
 

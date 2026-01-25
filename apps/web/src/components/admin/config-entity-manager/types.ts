@@ -14,7 +14,9 @@ export type ConfigEntityType =
   | 'membership-level'
   | 'consent'
   | 'consumer'
-  | 'blocklist-entry';
+  | 'blocklist-entry'
+  | 'pii-service-config'
+  | 'profile-store';
 
 export interface ConfigEntity {
   id: string;
@@ -273,6 +275,38 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
         { value: 'high', label: 'High' },
       ]},
       { name: 'category', label: 'Category', type: 'text' },
+    ],
+  },
+  'pii-service-config': {
+    type: 'pii-service-config',
+    label: 'PII Service Config',
+    labelZh: 'PII服务配置',
+    labelJa: 'PIIサービス設定',
+    description: 'PII service configurations for data encryption',
+    descriptionZh: 'PII数据加密服务配置',
+    descriptionJa: 'データ暗号化用PIIサービス設定',
+    extraFields: [
+      { name: 'apiUrl', label: 'API URL', type: 'url', required: true },
+      { name: 'authType', label: 'Auth Type', type: 'select', required: true, options: [
+        { value: 'mtls', label: 'mTLS' },
+        { value: 'api_key', label: 'API Key' },
+      ]},
+      { name: 'healthCheckUrl', label: 'Health Check URL', type: 'url' },
+      { name: 'healthCheckIntervalSec', label: 'Health Check Interval (sec)', type: 'number' },
+    ],
+  },
+  'profile-store': {
+    type: 'profile-store',
+    label: 'Profile Store',
+    labelZh: '档案存储库',
+    labelJa: 'プロファイルストア',
+    description: 'Profile stores for customer PII data management',
+    descriptionZh: '客户PII数据管理的档案存储库',
+    descriptionJa: '顧客PIIデータ管理用プロファイルストア',
+    extraFields: [
+      { name: 'piiServiceConfigCode', label: 'PII Service Config', type: 'select' },
+      { name: 'piiProxyUrl', label: 'PII Proxy URL', type: 'url' },
+      { name: 'isDefault', label: 'Is Default', type: 'boolean' },
     ],
   },
 };

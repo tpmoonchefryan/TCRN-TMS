@@ -28,7 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { configEntityApi, organizationApi, subsidiaryApi, talentApi } from '@/lib/api/client';
+import { organizationApi, profileStoreApi, subsidiaryApi, talentApi } from '@/lib/api/client';
 import { SubsidiaryInfo, useTalentStore } from '@/stores/talent-store';
 
 export default function OrganizationStructurePage() {
@@ -121,20 +121,20 @@ export default function OrganizationStructurePage() {
   // Profile Store list for talent creation
   const [profileStores, setProfileStores] = useState<Array<{ id: string; code: string; nameEn: string }>>([]);
 
-  // Fetch Profile Stores
+  // Fetch Profile Stores using dedicated API
   useEffect(() => {
     const fetchProfileStores = async () => {
       try {
-        const response = await configEntityApi.list('profile-store');
-        if (response.success && response.data) {
-          setProfileStores(response.data.map((item: any) => ({
+        const response = await profileStoreApi.list({ includeInactive: false });
+        if (response.success && response.data?.items) {
+          setProfileStores(response.data.items.map((item: any) => ({
             id: item.id,
             code: item.code,
             nameEn: item.nameEn || item.name_en || item.code,
           })));
         }
       } catch {
-        // Silently fail
+        // Silently fail - profile stores will be empty
       }
     };
     fetchProfileStores();
