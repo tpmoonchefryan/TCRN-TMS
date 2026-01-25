@@ -37,8 +37,13 @@ export class PiiServiceConfigController {
   @RequirePermissions({ resource: 'config.pii_service', action: 'read' })
   @ApiOperation({ summary: 'List PII service configs' })
   @ApiResponse({ status: 200, description: 'Returns PII service config list' })
-  async list(@Query() query: PaginationQueryDto) {
-    return this.piiServiceConfigService.findMany(query);
+  async list(
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() user: { id: string; username: string },
+    @Req() req: Request,
+  ) {
+    const context = this.buildContext(user, req);
+    return this.piiServiceConfigService.findMany(query, context);
   }
 
   /**
@@ -48,8 +53,13 @@ export class PiiServiceConfigController {
   @RequirePermissions({ resource: 'config.pii_service', action: 'read' })
   @ApiOperation({ summary: 'Get PII service config' })
   @ApiResponse({ status: 200, description: 'Returns PII service config' })
-  async getById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.piiServiceConfigService.findById(id);
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string; username: string },
+    @Req() req: Request,
+  ) {
+    const context = this.buildContext(user, req);
+    return this.piiServiceConfigService.findById(id, context);
   }
 
   /**
@@ -92,8 +102,13 @@ export class PiiServiceConfigController {
   @RequirePermissions({ resource: 'config.pii_service', action: 'read' })
   @ApiOperation({ summary: 'Test PII service connection' })
   @ApiResponse({ status: 200, description: 'Returns connection test result' })
-  async testConnection(@Param('id', ParseUUIDPipe) id: string) {
-    return this.piiServiceConfigService.testConnection(id);
+  async testConnection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string; username: string },
+    @Req() req: Request,
+  ) {
+    const context = this.buildContext(user, req);
+    return this.piiServiceConfigService.testConnection(id, context);
   }
 
   /**

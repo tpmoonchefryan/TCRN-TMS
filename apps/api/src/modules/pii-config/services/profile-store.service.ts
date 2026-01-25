@@ -238,6 +238,7 @@ export class ProfileStoreService {
         SELECT id FROM "${schema}".pii_service_config WHERE code = $1 AND is_active = true
       `, dto.piiServiceConfigCode);
 
+      // If user provided a code, it must exist
       if (piiConfigResult.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -246,6 +247,7 @@ export class ProfileStoreService {
       }
       piiConfigId = piiConfigResult[0].id;
     }
+    // If piiServiceConfigCode not provided, piiConfigId remains null (local-only mode)
 
     // If setting as default, unset other defaults
     if (dto.isDefault) {

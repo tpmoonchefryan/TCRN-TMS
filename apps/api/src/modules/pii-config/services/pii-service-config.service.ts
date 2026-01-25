@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { Prisma } from '@tcrn/database';
+import { prisma, setTenantSchema } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -26,34 +26,62 @@ export class PiiServiceConfigService {
   ) {}
 
   /**
-   * Get all PII service configs
+   * Get all PII service configs (multi-tenant aware - using raw SQL for proper schema support)
    */
-  async findMany(query: PaginationQueryDto) {
-    const prisma = this.databaseService.getPrisma();
+  async findMany(query: PaginationQueryDto, context: RequestContext) {
+    const schema = context.tenantSchema;
     const { page = 1, pageSize = 20, includeInactive = false } = query;
-    const pagination = this.databaseService.buildPagination(page, pageSize);
+    const offset = (page - 1) * pageSize;
 
-    const where: Prisma.PiiServiceConfigWhereInput = includeInactive
-      ? {}
-      : { isActive: true };
+    // Build WHERE clause
+    const whereClause = includeInactive ? '1=1' : 'psc.is_active = true';
 
-    const [items, total] = await Promise.all([
-      prisma.piiServiceConfig.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: pagination.skip,
-        take: pagination.take,
-        include: {
-          _count: {
-            select: { profileStores: true },
-          },
-        },
-      }),
-      prisma.piiServiceConfig.count({ where }),
-    ]);
+    // Query PII service configs using raw SQL
+    const items = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      code: string;
+      nameEn: string;
+      nameZh: string | null;
+      nameJa: string | null;
+      apiUrl: string;
+      authType: string;
+      isHealthy: boolean;
+      lastHealthCheckAt: Date | null;
+      isActive: boolean;
+      createdAt: Date;
+      version: number;
+    }>>(`
+      SELECT 
+        psc.id, psc.code, 
+        psc.name_en as "nameEn", 
+        psc.name_zh as "nameZh", 
+        psc.name_ja as "nameJa",
+        psc.api_url as "apiUrl",
+        psc.auth_type as "authType",
+        psc.is_healthy as "isHealthy",
+        psc.last_health_check_at as "lastHealthCheckAt",
+        psc.is_active as "isActive",
+        psc.created_at as "createdAt",
+        psc.version
+      FROM "${schema}".pii_service_config psc
+      WHERE ${whereClause}
+      ORDER BY psc.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, pageSize, offset);
 
-    return {
-      items: items.map((item) => ({
+    // Get total count
+    const totalResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+      SELECT COUNT(*) as count FROM "${schema}".pii_service_config psc WHERE ${whereClause}
+    `);
+    const total = Number(totalResult[0]?.count || 0);
+
+    // Count profile stores per config
+    const enrichedItems = await Promise.all(items.map(async (item) => {
+      const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+        SELECT COUNT(*) as count FROM "${schema}".profile_store WHERE pii_service_config_id = $1::uuid
+      `, item.id);
+
+      return {
         id: item.id,
         code: item.code,
         name: item.nameEn,
@@ -64,10 +92,14 @@ export class PiiServiceConfigService {
         isHealthy: item.isHealthy,
         lastHealthCheckAt: item.lastHealthCheckAt,
         isActive: item.isActive,
-        profileStoreCount: item._count.profileStores,
+        profileStoreCount: Number(countResult[0]?.count || 0),
         createdAt: item.createdAt,
         version: item.version,
-      })),
+      };
+    }));
+
+    return {
+      items: enrichedItems,
       meta: {
         pagination: this.databaseService.calculatePaginationMeta(total, page, pageSize),
       },
@@ -75,26 +107,66 @@ export class PiiServiceConfigService {
   }
 
   /**
-   * Get PII service config by ID
+   * Get PII service config by ID (multi-tenant aware - using raw SQL for proper schema support)
    */
-  async findById(id: string) {
-    const prisma = this.databaseService.getPrisma();
+  async findById(id: string, context: RequestContext) {
+    const schema = context.tenantSchema;
 
-    const config = await prisma.piiServiceConfig.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { profileStores: true },
-        },
-      },
-    });
+    // Query PII service config using raw SQL
+    const results = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      code: string;
+      nameEn: string;
+      nameZh: string | null;
+      nameJa: string | null;
+      descriptionEn: string | null;
+      descriptionZh: string | null;
+      descriptionJa: string | null;
+      apiUrl: string;
+      authType: string;
+      healthCheckUrl: string | null;
+      healthCheckIntervalSec: number;
+      isHealthy: boolean;
+      lastHealthCheckAt: Date | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      version: number;
+    }>>(`
+      SELECT 
+        id, code, 
+        name_en as "nameEn", 
+        name_zh as "nameZh", 
+        name_ja as "nameJa",
+        description_en as "descriptionEn",
+        description_zh as "descriptionZh",
+        description_ja as "descriptionJa",
+        api_url as "apiUrl",
+        auth_type as "authType",
+        health_check_url as "healthCheckUrl",
+        health_check_interval_sec as "healthCheckIntervalSec",
+        is_healthy as "isHealthy",
+        last_health_check_at as "lastHealthCheckAt",
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt",
+        version
+      FROM "${schema}".pii_service_config
+      WHERE id = $1::uuid
+    `, id);
 
+    const config = results[0];
     if (!config) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'PII service config not found',
       });
     }
+
+    // Count profile stores
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+      SELECT COUNT(*) as count FROM "${schema}".profile_store WHERE pii_service_config_id = $1::uuid
+    `, id);
 
     return {
       id: config.id,
@@ -112,7 +184,7 @@ export class PiiServiceConfigService {
       isHealthy: config.isHealthy,
       lastHealthCheckAt: config.lastHealthCheckAt,
       isActive: config.isActive,
-      profileStoreCount: config._count.profileStores,
+      profileStoreCount: Number(countResult[0]?.count || 0),
       createdAt: config.createdAt,
       updatedAt: config.updatedAt,
       version: config.version,
@@ -120,60 +192,72 @@ export class PiiServiceConfigService {
   }
 
   /**
-   * Create PII service config
+   * Create PII service config (multi-tenant aware - using raw SQL for proper schema support)
    */
   async create(dto: CreatePiiServiceConfigDto, context: RequestContext) {
-    const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
-    // Check for duplicate code
-    const existing = await prisma.piiServiceConfig.findFirst({
-      where: { code: dto.code },
-    });
+    // Check for duplicate code using raw SQL
+    const existingResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id FROM "${schema}".pii_service_config WHERE code = $1
+    `, dto.code);
 
-    if (existing) {
+    if (existingResult.length > 0) {
       throw new ConflictException({
         code: ErrorCodes.RES_ALREADY_EXISTS,
         message: 'PII service config with this code already exists',
       });
     }
 
-    // Create config
-    const config = await prisma.$transaction(async (tx) => {
-      const newConfig = await tx.piiServiceConfig.create({
-        data: {
-          code: dto.code,
-          nameEn: dto.nameEn,
-          nameZh: dto.nameZh,
-          nameJa: dto.nameJa,
-          descriptionEn: dto.descriptionEn,
-          descriptionZh: dto.descriptionZh,
-          descriptionJa: dto.descriptionJa,
-          apiUrl: dto.apiUrl,
-          authType: dto.authType,
-          // Note: In production, mTLS certs and API keys should be encrypted with KEK
-          healthCheckUrl: dto.healthCheckUrl || `${dto.apiUrl}/health`,
-          healthCheckIntervalSec: dto.healthCheckIntervalSec || 60,
-          createdBy: context.userId,
-          updatedBy: context.userId,
-        },
-      });
+    // Create config using raw SQL
+    const healthCheckUrl = dto.healthCheckUrl || `${dto.apiUrl}/health`;
+    const healthCheckIntervalSec = dto.healthCheckIntervalSec || 60;
 
-      // Record change log
-      await this.changeLogService.create(tx, {
-        action: 'create',
-        objectType: 'pii_service_config',
-        objectId: newConfig.id,
-        objectName: dto.code,
-        newValue: {
-          code: dto.code,
-          nameEn: dto.nameEn,
-          apiUrl: dto.apiUrl,
-          authType: dto.authType,
-        },
-      }, context);
+    const createResult = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      code: string;
+      nameEn: string;
+      createdAt: Date;
+    }>>(`
+      INSERT INTO "${schema}".pii_service_config 
+        (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
+         api_url, auth_type, health_check_url, health_check_interval_sec, 
+         is_healthy, is_active, created_at, updated_at, created_by, updated_by, version)
+      VALUES 
+        (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 
+         false, true, now(), now(), $12::uuid, $12::uuid, 1)
+      RETURNING id, code, name_en as "nameEn", created_at as "createdAt"
+    `,
+      dto.code,
+      dto.nameEn,
+      dto.nameZh || null,
+      dto.nameJa || null,
+      dto.descriptionEn || null,
+      dto.descriptionZh || null,
+      dto.descriptionJa || null,
+      dto.apiUrl,
+      dto.authType,
+      healthCheckUrl,
+      healthCheckIntervalSec,
+      context.userId
+    );
 
-      return newConfig;
-    });
+    const config = createResult[0];
+
+    // Record change log
+    await setTenantSchema(schema);
+    await this.changeLogService.create(prisma, {
+      action: 'create',
+      objectType: 'pii_service_config',
+      objectId: config.id,
+      objectName: dto.code,
+      newValue: {
+        code: dto.code,
+        nameEn: dto.nameEn,
+        apiUrl: dto.apiUrl,
+        authType: dto.authType,
+      },
+    }, context);
 
     return {
       id: config.id,
@@ -184,16 +268,25 @@ export class PiiServiceConfigService {
   }
 
   /**
-   * Update PII service config
+   * Update PII service config (multi-tenant aware - using raw SQL for proper schema support)
    */
   async update(id: string, dto: UpdatePiiServiceConfigDto, context: RequestContext) {
-    const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
-    // Get existing config
-    const existing = await prisma.piiServiceConfig.findUnique({
-      where: { id },
-    });
+    // Get existing config using raw SQL
+    const existingResult = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      code: string;
+      nameEn: string;
+      apiUrl: string;
+      isActive: boolean;
+      version: number;
+    }>>(`
+      SELECT id, code, name_en as "nameEn", api_url as "apiUrl", is_active as "isActive", version
+      FROM "${schema}".pii_service_config WHERE id = $1::uuid
+    `, id);
 
+    const existing = existingResult[0];
     if (!existing) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -209,51 +302,103 @@ export class PiiServiceConfigService {
       });
     }
 
-    // Build update data
-    const updateData: Prisma.PiiServiceConfigUpdateInput = {
-      updatedBy: context.userId,
-      version: { increment: 1 },
-    };
+    // Build UPDATE query
+    const updates: string[] = ['updated_at = now()', 'updated_by = $2::uuid', 'version = version + 1'];
+    const params: unknown[] = [id, context.userId];
+    let paramIndex = 3;
 
-    if (dto.nameEn !== undefined) updateData.nameEn = dto.nameEn;
-    if (dto.nameZh !== undefined) updateData.nameZh = dto.nameZh;
-    if (dto.nameJa !== undefined) updateData.nameJa = dto.nameJa;
-    if (dto.descriptionEn !== undefined) updateData.descriptionEn = dto.descriptionEn;
-    if (dto.descriptionZh !== undefined) updateData.descriptionZh = dto.descriptionZh;
-    if (dto.descriptionJa !== undefined) updateData.descriptionJa = dto.descriptionJa;
-    if (dto.apiUrl !== undefined) updateData.apiUrl = dto.apiUrl;
-    if (dto.authType !== undefined) updateData.authType = dto.authType;
-    if (dto.healthCheckUrl !== undefined) updateData.healthCheckUrl = dto.healthCheckUrl;
-    if (dto.healthCheckIntervalSec !== undefined) updateData.healthCheckIntervalSec = dto.healthCheckIntervalSec;
-    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+    if (dto.nameEn !== undefined) {
+      updates.push(`name_en = $${paramIndex}`);
+      params.push(dto.nameEn);
+      paramIndex++;
+    }
+    if (dto.nameZh !== undefined) {
+      updates.push(`name_zh = $${paramIndex}`);
+      params.push(dto.nameZh);
+      paramIndex++;
+    }
+    if (dto.nameJa !== undefined) {
+      updates.push(`name_ja = $${paramIndex}`);
+      params.push(dto.nameJa);
+      paramIndex++;
+    }
+    if (dto.descriptionEn !== undefined) {
+      updates.push(`description_en = $${paramIndex}`);
+      params.push(dto.descriptionEn);
+      paramIndex++;
+    }
+    if (dto.descriptionZh !== undefined) {
+      updates.push(`description_zh = $${paramIndex}`);
+      params.push(dto.descriptionZh);
+      paramIndex++;
+    }
+    if (dto.descriptionJa !== undefined) {
+      updates.push(`description_ja = $${paramIndex}`);
+      params.push(dto.descriptionJa);
+      paramIndex++;
+    }
+    if (dto.apiUrl !== undefined) {
+      updates.push(`api_url = $${paramIndex}`);
+      params.push(dto.apiUrl);
+      paramIndex++;
+    }
+    if (dto.authType !== undefined) {
+      updates.push(`auth_type = $${paramIndex}`);
+      params.push(dto.authType);
+      paramIndex++;
+    }
+    if (dto.healthCheckUrl !== undefined) {
+      updates.push(`health_check_url = $${paramIndex}`);
+      params.push(dto.healthCheckUrl);
+      paramIndex++;
+    }
+    if (dto.healthCheckIntervalSec !== undefined) {
+      updates.push(`health_check_interval_sec = $${paramIndex}`);
+      params.push(dto.healthCheckIntervalSec);
+      paramIndex++;
+    }
+    if (dto.isActive !== undefined) {
+      updates.push(`is_active = $${paramIndex}`);
+      params.push(dto.isActive);
+      paramIndex++;
+    }
 
-    // Update
-    const updated = await prisma.$transaction(async (tx) => {
-      const result = await tx.piiServiceConfig.update({
-        where: { id },
-        data: updateData,
-      });
+    // Execute update
+    const updateResult = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      code: string;
+      nameEn: string;
+      apiUrl: string;
+      isActive: boolean;
+      version: number;
+      updatedAt: Date;
+    }>>(`
+      UPDATE "${schema}".pii_service_config
+      SET ${updates.join(', ')}
+      WHERE id = $1::uuid
+      RETURNING id, code, name_en as "nameEn", api_url as "apiUrl", is_active as "isActive", version, updated_at as "updatedAt"
+    `, ...params);
 
-      // Record change log
-      await this.changeLogService.create(tx, {
-        action: 'update',
-        objectType: 'pii_service_config',
-        objectId: id,
-        objectName: result.code,
-        oldValue: {
-          nameEn: existing.nameEn,
-          apiUrl: existing.apiUrl,
-          isActive: existing.isActive,
-        },
-        newValue: {
-          nameEn: result.nameEn,
-          apiUrl: result.apiUrl,
-          isActive: result.isActive,
-        },
-      }, context);
+    const updated = updateResult[0];
 
-      return result;
-    });
+    // Record change log
+    await setTenantSchema(schema);
+    await this.changeLogService.create(prisma, {
+      action: 'update',
+      objectType: 'pii_service_config',
+      objectId: id,
+      objectName: updated.code,
+      oldValue: {
+        nameEn: existing.nameEn,
+        apiUrl: existing.apiUrl,
+        isActive: existing.isActive,
+      },
+      newValue: {
+        nameEn: updated.nameEn,
+        apiUrl: updated.apiUrl,
+        isActive: updated.isActive,
+      },
+    }, context);
 
     return {
       id: updated.id,
@@ -264,15 +409,22 @@ export class PiiServiceConfigService {
   }
 
   /**
-   * Test PII service connection
+   * Test PII service connection (multi-tenant aware)
    */
-  async testConnection(id: string) {
-    const prisma = this.databaseService.getPrisma();
+  async testConnection(id: string, context: RequestContext) {
+    const schema = context.tenantSchema;
 
-    const config = await prisma.piiServiceConfig.findUnique({
-      where: { id },
-    });
+    // Get config using raw SQL
+    const configResult = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      apiUrl: string;
+      healthCheckUrl: string | null;
+    }>>(`
+      SELECT id, api_url as "apiUrl", health_check_url as "healthCheckUrl"
+      FROM "${schema}".pii_service_config WHERE id = $1::uuid
+    `, id);
 
+    const config = configResult[0];
     if (!config) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -284,14 +436,12 @@ export class PiiServiceConfigService {
     const healthUrl = config.healthCheckUrl || `${config.apiUrl}/health`;
     const result = await this.piiClientService.checkHealth(healthUrl.replace('/health', ''));
 
-    // Update health status
-    await prisma.piiServiceConfig.update({
-      where: { id },
-      data: {
-        isHealthy: result.status === 'ok',
-        lastHealthCheckAt: new Date(),
-      },
-    });
+    // Update health status using raw SQL
+    await prisma.$executeRawUnsafe(`
+      UPDATE "${schema}".pii_service_config
+      SET is_healthy = $2, last_health_check_at = now()
+      WHERE id = $1::uuid
+    `, id, result.status === 'ok');
 
     return {
       status: result.status,

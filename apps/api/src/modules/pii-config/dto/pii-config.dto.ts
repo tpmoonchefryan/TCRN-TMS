@@ -206,8 +206,9 @@ export class CreateProfileStoreDto {
   @IsString()
   descriptionJa?: string;
 
+  @IsOptional()
   @IsString()
-  piiServiceConfigCode!: string;
+  piiServiceConfigCode?: string;
 
   @IsOptional()
   @IsBoolean()
