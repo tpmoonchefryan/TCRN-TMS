@@ -95,24 +95,6 @@ class UpdateTenantDto {
   version?: number;
 }
 
-class UpdateSelfFeaturesDto {
-  @IsOptional()
-  @IsBoolean()
-  pii_encryption?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  totp_2fa?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  external_homepage?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  marshmallow?: boolean;
-}
-
 class ListTenantsQueryDto {
   @IsOptional()
   @IsInt()
@@ -425,89 +407,6 @@ export class TenantController {
     }
 
     // Essential RBAC data seeded for schema
-  }
-
-  /**
-   * GET /api/v1/tenants/self
-   * Get current user's tenant details (for non-AC tenants)
-   */
-  @Get('self')
-  @ApiOperation({ summary: 'Get current tenant details' })
-  async getSelfTenant(
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    const tenant = await this.tenantService.getTenantById(user.tenantId);
-    if (!tenant) {
-      throw new NotFoundException({
-        code: ErrorCodes.TENANT_NOT_FOUND,
-        message: 'Tenant not found',
-      });
-    }
-
-    const stats = await this.getTenantStats(tenant.schemaName);
-
-    return success({
-      id: tenant.id,
-      code: tenant.code,
-      name: tenant.name,
-      tier: tenant.tier,
-      settings: tenant.settings,
-      features: tenant.features,
-      timezone: (tenant.settings as Record<string, unknown>)?.timezone || 'UTC',
-      defaultLanguage: (tenant.settings as Record<string, unknown>)?.defaultLanguage || 'en',
-      isActive: tenant.isActive,
-      stats,
-      createdAt: tenant.createdAt.toISOString(),
-      updatedAt: tenant.updatedAt.toISOString(),
-    });
-  }
-
-  /**
-   * PATCH /api/v1/tenants/self/features
-   * Update current tenant's feature flags (for tenant admins)
-   */
-  @Patch('self/features')
-  @ApiOperation({ summary: 'Update current tenant features' })
-  async updateSelfFeatures(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpdateSelfFeaturesDto,
-  ) {
-    // Get current tenant
-    const tenant = await this.tenantService.getTenantById(user.tenantId);
-    if (!tenant) {
-      throw new NotFoundException({
-        code: ErrorCodes.TENANT_NOT_FOUND,
-        message: 'Tenant not found',
-      });
-    }
-
-    // TODO: Add permission check for tenant admin role
-    // For now, any authenticated user in the tenant can update features
-
-    // Merge new features with existing
-    const currentFeatures = (tenant.features as Record<string, boolean>) || {};
-    const updatedFeatures = {
-      ...currentFeatures,
-      ...(dto.pii_encryption !== undefined && { pii_encryption: dto.pii_encryption }),
-      ...(dto.totp_2fa !== undefined && { totp_2fa: dto.totp_2fa }),
-      ...(dto.external_homepage !== undefined && { external_homepage: dto.external_homepage }),
-      ...(dto.marshmallow !== undefined && { marshmallow: dto.marshmallow }),
-    };
-
-    // Update tenant
-    const updated = await prisma.tenant.update({
-      where: { id: user.tenantId },
-      data: {
-        features: updatedFeatures,
-      },
-    });
-
-    return success({
-      id: updated.id,
-      code: updated.code,
-      features: updated.features,
-      updatedAt: updated.updatedAt.toISOString(),
-    });
   }
 
   /**

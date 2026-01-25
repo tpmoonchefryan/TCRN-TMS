@@ -619,13 +619,11 @@ export default function TenantSettingsPage() {
           name: tenant.name,
           timezone: tenant.timezone,
           defaultLanguage: tenant.defaultLanguage,
-          features: tenant.features,
         });
         toast.success(t('settingsSaved') || 'Settings saved successfully');
       } else {
-        // Non-AC tenants can update their own features
-        await tenantApi.updateSelfFeatures(tenant.features || {});
-        toast.success(t('settingsSaved') || 'Settings saved successfully');
+        // Non-AC tenants cannot update tenant settings
+        toast.info(t('settingsViewOnly') || 'Tenant settings are read-only for non-admin tenants');
       }
     } catch (error) {
       toast.error(t('settingsSaveFailed') || 'Failed to save settings');
