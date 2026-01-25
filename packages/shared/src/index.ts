@@ -1,8 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import * as adminSchema from './types/admin/schema';
+import * as customerSchema from './types/customer/schema';
+import * as integrationSchema from './types/integration/schema';
+import * as logsSchema from './types/logs/schema';
+import * as marshmallowSchema from './types/marshmallow/schema';
+import * as reportSchema from './types/report/schema';
 import * as securitySchema from './types/security/schema';
 
-export { securitySchema };
+export { 
+  adminSchema,
+  customerSchema,
+  integrationSchema,
+  logsSchema,
+  marshmallowSchema, 
+  reportSchema, 
+  securitySchema,
+};
 
 // Core exports (canonical sources)
 export * from './constants/error-codes';
@@ -41,23 +55,6 @@ export * from './types/rbac';
 export * from './types/config';
 export * from './types/homepage/schema';
 export * from './types/homepage/presets';
-
-// Feature schemas that have duplicate type names - export as namespaces
-import * as marshmallowSchema from './types/marshmallow/schema';
-import * as logsSchema from './types/logs/schema';
-import * as customerSchema from './types/customer/schema';
-import * as reportSchema from './types/report/schema';
-import * as integrationSchema from './types/integration/schema';
-import * as adminSchema from './types/admin/schema';
-
-export { 
-  marshmallowSchema, 
-  logsSchema, 
-  customerSchema, 
-  reportSchema, 
-  integrationSchema,
-  adminSchema 
-};
 
 // Re-export specific non-conflicting types from feature schemas
 // Note: TechEventType, TechEventScope, IntegrationDirection are exported from constants/event-types.ts

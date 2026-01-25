@@ -86,15 +86,17 @@ export async function createTenantSchema(tenantId: string): Promise<string> {
     `);
   }
   
-  // Copy seed data for reference tables (resources, platforms, roles, policies, config entities)
+  // Copy seed data for reference tables (resources, platforms, roles, policies, config entities, blocklists)
   const seedTables = [
     'resource', 
     'social_platform', 
     'role', 
     'policy', 
     'role_policy',
-    'pii_service_config',  // PII service configurations
-    'profile_store',       // Profile store configurations
+    'pii_service_config',      // PII service configurations
+    'profile_store',           // Profile store configurations
+    'blocklist_entry',         // Blocklist entries for content moderation
+    'external_blocklist_pattern', // External blocklist patterns
   ];
   for (const table of seedTables) {
     if (tables.some(t => t.tablename === table)) {

@@ -78,8 +78,11 @@ export class SecurityController {
   ) {
     const result = await this.blocklistService.findMany(user.tenantSchema, query);
     return {
-      items: result.items,
-      meta: { total: result.total },
+      success: true,
+      data: {
+        items: result.items,
+        meta: { total: result.total },
+      },
     };
   }
 
@@ -175,8 +178,11 @@ export class SecurityController {
   async listIpRules(@Query() query: IpRuleListQueryDto) {
     const result = await this.ipAccessService.findMany(query);
     return {
-      items: result.items,
-      meta: { total: result.total },
+      success: true,
+      data: {
+        items: result.items,
+        meta: { total: result.total },
+      },
     };
   }
 

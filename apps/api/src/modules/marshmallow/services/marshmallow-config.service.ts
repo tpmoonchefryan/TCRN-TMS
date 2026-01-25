@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
@@ -79,6 +80,14 @@ export class MarshmallowConfigService {
    * Get or create config for talent (multi-tenant aware)
    */
   async getOrCreate(talentId: string, tenantSchema: string) {
+    // Validate tenantSchema to prevent SQL injection and runtime errors
+    if (!tenantSchema || typeof tenantSchema !== 'string') {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Tenant schema is required',
+      });
+    }
+
     const prisma = this.databaseService.getPrisma();
 
     // Query config using raw SQL with tenant schema
@@ -225,6 +234,14 @@ export class MarshmallowConfigService {
    * Update config (multi-tenant aware)
    */
   async update(talentId: string, tenantSchema: string, dto: UpdateConfigDto, context: RequestContext) {
+    // Validate tenantSchema
+    if (!tenantSchema || typeof tenantSchema !== 'string') {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Tenant schema is required',
+      });
+    }
+
     const prisma = this.databaseService.getPrisma();
 
     // Get current config

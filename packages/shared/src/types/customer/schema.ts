@@ -183,7 +183,7 @@ export interface CustomerAccessLog {
   talent: TalentSummary;
   operator: { id: string; username: string };
   occurred_at: string;
-  field_changes?: any;
+  field_changes?: Record<string, { old: unknown; new: unknown }>;
 }
 
 // --- Import ---

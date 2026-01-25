@@ -67,12 +67,12 @@ export interface Tenant extends BaseEntity {
   schema_name: string;
   tier: TenantTier;
   is_active: boolean;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
 }
 
 export interface GlobalConfig extends BaseEntity {
   key: string;
-  value: any;
+  value: unknown;
   description?: string;
   updated_by?: string;
 }
