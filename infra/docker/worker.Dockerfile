@@ -42,6 +42,9 @@ RUN pnpm --filter @tcrn/shared build && \
 # Create production deployment using pnpm deploy
 RUN pnpm --filter @tcrn/worker deploy --prod /app/deploy
 
+# Copy Prisma generated client to deploy directory
+RUN cp -r /app/node_modules/.prisma /app/deploy/node_modules/.prisma
+
 # Production stage
 FROM node:20-alpine AS runner
 
@@ -54,7 +57,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 worker
 
-# Copy deployed application (includes all dependencies)
+# Copy deployed application (includes all dependencies and Prisma client)
 COPY --from=builder --chown=worker:nodejs /app/deploy ./
 
 USER worker
