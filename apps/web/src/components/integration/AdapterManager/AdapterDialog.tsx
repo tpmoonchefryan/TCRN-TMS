@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { dictionaryApi, integrationApi } from '@/lib/api/client';
+import { configurationEntityApi, integrationApi } from '@/lib/api/client';
 
 interface Platform {
   id: string;
@@ -85,16 +85,20 @@ export function AdapterDialog({
     inherit: true,
   });
 
-  // Load platforms
+  // Load platforms from configuration entity API (social-platform)
   const fetchPlatforms = useCallback(async () => {
     setIsLoadingPlatforms(true);
     try {
-      const response = await dictionaryApi.getByType('social_platforms');
+      const response = await configurationEntityApi.list('social-platform', {
+        includeInherited: true,
+        includeInactive: false,
+      });
       if (response.success && response.data) {
-        setPlatforms(response.data.map((p: Record<string, unknown>) => ({
+        const items = Array.isArray(response.data) ? response.data : ((response.data as any).items || []);
+        setPlatforms(items.map((p: Record<string, unknown>) => ({
           id: p.id as string,
           code: p.code as string,
-          displayName: (p.nameEn || p.name) as string,
+          displayName: (p.displayName || p.nameEn || p.name) as string,
           iconUrl: p.iconUrl as string | undefined,
         })));
       }

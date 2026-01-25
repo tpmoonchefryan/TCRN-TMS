@@ -25,7 +25,7 @@ import {
     Switch,
     Textarea,
 } from '@/components/ui';
-import { configurationEntityApi, membershipApi, systemDictionaryApi } from '@/lib/api/client';
+import { configurationEntityApi, membershipApi } from '@/lib/api/client';
 
 interface Platform {
   id?: string;
@@ -121,19 +121,22 @@ export function MembershipDialog({
     const loadData = async () => {
       setIsLoading(true);
       
-      // Load platforms from system dictionary API (separate try-catch)
+      // Load platforms from configuration entity API (social-platform)
       try {
-        const platformsResponse = await systemDictionaryApi.get('social_platforms');
+        const platformsResponse = await configurationEntityApi.list('social-platform', {
+          includeInherited: true,
+          includeInactive: false,
+        });
         if (platformsResponse.success && platformsResponse.data) {
-          // System dictionary API returns paginated data, extract items array
+          // Configuration entity API returns array of entities
           const items = Array.isArray(platformsResponse.data) 
             ? platformsResponse.data 
-            : (platformsResponse.data.items || platformsResponse.data);
+            : (platformsResponse.data as any).items || [];
           if (items.length > 0) {
             setPlatforms(items.map((item: any) => ({
               id: item.id,
               code: item.code,
-              displayName: item.extraData?.displayName || item.nameEn || item.name_en || item.code,
+              displayName: item.displayName || item.nameEn || item.name || item.code,
             })));
           } else {
             // Empty response, use fallback
@@ -144,7 +147,7 @@ export function MembershipDialog({
           }
         }
       } catch (error) {
-        console.error('Failed to load platforms from system dictionary:', error);
+        console.error('Failed to load platforms from configuration entity API:', error);
         // Use default platforms if API fails
         setPlatforms([
           { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },

@@ -37,7 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { reportApi, configurationEntityApi, dictionaryApi, ReportFormat } from '@/lib/api/client';
+import { reportApi, configurationEntityApi, ReportFormat } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface MfrConfigDialogProps {
@@ -136,8 +136,8 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
       setIsLoadingOptions(true);
       try {
         const [platformsRes, classesRes, statusesRes] = await Promise.all([
-          // Platform from system dictionary (social_platforms)
-          dictionaryApi.getByType('social_platforms'),
+          // Platform from configuration entity (social-platform)
+          configurationEntityApi.list('social-platform'),
           // Membership class from configuration entity
           configurationEntityApi.list('membership-class'),
           // Customer status from configuration entity
