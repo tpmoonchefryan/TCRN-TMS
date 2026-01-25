@@ -95,6 +95,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       NATS_URL: nats://nats:4222
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -148,6 +149,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       NATS_URL: nats://nats:4222
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
