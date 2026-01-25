@@ -17,6 +17,7 @@ import { TotpService } from '../totp.service';
 import { TokenService } from '../token.service';
 import { SessionService } from '../session.service';
 import { TenantService } from '../../tenant/tenant.service';
+import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
 import { prisma } from '@tcrn/database';
 
 const mockPrisma = prisma as unknown as {
@@ -31,6 +32,7 @@ describe('AuthService', () => {
   let mockTokenService: Partial<TokenService>;
   let mockSessionService: Partial<SessionService>;
   let mockTenantService: Partial<TenantService>;
+  let mockPermissionSnapshotService: Partial<PermissionSnapshotService>;
 
   const mockTenant = {
     id: 'tenant-123',
@@ -90,12 +92,17 @@ describe('AuthService', () => {
       getTenantByCode: vi.fn().mockResolvedValue(mockTenant),
     };
 
+    mockPermissionSnapshotService = {
+      refreshUserSnapshots: vi.fn().mockResolvedValue(undefined),
+    };
+
     service = new AuthService(
       mockPasswordService as PasswordService,
       mockTotpService as TotpService,
       mockTokenService as TokenService,
       mockSessionService as SessionService,
       mockTenantService as TenantService,
+      mockPermissionSnapshotService as PermissionSnapshotService,
     );
   });
 

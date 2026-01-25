@@ -58,7 +58,10 @@ export class PermissionSnapshotService {
     scopeType?: ScopeType,
     scopeId?: string | null
   ): Promise<boolean> {
-    const key = this.getSnapshotKey(tenantSchema, userId, scopeType, scopeId);
+    // Default to tenant scope if not specified (most common case for API endpoints)
+    const effectiveScopeType = scopeType || 'tenant';
+    const effectiveScopeId = scopeType ? scopeId : null;
+    const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
     const permKey = `${resource}:${action}`;
     
     // Check specific permission

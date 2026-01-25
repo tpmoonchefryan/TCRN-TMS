@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant';
 
 import { PasswordService } from './password.service';
@@ -51,12 +52,15 @@ export interface LoginResult {
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly passwordService: PasswordService,
     private readonly totpService: TotpService,
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
     private readonly tenantService: TenantService,
+    private readonly permissionSnapshotService: PermissionSnapshotService,
   ) {}
 
   /**
@@ -272,6 +276,14 @@ export class AuthService {
   ): Promise<LoginResult> {
     // Track successful login
     await this.sessionService.trackLoginAttempt(user.id, tenantSchema, true, ipAddress);
+
+    // Refresh permission snapshots for the user (PRD §12.6)
+    try {
+      await this.permissionSnapshotService.refreshUserSnapshots(tenantSchema, user.id);
+    } catch (error) {
+      // Log but don't fail login if permission refresh fails
+      this.logger.warn(`Failed to refresh permission snapshots for user ${user.id}`, error);
+    }
 
     // Generate access token
     const { token: accessToken, expiresIn } = this.tokenService.generateAccessToken({
