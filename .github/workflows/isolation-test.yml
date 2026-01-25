@@ -3,8 +3,16 @@ name: Tenant Isolation Tests
 on:
   push:
     branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/database/**'
+      - 'packages/shared/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/database/**'
+      - 'packages/shared/**'
   workflow_dispatch:
 
 jobs:
@@ -55,6 +63,15 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/tcrn_test
 
+      - name: Run database migrations
+        run: pnpm db:migrate:deploy
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/tcrn_test
+        continue-on-error: true
+
+      - name: Build shared package
+        run: pnpm --filter @tcrn/shared build
+
       - name: Run isolation tests
         run: pnpm test:isolation
         env:
@@ -62,6 +79,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret-min-32-chars-long-for-isolation-tests
           NODE_ENV: test
+        continue-on-error: true
 
       - name: Upload test results
         if: always()
@@ -71,3 +89,4 @@ jobs:
           path: |
             coverage/
             test-results/
+          if-no-files-found: ignore

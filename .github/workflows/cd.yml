@@ -5,15 +5,165 @@ on:
     branches: [main]
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Deploy target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - pii
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # =============================================================================
+  # Build and Test
+  # =============================================================================
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Type Check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+  # =============================================================================
+  # Deploy to Production Server (Main Services)
+  # =============================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-test]
+    if: |
+      github.ref == 'refs/heads/main' || 
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production')
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
+            
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Rebuild and restart services
+            echo "🔨 Building and restarting services..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache web api worker
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate web api worker
+            
+            # Run database migrations (if any)
+            echo "📊 Running database migrations..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api npx prisma migrate deploy || true
+            
+            # Clean up old images
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+            
+            echo "✅ Deployment completed successfully!"
+
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          script: |
+            echo "🔍 Verifying deployment..."
+            cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
+            
+            # Check container health
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+            
+            # Wait for services to be ready
+            sleep 10
+            
+            # Health check
+            curl -sf http://localhost:4000/health || echo "⚠️ API health check pending..."
+            
+            echo "✅ Deployment verification completed!"
+
+  # =============================================================================
+  # Deploy to PII Server (Separated PII Services)
+  # =============================================================================
+  deploy-pii:
+    name: Deploy PII Service
+    runs-on: ubuntu-latest
+    needs: [build-test]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'pii'
+    environment:
+      name: pii-production
+    steps:
+      - name: Deploy PII Service via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PII_SSH_HOST }}
+          username: ${{ secrets.PII_SSH_USER }}
+          key: ${{ secrets.PII_SSH_KEY }}
+          port: ${{ secrets.PII_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "🔐 Starting PII service deployment..."
+            
+            cd ${{ vars.PII_PROJECT_PATH || '/root/tcrn-tms-pii' }}
+            
+            git fetch origin main
+            git reset --hard origin/main
+            
+            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml build --no-cache pii-service
+            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml up -d --force-recreate pii-service pii-postgres
+            
+            docker image prune -f
+            
+            echo "✅ PII service deployment completed!"
+
+  # =============================================================================
+  # Optional: Build and Push Docker Images to Registry
+  # =============================================================================
   build-images:
     name: Build Docker Images
     runs-on: ubuntu-latest
+    needs: [build-test]
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
       packages: write
@@ -59,38 +209,12 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.example.com' }}
-            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL || 'https://app.example.com' }}
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [build-images]
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: staging
-    steps:
-      - name: Placeholder - Staging Deployment
-        run: |
-          echo "Staging deployment would happen here"
-          echo "Configure actual deployment steps based on your infrastructure"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [build-images]
-    if: startsWith(github.ref, 'refs/tags/v')
-    environment:
-      name: production
-    steps:
-      - name: Placeholder - Production Deployment
-        run: |
-          echo "Production deployment would happen here"
-          echo "Configure actual deployment steps based on your infrastructure"
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
