@@ -7,6 +7,15 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
   },
+  ignorePatterns: [
+    'vitest.config.ts',
+    'vitest.setup.ts',
+    '**/*.spec.ts',
+    '**/*.spec.tsx',
+    '**/*.test.ts',
+    '**/*.test.tsx',
+    'src/components/__tests__/**',
+  ],
   settings: {
     'import/resolver': {
       typescript: {

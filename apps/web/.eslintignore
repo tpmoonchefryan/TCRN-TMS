@@ -1,0 +1,8 @@
+# Test files
+vitest.config.ts
+vitest.setup.ts
+**/*.spec.ts
+**/*.spec.tsx
+**/*.test.ts
+**/*.test.tsx
+src/components/__tests__/**

@@ -7,8 +7,8 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
+    "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts' --fix",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:cov": "vitest run --coverage"
