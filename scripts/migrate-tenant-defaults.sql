@@ -82,8 +82,8 @@ BEGIN
           (gen_random_uuid(), ''talent'', ''organization'', ''Talent'', ''艺人'', ''タレント'', 0, true, now(), now()),
           (gen_random_uuid(), ''system_user'', ''user'', ''System User'', ''系统用户'', ''システムユーザー'', 0, true, now(), now()),
           (gen_random_uuid(), ''role'', ''user'', ''Role'', ''角色'', ''ロール'', 0, true, now(), now()),
-          (gen_random_uuid(), ''homepage'', ''external'', ''Homepage'', ''个人主页'', ''ホームページ'', 0, true, now(), now()),
-          (gen_random_uuid(), ''marshmallow'', ''external'', ''Marshmallow'', ''棉花糖'', ''マシュマロ'', 0, true, now(), now()),
+          (gen_random_uuid(), ''talent.homepage'', ''external'', ''Homepage'', ''个人主页'', ''ホームページ'', 0, true, now(), now()),
+          (gen_random_uuid(), ''talent.marshmallow'', ''external'', ''Marshmallow'', ''棉花糖'', ''マシュマロ'', 0, true, now(), now()),
           (gen_random_uuid(), ''customer.pii'', ''customer'', ''Customer PII'', ''客户敏感信息'', ''顧客PII'', 0, true, now(), now()),
           (gen_random_uuid(), ''security.blocklist'', ''security'', ''Blocklist'', ''屏蔽词'', ''ブロックリスト'', 0, true, now(), now()),
           (gen_random_uuid(), ''security.ip_rules'', ''security'', ''IP Rules'', ''IP规则'', ''IPルール'', 0, true, now(), now()),
@@ -109,7 +109,7 @@ BEGIN
         SELECT gen_random_uuid(), r.id, a.action, true, now(), now()
         FROM %I.resource r
         CROSS JOIN (VALUES (''read''), (''write''), (''delete''), (''admin'')) AS a(action)
-        WHERE r.code IN (''subsidiary'', ''talent'', ''system_user'', ''role'', ''homepage'', ''marshmallow'', 
+        WHERE r.code IN (''subsidiary'', ''talent'', ''system_user'', ''role'', ''talent.homepage'', ''talent.marshmallow'', 
                          ''customer.pii'', ''security.blocklist'', ''security.ip_rules'', ''security.external_blocklist'',
                          ''log.change'', ''log.security'', ''log.integration'', ''integration.consumer'')
         ON CONFLICT (resource_id, action) DO NOTHING
@@ -123,7 +123,7 @@ BEGIN
         CROSS JOIN %I.policy p
         JOIN %I.resource res ON p.resource_id = res.id
         WHERE r.code IN (''ADMIN'', ''TENANT_ADMIN'')
-          AND res.code IN (''subsidiary'', ''talent'', ''system_user'', ''role'', ''homepage'', ''marshmallow'', 
+          AND res.code IN (''subsidiary'', ''talent'', ''system_user'', ''role'', ''talent.homepage'', ''talent.marshmallow'', 
                            ''customer.pii'', ''security.blocklist'', ''security.ip_rules'', ''security.external_blocklist'',
                            ''log.change'', ''log.security'', ''log.integration'', ''integration.consumer'')
         ON CONFLICT DO NOTHING

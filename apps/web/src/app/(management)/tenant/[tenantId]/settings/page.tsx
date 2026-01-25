@@ -623,9 +623,9 @@ export default function TenantSettingsPage() {
         });
         toast.success(t('settingsSaved') || 'Settings saved successfully');
       } else {
-        // For normal tenants, settings are informational only
-        // In the future, we might add a self-update API
-        toast.info(t('settingsViewOnly') || 'Tenant settings are read-only for non-admin tenants');
+        // Non-AC tenants can update their own features
+        await tenantApi.updateSelfFeatures(tenant.features || {});
+        toast.success(t('settingsSaved') || 'Settings saved successfully');
       }
     } catch (error) {
       toast.error(t('settingsSaveFailed') || 'Failed to save settings');
@@ -1136,10 +1136,6 @@ export default function TenantSettingsPage() {
           <TabsTrigger value="integration">
             <Network size={14} className="mr-2" />
             {t('integration') || 'Integration'}
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings size={14} className="mr-2" />
-            {t('featureSettings')}
           </TabsTrigger>
           <TabsTrigger value="scope">
             <Layers size={14} className="mr-2" />
@@ -1664,51 +1660,6 @@ export default function TenantSettingsPage() {
             <AdapterManager ownerType="tenant" />
             <WebhookManager />
           </div>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feature Settings</CardTitle>
-              <CardDescription>Enable or disable tenant features</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {tenant?.features && Object.entries(tenant.features).map(([key, enabled]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div>
-                    <h4 className="font-medium capitalize">
-                      {key.replace(/_/g, ' ')}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {key === 'pii_encryption' && 'Encrypt sensitive customer data'}
-                      {key === 'totp_2fa' && 'Allow users to enable two-factor authentication'}
-                      {key === 'external_homepage' && 'Enable public talent homepage feature'}
-                      {key === 'marshmallow' && 'Enable anonymous message collection'}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={enabled}
-                    onCheckedChange={(checked) =>
-                      tenant && setTenant({
-                        ...tenant,
-                        features: { ...tenant.features, [key]: checked },
-                      })
-                    }
-                  />
-                </div>
-              ))}
-              <div className="flex justify-end mt-6">
-                <Button onClick={handleSave} disabled={isSaving}>
-                  <Save size={16} className="mr-2" />
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Scope Settings Tab - Hierarchical Settings with Inheritance */}

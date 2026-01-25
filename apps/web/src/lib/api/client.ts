@@ -1110,7 +1110,7 @@ export const securityApi = {
     ),
 };
 
-// Tenant API (Platform Admin)
+// Tenant API (Platform Admin + Self)
 export const tenantApi = {
   list: () =>
     apiClient.get<any[]>('/api/v1/tenants'),
@@ -1118,11 +1118,24 @@ export const tenantApi = {
   get: (id: string) =>
     apiClient.get<any>(`/api/v1/tenants/${id}`),
 
+  // Get current user's tenant (for non-AC tenants)
+  getSelf: () =>
+    apiClient.get<any>('/api/v1/tenants/self'),
+
   create: (data: any) =>
     apiClient.post<any>('/api/v1/tenants', data),
 
   update: (id: string, data: any) =>
     apiClient.patch<any>(`/api/v1/tenants/${id}`, data),
+
+  // Update current tenant's features (for tenant admins)
+  updateSelfFeatures: (features: {
+    pii_encryption?: boolean;
+    totp_2fa?: boolean;
+    external_homepage?: boolean;
+    marshmallow?: boolean;
+  }) =>
+    apiClient.patch<any>('/api/v1/tenants/self/features', features),
 
   activate: (id: string) =>
     apiClient.post<any>(`/api/v1/tenants/${id}/activate`, {}),
