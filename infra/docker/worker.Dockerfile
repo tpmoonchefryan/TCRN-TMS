@@ -19,7 +19,8 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/database/package.json ./packages/database/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 
-# Install dependencies
+# Install all dependencies (skip husky)
+ENV HUSKY=0
 RUN pnpm install --frozen-lockfile
 
 # Copy Prisma schema for generation
@@ -39,9 +40,6 @@ RUN pnpm --filter @tcrn/shared build && \
     pnpm --filter @tcrn/database build && \
     pnpm --filter @tcrn/worker build
 
-# Prune dev dependencies
-RUN pnpm prune --prod
-
 # Production stage
 FROM node:20-alpine AS runner
 
@@ -54,11 +52,17 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 worker
 
-# Copy entire workspace with node_modules (preserves pnpm structure and Prisma client)
+# Copy entire monorepo structure (preserves pnpm symlinks)
 COPY --from=builder --chown=worker:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=worker:nodejs /app/packages ./packages
-COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist ./dist
-COPY --from=builder --chown=worker:nodejs /app/apps/worker/package.json ./package.json
+COPY --from=builder --chown=worker:nodejs /app/apps/worker ./apps/worker
+COPY --from=builder --chown=worker:nodejs /app/package.json ./package.json
+
+# Recreate workspace symlinks
+RUN ln -sf ../../packages/database node_modules/@tcrn/database && \
+    ln -sf ../../packages/shared node_modules/@tcrn/shared
+
+WORKDIR /app/apps/worker
 
 USER worker
 
