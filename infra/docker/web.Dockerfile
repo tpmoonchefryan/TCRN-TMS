@@ -18,6 +18,11 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 
+# Copy tsconfig files needed for dependency resolution
+COPY tsconfig.json ./
+COPY packages/shared/tsconfig.json ./packages/shared/
+COPY packages/shared/tsup.config.ts ./packages/shared/
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
