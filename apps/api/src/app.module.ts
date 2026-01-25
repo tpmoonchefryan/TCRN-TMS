@@ -44,8 +44,8 @@ import { HealthModule } from './modules/health/health.module';
 import { QueueModule } from './modules/queue';
 
 // Import/Export modules
-import { ImportModule } from './modules/import';
 import { ExportModule } from './modules/export';
+import { ImportModule } from './modules/import';
 
 // Homepage module
 import { HomepageModule } from './modules/homepage';
@@ -150,6 +150,7 @@ import { TenantMiddleware, TenantModule } from './modules/tenant';
     
     // Integration module
     IntegrationModule,
+    PublicModule,
     
     // Security module
     SecurityModule,
