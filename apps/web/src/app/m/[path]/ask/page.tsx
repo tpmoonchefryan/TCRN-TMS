@@ -3,8 +3,8 @@
 'use client';
 
 import { ArrowLeft, CheckCircle2, Loader2, Send, User } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { use, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -18,6 +18,7 @@ import { publicApi } from '@/lib/api/client';
 
 // Cloudflare Turnstile Site Key (use test key in development)
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'; // Test key
+console.log('[Debug] Turnstile Site Key:', TURNSTILE_SITE_KEY);
 
 // Config type matching backend API response (camelCase)
 interface MarshmallowConfig {

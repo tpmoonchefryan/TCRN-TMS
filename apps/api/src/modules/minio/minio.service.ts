@@ -2,7 +2,7 @@
 
 import { Readable } from 'stream';
 
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 
@@ -37,7 +37,7 @@ export class MinioService implements OnModuleInit {
     this.client = new Client({
       endPoint: endpointHost,
       port: parseInt(endpointPort || '9000', 10),
-      useSSL: this.configService.get<string>('NODE_ENV') === 'production',
+      useSSL: this.configService.get<string>('MINIO_USE_SSL') === 'true',
       accessKey: this.configService.get<string>('MINIO_ROOT_USER', 'minioadmin'),
       secretKey: this.configService.get<string>('MINIO_ROOT_PASSWORD', ''),
     });

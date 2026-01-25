@@ -13,31 +13,31 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
-import { reportApi, configurationEntityApi, dictionaryApi, ReportFormat } from '@/lib/api/client';
+import { configurationEntityApi, dictionaryApi, reportApi, ReportFormat } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface MfrConfigDialogProps {
@@ -699,7 +699,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
                     <TableHead>{t('level')}</TableHead>
                     <TableHead>{t('validFrom')}</TableHead>
                     <TableHead>{t('validTo')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
+                  <TableHead>{t('statusLabel')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

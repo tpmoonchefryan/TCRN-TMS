@@ -37,6 +37,7 @@ export const configValidationSchema = Joi.object({
   MINIO_ENDPOINT: Joi.string().default('localhost:9000'),
   MINIO_ROOT_USER: Joi.string().default('minioadmin'),
   MINIO_ROOT_PASSWORD: Joi.string().optional(),
+  MINIO_USE_SSL: Joi.boolean().default(false),
 
   // NATS
   NATS_URL: Joi.string().default('nats://localhost:4222'),
