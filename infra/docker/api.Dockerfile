@@ -20,7 +20,6 @@ COPY packages/database/package.json ./packages/database/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 
 # Copy config files needed for build
-COPY tsconfig.json ./
 COPY packages/shared/tsconfig.json ./packages/shared/
 COPY packages/shared/tsup.config.ts ./packages/shared/
 COPY packages/database/tsconfig.json ./packages/database/
