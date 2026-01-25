@@ -43,7 +43,7 @@ build
 Thumbs.db
 
 # Logs
-/logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -117,7 +117,6 @@ yarn.lock
 technical_readme.md
 tech_readme.md
 .agent/rules/*
-.cursorrules
 
 # Upgrade documentation (temporary)
 UPGRADE-*.md

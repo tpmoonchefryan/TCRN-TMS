@@ -13,7 +13,7 @@ We take the security of TCRN TMS seriously. If you discover a security vulnerabi
 ### How to Report
 
 1. **Do NOT** open a public GitHub issue for security vulnerabilities
-2. Email us at: **ryan.lan_home@outlook.com** (or contact @tpmoonchefryan directly)
+2. Email us at: **security@tcrn-tms.com** (or contact @tpmoonchefryan directly)
 3. Include as much information as possible:
    - Type of vulnerability (e.g., XSS, SQL injection, authentication bypass)
    - Steps to reproduce
