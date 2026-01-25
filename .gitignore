@@ -1,0 +1,125 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+.next
+out
+build
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+.env.staging.local
+!.env.sample
+!.env.local.sample
+# Environment files in subdirectories
+**/apps/**/.env
+**/apps/**/.env.local
+**/apps/**/.env.production
+**/apps/**/.env.staging
+**/packages/**/.env
+**/packages/**/.env.local
+**/packages/**/.env.production
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+docs/testing/*
+
+# Playwright
+playwright-report
+test-results
+
+# Turbo
+.turbo
+
+# Prisma
+packages/database/prisma/*.db
+packages/database/prisma/*.db-journal
+
+# Docker
+*.pem
+
+# mTLS Certificates
+certs/
+
+# MinIO data (local)
+minio-data
+
+# Security sensitive files
+technical_fingerprinting.md
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Cache
+.cache
+.parcel-cache
+
+# Debug files
+*.log
+.debug
+debug-*.ts
+debug-*.js
+cookies.txt
+
+# Backup files
+*.backup
+*.bak
+*.pre-upgrade
+pnpm-lock.yaml.backup
+
+# Lock files (keep pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
+# Generated files
+*.generated.*
+
+# Prompts related files
+.context/*
+technical_readme.md
+tech_readme.md
+.agent/rules/*
+.cursorrules
+
+# Upgrade documentation (temporary)
+UPGRADE-*.md
+PRISMA-FIXES.md
+DEPRECATED-DEPS.md

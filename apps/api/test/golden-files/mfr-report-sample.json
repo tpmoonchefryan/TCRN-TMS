@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generatedAt": "2026-01-23T00:00:00Z",
+    "description": "MFR Report Golden File - Sample data for accuracy testing"
+  },
+  "testCases": [
+    {
+      "id": "mfr-001",
+      "description": "Single active membership",
+      "input": {
+        "customers": [
+          {
+            "id": "cust-001",
+            "nickname": "Test User 1",
+            "status": "active"
+          }
+        ],
+        "memberships": [
+          {
+            "customerId": "cust-001",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "GOLD",
+            "validFrom": "2026-01-01",
+            "validTo": null,
+            "isActive": true
+          }
+        ]
+      },
+      "expectedOutput": {
+        "totalCount": 1,
+        "rows": [
+          {
+            "nickname": "Test User 1",
+            "platformName": "YouTube",
+            "membershipClassName": "Subscription",
+            "membershipLevelName": "Gold",
+            "status": "Active",
+            "validFrom": "2026-01-01",
+            "validTo": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "mfr-002",
+      "description": "Multiple memberships same customer",
+      "input": {
+        "customers": [
+          {
+            "id": "cust-002",
+            "nickname": "Multi Member",
+            "status": "active"
+          }
+        ],
+        "memberships": [
+          {
+            "customerId": "cust-002",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "SILVER",
+            "validFrom": "2025-06-01",
+            "validTo": "2026-06-01",
+            "isActive": true
+          },
+          {
+            "customerId": "cust-002",
+            "platformCode": "BILIBILI",
+            "membershipClassCode": "FANCLUB",
+            "membershipLevelCode": "GOLD",
+            "validFrom": "2026-01-01",
+            "validTo": null,
+            "isActive": true
+          }
+        ]
+      },
+      "expectedOutput": {
+        "totalCount": 2,
+        "rows": [
+          {
+            "nickname": "Multi Member",
+            "platformName": "YouTube",
+            "membershipClassName": "Subscription",
+            "membershipLevelName": "Silver",
+            "status": "Active",
+            "validFrom": "2025-06-01",
+            "validTo": "2026-06-01"
+          },
+          {
+            "nickname": "Multi Member",
+            "platformName": "Bilibili",
+            "membershipClassName": "Fan Club",
+            "membershipLevelName": "Gold",
+            "status": "Active",
+            "validFrom": "2026-01-01",
+            "validTo": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "mfr-003",
+      "description": "Expired membership filtering",
+      "input": {
+        "customers": [
+          {
+            "id": "cust-003",
+            "nickname": "Expired User",
+            "status": "active"
+          }
+        ],
+        "memberships": [
+          {
+            "customerId": "cust-003",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "BRONZE",
+            "validFrom": "2024-01-01",
+            "validTo": "2024-12-31",
+            "isActive": false
+          }
+        ],
+        "filters": {
+          "includeExpired": false
+        }
+      },
+      "expectedOutput": {
+        "totalCount": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "mfr-004",
+      "description": "Platform filter",
+      "input": {
+        "customers": [
+          {
+            "id": "cust-004",
+            "nickname": "Platform Filter Test",
+            "status": "active"
+          }
+        ],
+        "memberships": [
+          {
+            "customerId": "cust-004",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "GOLD",
+            "validFrom": "2026-01-01",
+            "validTo": null,
+            "isActive": true
+          },
+          {
+            "customerId": "cust-004",
+            "platformCode": "BILIBILI",
+            "membershipClassCode": "FANCLUB",
+            "membershipLevelCode": "SILVER",
+            "validFrom": "2026-01-01",
+            "validTo": null,
+            "isActive": true
+          }
+        ],
+        "filters": {
+          "platformCodes": ["YOUTUBE"]
+        }
+      },
+      "expectedOutput": {
+        "totalCount": 1,
+        "rows": [
+          {
+            "nickname": "Platform Filter Test",
+            "platformName": "YouTube",
+            "membershipClassName": "Subscription",
+            "membershipLevelName": "Gold",
+            "status": "Active",
+            "validFrom": "2026-01-01",
+            "validTo": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "mfr-005",
+      "description": "Date range filter",
+      "input": {
+        "customers": [
+          {
+            "id": "cust-005",
+            "nickname": "Date Range Test",
+            "status": "active"
+          }
+        ],
+        "memberships": [
+          {
+            "customerId": "cust-005",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "GOLD",
+            "validFrom": "2026-01-15",
+            "validTo": null,
+            "isActive": true
+          },
+          {
+            "customerId": "cust-005",
+            "platformCode": "YOUTUBE",
+            "membershipClassCode": "SUBSCRIPTION",
+            "membershipLevelCode": "SILVER",
+            "validFrom": "2025-01-01",
+            "validTo": "2025-12-31",
+            "isActive": false
+          }
+        ],
+        "filters": {
+          "validFromStart": "2026-01-01",
+          "validFromEnd": "2026-01-31"
+        }
+      },
+      "expectedOutput": {
+        "totalCount": 1,
+        "rows": [
+          {
+            "nickname": "Date Range Test",
+            "platformName": "YouTube",
+            "membershipClassName": "Subscription",
+            "membershipLevelName": "Gold",
+            "status": "Active",
+            "validFrom": "2026-01-15",
+            "validTo": null
+          }
+        ]
+      }
+    }
+  ]
+}

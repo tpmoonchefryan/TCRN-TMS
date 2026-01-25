@@ -1,0 +1,1746 @@
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// TCRN TMS Complete Database Schema
+// Based on PRD v0.19 and 02-数据库设计与ORM.md
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "tenant_template"]
+}
+
+// =============================================================================
+// PUBLIC SCHEMA - Tenant Metadata & Global Configuration
+// =============================================================================
+
+/// Tenant - Top level organization metadata (PRD §7)
+model Tenant {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique @db.VarChar(32)
+  name       String   @db.VarChar(255)
+  schemaName String   @unique @map("schema_name") @db.VarChar(64)
+  tier       String   @default("standard") @db.VarChar(16) // 'ac', 'standard'
+  isActive   Boolean  @default(true) @map("is_active")
+  settings   Json     @default("{}") @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([code])
+  @@map("tenant")
+  @@schema("public")
+}
+
+/// Global Configuration (system-wide settings)
+model GlobalConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(128)
+  value       Json     @db.JsonB
+  description String?  @db.Text
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  updatedBy   String?  @map("updated_by") @db.Uuid
+
+  @@map("global_config")
+  @@schema("public")
+}
+
+/// System Dictionary Type (platform-level, AC tenant editable)
+model SystemDictionary {
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique @db.VarChar(64)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version       Int      @default(1)
+
+  items SystemDictionaryItem[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("system_dictionary")
+  @@schema("public")
+}
+
+/// System Dictionary Item (entries within a dictionary type)
+model SystemDictionaryItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  dictionaryCode String   @map("dictionary_code") @db.VarChar(64)
+  code           String   @db.VarChar(64)
+  nameEn         String   @map("name_en") @db.VarChar(255)
+  nameZh         String?  @map("name_zh") @db.VarChar(255)
+  nameJa         String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn  String?  @map("description_en") @db.Text
+  descriptionZh  String?  @map("description_zh") @db.Text
+  descriptionJa  String?  @map("description_ja") @db.Text
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  extraData      Json?    @map("extra_data") @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int      @default(1)
+
+  dictionary SystemDictionary @relation(fields: [dictionaryCode], references: [code], onDelete: Cascade)
+
+  @@unique([dictionaryCode, code])
+  @@index([dictionaryCode])
+  @@index([code])
+  @@index([isActive])
+  @@map("system_dictionary_item")
+  @@schema("public")
+}
+
+/// Email Template (platform-level email templates, multi-language)
+model EmailTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(64)
+  nameEn      String   @map("name_en") @db.VarChar(128)
+  nameZh      String?  @map("name_zh") @db.VarChar(128)
+  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  subjectEn   String   @map("subject_en") @db.VarChar(255)
+  subjectZh   String?  @map("subject_zh") @db.VarChar(255)
+  subjectJa   String?  @map("subject_ja") @db.VarChar(255)
+  bodyHtmlEn  String   @map("body_html_en") @db.Text
+  bodyHtmlZh  String?  @map("body_html_zh") @db.Text
+  bodyHtmlJa  String?  @map("body_html_ja") @db.Text
+  bodyTextEn  String?  @map("body_text_en") @db.Text
+  bodyTextZh  String?  @map("body_text_zh") @db.Text
+  bodyTextJa  String?  @map("body_text_ja") @db.Text
+  variables   String[] @db.VarChar(64)
+  category    String   @db.VarChar(32) // 'system' | 'business'
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+  @@map("email_template")
+  @@schema("public")
+}
+
+// =============================================================================
+// TENANT SCHEMA - Organization Structure Module (PRD §7-8)
+// =============================================================================
+
+/// Subsidiary - Organization node (PRD §7 分级目录)
+model Subsidiary {
+  id            String   @id @default(uuid()) @db.Uuid
+  parentId      String?  @map("parent_id") @db.Uuid
+  code          String   @unique @db.VarChar(32)
+  path          String   @db.VarChar(1024) // Materialized path: /sub1/sub2/
+  depth         Int      @default(0) @db.SmallInt
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String   @map("created_by") @db.Uuid
+  updatedBy     String   @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  // Self-relation for tree structure
+  parent   Subsidiary?  @relation("SubsidiaryTree", fields: [parentId], references: [id])
+  children Subsidiary[] @relation("SubsidiaryTree")
+  talents  Talent[]
+
+  @@index([parentId])
+  @@index([path])
+  @@index([isActive])
+  @@map("subsidiary")
+  @@schema("tenant_template")
+}
+
+/// Talent - Artist/VTuber (PRD §7 艺人)
+model Talent {
+  id             String   @id @default(uuid()) @db.Uuid
+  subsidiaryId   String?  @map("subsidiary_id") @db.Uuid
+  profileStoreId String?  @map("profile_store_id") @db.Uuid
+  code           String   @unique @db.VarChar(32)
+  path           String   @db.VarChar(1024) // Materialized path including self
+  nameEn         String   @map("name_en") @db.VarChar(255)
+  nameZh         String?  @map("name_zh") @db.VarChar(255)
+  nameJa         String?  @map("name_ja") @db.VarChar(255)
+  displayName    String   @map("display_name") @db.VarChar(255)
+  descriptionEn  String?  @map("description_en") @db.Text
+  descriptionZh  String?  @map("description_zh") @db.Text
+  descriptionJa  String?  @map("description_ja") @db.Text
+  avatarUrl      String?  @map("avatar_url") @db.VarChar(512)
+  homepagePath   String?  @unique @map("homepage_path") @db.VarChar(128)
+  timezone       String   @default("UTC") @db.VarChar(64)
+  isActive       Boolean  @default(true) @map("is_active")
+  settings       Json     @default("{}") @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String   @map("created_by") @db.Uuid
+  updatedBy      String   @map("updated_by") @db.Uuid
+  version        Int      @default(1)
+
+  // Relations
+  subsidiary            Subsidiary?          @relation(fields: [subsidiaryId], references: [id])
+  profileStore          ProfileStore?        @relation(fields: [profileStoreId], references: [id])
+  customerProfiles      CustomerProfile[]    @relation("TalentCustomers")
+  originCustomers       CustomerProfile[]    @relation("OriginTalent")
+  lastModifiedCustomers CustomerProfile[]    @relation("LastModifiedTalent")
+  homepage              TalentHomepage?
+  marshmallowConfig     MarshmallowConfig?
+  importJobs            ImportJob[]
+  exportJobs            ExportJob[]
+  reportJobs            ReportJob[]
+  customerAccessLogs    CustomerAccessLog[]
+  marshmallowMessages   MarshmallowMessage[]
+
+  @@index([subsidiaryId])
+  @@index([profileStoreId])
+  @@index([path])
+  @@index([homepagePath])
+  @@map("talent")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// USER & PERMISSION Module (PRD §12)
+// =============================================================================
+
+/// System User (PRD §12.3)
+model SystemUser {
+  id                String    @id @default(uuid()) @db.Uuid
+  username          String    @unique @db.VarChar(64)
+  email             String    @unique @db.VarChar(255)
+  phone             String?   @db.VarChar(32)
+  passwordHash      String    @map("password_hash") @db.VarChar(255)
+  displayName       String?   @map("display_name") @db.VarChar(128)
+  avatarUrl         String?   @map("avatar_url") @db.VarChar(512)
+  preferredLanguage String    @default("en") @map("preferred_language") @db.VarChar(5)
+  totpSecret        String?   @map("totp_secret") @db.VarChar(64) // Encrypted
+  totpEnabledAt     DateTime? @map("totp_enabled_at") @db.Timestamptz
+  isTotpEnabled     Boolean   @default(false) @map("is_totp_enabled")
+  isActive          Boolean   @default(true) @map("is_active")
+  forceReset        Boolean   @default(false) @map("force_reset")
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz
+  lastLoginAt       DateTime? @map("last_login_at") @db.Timestamptz
+  lastLoginIp       String?   @map("last_login_ip") @db.Inet
+  failedLoginCount  Int       @default(0) @map("failed_login_count") @db.SmallInt
+  lockedUntil       DateTime? @map("locked_until") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?   @map("created_by") @db.Uuid
+  updatedBy         String?   @map("updated_by") @db.Uuid
+  version           Int       @default(1)
+
+  // Relations
+  recoveryCodes       RecoveryCode[]
+  userRoles           UserRole[]
+  scopeAccesses       UserScopeAccess[]
+  delegatedAdminUsers DelegatedAdmin[]    @relation("DelegatedAdminUser")
+  delegatedAdminBy    DelegatedAdmin[]    @relation("DelegatedAdminGrantedBy")
+  refreshTokens       RefreshToken[]
+  changeLogs          ChangeLog[]
+  importJobs          ImportJob[]
+  exportJobs          ExportJob[]
+  reportJobs          ReportJob[]
+  customerAccessLogs  CustomerAccessLog[]
+
+  @@index([email])
+  @@index([isActive])
+  @@map("system_user")
+  @@schema("tenant_template")
+}
+
+/// Recovery Code for 2FA (PRD §12.9)
+model RecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash") @db.VarChar(64) // SHA256
+  isUsed    Boolean   @default(false) @map("is_used")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isUsed])
+  @@map("recovery_code")
+  @@schema("tenant_template")
+}
+
+/// Role (PRD §12.4)
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(32)
+  nameEn      String   @map("name_en") @db.VarChar(128)
+  nameZh      String?  @map("name_zh") @db.VarChar(128)
+  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  version     Int      @default(1)
+
+  // Relations
+  rolePolicies       RolePolicy[]
+  userRoles          UserRole[]
+  delegatedAdminRole DelegatedAdmin[] @relation("DelegatedAdminRole")
+
+  @@map("role")
+  @@schema("tenant_template")
+}
+
+/// Resource Definition (PRD §12.5)
+model Resource {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(64) // e.g., "customer.profile"
+  nameEn      String   @map("name_en") @db.VarChar(128)
+  nameZh      String?  @map("name_zh") @db.VarChar(128)
+  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  description String?  @db.Text
+  module      String   @db.VarChar(32)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  policies Policy[]
+
+  @@map("resource")
+  @@schema("tenant_template")
+}
+
+/// Policy (PRD §12.5)
+/// Defines resource + action combinations. Effect is now controlled by RolePolicy.
+model Policy {
+  id          String   @id @default(uuid()) @db.Uuid
+  resourceId  String   @map("resource_id") @db.Uuid
+  action      String   @db.VarChar(32) // 'read', 'write', 'delete', 'execute', 'admin'
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  resource     Resource     @relation(fields: [resourceId], references: [id])
+  rolePolicies RolePolicy[]
+
+  @@unique([resourceId, action])
+  @@map("policy")
+  @@schema("tenant_template")
+}
+
+/// Role-Policy relation with effect (PRD §12.5)
+/// Effect can be 'grant' or 'deny'. Absence of record means 'unset'.
+/// Priority: Deny > Grant > Unset
+model RolePolicy {
+  id        String   @id @default(uuid()) @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
+  policyId  String   @map("policy_id") @db.Uuid
+  effect    String   @default("grant") @map("effect") @db.VarChar(16) // 'grant' | 'deny'
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, policyId])
+  @@map("role_policy")
+  @@schema("tenant_template")
+}
+
+/// User-Role relation with scope (PRD §12.6)
+model UserRole {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  roleId    String    @map("role_id") @db.Uuid
+  scopeType String    @map("scope_type") @db.VarChar(32) // 'tenant', 'subsidiary', 'talent'
+  scopeId   String?   @map("scope_id") @db.Uuid // NULL = tenant level
+  inherit   Boolean   @default(false)
+  grantedAt DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  grantedBy String?   @map("granted_by") @db.Uuid
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  user SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, scopeType, scopeId])
+  @@index([userId])
+  @@index([scopeType, scopeId])
+  @@map("user_role")
+  @@schema("tenant_template")
+}
+
+/// User Scope Access - Controls visibility of organization nodes
+model UserScopeAccess {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  scopeType       String   @map("scope_type") @db.VarChar(32) // 'tenant', 'subsidiary', 'talent'
+  scopeId         String?  @map("scope_id") @db.Uuid // NULL = tenant level
+  includeSubunits Boolean  @default(false) @map("include_subunits")
+  grantedAt       DateTime @default(now()) @map("granted_at") @db.Timestamptz
+  grantedBy       String?  @map("granted_by") @db.Uuid
+
+  user SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scopeType, scopeId])
+  @@index([userId])
+  @@index([scopeType, scopeId])
+  @@map("user_scope_access")
+  @@schema("tenant_template")
+}
+
+/// Delegated Admin (PRD §13.3)
+model DelegatedAdmin {
+  id          String   @id @default(uuid()) @db.Uuid
+  scopeType   String   @map("scope_type") @db.VarChar(32) // 'subsidiary', 'talent'
+  scopeId     String   @map("scope_id") @db.Uuid
+  adminUserId String?  @map("admin_user_id") @db.Uuid
+  adminRoleId String?  @map("admin_role_id") @db.Uuid
+  grantedAt   DateTime @default(now()) @map("granted_at") @db.Timestamptz
+  grantedBy   String   @map("granted_by") @db.Uuid
+
+  adminUser     SystemUser? @relation("DelegatedAdminUser", fields: [adminUserId], references: [id])
+  adminRole     Role?       @relation("DelegatedAdminRole", fields: [adminRoleId], references: [id])
+  grantedByUser SystemUser  @relation("DelegatedAdminGrantedBy", fields: [grantedBy], references: [id])
+
+  @@map("delegated_admin")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// CUSTOMER MANAGEMENT Module (PRD §11)
+// =============================================================================
+
+/// PII Service Config (PRD §10.2 v0.18)
+model PiiServiceConfig {
+  id                     String    @id @default(uuid()) @db.Uuid
+  code                   String    @unique @db.VarChar(32)
+  nameEn                 String    @map("name_en") @db.VarChar(255)
+  nameZh                 String?   @map("name_zh") @db.VarChar(255)
+  nameJa                 String?   @map("name_ja") @db.VarChar(255)
+  descriptionEn          String?   @map("description_en") @db.Text
+  descriptionZh          String?   @map("description_zh") @db.Text
+  descriptionJa          String?   @map("description_ja") @db.Text
+  apiUrl                 String    @map("api_url") @db.VarChar(512)
+  authType               String    @default("mtls") @map("auth_type") @db.VarChar(16) // 'mtls', 'api_key'
+  mtlsClientCert         Bytes?    @map("mtls_client_cert") // KEK encrypted
+  mtlsClientKey          Bytes?    @map("mtls_client_key") // KEK encrypted
+  mtlsCaCert             Bytes?    @map("mtls_ca_cert") // KEK encrypted
+  apiKeyHash             String?   @map("api_key_hash") @db.VarChar(64)
+  healthCheckUrl         String?   @map("health_check_url") @db.VarChar(512)
+  healthCheckIntervalSec Int       @default(60) @map("health_check_interval_sec")
+  lastHealthCheckAt      DateTime? @map("last_health_check_at") @db.Timestamptz
+  isHealthy              Boolean   @default(true) @map("is_healthy")
+  isActive               Boolean   @default(true) @map("is_active")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy              String?   @map("created_by") @db.Uuid
+  updatedBy              String?   @map("updated_by") @db.Uuid
+  version                Int       @default(1)
+
+  profileStores ProfileStore[]
+
+  @@index([isActive])
+  @@index([isHealthy])
+  @@map("pii_service_config")
+  @@schema("tenant_template")
+}
+
+/// Profile Store (PRD §10.2 v0.18)
+model ProfileStore {
+  id                 String   @id @default(uuid()) @db.Uuid
+  code               String   @unique @db.VarChar(32)
+  nameEn             String   @map("name_en") @db.VarChar(255)
+  nameZh             String?  @map("name_zh") @db.VarChar(255)
+  nameJa             String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn      String?  @map("description_en") @db.Text
+  descriptionZh      String?  @map("description_zh") @db.Text
+  descriptionJa      String?  @map("description_ja") @db.Text
+  piiProxyUrl        String?  @map("pii_proxy_url") @db.VarChar(512) // PII Proxy URL - when empty, PII fields are disabled
+  piiServiceConfigId String?  @map("pii_service_config_id") @db.Uuid // Optional PII service config
+  isDefault          Boolean  @default(false) @map("is_default")
+  isActive           Boolean  @default(true) @map("is_active")
+  sortOrder          Int      @default(0) @map("sort_order")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?  @map("created_by") @db.Uuid
+  updatedBy          String?  @map("updated_by") @db.Uuid
+  version            Int      @default(1)
+
+  piiServiceConfig    PiiServiceConfig?    @relation(fields: [piiServiceConfigId], references: [id])
+  talents             Talent[]
+  customerProfiles    CustomerProfile[]
+  customerExternalIds CustomerExternalId[]
+  reportJobs          ReportJob[]
+  importJobs          ImportJob[]
+  exportJobs          ExportJob[]
+
+  @@index([piiServiceConfigId])
+  @@index([isActive])
+  @@map("profile_store")
+  @@schema("tenant_template")
+}
+
+/// Customer Profile (PRD §11.2)
+model CustomerProfile {
+  id                   String    @id @default(uuid()) @db.Uuid
+  talentId             String    @map("talent_id") @db.Uuid
+  profileStoreId       String    @map("profile_store_id") @db.Uuid
+  originTalentId       String    @map("origin_talent_id") @db.Uuid
+  lastModifiedTalentId String?   @map("last_modified_talent_id") @db.Uuid
+  rmProfileId          String    @unique @map("rm_profile_id") @db.Uuid // PII link token
+  profileType          String    @map("profile_type") @db.VarChar(16) // 'individual', 'company'
+  nickname             String    @db.VarChar(128)
+  primaryLanguage      String?   @map("primary_language") @db.VarChar(5)
+  statusId             String?   @map("status_id") @db.Uuid
+  inactivationReasonId String?   @map("inactivation_reason_id") @db.Uuid
+  inactivatedAt        DateTime? @map("inactivated_at") @db.Timestamptz
+  notes                String?   @db.Text
+  tags                 String[]  @default([]) @db.VarChar(64)
+  source               String?   @db.VarChar(64)
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy            String?   @map("created_by") @db.Uuid
+  updatedBy            String?   @map("updated_by") @db.Uuid
+  version              Int       @default(1)
+
+  // Relations
+  talent             Talent                    @relation("TalentCustomers", fields: [talentId], references: [id])
+  profileStore       ProfileStore              @relation(fields: [profileStoreId], references: [id])
+  originTalent       Talent                    @relation("OriginTalent", fields: [originTalentId], references: [id])
+  lastModifiedTalent Talent?                   @relation("LastModifiedTalent", fields: [lastModifiedTalentId], references: [id])
+  status             CustomerStatus?           @relation(fields: [statusId], references: [id])
+  inactivationReason InactivationReason?       @relation(fields: [inactivationReasonId], references: [id])
+  companyInfo        CustomerCompanyInfo?
+  externalIds        CustomerExternalId[]
+  platformIdentities PlatformIdentity[]
+  membershipRecords  MembershipRecord[]
+  consentAgreements  ConsentAgreement[]
+  accessLogs         CustomerAccessLog[]
+  identityHistory    PlatformIdentityHistory[]
+
+  @@index([talentId])
+  @@index([profileStoreId])
+  @@index([originTalentId])
+  @@index([statusId])
+  @@index([profileType])
+  @@index([tags])
+  @@index([profileStoreId, isActive])
+  @@map("customer_profile")
+  @@schema("tenant_template")
+}
+
+/// Customer Company Info (PRD §11.2)
+model CustomerCompanyInfo {
+  id                 String    @id @default(uuid()) @db.Uuid
+  customerId         String    @unique @map("customer_id") @db.Uuid
+  companyLegalName   String    @map("company_legal_name") @db.VarChar(255)
+  companyShortName   String?   @map("company_short_name") @db.VarChar(128)
+  registrationNumber String?   @map("registration_number") @db.VarChar(64)
+  vatId              String?   @map("vat_id") @db.VarChar(64)
+  establishmentDate  DateTime? @map("establishment_date") @db.Date
+  businessSegmentId  String?   @map("business_segment_id") @db.Uuid
+  website            String?   @db.VarChar(512)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer        CustomerProfile  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  businessSegment BusinessSegment? @relation(fields: [businessSegmentId], references: [id])
+
+  @@map("customer_company_info")
+  @@schema("tenant_template")
+}
+
+/// Customer External ID (PRD §11.0 v0.17)
+model CustomerExternalId {
+  id             String   @id @default(uuid()) @db.Uuid
+  customerId     String   @map("customer_id") @db.Uuid
+  profileStoreId String   @map("profile_store_id") @db.Uuid
+  consumerId     String   @map("consumer_id") @db.Uuid
+  externalId     String   @map("external_id") @db.VarChar(128)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy      String?  @map("created_by") @db.Uuid
+
+  customer     CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  profileStore ProfileStore    @relation(fields: [profileStoreId], references: [id])
+  consumer     Consumer        @relation(fields: [consumerId], references: [id])
+
+  @@unique([profileStoreId, consumerId, externalId])
+  @@index([customerId])
+  @@index([profileStoreId])
+  @@map("customer_external_id")
+  @@schema("tenant_template")
+}
+
+/// Customer Access Log (PRD §11 v0.18)
+model CustomerAccessLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  customerId     String   @map("customer_id") @db.Uuid
+  profileStoreId String   @map("profile_store_id") @db.Uuid
+  talentId       String   @map("talent_id") @db.Uuid
+  action         String   @db.VarChar(32) // 'create', 'update', 'deactivate', 'reactivate', 'pii_view', 'pii_update'
+  fieldChanges   Json?    @map("field_changes") @db.JsonB
+  operatorId     String?  @map("operator_id") @db.Uuid
+  operatorName   String?  @map("operator_name") @db.VarChar(128)
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent") @db.Text
+  requestId      String?  @map("request_id") @db.VarChar(64)
+
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  talent   Talent          @relation(fields: [talentId], references: [id])
+  operator SystemUser?     @relation(fields: [operatorId], references: [id])
+
+  @@index([customerId])
+  @@index([talentId])
+  @@index([profileStoreId])
+  @@index([occurredAt])
+  @@index([action])
+  @@map("customer_access_log")
+  @@schema("tenant_template")
+}
+
+/// Platform Identity (PRD §11.2)
+model PlatformIdentity {
+  id                String   @id @default(uuid()) @db.Uuid
+  customerId        String   @map("customer_id") @db.Uuid
+  platformId        String   @map("platform_id") @db.Uuid
+  platformUid       String   @map("platform_uid") @db.VarChar(128)
+  platformNickname  String?  @map("platform_nickname") @db.VarChar(128)
+  platformAvatarUrl String?  @map("platform_avatar_url") @db.VarChar(512)
+  profileUrl        String?  @map("profile_url") @db.VarChar(512)
+  isVerified        Boolean  @default(false) @map("is_verified")
+  isCurrent         Boolean  @default(true) @map("is_current")
+  capturedAt        DateTime @default(now()) @map("captured_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer CustomerProfile           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  platform SocialPlatform            @relation(fields: [platformId], references: [id])
+  history  PlatformIdentityHistory[]
+
+  @@unique([customerId, platformId, platformUid])
+  @@index([customerId])
+  @@index([platformId, platformUid])
+  @@index([customerId, isCurrent])
+  @@map("platform_identity")
+  @@schema("tenant_template")
+}
+
+/// Platform Identity History (PRD §11.2)
+model PlatformIdentityHistory {
+  id         String   @id @default(uuid()) @db.Uuid
+  identityId String   @map("identity_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  changeType String   @map("change_type") @db.VarChar(32) // 'created', 'uid_changed', 'nickname_changed', 'deactivated'
+  oldValue   String?  @map("old_value") @db.VarChar(255)
+  newValue   String?  @map("new_value") @db.VarChar(255)
+  capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz
+  capturedBy String?  @map("captured_by") @db.Uuid
+
+  identity PlatformIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  customer CustomerProfile  @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([identityId])
+  @@index([capturedAt])
+  @@map("platform_identity_history")
+  @@schema("tenant_template")
+}
+
+/// Membership Record (PRD §11.2)
+model MembershipRecord {
+  id                String    @id @default(uuid()) @db.Uuid
+  customerId        String    @map("customer_id") @db.Uuid
+  platformId        String    @map("platform_id") @db.Uuid
+  membershipClassId String    @map("membership_class_id") @db.Uuid
+  membershipTypeId  String    @map("membership_type_id") @db.Uuid
+  membershipLevelId String    @map("membership_level_id") @db.Uuid
+  validFrom         DateTime  @map("valid_from") @db.Timestamptz
+  validTo           DateTime? @map("valid_to") @db.Timestamptz
+  autoRenew         Boolean   @default(false) @map("auto_renew")
+  isExpired         Boolean   @default(false) @map("is_expired")
+  expiredAt         DateTime? @map("expired_at") @db.Timestamptz
+  note              String?   @db.Text
+
+  // External sync (PRD §10.2)
+  externalSyncedAt  DateTime? @map("external_synced_at") @db.Timestamptz
+  externalReference String?   @map("external_reference") @db.VarChar(128)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  customer        CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  platform        SocialPlatform  @relation(fields: [platformId], references: [id])
+  membershipClass MembershipClass @relation(fields: [membershipClassId], references: [id])
+  membershipType  MembershipType  @relation(fields: [membershipTypeId], references: [id])
+  membershipLevel MembershipLevel @relation(fields: [membershipLevelId], references: [id])
+
+  @@index([customerId])
+  @@index([platformId])
+  @@index([validFrom, validTo])
+  @@index([validTo])
+  @@index([autoRenew])
+  @@map("membership_record")
+  @@schema("tenant_template")
+}
+
+/// Consent Agreement (PRD §10.2)
+model ConsentAgreement {
+  id           String    @id @default(uuid()) @db.Uuid
+  customerId   String    @map("customer_id") @db.Uuid
+  consentId    String    @map("consent_id") @db.Uuid
+  agreedAt     DateTime  @default(now()) @map("agreed_at") @db.Timestamptz
+  ipAddress    String?   @map("ip_address") @db.Inet
+  userAgent    String?   @map("user_agent") @db.Text
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  revokeReason String?   @map("revoke_reason") @db.Text
+
+  customer CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  consent  Consent         @relation(fields: [consentId], references: [id])
+
+  @@index([customerId])
+  @@index([consentId])
+  @@map("consent_agreement")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// CONFIGURATION ENTITIES Module (PRD §10)
+// =============================================================================
+
+/// Channel Category (PRD §10.2 - v0.21)
+model ChannelCategory {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16) // 'tenant', 'subsidiary', 'talent'
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  communicationTypes CommunicationType[]
+
+  @@unique([ownerType, ownerId, code])
+  @@index([ownerType, ownerId])
+  @@index([isActive])
+  @@map("channel_category")
+  @@schema("tenant_template")
+}
+
+/// Business Segment (PRD §10.2)
+model BusinessSegment {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16) // 'tenant', 'subsidiary', 'talent'
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  companyInfos CustomerCompanyInfo[]
+
+  @@unique([ownerType, ownerId, code])
+  @@map("business_segment")
+  @@schema("tenant_template")
+}
+
+/// Communication Type (PRD §10.2)
+model CommunicationType {
+  id                String   @id @default(uuid()) @db.Uuid
+  ownerType         String   @map("owner_type") @db.VarChar(16)
+  ownerId           String?  @map("owner_id") @db.Uuid
+  code              String   @db.VarChar(32)
+  channelCategory   String   @map("channel_category") @db.VarChar(16) // Legacy: 'phone', 'email', 'sns', 'other'
+  channelCategoryId String?  @map("channel_category_id") @db.Uuid // New FK reference
+  nameEn            String   @map("name_en") @db.VarChar(255)
+  nameZh            String?  @map("name_zh") @db.VarChar(255)
+  nameJa            String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn     String?  @map("description_en") @db.Text
+  descriptionZh     String?  @map("description_zh") @db.Text
+  descriptionJa     String?  @map("description_ja") @db.Text
+  sortOrder         Int      @default(0) @map("sort_order")
+  isActive          Boolean  @default(true) @map("is_active")
+  isForceUse        Boolean  @default(false) @map("is_force_use")
+  isSystem          Boolean  @default(false) @map("is_system")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?  @map("created_by") @db.Uuid
+  updatedBy         String?  @map("updated_by") @db.Uuid
+  version           Int      @default(1)
+
+  channelCategoryRef ChannelCategory? @relation(fields: [channelCategoryId], references: [id])
+
+  @@unique([ownerType, ownerId, code])
+  @@index([channelCategoryId])
+  @@map("communication_type")
+  @@schema("tenant_template")
+}
+
+/// Address Type (PRD §10.2)
+model AddressType {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16)
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  @@unique([ownerType, ownerId, code])
+  @@map("address_type")
+  @@schema("tenant_template")
+}
+
+/// Customer Status (PRD §10.2)
+model CustomerStatus {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16)
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  color         String   @default("#808080") @db.VarChar(7)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  customers CustomerProfile[]
+
+  @@unique([ownerType, ownerId, code])
+  @@map("customer_status")
+  @@schema("tenant_template")
+}
+
+/// Reason Category (PRD §10.2)
+model ReasonCategory {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16)
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  inactivationReasons InactivationReason[]
+
+  @@unique([ownerType, ownerId, code])
+  @@map("reason_category")
+  @@schema("tenant_template")
+}
+
+/// Inactivation Reason (PRD §10.2)
+model InactivationReason {
+  id               String   @id @default(uuid()) @db.Uuid
+  ownerType        String   @map("owner_type") @db.VarChar(16)
+  ownerId          String?  @map("owner_id") @db.Uuid
+  reasonCategoryId String   @map("reason_category_id") @db.Uuid
+  code             String   @db.VarChar(32)
+  nameEn           String   @map("name_en") @db.VarChar(255)
+  nameZh           String?  @map("name_zh") @db.VarChar(255)
+  nameJa           String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn    String?  @map("description_en") @db.Text
+  descriptionZh    String?  @map("description_zh") @db.Text
+  descriptionJa    String?  @map("description_ja") @db.Text
+  sortOrder        Int      @default(0) @map("sort_order")
+  isActive         Boolean  @default(true) @map("is_active")
+  isForceUse       Boolean  @default(false) @map("is_force_use")
+  isSystem         Boolean  @default(false) @map("is_system")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?  @map("created_by") @db.Uuid
+  updatedBy        String?  @map("updated_by") @db.Uuid
+  version          Int      @default(1)
+
+  reasonCategory ReasonCategory    @relation(fields: [reasonCategoryId], references: [id])
+  customers      CustomerProfile[]
+
+  @@unique([ownerType, ownerId, code])
+  @@map("inactivation_reason")
+  @@schema("tenant_template")
+}
+
+/// Membership Class (PRD §10.2)
+model MembershipClass {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerType     String   @map("owner_type") @db.VarChar(16)
+  ownerId       String?  @map("owner_id") @db.Uuid
+  code          String   @db.VarChar(32)
+  nameEn        String   @map("name_en") @db.VarChar(255)
+  nameZh        String?  @map("name_zh") @db.VarChar(255)
+  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionZh String?  @map("description_zh") @db.Text
+  descriptionJa String?  @map("description_ja") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  isForceUse    Boolean  @default(false) @map("is_force_use")
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  version       Int      @default(1)
+
+  membershipTypes   MembershipType[]
+  membershipRecords MembershipRecord[]
+
+  @@unique([code])
+  @@map("membership_class")
+  @@schema("tenant_template")
+}
+
+/// Membership Type (PRD §10.2)
+model MembershipType {
+  id                 String   @id @default(uuid()) @db.Uuid
+  membershipClassId  String   @map("membership_class_id") @db.Uuid
+  code               String   @db.VarChar(32)
+  nameEn             String   @map("name_en") @db.VarChar(255)
+  nameZh             String?  @map("name_zh") @db.VarChar(255)
+  nameJa             String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn      String?  @map("description_en") @db.Text
+  descriptionZh      String?  @map("description_zh") @db.Text
+  descriptionJa      String?  @map("description_ja") @db.Text
+  externalControl    Boolean  @default(false) @map("external_control")
+  defaultRenewalDays Int      @default(30) @map("default_renewal_days")
+  sortOrder          Int      @default(0) @map("sort_order")
+  isActive           Boolean  @default(true) @map("is_active")
+  isForceUse         Boolean  @default(false) @map("is_force_use")
+  isSystem           Boolean  @default(false) @map("is_system")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?  @map("created_by") @db.Uuid
+  updatedBy          String?  @map("updated_by") @db.Uuid
+  version            Int      @default(1)
+
+  membershipClass   MembershipClass    @relation(fields: [membershipClassId], references: [id])
+  membershipLevels  MembershipLevel[]
+  membershipRecords MembershipRecord[]
+
+  @@unique([code])
+  @@map("membership_type")
+  @@schema("tenant_template")
+}
+
+/// Membership Level (PRD §10.2)
+model MembershipLevel {
+  id               String   @id @default(uuid()) @db.Uuid
+  membershipTypeId String   @map("membership_type_id") @db.Uuid
+  code             String   @db.VarChar(32)
+  nameEn           String   @map("name_en") @db.VarChar(255)
+  nameZh           String?  @map("name_zh") @db.VarChar(255)
+  nameJa           String?  @map("name_ja") @db.VarChar(255)
+  descriptionEn    String?  @map("description_en") @db.Text
+  descriptionZh    String?  @map("description_zh") @db.Text
+  descriptionJa    String?  @map("description_ja") @db.Text
+  rank             Int      @default(0)
+  color            String?  @db.VarChar(7)
+  badgeUrl         String?  @map("badge_url") @db.VarChar(512)
+  sortOrder        Int      @default(0) @map("sort_order")
+  isActive         Boolean  @default(true) @map("is_active")
+  isForceUse       Boolean  @default(false) @map("is_force_use")
+  isSystem         Boolean  @default(false) @map("is_system")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?  @map("created_by") @db.Uuid
+  updatedBy        String?  @map("updated_by") @db.Uuid
+  version          Int      @default(1)
+
+  membershipType    MembershipType     @relation(fields: [membershipTypeId], references: [id])
+  membershipRecords MembershipRecord[]
+
+  @@unique([code])
+  @@map("membership_level")
+  @@schema("tenant_template")
+}
+
+/// Consent (PRD §10.2)
+model Consent {
+  id                String    @id @default(uuid()) @db.Uuid
+  ownerType         String    @map("owner_type") @db.VarChar(16)
+  ownerId           String?   @map("owner_id") @db.Uuid
+  code              String    @db.VarChar(32)
+  consentVersion    String    @map("consent_version") @db.VarChar(16)
+  nameEn            String    @map("name_en") @db.VarChar(255)
+  nameZh            String?   @map("name_zh") @db.VarChar(255)
+  nameJa            String?   @map("name_ja") @db.VarChar(255)
+  contentMarkdownEn String?   @map("content_markdown_en") @db.Text
+  contentMarkdownZh String?   @map("content_markdown_zh") @db.Text
+  contentMarkdownJa String?   @map("content_markdown_ja") @db.Text
+  contentUrl        String?   @map("content_url") @db.VarChar(512)
+  effectiveFrom     DateTime  @map("effective_from") @db.Date
+  expiresAt         DateTime? @map("expires_at") @db.Date
+  isRequired        Boolean   @default(true) @map("is_required")
+  sortOrder         Int       @default(0) @map("sort_order")
+  isActive          Boolean   @default(true) @map("is_active")
+  isForceUse        Boolean   @default(false) @map("is_force_use")
+  isSystem          Boolean   @default(false) @map("is_system")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?   @map("created_by") @db.Uuid
+  updatedBy         String?   @map("updated_by") @db.Uuid
+  version           Int       @default(1)
+
+  consentAgreements ConsentAgreement[]
+
+  @@unique([ownerType, ownerId, code, consentVersion])
+  @@map("consent")
+  @@schema("tenant_template")
+}
+
+/// Consumer - API Consumer (PRD §10.3)
+model Consumer {
+  id               String   @id @default(uuid()) @db.Uuid
+  code             String   @unique @db.VarChar(32)
+  nameEn           String   @map("name_en") @db.VarChar(255)
+  nameZh           String?  @map("name_zh") @db.VarChar(255)
+  nameJa           String?  @map("name_ja") @db.VarChar(255)
+  consumerCategory String   @map("consumer_category") @db.VarChar(16) // 'internal', 'external', 'partner'
+  contactName      String?  @map("contact_name") @db.VarChar(128)
+  contactEmail     String?  @map("contact_email") @db.VarChar(255)
+  apiKeyHash       String?  @map("api_key_hash") @db.VarChar(64)
+  apiKeyPrefix     String?  @map("api_key_prefix") @db.VarChar(8)
+  allowedIps       String[] @default([]) @map("allowed_ips") @db.Inet
+  rateLimit        Int      @default(1000) @map("rate_limit")
+  notes            String?  @db.Text
+  sortOrder        Int      @default(0) @map("sort_order")
+  isActive         Boolean  @default(true) @map("is_active")
+  isForceUse       Boolean  @default(false) @map("is_force_use")
+  isSystem         Boolean  @default(false) @map("is_system")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?  @map("created_by") @db.Uuid
+  updatedBy        String?  @map("updated_by") @db.Uuid
+  version          Int      @default(1)
+
+  externalIds     CustomerExternalId[]
+  integrationLogs IntegrationLog[]
+  importJobs      ImportJob[]
+
+  @@map("consumer")
+  @@schema("tenant_template")
+}
+
+/// Social Platform (PRD §10.3)
+model SocialPlatform {
+  id                 String   @id @default(uuid()) @db.Uuid
+  code               String   @unique @db.VarChar(32) // e.g., 'BILIBILI', 'YOUTUBE'
+  nameEn             String   @map("name_en") @db.VarChar(255)
+  nameZh             String?  @map("name_zh") @db.VarChar(255)
+  nameJa             String?  @map("name_ja") @db.VarChar(255)
+  displayName        String   @map("display_name") @db.VarChar(64)
+  iconUrl            String?  @map("icon_url") @db.VarChar(512)
+  baseUrl            String?  @map("base_url") @db.VarChar(512)
+  profileUrlTemplate String?  @map("profile_url_template") @db.VarChar(512)
+  color              String?  @db.VarChar(7)
+  sortOrder          Int      @default(0) @map("sort_order")
+  isActive           Boolean  @default(true) @map("is_active")
+  isForceUse         Boolean  @default(false) @map("is_force_use")
+  isSystem           Boolean  @default(false) @map("is_system")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version            Int      @default(1)
+
+  platformIdentities  PlatformIdentity[]
+  membershipRecords   MembershipRecord[]
+  integrationAdapters IntegrationAdapter[]
+
+  @@map("social_platform")
+  @@schema("tenant_template")
+}
+
+/// Blocklist Entry (PRD §10.3 v0.20)
+model BlocklistEntry {
+  id            String    @id @default(uuid()) @db.Uuid
+  ownerType     String    @map("owner_type") @db.VarChar(16)
+  ownerId       String?   @map("owner_id") @db.Uuid
+  pattern       String    @db.VarChar(512)
+  patternType   String    @default("keyword") @map("pattern_type") @db.VarChar(16) // 'keyword', 'regex', 'wildcard'
+  nameEn        String    @map("name_en") @db.VarChar(128)
+  nameZh        String?   @map("name_zh") @db.VarChar(128)
+  nameJa        String?   @map("name_ja") @db.VarChar(128)
+  description   String?   @db.Text
+  category      String?   @db.VarChar(64)
+  severity      String    @default("medium") @db.VarChar(16) // 'low', 'medium', 'high'
+  action        String    @default("reject") @db.VarChar(16) // 'reject', 'flag', 'replace'
+  replacement   String    @default("***") @db.VarChar(255)
+  scope         String[]  @default(["marshmallow"]) @db.VarChar(64)
+  inherit       Boolean   @default(true)
+  sortOrder     Int       @default(0) @map("sort_order")
+  isActive      Boolean   @default(true) @map("is_active")
+  isForceUse    Boolean   @default(false) @map("is_force_use")
+  isSystem      Boolean   @default(false) @map("is_system")
+  matchCount    Int       @default(0) @map("match_count")
+  lastMatchedAt DateTime? @map("last_matched_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  updatedBy     String?   @map("updated_by") @db.Uuid
+  version       Int       @default(1)
+
+  @@index([ownerType, ownerId])
+  @@index([isActive])
+  @@index([category])
+  @@index([scope])
+  @@map("blocklist_entry")
+  @@schema("tenant_template")
+}
+
+/// IP Access Rule (v0.20)
+model IpAccessRule {
+  id        String    @id @default(uuid()) @db.Uuid
+  ruleType  String    @map("rule_type") @db.VarChar(16) // 'whitelist', 'blacklist'
+  ipPattern String    @map("ip_pattern") @db.VarChar(64) // IP or CIDR
+  scope     String    @default("global") @db.VarChar(16) // 'global', 'admin', 'public', 'api'
+  reason    String?   @db.VarChar(255)
+  source    String    @default("manual") @db.VarChar(16) // 'manual', 'auto'
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+  hitCount  Int       @default(0) @map("hit_count")
+  lastHitAt DateTime? @map("last_hit_at") @db.Timestamptz
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([ruleType])
+  @@index([scope])
+  @@index([expiresAt])
+  @@map("ip_access_rule")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// LOGGING Module (PRD §15)
+// =============================================================================
+
+/// Change Log (PRD §15)
+model ChangeLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  operatorId   String?  @map("operator_id") @db.Uuid
+  operatorName String?  @map("operator_name") @db.VarChar(128)
+  action       String   @db.VarChar(32) // 'create', 'update', 'deactivate', 'reactivate'
+  objectType   String   @map("object_type") @db.VarChar(64)
+  objectId     String   @map("object_id") @db.Uuid
+  objectName   String?  @map("object_name") @db.VarChar(255)
+  diff         Json?    @db.JsonB
+  ipAddress    String?  @map("ip_address") @db.Inet
+  userAgent    String?  @map("user_agent") @db.Text
+  requestId    String?  @map("request_id") @db.VarChar(64)
+
+  operator SystemUser? @relation(fields: [operatorId], references: [id])
+
+  @@index([occurredAt])
+  @@index([objectType, objectId])
+  @@index([operatorId])
+  @@index([requestId])
+  @@map("change_log")
+  @@schema("tenant_template")
+}
+
+/// Technical Event Log (PRD §15)
+model TechnicalEventLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  occurredAt  DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  severity    String   @db.VarChar(16) // 'debug', 'info', 'warn', 'error', 'critical'
+  eventType   String   @map("event_type") @db.VarChar(64)
+  scope       String   @default("general") @db.VarChar(32)
+  traceId     String?  @map("trace_id") @db.VarChar(64)
+  spanId      String?  @map("span_id") @db.VarChar(32)
+  source      String?  @db.VarChar(64)
+  message     String?  @db.Text
+  payloadJson Json?    @map("payload_json") @db.JsonB
+  errorCode   String?  @map("error_code") @db.VarChar(32)
+  errorStack  String?  @map("error_stack") @db.Text
+
+  @@index([occurredAt])
+  @@index([eventType])
+  @@index([scope])
+  @@index([traceId])
+  @@map("technical_event_log")
+  @@schema("tenant_template")
+}
+
+/// Integration Log (PRD §15)
+model IntegrationLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  consumerId     String?  @map("consumer_id") @db.Uuid
+  consumerCode   String?  @map("consumer_code") @db.VarChar(32)
+  direction      String   @db.VarChar(16) // 'inbound', 'outbound'
+  endpoint       String   @db.VarChar(512)
+  method         String?  @db.VarChar(10)
+  requestHeaders Json?    @map("request_headers") @db.JsonB
+  requestBody    Json?    @map("request_body") @db.JsonB
+  responseStatus Int?     @map("response_status") @db.SmallInt
+  responseBody   Json?    @map("response_body") @db.JsonB
+  latencyMs      Int?     @map("latency_ms")
+  errorMessage   String?  @map("error_message") @db.Text
+  traceId        String?  @map("trace_id") @db.VarChar(64)
+
+  consumer Consumer? @relation(fields: [consumerId], references: [id])
+
+  @@index([occurredAt])
+  @@index([consumerId])
+  @@index([responseStatus])
+  @@index([traceId])
+  @@map("integration_log")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// EXTERNAL PAGES Module (PRD §16)
+// =============================================================================
+
+/// Talent Homepage (PRD §16)
+model TalentHomepage {
+  id                            String   @id @default(uuid()) @db.Uuid
+  talentId                      String   @unique @map("talent_id") @db.Uuid
+  isPublished                   Boolean  @default(false) @map("is_published")
+  publishedVersionId            String?  @map("published_version_id") @db.Uuid
+  draftVersionId                String?  @map("draft_version_id") @db.Uuid
+  customDomain                  String?  @unique @map("custom_domain") @db.VarChar(255)
+  customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
+  customDomainVerificationToken String?  @map("custom_domain_verification_token") @db.VarChar(64)
+  seoTitle                      String?  @map("seo_title") @db.VarChar(128)
+  seoDescription                String?  @map("seo_description") @db.VarChar(512)
+  ogImageUrl                    String?  @map("og_image_url") @db.VarChar(512)
+  analyticsId                   String?  @map("analytics_id") @db.VarChar(64)
+  theme                         Json     @default("{}") @db.JsonB
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version                       Int      @default(1)
+
+  talent           Talent            @relation(fields: [talentId], references: [id])
+  homepageVersions HomepageVersion[]
+
+  @@map("talent_homepage")
+  @@schema("tenant_template")
+}
+
+/// Homepage Version (PRD §16)
+model HomepageVersion {
+  id            String    @id @default(uuid()) @db.Uuid
+  homepageId    String    @map("homepage_id") @db.Uuid
+  versionNumber Int       @map("version_number")
+  content       Json      @db.JsonB
+  theme         Json      @default("{}") @db.JsonB
+  status        String    @db.VarChar(16) // 'draft', 'published', 'archived'
+  contentHash   String?   @map("content_hash") @db.VarChar(64)
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz
+  publishedBy   String?   @map("published_by") @db.Uuid
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+
+  homepage TalentHomepage @relation(fields: [homepageId], references: [id], onDelete: Cascade)
+
+  @@unique([homepageId, versionNumber])
+  @@index([homepageId, status])
+  @@map("homepage_version")
+  @@schema("tenant_template")
+}
+
+/// Marshmallow Config (PRD §8 v0.19)
+model MarshmallowConfig {
+  id                            String   @id @default(uuid()) @db.Uuid
+  talentId                      String   @unique @map("talent_id") @db.Uuid
+  path                          String?  @unique @db.VarChar(128) // Custom URL path for marshmallow page
+  isEnabled                     Boolean  @default(false) @map("is_enabled")
+  title                         String?  @db.VarChar(128)
+  welcomeText                   String?  @map("welcome_text") @db.Text
+  placeholderText               String?  @map("placeholder_text") @db.VarChar(255)
+  thankYouText                  String?  @map("thank_you_text") @db.Text
+  allowAnonymous                Boolean  @default(true) @map("allow_anonymous")
+  captchaMode                   String   @default("auto") @map("captcha_mode") @db.VarChar(16) // 'always', 'never', 'auto'
+  moderationEnabled             Boolean  @default(true) @map("moderation_enabled")
+  autoApprove                   Boolean  @default(false) @map("auto_approve")
+  profanityFilterEnabled        Boolean  @default(true) @map("profanity_filter_enabled")
+  externalBlocklistEnabled      Boolean  @default(true) @map("external_blocklist_enabled")
+  maxMessageLength              Int      @default(500) @map("max_message_length")
+  minMessageLength              Int      @default(1) @map("min_message_length")
+  rateLimitPerIp                Int      @default(5) @map("rate_limit_per_ip")
+  rateLimitWindowHours          Int      @default(1) @map("rate_limit_window_hours")
+  reactionsEnabled              Boolean  @default(true) @map("reactions_enabled")
+  allowedReactions              String[] @default(["❤️", "👍", "😊", "🎉", "💯"]) @map("allowed_reactions") @db.VarChar(32)
+  theme                         Json     @default("{}") @db.JsonB
+  // Custom domain settings
+  customDomain                  String?  @unique @map("custom_domain") @db.VarChar(255)
+  customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
+  customDomainVerificationToken String?  @map("custom_domain_verification_token") @db.VarChar(64)
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version                       Int      @default(1)
+
+  talent   Talent               @relation(fields: [talentId], references: [id])
+  messages MarshmallowMessage[]
+
+  @@map("marshmallow_config")
+  @@schema("tenant_template")
+}
+
+/// Marshmallow Message (PRD §8 v0.19)
+model MarshmallowMessage {
+  id              String    @id @default(uuid()) @db.Uuid
+  configId        String    @map("config_id") @db.Uuid
+  talentId        String    @map("talent_id") @db.Uuid
+  content         String    @db.Text
+  senderName      String?   @map("sender_name") @db.VarChar(64)
+  isAnonymous     Boolean   @map("is_anonymous")
+  status          String    @default("pending") @db.VarChar(16) // 'pending', 'approved', 'rejected', 'spam'
+  rejectionReason String?   @map("rejection_reason") @db.VarChar(32)
+  rejectionNote   String?   @map("rejection_note") @db.VarChar(255)
+  moderatedAt     DateTime? @map("moderated_at") @db.Timestamptz
+  moderatedBy     String?   @map("moderated_by") @db.Uuid
+  isRead          Boolean   @default(false) @map("is_read")
+  isStarred       Boolean   @default(false) @map("is_starred")
+  isPinned        Boolean   @default(false) @map("is_pinned")
+  replyContent    String?   @map("reply_content") @db.Text
+  repliedAt       DateTime? @map("replied_at") @db.Timestamptz
+  repliedBy       String?   @map("replied_by") @db.Uuid
+  reactionCounts  Json      @default("{}") @map("reaction_counts") @db.JsonB
+  ipAddress       String?   @map("ip_address") @db.Inet
+  userAgent       String?   @map("user_agent") @db.Text
+  fingerprintHash String?   @map("fingerprint_hash") @db.VarChar(64)
+  profanityFlags  String[]  @default([]) @map("profanity_flags") @db.VarChar(64)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  config    MarshmallowConfig     @relation(fields: [configId], references: [id], onDelete: Cascade)
+  talent    Talent                @relation(fields: [talentId], references: [id])
+  reactions MarshmallowReaction[]
+
+  @@index([talentId])
+  @@index([configId])
+  @@index([configId, status])
+  @@index([createdAt])
+  @@index([talentId, isStarred])
+  @@index([talentId, isPinned])
+  @@index([talentId, status])
+  @@map("marshmallow_message")
+  @@schema("tenant_template")
+}
+
+/// Marshmallow Reaction (PRD §8 v0.19)
+model MarshmallowReaction {
+  id              String   @id @default(uuid()) @db.Uuid
+  messageId       String   @map("message_id") @db.Uuid
+  reaction        String   @db.VarChar(32)
+  fingerprintHash String   @map("fingerprint_hash") @db.VarChar(64)
+  ipAddress       String?  @map("ip_address") @db.Inet
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  message MarshmallowMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, fingerprintHash, reaction])
+  @@index([messageId])
+  @@index([fingerprintHash])
+  @@map("marshmallow_reaction")
+  @@schema("tenant_template")
+}
+
+/// External Blocklist Pattern (v0.19, v0.24 adds inheritance fields)
+model ExternalBlocklistPattern {
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerType   String   @map("owner_type") @db.VarChar(16)
+  ownerId     String?  @map("owner_id") @db.Uuid
+  pattern     String   @db.VarChar(512)
+  patternType String   @default("domain") @map("pattern_type") @db.VarChar(16) // 'domain', 'url_regex', 'keyword'
+  nameEn      String   @map("name_en") @db.VarChar(128)
+  nameZh      String?  @map("name_zh") @db.VarChar(128)
+  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  description String?  @db.Text
+  category    String?  @db.VarChar(64)
+  severity    String   @default("medium") @db.VarChar(16)
+  action      String   @default("reject") @db.VarChar(16)
+  replacement String   @default("[链接已移除]") @db.VarChar(255)
+  inherit     Boolean  @default(true)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isForceUse  Boolean  @default(false) @map("is_force_use")
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  version     Int      @default(1)
+
+  @@index([ownerType, ownerId])
+  @@index([isActive])
+  @@index([category])
+  @@map("external_blocklist_pattern")
+  @@schema("tenant_template")
+}
+
+/// Config Override (PRD §10)
+model ConfigOverride {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String   @map("entity_type") @db.VarChar(64)
+  entityId   String   @map("entity_id") @db.Uuid
+  ownerType  String   @map("owner_type") @db.VarChar(16)
+  ownerId    String?  @map("owner_id") @db.Uuid
+  isDisabled Boolean  @default(false) @map("is_disabled")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy  String?  @map("created_by") @db.Uuid
+  updatedBy  String?  @map("updated_by") @db.Uuid
+
+  @@unique([entityType, entityId, ownerType, ownerId])
+  @@index([entityType, ownerType, ownerId])
+  @@map("config_override")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// JOB Module (PRD §11.7, §20)
+// =============================================================================
+
+/// Import Job (PRD §11.7)
+model ImportJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  talentId       String    @map("talent_id") @db.Uuid
+  profileStoreId String    @map("profile_store_id") @db.Uuid
+  jobType        String    @map("job_type") @db.VarChar(32) // 'individual_import', 'company_import'
+  status         String    @default("pending") @db.VarChar(16)
+  fileName       String    @map("file_name") @db.VarChar(255)
+  fileSize       Int?      @map("file_size")
+  consumerId     String?   @map("consumer_id") @db.Uuid
+  totalRows      Int       @default(0) @map("total_rows")
+  processedRows  Int       @default(0) @map("processed_rows")
+  successRows    Int       @default(0) @map("success_rows")
+  failedRows     Int       @default(0) @map("failed_rows")
+  warningRows    Int       @default(0) @map("warning_rows")
+  startedAt      DateTime? @map("started_at") @db.Timestamptz
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy      String?   @map("created_by") @db.Uuid
+
+  talent        Talent           @relation(fields: [talentId], references: [id])
+  profileStore  ProfileStore     @relation(fields: [profileStoreId], references: [id])
+  consumer      Consumer?        @relation(fields: [consumerId], references: [id])
+  createdByUser SystemUser?      @relation(fields: [createdBy], references: [id])
+  errors        ImportJobError[]
+
+  @@index([talentId])
+  @@index([profileStoreId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("import_job")
+  @@schema("tenant_template")
+}
+
+/// Import Job Error (PRD §11.7)
+model ImportJobError {
+  id           String   @id @default(uuid()) @db.Uuid
+  importJobId  String   @map("import_job_id") @db.Uuid
+  rowNumber    Int      @map("row_number")
+  errorCode    String   @map("error_code") @db.VarChar(64)
+  errorMessage String   @map("error_message") @db.Text
+  originalData String   @map("original_data") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  importJob ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+
+  @@index([importJobId])
+  @@index([rowNumber])
+  @@map("import_job_error")
+  @@schema("tenant_template")
+}
+
+/// Export Job (PRD §11.7)
+model ExportJob {
+  id               String    @id @default(uuid()) @db.Uuid
+  talentId         String    @map("talent_id") @db.Uuid
+  profileStoreId   String    @map("profile_store_id") @db.Uuid
+  jobType          String    @map("job_type") @db.VarChar(32) // 'customer_export', 'membership_export'
+  format           String    @default("csv") @db.VarChar(16) // 'csv', 'xlsx', 'json'
+  status           String    @default("pending") @db.VarChar(16)
+  filters          Json?     @db.JsonB
+  totalRecords     Int       @default(0) @map("total_records")
+  processedRecords Int       @default(0) @map("processed_records")
+  fileName         String?   @map("file_name") @db.VarChar(255)
+  filePath         String?   @map("file_path") @db.VarChar(512)
+  errorMessage     String?   @map("error_message") @db.Text
+  startedAt        DateTime? @map("started_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  expiresAt        DateTime? @map("expires_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+
+  talent        Talent       @relation(fields: [talentId], references: [id])
+  profileStore  ProfileStore @relation(fields: [profileStoreId], references: [id])
+  createdByUser SystemUser?  @relation(fields: [createdBy], references: [id])
+
+  @@index([talentId])
+  @@index([profileStoreId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("export_job")
+  @@schema("tenant_template")
+}
+
+/// Report Job (PRD §20)
+model ReportJob {
+  id                 String    @id @default(uuid()) @db.Uuid
+  talentId           String    @map("talent_id") @db.Uuid
+  profileStoreId     String    @map("profile_store_id") @db.Uuid
+  reportType         String    @map("report_type") @db.VarChar(32) // 'mfr'
+  filterCriteria     Json      @map("filter_criteria") @db.JsonB
+  format             String    @default("xlsx") @db.VarChar(16)
+  status             String    @default("pending") @db.VarChar(16)
+  retryCount         Int       @default(0) @map("retry_count")
+  maxRetries         Int       @default(3) @map("max_retries")
+  errorCode          String?   @map("error_code") @db.VarChar(64)
+  errorMessage       String?   @map("error_message") @db.Text
+  totalRows          Int?      @map("total_rows")
+  processedRows      Int       @default(0) @map("processed_rows")
+  progressPercentage Int       @default(0) @map("progress_percentage") @db.SmallInt
+  fileName           String?   @map("file_name") @db.VarChar(255)
+  filePath           String?   @map("file_path") @db.VarChar(512)
+  fileSizeBytes      BigInt?   @map("file_size_bytes")
+  queuedAt           DateTime? @map("queued_at") @db.Timestamptz
+  startedAt          DateTime? @map("started_at") @db.Timestamptz
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  expiresAt          DateTime? @map("expires_at") @db.Timestamptz
+  downloadedAt       DateTime? @map("downloaded_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy          String    @map("created_by") @db.Uuid
+
+  talent       Talent       @relation(fields: [talentId], references: [id])
+  profileStore ProfileStore @relation(fields: [profileStoreId], references: [id])
+  creator      SystemUser   @relation(fields: [createdBy], references: [id])
+
+  @@index([talentId])
+  @@index([status])
+  @@index([reportType])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("report_job")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// INTEGRATION Module (PRD §8)
+// =============================================================================
+
+/// Integration Adapter (PRD §8)
+model IntegrationAdapter {
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerType   String   @map("owner_type") @db.VarChar(16)
+  ownerId     String?  @map("owner_id") @db.Uuid
+  platformId  String   @map("platform_id") @db.Uuid
+  code        String   @db.VarChar(32)
+  nameEn      String   @map("name_en") @db.VarChar(255)
+  nameZh      String?  @map("name_zh") @db.VarChar(255)
+  nameJa      String?  @map("name_ja") @db.VarChar(255)
+  adapterType String   @map("adapter_type") @db.VarChar(16) // 'oauth', 'api_key', 'webhook'
+  inherit     Boolean  @default(true)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  version     Int      @default(1)
+
+  platform       SocialPlatform  @relation(fields: [platformId], references: [id])
+  adapterConfigs AdapterConfig[]
+
+  @@unique([ownerType, ownerId, code])
+  @@map("integration_adapter")
+  @@schema("tenant_template")
+}
+
+/// Adapter Config (PRD §8)
+model AdapterConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  adapterId   String   @map("adapter_id") @db.Uuid
+  configKey   String   @map("config_key") @db.VarChar(64)
+  configValue String   @map("config_value") @db.Text
+  isSecret    Boolean  @default(false) @map("is_secret")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  adapter IntegrationAdapter @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+
+  @@unique([adapterId, configKey])
+  @@map("adapter_config")
+  @@schema("tenant_template")
+}
+
+/// Webhook (PRD §8)
+model Webhook {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  nameEn              String    @map("name_en") @db.VarChar(255)
+  nameZh              String?   @map("name_zh") @db.VarChar(255)
+  nameJa              String?   @map("name_ja") @db.VarChar(255)
+  url                 String    @db.VarChar(512)
+  secret              String?   @db.VarChar(255) // Encrypted
+  events              String[]  @db.VarChar(64)
+  headers             Json      @default("{}") @db.JsonB
+  retryPolicy         Json      @default("{\"max_retries\": 3, \"backoff_ms\": 1000}") @map("retry_policy") @db.JsonB
+  isActive            Boolean   @default(true) @map("is_active")
+  lastTriggeredAt     DateTime? @map("last_triggered_at") @db.Timestamptz
+  lastStatus          Int?      @map("last_status") @db.SmallInt
+  consecutiveFailures Int       @default(0) @map("consecutive_failures") @db.SmallInt
+  disabledAt          DateTime? @map("disabled_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?   @map("created_by") @db.Uuid
+  updatedBy           String?   @map("updated_by") @db.Uuid
+  version             Int       @default(1)
+
+  @@map("webhook")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// SESSION & TOKEN Module
+// =============================================================================
+
+/// Refresh Token
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(64)
+  deviceInfo String?   @map("device_info") @db.VarChar(255)
+  ipAddress  String?   @map("ip_address") @db.Inet
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_token")
+  @@schema("tenant_template")
+}
+
+// =============================================================================
+// EMAIL Module
+// =============================================================================
+
+/// Email Log (tenant-scoped, error logs only)
+model EmailLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  templateCode  String   @map("template_code") @db.VarChar(64)
+  recipientHint String   @map("recipient_hint") @db.VarChar(64)
+  locale        String   @db.VarChar(8)
+  errorCode     String?  @map("error_code") @db.VarChar(64)
+  errorMessage  String?  @map("error_message") @db.Text
+  retryCount    Int      @default(0) @map("retry_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([templateCode])
+  @@index([createdAt])
+  @@map("email_log")
+  @@schema("tenant_template")
+}
+
+/// Email Change Request (for email verification workflow)
+model EmailChangeRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  newEmail    String    @map("new_email") @db.VarChar(255)
+  token       String    @unique @db.VarChar(64)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("email_change_request")
+  @@schema("tenant_template")
+}
+
+/// Password Reset Request (for forgot password workflow)
+model PasswordResetRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  email       String    @db.VarChar(255)
+  token       String    @unique @db.VarChar(64)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  usedAt      DateTime? @map("used_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_request")
+  @@schema("tenant_template")
+}
+

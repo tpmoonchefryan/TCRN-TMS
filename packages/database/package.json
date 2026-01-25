@@ -1,0 +1,52 @@
+{
+  "name": "@tcrn/database",
+  "version": "0.1.0",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup && pnpm db:generate",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seeds/index.ts",
+    "db:seed:uat": "tsx prisma/seeds/index-uat.ts",
+    "db:seed:all": "pnpm db:seed && pnpm db:seed:uat",
+    "db:reset": "prisma migrate reset --force && pnpm db:seed",
+    "db:apply-migrations": "tsx scripts/apply-migrations.ts",
+    "db:sync-schemas": "tsx scripts/sync-tenant-schemas.ts",
+    "db:create-tenant": "tsx scripts/create-tenant-schema.ts",
+    "db:init": "pnpm db:apply-migrations && pnpm db:generate && pnpm db:seed",
+    "db:refresh-snapshots": "tsx scripts/refresh-permission-snapshots.ts",
+    "db:fix-roles": "tsx scripts/fix-tenant-roles.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.14.0",
+    "argon2": "0.44.0"
+  },
+  "devDependencies": {
+    "@tcrn/eslint-config": "workspace:*",
+    "@types/node": "22.15.27",
+    "eslint": "9.35.0",
+    "prisma": "6.14.0",
+    "tsup": "8.5.0",
+    "tsx": "4.20.5",
+    "typescript": "5.8.3"
+  }
+}

@@ -1,0 +1,71 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# Grafana Tempo Configuration for TCRN TMS
+# Reference: https://grafana.com/docs/tempo/latest/configuration/
+
+# Server configuration
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+
+# Distributor configuration
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+# Ingester configuration
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+  max_block_duration: 5m
+
+# Compactor configuration
+compactor:
+  compaction:
+    compaction_window: 1h
+    max_block_bytes: 100_000_000
+    block_retention: 48h
+    compacted_block_retention: 10m
+
+# Storage configuration
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/traces
+    wal:
+      path: /tmp/tempo/wal
+    block:
+      bloom_filter_false_positive: 0.05
+      v2_encoding: zstd
+
+# Metrics generator (for trace-to-metrics)
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      service: tcrn-tms
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+# Overrides configuration
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
+
+# Query frontend configuration  
+query_frontend:
+  search:
+    max_duration: 168h
+
+# Usage reporting (disabled for privacy)
+usage_report:
+  reporting_enabled: false

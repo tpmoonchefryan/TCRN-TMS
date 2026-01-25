@@ -1,0 +1,119 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcrn-api
+  labels:
+    app: tcrn-api
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: tcrn-api
+  template:
+    metadata:
+      labels:
+        app: tcrn-api
+    spec:
+      containers:
+        - name: api
+          image: tcrn-tms/api:latest
+          ports:
+            - containerPort: 4000
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-secrets
+                  key: jwt-secret
+            - name: FINGERPRINT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-secrets
+                  key: fingerprint-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcrn-api
+spec:
+  selector:
+    app: tcrn-api
+  ports:
+    - port: 80
+      targetPort: 4000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tcrn-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tcrn-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tcrn-api-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tcrn-api

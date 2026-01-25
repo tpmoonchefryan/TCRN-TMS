@@ -1,0 +1,93 @@
+/* © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* PRD Defined Colors mapped to HSL */
+    /* Primary #5599FF -> 216 100% 67% */
+    /* Accent #FF88CC -> 325 100% 77% */
+    /* Background #F5F7FA -> 216 27% 97% or #FFFFFF -> 0 0% 100% depending on context */
+    
+    /* Global Background (Page) - #F5F7FA as per PRD "灰" for general bg */
+    --background: 216 27% 97%; 
+    --foreground: 222.2 84% 4.9%;
+
+    /* Card Backgrounds - #FFFFFF */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary Blue */
+    --primary: 216 100% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary/Accent Pink */
+    --secondary: 325 100% 77%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted Text/Backgrounds */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 325 100% 96%;
+    --accent-foreground: 325 100% 40%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 216 100% 67%;
+    
+    --radius: 0.5rem; /* 8px as per PRD max */
+  }
+
+  .dark {
+    /* Placeholder for dark mode - keeping high contrast for now */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 216 100% 67%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 216 100% 67%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* PRD §5 - Rounded corners 4-8px */
+  .card {
+    @apply rounded-lg border-none bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md;
+  }
+  
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+}

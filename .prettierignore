@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+.next
+out
+build
+
+# Lock files
+pnpm-lock.yaml
+
+# Generated
+*.generated.*
+coverage
+.turbo
+
+# Context docs (maintain original formatting)
+.context/
+
+# Prisma migrations
+packages/database/prisma/migrations

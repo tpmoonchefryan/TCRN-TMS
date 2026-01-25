@@ -1,0 +1,24 @@
+{
+  "name": "@tcrn/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "main": "index.js",
+  "files": [
+    "*.js"
+  ],
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "8.52.0",
+    "@typescript-eslint/parser": "8.52.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-import": "2.32.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0",
+    "typescript": ">=5.0.0"
+  },
+  "devDependencies": {
+    "eslint": "9.35.0",
+    "typescript": "5.8.3"
+  }
+}

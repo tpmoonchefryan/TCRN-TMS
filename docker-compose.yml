@@ -1,0 +1,251 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# TCRN TMS Docker Compose - Local Development Environment
+# PRD §4.4: 双网络隔离架构
+
+version: '3.8'
+
+networks:
+  # Main application network
+  app-network:
+    driver: bridge
+  # PII isolated network (PRD §4.4)
+  pii-network:
+    driver: bridge
+
+services:
+  # =============================================================================
+  # Main Application Services
+  # =============================================================================
+
+  # PostgreSQL 16 - Main Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: tcrn-postgres
+    networks:
+      - app-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tcrn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-tcrn_tms}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tcrn} -d ${POSTGRES_DB:-tcrn_tms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Redis 7 - Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: tcrn-redis
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  # MinIO - Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: tcrn-minio
+    networks:
+      - app-network
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+
+  # NATS JetStream - Event Bus
+  nats:
+    image: nats:2-alpine
+    container_name: tcrn-nats
+    networks:
+      - app-network
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["--jetstream", "--store_dir=/data", "-m", "8222"]
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "nats-server", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # =============================================================================
+  # Observability Services (PRD §15)
+  # =============================================================================
+
+  # Grafana Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: tcrn-loki
+    networks:
+      - app-network
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+      - ./infra/loki/loki-local.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  # Grafana Tempo - Distributed Tracing (PRD P-32)
+  tempo:
+    image: grafana/tempo:2.3.0
+    container_name: tcrn-tempo
+    networks:
+      - app-network
+    ports:
+      - "3200:3200"   # Tempo API
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - tempo-data:/tmp/tempo
+      - ./infra/tempo/tempo.yaml:/etc/tempo/tempo.yaml
+    command: -config.file=/etc/tempo/tempo.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3200/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+
+  # =============================================================================
+  # PII Isolated Services (PRD §4.4)
+  # =============================================================================
+
+  # PostgreSQL - PII Database (Isolated)
+  pii-postgres:
+    image: postgres:16-alpine
+    container_name: tcrn-pii-postgres
+    networks:
+      - pii-network  # Only connected to PII network
+    volumes:
+      - pii-postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${PII_POSTGRES_USER:-pii_user}
+      POSTGRES_PASSWORD: ${PII_POSTGRES_PASSWORD:?PII_POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${PII_POSTGRES_DB:-pii_vault}
+    # No port exposure to host - only accessible via pii-service
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PII_POSTGRES_USER:-pii_user} -d ${PII_POSTGRES_DB:-pii_vault}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  # PII Transit Service
+  # Connects to both networks: receives requests from app-network, accesses pii-network
+  pii-service:
+    build:
+      context: .
+      dockerfile: infra/docker/pii-service.Dockerfile
+    container_name: tcrn-pii-service
+    networks:
+      - app-network   # Receives requests from main application
+      - pii-network   # Accesses PII database
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PII_SERVICE_PORT: 5000
+      PII_DATABASE_URL: postgresql://${PII_POSTGRES_USER:-pii_user}:${PII_POSTGRES_PASSWORD}@pii-postgres:5432/${PII_POSTGRES_DB:-pii_vault}
+      PII_JWT_SECRET: ${PII_JWT_SECRET:-${JWT_SECRET:?JWT_SECRET is required}}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY is required}
+      # mTLS Configuration (enable in production)
+      TLS_ENABLED: ${PII_TLS_ENABLED:-false}
+      TLS_KEY_PATH: /app/certs/pii-server.key
+      TLS_CERT_PATH: /app/certs/pii-server.crt
+      TLS_CA_PATH: /app/certs/ca.crt
+      MTLS_ALLOWED_CNS: ${MTLS_ALLOWED_CNS:-tcrn-api,tcrn-worker}
+    volumes:
+      # Mount mTLS certificates (generate with scripts/generate-mtls-certs.sh)
+      - ./certs:/app/certs:ro
+    ports:
+      - "5100:5000"
+    depends_on:
+      pii-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+volumes:
+  postgres-data:
+    name: tcrn-postgres-data
+  redis-data:
+    name: tcrn-redis-data
+  minio-data:
+    name: tcrn-minio-data
+  nats-data:
+    name: tcrn-nats-data
+  pii-postgres-data:
+    name: tcrn-pii-postgres-data
+  loki-data:
+    name: tcrn-loki-data
+  tempo-data:
+    name: tcrn-tempo-data

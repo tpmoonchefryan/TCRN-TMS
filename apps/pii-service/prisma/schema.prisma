@@ -1,0 +1,66 @@
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// PII Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/pii-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PII_DATABASE_URL")
+}
+
+/// Tenant Data Encryption Key (DEK)
+model TenantDek {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @unique @map("tenant_id") @db.Uuid
+  encryptedDek Bytes     @map("encrypted_dek")
+  dekVersion   Int       @default(1) @map("dek_version")
+  algorithm    String    @default("AES-256-GCM") @db.VarChar(32)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  rotatedAt    DateTime? @map("rotated_at") @db.Timestamptz
+
+  @@map("tenant_dek")
+}
+
+/// PII Profile - Encrypted Personal Information
+model PiiProfile {
+  id             String   @id @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  profileStoreId String   @map("profile_store_id") @db.Uuid
+  givenName      Bytes?   @map("given_name")
+  familyName     Bytes?   @map("family_name")
+  gender         String?  @db.VarChar(16)
+  birthDate      Bytes?   @map("birth_date")
+  phoneNumbers   Bytes?   @map("phone_numbers")
+  emails         Bytes?   @map("emails")
+  addresses      Bytes?   @map("addresses")
+  dataHash       String?  @map("data_hash") @db.VarChar(64)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([profileStoreId])
+  @@map("pii_profile")
+}
+
+/// PII Access Audit Log
+model PiiAccessAudit {
+  id             String   @id @default(uuid()) @db.Uuid
+  profileId      String   @map("profile_id") @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  operatorId     String   @map("operator_id") @db.Uuid
+  action         String   @db.VarChar(32)
+  fieldsAccessed String[] @map("fields_accessed") @db.VarChar(64)
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent") @db.Text
+  jwtJti         String?  @map("jwt_jti") @db.VarChar(64)
+  metadata       Json?    @db.JsonB
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+
+  @@index([profileId])
+  @@index([tenantId])
+  @@index([occurredAt(sort: Desc)])
+  @@map("pii_access_audit")
+}

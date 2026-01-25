@@ -1,0 +1,77 @@
+{
+  "name": "tcrn-tms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TCRN TMS - Talent Management System for VTuber/VUP",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": "月球厨师莱恩 (TPMOONCHEFRYAN)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tpmoonchefryan/tcrn-tms.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tpmoonchefryan/tcrn-tms/issues"
+  },
+  "homepage": "https://github.com/tpmoonchefryan/tcrn-tms#readme",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project shared --project auth-core --project security",
+    "test:integration": "vitest run --project business",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:isolation": "vitest run apps/api/src/testing/isolation/",
+    "test:perf:smoke": "k6 run k6/scenarios/smoke.js",
+    "test:perf:load": "k6 run k6/scenarios/load.js",
+    "test:perf:stress": "k6 run k6/scenarios/stress.js",
+    "coverage:check": "vitest run --coverage --coverage.100",
+    "type-check": "turbo typecheck",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "db:generate": "turbo db:generate",
+    "db:push": "turbo db:push",
+    "db:migrate": "turbo db:migrate",
+    "db:migrate:test": "DATABASE_URL=$DATABASE_URL turbo db:migrate",
+    "db:seed": "pnpm --filter @tcrn/database db:seed",
+    "db:reset": "pnpm --filter @tcrn/database db:reset",
+    "clean": "turbo clean && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "20.3.1",
+    "@commitlint/config-conventional": "20.3.1",
+    "@vitest/coverage-v8": "4.0.17",
+    "fast-check": "^4.5.3",
+    "husky": "9.1.7",
+    "lint-staged": "16.2.7",
+    "prettier": "3.8.0",
+    "turbo": "2.7.5",
+    "typescript": "5.9.3",
+    "vitest": "4.0.17"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2"
+  }
+}

@@ -1,0 +1,399 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+
+groups:
+  - name: tcrn-infrastructure
+    rules:
+      # CPU alerts
+      - alert: HighCpuUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 75
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage high (> 75%)"
+          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalCpuUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU usage critical (> 90%)"
+          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Memory alerts
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory usage high (> 80%)"
+          description: "Instance {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Memory usage critical (> 90%)"
+          description: "Instance {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Disk alerts
+      - alert: HighDiskUsage
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk usage high (> 80%)"
+          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalDiskUsage
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk usage critical (> 90%)"
+          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf \"%.1f\" }}%"
+
+  - name: tcrn-application
+    rules:
+      # HTTP error rate
+      - alert: HighHttpErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx error rate high (> 1%)"
+          description: "Service {{ $labels.service }} 5xx error rate is {{ $value | printf \"%.2f\" }}%"
+
+      - alert: CriticalHttpErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx error rate critical (> 5%)"
+          description: "Service {{ $labels.service }} 5xx error rate is {{ $value | printf \"%.2f\" }}%"
+
+      # API latency
+      - alert: HighApiLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API P95 latency high (> 1s)"
+          description: "Service {{ $labels.service }} P95 latency is {{ $value | printf \"%.2f\" }}s"
+
+      - alert: CriticalApiLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API P95 latency critical (> 3s)"
+          description: "Service {{ $labels.service }} P95 latency is {{ $value | printf \"%.2f\" }}s"
+
+  - name: tcrn-database
+    rules:
+      # PostgreSQL connections
+      - alert: HighPostgresConnections
+        expr: |
+          sum(pg_stat_activity_count) by (datname) 
+          / 
+          pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection usage high (> 80%)"
+          description: "Database {{ $labels.datname }} connection usage is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalPostgresConnections
+        expr: |
+          sum(pg_stat_activity_count) by (datname) 
+          / 
+          pg_settings_max_connections > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL connection usage critical (> 90%)"
+          description: "Database {{ $labels.datname }} connection usage is {{ $value | printf \"%.1f\" }}%"
+
+      # Redis memory
+      - alert: HighRedisMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.7
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high (> 70%)"
+          description: "Redis memory usage is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalRedisMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis memory usage critical (> 85%)"
+          description: "Redis memory usage is {{ $value | printf \"%.1f\" }}%"
+
+  - name: tcrn-queue
+    rules:
+      # BullMQ queue backlog
+      - alert: HighQueueBacklog
+        expr: |
+          bullmq_queue_waiting{queue=~"report-queue|import-queue"} > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue backlog high (> 50)"
+          description: "Queue {{ $labels.queue }} has {{ $value }} jobs waiting"
+
+      - alert: CriticalQueueBacklog
+        expr: |
+          bullmq_queue_waiting{queue=~"report-queue|import-queue"} > 100
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Queue backlog critical (> 100)"
+          description: "Queue {{ $labels.queue }} has {{ $value }} jobs waiting"
+
+  - name: tcrn-security
+    rules:
+      # Login failure rate
+      - alert: HighLoginFailureRate
+        expr: |
+          rate(auth_login_total{status="failed"}[5m]) 
+          / 
+          rate(auth_login_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Login failure rate high (> 10%)"
+          description: "Possible brute force attack, login failure rate is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalLoginFailureRate
+        expr: |
+          rate(auth_login_total{status="failed"}[5m]) 
+          / 
+          rate(auth_login_total[5m]) > 0.3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Login failure rate critical (> 30%)"
+          description: "Possible attack in progress, login failure rate is {{ $value | printf \"%.1f\" }}%"
+
+      # Certificate expiry
+      - alert: CertificateExpiringSoon
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificate expiring soon (< 30 days)"
+          description: "Certificate will expire in {{ $value | printf \"%.0f\" }} days"
+
+      - alert: CertificateExpiringCritical
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Certificate expiring soon (< 7 days)"
+          description: "Certificate will expire in {{ $value | printf \"%.0f\" }} days, renew immediately!"
+
+  - name: tcrn-report
+    rules:
+      # Report job failure rate
+      - alert: HighReportFailureRate
+        expr: |
+          rate(report_jobs_total{status="failed"}[10m]) 
+          / 
+          rate(report_jobs_total[10m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Report job failure rate high (> 5%)"
+          description: "Report job failure rate is {{ $value | printf \"%.1f\" }}%"
+
+      - alert: CriticalReportFailureRate
+        expr: |
+          rate(report_jobs_total{status="failed"}[10m]) 
+          / 
+          rate(report_jobs_total[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Report job failure rate critical (> 10%)"
+          description: "Report job failure rate is {{ $value | printf \"%.1f\" }}%"
+
+      # Report generation duration
+      - alert: SlowReportGeneration
+        expr: |
+          histogram_quantile(0.95, sum(rate(report_generation_duration_seconds_bucket[10m])) by (le)) > 120
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Report generation P95 slow (> 2min)"
+          description: "Report generation P95 duration is {{ $value | printf \"%.1f\" }}s"
+
+      - alert: CriticalSlowReportGeneration
+        expr: |
+          histogram_quantile(0.95, sum(rate(report_generation_duration_seconds_bucket[10m])) by (le)) > 300
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Report generation P95 critical (> 5min)"
+          description: "Report generation P95 duration is {{ $value | printf \"%.1f\" }}s"
+
+      # Report queue stalled
+      - alert: ReportQueueStalled
+        expr: |
+          increase(report_jobs_total{status="completed"}[30m]) == 0 
+          AND 
+          bullmq_queue_waiting{queue="report-queue"} > 0
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Report queue appears stalled"
+          description: "No reports completed in 30 minutes but {{ $value }} jobs waiting"
+
+  - name: tcrn-pii
+    rules:
+      # PII service latency P95
+      - alert: HighPiiServiceLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(pii_request_duration_seconds_bucket[5m])) by (le)) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PII service P95 latency high (> 5s)"
+          description: "PII service P95 latency is {{ $value | printf \"%.2f\" }}s"
+
+      - alert: CriticalPiiServiceLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(pii_request_duration_seconds_bucket[5m])) by (le)) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PII service P95 latency critical (> 10s)"
+          description: "PII service P95 latency is {{ $value | printf \"%.2f\" }}s"
+
+      # PII service error rate
+      - alert: HighPiiErrorRate
+        expr: |
+          sum(rate(pii_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(pii_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PII service error rate high (> 1%)"
+          description: "PII service error rate is {{ $value | printf \"%.2f\" }}%"
+
+      - alert: CriticalPiiErrorRate
+        expr: |
+          sum(rate(pii_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(pii_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PII service error rate critical (> 5%)"
+          description: "PII service error rate is {{ $value | printf \"%.2f\" }}%"
+
+      # PII service unavailable
+      - alert: PiiServiceUnavailable
+        expr: |
+          up{job="pii-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PII service unavailable"
+          description: "PII service has been down for more than 1 minute"
+
+      # PII encryption/decryption errors
+      - alert: PiiCryptoErrors
+        expr: |
+          rate(pii_crypto_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PII encryption/decryption errors detected"
+          description: "{{ $value | printf \"%.2f\" }} crypto errors per second"
+
+  - name: tcrn-api-p99
+    rules:
+      # API P99 latency (more stringent than P95)
+      - alert: HighApiLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API P99 latency high (> 2s)"
+          description: "Service {{ $labels.service }} P99 latency is {{ $value | printf \"%.2f\" }}s"
+
+      - alert: CriticalApiLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API P99 latency critical (> 5s)"
+          description: "Service {{ $labels.service }} P99 latency is {{ $value | printf \"%.2f\" }}s"
+
+      # Too many 5xx errors (absolute count)
+      - alert: TooMany5xxErrors
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[1m])) by (service) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx error count high (> 5/min)"
+          description: "Service {{ $labels.service }} has {{ $value | printf \"%.1f\" }} 5xx errors per minute"
