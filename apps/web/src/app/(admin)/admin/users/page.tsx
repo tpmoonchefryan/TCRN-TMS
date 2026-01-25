@@ -38,6 +38,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { systemUserApi } from '@/lib/api/client';
+import { useRouter } from 'next/navigation';
 
 // Note: AC User Management is for managing platform-level users (e.g., API support staff)
 // Not to be confused with tenant-level user management
@@ -45,7 +46,7 @@ import { systemUserApi } from '@/lib/api/client';
 export default function ACUsersPage() {
   const t = useTranslations('adminConsole.users');
   const tCommon = useTranslations('common');
-  // const router = useRouter();
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +78,34 @@ export default function ACUsersPage() {
 
   const handleCreateUser = () => {
     setIsCreateDialogOpen(true);
+  };
+
+  const handleEditUser = (userId: string) => {
+    router.push(`/admin/users/${userId}`);
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    try {
+      const response = await systemUserApi.resetPassword(userId, { forceReset: true });
+      if (response.success) {
+        toast.success(t('passwordResetSuccess'));
+        fetchUsers();
+      }
+    } catch (err: any) {
+      toast.error(tCommon('error'), { description: err.message });
+    }
+  };
+
+  const handleDeactivateUser = async (userId: string) => {
+    try {
+      const response = await systemUserApi.deactivate(userId);
+      if (response.success) {
+        toast.success(t('userDeactivated'));
+        fetchUsers();
+      }
+    } catch (err: any) {
+      toast.error(tCommon('error'), { description: err.message });
+    }
   };
 
   return (
@@ -186,16 +215,19 @@ export default function ACUsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
                             <Edit className="mr-2 h-4 w-4" />
                             {tCommon('edit')}
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPassword(user.id)}>
                             <Lock className="mr-2 h-4 w-4" />
                             {t('resetPassword')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-500">
+                          <DropdownMenuItem 
+                            className="text-red-500"
+                            onClick={() => handleDeactivateUser(user.id)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {t('deactivate')}
                           </DropdownMenuItem>
