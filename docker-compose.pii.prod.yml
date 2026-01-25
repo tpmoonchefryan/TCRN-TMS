@@ -1,0 +1,91 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# TCRN TMS PII Service - Production Environment (Isolated Server)
+# Usage: docker compose -f docker-compose.pii.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # PII Isolated Infrastructure
+  # =============================================================================
+
+  # PostgreSQL - PII Database (Isolated)
+  pii-postgres:
+    image: postgres:16-alpine
+    container_name: tcrn-pii-postgres
+    restart: always
+    networks:
+      - pii-network  # Only connected to PII network
+    volumes:
+      - pii-postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${PII_POSTGRES_USER:-pii_user}
+      POSTGRES_PASSWORD: ${PII_POSTGRES_PASSWORD:?PII_POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${PII_POSTGRES_DB:-pii_vault}
+    # No port exposure to host - only accessible via pii-service container
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PII_POSTGRES_USER:-pii_user} -d ${PII_POSTGRES_DB:-pii_vault}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  # PII Transit Service
+  pii-service:
+    build:
+      context: .
+      dockerfile: infra/docker/pii-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: tcrn-pii-service
+    restart: always
+    networks:
+      - pii-network
+    environment:
+      NODE_ENV: production
+      PORT: 5100 # Internal port
+      PII_DATABASE_URL: postgresql://${PII_POSTGRES_USER:-pii_user}:${PII_POSTGRES_PASSWORD}@pii-postgres:5432/${PII_POSTGRES_DB:-pii_vault}
+      PII_JWT_SECRET: ${PII_JWT_SECRET:?PII_JWT_SECRET is required}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY is required}
+      
+      # mTLS Configuration (Mandatory for Production)
+      TLS_ENABLED: "true"
+      TLS_KEY_PATH: /app/certs/server.key
+      TLS_CERT_PATH: /app/certs/server.crt
+      TLS_CA_PATH: /app/certs/ca.crt
+      MTLS_ALLOWED_CNS: ${MTLS_ALLOWED_CNS:-tcrn-api,tcrn-worker}
+    volumes:
+      # Mount mTLS certificates
+      - ./certs:/app/certs:ro
+    ports:
+      - "5100:5100" # Exposed to host, MUST use Firewall to restrict access
+    depends_on:
+      pii-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  pii-network:
+    driver: bridge
+
+volumes:
+  pii-postgres-data:
+    name: tcrn-pii-postgres-data
