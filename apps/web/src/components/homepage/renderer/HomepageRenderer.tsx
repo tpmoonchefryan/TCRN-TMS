@@ -3,33 +3,23 @@
 'use client';
 
 import { HomepageContent, ThemeConfig } from '@tcrn/shared';
+import { motion } from 'framer-motion';
+import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import React, { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
 import { migrateComponentTypes } from '../lib/types';
 
-import { cn } from '@/lib/utils';
-
 interface HomepageRendererProps {
   content: HomepageContent;
   theme: ThemeConfig;
   className?: string;
 }
-
-import { motion } from 'framer-motion';
-
-
-
-interface HomepageRendererProps {
-  content: HomepageContent;
-  theme: ThemeConfig;
-  className?: string;
-}
-
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Globe } from 'lucide-react';
-import React, { useState } from 'react';
 
 // Helper to convert hex to HSL for Tailwind variables
 function hexToHsl(hex: string): string {
