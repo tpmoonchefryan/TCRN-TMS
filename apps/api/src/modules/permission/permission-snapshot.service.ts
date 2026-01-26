@@ -62,6 +62,15 @@ export class PermissionSnapshotService {
     const effectiveScopeType = scopeType || 'tenant';
     const effectiveScopeId = scopeType ? scopeId : null;
     const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+    
+    // Lazy load: Check if snapshot exists, if not calculate it
+    // This handles cases where Redis was flushed or user permissions haven't been cached yet
+    const exists = await this.redisService.exists(key);
+    if (!exists) {
+      this.logger.log(`Snapshot missing for ${key}, calculating...`);
+      await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+    }
+
     const permKey = `${resource}:${action}`;
     
     // Check specific permission
@@ -96,6 +105,17 @@ export class PermissionSnapshotService {
     }
     
     if (globalAdminValue === 'grant') {
+      return true;
+    }
+
+    // Check for superuser permission (*:*)
+    const superuserValue = await this.redisService.hget(key, '*:*');
+    
+    if (superuserValue === 'deny') {
+      return false;
+    }
+    
+    if (superuserValue === 'grant') {
       return true;
     }
 
@@ -306,10 +326,19 @@ export class PermissionSnapshotService {
       scopeIndex: number;
       isDirect: boolean;
     }>>();
+
+    console.log(`[PermissionDebug] Calculating for user scopes:`, scopeChain);
+    console.log(`[PermissionDebug] Found assignments:`, assignments);
     
     for (const assignment of assignments) {
       const assignmentScopeKey = `${assignment.scopeType}:${assignment.scopeId}`;
-      const assignmentScopeIdx = scopeIndex.get(assignmentScopeKey);
+      let assignmentScopeIdx = scopeIndex.get(assignmentScopeKey);
+      
+      // Fallback for tenant scope: if tenant:UUID not found, check tenant:null
+      // This ensures tenant-level roles apply to the current tenant context
+      if (assignmentScopeIdx === undefined && assignment.scopeType === 'tenant') {
+        assignmentScopeIdx = scopeIndex.get('tenant:null');
+      }
       
       // Skip if assignment is not in the scope chain
       if (assignmentScopeIdx === undefined) {
@@ -317,8 +346,12 @@ export class PermissionSnapshotService {
       }
       
       // Check if this assignment applies to target scope
-      const isDirect = assignment.scopeType === targetScopeType && 
-                       assignment.scopeId === targetScopeId;
+      // For tenant scope, we treat null and specific ID as matching because
+      // tenant scope effectively means "the current tenant context"
+      const isTenantMatch = assignment.scopeType === 'tenant' && targetScopeType === 'tenant';
+      
+      const isDirect = (assignment.scopeType === targetScopeType && 
+                       assignment.scopeId === targetScopeId) || isTenantMatch;
       
       // If inherit=false, only apply to direct scope
       if (!assignment.inherit && !isDirect) {
@@ -327,6 +360,7 @@ export class PermissionSnapshotService {
       
       // Get role permissions
       const rolePermissions = await this.getRolePermissions(tenantSchema, assignment.roleId);
+      console.log(`[PermissionDebug] Role ${assignment.roleId} permissions:`, rolePermissions);
       
       for (const perm of rolePermissions) {
         const key = `${perm.resourceCode}:${perm.action}`;

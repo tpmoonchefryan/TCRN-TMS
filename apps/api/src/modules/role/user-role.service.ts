@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -96,7 +96,7 @@ export class UserRoleService {
     scopeId: string | null
   ): Promise<boolean> {
     // Check if grantor has admin permission at tenant level (ADMIN role at tenant scope)
-    const isAdmin = await this.snapshotService.checkPermission(
+    let isAdmin = await this.snapshotService.checkPermission(
       tenantSchema,
       grantorUserId,
       'system_user',
@@ -104,6 +104,18 @@ export class UserRoleService {
       'tenant',
       null,
     );
+
+    // Compat: Check system_user.manage (seed.ts) if system_user (TenantController) check fails
+    if (!isAdmin) {
+      isAdmin = await this.snapshotService.checkPermission(
+        tenantSchema,
+        grantorUserId,
+        'system_user.manage',
+        'admin',
+        'tenant',
+        null,
+      );
+    }
 
     if (isAdmin) {
       return true; // Admin at tenant level can assign any role at any scope
