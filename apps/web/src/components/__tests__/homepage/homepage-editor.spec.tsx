@@ -77,6 +77,8 @@ const mockEditorStore = {
   error: null as string | null,
   previewDevice: 'mobile' as const,
   setPreviewDevice: vi.fn(),
+  editingLocale: 'default',
+  setEditingLocale: vi.fn(),
 };
 
 vi.mock('@/stores/homepage/editor-store', () => ({
