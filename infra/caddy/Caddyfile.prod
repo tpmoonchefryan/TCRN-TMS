@@ -21,6 +21,11 @@
 web.prod.tcrn-tms.com {
     encode gzip zstd
     
+    # Special case: Live Status API - handled by Next.js (Web)
+    handle /api/live-status* {
+        reverse_proxy web:3000
+    }
+
     # API proxy - /api/* routes to NestJS API
     handle /api/* {
         reverse_proxy api:4000
