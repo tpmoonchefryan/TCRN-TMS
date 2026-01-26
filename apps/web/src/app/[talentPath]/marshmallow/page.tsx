@@ -3,10 +3,10 @@
 
 'use client';
 
-import { AlertCircle, ArrowLeft, CheckCircle, Loader2, Send, Link as LinkIcon } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle, Link as LinkIcon, Loader2, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 
@@ -121,6 +121,8 @@ export default function MarshmallowPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (!config) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
