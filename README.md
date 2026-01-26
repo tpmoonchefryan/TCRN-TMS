@@ -113,7 +113,7 @@ A complete anonymous question box system inspired by Japanese "Marshmallow" serv
 <p align="center">
   <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">
   <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow Preview2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow Preview3" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow Preview3" width="1200">
 </p>
 
 ### 📊 MFR Report Generation

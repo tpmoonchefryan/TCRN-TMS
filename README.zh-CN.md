@@ -113,7 +113,7 @@
 <p align="center">
   <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">
   <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow 预览2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow 预览3" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow 预览3" width="1200">
 </p>
 
 ### 📊 MFR 报表生成

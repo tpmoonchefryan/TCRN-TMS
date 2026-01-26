@@ -113,7 +113,7 @@
 <p align="center">
   <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow プレビュー" width="600">
   <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow プレビュー2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow プレビュー3" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow プレビュー3" width="1200">
 </p>
 
 ### 📊 MFRレポート生成
