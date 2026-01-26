@@ -9,7 +9,7 @@ import {
     Query,
     Req,
     Res,
-    UseGuards,
+    UseGuards
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -104,6 +104,24 @@ export class PublicMarshmallowController {
     const userAgent = req.headers['user-agent'] ?? '';
 
     return this.publicService.submitMessage(path, dto, { ip, userAgent });
+  }
+
+  /**
+   * Preview image from link (e.g. Bilibili)
+   */
+  @Post('preview-image') // Global public endpoint, no path needed really, but could be under path if we want rate limit per talent?
+  // Actually, keeping it generic is fine.
+  @Public()
+  @ApiOperation({ summary: 'Preview image from link' })
+  @ApiResponse({ status: 200, description: 'Returns image URL' })
+  async previewImage(
+    @Body() body: { url: string },
+  ) {
+    const images = await this.publicService.resolveBilibiliImages(body.url);
+    if (!images || images.length === 0) {
+        return { images: [], error: 'Could not resolve images' };
+    }
+    return { images };
   }
 
   /**

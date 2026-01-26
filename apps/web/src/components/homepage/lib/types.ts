@@ -14,6 +14,9 @@ export type ComponentType =
   | 'RichText'
   | 'LinkButton'
   | 'MarshmallowWidget'
+  | 'Schedule'
+  | 'MusicPlayer'
+  | 'LiveStatus'
   | 'Divider'
   | 'Spacer';
 
@@ -23,6 +26,22 @@ export interface ComponentInstance {
   props: Record<string, any>;
   order?: number;  // Optional: order can be inferred from array position
   visible: boolean;
+
+  // New: Component-level overrides
+  styleOverrides?: {
+    backgroundColor?: string;
+    textColor?: string;
+    borderRadius?: string;
+  };
+  animation?: {
+    type: 'fade' | 'slide' | 'scale' | 'none';
+    delay?: number;
+    duration?: number;
+  };
+  
+  // New: Internationalization
+  // Map of locale code (e.g., 'zh', 'ja') to partial props override
+  i18n?: Record<string, Record<string, any>>;
 }
 
 export interface HomepageContent {

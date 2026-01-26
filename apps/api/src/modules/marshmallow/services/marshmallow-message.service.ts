@@ -1,20 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
+    BadRequestException,
+    Injectable,
+    Logger,
+    NotFoundException,
 } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import {
-  MessageListQueryDto,
-  RejectMessageDto,
-  ReplyMessageDto,
-  BatchActionDto,
-  UpdateMessageDto,
+    BatchActionDto,
+    MessageListQueryDto,
+    RejectMessageDto,
+    ReplyMessageDto,
+    UpdateMessageDto,
 } from '../dto/marshmallow.dto';
 
 @Injectable()
@@ -97,13 +97,18 @@ export class MarshmallowMessageService {
       repliedBy: string | null;
       reactionCounts: Record<string, number> | null;
       profanityFlags: string[] | null;
+      imageUrl: string | null;
+      imageUrls: string[] | null;
+      socialLink: string | null;
       createdAt: Date;
     }>>(`
       SELECT id, content, sender_name as "senderName", is_anonymous as "isAnonymous",
              status, rejection_reason as "rejectionReason", is_read as "isRead",
              is_starred as "isStarred", is_pinned as "isPinned", reply_content as "replyContent",
              replied_at as "repliedAt", replied_by as "repliedBy", reaction_counts as "reactionCounts",
-             profanity_flags as "profanityFlags", created_at as "createdAt"
+             profanity_flags as "profanityFlags",
+             image_url as "imageUrl", image_urls as "imageUrls", social_link as "socialLink",
+             created_at as "createdAt"
       FROM "${tenantSchema}".marshmallow_message
       WHERE ${whereClause}
       ORDER BY is_pinned DESC, ${orderByField} ${orderDirection}
@@ -164,6 +169,9 @@ export class MarshmallowMessageService {
         repliedBy: m.repliedBy ? userMap.get(m.repliedBy) ?? null : null,
         reactionCounts: m.reactionCounts ?? {},
         profanityFlags: m.profanityFlags ?? [],
+        imageUrl: m.imageUrl,
+        imageUrls: m.imageUrls || (m.imageUrl ? [m.imageUrl] : []),
+        socialLink: m.socialLink,
         createdAt: m.createdAt.toISOString(),
       })),
       total,

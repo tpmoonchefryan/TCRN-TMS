@@ -5,6 +5,7 @@ import React from 'react';
 
 import { ProfileCardProps } from './schema';
 
+import { ImageUploader } from '@/components/shared/ImageUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,6 +24,15 @@ interface ProfileCardEditorProps {
 
 export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onChange }) => {
   const t = useTranslations('homepageComponentEditor');
+
+  const handleUpload = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
   
   return (
     <div className="space-y-4">
@@ -47,11 +57,24 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
 
       <div className="space-y-2">
         <Label>{t('avatarUrl')}</Label>
-        <Input 
-          value={props.avatarUrl || ''} 
-          onChange={(e) => onChange({ avatarUrl: e.target.value })}
-          placeholder="https://..."
-        />
+        <div className="flex gap-4 items-start">
+             <ImageUploader 
+               value={props.avatarUrl || null} 
+               onChange={(url) => onChange({ avatarUrl: url || '' })}
+               onUpload={handleUpload}
+               className="h-24 w-24"
+             />
+             <div className="flex-1 space-y-2">
+                <Input 
+                  value={props.avatarUrl || ''} 
+                  onChange={(e) => onChange({ avatarUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Upload a local image or paste a URL.
+                </p>
+             </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

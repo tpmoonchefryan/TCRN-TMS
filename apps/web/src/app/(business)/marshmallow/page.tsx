@@ -3,8 +3,8 @@
 'use client';
 
 import { Archive, ChevronLeft, ChevronRight, ExternalLink, Flag, Inbox, Loader2, MessageSquareHeart, Radio, Settings, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,15 +13,14 @@ import { MessageCard } from '@/components/marshmallow/admin/MessageCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { marshmallowApi } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
@@ -42,6 +41,9 @@ interface MarshmallowMessage {
   repliedBy: { id: string; username: string } | null;
   reactionCounts: Record<string, number>;
   profanityFlags: string[];
+  imageUrl?: string | null;
+  imageUrls?: string[];
+  socialLink?: string | null;
   createdAt: string;
 }
 

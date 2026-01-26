@@ -49,7 +49,7 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Layout Mode</Label>
+          <Label>{t('layoutMode')}</Label>
           <Select 
             value={props.layoutMode} 
             onValueChange={(v: any) => onChange({ layoutMode: v })}
@@ -58,9 +58,9 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="carousel">Carousel (Scroll)</SelectItem>
+              <SelectItem value="carousel">{t('carousel')}</SelectItem>
               <SelectItem value="grid">Grid</SelectItem>
-              <SelectItem value="masonry">Masonry</SelectItem>
+              <SelectItem value="masonry">{t('masonry')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -104,7 +104,7 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
         )}
 
         <div className="flex items-center justify-between">
-          <Label>Show Captions</Label>
+          <Label>{t('showCaptions')}</Label>
           <Switch 
             checked={props.showCaptions} 
             onCheckedChange={(checked) => onChange({ showCaptions: checked })} 
@@ -160,7 +160,7 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
           
            {(!props.images || props.images.length === 0) && (
             <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
-              No images added
+              {t('noImages')}
             </div>
           )}
         </div>

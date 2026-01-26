@@ -2,50 +2,66 @@
 
 import { Image, Link, MessageCircle, Minus, MoveVertical, Share2, Type, User, Youtube } from 'lucide-react';
 
+import { Calendar, Music, Radio } from 'lucide-react';
 import {
-    Divider,
-    defaultProps as DividerDefaultProps,
-    DividerEditor
+  Divider,
+  defaultProps as DividerDefaultProps,
+  DividerEditor
 } from '../components/Divider';
 import {
-    ImageGallery,
-    defaultProps as ImageGalleryDefaultProps,
-    ImageGalleryEditor
+  ImageGallery,
+  defaultProps as ImageGalleryDefaultProps,
+  ImageGalleryEditor
 } from '../components/ImageGallery';
 import {
-    LinkButton,
-    defaultProps as LinkButtonDefaultProps,
-    LinkButtonEditor
+  LinkButton,
+  defaultProps as LinkButtonDefaultProps,
+  LinkButtonEditor
 } from '../components/LinkButton';
 import {
-    MarshmallowWidget,
-    defaultProps as MarshmallowWidgetDefaultProps,
-    MarshmallowWidgetEditor
+  LiveStatus,
+  defaultProps as LiveStatusDefaultProps,
+  LiveStatusEditor
+} from '../components/LiveStatus';
+import {
+  MarshmallowWidget,
+  defaultProps as MarshmallowWidgetDefaultProps,
+  MarshmallowWidgetEditor
 } from '../components/MarshmallowWidget';
 import {
-    ProfileCard,
-    defaultProps as ProfileCardDefaultProps,
-    ProfileCardEditor
+  MusicPlayer,
+  defaultProps as MusicPlayerDefaultProps,
+  MusicPlayerEditor
+} from '../components/MusicPlayer';
+import {
+  ProfileCard,
+  defaultProps as ProfileCardDefaultProps,
+  ProfileCardEditor
 } from '../components/ProfileCard';
 import {
-    RichText,
-    defaultProps as RichTextDefaultProps,
-    RichTextEditor
+  RichText,
+  defaultProps as RichTextDefaultProps,
+  RichTextEditor
 } from '../components/RichText';
 import {
-    SocialLinks,
-    defaultProps as SocialLinksDefaultProps,
-    SocialLinksEditor
+  Schedule,
+  defaultProps as ScheduleDefaultProps,
+  ScheduleEditor
+} from '../components/Schedule';
+import {
+  SocialLinks,
+  defaultProps as SocialLinksDefaultProps,
+  SocialLinksEditor
 } from '../components/SocialLinks';
 import {
-    Spacer,
-    defaultProps as SpacerDefaultProps,
-    SpacerEditor
+  Spacer,
+  defaultProps as SpacerDefaultProps,
+  SpacerEditor
 } from '../components/Spacer';
 import {
-    VideoEmbed,
-    defaultProps as VideoEmbedDefaultProps,
-    VideoEmbedEditor
+  VideoEmbed,
+  defaultProps as VideoEmbedDefaultProps,
+  VideoEmbedEditor
 } from '../components/VideoEmbed';
 
 import { ComponentDefinition, ComponentType } from './types';
@@ -153,5 +169,38 @@ export const COMPONENT_REGISTRY: Record<ComponentType, ComponentDefinition> = {
     defaultProps: SpacerDefaultProps,
     preview: Spacer,
     editor: SpacerEditor
+  },
+  Schedule: {
+    type: 'Schedule',
+    nameEn: 'Schedule',
+    nameZh: '日程表',
+    nameJa: 'スケジュール',
+    icon: Calendar,
+    category: 'interactive',
+    defaultProps: ScheduleDefaultProps,
+    preview: Schedule,
+    editor: ScheduleEditor
+  },
+  MusicPlayer: {
+    type: 'MusicPlayer',
+    nameEn: 'Music Player',
+    nameZh: '音乐播放器',
+    nameJa: '音楽プレーヤー',
+    icon: Music,
+    category: 'media',
+    defaultProps: MusicPlayerDefaultProps,
+    preview: MusicPlayer,
+    editor: MusicPlayerEditor
+  },
+  LiveStatus: {
+    type: 'LiveStatus',
+    nameEn: 'Live Status',
+    nameZh: '直播状态',
+    nameJa: '配信ステータス',
+    icon: Radio,
+    category: 'core',
+    defaultProps: LiveStatusDefaultProps,
+    preview: LiveStatus,
+    editor: LiveStatusEditor
   }
 };

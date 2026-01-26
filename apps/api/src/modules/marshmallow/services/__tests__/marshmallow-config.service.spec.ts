@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MarshmallowConfigService } from '../marshmallow-config.service';
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
+import { MarshmallowConfigService } from '../marshmallow-config.service';
 
-describe.skip('MarshmallowConfigService', () => {
+describe('MarshmallowConfigService', () => {
   let service: MarshmallowConfigService;
   let mockDatabaseService: Partial<DatabaseService>;
   let mockChangeLogService: Partial<ChangeLogService>;
@@ -20,6 +20,7 @@ describe.skip('MarshmallowConfigService', () => {
     };
     $transaction: ReturnType<typeof vi.fn>;
     $queryRawUnsafe: ReturnType<typeof vi.fn>;
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
   };
 
   const mockConfig = {
@@ -54,8 +55,15 @@ describe.skip('MarshmallowConfigService', () => {
         upsert: vi.fn().mockResolvedValue(mockConfig),
       },
       $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
-      $queryRawUnsafe: vi.fn().mockResolvedValue([{ id: 'talent-123' }]),
+      $queryRawUnsafe: vi.fn(),
+      $executeRawUnsafe: vi.fn(),
     };
+    
+    // Default behavior for queryRawUnsafe: return mockConfig (as an array)
+    // This covers the "get config" case which is usually the first call
+    // However, since it is called multiple times with different schemas, we might need to be smarter.
+    // For now, let's make it return [mockConfig] by default for simple tests.
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([mockConfig]);
 
     mockDatabaseService = {
       getPrisma: vi.fn().mockReturnValue(mockPrisma),
@@ -63,6 +71,7 @@ describe.skip('MarshmallowConfigService', () => {
 
     mockChangeLogService = {
       create: vi.fn().mockResolvedValue(undefined),
+      createDirect: vi.fn().mockResolvedValue(undefined),
     };
 
     mockConfigService = {
@@ -89,7 +98,17 @@ describe.skip('MarshmallowConfigService', () => {
     });
 
     it('should return default config when none exists', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+      // 1. Get config -> empty
+      // 2. Get talent -> found
+      // 3. Insert -> returns created config
+      // 4. Get stats -> returns stats
+      // 5. Get talent (url) -> returns talent path
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([]) // Config not found
+        .mockResolvedValueOnce([{ id: 'talent-123', settings: {} }]) // Talent found
+        .mockResolvedValueOnce([mockConfig]) // Insert return
+        .mockResolvedValueOnce([{ total: 0n, pending: 0n, approved: 0n, rejected: 0n, unread: 0n }]) // Stats
+        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // Talent URL
 
       const result = await service.getOrCreate('talent-123', 'tenant_test');
 
@@ -105,9 +124,24 @@ describe.skip('MarshmallowConfigService', () => {
         isEnabled: false,
       };
 
+      // Mock sequence for update:
+      // 1. Get config -> found
+      // 2. Update config -> result (void/count) or ignored
+      // 3. Log change -> result
+      // 4. getOrCreate -> calls...
+      //    4.1 Get config -> found (updated)
+      //    4.2 Get stats
+      //    4.3 Get talent URL
+      
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([mockConfig]) // Get current
+        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
+        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
+        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
+
       const result = await service.update('talent-123', 'tenant_test', dto, mockContext);
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
     });
 
     it('should log config changes', async () => {
@@ -116,9 +150,15 @@ describe.skip('MarshmallowConfigService', () => {
         isEnabled: false,
       };
 
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([mockConfig]) // Get current
+        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
+        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
+        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
+
       await service.update('talent-123', 'tenant_test', dto, mockContext);
 
-      expect(mockChangeLogService.create).toHaveBeenCalled();
+      expect(mockChangeLogService.createDirect).toHaveBeenCalled();
     });
   });
 
@@ -133,13 +173,14 @@ describe.skip('MarshmallowConfigService', () => {
     });
 
     it('should throw NotFoundException for invalid talent', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+      // 1. Get config -> empty
+      // 2. Get talent -> empty (not found)
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
 
-      // The service should still return defaults even if talent doesn't exist
-      // (depending on implementation)
-      const result = await service.getOrCreate('invalid-talent', 'tenant_test');
-
-      expect(result).toBeDefined();
+      await expect(service.getOrCreate('invalid-talent', 'tenant_test'))
+        .rejects.toThrow(NotFoundException);
     });
   });
 });

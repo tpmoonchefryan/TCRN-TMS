@@ -37,8 +37,8 @@ export const SpacerEditor: React.FC<SpacerEditorProps> = ({ props, onChange }) =
             <SelectItem value="small">{t('small')} (1rem)</SelectItem>
             <SelectItem value="medium">{t('medium')} (2rem)</SelectItem>
             <SelectItem value="large">{t('large')} (4rem)</SelectItem>
-            <SelectItem value="xl">XL (6rem)</SelectItem>
-            <SelectItem value="xxl">XXL (8rem)</SelectItem>
+            <SelectItem value="xl">{t('xl')}</SelectItem>
+            <SelectItem value="xxl">{t('xxl')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

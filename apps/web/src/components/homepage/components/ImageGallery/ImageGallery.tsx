@@ -40,11 +40,17 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
           {images.map((img, i) => (
             <figure key={i} className="shrink-0">
               <div className="overflow-hidden rounded-md">
-                <img
-                  src={img.url}
-                  alt={img.alt || `Gallery image ${i + 1}`}
-                  className="aspect-[3/4] h-[300px] w-auto object-cover transition-all hover:scale-105"
-                />
+                {img.url ? (
+                  <img
+                    src={img.url}
+                    alt={img.alt || `Gallery image ${i + 1}`}
+                    className="aspect-[3/4] h-[300px] w-auto object-cover transition-all hover:scale-105"
+                  />
+                ) : (
+                  <div className="aspect-[3/4] h-[300px] w-[225px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-muted-foreground text-xs">
+                    No Image
+                  </div>
+                )}
               </div>
               {showCaptions && img.caption && (
                 <figcaption className="mt-2 text-xs text-muted-foreground text-center w-[200px] whitespace-normal">
@@ -70,12 +76,14 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
       >
         {images.map((img, i) => (
           <figure key={i} className="mb-4 break-inside-avoid">
-             <img
-              src={img.url}
-              alt={img.alt || `Gallery image ${i + 1}`}
-              className="w-full rounded-lg object-cover"
-              style={{ display: 'block' }}
-            />
+             {img.url && (
+              <img
+                src={img.url}
+                alt={img.alt || `Gallery image ${i + 1}`}
+                className="w-full rounded-lg object-cover"
+                style={{ display: 'block' }}
+              />
+             )}
             {showCaptions && img.caption && (
               <figcaption className="mt-2 text-xs text-muted-foreground text-center">
                 {img.caption}
@@ -92,11 +100,17 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
       {images.map((img, i) => (
         <figure key={i} className="space-y-2">
           <div className="overflow-hidden rounded-md aspect-square">
-             <img
-              src={img.url}
-              alt={img.alt || `Gallery image ${i + 1}`}
-              className="h-full w-full object-cover transition-all hover:scale-105"
-            />
+             {img.url ? (
+               <img
+                src={img.url}
+                alt={img.alt || `Gallery image ${i + 1}`}
+                className="h-full w-full object-cover transition-all hover:scale-105"
+              />
+             ) : (
+              <div className="h-full w-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-muted-foreground text-xs">
+                No Image
+              </div>
+             )}
           </div>
           {showCaptions && img.caption && (
             <figcaption className="text-xs text-muted-foreground">

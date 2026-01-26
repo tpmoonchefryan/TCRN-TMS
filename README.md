@@ -155,6 +155,8 @@ Drag-and-drop homepage builder for talents:
 - **Component Library**: Hero, About, Social Links, Gallery, Timeline, Marshmallow Widget
 - **Theme System**: 5 presets (Default, Dark, Cute, Professional, Minimal) + custom colors
 - **Version History**: Rollback to any previous published version
+- **Live Status Integration**: Real-time Bilibili/YouTube stream status with cover image support
+- **Profile Card**: Enhanced personalization with local avatar upload and customizable layout
 - **Custom Domains**: Support for talent-owned domains with DNS verification
 - **SEO Optimization**: Automatic meta tags and Open Graph support
 

@@ -11,16 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { publicApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,8 @@ interface MarshmallowMessage {
   userReactions: string[];
   createdAt: string;
   isRead?: boolean;
+  imageUrl?: string | null;
+  imageUrls?: string[];
 }
 
 interface MessageFeedProps {

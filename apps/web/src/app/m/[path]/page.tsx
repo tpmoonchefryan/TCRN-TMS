@@ -40,6 +40,8 @@ interface MarshmallowMessage {
   userReactions: string[];
   createdAt: string;
   isRead?: boolean;
+  imageUrl?: string | null;
+  imageUrls?: string[];
 }
 
 // Fetch config from API

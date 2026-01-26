@@ -2,17 +2,17 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsInt,
-  IsArray,
-  IsEnum,
-  IsObject,
-  Min,
-  Max,
-  MaxLength,
-  MinLength,
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsObject,
+    IsOptional,
+    IsString,
+    Max,
+    MaxLength,
+    Min,
+    MinLength,
 } from 'class-validator';
 
 // =============================================================================
@@ -312,6 +312,17 @@ export class SubmitMessageDto {
   @IsString()
   @MaxLength(256)
   honeypot?: string;  // Hidden field - should always be empty for real users
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  socialLink?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(512, { each: true })
+  selectedImageUrls?: string[];
 }
 
 export class PublicMessagesQueryDto {

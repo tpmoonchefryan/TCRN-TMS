@@ -997,6 +997,8 @@ export const publicApi = {
       turnstileToken?: string;
       fingerprint: string;
       honeypot?: string;  // Hidden field for bot detection
+      socialLink?: string;
+      selectedImageUrls?: string[];
     }
   ) =>
     apiClient.post<any>(`/api/v1/public/marshmallow/${talentPath}/submit`, data),
@@ -1040,6 +1042,12 @@ export const publicApi = {
     }>(
       `/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/reply-auth`,
       { ssoToken, content }
+    ),
+
+  previewMarshmallowImage: (url: string) =>
+    apiClient.post<{ success: boolean; imageUrl?: string; images?: string[]; error?: string }>(
+      '/api/v1/public/marshmallow/preview-image',
+      { url }
     ),
 };
 

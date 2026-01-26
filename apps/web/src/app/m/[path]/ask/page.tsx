@@ -2,7 +2,7 @@
 
 'use client';
 
-import { ArrowLeft, CheckCircle2, Loader2, Send, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Link as LinkIcon, Loader2, Send, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { use, useEffect, useRef, useState } from 'react';
@@ -95,6 +95,11 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [fingerprint, setFingerprint] = useState('');
   const [honeypot, setHoneypot] = useState('');  // Honeypot field - should remain empty
+  const [socialLink, setSocialLink] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -208,6 +213,8 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
         turnstileToken: turnstileToken || undefined,
         fingerprint,
         honeypot: honeypot || undefined,  // Pass honeypot value for bot detection
+        socialLink: socialLink.trim() || undefined,
+        selectedImageUrls: selectedImages.length > 0 ? selectedImages : undefined,
       });
 
       if (!response.success) {
@@ -229,6 +236,49 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     }
   };
 
+  const handlePreviewImage = async () => {
+    if (!socialLink.trim()) return;
+    
+    setLoadingPreview(true);
+    setPreviewImage(null);
+    setPreviewImages([]);
+    setSelectedImages([]);
+
+    try {
+        const res = await publicApi.previewMarshmallowImage(socialLink.trim());
+        if (res.success) {
+            if (res.data?.images && res.data.images.length > 0) {
+                 setPreviewImages(res.data.images);
+                 // Auto-select all by default? Or none? Let's select none and let user pick, or maybe select all?
+                 // Let's select all by default for convenience if <= 9? 
+                 // Actually user requested "let submitter choose".
+                 // Let's select none or let them click. 
+                 // We can also just show them to pick.
+            } else if (res.data?.imageUrl) {
+                 setPreviewImages([res.data.imageUrl]);
+                 setSelectedImages([res.data.imageUrl]);
+            }
+            toast.success('Images loaded successfully');
+        } else {
+            toast.error(res.data?.error || 'Failed to load images');
+        }
+    } catch (e) {
+        toast.error('Failed to load images');
+    } finally {
+        setLoadingPreview(false);
+    }
+  };
+
+  const toggleImageSelection = (url: string) => {
+      setSelectedImages(prev => {
+          if (prev.includes(url)) {
+              return prev.filter(i => i !== url);
+          } else {
+              return [...prev, url];
+          }
+      });
+  };
+
   if (isSubmitted) {
     return (
       <div className="px-4 pt-12 pb-8 flex-1 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in-95 duration-500">
@@ -240,7 +290,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
           {config.thankYouText || t('defaultThankYou')}
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { setIsSubmitted(false); setContent(''); setSenderName(''); }}>
+          <Button variant="outline" onClick={() => { setIsSubmitted(false); setContent(''); setSenderName(''); setSocialLink(''); }}>
             {t('sendAnother')}
           </Button>
           <Button asChild>
@@ -346,6 +396,78 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
                 disabled={isSubmitting}
               />
             </div>
+          </div>
+
+          {/* Bilibili Link Input */}
+          <div className="mt-6 space-y-2">
+            <div className="relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                    id="social-link"
+                    value={socialLink}
+                    onChange={e => {
+                        setSocialLink(e.target.value);
+                        setSocialLink(e.target.value);
+                        if (previewImages.length > 0) {
+                             setPreviewImages([]); 
+                             setSelectedImages([]);
+                        }
+                    }}
+                    placeholder="https://www.bilibili.com/opus/......"
+                    className="pl-9 pr-20 border-slate-200"
+                />
+                <Button
+                    type="button"
+                    variant="ghost" 
+                    size="sm"
+                    className="absolute right-1 top-1 h-8 text-xs text-slate-500 hover:text-[var(--mm-primary)]"
+                    disabled={!socialLink.trim() || loadingPreview}
+                    onClick={handlePreviewImage}
+                >
+                    {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : t('getImage')}
+                </Button>
+            </div>
+            
+            {/* Image Preview Area */}
+            {previewImages.length > 0 && (
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                    {previewImages.map((img, index) => (
+                        <div 
+                            key={index} 
+                            className={`relative aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all ${selectedImages.includes(img) ? 'border-[var(--mm-primary)] ring-2 ring-[var(--mm-primary)] ring-offset-1' : 'border-slate-200 opacity-70 hover:opacity-100'}`}
+                            onClick={() => toggleImageSelection(img)}
+                        >
+                            <img 
+                                src={img} 
+                                alt={`Preview ${index}`} 
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                            />
+                            {selectedImages.includes(img) && (
+                                <div className="absolute top-1 right-1 bg-[var(--mm-primary)] text-white rounded-full p-0.5">
+                                    <CheckCircle2 size={12} />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+            {previewImages.length > 0 && (
+                <p className="text-[10px] text-slate-500 mt-1">
+                    {/* Reuse existing "click to select" logic or keep it simple? Actually user only asked to change the bottom help text. */}
+                    {/* The text "点击图片选择要发送的内容" was not requested to be changed, but good to check. */}
+                    {/* Wait, the user provided text is: "在此粘贴你想发送图片的Bilibili动态网址，点击获取图片，然后选择你想发给主播的图片后点击发送棉花糖即可" */}
+                    {/* This single sentence seems to replace the previous help text at the bottom. */}
+                    {/* So I should remove the separate "Click to select" text if it's redundant, or just focus on the bottom text. */}
+                    {/* The bottom text was: "本链接仅作为获取图片用途，不会存储用户账号信息" */}
+                    {/* The user request says: "Change THIS text to..." */}
+                    {/* So I will replace the bottom text with the new one. */}
+                </p>
+            )}
+
+            <p className="text-[10px] text-slate-400">
+                {t('bilibiliHelpText')}
+            </p>
           </div>
 
           <div className="h-px bg-slate-100 my-6" />

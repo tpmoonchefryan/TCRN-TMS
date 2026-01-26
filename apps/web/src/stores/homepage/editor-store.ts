@@ -34,6 +34,9 @@ interface EditorState {
     analyticsId: string | null;
   } | null;
   dbVersion: number;
+  
+  // i18n
+  editingLocale: string; // 'default' or locale code (e.g. 'zh', 'ja')
 
   // Actions
   init: (content?: HomepageContent, theme?: ThemeConfig) => void;
@@ -49,6 +52,7 @@ interface EditorState {
   setTheme: (theme: Partial<ThemeConfig>) => void;
   setThemePreset: (presetName: string) => void;
   setPreviewDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
+  setEditingLocale: (locale: string) => void;
   setSaveStatus: (status: 'saved' | 'saving' | 'unsaved' | 'offline') => void;
   
   // Undo/Redo
@@ -75,6 +79,7 @@ export const useEditorStore = create<EditorState>()(
     isSaving: false,
     settings: null,
     dbVersion: 0,
+    editingLocale: 'default',
     
     // History for undo/redo
     history: [],
@@ -85,6 +90,7 @@ export const useEditorStore = create<EditorState>()(
       if (content) state.content = content;
       if (theme) state.theme = theme;
       state.saveStatus = 'saved';
+      state.editingLocale = 'default';
       state.lastSavedHash = JSON.stringify({ content, theme });
     }),
 
@@ -106,6 +112,7 @@ export const useEditorStore = create<EditorState>()(
         const rawTheme = draftVersion?.theme || theme || {};
         const themeToLoad: ThemeConfig = {
           preset: rawTheme.preset ?? DEFAULT_THEME.preset,
+          visual_style: rawTheme.visual_style ?? 'simple',
           colors: {
             ...DEFAULT_THEME.colors,
             ...(rawTheme.colors || {}),
@@ -121,6 +128,14 @@ export const useEditorStore = create<EditorState>()(
           typography: {
             ...DEFAULT_THEME.typography,
             ...(rawTheme.typography || {}),
+          },
+          decorations: {
+            ...DEFAULT_THEME.decorations,
+            ...(rawTheme.decorations || {}),
+          },
+          animation: {
+            ...DEFAULT_THEME.animation,
+            ...(rawTheme.animation || {}),
           },
         };
 
@@ -139,6 +154,7 @@ export const useEditorStore = create<EditorState>()(
           // Ensure version is a number (handle potential string from raw query)
           state.dbVersion = Number(version) || 0; 
           state.saveStatus = 'saved';
+          state.editingLocale = 'default';
           state.lastSavedHash = JSON.stringify({ content: contentToLoad, theme: themeToLoad });
           state.isLoading = false;
         });
@@ -257,7 +273,17 @@ export const useEditorStore = create<EditorState>()(
     updateComponent: (id, props) => set((state) => {
       const component = state.content.components.find((c) => c.id === id);
       if (component) {
-        component.props = { ...component.props, ...props };
+        if (state.editingLocale === 'default') {
+          // Normal update
+          component.props = { ...component.props, ...props };
+        } else {
+          // Localized update
+          if (!component.i18n) component.i18n = {};
+          if (!component.i18n[state.editingLocale]) component.i18n[state.editingLocale] = {};
+          
+          // Merge localized props
+          Object.assign(component.i18n[state.editingLocale], props);
+        }
         state.saveStatus = 'unsaved';
       }
     }),
@@ -295,6 +321,10 @@ export const useEditorStore = create<EditorState>()(
 
     setPreviewDevice: (device) => set((state) => {
       state.previewDevice = device;
+    }),
+    
+    setEditingLocale: (locale) => set((state) => {
+      state.editingLocale = locale;
     }),
 
     setSaveStatus: (status) => set((state) => {

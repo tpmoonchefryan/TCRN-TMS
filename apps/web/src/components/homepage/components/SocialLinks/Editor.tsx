@@ -57,7 +57,7 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="icon">Icon Only</SelectItem>
+              <SelectItem value="icon">{t('iconOnly')}</SelectItem>
               <SelectItem value="button">{t('solid')}</SelectItem>
               <SelectItem value="pill">{t('outline')}</SelectItem>
             </SelectContent>
@@ -65,7 +65,7 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
         </div>
 
         <div className="space-y-2">
-          <Label>Layout</Label>
+          <Label>{t('layout')}</Label>
           <Select 
             value={props.layout} 
             onValueChange={(v: any) => onChange({ layout: v })}
@@ -74,15 +74,15 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="horizontal">Horizontal</SelectItem>
-              <SelectItem value="vertical">Vertical</SelectItem>
-              <SelectItem value="grid">Grid (2 Col)</SelectItem>
+              <SelectItem value="horizontal">{t('horizontal')}</SelectItem>
+              <SelectItem value="vertical">{t('vertical')}</SelectItem>
+              <SelectItem value="grid">{t('grid2Col')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <div className="space-y-2">
-          <Label>Size</Label>
+          <Label>{t('size')}</Label>
           <Select 
             value={props.iconSize} 
             onValueChange={(v: any) => onChange({ iconSize: v })}
@@ -120,13 +120,13 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
                       <SelectValue placeholder={t('platform')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="twitter">Twitter / X</SelectItem>
-                      <SelectItem value="youtube">YouTube</SelectItem>
-                      <SelectItem value="github">GitHub</SelectItem>
-                      <SelectItem value="instagram">Instagram</SelectItem>
-                      <SelectItem value="facebook">Facebook</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="custom">Custom Link</SelectItem>
+                      <SelectItem value="twitter">{t('twitterX')}</SelectItem>
+                      <SelectItem value="youtube">{t('youtube')}</SelectItem>
+                      <SelectItem value="github">{t('github')}</SelectItem>
+                      <SelectItem value="instagram">{t('instagram')}</SelectItem>
+                      <SelectItem value="facebook">{t('facebook')}</SelectItem>
+                      <SelectItem value="email">{t('email')}</SelectItem>
+                      <SelectItem value="custom">{t('customLink')}</SelectItem>
                     </SelectContent>
                   </Select>
                   
@@ -159,7 +159,7 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
           
           {(!props.platforms || props.platforms.length === 0) && (
             <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
-              No platforms added
+              {t('noPlatforms')}
             </div>
           )}
         </div>

@@ -34,7 +34,7 @@ export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onCha
           placeholder={t('videoUrlPlaceholder')}
         />
         <p className="text-xs text-muted-foreground">
-          Supports YouTube and Bilibili (BV/AV) links.
+          {t('videoSupportHint')}
         </p>
       </div>
 
@@ -48,10 +48,10 @@ export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onCha
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
-            <SelectItem value="4:3">4:3 (Classic)</SelectItem>
-            <SelectItem value="1:1">1:1 (Square)</SelectItem>
-            <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
+            <SelectItem value="16:9">{t('widescreen')}</SelectItem>
+            <SelectItem value="4:3">{t('classic')}</SelectItem>
+            <SelectItem value="1:1">{t('square')}</SelectItem>
+            <SelectItem value="9:16">{t('vertical916')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -65,7 +65,7 @@ export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onCha
       </div>
       
        <div className="flex items-center justify-between">
-        <Label>Show Controls</Label>
+        <Label>{t('showControls')}</Label>
         <Switch 
           checked={props.showControls} 
           onCheckedChange={(checked) => onChange({ showControls: checked })} 

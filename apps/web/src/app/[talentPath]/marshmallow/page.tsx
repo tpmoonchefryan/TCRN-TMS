@@ -3,10 +3,10 @@
 
 'use client';
 
-import { ArrowLeft, Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle, Loader2, Send, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 
@@ -51,8 +51,76 @@ export default function MarshmallowPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Social Link State
+  const [socialLink, setSocialLink] = useState('');
 
-  if (!config) {
+  // Generate a simple fingerprint for now if one doesn't exist
+  // In a real app, use a proper fingerprint library like @fingerprintjs/fingerprintjs
+  const [fingerprint, setFingerprint] = useState('');
+  useEffect(() => {
+    let fp = localStorage.getItem('marshmallow_device_fp');
+    if (!fp) {
+      fp = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('marshmallow_device_fp', fp);
+    }
+    setFingerprint(fp);
+  }, []);
+
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (message.length < config.minLength) {
+      setErrorMessage(`Message must be at least ${config.minLength} characters.`);
+      setSubmitStatus('error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const formData = new FormData(); // Keeping FormData for compatibility or switching to JSON?
+      // Actually controller expects DTO body now for submitMessage if we removed FileInterceptor? 
+      // Wait, I updated controller to use @Body() dto: SubmitMessageDto.
+      // So I should send JSON now.
+      
+      const payload = {
+          content: message,
+          isAnonymous: true,
+          fingerprint,
+          socialLink: socialLink.trim() || undefined,
+      };
+
+      // Call API
+      const response = await fetch(`/api/v1/public/marshmallow/${talentPath}/submit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+         const data = await response.json().catch(() => ({}));
+         throw new Error(data.message || 'Submission failed');
+      }
+      
+      // Success
+      setSubmitStatus('success');
+      setSubmitStatus('success');
+      setMessage('');
+      setSocialLink('');
+    } catch (error) {
+      console.error('Submit error:', error);
+      setSubmitStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -85,32 +153,7 @@ export default function MarshmallowPage() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (message.length < config.minLength) {
-      setErrorMessage(`Message must be at least ${config.minLength} characters.`);
-      setSubmitStatus('error');
-      return;
-    }
 
-    setIsSubmitting(true);
-    setErrorMessage('');
-
-    try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success
-      setSubmitStatus('success');
-      setMessage('');
-    } catch (error) {
-      setSubmitStatus('error');
-      setErrorMessage('Failed to send message. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const primaryColor = config.primaryColor || '#3B82F6';
 
@@ -179,26 +222,40 @@ export default function MarshmallowPage() {
                 )}
 
                 <div className="space-y-2">
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={config.placeholderText}
-                    maxLength={config.maxLength}
-                    rows={6}
-                    className="w-full px-4 py-3 rounded-lg border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                    disabled={isSubmitting}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>
-                      {message.length < config.minLength && message.length > 0 && (
-                        <span className="text-amber-500">
-                          {config.minLength - message.length} more characters needed
+                   <div className="relative">
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder={config.placeholderText}
+                      maxLength={config.maxLength}
+                      rows={6}
+                      className="w-full px-4 py-3 rounded-lg border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Bilibili Link Input */}
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                            type="text"
+                            value={socialLink}
+                            onChange={(e) => setSocialLink(e.target.value)}
+                            placeholder="Bilibili Dynamic Link (Optional)"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            disabled={isSubmitting}
+                        />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground ml-1">
+                        本链接仅作为获取图片用途，不会存储用户账号信息
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end text-xs text-muted-foreground">
+                        <span>
+                        {message.length} / {config.maxLength}
                         </span>
-                      )}
-                    </span>
-                    <span>
-                      {message.length} / {config.maxLength}
-                    </span>
                   </div>
                 </div>
 

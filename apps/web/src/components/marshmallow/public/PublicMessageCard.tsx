@@ -4,14 +4,15 @@
 
 import { Check, MessageCircle, Plus, Share2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,8 @@ interface MarshmallowMessage {
   reactionCounts: Record<string, number>;
   userReactions: string[];
   createdAt: string;
+  imageUrl?: string | null;
+  imageUrls?: string[];
 }
 
 interface PublicMessageCardProps {
@@ -85,6 +88,7 @@ export function PublicMessageCard({
   const [userReactions, setUserReactions] = useState<string[]>(message.userReactions || []);
   const [isReacting, setIsReacting] = useState(false);
   const [fingerprint, setFingerprint] = useState<string>('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   // Inline reply state (for streamer mode)
   const [isReplying, setIsReplying] = useState(false);
@@ -170,8 +174,8 @@ export function PublicMessageCard({
   };
 
   const senderDisplay = message.isAnonymous 
-    ? 'Anonymous' 
-    : (message.senderName || 'Someone');
+    ? t('anonymous') 
+    : (message.senderName || t('someone'));
 
   return (
     <div className="rounded-2xl overflow-hidden mb-6 transition-all hover:translate-y-[-2px] bg-white border-slate-200 shadow-sm" id={message.id}>
@@ -202,6 +206,41 @@ export function PublicMessageCard({
         <div className="mt-2 text-xs text-slate-400 font-medium">
           {senderDisplay} • {format.dateTime(new Date(message.createdAt), { dateStyle: 'medium', timeStyle: 'short' })}
         </div>
+        
+        {/* Image Grid */}
+        {(message.imageUrls?.length || message.imageUrl) && (
+            <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {(message.imageUrls && message.imageUrls.length > 0 ? message.imageUrls : [message.imageUrl]).filter(Boolean).map((img, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in shadow-sm">
+                        <img 
+                            src={img!} 
+                            alt={`Attachment ${index}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewImage(img!);
+                            }}
+                        />
+                    </div>
+                ))}
+            </div>
+        )}
+
+        <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none flex items-center justify-center">
+                <DialogTitle className="sr-only">{t('imagePreview')}</DialogTitle>
+                {previewImage && (
+                    <img 
+                        src={previewImage} 
+                        alt="Preview" 
+                        className="max-h-[90vh] max-w-full object-contain rounded-lg shadow-2xl"
+                        referrerPolicy="no-referrer"
+                    />
+                )}
+            </DialogContent>
+        </Dialog>
       </div>
 
       {/* Answer/Reply - Parse multiple replies separated by --- */}

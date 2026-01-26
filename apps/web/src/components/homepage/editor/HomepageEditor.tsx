@@ -97,7 +97,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-background">
       {/* Dialogs */}
       <VersionHistory open={historyOpen} onOpenChange={setHistoryOpen} talentId={talentId} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} talentId={talentId} />
@@ -119,6 +119,35 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Language Switcher */}
+          <div className="flex items-center mr-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-2 px-2">
+                  <span className="text-xs font-medium">
+                    {useEditorStore(s => s.editingLocale) === 'default' 
+                      ? 'Default' 
+                      : useEditorStore.getState().editingLocale.toUpperCase()}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('default')}>
+                  Default (Original)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('en')}>
+                  English (EN)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('zh')}>
+                  Chinese (ZH)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('ja')}>
+                  Japanese (JA)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           {/* Device Switcher */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 mr-2">
             <Button
@@ -232,7 +261,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
         </div>
 
         {/* Center: Canvas / Preview */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
           <Canvas />
         </div>
         

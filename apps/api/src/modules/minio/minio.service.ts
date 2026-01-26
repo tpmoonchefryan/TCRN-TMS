@@ -15,6 +15,7 @@ export const BUCKETS = {
   AVATARS: 'avatars',
   HOMEPAGE_ASSETS: 'homepage-assets',
   ATTACHMENTS: 'attachments',
+  MARSHMALLOW_IMAGES: 'marshmallow-images',
 } as const;
 
 export type BucketName = (typeof BUCKETS)[keyof typeof BUCKETS];
@@ -52,6 +53,9 @@ export class MinioService implements OnModuleInit {
 
       // Set lifecycle policy for temp-reports (PRD §20.6)
       await this.setTempReportsLifecycle();
+
+      // Set lifecycle policy for marshmallow images (30 days)
+      await this.setMarshmallowLifecycle();
 
       this.logger.log('MinIO connected and buckets initialized');
     } catch (error) {
@@ -94,7 +98,6 @@ export class MinioService implements OnModuleInit {
    * PRD §20.6: Delete objects older than 1 day
    */
   private async setTempReportsLifecycle(): Promise<void> {
-    // Use the proper MinIO SDK format for lifecycle configuration
     const lifecycleConfig = {
       Rule: [
         {
@@ -109,15 +112,42 @@ export class MinioService implements OnModuleInit {
         },
       ],
     };
+    await this.applyLifecyclePolicy(BUCKETS.TEMP_REPORTS, lifecycleConfig);
+  }
 
+  /**
+   * Set lifecycle policy for marshmallow images bucket
+   * Delete objects older than 30 days
+   */
+  private async setMarshmallowLifecycle(): Promise<void> {
+    const lifecycleConfig = {
+      Rule: [
+        {
+          ID: 'ExpireMarshmallowImages',
+          Status: 'Enabled',
+          Filter: {
+            Prefix: '',
+          },
+          Expiration: {
+            Days: 30,
+          },
+        },
+      ],
+    };
+    await this.applyLifecyclePolicy(BUCKETS.MARSHMALLOW_IMAGES, lifecycleConfig);
+  }
+
+  /**
+   * Apply lifecycle policy helper
+   */
+  private async applyLifecyclePolicy(bucketName: string, config: any): Promise<void> {
     try {
-      await this.client.setBucketLifecycle(BUCKETS.TEMP_REPORTS, lifecycleConfig);
+      await this.client.setBucketLifecycle(bucketName, config);
     } catch (error: any) {
-      // MinIO might not support lifecycle in dev mode, log as info not error
       if (error?.code === 'InvalidArgument' || error?.code === 'NotImplemented') {
-        this.logger.log('MinIO lifecycle policy not supported in this environment');
+        this.logger.log(`MinIO lifecycle policy not supported for ${bucketName} in this environment`);
       } else {
-        this.logger.warn(`Could not set temp-reports lifecycle policy: ${error?.message}`);
+        this.logger.warn(`Could not set ${bucketName} lifecycle policy: ${error?.message}`);
       }
     }
   }

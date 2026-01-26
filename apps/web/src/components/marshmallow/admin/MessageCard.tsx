@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import {
     Check,
     Clock,
+    ExternalLink,
     MessageCircle,
     MoreHorizontal,
     Reply,
@@ -20,6 +21,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,6 +50,9 @@ export interface MarshmallowMessage {
   reactionCounts: Record<string, number>;
   profanityFlags: string[];
   createdAt: string;
+  imageUrl?: string | null;
+  imageUrls?: string[];
+  socialLink?: string | null;
   ipAddress?: string; // Admin only
 }
 
@@ -75,6 +80,7 @@ export function MessageCard({
   const t = useTranslations('marshmallowAdmin');
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleReplySubmit = () => {
     onReply(message.id, replyText);
@@ -138,8 +144,20 @@ export function MessageCard({
                 {t('flagged')}
               </span>
             )}
-            {!message.isRead && (
+      {!message.isRead && (
               <Badge variant="outline" className="text-xs">{t('unread')}</Badge>
+            )}
+            {message.socialLink && (
+              <a 
+                href={message.socialLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+              >
+                <ExternalLink size={12} />
+                Bilibili
+              </a>
             )}
           </div>
           
@@ -190,6 +208,41 @@ export function MessageCard({
           )}>
             {message.content}
           </p>
+
+          {/* Image Grid */}
+          {(message.imageUrls?.length || message.imageUrl) && (
+             <div className="mt-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                 {(message.imageUrls && message.imageUrls.length > 0 ? message.imageUrls : [message.imageUrl]).filter(Boolean).map((img, index) => (
+                     <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in">
+                         <img 
+                            src={img!} 
+                            alt={`Attachment ${index}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewImage(img!);
+                            }}
+                         />
+                     </div>
+                 ))}
+             </div>
+          )}
+
+          <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none flex items-center justify-center">
+              <DialogTitle className="sr-only">{t('imagePreview')}</DialogTitle>
+              {previewImage && (
+                <img 
+                  src={previewImage} 
+                  alt="Preview" 
+                  className="max-h-[90vh] max-w-full object-contain rounded-lg shadow-2xl"
+                  referrerPolicy="no-referrer"
+                />
+              )}
+            </DialogContent>
+          </Dialog>
           
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-medium text-slate-700 dark:text-slate-300">

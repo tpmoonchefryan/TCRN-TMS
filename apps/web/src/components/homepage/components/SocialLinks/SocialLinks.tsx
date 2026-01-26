@@ -4,7 +4,7 @@ import { Facebook, Github, Instagram, Link as LinkIcon, Mail, Twitter, Youtube }
 import Link from 'next/link';
 import React from 'react';
 
-import { defaultProps, SocialLinksProps, SocialPlatform } from './schema';
+import { defaultProps, SocialLinksProps } from './schema';
 
 import { cn } from '@/lib/utils';
 
@@ -55,7 +55,7 @@ export const SocialLinks: React.FC<SocialLinksRendererProps> = (props) => {
     <div className={cn("p-4", containerLayoutClasses[layout], className)}>
       {platforms.map((platform, idx) => {
         // Normalize platform code to lowercase for icon lookup
-        const code = platform.platformCode.toLowerCase();
+        const code = platform.platformCode?.toLowerCase() || 'default';
         const Icon = PLATFORM_ICONS[code] || PLATFORM_ICONS.default;
         
         // Label logic

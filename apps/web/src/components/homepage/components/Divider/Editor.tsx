@@ -59,7 +59,7 @@ export const DividerEditor: React.FC<DividerEditorProps> = ({ props, onChange })
       </div>
       
       <div className="space-y-2">
-        <Label>Color</Label>
+        <Label>{t('color')}</Label>
         <Select 
           value={props.color} 
           onValueChange={(v: any) => onChange({ color: v })}
@@ -68,9 +68,9 @@ export const DividerEditor: React.FC<DividerEditorProps> = ({ props, onChange })
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">Default (Gray)</SelectItem>
-            <SelectItem value="primary">Primary</SelectItem>
-            <SelectItem value="accent">Accent</SelectItem>
+            <SelectItem value="default">{t('presetDefault')}</SelectItem>
+            <SelectItem value="primary">{t('primaryColor')}</SelectItem>
+            <SelectItem value="accent">{t('secondaryColor')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -38,12 +38,12 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          The path to the talent's marshmallow page (same as homepage path)
+          {t('pathHintMarshmallow')}
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label>Display Mode</Label>
+        <Label>{t('displayMode')}</Label>
         <Select 
           value={props.displayMode} 
           onValueChange={(v: any) => onChange({ displayMode: v })}
@@ -52,14 +52,14 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="card">Card</SelectItem>
-            <SelectItem value="button">Button Only</SelectItem>
+            <SelectItem value="card">{t('card')}</SelectItem>
+            <SelectItem value="button">{t('buttonOnly')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="flex items-center justify-between">
-        <Label>Show Submit Button</Label>
+        <Label>{t('showSubmitButton')}</Label>
         <Switch 
           checked={props.showSubmitButton} 
           onCheckedChange={(checked) => onChange({ showSubmitButton: checked })} 
@@ -71,7 +71,7 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
         <Input 
           value={props.title || ''} 
           onChange={(e) => onChange({ title: e.target.value })}
-          placeholder="Marshmallow"
+          placeholder={t('marshmallowPlaceholder')}
         />
       </div>
 
@@ -80,7 +80,7 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
         <Input 
           value={props.description || ''} 
           onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Anonymous messages are welcome!"
+          placeholder={t('descPlaceholder')}
         />
       </div>
 
@@ -89,7 +89,7 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
         <Input 
           value={props.buttonText || ''} 
           onChange={(e) => onChange({ buttonText: e.target.value })}
-          placeholder="Send Message"
+          placeholder={t('buttonTextPlaceholder')}
         />
       </div>
     </div>

@@ -1,11 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { HttpService } from '@nestjs/axios';
 import {
     BadRequestException,
     ForbiddenException,
     Injectable,
+    Logger,
     NotFoundException,
 } from '@nestjs/common';
 import { ErrorCodes, LogSeverity, TechEventType } from '@tcrn/shared';
+import { firstValueFrom } from 'rxjs';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
@@ -14,6 +17,7 @@ import {
     PublicMessagesQueryDto,
     SubmitMessageDto,
 } from '../dto/marshmallow.dto';
+
 
 import { CaptchaContext, CaptchaService } from './captcha.service';
 import { MarshmallowRateLimitService } from './marshmallow-rate-limit.service';
@@ -32,7 +36,10 @@ export class PublicMarshmallowService {
     private readonly reactionService: MarshmallowReactionService,
     private readonly techEventLog: TechEventLogService,
     private readonly trustScoreService: TrustScoreService,
+    private readonly httpService: HttpService,
   ) {}
+
+  private readonly logger = new Logger(PublicMarshmallowService.name);
 
   /**
    * Find talent and config by path (multi-tenant)
@@ -287,14 +294,36 @@ export class PublicMarshmallowService {
       status = 'pending';
     }
 
-    // 8. Create message (using raw SQL for multi-tenant)
+    // 8. Handle Image (Bilibili Link)
+    let imageUrl: string | null = null;
+    let imageUrls: string[] = [];
+    let socialLink: string | null = dto.socialLink || null;
+
+    if (dto.selectedImageUrls && dto.selectedImageUrls.length > 0) {
+        // User explicitly selected images
+        imageUrls = dto.selectedImageUrls;
+        imageUrl = imageUrls[0]; // Backward compatibility
+    } else if (dto.socialLink) {
+        // Legacy behavior: resolve single image if not provided
+        try {
+            const images = await this.resolveBilibiliImages(dto.socialLink);
+            if (images.length > 0) {
+                imageUrls = images;
+                imageUrl = images[0];
+            }
+        } catch (error) {
+             this.logger.warn(`Failed to resolve Bilibili image: ${error}`);
+        }
+    }
+
+    // 9. Create message (using raw SQL for multi-tenant)
     const messages = await prisma.$queryRawUnsafe<Array<{ id: string; status: string }>>(`
       INSERT INTO "${tenantSchema}".marshmallow_message (
         id, config_id, talent_id, content, sender_name, is_anonymous, status,
-        ip_address, user_agent, fingerprint_hash, profanity_flags, created_at
+        ip_address, user_agent, fingerprint_hash, profanity_flags, image_url, image_urls, social_link, created_at
       ) VALUES (
         gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6,
-        $7::inet, $8, $9, $10::varchar(64)[], now()
+        $7::inet, $8, $9, $10::varchar(64)[], $11, $12::text[], $13, now()
       )
       RETURNING id, status
     `,
@@ -308,6 +337,9 @@ export class PublicMarshmallowService {
       context.userAgent,
       dto.fingerprint,
       filterResult.flags || [],
+      imageUrl,
+      imageUrls,
+      socialLink
     );
 
     const message = messages[0];
@@ -370,12 +402,15 @@ export class PublicMarshmallowService {
       reactionCounts: Record<string, number> | null;
       isPinned: boolean;
       createdAt: Date;
+      imageUrl: string | null;
+      imageUrls: string[] | null;
     }>>(`
       SELECT m.id, m.content, m.sender_name as "senderName", m.is_anonymous as "isAnonymous",
              m.is_read as "isRead", m.reply_content as "replyContent", m.replied_at as "repliedAt",
              m.replied_by as "repliedById", u.display_name as "repliedByName",
              u.avatar_url as "repliedByAvatar", u.email as "repliedByEmail",
-             m.reaction_counts as "reactionCounts", m.is_pinned as "isPinned", m.created_at as "createdAt"
+             m.reaction_counts as "reactionCounts", m.is_pinned as "isPinned", m.created_at as "createdAt",
+             m.image_url as "imageUrl", m.image_urls as "imageUrls"
       FROM "${tenantSchema}".marshmallow_message m
       LEFT JOIN "${tenantSchema}".system_user u ON m.replied_by = u.id
       WHERE m.config_id = $1::uuid AND m.status = 'approved' ${cursorCondition}
@@ -414,6 +449,8 @@ export class PublicMarshmallowService {
         reactionCounts: m.reactionCounts ?? {},
         userReactions: userReactions[m.id] ?? [],
         createdAt: m.createdAt.toISOString(),
+        imageUrl: m.imageUrl,
+        imageUrls: m.imageUrls,
       })),
       cursor: hasMore ? items[items.length - 1].createdAt.toISOString() : null,
       hasMore,
@@ -777,5 +814,162 @@ export class PublicMarshmallowService {
         displayName: context.displayName,
       },
     };
+  }
+
+  /**
+   * Resolve Bilibili Opus/Dynamic images
+   * Supports:
+   * - https://www.bilibili.com/opus/<ID>
+   * - https://t.bilibili.com/<ID>
+   */
+  async resolveBilibiliImages(url: string | undefined): Promise<string[]> {
+    if (!url) return [];
+
+    // 1. Extract Dynamic ID
+    let dynamicId: string | null = null;
+    
+    // Match opus/<ID> or t.bilibili.com/<ID>
+    const match = url.match(/(?:opus\/|t\.bilibili\.com\/)(\d+)/);
+    if (match) {
+        dynamicId = match[1];
+    }
+
+    if (!dynamicId) return [];
+
+    // 2. Fetch Dynamic Details from Bilibili API
+    // API: https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=<ID>
+    try {
+        const { data } = await firstValueFrom(
+            this.httpService.get(`https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=${dynamicId}`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                },
+            })
+        );
+
+        if (data?.code === 0 && data?.data?.item) {
+             const item = data.data.item;
+             const images = this.extractImagesFromModules(item.modules);
+             if (images.length > 0) return images;
+        }
+        
+        // If API fails or no image found, try scraping the page (Fallback)
+        this.logger.warn(`Bilibili API failed for ${dynamicId} (Code: ${data?.code}), trying fallback scraping...`);
+        return this.resolveBilibiliImagesFromPage(dynamicId);
+
+    } catch (error) {
+        this.logger.warn(`Error fetching Bilibili API for ${dynamicId}: ${error}, trying fallback scraping...`);
+        return this.resolveBilibiliImagesFromPage(dynamicId);
+    }
+  }
+
+  /**
+   * extracting images from API modules structure
+   */
+  private extractImagesFromModules(modules: any): string[] {
+      const images: string[] = [];
+      if (!modules) return [];
+      
+      if (Array.isArray(modules)) {
+          for (const mod of modules) {
+               const major = mod.module_dynamic?.major;
+               if (major) {
+                    // Opus
+                    if (major.opus?.pics) {
+                        for (const pic of major.opus.pics) {
+                            if (pic.url) images.push(this.normalizeBilibiliUrl(pic.url));
+                        }
+                    }
+                    // Draw
+                    if (major.draw?.items) {
+                        for (const d of major.draw.items) {
+                            if (d.src) images.push(this.normalizeBilibiliUrl(d.src));
+                        }
+                    }
+                    // Article
+                    if (major.article?.covers) {
+                        for (const cover of major.article.covers) {
+                            images.push(this.normalizeBilibiliUrl(cover));
+                        }
+                    }
+                    // Archive (Video cover)
+                    if (major.archive?.cover) {
+                        images.push(this.normalizeBilibiliUrl(major.archive.cover));
+                    }
+               }
+               // Also check module_content (Strategy 1) for simple layout
+               if (mod.module_content?.pics) {
+                   for (const pic of mod.module_content.pics) {
+                       if (pic.url) images.push(this.normalizeBilibiliUrl(pic.url));
+                   }
+               }
+          }
+      }
+      return images;
+  }
+
+  /**
+   * Fallback: Scrape Opus page for __INITIAL_STATE__
+   */
+  private async resolveBilibiliImagesFromPage(dynamicId: string): Promise<string[]> {
+      try {
+          // Use native fetch to match the behavior of the successful debug script
+          const response = await fetch(`https://www.bilibili.com/opus/${dynamicId}`, {
+              headers: {
+                  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              },
+          });
+          
+          if (!response.ok) {
+              this.logger.warn(`Bilibili fallback fetch failed: ${response.status}`);
+              return [];
+          }
+
+          const html = await response.text();
+          this.logger.log(`Bilibili fallback HTML length: ${html.length}`);
+          
+          // Regex to extract __INITIAL_STATE__
+          const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.+?});/);
+          if (!stateMatch) {
+              this.logger.warn('Bilibili fallback: __INITIAL_STATE__ not found in HTML');
+              return [];
+          }
+          
+          this.logger.log('Bilibili fallback: __INITIAL_STATE__ found');
+          const state = JSON.parse(stateMatch[1]);
+          const modules = state.detail?.modules;
+          
+          const images = this.extractImagesFromModules(modules);
+          if (images.length > 0) return images;
+          
+          // Strategy 3: Regex match on the entire state string (Fallthrough)
+          // This is useful if the structure is nested differently than expected
+          const stateStr = JSON.stringify(state);
+          const regexMatches = stateStr.matchAll(/https?:\/\/(i[0-9]|bfs)\.hdslb\.com\/bfs\/new_dyn\/[a-zA-Z0-9]+\.(png|jpg|jpeg|webp)/g);
+          const regexImages: string[] = [];
+          for (const match of regexMatches) {
+               regexImages.push(this.normalizeBilibiliUrl(match[0]));
+          }
+          
+          if (regexImages.length > 0) {
+               this.logger.log(`Bilibili fallback: Regex found ${regexImages.length} images`);
+               // Deduplicate
+               return Array.from(new Set(regexImages));
+          }
+
+          this.logger.warn('Bilibili fallback: No images found in modules or regex');
+          return [];
+      } catch (error) {
+          this.logger.error(`Error scraping Bilibili page ${dynamicId}: ${error}`);
+          return [];
+      }
+  }
+
+  private normalizeBilibiliUrl(url: string): string {
+      if (!url) return '';
+      if (url.startsWith('http://')) {
+          return url.replace('http://', 'https://');
+      }
+      return url;
   }
 }

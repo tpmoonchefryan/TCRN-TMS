@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, type RequestContext, type ChangeAction } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -337,21 +337,15 @@ export class MarshmallowConfigService {
         WHERE id = $1::uuid
       `, ...params);
 
-      // Log change (use actual change_log table schema)
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "${tenantSchema}".change_log (
-          id, action, object_type, object_id, object_name, diff,
-          operator_id, ip_address, occurred_at
-        ) VALUES (
-          gen_random_uuid(), 'update', 'marshmallow_config', $1::uuid, 'Marshmallow config',
-          $2::jsonb, $3::uuid, $4::inet, now()
-        )
-      `,
-        config.id,
-        JSON.stringify({ old: oldValue, new: newValue }),
-        context.userId,
-        context.ipAddress || null,
-      );
+      // Log change using standard service
+      await this.changeLogService.createDirect({
+        action: 'update' as ChangeAction,
+        objectType: 'marshmallow_config',
+        objectId: config.id,
+        objectName: 'Marshmallow config',
+        oldValue,
+        newValue,
+      }, context);
     }
 
     return this.getOrCreate(talentId, tenantSchema);

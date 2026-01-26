@@ -30,12 +30,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ props, onChange 
         <Textarea 
           value={props.contentHtml} 
           onChange={(e) => onChange({ contentHtml: e.target.value })}
-          placeholder="<p>Enter HTML here...</p>"
+          placeholder={t('htmlPlaceholder')}
           rows={10}
           className="font-mono text-sm"
         />
         <p className="text-xs text-muted-foreground">
-          Supports basic HTML tags (p, b, i, ul, ol, etc.).
+          {t('htmlSupportHint')}
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ props, onChange 
             <SelectItem value="left">{t('left')}</SelectItem>
             <SelectItem value="center">{t('center')}</SelectItem>
             <SelectItem value="right">{t('right')}</SelectItem>
-            <SelectItem value="justify">Justify</SelectItem>
+            <SelectItem value="justify">{t('justify')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

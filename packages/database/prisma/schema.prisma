@@ -1373,6 +1373,9 @@ model MarshmallowMessage {
   status          String    @default("pending") @db.VarChar(16) // 'pending', 'approved', 'rejected', 'spam'
   rejectionReason String?   @map("rejection_reason") @db.VarChar(32)
   rejectionNote   String?   @map("rejection_note") @db.VarChar(255)
+  imageUrl        String?   @map("image_url") @db.VarChar(512)
+  imageUrls       String[]  @default([]) @map("image_urls")
+  socialLink      String?   @map("social_link") @db.VarChar(512)
   moderatedAt     DateTime? @map("moderated_at") @db.Timestamptz
   moderatedBy     String?   @map("moderated_by") @db.Uuid
   isRead          Boolean   @default(false) @map("is_read")
