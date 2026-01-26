@@ -110,6 +110,12 @@
 - **表情反应**：粉丝可对已审核消息进行表情反应
 - **导出功能**：支持导出消息为 CSV/JSON/XLSX
 
+<p align="center">
+  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">
+  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow 预览2" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow 预览3" width="600">
+</p>
+
 ### 📊 MFR 报表生成
 
 生成全面的**会员反馈报表**：
@@ -159,6 +165,7 @@ Loki 集成支持跨所有日志的全文搜索。
 - **个人名片**：增强的个性化设置，支持本地头像上传和自定义布局
 - **自定义域名**：支持艺人自有域名，带 DNS 验证
 - **SEO 优化**：自动生成 meta 标签和 Open Graph 支持
+- **示例页面**：[https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
 
 ### 安全管理
 

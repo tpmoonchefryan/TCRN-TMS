@@ -110,6 +110,12 @@ A complete anonymous question box system inspired by Japanese "Marshmallow" serv
 - **Emoji Reactions**: Fans can react to approved messages
 - **Export Capability**: Export messages to CSV/JSON/XLSX
 
+<p align="center">
+  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">
+  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow Preview2" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow Preview3" width="600">
+</p>
+
 ### 📊 MFR Report Generation
 
 Generate comprehensive **Membership Feedback Reports** with:
@@ -159,6 +165,7 @@ Drag-and-drop homepage builder for talents:
 - **Profile Card**: Enhanced personalization with local avatar upload and customizable layout
 - **Custom Domains**: Support for talent-owned domains with DNS verification
 - **SEO Optimization**: Automatic meta tags and Open Graph support
+- **Example Page**: [https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
 
 ### Security Management
 

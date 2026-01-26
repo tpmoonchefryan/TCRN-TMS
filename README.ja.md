@@ -110,6 +110,12 @@
 - **絵文字リアクション**：ファンは承認されたメッセージにリアクション可能
 - **エクスポート機能**：メッセージをCSV/JSON/XLSXにエクスポート
 
+<p align="center">
+  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow プレビュー" width="600">
+  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow プレビュー2" width="600">
+  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow プレビュー3" width="600">
+</p>
+
 ### 📊 MFRレポート生成
 
 包括的な**メンバーシップフィードバックレポート**を生成：
@@ -159,6 +165,7 @@ Loki統合により、すべてのログで全文検索が可能です。
 - **プロフィールカード**：ローカルアバターアップロードとカスタマイズ可能なレイアウトによるパーソナライゼーション強化
 - **カスタムドメイン**：DNS検証付きタレント所有ドメインをサポート
 - **SEO最適化**：自動メタタグとOpen Graphサポート
+- **サンプルページ**：[https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
 
 ### セキュリティ管理
 
