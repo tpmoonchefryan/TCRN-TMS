@@ -21,6 +21,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: tcrn-postgres
+    restart: always
     networks:
       - app-network
     volumes:
@@ -46,6 +47,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: tcrn-redis
+    restart: always
     networks:
       - app-network
     volumes:
@@ -68,6 +70,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: tcrn-minio
+    restart: always
     networks:
       - app-network
     volumes:
@@ -94,6 +97,7 @@ services:
   nats:
     image: nats:2-alpine
     container_name: tcrn-nats
+    restart: always
     networks:
       - app-network
     ports:
@@ -121,6 +125,7 @@ services:
   loki:
     image: grafana/loki:2.9.0
     container_name: tcrn-loki
+    restart: always
     networks:
       - app-network
     ports:
@@ -144,6 +149,7 @@ services:
   tempo:
     image: grafana/tempo:2.3.0
     container_name: tcrn-tempo
+    restart: always
     networks:
       - app-network
     ports:
@@ -173,6 +179,7 @@ services:
   pii-postgres:
     image: postgres:16-alpine
     container_name: tcrn-pii-postgres
+    restart: always
     networks:
       - pii-network  # Only connected to PII network
     volumes:

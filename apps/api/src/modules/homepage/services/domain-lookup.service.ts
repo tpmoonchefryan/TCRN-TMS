@@ -68,12 +68,18 @@ export class DomainLookupService {
       }>>(`
         SELECT 
           mc.talent_id as "talentId",
-          COALESCE(mc.path, t.code) as "path"
+          COALESCE(t.homepage_path, t.code) as "path"
         FROM "${schema}".marshmallow_config mc
         JOIN "${schema}".talent t ON t.id = mc.talent_id
         WHERE LOWER(mc.custom_domain) = $1
           AND mc.custom_domain_verified = true
-          AND mc.is_enabled = true
+          // Marshmallow config doesn't have is_enabled, logic should be inferred or column verified.
+          // Based on logs, the error is specifically about mc.path. Let's fix that first.
+          // IMPORTANT: Check if mc.is_enabled exists. Schema shows it doesn't.
+          // Looking at schema.prisma lines 1350-1363 for marshmallow_config:
+          // It has: talentId, customDomain, customDomainVerified, customDomainVerificationToken
+          // It DOES NOT have is_enabled. It seems this query is incorrect on multiple fronts.
+          // Let's remove is_enabled check as well if it doesn't exist.
           AND t.is_active = true
       `, normalizedDomain);
 
