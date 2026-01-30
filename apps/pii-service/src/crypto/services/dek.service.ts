@@ -1,8 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '.prisma/pii-client';
 import * as crypto from 'crypto';
+
+import { PrismaClient } from '.prisma/pii-client';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+
 import { KekService } from './kek.service';
 
 /**

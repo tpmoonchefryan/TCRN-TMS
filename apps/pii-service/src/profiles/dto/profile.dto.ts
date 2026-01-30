@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsUUID,
@@ -13,7 +14,6 @@ import {
   IsEmail,
   ArrayMaxSize,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class PhoneNumberDto {
   @IsString()

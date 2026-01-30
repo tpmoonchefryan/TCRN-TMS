@@ -13,14 +13,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Request } from 'express';
-import { ProfilesService } from './services/profiles.service';
+
 import { CurrentContext } from '../auth/decorators/current-context.decorator';
 import { JwtContext } from '../auth/strategies/jwt.strategy';
+
 import {
   CreatePiiProfileDto,
   UpdatePiiProfileDto,
   BatchGetProfilesDto,
 } from './dto/profile.dto';
+import { ProfilesService } from './services/profiles.service';
 
 @ApiTags('PII Profiles')
 @ApiBearerAuth()

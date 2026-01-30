@@ -10,11 +10,11 @@ import { ProfilesService } from '../services/profiles.service';
 
 describe('ProfilesService', () => {
   let service: ProfilesService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockPrisma: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockCryptoService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockAuditService: any;
 
   const mockUserContext: JwtContext = {
@@ -61,8 +61,8 @@ describe('ProfilesService', () => {
         create: vi.fn(),
         findFirst: vi.fn(),
         findMany: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
+        $queryRawUnsafe: vi.fn(),
+        $executeRawUnsafe: vi.fn(),
       },
     };
 

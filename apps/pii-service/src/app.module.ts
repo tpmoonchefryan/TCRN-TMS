@@ -4,13 +4,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 
-import { DatabaseModule } from './database/database.module';
-import { CryptoModule } from './crypto/crypto.module';
-import { AuthModule } from './auth/auth.module';
-import { ProfilesModule } from './profiles/profiles.module';
 import { AuditModule } from './audit/audit.module';
-import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CryptoModule } from './crypto/crypto.module';
+import { DatabaseModule } from './database/database.module';
+import { HealthModule } from './health/health.module';
+import { ProfilesModule } from './profiles/profiles.module';
 
 @Module({
   imports: [

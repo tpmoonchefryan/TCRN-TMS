@@ -1,21 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { PrismaClient } from '.prisma/pii-client';
 import {
   Injectable,
   Inject,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaClient } from '.prisma/pii-client';
-import { CryptoService } from '../../crypto/services/crypto.service';
+
 import { AuditService } from '../../audit/services/audit.service';
+import { JwtContext } from '../../auth/strategies/jwt.strategy';
+import { CryptoService } from '../../crypto/services/crypto.service';
 import {
   CreatePiiProfileDto,
   UpdatePiiProfileDto,
   BatchGetProfilesDto,
   PiiProfileResponse,
 } from '../dto/profile.dto';
-import { JwtContext } from '../../auth/strategies/jwt.strategy';
 
 @Injectable()
 export class ProfilesService {

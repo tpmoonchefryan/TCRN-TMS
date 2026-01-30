@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+
+import { Injectable } from '@nestjs/common';
+
 import { DekService } from './dek.service';
 
 /**
