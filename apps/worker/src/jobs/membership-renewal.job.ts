@@ -2,7 +2,7 @@
 // Membership Auto-Renewal Job Processor (PRD §11.6)
 
 import { PrismaClient } from '@tcrn/database';
-import type { Job, Processor } from 'bullmq';
+import type { Job, Processor, Queue } from 'bullmq';
 
 import { membershipRenewalLogger as logger } from '../logger';
 
@@ -214,12 +214,13 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
   }
 };
 
+
 /**
  * Create scheduled membership renewal job
  * Should be called by a cron job (e.g., daily at 2:00 AM)
  */
 export async function scheduleMembershipRenewalJob(
-  queue: { add: (name: string, data: MembershipRenewalJobData, opts?: { jobId?: string; removeOnComplete?: { age: number } }) => Promise<void> },
+  queue: Queue | { add: (name: string, data: MembershipRenewalJobData, opts?: any) => Promise<any> },
   tenantId: string,
   tenantSchemaName: string
 ) {
