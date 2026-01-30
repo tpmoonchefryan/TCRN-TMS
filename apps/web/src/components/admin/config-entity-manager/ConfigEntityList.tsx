@@ -80,7 +80,7 @@ export function ConfigEntityList({
         setEntities(response.data);
         setTotalCount(response.meta?.pagination?.totalCount || response.data.length);
       }
-    } catch (error) {
+    } catch {
       // Error handled by API client
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ export function ConfigEntityList({
           }))
         );
       }
-    } catch (error) {
+    } catch {
       // Error handled by API client
     }
   }, [config.hasParent, config.parentType, scopeType, scopeId]);
@@ -146,7 +146,7 @@ export function ConfigEntityList({
       }
       setFormOpen(false);
       fetchEntities();
-    } catch (error) {
+    } catch {
       // Error handled by API client
     } finally {
       setFormLoading(false);
@@ -161,12 +161,12 @@ export function ConfigEntityList({
         await configEntityApi.reactivate(entityType, entity.id, entity.version);
       }
       fetchEntities();
-    } catch (error) {
+    } catch {
       // Error handled by API client
     }
   };
 
-  const handleToggleDisable = async (entity: ConfigEntity) => {
+  const handleToggleDisable = async (_entity: ConfigEntity) => {
     // TODO: Implement disable/enable for inherited configs
   };
 

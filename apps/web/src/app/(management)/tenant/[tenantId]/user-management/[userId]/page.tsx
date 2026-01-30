@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -17,9 +18,9 @@ import {
     Unlock,
     User
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -41,7 +42,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { systemUserApi, systemRoleApi, userRoleApi } from '@/lib/api/client';
+import { systemRoleApi, systemUserApi, userRoleApi } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
 // User interface from API

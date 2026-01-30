@@ -2,7 +2,7 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import { publicApi } from '@/lib/api/client';
 
@@ -63,7 +63,7 @@ export function StreamerModeProvider({ children, ssoToken }: StreamerModeProvide
           setUser(null);
           setError('SSO token is invalid or expired');
         }
-      } catch (err) {
+      } catch {
         setUser(null);
         setError('Failed to validate SSO token');
       } finally {

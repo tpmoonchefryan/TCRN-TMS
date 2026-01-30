@@ -34,7 +34,7 @@ export interface CustomDomainDialogProps {
 export function CustomDomainDialog({
   open,
   onOpenChange,
-  type,
+  type: _type,
   currentDomain,
   verified,
   verificationToken,

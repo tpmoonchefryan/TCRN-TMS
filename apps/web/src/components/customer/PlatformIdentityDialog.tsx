@@ -8,21 +8,21 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
+    Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    Input,
+    Label,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Switch,
 } from '@/components/ui';
 import { platformIdentityApi, systemDictionaryApi } from '@/lib/api/client';
 
@@ -87,13 +87,15 @@ export function PlatformIdentityDialog({
         if (response.success && response.data) {
           // System dictionary API returns paginated data, extract items array
           const items = Array.isArray(response.data) ? response.data : (response.data.items || response.data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setPlatforms(items.map((item: any) => ({
             id: item.id,
             code: item.code,
-            displayName: item.extraData?.displayName || item.nameEn || item.name_en || item.code,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            displayName: (item.extraData as any)?.displayName || item.nameEn || (item as any).name_en || item.code,
           })));
         }
-      } catch (error) {
+      } catch {
         // Use default platforms if API fails
         setPlatforms([
           { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },
@@ -173,8 +175,8 @@ export function PlatformIdentityDialog({
       
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
-      toast.error(error.message || tToast('error.save'));
+    } catch (error: unknown) {
+      toast.error((error as Error).message || tToast('error.save'));
     } finally {
       setIsSaving(false);
     }

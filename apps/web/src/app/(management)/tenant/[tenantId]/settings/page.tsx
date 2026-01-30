@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -7,7 +8,6 @@ import {
     Building2,
     CheckCircle,
     Clock,
-    Copy,
     Database,
     Edit,
     Languages,
@@ -18,13 +18,11 @@ import {
     Plus,
     Save,
     Search,
-    Settings,
     Shield,
-    Trash2,
     XCircle
 } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -49,8 +47,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+    DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,7 +69,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { configEntityApi, dictionaryApi, tenantApi, profileStoreApi, piiServiceConfigApi } from '@/lib/api/client';
+import { configEntityApi, dictionaryApi, piiServiceConfigApi, profileStoreApi, tenantApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 

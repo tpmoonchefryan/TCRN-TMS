@@ -8,7 +8,7 @@ interface JsonViewerProps {
   collapsed?: boolean;
 }
 
-export function JsonViewer({ data, className, collapsed = false }: JsonViewerProps) {
+export function JsonViewer({ data, className, collapsed: _collapsed = false }: JsonViewerProps) {
   if (data === null || data === undefined) {
     return <span className="text-slate-400 italic">null</span>;
   }

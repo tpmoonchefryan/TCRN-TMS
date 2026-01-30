@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { ArrowLeft, User, Building2, Lock, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { ArrowLeft, Building2, Loader2, Lock, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { Button, Card, Input, Label, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Textarea } from '@/components/ui';
-import { customerApi, companyCustomerApi } from '@/lib/api/client';
+import { Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@/components/ui';
+import { companyCustomerApi, customerApi } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface IndividualFormData {

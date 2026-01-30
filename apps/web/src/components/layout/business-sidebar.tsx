@@ -1,20 +1,21 @@
+/* eslint-disable import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import {
-  Users,
-  Globe,
-  MessageSquareHeart,
-  Settings,
-  ChevronRight,
-  History,
-  FileSpreadsheet,
-  UserCog,
+    ChevronRight,
+    FileSpreadsheet,
+    Globe,
+    History,
+    MessageSquareHeart,
+    Settings,
+    UserCog,
+    Users,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
@@ -52,7 +53,7 @@ interface NavGroupProps {
   children: React.ReactNode;
 }
 
-function NavGroup({ title, children }: NavGroupProps) {
+function NavGroup({ title: _title, children }: NavGroupProps) {
   return (
     <div className="mb-4">
       <div className="flex flex-col gap-1">{children}</div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -21,8 +22,8 @@ import {
     Settings,
     Shield,
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 

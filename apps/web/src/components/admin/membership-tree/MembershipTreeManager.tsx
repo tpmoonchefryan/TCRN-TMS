@@ -1,25 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { ConfigEntityForm, ENTITY_TYPE_CONFIGS } from '../config-entity-manager';
+import { ConfigEntityForm } from '../config-entity-manager';
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { configEntityApi } from '@/lib/api/client';
 
@@ -83,11 +83,11 @@ type EntityKind = 'class' | 'type' | 'level';
 export function MembershipTreeManager({
   scopeType = 'tenant',
   scopeId,
-  locale = 'en',
+  locale: _locale = 'en',
 }: MembershipTreeManagerProps) {
   const [tree, setTree] = useState<MembershipClass[]>([]);
   const [loading, setLoading] = useState(true);
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [includeInactive, _setIncludeInactive] = useState(false);
 
   // Form state
   const [formOpen, setFormOpen] = useState(false);
@@ -116,7 +116,7 @@ export function MembershipTreeManager({
           setTree(result.data);
         }
       }
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setLoading(false);
@@ -187,7 +187,7 @@ export function MembershipTreeManager({
       }
       setFormOpen(false);
       fetchTree();
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setFormLoading(false);
@@ -209,7 +209,7 @@ export function MembershipTreeManager({
         await configEntityApi.reactivate(entityType, entity.id, entity.version);
       }
       fetchTree();
-    } catch (error) {
+    } catch {
       // Error handling
     }
   };

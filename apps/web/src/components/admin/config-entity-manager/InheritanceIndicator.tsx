@@ -59,7 +59,7 @@ export function InheritanceIndicator({
   isForceUse,
   isSystem,
   isDisabledHere,
-  canDisable,
+  canDisable: _canDisable,
   ownerType,
   ownerName,
   locale = 'en',

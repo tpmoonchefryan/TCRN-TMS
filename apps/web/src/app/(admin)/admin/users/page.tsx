@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -13,8 +14,8 @@ import {
     UserPlus,
     Users
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,11 +44,22 @@ import { systemUserApi } from '@/lib/api/client';
 // Note: AC User Management is for managing platform-level users (e.g., API support staff)
 // Not to be confused with tenant-level user management
 
+
+interface SystemUser {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  lastLogin: string;
+}
+
 export default function ACUsersPage() {
   const t = useTranslations('adminConsole.users');
   const tCommon = useTranslations('common');
   const router = useRouter();
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

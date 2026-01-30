@@ -42,7 +42,7 @@ interface PageProps {
 // Generate Metadata for SEO
 export async function generateMetadata(
   props: PageProps,
-  parent: ResolvingMetadata
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const params = await props.params;
   const pathStr = Array.isArray(params.path) ? params.path.join('/') : params.path;

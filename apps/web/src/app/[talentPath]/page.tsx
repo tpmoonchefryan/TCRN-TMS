@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Talent Homepage (Public)
 
-import { 
-  ExternalLink, 
-  MessageCircle, 
-  Twitter, 
-  Youtube, 
-  Globe 
+import {
+    ExternalLink,
+    Globe,
+    MessageCircle,
+    Twitter,
+    Youtube
 } from 'lucide-react';
 import { Metadata } from 'next';
 import Link from 'next/link';

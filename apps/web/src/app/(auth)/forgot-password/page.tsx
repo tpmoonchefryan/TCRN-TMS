@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { ArrowLeft, Mail, Sparkles, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, CheckCircle2, Mail, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';

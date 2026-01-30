@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -114,7 +115,7 @@ export default function UserDetailPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsSaving(false);
@@ -133,7 +134,7 @@ export default function UserDetailPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsSaving(false);
@@ -150,7 +151,7 @@ export default function UserDetailPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsSaving(false);

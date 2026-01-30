@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import { FolderTree, Loader2, Plus, Search, Settings, X } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

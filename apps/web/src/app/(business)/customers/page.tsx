@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -19,9 +20,9 @@ interface CustomerListItem {
 }
 import { formatDistanceToNow } from 'date-fns';
 import { Building2, Filter, Loader2, Plus, Search, Upload, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

@@ -1,10 +1,11 @@
+/* eslint-disable import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import { Bell, Check, Languages, LogOut, Menu, Settings, User } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';

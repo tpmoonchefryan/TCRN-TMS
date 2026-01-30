@@ -65,7 +65,7 @@ export function IdentityHistoryTimeline({
         // Check if there are more items
         setHasMore(items.length === maxItems);
       }
-    } catch (error) {
+    } catch {
       // Silent fail - just show no history
     } finally {
       setIsLoading(false);

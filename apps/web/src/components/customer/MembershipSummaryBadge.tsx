@@ -87,7 +87,7 @@ export function MembershipSummaryBadge({
           totalCount,
         });
       }
-    } catch (error) {
+    } catch {
       // Silent fail - show no memberships
       setSummary({
         highestLevel: null,

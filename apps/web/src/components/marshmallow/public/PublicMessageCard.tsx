@@ -214,14 +214,14 @@ export function PublicMessageCard({
                 {(message.imageUrls && message.imageUrls.length > 0 ? message.imageUrls : [message.imageUrl]).filter(Boolean).map((img, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in shadow-sm">
                         <img 
-                            src={img!} 
+                            src={img || ''} 
                             alt={`Attachment ${index}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
                             referrerPolicy="no-referrer"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setPreviewImage(img!);
+                                setPreviewImage(img || null);
                             }}
                         />
                     </div>

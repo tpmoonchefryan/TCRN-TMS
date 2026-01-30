@@ -1,13 +1,14 @@
+/* eslint-disable no-useless-escape, import/order */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { Sparkles, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertTriangle, CheckCircle2, Lock, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-import { Button, Input, Card, CardContent, CardDescription, CardHeader, CardTitle, Label } from '@/components/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 

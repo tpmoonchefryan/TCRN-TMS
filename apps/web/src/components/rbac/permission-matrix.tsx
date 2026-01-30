@@ -1,10 +1,8 @@
 'use client';
 
-import { ResourceDefinition, Permission, ActionType } from '@tcrn/shared';
-import { useState } from 'react';
+import { ActionType, Permission, ResourceDefinition } from '@tcrn/shared';
 
-import { Checkbox } from '@/components/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Checkbox } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface PermissionMatrixProps {

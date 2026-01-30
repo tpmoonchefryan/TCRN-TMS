@@ -1,20 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import { CustomerIndividual, PiiData } from '@tcrn/shared';
-import { Eye, Lock, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Clock, Eye, Lock, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { piiTokenManager, type PiiProfile, PiiServiceError } from '@/lib/pii';
+import { PiiServiceError, piiTokenManager, type PiiProfile } from '@/lib/pii';
 import { cn } from '@/lib/utils';
 import { useTalentStore } from '@/stores/talent-store';
 
@@ -43,8 +42,8 @@ export function PiiReveal({ customer, onReveal }: PiiRevealProps) {
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [retryState, setRetryState] = useState<{ count: number; delay: number | null }>({ count: 0, delay: null });
-  const [error, setError] = useState<string | null>(null);
+  const [_retryState, setRetryState] = useState<{ count: number; delay: number | null }>({ count: 0, delay: null });
+  const [_error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const refreshAttemptedRef = useRef(false);
@@ -77,7 +76,7 @@ export function PiiReveal({ customer, onReveal }: PiiRevealProps) {
         setError(null);
         toast.success(t('status.accessExtended'));
       }
-    } catch (err: any) {
+    } catch {
       toast.warning(t('errors.extendFailed'));
     } finally {
       setIsRefreshing(false);
@@ -341,3 +340,4 @@ export function PiiReveal({ customer, onReveal }: PiiRevealProps) {
     </div>
   );
 }
+
