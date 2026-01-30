@@ -220,7 +220,7 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
  * Should be called by a cron job (e.g., daily at 2:00 AM)
  */
 export async function scheduleMembershipRenewalJob(
-  queue: Queue | { add: (name: string, data: MembershipRenewalJobData, opts?: any) => Promise<any> },
+  queue: Queue | { add: (name: string, data: MembershipRenewalJobData, opts?: unknown) => Promise<unknown> },
   tenantId: string,
   tenantSchemaName: string
 ) {

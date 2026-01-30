@@ -52,6 +52,7 @@ class Logger {
         break;
       default:
         // Use console.info instead of console.log for production compliance
+        // eslint-disable-next-line no-console
         console.info(formatted);
     }
   }

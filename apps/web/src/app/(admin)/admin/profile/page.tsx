@@ -41,10 +41,12 @@ export default function AdminProfilePage() {
     try {
       const response = await userApi.updateProfile({ displayName });
       if (response.success && response.data) {
-        setUser({
-          ...user!,
-          display_name: displayName,
-        });
+        if (user) {
+          setUser({
+            ...user,
+            display_name: displayName,
+          });
+        }
         toast.success(t('saveSuccess'));
       }
     } catch (error) {

@@ -42,10 +42,11 @@ export default function ConsumersPage() {
       } else {
         setError(response.error?.message || tCommon('error'));
       }
-    } catch (err: any) {
-      setError(err.message || tCommon('error'));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : tCommon('error');
+      setError(errorMessage);
       toast.error(tCommon('error'), {
-        description: err.message,
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

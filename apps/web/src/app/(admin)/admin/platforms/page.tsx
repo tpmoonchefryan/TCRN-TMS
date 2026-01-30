@@ -28,10 +28,12 @@ export default function PlatformsPage() {
   const te = useTranslations('errors');
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useCallback((error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = useCallback((error: unknown): string => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errorCode = (error as any)?.code;
     if (errorCode && typeof errorCode === 'string') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const translated = te(errorCode as any);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
@@ -40,7 +42,8 @@ export default function PlatformsPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (error as any)?.message || te('generic');
   }, [te]);
 
   const [platforms, setPlatforms] = useState<Platform[]>([]);
@@ -55,7 +58,7 @@ export default function PlatformsPage() {
       if (response.success && response.data) {
         setPlatforms(response.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsLoading(false);

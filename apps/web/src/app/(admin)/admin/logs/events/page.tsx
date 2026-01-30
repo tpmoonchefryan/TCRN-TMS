@@ -3,15 +3,14 @@
 'use client';
 
 import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Loader2,
-  RefreshCw,
-  Search,
-  Shield,
+    Activity,
+    AlertCircle,
+    AlertTriangle,
+    Info,
+    Loader2,
+    RefreshCw,
+    Search,
+    Shield,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -22,19 +21,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import { logApi } from '@/lib/api/client';
 
