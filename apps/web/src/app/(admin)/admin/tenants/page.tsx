@@ -3,8 +3,8 @@
 'use client';
 
 import { Building, CheckCircle, Loader2, Plus, RefreshCw, Search, XCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -47,10 +47,11 @@ export default function TenantsPage() {
       } else {
         setError(response.error?.message || tCommon('error'));
       }
-    } catch (err: any) {
-      setError(err.message || tCommon('error'));
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || tCommon('error');
+      setError(errorMessage);
       toast.error(tCommon('error'), {
-        description: err.message,
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

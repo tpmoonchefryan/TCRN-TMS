@@ -167,7 +167,7 @@ export async function proxy(request: NextRequest) {
 
   // Get locale from cookie
   const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  if (cookieLocale && locales.includes(cookieLocale as any)) {
+  if (cookieLocale && (locales as readonly string[]).includes(cookieLocale)) {
     return NextResponse.next();
   }
 
@@ -179,7 +179,7 @@ export async function proxy(request: NextRequest) {
     const preferredLocale = acceptLanguage
       .split(',')
       .map((lang) => lang.split(';')[0].trim().split('-')[0])
-      .find((lang) => locales.includes(lang as any));
+      .find((lang) => (locales as readonly string[]).includes(lang));
     if (preferredLocale) {
       detectedLocale = preferredLocale as typeof defaultLocale;
     }

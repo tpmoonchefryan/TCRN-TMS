@@ -1,21 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import {
-  ChevronRight,
-  ChevronDown,
-  Building2,
-  FolderTree,
-  Sparkles,
-  Settings,
-  Check,
-  ToggleLeft,
-  ToggleRight,
+    Building2,
+    Check,
+    ChevronDown,
+    ChevronRight,
+    FolderTree,
+    Settings,
+    Sparkles,
+    ToggleLeft,
+    ToggleRight,
 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SubsidiaryInfo, TalentInfo } from '@/stores/talent-store';
 

@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { ADAPTER_CONFIG_KEYS, integrationSchema } from '@tcrn/shared';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 type AdapterConfig = integrationSchema.AdapterConfig;
 type AdapterType = integrationSchema.AdapterType;
-import { Eye, EyeOff, Lock } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { Input, Button, Label } from '@/components/ui';
+import { Button, Input, Label } from '@/components/ui';
 
 interface AdapterConfigFormProps {
   type: AdapterType;

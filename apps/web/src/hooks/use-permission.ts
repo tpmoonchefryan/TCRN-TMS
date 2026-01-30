@@ -69,6 +69,7 @@ export function usePermission() {
   // Get user's role codes
   const userRoles = useMemo(() => {
     if (!user?.roles) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return user.roles.map((r: any) => r.code || r);
   }, [user]);
 
@@ -84,7 +85,7 @@ export function usePermission() {
   const hasPermission = useCallback((
     resource: string, 
     action: ActionType | ActionType[],
-    scopeId?: string
+    _scopeId?: string
   ): boolean => {
     if (!isAuthenticated || !user) return false;
 

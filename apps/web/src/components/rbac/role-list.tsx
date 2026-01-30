@@ -1,23 +1,22 @@
 'use client';
 
 import { RoleDetail } from '@tcrn/shared';
-import { MoreHorizontal, Plus, Shield, ShieldAlert, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Shield, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import React from 'react';
 
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow,
-  Button,
-  Badge,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
+import {
+    Badge,
+    Button,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from '@/components/ui';
 
 interface RoleListProps {
@@ -50,6 +49,8 @@ export function RoleList({ roles }: RoleListProps) {
                 </div>
               </TableCell>
               <TableCell>
+          /* eslint-disable @typescript-eslint/no-unused-vars */
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial Licenses
                 <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
                   {role.code}
                 </code>

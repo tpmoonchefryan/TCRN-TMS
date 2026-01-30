@@ -10,12 +10,12 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,7 +81,7 @@ export function CustomDomainDialog({
         setLocalVerified(false);
       }
       toast.success(t('domainSaved') || 'Domain saved');
-    } catch (error) {
+    } catch {
       toast.error(tCommon('error'));
     } finally {
       setIsSaving(false);
@@ -99,7 +99,7 @@ export function CustomDomainDialog({
       } else {
         toast.error(result.message || t('verificationFailed'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('verificationFailed'));
     } finally {
       setIsVerifying(false);
@@ -115,7 +115,7 @@ export function CustomDomainDialog({
       setLocalVerified(false);
       toast.success(t('domainRemoved') || 'Domain removed');
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error(tCommon('error'));
     } finally {
       setIsSaving(false);

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';

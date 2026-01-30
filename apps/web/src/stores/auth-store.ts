@@ -202,13 +202,14 @@ export const useAuthStore = create<AuthState>()(
           }
           
           set({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             error: (response as any).error?.message || 'Login failed',
             isLoading: false,
           });
           return { success: false };
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
-            error: error.message || 'Login failed',
+            error: (error as Error).message || 'Login failed',
             isLoading: false,
           });
           return { success: false };
@@ -241,9 +242,9 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
           return false;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
-            error: error.message || 'Verification failed',
+            error: (error as Error).message || 'Verification failed',
             isLoading: false,
           });
           return false;
@@ -278,9 +279,9 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
           return false;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
-            error: error.message || 'Password reset failed',
+            error: (error as Error).message || 'Password reset failed',
             isLoading: false,
           });
           return false;

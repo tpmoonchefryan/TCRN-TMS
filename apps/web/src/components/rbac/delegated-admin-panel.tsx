@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Building2, Loader2, Plus, ShieldCheck, Trash2, User, Users } from 'lucide-react';
@@ -8,33 +9,33 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    Label,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui';
-import { delegatedAdminApi, DelegatedAdmin, systemUserApi, systemRoleApi, organizationApi } from '@/lib/api/client';
+import { DelegatedAdmin, delegatedAdminApi, organizationApi, systemRoleApi, systemUserApi } from '@/lib/api/client';
 
 interface DelegatedAdminPanelProps {
   scopeType?: 'subsidiary' | 'talent';

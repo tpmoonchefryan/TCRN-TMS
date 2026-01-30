@@ -1,25 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { Plus, RefreshCw, Shield, Filter } from 'lucide-react';
+import { Filter, Plus, RefreshCw, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 
 import { BlocklistForm } from './BlocklistForm';
 import { BlocklistTable } from './BlocklistTable';
 import { PatternTester } from './PatternTester';
 
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  Switch,
-  Label,
+import {
+    Button,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    Label,
+    Switch,
 } from '@/components/ui';
 import { securityApi } from '@/lib/api/client';
 

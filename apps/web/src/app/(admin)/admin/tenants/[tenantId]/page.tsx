@@ -12,8 +12,8 @@ import {
     Settings,
     XCircle
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,10 +43,12 @@ export default function TenantDetailPage() {
   const tenantId = params.tenantId as string;
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useCallback((error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = useCallback((error: unknown): string => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errorCode = (error as any)?.code;
     if (errorCode && typeof errorCode === 'string') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const translated = te(errorCode as any);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
@@ -55,7 +57,7 @@ export default function TenantDetailPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return (error as Error)?.message || te('generic');
   }, [te]);
 
   const [tenant, setTenant] = useState<TenantDetails | null>(null);
@@ -88,8 +90,8 @@ export default function TenantDetailPage() {
       } else {
         setError(response.error?.message || 'Failed to fetch tenant');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tenant');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to fetch tenant');
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +121,7 @@ export default function TenantDetailPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsSaving(false);
@@ -138,7 +140,7 @@ export default function TenantDetailPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
       setIsSaving(false);

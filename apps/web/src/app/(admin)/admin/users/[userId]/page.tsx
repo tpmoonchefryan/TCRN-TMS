@@ -15,8 +15,8 @@ import {
     User,
     XCircle
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -44,10 +44,12 @@ export default function UserDetailPage() {
   const userId = params.userId as string;
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useCallback((error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = useCallback((error: unknown): string => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errorCode = (error as any)?.code;
     if (errorCode && typeof errorCode === 'string') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const translated = te(errorCode as any);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
@@ -56,7 +58,7 @@ export default function UserDetailPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return (error as Error)?.message || te('generic');
   }, [te]);
 
   const [user, setUser] = useState<UserDetails | null>(null);
@@ -87,8 +89,8 @@ export default function UserDetailPage() {
       } else {
         setError(response.error?.message || 'Failed to fetch user');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch user');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to fetch user');
     } finally {
       setIsLoading(false);
     }

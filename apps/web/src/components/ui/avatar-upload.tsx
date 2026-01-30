@@ -103,7 +103,7 @@ export function AvatarUpload({
         setPreviewUrl(null);
         toast.error(result.error?.message || t('uploadFailed'));
       }
-    } catch (error) {
+    } catch {
       setPreviewUrl(null);
       toast.error(t('uploadFailed'));
     } finally {
@@ -127,7 +127,7 @@ export function AvatarUpload({
       } else {
         toast.error(t('deleteFailed'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('deleteFailed'));
     } finally {
       setIsDeleting(false);

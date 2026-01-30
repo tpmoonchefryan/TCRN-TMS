@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { Globe, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
 import { securityApi } from '@/lib/api/client';
 
 export function IpChecker() {

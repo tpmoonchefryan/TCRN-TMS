@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 'use client';
 
 import { Slot } from '@radix-ui/react-slot';
@@ -213,16 +214,10 @@ function SidebarTrigger({ className, ...props }: SidebarTriggerProps) {
 }
 
 export {
-  Sidebar,
-  SidebarProvider,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
-  useSidebar,
+    Sidebar, SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
+    useSidebar
 };
+

@@ -2,37 +2,37 @@
 
 'use client';
 
-import { 
-  Edit2, 
-  Trash2, 
-  Power, 
-  PowerOff, 
-  AlertTriangle, 
-  AlertCircle, 
-  Info,
-  Ban,
-  Check,
-  ArrowDownFromLine,
-  Lock,
-  Shield,
+import {
+    AlertCircle,
+    AlertTriangle,
+    ArrowDownFromLine,
+    Ban,
+    Check,
+    Edit2,
+    Info,
+    Lock,
+    Power,
+    PowerOff,
+    Shield,
+    Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { BlocklistEntry } from './index';
 
 import {
-  Badge,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Badge,
+    Button,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui';
 
 
@@ -51,8 +51,8 @@ interface BlocklistTableProps {
 export function BlocklistTable({
   entries,
   isLoading,
-  scopeType = 'tenant',
-  scopeId,
+  scopeType: _scopeType = 'tenant',
+  scopeId: _scopeId,
   onEdit,
   onDelete,
   onToggleActive,
@@ -111,6 +111,7 @@ export function BlocklistTable({
         return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
+
 
   const getSeverityBadge = (severity: string) => {
     const variants: Record<string, 'destructive' | 'warning' | 'secondary'> = {

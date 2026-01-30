@@ -124,7 +124,7 @@ export function EmailConfigPanel() {
           setSmtpFromName(config.smtp.fromName || 'TCRN TMS');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error(t('loadError') || 'Failed to load email configuration');
     } finally {
       setIsLoading(false);
@@ -185,7 +185,7 @@ export function EmailConfigPanel() {
       } else {
         throw new Error('Save failed');
       }
-    } catch (error) {
+    } catch {
       toast.error(t('saveError') || 'Failed to save email configuration');
     } finally {
       setIsSaving(false);
@@ -205,7 +205,7 @@ export function EmailConfigPanel() {
           toast.error(result.error || result.message || t('connectionFailed') || 'Connection failed');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error(t('connectionError') || 'Failed to test connection');
     } finally {
       setIsTestingConnection(false);
@@ -236,7 +236,7 @@ export function EmailConfigPanel() {
           toast.error(result.error || result.message || t('testFailed') || 'Failed to send test email');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error(t('testError') || 'Failed to send test email');
     } finally {
       setIsTesting(false);

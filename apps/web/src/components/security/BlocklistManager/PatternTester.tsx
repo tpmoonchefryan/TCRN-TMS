@@ -2,7 +2,10 @@
 
 'use client';
 
-import { CheckCircle2, AlertTriangle, Play, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Play, XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 // Local enum to avoid import issues with @tcrn/shared in client components
 const BlocklistPatternType = {
@@ -10,11 +13,8 @@ const BlocklistPatternType = {
   REGEX: 'regex',
   WILDCARD: 'wildcard',
 } as const;
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label, Textarea } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea } from '@/components/ui';
 import { securityApi } from '@/lib/api/client';
 
 interface PatternTesterProps {
@@ -35,7 +35,7 @@ export function PatternTester({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, setValue } = useForm({
+  const { register, handleSubmit } = useForm({
     defaultValues: {
       pattern: defaultPattern,
       pattern_type: defaultPatternType,
@@ -45,6 +45,7 @@ export function PatternTester({
 
   // Keep form synced with props if needed, but for now simple state
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onTest = async (data: any) => {
     setIsLoading(true);
     setError(null);
@@ -64,6 +65,7 @@ export function PatternTester({
         const apiResult = response.data;
         
         // If API returns highlighted_content, use it; otherwise build client-side
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let highlightedContent = (apiResult as any).highlighted_content || (apiResult as any).highlightedContent;
         
         if (!highlightedContent && apiResult.matched) {
@@ -96,8 +98,8 @@ export function PatternTester({
       } else {
         setError(t('testFailed'));
       }
-    } catch (err: any) {
-      setError(err.message || t('testFailed'));
+    } catch (err: unknown) {
+      setError((err as Error).message || t('testFailed'));
     } finally {
       setIsLoading(false);
     }

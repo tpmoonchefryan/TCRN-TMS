@@ -49,7 +49,7 @@ export default function AdminProfilePage() {
         }
         toast.success(t('saveSuccess'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('saveFailed'));
     } finally {
       setIsSaving(false);

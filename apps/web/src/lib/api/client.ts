@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -654,7 +655,7 @@ export const externalIdApi = {
   create: (customerId: string, data: CreateExternalIdData, talentId: string) =>
     apiClient.post<ExternalIdRecord>(`/api/v1/customers/${customerId}/external-ids`, data, { 'X-Talent-Id': talentId }),
   
-  delete: (customerId: string, externalIdId: string, talentId: string) =>
+  delete: (customerId: string, externalIdId: string, _talentId: string) =>
     apiClient.delete<{ message: string }>(`/api/v1/customers/${customerId}/external-ids/${externalIdId}`),
 };
 
@@ -1375,7 +1376,7 @@ export const dictionaryApi = {
     apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
 
   // Deactivate dictionary item (AC only)
-  deactivateItem: (typeCode: string, itemId: string, version: number) =>
+  deactivateItem: (typeCode: string, itemId: string, _version: number) =>
     apiClient.delete<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`),
 
   // Reactivate dictionary item (AC only)

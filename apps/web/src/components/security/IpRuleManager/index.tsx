@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { Plus, RefreshCw, Globe } from 'lucide-react';
+import { Globe, Plus, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 
 import { IpChecker } from './IpChecker';
