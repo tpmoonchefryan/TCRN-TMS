@@ -244,7 +244,7 @@ class ScopeDto {
   scopeId: string;
 }
 
-class TestBlocklistDto {
+class TestBlocklistTextDto {
   @ApiProperty({ description: 'Scope type for blocklist', enum: ['tenant', 'subsidiary', 'talent'], example: 'talent' })
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType: OwnerType;
@@ -738,7 +738,7 @@ export class ConfigController {
   @ApiOperation({ summary: 'Test blocklist' })
   async testBlocklist(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: TestBlocklistDto,
+    @Body() dto: TestBlocklistTextDto,
   ) {
     const result = await this.blocklistService.testText(
       user.tenantSchema,
