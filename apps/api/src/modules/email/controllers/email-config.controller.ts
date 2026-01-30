@@ -1,32 +1,32 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Body,
-  ForbiddenException,
-  UseGuards,
-  BadRequestException,
+    BadRequestException,
+    Body,
+    Controller,
+    ForbiddenException,
+    Get,
+    Post,
+    Put,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '../../../common/guards';
 import { AuthenticatedUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../../common/guards';
 import { success } from '../../../common/response.util';
 
-import { EmailConfigService } from '../services/email-config.service';
-import { TencentSesClient } from '../services/tencent-ses.client';
-import { SmtpClient } from '../services/smtp.client';
 import { SaveEmailConfigDto, TestEmailDto } from '../dto/email-config.dto';
+import { EmailConfigService } from '../services/email-config.service';
+import { SmtpClient } from '../services/smtp.client';
+import { TencentSesClient } from '../services/tencent-ses.client';
 
 /**
  * Email Configuration Controller
  * For AC tenant admin to manage email provider configuration
  * Route: /api/v1/email/config
  */
-@ApiTags('Email Configuration')
+@ApiTags('Ops - Email')
 @Controller('email/config')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)

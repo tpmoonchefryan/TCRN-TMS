@@ -1,30 +1,30 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Query,
-  Body,
-  Headers,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Get,
+    Headers,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  CreatePlatformIdentityDto,
-  UpdatePlatformIdentityDto,
-  PlatformIdentityHistoryQueryDto,
+    CreatePlatformIdentityDto,
+    PlatformIdentityHistoryQueryDto,
+    UpdatePlatformIdentityDto,
 } from '../dto/customer.dto';
 import { PlatformIdentityService } from '../services/platform-identity.service';
 
-@ApiTags('Customers - Platform Identities')
+@ApiTags('Customer - Platform IDs')
 @Controller('customers/:customerId/platform-identities')
 export class PlatformIdentityController {
   constructor(

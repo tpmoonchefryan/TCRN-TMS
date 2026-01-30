@@ -7,7 +7,7 @@ import {
     Param,
     Put
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsObject, IsString, Min } from 'class-validator';
 
@@ -18,9 +18,11 @@ import { ScopeSettings, SettingsService } from './settings.service';
 
 // DTOs
 class UpdateSettingsDto {
+  @ApiProperty({ description: 'Settings object to update', example: { defaultLanguage: 'ja', maxItems: 100 } })
   @IsObject()
   settings: Record<string, unknown>;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
   @Min(1)
   @Type(() => Number)
@@ -28,6 +30,7 @@ class UpdateSettingsDto {
 }
 
 class ResetFieldDto {
+  @ApiProperty({ description: 'Field name to reset', example: 'defaultLanguage' })
   @IsString()
   field: string;
 }
@@ -36,7 +39,7 @@ class ResetFieldDto {
  * Settings Controller
  * Manages hierarchical settings for tenant, subsidiary, and talent
  */
-@ApiTags('Settings')
+@ApiTags('System - Settings')
 @Controller()
 @ApiBearerAuth()
 export class SettingsController {

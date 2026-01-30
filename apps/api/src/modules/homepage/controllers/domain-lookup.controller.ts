@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  NotFoundException,
-  Query,
-  UseGuards,
+    Controller,
+    Get,
+    NotFoundException,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
@@ -14,7 +14,7 @@ import { Public } from '../../../common/decorators';
 import { RateLimiterGuard } from '../../../common/guards/rate-limiter.guard';
 import { DomainLookupService } from '../services/domain-lookup.service';
 
-@ApiTags('Domain Lookup')
+@ApiTags('Public - Homepage')
 @Controller('public/domain-lookup')
 export class DomainLookupController {
   constructor(private readonly domainLookupService: DomainLookupService) {}

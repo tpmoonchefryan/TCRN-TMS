@@ -1,29 +1,31 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
 
-import { JwtAuthGuard } from '../../../common/guards';
 import { RequirePermissions } from '../../../common/decorators';
-import { EmailTemplateService } from '../services/email-template.service';
+import { JwtAuthGuard } from '../../../common/guards';
 import {
-  CreateEmailTemplateDto,
-  UpdateEmailTemplateDto,
-  PreviewEmailTemplateDto,
-  EmailTemplateQueryDto,
+    CreateEmailTemplateDto,
+    EmailTemplateQueryDto,
+    PreviewEmailTemplateDto,
+    UpdateEmailTemplateDto,
 } from '../dto/email-template.dto';
+import { EmailTemplateService } from '../services/email-template.service';
 
+import { ApiTags } from '@nestjs/swagger';
 import type { SupportedLocale } from '../interfaces/email.interface';
 
+@ApiTags('Ops - Email')
 @Controller('email-templates')
 @UseGuards(JwtAuthGuard)
 export class EmailTemplateController {

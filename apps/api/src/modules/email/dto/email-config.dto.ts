@@ -1,17 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import {
-  IsString,
-  IsNumber,
-  IsBoolean,
-  IsOptional,
-  IsIn,
-  ValidateNested,
-  Min,
-  Max,
-  IsEmail,
-} from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+    IsBoolean,
+    IsEmail,
+    IsIn,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Max,
+    Min,
+    ValidateNested,
+} from 'class-validator';
 
 /**
  * Tencent Cloud SES configuration

@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+
 import {
-  IsString,
-  IsOptional,
-  IsArray,
-  IsIn,
-  IsBoolean,
-  MaxLength,
-  MinLength,
+    IsArray,
+    IsBoolean,
+    IsIn,
+    IsOptional,
+    IsString,
+    MaxLength,
+    MinLength,
 } from 'class-validator';
 
 export class CreateEmailTemplateDto {

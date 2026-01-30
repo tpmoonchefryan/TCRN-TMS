@@ -1,25 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  Headers,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { CreateExternalIdDto } from '../dto/customer.dto';
 import { CustomerExternalIdService } from '../services/external-id.service';
 
-@ApiTags('Customers - External IDs')
+@ApiTags('Customer - External IDs')
 @Controller('customers/:customerId/external-ids')
 export class ExternalIdController {
   constructor(

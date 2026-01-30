@@ -1,29 +1,29 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Query,
-  Body,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  CreatePiiServiceConfigDto,
-  UpdatePiiServiceConfigDto,
-  PaginationQueryDto,
+    CreatePiiServiceConfigDto,
+    PaginationQueryDto,
+    UpdatePiiServiceConfigDto,
 } from '../dto/pii-config.dto';
 import { PiiServiceConfigService } from '../services/pii-service-config.service';
 
-@ApiTags('PII Service Config')
+@ApiTags('System - PII')
 @Controller('pii-service-configs')
 export class PiiServiceConfigController {
   constructor(

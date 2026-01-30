@@ -1,37 +1,37 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Put,
-  Param,
-  Body,
-  Query,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Put,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  AdapterListQueryDto,
-  CreateAdapterDto,
-  UpdateAdapterDto,
-  UpdateAdapterConfigsDto,
-  DisableAdapterDto,
-  CreateWebhookDto,
-  UpdateWebhookDto,
+    AdapterListQueryDto,
+    CreateAdapterDto,
+    CreateWebhookDto,
+    DisableAdapterDto,
+    UpdateAdapterConfigsDto,
+    UpdateAdapterDto,
+    UpdateWebhookDto,
 } from '../dto/integration.dto';
 import { AdapterService } from '../services/adapter.service';
 import { ApiKeyService } from '../services/api-key.service';
 import { WebhookService } from '../services/webhook.service';
 
-@ApiTags('Integration')
+@ApiTags('Ops - Integration')
 @Controller('integration')
 export class IntegrationController {
   constructor(

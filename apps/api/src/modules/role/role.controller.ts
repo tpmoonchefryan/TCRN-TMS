@@ -1,102 +1,119 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Put,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Put,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsBoolean, IsInt, Min, IsArray, Matches, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { RoleService } from './role.service';
 
 // DTOs
 class ListRolesQueryDto {
+  @ApiPropertyOptional({ description: 'Search by role code or name', example: 'admin' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by system roles only', example: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   isSystem?: boolean;
 
+  @ApiPropertyOptional({ description: 'Filter by active status', example: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Sort field', example: 'code' })
   @IsOptional()
   @IsString()
   sort?: string;
 }
 
 class CreateRoleDto {
+  @ApiProperty({ description: 'Role code (uppercase letters, numbers, underscores)', example: 'SALES_MANAGER', pattern: '^[A-Z0-9_]{3,32}$' })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
+  @ApiProperty({ description: 'Role name in English', example: 'Sales Manager', minLength: 1 })
   @IsString()
   @MinLength(1)
   nameEn: string;
 
+  @ApiPropertyOptional({ description: 'Role name in Chinese', example: '销售经理' })
   @IsOptional()
   @IsString()
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Role name in Japanese', example: '営業マネージャー' })
   @IsOptional()
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Role description', example: 'Manages sales team and customer relationships' })
   @IsOptional()
   @IsString()
   description?: string;
 
+  @ApiProperty({ description: 'Permission IDs to assign', type: [String], example: ['perm-001', 'perm-002'] })
   @IsArray()
   @IsString({ each: true })
   permissionIds: string[];
 }
 
 class UpdateRoleDto {
+  @ApiPropertyOptional({ description: 'Role name in English', example: 'Senior Sales Manager' })
   @IsOptional()
   @IsString()
   nameEn?: string;
 
+  @ApiPropertyOptional({ description: 'Role name in Chinese', example: '高级销售经理' })
   @IsOptional()
   @IsString()
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Role name in Japanese', example: 'シニア営業マネージャー' })
   @IsOptional()
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Role description', example: 'Senior manager for sales operations' })
   @IsOptional()
   @IsString()
   description?: string;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
   @Min(1)
   version: number;
 }
 
 class SetPermissionsDto {
+  @ApiProperty({ description: 'Permission IDs to set (replaces all existing)', type: [String], example: ['perm-001', 'perm-002', 'perm-003'] })
   @IsArray()
   @IsString({ each: true })
   permissionIds: string[];
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
   @Min(1)
   version: number;
@@ -123,7 +140,7 @@ function getLocalizedName(
  * Role Controller
  * Manages roles and their permissions
  */
-@ApiTags('Roles')
+@ApiTags('System - Roles')
 @Controller('roles')
 @ApiBearerAuth()
 export class RoleController {

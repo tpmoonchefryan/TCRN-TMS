@@ -5,7 +5,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AppService } from './app.service';
 
-@ApiTags('root')
+@ApiTags('Public - Health')
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

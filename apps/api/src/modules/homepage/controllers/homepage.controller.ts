@@ -1,32 +1,32 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Patch,
-  Param,
-  Body,
-  Query,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Put,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser, AuthenticatedUser } from '../../../common/decorators';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  SaveDraftDto,
-  PublishDto,
-  UpdateSettingsDto,
-  VersionListQueryDto,
+    PublishDto,
+    SaveDraftDto,
+    UpdateSettingsDto,
+    VersionListQueryDto,
 } from '../dto/homepage.dto';
 import { HomepageVersionService } from '../services/homepage-version.service';
 import { HomepageService } from '../services/homepage.service';
 
-@ApiTags('Homepage Management')
+@ApiTags('Ops - Homepage')
 @Controller('talents/:talentId/homepage')
 export class HomepageController {
   constructor(

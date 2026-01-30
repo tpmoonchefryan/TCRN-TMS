@@ -1,13 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Controller, Get, Query, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { prisma } from '@tcrn/database';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
@@ -36,7 +35,7 @@ interface UserRoleInfo {
  * Handles GET /api/v1/users/me/permissions
  * PRD §12.6 - Get current user's effective permissions
  */
-@ApiTags('User Permissions')
+@ApiTags('System - Permissions')
 @Controller('users/me/permissions')
 @ApiBearerAuth()
 export class MyPermissionsController {

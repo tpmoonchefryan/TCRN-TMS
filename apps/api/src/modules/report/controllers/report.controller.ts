@@ -1,31 +1,31 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  Query,
-  Req,
-  Res,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    Query,
+    Req,
+    Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request, Response } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  MfrSearchRequestDto,
-  CreateMfrJobDto,
-  ReportJobListQueryDto,
+    CreateMfrJobDto,
+    MfrSearchRequestDto,
+    ReportJobListQueryDto,
 } from '../dto/report.dto';
 import { MfrReportService } from '../services/mfr-report.service';
 import { ReportJobService } from '../services/report-job.service';
 
-@ApiTags('Reports')
+@ApiTags('Ops - Reports')
 @Controller('reports')
 export class ReportController {
   constructor(

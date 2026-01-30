@@ -1,38 +1,42 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  Req,
+    Body,
+    Controller,
+    Get,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
-import { PermissionService, PermissionAction, PermissionEffect } from './permission.service';
+import { PermissionAction, PermissionEffect, PermissionService } from './permission.service';
 
 // DTOs
 class ListPermissionsQueryDto {
+  @ApiPropertyOptional({ description: 'Filter by resource code', example: 'customer.profile' })
   @IsOptional()
   @IsString()
   resourceCode?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by action type', example: 'read', enum: ['create', 'read', 'update', 'delete', 'manage'] })
   @IsOptional()
   @IsString()
   action?: PermissionAction;
 
+  @ApiPropertyOptional({ description: 'Filter by effect type', example: 'allow', enum: ['allow', 'deny'] })
   @IsOptional()
   @IsString()
   effect?: PermissionEffect;
 
+  @ApiPropertyOptional({ description: 'Filter by active status', example: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -40,22 +44,27 @@ class ListPermissionsQueryDto {
 }
 
 class PermissionCheckDto {
+  @ApiProperty({ description: 'Resource code to check', example: 'customer.profile' })
   @IsString()
   resource: string;
 
+  @ApiProperty({ description: 'Action to check', example: 'read' })
   @IsString()
   action: string;
 
+  @ApiPropertyOptional({ description: 'Scope type for contextual check', example: 'subsidiary', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsOptional()
   @IsString()
   scopeType?: ScopeType;
 
+  @ApiPropertyOptional({ description: 'Scope ID for contextual check', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   scopeId?: string;
 }
 
 class CheckPermissionsDto {
+  @ApiProperty({ description: 'List of permission checks to perform', type: [PermissionCheckDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PermissionCheckDto)
@@ -63,10 +72,12 @@ class CheckPermissionsDto {
 }
 
 class GetMyPermissionsQueryDto {
+  @ApiPropertyOptional({ description: 'Scope type to filter permissions', example: 'talent', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsOptional()
   @IsString()
   scopeType?: ScopeType;
 
+  @ApiPropertyOptional({ description: 'Scope ID to filter permissions', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   scopeId?: string;
@@ -93,7 +104,7 @@ function getLocalizedName(
  * Permission Controller
  * Manages permission entries and checks
  */
-@ApiTags('Permissions')
+@ApiTags('System - Permissions')
 @Controller('permissions')
 @ApiBearerAuth()
 export class PermissionController {

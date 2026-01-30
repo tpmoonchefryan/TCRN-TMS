@@ -13,7 +13,7 @@ import {
     Query,
     Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
@@ -23,131 +23,159 @@ import { paginated, success } from '../../common/response.util';
 
 import { BlocklistService } from './blocklist.service';
 import { ConfigService } from './config.service';
-import { ConsumerKeyService } from './consumer-key.service';
 import { CONFIG_TABLE_NAMES, ConfigEntityType, OwnerType } from './config.types';
+import { ConsumerKeyService } from './consumer-key.service';
 
 // DTOs
 class ListConfigQueryDto {
+  @ApiPropertyOptional({ description: 'Scope type filter', enum: ['tenant', 'subsidiary', 'talent'], example: 'talent' })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType?: OwnerType;
 
+  @ApiPropertyOptional({ description: 'Scope ID filter', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   scopeId?: string;
 
+  @ApiPropertyOptional({ description: 'Include inherited configs', example: true, default: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeInherited?: boolean;
 
+  @ApiPropertyOptional({ description: 'Include disabled configs', example: false, default: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeDisabled?: boolean;
 
+  @ApiPropertyOptional({ description: 'Include inactive configs', example: false, default: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeInactive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Only show configs owned by current scope', example: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   ownerOnly?: boolean;
 
+  @ApiPropertyOptional({ description: 'Search keyword', example: 'VIP' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Parent ID for hierarchical configs', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   parentId?: string;
 
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   page?: number;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 50, minimum: 1, default: 50 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   pageSize?: number;
 
+  @ApiPropertyOptional({ description: 'Sort field', example: 'sortOrder' })
   @IsOptional()
   @IsString()
   sort?: string;
 }
 
 class CreateConfigDto {
+  @ApiProperty({ description: 'Config code (uppercase)', example: 'VIP_STATUS', pattern: '^[A-Z0-9_]{3,32}$' })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
+  @ApiProperty({ description: 'Name in English', example: 'VIP Status', minLength: 1 })
   @IsString()
   @MinLength(1)
   nameEn: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', example: 'VIP状态' })
   @IsOptional()
   @IsString()
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'VIPステータス' })
   @IsOptional()
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English', example: 'Customer VIP status indicator' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese', example: '客户VIP状态指示器' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese', example: '顧客VIPステータスインジケーター' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order for display', example: 0, minimum: 0 })
   @IsOptional()
   @IsInt()
   @Min(0)
   sortOrder?: number;
 
+  @ApiPropertyOptional({ description: 'Force use (cannot be disabled)', example: false })
   @IsOptional()
   @IsBoolean()
   isForceUse?: boolean;
 
+  @ApiPropertyOptional({ description: 'Owner type for scoped configs', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   ownerType?: OwnerType;
 
+  @ApiPropertyOptional({ description: 'Owner ID for scoped configs', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   ownerId?: string;
 
   // Social Platform specific fields
+  @ApiPropertyOptional({ description: 'Display name for social platform', example: 'Twitter/X' })
   @IsOptional()
   @IsString()
   displayName?: string;
 
+  @ApiPropertyOptional({ description: 'Brand color (hex)', example: '#1DA1F2' })
   @IsOptional()
   @IsString()
   color?: string;
 
+  @ApiPropertyOptional({ description: 'Active status', example: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Base URL for platform', example: 'https://twitter.com' })
   @IsOptional()
   @IsString()
   baseUrl?: string;
 
+  @ApiPropertyOptional({ description: 'Icon URL', example: 'https://example.com/icons/twitter.svg' })
   @IsOptional()
   @IsString()
   iconUrl?: string;
 
+  @ApiPropertyOptional({ description: 'URL pattern for validation', example: 'https://twitter.com/{username}' })
   @IsOptional()
   @IsString()
   urlPattern?: string;
@@ -157,39 +185,48 @@ class CreateConfigDto {
 }
 
 class UpdateConfigDto {
+  @ApiPropertyOptional({ description: 'Name in English', example: 'Updated Name' })
   @IsOptional()
   @IsString()
   nameEn?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', example: '更新的名称' })
   @IsOptional()
   @IsString()
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', example: '更新された名前' })
   @IsOptional()
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order', example: 1, minimum: 0 })
   @IsOptional()
   @IsInt()
   @Min(0)
   sortOrder?: number;
 
+  @ApiPropertyOptional({ description: 'Force use (cannot be disabled)', example: false })
   @IsOptional()
   @IsBoolean()
   isForceUse?: boolean;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
   @Min(1)
   version: number;
@@ -198,21 +235,26 @@ class UpdateConfigDto {
 }
 
 class ScopeDto {
+  @ApiProperty({ description: 'Scope type', enum: ['subsidiary', 'talent'], example: 'talent' })
   @IsEnum(['subsidiary', 'talent'])
   scopeType: OwnerType;
 
+  @ApiProperty({ description: 'Scope ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsString()
   scopeId: string;
 }
 
 class TestBlocklistDto {
+  @ApiProperty({ description: 'Scope type for blocklist', enum: ['tenant', 'subsidiary', 'talent'], example: 'talent' })
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType: OwnerType;
 
+  @ApiPropertyOptional({ description: 'Scope ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   scopeId?: string;
 
+  @ApiProperty({ description: 'Text to test against blocklist', example: 'test message content', minLength: 1 })
   @IsString()
   @MinLength(1)
   text: string;
@@ -230,7 +272,7 @@ function isValidEntityType(type: string): type is ConfigEntityType {
  * Generic CRUD operations for configuration entities
  * Route: /api/v1/configuration-entity/:entityType
  */
-@ApiTags('Configuration Entity')
+@ApiTags('System - Config')
 @Controller('configuration-entity')
 @ApiBearerAuth()
 export class ConfigController {

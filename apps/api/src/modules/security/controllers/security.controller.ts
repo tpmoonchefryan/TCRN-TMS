@@ -1,37 +1,37 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  Query,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser, AuthenticatedUser } from '../../../common/decorators';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  BlocklistListQueryDto,
-  CreateBlocklistDto,
-  UpdateBlocklistDto,
-  TestBlocklistDto,
-  DisableScopeDto,
-  IpRuleListQueryDto,
-  CreateIpRuleDto,
-  CheckIpDto,
+    BlocklistListQueryDto,
+    CheckIpDto,
+    CreateBlocklistDto,
+    CreateIpRuleDto,
+    DisableScopeDto,
+    IpRuleListQueryDto,
+    TestBlocklistDto,
+    UpdateBlocklistDto,
 } from '../dto/security.dto';
 import { BlocklistService } from '../services/blocklist.service';
 import { FingerprintService } from '../services/fingerprint.service';
 import { IpAccessService } from '../services/ip-access.service';
 
-@ApiTags('Security')
+@ApiTags('System - Security')
 @Controller('')
 export class SecurityController {
   constructor(

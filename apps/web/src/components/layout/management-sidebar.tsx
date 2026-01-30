@@ -3,25 +3,24 @@
 'use client';
 
 import {
-  Building2,
-  Users,
-  Plug,
-  Webhook,
-  Home,
-  Settings,
-  ChevronRight,
+    Building2,
+    ChevronRight,
+    Home,
+    Plug,
+    Settings,
+    Users,
+    Webhook,
 } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname, useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React from 'react';
+import Link from 'next/link';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import React, { useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
-import { NoTalentMessage } from '@/components/talent/talent-select-modal';
+import { NoTalentMessage, TalentSelectModal } from '@/components/talent/talent-select-modal';
 import { useUIMode } from '@/hooks/use-ui-mode';
-import { cn } from '@/lib/utils';
-import { isStaging } from '@/lib/utils';
-import { useTalentStore } from '@/stores/talent-store';
+import { cn, isStaging } from '@/lib/utils';
+import { TalentInfo, useTalentStore } from '@/stores/talent-store';
 
 interface NavItemProps {
   href: string;
@@ -67,7 +66,10 @@ export function ManagementSidebar() {
   const searchParams = useSearchParams();
   const t = useTranslations('navigation');
   const { switchToBusinessUI, canAccessBusinessUI } = useUIMode();
-  const { currentTenantId, hasTalentAccess } = useTalentStore();
+  const { currentTenantId, hasTalentAccess, currentTalent, accessibleTalents, setCurrentTalent, setUIMode } = useTalentStore();
+  
+  // State for talent selection modal
+  const [showTalentModal, setShowTalentModal] = useState(false);
 
   // Get tenantId from params or store
   const tenantId = (params?.tenantId as string) || currentTenantId || '';
@@ -78,46 +80,64 @@ export function ManagementSidebar() {
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
 
   const handleHomeClick = () => {
-    if (canAccessBusinessUI) {
-      switchToBusinessUI();
-      router.push('/customers');
+    // If user has talent access
+    if (hasTalentAccess()) {
+      if (currentTalent) {
+        // Already has selected talent, go directly
+        switchToBusinessUI();
+        router.push('/customers');
+      } else {
+        // No talent selected, show modal to pick one
+        setShowTalentModal(true);
+      }
     }
   };
 
-  return (
-    <aside 
-      className="fixed left-0 z-40 w-64 border-r bg-white/80 backdrop-blur-xl transition-transform dark:bg-slate-950/80 dark:border-slate-800 hidden md:block"
-      style={{ 
-        top: topOffset, 
-        height: `calc(100vh - ${topOffset}px)` 
-      }}
-    >
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2 font-bold text-xl text-primary">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-pink-400 rounded-lg flex items-center justify-center text-white">
-            T
-          </div>
-          <span>TCRN TMS</span>
-        </div>
-      </div>
+  const handleTalentSelect = (talent: TalentInfo) => {
+    setCurrentTalent(talent);
+    setUIMode('business');
+    setShowTalentModal(false);
+    router.push('/customers');
+  };
 
-      <div className="flex flex-col h-[calc(100%-4rem)] overflow-y-auto custom-scrollbar">
-        {/* Home Button */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-          {hasTalentAccess() ? (
-            <button
-              onClick={handleHomeClick}
-              disabled={!canAccessBusinessUI}
-              className={cn(
-                'w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200',
-                canAccessBusinessUI
-                  ? 'bg-primary text-white shadow-md shadow-primary/30 hover:bg-primary/90'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              )}
-            >
-              <Home size={18} />
-              {t('backToBusiness')}
+  // Button is enabled if user has any talent access
+  const isButtonEnabled = hasTalentAccess();
+
+  return (
+    <>
+      <aside 
+        className="fixed left-0 z-40 w-64 border-r bg-white/80 backdrop-blur-xl transition-transform dark:bg-slate-950/80 dark:border-slate-800 hidden md:block"
+        style={{ 
+          top: topOffset, 
+          height: `calc(100vh - ${topOffset}px)` 
+        }}
+      >
+        {/* Logo */}
+        <div className="flex h-16 items-center px-6 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 font-bold text-xl text-primary">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-pink-400 rounded-lg flex items-center justify-center text-white">
+              T
+            </div>
+            <span>TCRN TMS</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col h-[calc(100%-4rem)] overflow-y-auto custom-scrollbar">
+          {/* Home Button */}
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+            {hasTalentAccess() ? (
+              <button
+                onClick={handleHomeClick}
+                disabled={!isButtonEnabled}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200',
+                  isButtonEnabled
+                    ? 'bg-primary text-white shadow-md shadow-primary/30 hover:bg-primary/90'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                )}
+              >
+                <Home size={18} />
+                {t('backToBusiness')}
             </button>
           ) : (
             <NoTalentMessage />
@@ -182,5 +202,13 @@ export function ManagementSidebar() {
         </div>
       </div>
     </aside>
+    
+    {/* Talent Selection Modal */}
+    <TalentSelectModal
+      open={showTalentModal}
+      talents={accessibleTalents}
+      onSelect={handleTalentSelect}
+    />
+  </>
   );
 }

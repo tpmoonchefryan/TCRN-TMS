@@ -1,49 +1,55 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Query,
-  Param,
-  Req,
+    Controller,
+    Get,
+    Param,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { OrganizationService } from './organization.service';
 
 // DTOs
 class GetTreeQueryDto {
+  @ApiPropertyOptional({ description: 'Include talents in tree nodes', example: true, default: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeTalents?: boolean;
 
+  @ApiPropertyOptional({ description: 'Include inactive nodes', example: false, default: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeInactive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Search keyword for filtering nodes', example: 'Tokyo' })
   @IsOptional()
   @IsString()
   search?: string;
 }
 
 class GetChildrenQueryDto {
+  @ApiPropertyOptional({ description: 'Parent node ID (null for root)', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   parentId?: string;
 
+  @ApiPropertyOptional({ description: 'Include talents in response', example: true, default: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeTalents?: boolean;
 
+  @ApiPropertyOptional({ description: 'Include inactive nodes', example: false, default: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -54,7 +60,7 @@ class GetChildrenQueryDto {
  * Organization Controller
  * Provides organization tree and navigation
  */
-@ApiTags('Organization')
+@ApiTags('Org - Tree')
 @Controller('organization')
 @ApiBearerAuth()
 export class OrganizationController {
@@ -65,7 +71,44 @@ export class OrganizationController {
    * Get organization tree
    */
   @Get('tree')
-  @ApiOperation({ summary: 'Get organization tree' })
+  @ApiOperation({ 
+    summary: 'Get organization tree',
+    description: `Returns the full organization tree structure including subsidiaries and talents.
+    
+The tree is filtered based on the authenticated user's access permissions.
+Use this for initial page load. For lazy loading, use /tree/root and /tree/children.`,
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns organization tree',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          tenantId: '550e8400-e29b-41d4-a716-446655440000',
+          subsidiaries: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440001',
+              code: 'TOKYO',
+              displayName: 'Tokyo Branch',
+              path: '/TOKYO/',
+              talents: [
+                {
+                  id: '550e8400-e29b-41d4-a716-446655440002',
+                  code: 'TALENT001',
+                  displayName: 'Talent Name',
+                  avatarUrl: 'https://example.com/avatar.jpg',
+                },
+              ],
+              children: [],
+            },
+          ],
+          directTalents: [],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getTree(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetTreeQueryDto,

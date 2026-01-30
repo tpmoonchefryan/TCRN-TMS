@@ -1,128 +1,150 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsBoolean, IsEmail, IsInt, Min, MinLength, IsEnum } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { success, paginated } from '../../common/response.util';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { paginated, success } from '../../common/response.util';
 
 import { SystemUserService } from './system-user.service';
 
 // DTOs
 class ListUsersQueryDto {
+  @ApiPropertyOptional({ description: 'Search by username, email, or display name', example: 'john' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by role ID', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsString()
   roleId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by active status', example: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Filter by TOTP enabled status', example: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   isTotpEnabled?: boolean;
 
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   page?: number;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, default: 20 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   pageSize?: number;
 
+  @ApiPropertyOptional({ description: 'Sort field (prefix with - for desc)', example: '-createdAt' })
   @IsOptional()
   @IsString()
   sort?: string;
 }
 
 class CreateUserDto {
+  @ApiProperty({ description: 'Username (unique within tenant)', example: 'john.doe', minLength: 3 })
   @IsString()
   @MinLength(3)
   username: string;
 
+  @ApiProperty({ description: 'Email address (unique within tenant)', example: 'john.doe@example.com' })
   @IsEmail()
   email: string;
 
+  @ApiProperty({ description: 'Initial password (min 12 chars)', example: 'SecureP@ssw0rd123', minLength: 12 })
   @IsString()
   @MinLength(12)
   password: string;
 
+  @ApiPropertyOptional({ description: 'Display name', example: 'John Doe' })
   @IsOptional()
   @IsString()
   displayName?: string;
 
+  @ApiPropertyOptional({ description: 'Phone number', example: '+81-90-1234-5678' })
   @IsOptional()
   @IsString()
   phone?: string;
 
+  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: ['en', 'zh', 'ja'] })
   @IsOptional()
   @IsEnum(['en', 'zh', 'ja'])
   preferredLanguage?: 'en' | 'zh' | 'ja';
 
+  @ApiPropertyOptional({ description: 'Force password reset on first login', example: true, default: false })
   @IsOptional()
   @IsBoolean()
   forceReset?: boolean;
 }
 
 class UpdateUserDto {
+  @ApiPropertyOptional({ description: 'Display name', example: 'John Doe' })
   @IsOptional()
   @IsString()
   displayName?: string;
 
+  @ApiPropertyOptional({ description: 'Phone number', example: '+81-90-1234-5678' })
   @IsOptional()
   @IsString()
   phone?: string;
 
+  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: ['en', 'zh', 'ja'] })
   @IsOptional()
   @IsEnum(['en', 'zh', 'ja'])
   preferredLanguage?: 'en' | 'zh' | 'ja';
 
+  @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://example.com/avatars/user.jpg' })
   @IsOptional()
   @IsString()
   avatarUrl?: string;
 }
 
 class ResetPasswordDto {
+  @ApiPropertyOptional({ description: 'New password (if empty, generates random)', example: 'NewSecureP@ss123' })
   @IsOptional()
   @IsString()
   newPassword?: string;
 
+  @ApiPropertyOptional({ description: 'Force password reset on next login', example: true, default: true })
   @IsOptional()
   @IsBoolean()
   forceReset?: boolean;
 
+  @ApiPropertyOptional({ description: 'Send notification email to user', example: true, default: false })
   @IsOptional()
   @IsBoolean()
   notifyUser?: boolean;
 }
 
+
 /**
  * System User Controller
  * Manages system users within a tenant
  */
-@ApiTags('System Users')
+@ApiTags('System - Users')
 @Controller('system-users')
 @ApiBearerAuth()
 export class SystemUserController {

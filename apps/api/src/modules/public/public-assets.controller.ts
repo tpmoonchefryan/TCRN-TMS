@@ -7,7 +7,7 @@ import { BUCKETS, MinioService } from '../minio/minio.service';
 
 import { Public } from '../../common/decorators/public.decorator';
 
-@ApiTags('Public Assets')
+@ApiTags('Public - Assets')
 @Controller('public/assets')
 export class PublicAssetsController {
   private readonly logger = new Logger(PublicAssetsController.name);

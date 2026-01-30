@@ -14,7 +14,7 @@ import { Public } from '../../../common/decorators';
 import { RateLimiterGuard } from '../../../common/guards/rate-limiter.guard';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
-@ApiTags('Public Homepage')
+@ApiTags('Public - Homepage')
 @Controller('public/homepage')
 export class PublicHomepageController {
   constructor(private readonly publicHomepageService: PublicHomepageService) {}

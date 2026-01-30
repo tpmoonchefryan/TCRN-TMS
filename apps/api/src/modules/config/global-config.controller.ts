@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  NotFoundException,
-  Param,
-  Put,
+    Body,
+    Controller,
+    ForbiddenException,
+    Get,
+    NotFoundException,
+    Param,
+    Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
@@ -28,7 +28,7 @@ class SetConfigDto {
  * For AC tenant admin to manage global platform configuration
  * Route: /api/v1/platform/config
  */
-@ApiTags('Platform Config')
+@ApiTags('System - Config')
 @Controller('platform/config')
 @ApiBearerAuth()
 export class GlobalConfigController {

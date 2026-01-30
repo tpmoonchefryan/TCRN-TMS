@@ -1,22 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsBoolean, IsInt, Min, Matches, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { success, paginated } from '../../common/response.util';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { paginated, success } from '../../common/response.util';
 
 import { SubsidiaryService } from './subsidiary.service';
 
@@ -167,7 +167,7 @@ function getLocalizedName(
  * Subsidiary Controller
  * Manages hierarchical organization units
  */
-@ApiTags('Organization - Subsidiary')
+@ApiTags('Org - Subsidiaries')
 @Controller('subsidiaries')
 @ApiBearerAuth()
 export class SubsidiaryController {

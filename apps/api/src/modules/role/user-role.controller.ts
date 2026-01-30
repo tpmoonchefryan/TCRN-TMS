@@ -1,22 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Req,
-  HttpCode,
-  HttpStatus,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsEnum, IsDateString } from 'class-validator';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 import { ScopeType } from '../permission/permission-snapshot.service';
 
@@ -62,7 +62,7 @@ class UpdateAssignmentDto {
  * User Role Controller
  * Manages user-role assignments
  */
-@ApiTags('User Roles')
+@ApiTags('System - Roles')
 @Controller('users/:userId/roles')
 @ApiBearerAuth()
 export class UserRoleController {

@@ -1,22 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { DelegatedAdminService, DelegateScopeType, DelegateType } from './delegated-admin.service';
@@ -51,7 +51,7 @@ class CreateDelegatedAdminDto {
  * Manages delegation of admin rights to users or roles
  * PRD §13.3 - Delegated Admin
  */
-@ApiTags('Delegated Admins')
+@ApiTags('System - Delegated Admin')
 @Controller('delegated-admins')
 @ApiBearerAuth()
 export class DelegatedAdminController {

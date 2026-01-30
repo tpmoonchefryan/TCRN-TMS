@@ -28,7 +28,7 @@ import {
 import { MarshmallowReactionService } from '../services/marshmallow-reaction.service';
 import { PublicMarshmallowService } from '../services/public-marshmallow.service';
 
-@ApiTags('Public Marshmallow')
+@ApiTags('Public - Marshmallow')
 @Controller('public/marshmallow')
 @UseGuards(UaDetectionGuard)
 export class PublicMarshmallowController {

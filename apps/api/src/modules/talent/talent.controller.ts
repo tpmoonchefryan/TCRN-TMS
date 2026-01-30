@@ -191,7 +191,7 @@ function getLocalizedName(
  * Talent Controller
  * Manages artists/VTubers
  */
-@ApiTags('Organization - Talent')
+@ApiTags('Org - Talents')
 @Controller('talents')
 @ApiBearerAuth()
 export class TalentController {

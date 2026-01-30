@@ -1,54 +1,56 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Req,
-  Res,
-  HttpCode,
-  HttpStatus,
-  UseInterceptors,
-  UploadedFile,
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Query,
+    Req,
+    Res,
+    UnauthorizedException,
+    UploadedFile,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 import { Request, Response } from 'express';
 
 import { Public } from '../../common/decorators';
-import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
 
 import { randomBytes } from 'crypto';
 
 import { EmailService } from '../email/services/email.service';
-import { MinioService, BUCKETS } from '../minio/minio.service';
+import { BUCKETS, MinioService } from '../minio/minio.service';
 import { AuthService } from './auth.service';
 import {
-  LoginDto,
-  TotpVerifyDto,
-  RecoveryCodeVerifyDto,
-  RefreshTokenDto,
-  ChangePasswordDto,
-  UpdateUserProfileDto,
-  TotpEnableDto,
-  TotpDisableDto,
-  RegenerateRecoveryCodesDto,
-  ForceResetPasswordDto,
+    ChangePasswordDto,
+    ForceResetPasswordDto,
+    LoginDto,
+    RecoveryCodeVerifyDto,
+    RefreshTokenDto,
+    RegenerateRecoveryCodesDto,
+    TotpDisableDto,
+    TotpEnableDto,
+    TotpVerifyDto,
+    UpdateUserProfileDto
 } from './dto/auth.dto';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 import { TokenService } from './token.service';
 import { TotpService } from './totp.service';
 
-@ApiTags('Authentication')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -67,7 +69,93 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'User login' })
+  @ApiOperation({ 
+    summary: 'User login',
+    description: `Authenticates a user with tenant code, username/email, and password.
+    
+**Possible Responses:**
+- **Success**: Returns access token and user info
+- **TOTP Required**: If 2FA is enabled, returns session token for TOTP verification  
+- **Password Reset Required**: If password expired or force reset flag is set
+
+The refresh token is automatically set as an HTTP-only cookie.`,
+  })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Login successful - returns access token',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          tokenType: 'Bearer',
+          expiresIn: 900,
+          user: {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            username: 'admin',
+            email: 'admin@example.com',
+            displayName: 'System Admin',
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'TOTP verification required',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          totpRequired: true,
+          sessionToken: 'sess_abc123...',
+          expiresIn: 300,
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Password reset required',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          passwordResetRequired: true,
+          sessionToken: 'sess_abc123...',
+          expiresIn: 300,
+          reason: 'password_expired',
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Invalid credentials',
+    schema: {
+      example: {
+        success: false,
+        error: {
+          code: 'AUTH_INVALID_CREDENTIALS',
+          message: 'Invalid username or password',
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Account locked or tenant disabled',
+    schema: {
+      example: {
+        success: false,
+        error: {
+          code: 'AUTH_ACCOUNT_LOCKED',
+          message: 'Account is locked due to too many failed attempts',
+        },
+      },
+    },
+  })
   async login(
     @Body() dto: LoginDto,
     @Req() req: Request,
@@ -588,7 +676,44 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({ 
+    summary: 'Refresh access token',
+    description: `Exchanges a valid refresh token for a new access token.
+    
+The refresh token can be provided in:
+1. Request body (refreshToken field)
+2. HTTP-only cookie (refresh_token)
+
+Refresh tokens are single-use and rotate on each refresh.`,
+  })
+  @ApiBody({ type: RefreshTokenDto, required: false })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Token refreshed successfully',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          tokenType: 'Bearer',
+          expiresIn: 900,
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Invalid or expired refresh token',
+    schema: {
+      example: {
+        success: false,
+        error: {
+          code: 'AUTH_REFRESH_TOKEN_INVALID',
+          message: 'Refresh token is invalid or expired',
+        },
+      },
+    },
+  })
   async refresh(
     @Body() dto: RefreshTokenDto,
     @Req() req: Request,
@@ -622,7 +747,35 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Logout current device' })
+  @ApiOperation({ 
+    summary: 'Logout current device',
+    description: `Invalidates the current refresh token and clears the session.
+    
+This only logs out the current device. Use /logout-all to logout all devices.`,
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Logged out successfully',
+    schema: {
+      example: {
+        success: true,
+        data: { message: 'Logged out successfully' },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Not authenticated',
+    schema: {
+      example: {
+        success: false,
+        error: {
+          code: 'AUTH_UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      },
+    },
+  })
   async logout(
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
@@ -687,12 +840,63 @@ export class AuthController {
       revokedSessions: revokedCount,
     });
   }
+  /**
+   * GET /api/v1/auth/oauth/authorize
+   * OAuth2 Implicit Flow authorize endpoint for Swagger UI
+   * Automatically issues access token if user has valid refresh token cookie
+   */
+  @Public()
+  @Get('oauth/authorize')
+  @ApiOperation({ summary: 'OAuth2 Authorize Endpoint (Internal)' })
+  async authorize(
+    @Query('response_type') responseType: string,
+    @Query('client_id') clientId: string,
+    @Query('redirect_uri') redirectUri: string,
+    @Query('state') state: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    // Only support implicit flow for Swagger
+    // Swagger sends response_type=token
+    
+    const refreshToken = req.cookies?.refresh_token;
+    
+    if (!refreshToken) {
+      // If not logged in, we cannot auto-authorize
+      // In a full OAuth provider we would show a login page here
+      // But for this internal tool, we just return 401 or redirect with error
+      throw new UnauthorizedException('Please log in to the main application first');
+    }
+
+    // Get tenant context
+    // Middleware should have parsed the tenant from cookie/header if possible,
+    // otherwise fallback to template or error out in service
+    const tenantSchema = req.tenantContext?.schemaName || 'tenant_template';
+
+    try {
+      const result = await this.authService.refreshAccessToken(refreshToken, tenantSchema);
+      
+      // Implicit flow returns token in fragment
+      const params = new URLSearchParams();
+      params.append('access_token', result.accessToken);
+      params.append('token_type', 'Bearer');
+      params.append('expires_in', result.expiresIn.toString());
+      if (state) {
+        params.append('state', state);
+      }
+
+      const redirectUrl = `${redirectUri}#${params.toString()}`;
+      return res.redirect(redirectUrl);
+    } catch (error) {
+       throw new UnauthorizedException('Failed to authorize: ' + error.message);
+    }
+  }
 }
 
 /**
  * User Profile Controller
  */
-@ApiTags('User')
+@ApiTags('Auth - User Profile')
 @Controller('users/me')
 @ApiBearerAuth()
 export class UserController {
@@ -709,7 +913,35 @@ export class UserController {
    * Get current user info
    */
   @Get()
-  @ApiOperation({ summary: 'Get current user info' })
+  @ApiOperation({ 
+    summary: 'Get current user info',
+    description: 'Returns the authenticated user\'s profile information including security settings.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns current user profile',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          username: 'john.doe',
+          email: 'john.doe@example.com',
+          phone: '+81-90-1234-5678',
+          displayName: 'John Doe',
+          avatarUrl: 'https://example.com/avatars/user.jpg',
+          preferredLanguage: 'en',
+          totpEnabled: true,
+          forceReset: false,
+          lastLoginAt: '2024-01-15T10:30:00Z',
+          passwordChangedAt: '2024-01-01T00:00:00Z',
+          passwordExpiresAt: '2024-04-01T00:00:00Z',
+          createdAt: '2023-06-01T00:00:00Z',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async getCurrentUser(@CurrentUser() user: AuthenticatedUser) {
     const users = await prisma.$queryRawUnsafe<Array<{
       id: string;
@@ -767,7 +999,28 @@ export class UserController {
    * Update current user profile
    */
   @Patch()
-  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiOperation({ 
+    summary: 'Update current user profile',
+    description: 'Updates the authenticated user\'s profile fields such as display name, phone, and language preferences.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Profile updated successfully (returns full user profile)',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          username: 'john.doe',
+          email: 'john.doe@example.com',
+          displayName: 'John Doe Updated',
+          preferredLanguage: 'ja',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'No fields to update' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async updateCurrentUser(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateUserProfileDto,
@@ -817,7 +1070,26 @@ export class UserController {
    */
   @Post('password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Change password' })
+  @ApiOperation({ 
+    summary: 'Change password',
+    description: 'Changes the authenticated user\'s password. Requires current password verification.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Password changed successfully',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          message: 'Password changed successfully',
+          passwordChangedAt: '2024-01-15T10:30:00Z',
+          passwordExpiresAt: '2024-04-15T10:30:00Z',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed (passwords don\'t match, weak password, or same as old)' })
+  @ApiResponse({ status: 401, description: 'Current password incorrect' })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
@@ -910,7 +1182,26 @@ export class UserController {
    * Initialize TOTP setup
    */
   @Post('totp/setup')
-  @ApiOperation({ summary: 'Initialize TOTP setup' })
+  @ApiOperation({ 
+    summary: 'Initialize TOTP setup',
+    description: 'Generates a new TOTP secret and returns QR code for authenticator app setup.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'TOTP setup initialized',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          secret: 'JBSWY3DPEHPK3PXP',
+          qrCodeUrl: 'data:image/png;base64,...',
+          issuer: 'TCRN TMS',
+          accountName: 'john.doe@example.com',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'TOTP already enabled' })
   async setupTotp(@CurrentUser() user: AuthenticatedUser) {
     // Check if TOTP is already enabled
     const users = await prisma.$queryRawUnsafe<Array<{ is_totp_enabled: boolean }>>(`
@@ -1189,7 +1480,28 @@ export class UserController {
    * Get active sessions
    */
   @Get('sessions')
-  @ApiOperation({ summary: 'Get active sessions' })
+  @ApiOperation({ 
+    summary: 'Get active sessions',
+    description: 'Lists all active sessions for the current user including device information.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns list of active sessions',
+    schema: {
+      example: {
+        success: true,
+        data: [{
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          ipAddress: '192.168.1.1',
+          userAgent: 'Mozilla/5.0...',
+          deviceInfo: { browser: 'Chrome', os: 'MacOS' },
+          lastActivityAt: '2024-01-15T10:30:00Z',
+          createdAt: '2024-01-15T09:00:00Z',
+          isCurrent: true,
+        }],
+      },
+    },
+  })
   async getSessions(@CurrentUser() user: AuthenticatedUser) {
     const sessions = await this.sessionService.getUserSessions(
       user.id,

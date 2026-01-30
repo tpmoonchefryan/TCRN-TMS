@@ -2,13 +2,13 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsUUID,
-  IsEnum,
-  IsInt,
-  Min,
-  Max,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    IsUUID,
+    Max,
+    Min,
 } from 'class-validator';
 
 export enum ImportJobType {

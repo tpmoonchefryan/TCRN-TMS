@@ -2,39 +2,39 @@
 
 import { InjectQueue } from '@nestjs/bullmq';
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-  Body,
-  Headers,
-  Req,
-  Res,
-  ParseUUIDPipe,
-  UploadedFile,
-  UseInterceptors,
-  StreamableFile,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    Query,
+    Req,
+    Res,
+    StreamableFile,
+    UploadedFile,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
 import { Request, Response } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { MinioService } from '../../minio';
 import { QUEUE_NAMES } from '../../queue';
 import {
-  ImportJobType,
-  CreateImportJobDto,
-  ImportJobQueryDto,
+    CreateImportJobDto,
+    ImportJobQueryDto,
+    ImportJobType,
 } from '../dto/import.dto';
 import { ImportJobService } from '../services/import-job.service';
 import { ImportParserService } from '../services/import-parser.service';
 
-@ApiTags('Customer Import')
+@ApiTags('Customer - Import')
 @Controller('imports/customers')
 export class ImportController {
   constructor(

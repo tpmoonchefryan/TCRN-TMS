@@ -2,16 +2,16 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsInt,
-  IsBoolean,
-  IsUrl,
-  MaxLength,
-  Matches,
-  Min,
-  Max,
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    IsUrl,
+    Matches,
+    Max,
+    MaxLength,
+    Min,
 } from 'class-validator';
 
 export enum AuthType {

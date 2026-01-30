@@ -2,16 +2,15 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsInt,
-  IsArray,
-  IsEnum,
-  IsUUID,
-  Min,
-  Max,
-  MaxLength,
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    IsUUID,
+    Max,
+    Min
 } from 'class-validator';
 
 // =============================================================================

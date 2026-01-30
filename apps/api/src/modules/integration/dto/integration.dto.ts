@@ -2,20 +2,20 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsInt,
-  IsArray,
-  IsEnum,
-  IsUUID,
-  IsUrl,
-  IsObject,
-  Min,
-  Max,
-  Matches,
-  MaxLength,
-  ValidateNested,
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsObject,
+    IsOptional,
+    IsString,
+    IsUUID,
+    IsUrl,
+    Matches,
+    Max,
+    MaxLength,
+    Min,
+    ValidateNested,
 } from 'class-validator';
 
 // =============================================================================

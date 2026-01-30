@@ -32,7 +32,7 @@ import { CompanyCustomerService } from '../services/company-customer.service';
 import { CustomerProfileService } from '../services/customer-profile.service';
 import { IndividualCustomerService } from '../services/individual-customer.service';
 
-@ApiTags('Customers')
+@ApiTags('Customer - Profiles')
 @Controller('customers')
 export class CustomerController {
   constructor(
@@ -47,8 +47,45 @@ export class CustomerController {
    */
   @Get()
   @RequirePermissions({ resource: 'customer.profile', action: 'read' })
-  @ApiOperation({ summary: 'List customers' })
-  @ApiResponse({ status: 200, description: 'Returns customer list' })
+  @ApiOperation({ 
+    summary: 'List customers',
+    description: `Returns a paginated list of customers for the specified talent.
+    
+Supports filtering by profile type, status, tags, membership status, and date range.
+Results include both individual and company customers.`,
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns paginated customer list',
+    schema: {
+      example: {
+        success: true,
+        data: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            nickname: 'John Doe',
+            profileType: 'individual',
+            statusCode: 'active',
+            tags: ['VIP', 'Premium'],
+            isActive: true,
+            createdAt: '2024-01-15T10:30:00Z',
+          },
+        ],
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 150,
+            totalPages: 8,
+            hasNext: true,
+            hasPrev: false,
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async list(
     @Query() query: CustomerListQueryDto,
     @CurrentUser() user: AuthenticatedUser,

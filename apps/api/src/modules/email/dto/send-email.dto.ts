@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { IsString, IsOptional, IsObject, IsIn } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class SendEmailDto {
   @IsString()

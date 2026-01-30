@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsEnum,
@@ -92,62 +93,74 @@ export interface ThemeConfig {
 // =============================================================================
 
 export class SaveDraftDto {
+  @ApiProperty({ description: 'Homepage content with components', type: Object })
   @IsObject()
   content!: HomepageContent;
 
+  @ApiPropertyOptional({ description: 'Theme configuration', type: Object })
   @IsOptional()
   @IsObject()
   theme?: ThemeConfig;
 }
 
 export class PublishDto {
+  @ApiPropertyOptional({ description: 'Specific version number to publish', example: 1 })
   @IsOptional()
   @IsInt()
   version?: number;
 }
 
 export class UpdateSettingsDto {
+  @ApiPropertyOptional({ description: 'SEO title for the homepage', example: 'My Fan Page', maxLength: 128 })
   @IsOptional()
   @IsString()
   @MaxLength(128)
   seoTitle?: string;
 
+  @ApiPropertyOptional({ description: 'SEO meta description', example: 'Welcome to my fan page!', maxLength: 512 })
   @IsOptional()
   @IsString()
   @MaxLength(512)
   seoDescription?: string;
 
+  @ApiPropertyOptional({ description: 'Open Graph image URL', example: 'https://example.com/og.jpg', maxLength: 512 })
   @IsOptional()
   @IsUrl()
   @MaxLength(512)
   ogImageUrl?: string;
 
+  @ApiPropertyOptional({ description: 'Google Analytics ID', example: 'G-XXXXXXXXXX', maxLength: 64 })
   @IsOptional()
   @IsString()
   @MaxLength(64)
   analyticsId?: string;
 
+  @ApiPropertyOptional({ description: 'Custom domain for the homepage', example: 'fanpage.example.com', maxLength: 255, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   customDomain?: string | null;
 
+  @ApiPropertyOptional({ description: 'Custom path for the homepage URL', example: 'my-page', maxLength: 255, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   homepagePath?: string | null;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1 })
   @IsInt()
   version!: number;
 }
 
 export class VersionListQueryDto {
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 50, default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -155,6 +168,7 @@ export class VersionListQueryDto {
   @Max(50)
   pageSize?: number = 20;
 
+  @ApiPropertyOptional({ description: 'Filter by version status', enum: ['draft', 'published', 'archived'] })
   @IsOptional()
   @IsEnum(['draft', 'published', 'archived'])
   status?: 'draft' | 'published' | 'archived';

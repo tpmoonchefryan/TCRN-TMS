@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -645,6 +645,9 @@ export class AuthService {
       });
     }
 
+    // Use the schema extracted from token if available, otherwise use passed schema
+    const targetSchema = result.schema || tenantSchema;
+
     // Get user info
     const users = await prisma.$queryRawUnsafe<Array<{
       id: string;
@@ -653,7 +656,7 @@ export class AuthService {
       is_active: boolean;
     }>>(`
       SELECT id, username, email, is_active
-      FROM "${tenantSchema}".system_user
+      FROM "${targetSchema}".system_user
       WHERE id = $1::uuid
     `, result.userId);
 
@@ -665,7 +668,7 @@ export class AuthService {
     }
 
     // Get tenant info
-    const tenant = await this.tenantService.getTenantBySchemaName(tenantSchema);
+    const tenant = await this.tenantService.getTenantBySchemaName(targetSchema);
     if (!tenant || !tenant.isActive) {
       throw new UnauthorizedException({
         code: ErrorCodes.TENANT_DISABLED,
@@ -677,7 +680,7 @@ export class AuthService {
     const { token: accessToken, expiresIn } = this.tokenService.generateAccessToken({
       sub: users[0].id,
       tid: tenant.id,
-      tsc: tenantSchema,
+      tsc: targetSchema,
       email: users[0].email,
       username: users[0].username,
     });
@@ -702,7 +705,7 @@ export class AuthService {
     if (refreshToken) {
       const result = await this.tokenService.verifyRefreshToken(refreshToken, tenantSchema);
       if (result) {
-        await this.tokenService.revokeRefreshToken(result.tokenId, tenantSchema);
+        await this.tokenService.revokeRefreshToken(result.tokenId, result.schema || tenantSchema);
       }
     }
 

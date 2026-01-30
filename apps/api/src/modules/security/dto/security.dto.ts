@@ -1,18 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsInt,
-  IsArray,
-  IsEnum,
-  IsUUID,
-  Min,
-  Max,
-  Matches,
-  MaxLength,
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    IsUUID,
+    Matches,
+    Max,
+    MaxLength,
+    Min,
 } from 'class-validator';
 
 // =============================================================================
@@ -54,47 +55,57 @@ export enum IpRuleScope {
 // =============================================================================
 
 export class BlocklistListQueryDto {
+  @ApiPropertyOptional({ description: 'Scope type', enum: ['tenant', 'subsidiary', 'talent'], example: 'tenant' })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType?: 'tenant' | 'subsidiary' | 'talent' = 'tenant';
 
+  @ApiPropertyOptional({ description: 'Scope ID (UUID)', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()
   @IsUUID()
   scopeId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by category', example: 'profanity' })
   @IsOptional()
   @IsString()
   category?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by pattern type', enum: BlocklistPatternType })
   @IsOptional()
   @IsEnum(BlocklistPatternType)
   patternType?: BlocklistPatternType;
 
+  @ApiPropertyOptional({ description: 'Filter by scope', example: 'marshmallow' })
   @IsOptional()
   @IsString()
   scope?: string;
 
+  @ApiPropertyOptional({ description: 'Include inherited entries', example: true, default: true })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   includeInherited?: boolean = true;
 
+  @ApiPropertyOptional({ description: 'Include disabled entries', example: false, default: false })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   includeDisabled?: boolean = false;
 
+  @ApiPropertyOptional({ description: 'Include inactive entries', example: false, default: false })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   includeInactive?: boolean = false;
 
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 100, default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -104,29 +115,36 @@ export class BlocklistListQueryDto {
 }
 
 export class DisableScopeDto {
+  @ApiProperty({ description: 'Scope type', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType!: 'tenant' | 'subsidiary' | 'talent';
 
+  @ApiPropertyOptional({ description: 'Scope ID (UUID)' })
   @IsOptional()
   @IsUUID()
   scopeId?: string;
 }
 
 export class CreateBlocklistDto {
+  @ApiProperty({ description: 'Owner type', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   ownerType!: 'tenant' | 'subsidiary' | 'talent';
 
+  @ApiPropertyOptional({ description: 'Owner ID (UUID)' })
   @IsOptional()
   @IsUUID()
   ownerId?: string;
 
+  @ApiProperty({ description: 'Blocklist pattern', example: 'badword', maxLength: 512 })
   @IsString()
   @MaxLength(512)
   pattern!: string;
 
+  @ApiProperty({ description: 'Pattern type', enum: BlocklistPatternType })
   @IsEnum(BlocklistPatternType)
   patternType!: BlocklistPatternType;
 
+  @ApiProperty({ description: 'Name in English', example: 'Profanity Filter', maxLength: 128 })
   @IsString()
   @MaxLength(128)
   nameEn!: string;

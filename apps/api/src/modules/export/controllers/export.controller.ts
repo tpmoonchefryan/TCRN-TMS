@@ -1,30 +1,30 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-  Body,
-  Headers,
-  Req,
-  Res,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    Query,
+    Req,
+    Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request, Response } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  CreateExportJobDto,
-  ExportJobQueryDto,
+    CreateExportJobDto,
+    ExportJobQueryDto,
 } from '../dto/export.dto';
 import { ExportJobService } from '../services/export-job.service';
 
-@ApiTags('Customer Export')
+@ApiTags('Customer - Export')
 @Controller('exports')
 export class ExportController {
   constructor(

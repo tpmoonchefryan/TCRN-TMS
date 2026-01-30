@@ -1,29 +1,29 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  Query,
-  Req,
-  ParseUUIDPipe,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { RequirePermissions, CurrentUser } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-  ExternalBlocklistQueryDto,
-  CreateExternalBlocklistDto,
-  UpdateExternalBlocklistDto,
-  BatchToggleDto,
-  DisableExternalBlocklistDto,
-  OwnerType,
+    BatchToggleDto,
+    CreateExternalBlocklistDto,
+    DisableExternalBlocklistDto,
+    ExternalBlocklistQueryDto,
+    OwnerType,
+    UpdateExternalBlocklistDto,
 } from '../dto/external-blocklist.dto';
 import { ExternalBlocklistService } from '../services/external-blocklist.service';
 
@@ -34,7 +34,7 @@ interface AuthenticatedUser {
   tenantSchema: string;
 }
 
-@ApiTags('External Blocklist')
+@ApiTags('Ops - Blocklist')
 @Controller('external-blocklist')
 export class ExternalBlocklistController {
   constructor(private readonly service: ExternalBlocklistService) {}

@@ -1,11 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import { success } from '../../common/response.util';
 import { CreateSystemRoleDto } from './dto/create-system-role.dto';
 import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
 import { SystemRoleService } from './system-role.service';
 
+@ApiTags('System - System Roles')
 @Controller('system-roles')
 export class SystemRoleController {
   constructor(private readonly systemRoleService: SystemRoleService) {}

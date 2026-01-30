@@ -14,7 +14,7 @@ import {
     Post,
     Query
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 import * as argon2 from 'argon2';
@@ -28,67 +28,81 @@ import { TenantService } from './tenant.service';
 
 // DTOs
 class AdminUserDto {
+  @ApiProperty({ description: 'Admin username', example: 'admin', minLength: 3 })
   @IsString()
   @MinLength(3)
   username: string;
 
+  @ApiProperty({ description: 'Admin email', example: 'admin@example.com' })
   @IsEmail()
   email: string;
 
+  @ApiProperty({ description: 'Admin password', example: 'SecureP@ssw0rd123', minLength: 12 })
   @IsString()
   @MinLength(12)
   password: string;
 
+  @ApiPropertyOptional({ description: 'Admin display name', example: 'System Administrator' })
   @IsOptional()
   @IsString()
   displayName?: string;
 }
 
 class TenantSettingsDto {
+  @ApiPropertyOptional({ description: 'Maximum talents allowed', example: 100, minimum: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
   maxTalents?: number;
 
+  @ApiPropertyOptional({ description: 'Max customers per talent', example: 10000, minimum: 1000 })
   @IsOptional()
   @IsInt()
   @Min(1000)
   maxCustomersPerTalent?: number;
 
+  @ApiPropertyOptional({ description: 'Enabled features list', example: ['homepage', 'marshmallow'], type: [String] })
   @IsOptional()
   @IsString({ each: true })
   features?: string[];
 }
 
 class CreateTenantDto {
+  @ApiProperty({ description: 'Tenant code (uppercase)', example: 'ACME_CORP', pattern: '^[A-Z0-9_]{3,32}$' })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/, { message: 'Code must be 3-32 uppercase letters, numbers, or underscores' })
   code: string;
 
+  @ApiProperty({ description: 'Tenant name', example: 'Acme Corporation', minLength: 2 })
   @IsString()
   @MinLength(2)
   name: string;
 
+  @ApiPropertyOptional({ description: 'Tenant settings', type: TenantSettingsDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => TenantSettingsDto)
   settings?: TenantSettingsDto;
 
+  @ApiProperty({ description: 'Initial admin user', type: AdminUserDto })
   @ValidateNested()
   @Type(() => AdminUserDto)
   adminUser: AdminUserDto;
 }
 
 class UpdateTenantDto {
+  @ApiPropertyOptional({ description: 'Updated tenant name', example: 'Acme Corp Inc.' })
   @IsOptional()
   @IsString()
   name?: string;
 
+  @ApiPropertyOptional({ description: 'Updated settings', type: TenantSettingsDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => TenantSettingsDto)
   settings?: TenantSettingsDto;
 
+  @ApiPropertyOptional({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -96,31 +110,37 @@ class UpdateTenantDto {
 }
 
 class ListTenantsQueryDto {
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, default: 20 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
   pageSize?: number = 20;
 
+  @ApiPropertyOptional({ description: 'Search by code or name', example: 'acme' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by tier', enum: ['ac', 'standard'], example: 'standard' })
   @IsOptional()
   @IsString()
   tier?: 'ac' | 'standard';
 
+  @ApiPropertyOptional({ description: 'Filter by active status', example: true })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Sort field', example: '-createdAt' })
   @IsOptional()
   @IsString()
   sort?: string;
@@ -130,7 +150,7 @@ class ListTenantsQueryDto {
  * Tenant Management Controller (AC Only)
  * PRD §7: AC 管理租户专用
  */
-@ApiTags('Tenant Management')
+@ApiTags('Org - Tenants')
 @Controller('tenants')
 @ApiBearerAuth()
 export class TenantController {

@@ -1,24 +1,24 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Body,
-  Controller,
-  Delete,
-  ForbiddenException,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Put,
-  Query,
-  Req,
+    Body,
+    Controller,
+    Delete,
+    ForbiddenException,
+    Get,
+    NotFoundException,
+    Param,
+    Post,
+    Put,
+    Query,
+    Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
-import { success, paginated } from '../../common/response.util';
+import { paginated, success } from '../../common/response.util';
 
 import { DictionaryService } from './dictionary.service';
 
@@ -27,21 +27,25 @@ import { DictionaryService } from './dictionary.service';
 // =====================================================
 
 class GetDictionaryQueryDto {
+  @ApiPropertyOptional({ description: 'Search keyword', example: 'status' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Include inactive items', example: false })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   includeInactive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Type(() => Number)
   page?: number;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 50, minimum: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -50,38 +54,46 @@ class GetDictionaryQueryDto {
 }
 
 class CreateDictionaryTypeDto {
+  @ApiProperty({ description: 'Dictionary type code', example: 'CUSTOMER_STATUS', minLength: 2, maxLength: 64 })
   @IsString()
   @MinLength(2)
   @MaxLength(64)
   code!: string;
 
+  @ApiProperty({ description: 'Name in English', example: 'Customer Status', maxLength: 255 })
   @IsString()
   @MinLength(1)
   @MaxLength(255)
   nameEn!: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', example: '客户状态', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', example: '顧客ステータス', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English', example: 'Customer status codes' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese', example: '客户状态代码' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese', example: '顧客ステータスコード' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order', example: 0, minimum: 0 })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -89,129 +101,156 @@ class CreateDictionaryTypeDto {
 }
 
 class UpdateDictionaryTypeDto {
+  @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(255)
   nameEn?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
   @IsNumber()
   @Min(0)
   sortOrder?: number;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1 })
   @IsNumber()
   version!: number;
 }
 
 class CreateDictionaryItemDto {
+  @ApiProperty({ description: 'Item code', example: 'ACTIVE', minLength: 1, maxLength: 64 })
   @IsString()
   @MinLength(1)
   @MaxLength(64)
   code!: string;
 
+  @ApiProperty({ description: 'Name in English', example: 'Active', maxLength: 255 })
   @IsString()
   @MinLength(1)
   @MaxLength(255)
   nameEn!: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', example: '活跃', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'アクティブ', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
   @IsNumber()
   @Min(0)
   sortOrder?: number;
 
+  @ApiPropertyOptional({ description: 'Extra data (JSON object)', example: { color: '#00FF00' } })
   @IsOptional()
   @IsObject()
   extraData?: Record<string, unknown>;
 }
 
 class UpdateDictionaryItemDto {
+  @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(255)
   nameEn?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Chinese', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameZh?: string;
 
+  @ApiPropertyOptional({ description: 'Name in Japanese', maxLength: 255 })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({ description: 'Description in English' })
   @IsOptional()
   @IsString()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Chinese' })
   @IsOptional()
   @IsString()
   descriptionZh?: string;
 
+  @ApiPropertyOptional({ description: 'Description in Japanese' })
   @IsOptional()
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
   @IsNumber()
   @Min(0)
   sortOrder?: number;
 
+  @ApiPropertyOptional({ description: 'Extra data (JSON object)' })
   @IsOptional()
   @IsObject()
   extraData?: Record<string, unknown>;
 
+  @ApiProperty({ description: 'Optimistic lock version', example: 1 })
   @IsNumber()
   version!: number;
 }
 
 class DeactivateItemDto {
+  @ApiProperty({ description: 'Optimistic lock version', example: 1 })
   @IsNumber()
   version!: number;
 }
@@ -225,7 +264,7 @@ class DeactivateItemDto {
  * Read access for all tenants, write access for AC tenant only
  * Route: /api/v1/system-dictionary/:type
  */
-@ApiTags('System Dictionary')
+@ApiTags('System - Dictionary')
 @Controller('system-dictionary')
 @ApiBearerAuth()
 export class DictionaryController {

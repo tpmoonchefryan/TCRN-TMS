@@ -141,6 +141,10 @@ export class TokenService {
   /**
    * Generate Refresh Token (opaque, stored in DB)
    */
+  /**
+   * Generate Refresh Token (opaque, stored in DB)
+   * Format: rt_<base64(schema)>.<random>
+   */
   async generateRefreshToken(
     userId: string,
     tenantSchema: string,
@@ -150,8 +154,14 @@ export class TokenService {
     token: string;
     expiresAt: Date;
   }> {
-    // Generate random token
-    const token = `rt_${randomUUID().replace(/-/g, '')}${randomUUID().replace(/-/g, '')}`;
+    // Generate random token part
+    const randomPart = `${randomUUID().replace(/-/g, '')}${randomUUID().replace(/-/g, '')}`;
+    
+    // Encode schema in token
+    const schemaPart = Buffer.from(tenantSchema).toString('base64').replace(/=/g, ''); // Simple base64, usually safe for token chars if handled
+    // Actually base64url is better but base64 with stripped = is fine for our usage
+    
+    const token = `rt_${schemaPart}.${randomPart}`;
     const tokenHash = createHash('sha256').update(token).digest('hex');
     
     const expiresAt = new Date();
@@ -173,11 +183,30 @@ export class TokenService {
    */
   async verifyRefreshToken(
     token: string,
-    tenantSchema: string,
+    tenantSchema: string, // Fallback or override
   ): Promise<{
     userId: string;
     tokenId: string;
+    schema: string;
   } | null> {
+    // Try to extract schema from token
+    let targetSchema = tenantSchema;
+    
+    if (token.startsWith('rt_') && token.includes('.')) {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 2) {
+           const schemaPart = parts[0].substring(3); // remove rt_
+           const decoded = Buffer.from(schemaPart, 'base64').toString('utf-8');
+           if (decoded) {
+             targetSchema = decoded;
+           }
+        }
+      } catch (e) {
+        // Ignore parsing errors, fall back to provided schema
+      }
+    }
+
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
     const result = await prisma.$queryRawUnsafe<Array<{
@@ -187,7 +216,7 @@ export class TokenService {
       revoked_at: Date | null;
     }>>(`
       SELECT id, user_id, expires_at, revoked_at
-      FROM "${tenantSchema}".refresh_token
+      FROM "${targetSchema}".refresh_token
       WHERE token_hash = $1
     `, tokenHash);
 
@@ -210,6 +239,7 @@ export class TokenService {
     return {
       userId: refreshToken.user_id,
       tokenId: refreshToken.id,
+      schema: targetSchema,
     };
   }
 

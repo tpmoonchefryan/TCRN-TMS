@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { LokiQueryService } from '../services';
 
-@ApiTags('Logs - Search')
+@ApiTags('System - Logs')
 @Controller('logs/search')
 export class LogSearchController {
   constructor(private readonly lokiQueryService: LokiQueryService) {}

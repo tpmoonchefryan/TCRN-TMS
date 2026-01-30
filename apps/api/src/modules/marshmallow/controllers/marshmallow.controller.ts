@@ -46,7 +46,7 @@ interface AuthenticatedUser {
   tenantSchema: string;
 }
 
-@ApiTags('Marshmallow Management')
+@ApiTags('Ops - Marshmallow')
 @Controller('talents/:talentId/marshmallow')
 export class MarshmallowController {
   constructor(

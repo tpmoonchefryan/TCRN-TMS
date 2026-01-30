@@ -1,21 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  ParseUUIDPipe,
-  UseGuards,
+    Controller,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards';
 import { ChangeLogQueryDto, PaginationDto } from '../dto/log.dto';
 import { ChangeLogQueryService } from '../services';
 
-@ApiTags('Logs - Change Log')
+@ApiTags('System - Logs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('logs/changes')
