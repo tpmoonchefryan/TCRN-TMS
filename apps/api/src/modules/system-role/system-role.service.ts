@@ -41,6 +41,7 @@ export class SystemRoleService {
 
   async findAll(filters?: { isActive?: boolean; isSystem?: boolean; search?: string }) {
     // Build where clause based on filters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     
     if (filters?.isActive !== undefined) {
@@ -170,6 +171,7 @@ export class SystemRoleService {
    * Now supports three-state permissions: grant, deny, unset
    */
   private async assignPermissions(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any, 
     roleId: string, 
     permissions: { resource: string; action: string; effect?: 'grant' | 'deny' }[]

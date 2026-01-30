@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database before importing service
 vi.mock('@tcrn/database', () => ({
@@ -11,10 +12,9 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { SystemUserService, SystemUserData } from '../system-user.service';
 import { PasswordService } from '../../auth/password.service';
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
-import { prisma } from '@tcrn/database';
+import { SystemUserData, SystemUserService } from '../system-user.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -296,6 +296,7 @@ describe('SystemUserService', () => {
       const result = await service.resetPassword('user-123', testSchema, {});
 
       expect(result.tempPassword).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(result.tempPassword!.length).toBe(16);
     });
 

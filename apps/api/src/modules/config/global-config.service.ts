@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
 
 import { DatabaseService } from '../database';
 
@@ -44,13 +45,13 @@ export class GlobalConfigService {
     const config = await prisma.globalConfig.upsert({
       where: { key },
       update: {
-        value: value as any,
+        value: value as Prisma.JsonValue,
         description,
         updatedAt: new Date(),
       },
       create: {
         key,
-        value: value as any,
+        value: value as Prisma.JsonValue,
         description,
       },
     });

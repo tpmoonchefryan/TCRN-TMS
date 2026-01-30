@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { IpAccessService } from '../ip-access.service';
 import { DatabaseService } from '../../../database';
-import { RedisService } from '../../../redis';
 import { ChangeLogService } from '../../../log';
+import { RedisService } from '../../../redis';
 import { IpRuleType, IpRuleScope } from '../../dto/security.dto';
+import { IpAccessService } from '../ip-access.service';
 
 describe('IpAccessService', () => {
   let service: IpAccessService;

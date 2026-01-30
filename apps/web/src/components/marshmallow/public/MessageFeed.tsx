@@ -7,6 +7,9 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { PublicMessageCard } from './PublicMessageCard';
+import { useStreamerMode } from './StreamerModeContext';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,8 +28,6 @@ import {
 import { publicApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 
-import { PublicMessageCard } from './PublicMessageCard';
-import { useStreamerMode } from './StreamerModeContext';
 
 // Message type
 interface MarshmallowMessage {

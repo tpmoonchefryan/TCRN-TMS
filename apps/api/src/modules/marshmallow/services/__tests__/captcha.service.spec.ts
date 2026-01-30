@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ConfigService } from '@nestjs/config';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { CaptchaService } from '../captcha.service';
 import { RedisService } from '../../../redis';
-import { TrustScoreService } from '../trust-score.service';
 import { CaptchaMode } from '../../dto/marshmallow.dto';
+import { CaptchaService } from '../captcha.service';
+import { TrustScoreService } from '../trust-score.service';
 
 describe('CaptchaService', () => {
   let service: CaptchaService;

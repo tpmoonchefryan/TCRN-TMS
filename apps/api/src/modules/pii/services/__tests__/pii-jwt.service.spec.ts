@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { PiiJwtService, PiiAccessJwtPayload, ServiceJwtPayload } from '../pii-jwt.service';
 import { TechEventLogService } from '../../../log/services/tech-event-log.service';
+import { PiiJwtService, PiiAccessJwtPayload, ServiceJwtPayload } from '../pii-jwt.service';
 
 describe('PiiJwtService', () => {
   let service: PiiJwtService;

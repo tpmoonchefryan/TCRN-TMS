@@ -93,7 +93,7 @@ export class MarshmallowController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() _req: Request,
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
@@ -109,7 +109,6 @@ export class MarshmallowController {
       throw new BadRequestException('File size exceeds 5MB limit');
     }
 
-    const context = this.buildContext(user, req);
     const extension = file.mimetype.split('/')[1];
     const objectName = `${user.tenantSchema}/${talentId}/avatar-${Date.now()}.${extension}`;
 

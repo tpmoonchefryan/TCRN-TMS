@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-  ForbiddenException,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+    Injectable,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -45,8 +45,9 @@ export class ApiKeyGuard implements CanActivate {
       }
     }
 
-    // Attach consumer info to request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (request as any).consumer = consumer;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (request as any)._integrationLogContext = {
       consumer,
       startTime,
@@ -73,6 +74,7 @@ export class ApiKeyGuard implements CanActivate {
 
   private async logInbound(
     request: Request,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     consumer: any | null,
     status: number,
     errorMessage: string | null,

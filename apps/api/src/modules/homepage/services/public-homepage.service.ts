@@ -114,6 +114,7 @@ export class PublicHomepageService {
         }
 
         this.logger.debug(`[getPublishedHomepage] Version content keys: ${Object.keys(version.content || {}).join(', ')}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.logger.debug(`[getPublishedHomepage] Version content.components length: ${(version.content as any)?.components?.length ?? 'N/A'}`);
         this.logger.debug(`[getPublishedHomepage] Version theme keys: ${Object.keys(version.theme || {}).join(', ')}`);
 

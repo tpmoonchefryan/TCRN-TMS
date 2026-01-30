@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 import { ErrorCodes, TechEventType, type RequestContext } from '@tcrn/shared';
@@ -13,11 +13,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from '../../database';
 import { ChangeLogService, TechEventLogService } from '../../log';
 import {
-  CreateIndividualCustomerDto,
-  UpdateIndividualCustomerDto,
-  UpdateIndividualPiiDto,
-  ProfileType,
-  CustomerAction,
+    CreateIndividualCustomerDto,
+    CustomerAction,
+    ProfileType,
+    UpdateIndividualCustomerDto,
+    UpdateIndividualPiiDto,
 } from '../dto/customer.dto';
 
 /**
@@ -94,7 +94,7 @@ export class IndividualCustomerService {
       const newCustomer = await tx.customerProfile.create({
         data: {
           talentId: dto.talentId,
-          profileStoreId: talent.profileStoreId!,
+          profileStoreId: talent.profileStoreId ?? '',
           originTalentId: dto.talentId,
           rmProfileId,
           profileType: ProfileType.INDIVIDUAL,
@@ -127,7 +127,7 @@ export class IndividualCustomerService {
           await tx.customerExternalId.create({
             data: {
               customerId: newCustomer.id,
-              profileStoreId: talent.profileStoreId!,
+              profileStoreId: talent.profileStoreId ?? '',
               consumerId: consumer.id,
               externalId: dto.externalId,
               createdBy: context.userId,
@@ -156,7 +156,7 @@ export class IndividualCustomerService {
       await tx.customerAccessLog.create({
         data: {
           customerId: newCustomer.id,
-          profileStoreId: talent.profileStoreId!,
+          profileStoreId: talent.profileStoreId ?? '',
           talentId: dto.talentId,
           action: CustomerAction.CREATE,
           operatorId: context.userId,

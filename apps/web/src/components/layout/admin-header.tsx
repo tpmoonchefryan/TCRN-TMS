@@ -3,8 +3,8 @@
 'use client';
 
 import { Bell, Check, Languages, LogOut, Menu, Settings, User } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';

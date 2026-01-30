@@ -1,6 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+/* eslint-disable import/order */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../redis/redis.service';
 
@@ -12,8 +14,7 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { PermissionSnapshotService, ScopeType } from '../permission-snapshot.service';
-import { prisma } from '@tcrn/database';
+import { PermissionSnapshotService } from '../permission-snapshot.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;

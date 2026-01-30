@@ -66,7 +66,7 @@ export class SettingsService {
     
     // Get current scope's own settings
     let currentVersion = 1;
-    let currentSettings: Record<string, unknown> = {};
+    // let currentSettings: Record<string, unknown> = {};
     
     for (const scope of chain) {
       const scopeSettings = await this.getScopeOwnSettings(tenantSchema, scope.type, scope.id);
@@ -91,7 +91,7 @@ export class SettingsService {
         // Track version for current scope
         if (scope.type === scopeType && scope.id === scopeId) {
           currentVersion = scopeSettings.version;
-          currentSettings = scopeSettings.settings;
+          // currentSettings = scopeSettings.settings;
         }
       }
     }
@@ -207,6 +207,7 @@ export class SettingsService {
     
     if (scopeType === 'subsidiary') {
       // Get subsidiary parent chain
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const subsidiaryChain = await this.getSubsidiaryChain(tenantSchema, scopeId!);
       for (const subId of subsidiaryChain) {
         chain.push({ type: 'subsidiary', id: subId });
@@ -541,7 +542,7 @@ export class SettingsService {
   /**
    * Get human-readable scope name
    */
-  private getScopeName(scopeType: 'tenant' | 'subsidiary' | 'talent', scopeId: string | null): string {
+  private getScopeName(scopeType: 'tenant' | 'subsidiary' | 'talent', _scopeId: string | null): string {
     if (scopeType === 'tenant') return 'Tenant';
     if (scopeType === 'subsidiary') return `Subsidiary`;
     if (scopeType === 'talent') return `Talent`;

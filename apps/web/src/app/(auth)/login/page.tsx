@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { 
   Button, 
   Card, 
@@ -21,7 +22,6 @@ import {
   Input, 
   Label 
 } from '@/components/ui';
-import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { setUserLocale } from '@/i18n/locale';
 import { userApi } from '@/lib/api/client';
 import { isStaging } from '@/lib/utils';

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -409,7 +409,13 @@ export class SubsidiaryService {
     `, newPath, `${oldPath}%`, userId);
 
     const updated = await this.findById(id, tenantSchema);
-    return { subsidiary: updated!, affectedChildren: affectedResult - 1 };
+    if (!updated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Subsidiary not found after move',
+      });
+    }
+    return { subsidiary: updated, affectedChildren: affectedResult - 1 };
   }
 
   /**
@@ -498,7 +504,14 @@ export class SubsidiaryService {
       WHERE id = $1::uuid
     `, id, userId);
 
-    return (await this.findById(id, tenantSchema))!;
+    const reactivated = await this.findById(id, tenantSchema);
+    if (!reactivated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Subsidiary not found after reactivation',
+      });
+    }
+    return reactivated;
   }
 
   /**

@@ -5,10 +5,10 @@ import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import {
-  MfrFilterCriteriaDto,
-  MfrSearchResult,
-  MfrPreviewRow,
-  ReportType,
+    MfrFilterCriteriaDto,
+    MfrPreviewRow,
+    MfrSearchResult,
+    ReportType,
 } from '../dto/report.dto';
 
 import { ReportJobService } from './report-job.service';
@@ -48,7 +48,7 @@ export class MfrReportService {
     }
 
     // Build where conditions
-    const { conditions, params, paramIndex: nextParamIndex } = this.buildMembershipWhereConditions(talentId, filters, schema);
+    const { conditions, params } = this.buildMembershipWhereConditions(talentId, filters);
     const whereClause = conditions.join(' AND ');
 
     // Get total count using raw SQL
@@ -137,7 +137,7 @@ export class MfrReportService {
     const schema = context.tenantSchema;
 
     // Build where conditions
-    const { conditions, params } = this.buildMembershipWhereConditions(talentId, filters, schema);
+    const { conditions, params } = this.buildMembershipWhereConditions(talentId, filters);
     const whereClause = conditions.join(' AND ');
 
     // Count total rows for estimate using raw SQL
@@ -170,7 +170,6 @@ export class MfrReportService {
   private buildMembershipWhereConditions(
     talentId: string,
     filters: MfrFilterCriteriaDto,
-    schema: string,
   ): { conditions: string[]; params: unknown[]; paramIndex: number } {
     const conditions: string[] = ['cp.talent_id = $1::uuid'];
     const params: unknown[] = [talentId];

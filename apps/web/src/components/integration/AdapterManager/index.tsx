@@ -2,8 +2,6 @@
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import {
   CheckCircle,
   GitBranch,
@@ -17,7 +15,12 @@ import {
   Settings,
   XCircle,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+import { AdapterConfigDialog } from './AdapterConfigDialog';
+import { AdapterDialog } from './AdapterDialog';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,8 +43,6 @@ import {
 } from '@/components/ui/table';
 import { integrationApi } from '@/lib/api/client';
 
-import { AdapterDialog } from './AdapterDialog';
-import { AdapterConfigDialog } from './AdapterConfigDialog';
 
 interface Adapter {
   id: string;

@@ -52,8 +52,9 @@ async function fetchPiiProfileIds(): Promise<string[]> {
 
     const data = await response.json() as { profileIds?: string[] };
     return data.profileIds || [];
-  } catch (error: any) {
-    logger.error(`Failed to fetch PII profile IDs: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to fetch PII profile IDs: ${errorMessage}`);
     return [];
   }
 }
@@ -76,8 +77,9 @@ async function deletePiiProfile(profileId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error: any) {
-    logger.error(`Failed to delete PII profile ${profileId}: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to delete PII profile ${profileId}: ${errorMessage}`);
     return false;
   }
 }
@@ -178,8 +180,9 @@ export const piiCleanupJobProcessor: Processor<PiiCleanupJobData, PiiCleanupJobR
     logger.info(`Total: ${result.totalPiiProfiles}, Orphaned: ${result.orphanedProfiles}, Cleaned: ${result.cleanedProfiles}`);
 
     return result;
-  } catch (error: any) {
-    logger.error(`PII cleanup job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`PII cleanup job ${jobId} failed: ${errorMessage}`);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -190,7 +193,7 @@ export const piiCleanupJobProcessor: Processor<PiiCleanupJobData, PiiCleanupJobR
  * Schedule a PII cleanup job
  * Should be called by a cron job (e.g., weekly on Sunday at 3:00 AM)
  */
-export async function schedulePiiCleanupJob(queue: any): Promise<string> {
+export async function schedulePiiCleanupJob(queue: { add: (name: string, data: PiiCleanupJobData, opts?: { jobId?: string; removeOnComplete?: { age: number } }) => Promise<unknown> }): Promise<string> {
   const jobId = `pii_cleanup_${Date.now()}`;
 
   await queue.add(

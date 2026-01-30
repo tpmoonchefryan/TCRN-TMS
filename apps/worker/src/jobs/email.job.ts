@@ -2,12 +2,12 @@
 
 import { createDecipheriv } from 'crypto';
 
+import { prisma } from '@tcrn/database';
+import { mask } from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import * as nodemailer from 'nodemailer';
 import * as tencentcloud from 'tencentcloud-sdk-nodejs-ses';
 
-import { prisma } from '@tcrn/database';
-import { mask } from '@tcrn/shared';
 
 import { workerLogger as logger } from '../logger';
 import { getPiiClient } from '../services/pii-client';

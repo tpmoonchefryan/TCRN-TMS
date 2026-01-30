@@ -2,8 +2,6 @@
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import {
   AlertCircle,
   CheckCircle,
@@ -18,7 +16,11 @@ import {
   Webhook,
   XCircle,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+import { WebhookDialog } from './WebhookDialog';
 
 import {
   AlertDialog,
@@ -51,7 +53,6 @@ import {
 } from '@/components/ui/table';
 import { integrationApi } from '@/lib/api/client';
 
-import { WebhookDialog } from './WebhookDialog';
 
 interface WebhookItem {
   id: string;

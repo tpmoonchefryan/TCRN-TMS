@@ -5,8 +5,9 @@
 
 import { useTranslations } from 'next-intl';
 
-import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@/components/ui';
 import { LiveStatusProps } from './Preview';
+
+import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@/components/ui';
 
 interface LiveStatusEditorProps {
   props: LiveStatusProps;

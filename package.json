@@ -2,6 +2,7 @@
   "name": "tcrn-tms",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "TCRN TMS - Talent Management System for VTuber/VUP",
   "license": "PolyForm-Noncommercial-1.0.0",
   "author": "月球厨师莱恩 (TPMOONCHEFRYAN)",

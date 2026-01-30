@@ -1,6 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
+
+import { ConfigEntityForm } from './ConfigEntityForm';
+import { InheritanceIndicator } from './InheritanceIndicator';
+import { ConfigEntity, ConfigEntityType, ENTITY_TYPE_CONFIGS } from './types';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,10 +28,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { configEntityApi } from '@/lib/api/client';
-import { useCallback, useEffect, useState } from 'react';
-import { ConfigEntityForm } from './ConfigEntityForm';
-import { InheritanceIndicator } from './InheritanceIndicator';
-import { ConfigEntity, ConfigEntityType, ENTITY_TYPE_CONFIGS } from './types';
 
 interface ConfigEntityListProps {
   entityType: ConfigEntityType;

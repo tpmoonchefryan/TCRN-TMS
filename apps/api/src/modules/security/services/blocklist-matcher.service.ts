@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
 import { RedisService } from '../../redis';
@@ -62,7 +62,7 @@ export class BlocklistMatcherService implements OnModuleInit {
             pattern: p,
             regex: new RegExp(p.pattern, 'gi'),
           });
-        } catch (e) {
+        } catch {
           this.logger.warn(`Invalid regex pattern: ${p.pattern}`);
         }
       } else if (p.patternType === 'wildcard') {
@@ -75,7 +75,7 @@ export class BlocklistMatcherService implements OnModuleInit {
             pattern: p,
             regex: new RegExp(regexPattern, 'gi'),
           });
-        } catch (e) {
+        } catch {
           this.logger.warn(`Invalid wildcard pattern: ${p.pattern}`);
         }
       }

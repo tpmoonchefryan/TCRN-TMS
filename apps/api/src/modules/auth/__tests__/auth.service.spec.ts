@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { UnauthorizedException } from '@nestjs/common';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database
 vi.mock('@tcrn/database', () => ({
@@ -11,14 +12,13 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { AuthService, LoginResult } from '../auth.service';
-import { PasswordService } from '../password.service';
-import { TotpService } from '../totp.service';
-import { TokenService } from '../token.service';
-import { SessionService } from '../session.service';
-import { TenantService } from '../../tenant/tenant.service';
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
-import { prisma } from '@tcrn/database';
+import { TenantService } from '../../tenant/tenant.service';
+import { AuthService } from '../auth.service';
+import { PasswordService } from '../password.service';
+import { SessionService } from '../session.service';
+import { TokenService } from '../token.service';
+import { TotpService } from '../totp.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;

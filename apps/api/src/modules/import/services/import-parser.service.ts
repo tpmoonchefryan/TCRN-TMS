@@ -4,10 +4,10 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 import {
-  IndividualImportRow,
-  CompanyImportRow,
-  ParsedPhoneNumber,
-  ParsedEmail,
+    CompanyImportRow,
+    IndividualImportRow,
+    ParsedEmail,
+    ParsedPhoneNumber,
 } from '../dto/import.dto';
 
 // Validation schemas
@@ -96,7 +96,7 @@ export class ImportParserService {
    * Parse individual import row
    */
   parseIndividualRow(row: IndividualImportRow, rowNumber: number): ParseResult<ParsedIndividualRow> {
-    const errors: string[] = [];
+    // const errors: string[] = [];
     const warnings: string[] = [];
 
     // Validate with Zod
@@ -174,7 +174,7 @@ export class ImportParserService {
   /**
    * Parse company import row
    */
-  parseCompanyRow(row: CompanyImportRow, rowNumber: number): ParseResult<ParsedCompanyRow> {
+  parseCompanyRow(row: CompanyImportRow, _rowNumber: number): ParseResult<ParsedCompanyRow> {
     const warnings: string[] = [];
 
     // Validate with Zod

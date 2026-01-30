@@ -2,7 +2,7 @@
 
 import * as crypto from 'crypto';
 
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -319,7 +319,14 @@ export class SystemUserService {
     // Delete permission snapshots
     await this.snapshotService.deleteUserSnapshots(tenantSchema, id);
 
-    return (await this.findById(id, tenantSchema))!;
+    const deactivated = await this.findById(id, tenantSchema);
+    if (!deactivated) {
+      throw new NotFoundException({
+        code: ErrorCodes.USER_NOT_FOUND,
+        message: 'User not found after deactivation',
+      });
+    }
+    return deactivated;
   }
 
   /**
@@ -343,7 +350,14 @@ export class SystemUserService {
     // Refresh permission snapshots
     await this.snapshotService.refreshUserSnapshots(tenantSchema, id);
 
-    return (await this.findById(id, tenantSchema))!;
+    const reactivated = await this.findById(id, tenantSchema);
+    if (!reactivated) {
+      throw new NotFoundException({
+        code: ErrorCodes.USER_NOT_FOUND,
+        message: 'User not found after reactivation',
+      });
+    }
+    return reactivated;
   }
 
   /**
@@ -365,7 +379,14 @@ export class SystemUserService {
       WHERE id = $1::uuid
     `, id);
 
-    return (await this.findById(id, tenantSchema))!;
+    const updated = await this.findById(id, tenantSchema);
+    if (!updated) {
+      throw new NotFoundException({
+        code: ErrorCodes.USER_NOT_FOUND,
+        message: 'User not found after force TOTP',
+      });
+    }
+    return updated;
   }
 
   /**

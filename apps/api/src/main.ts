@@ -9,7 +9,6 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-
 // Import modules for Swagger definition grouping
 import { AuthModule } from './modules/auth';
 import { ConfigModule as AppConfigModule } from './modules/config';

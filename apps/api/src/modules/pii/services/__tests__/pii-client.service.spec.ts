@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError, AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { PiiClientService, PiiProfile } from '../pii-client.service';
 import { IntegrationLogService } from '../../../log';
+import { PiiClientService, PiiProfile } from '../pii-client.service';
 
 // Mock axios with importOriginal to preserve AxiosError
 vi.mock('axios', async (importOriginal) => {

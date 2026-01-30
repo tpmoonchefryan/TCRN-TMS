@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -341,7 +341,13 @@ export class RoleService {
     const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
 
     const updatedRole = await this.findById(roleId, tenantSchema);
-    return { role: updatedRole!, affectedUsers };
+    if (!updatedRole) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Role not found after update',
+      });
+    }
+    return { role: updatedRole, affectedUsers };
   }
 
   /**
@@ -379,7 +385,14 @@ export class RoleService {
     // Refresh snapshots
     await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
 
-    return (await this.findById(roleId, tenantSchema))!;
+    const deactivatedRole = await this.findById(roleId, tenantSchema);
+    if (!deactivatedRole) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Role not found after deactivation',
+      });
+    }
+    return deactivatedRole;
   }
 
   /**
@@ -410,6 +423,13 @@ export class RoleService {
     // Refresh snapshots
     await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
 
-    return (await this.findById(roleId, tenantSchema))!;
+    const reactivatedRole = await this.findById(roleId, tenantSchema);
+    if (!reactivatedRole) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Role not found after reactivation',
+      });
+    }
+    return reactivatedRole;
   }
 }

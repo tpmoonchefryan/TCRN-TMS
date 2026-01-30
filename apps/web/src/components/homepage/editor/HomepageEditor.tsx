@@ -3,8 +3,8 @@
 'use client';
 
 import { ArrowLeft, Eye, History, Monitor, MoreHorizontal, Redo2, Save, Settings, Smartphone, Tablet, Undo2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React from 'react'; // Added for React.useState
 import { toast } from 'sonner';
 

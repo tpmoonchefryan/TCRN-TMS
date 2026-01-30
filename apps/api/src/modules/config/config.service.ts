@@ -325,7 +325,7 @@ export class ConfigService {
     // Build INSERT - start with minimal fields
     const baseFields = ['id', 'name_en', 'name_zh', 'name_ja', 'is_active', 'created_at', 'updated_at', 'version'];
     const baseValues = ['gen_random_uuid()', '$1', '$2', '$3', 'true', 'now()', 'now()', '1'];
-    const baseParams: any[] = [data.nameEn, data.nameZh || null, data.nameJa || null];
+    const baseParams: (string | number | boolean | null)[] = [data.nameEn, data.nameZh || null, data.nameJa || null];
 
     // Add code field if entity supports it
     if (hasCode && data.code) {
@@ -602,7 +602,14 @@ export class ConfigService {
       WHERE id = $1::uuid
     `, id, userId);
 
-    return (await this.findById(entityType, id, tenantSchema))!;
+    const deactivated = await this.findById(entityType, id, tenantSchema);
+    if (!deactivated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Config entity not found after deactivation',
+      });
+    }
+    return deactivated;
   }
 
   /**
@@ -638,7 +645,14 @@ export class ConfigService {
       WHERE id = $1::uuid
     `, id, userId);
 
-    return (await this.findById(entityType, id, tenantSchema))!;
+    const reactivated = await this.findById(entityType, id, tenantSchema);
+    if (!reactivated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Config entity not found after reactivation',
+      });
+    }
+    return reactivated;
   }
 
   /**
@@ -874,6 +888,7 @@ export class ConfigService {
       if (!levelsByType.has(level.membershipTypeId)) {
         levelsByType.set(level.membershipTypeId, []);
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       levelsByType.get(level.membershipTypeId)!.push(level);
     }
 
@@ -883,6 +898,7 @@ export class ConfigService {
       if (!typesByClass.has(type.membershipClassId)) {
         typesByClass.set(type.membershipClassId, []);
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       typesByClass.get(type.membershipClassId)!.push(type);
     }
 

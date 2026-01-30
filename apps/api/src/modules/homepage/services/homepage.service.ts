@@ -40,7 +40,7 @@ const DEFAULT_THEME = {
   typography: { font_family: 'system', heading_weight: 'bold' },
 } as unknown as ThemeConfig;
 
-const DEFAULT_CONTENT: HomepageContent = {
+const _DEFAULT_CONTENT: HomepageContent = {
   version: '1.0',
   components: [],
 };
@@ -168,7 +168,7 @@ export class HomepageService {
     context: RequestContext,
   ): Promise<{ draftVersion: { id: string; versionNumber: number; contentHash: string; updatedAt: string }; isNewVersion: boolean }> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Get homepage
     const homepages = await prisma.$queryRawUnsafe<Array<{
@@ -232,7 +232,7 @@ export class HomepageService {
     const versionNumber = (lastVersions[0]?.versionNumber ?? 0) + 1;
 
     // Create new version and update homepage pointer
-    const newVersions = await prisma.$queryRawUnsafe<Array<{
+    const _newVersions = await prisma.$queryRawUnsafe<Array<{
       id: string;
       versionNumber: number;
       contentHash: string | null;
@@ -284,7 +284,7 @@ export class HomepageService {
     context: RequestContext,
   ): Promise<{ publishedVersion: { id: string; versionNumber: number; publishedAt: string }; homepageUrl: string; cdnPurgeStatus: 'success' | 'pending' | 'failed' }> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Get homepage and talent info
     const homepages = await prisma.$queryRawUnsafe<Array<{
@@ -376,7 +376,7 @@ export class HomepageService {
    */
   async unpublish(talentId: string, context: RequestContext): Promise<void> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Get homepage and talent info
     const homepages = await prisma.$queryRawUnsafe<Array<{
@@ -433,7 +433,7 @@ export class HomepageService {
     context: RequestContext,
   ): Promise<HomepageResponse> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Get homepage
     const homepages = await prisma.$queryRawUnsafe<Array<{
@@ -648,7 +648,7 @@ export class HomepageService {
     context: RequestContext,
   ): Promise<{ token: string; txtRecord: string }> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Generate random token
     const token = crypto.randomBytes(32).toString('hex');
@@ -673,7 +673,7 @@ export class HomepageService {
   ): Promise<{ verified: boolean; message: string }> {
     const { promises: dns } = await import('dns');
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Get homepage with domain info
     const homepages = await prisma.$queryRawUnsafe<Array<{
@@ -750,7 +750,7 @@ export class HomepageService {
     context: RequestContext,
   ): Promise<{ customDomain: string | null; token: string | null; txtRecord: string | null }> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema ?? '';
 
     // Ensure homepage exists
     const homepage = await this.getOrCreate(talentId, tenantSchema);

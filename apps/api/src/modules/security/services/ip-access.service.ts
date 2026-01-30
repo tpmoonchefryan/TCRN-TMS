@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  OnModuleInit,
-  NotFoundException,
-  BadRequestException,
-  Logger,
+    BadRequestException,
+    Injectable,
+    Logger,
+    NotFoundException,
+    OnModuleInit,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@tcrn/database';
@@ -14,7 +14,7 @@ import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import { RedisService } from '../../redis';
-import { IpRuleListQueryDto, CreateIpRuleDto, IpRuleType, IpRuleScope } from '../dto/security.dto';
+import { CreateIpRuleDto, IpRuleListQueryDto } from '../dto/security.dto';
 
 interface IpRule {
   id: string;
@@ -146,6 +146,7 @@ export class IpAccessService implements OnModuleInit {
           expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
           isActive: true,
           hitCount: 0,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           createdBy: context.userId!,
         },
       });
@@ -268,6 +269,7 @@ export class IpAccessService implements OnModuleInit {
       if (!cache.has(rule.scope)) {
         cache.set(rule.scope, []);
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       cache.get(rule.scope)!.push(ipRule);
 
       // Global rules apply to all scopes
@@ -276,6 +278,7 @@ export class IpAccessService implements OnModuleInit {
           if (!cache.has(scope)) {
             cache.set(scope, []);
           }
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           cache.get(scope)!.push(ipRule);
         }
       }

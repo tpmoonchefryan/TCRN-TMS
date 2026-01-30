@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
+import { DelegatedAdminPanel } from '@/components/rbac/delegated-admin-panel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -39,7 +40,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DelegatedAdminPanel } from '@/components/rbac/delegated-admin-panel';
 import { systemUserApi, systemRoleApi, permissionApi } from '@/lib/api/client';
 
 

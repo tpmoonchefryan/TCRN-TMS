@@ -192,11 +192,14 @@ export class PermissionService {
         ? res.actions.split(',').filter(a => a) as PermissionAction[]
         : [];
       
-      moduleMap.get(res.module)!.push({
-        code: res.code,
-        name,
-        actions,
-      });
+      const moduleResources = moduleMap.get(res.module);
+      if (moduleResources) {
+        moduleResources.push({
+          code: res.code,
+          name,
+          actions,
+        });
+      }
     }
 
     // Module name mapping

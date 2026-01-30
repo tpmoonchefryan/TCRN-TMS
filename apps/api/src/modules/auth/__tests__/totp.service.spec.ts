@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { UnauthorizedException } from '@nestjs/common';
+import { authenticator } from 'otplib';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock external dependencies
 vi.mock('otplib', () => ({
@@ -18,7 +19,6 @@ vi.mock('qrcode', () => ({
 }));
 
 import { TotpService } from '../totp.service';
-import { authenticator } from 'otplib';
 
 describe('TotpService', () => {
   let service: TotpService;
@@ -53,7 +53,7 @@ describe('TotpService', () => {
     });
 
     it('should use provided secret if given', async () => {
-      const result = await service.generateSetupInfo('test@example.com', 'CUSTOM_SECRET');
+      const _result = await service.generateSetupInfo('test@example.com', 'CUSTOM_SECRET');
 
       expect(authenticator.keyuri).toHaveBeenCalledWith('test@example.com', 'TCRN TMS', 'CUSTOM_SECRET');
     });

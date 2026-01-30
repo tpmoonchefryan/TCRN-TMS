@@ -28,6 +28,7 @@ import {
 import React, { useState } from 'react';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+
 import { SortableComponent } from './SortableComponent';
 
 import { cn } from '@/lib/utils';

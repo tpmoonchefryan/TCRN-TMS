@@ -2,10 +2,11 @@
 
 'use client';
 
+import { LanguageSwitcher } from './LanguageSwitcher';
+
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { isStaging } from '@/lib/utils';
 
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function PublicHeader() {
   const stagingOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;

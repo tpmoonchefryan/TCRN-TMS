@@ -1,17 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes, type RequestContext, type ChangeAction } from '@tcrn/shared';
+import { ErrorCodes, type ChangeAction, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
-import { UpdateConfigDto, CaptchaMode } from '../dto/marshmallow.dto';
+import { CaptchaMode, UpdateConfigDto } from '../dto/marshmallow.dto';
 
 const DEFAULT_CONFIG = {
   isEnabled: false,
@@ -401,7 +401,13 @@ export class MarshmallowConfigService {
     context: RequestContext,
   ): Promise<{ customDomain: string | null; token: string | null; txtRecord: string | null }> {
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema;
+    if (!tenantSchema) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Tenant schema is required',
+      });
+    };
     const crypto = await import('crypto');
 
     // First get or create config
@@ -452,7 +458,13 @@ export class MarshmallowConfigService {
   ): Promise<{ verified: boolean; message: string }> {
     const { promises: dns } = await import('dns');
     const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema!;
+    const tenantSchema = context.tenantSchema;
+    if (!tenantSchema) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Tenant schema is required',
+      });
+    };
 
     // Get config with domain info
     const configs = await prisma.$queryRawUnsafe<Array<{

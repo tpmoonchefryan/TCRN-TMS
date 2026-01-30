@@ -2,9 +2,9 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { ProfanityFilterService } from '../profanity-filter.service';
 import { DatabaseService } from '../../../database';
 import { RedisService } from '../../../redis';
+import { ProfanityFilterService } from '../profanity-filter.service';
 
 describe.skip('ProfanityFilterService', () => {
   let service: ProfanityFilterService;

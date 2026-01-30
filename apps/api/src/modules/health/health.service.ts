@@ -30,8 +30,8 @@ export class HealthService {
     services.minio = await this.checkMinio();
 
     // Determine overall status
-    const allHealthy = Object.values(services).every((s: any) => s.status === 'up');
-    const anyHealthy = Object.values(services).some((s: any) => s.status === 'up');
+    const allHealthy = Object.values(services).every((s: { status: string }) => s.status === 'up');
+    const anyHealthy = Object.values(services).some((s: { status: string }) => s.status === 'up');
 
     let status: HealthCheckResponse['status'];
     if (allHealthy) {

@@ -13,6 +13,7 @@ import {
     UserPlus,
     Users
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -38,7 +39,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { systemUserApi } from '@/lib/api/client';
-import { useRouter } from 'next/navigation';
 
 // Note: AC User Management is for managing platform-level users (e.g., API support staff)
 // Not to be confused with tenant-level user management

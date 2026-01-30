@@ -2,8 +2,6 @@
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import {
   ChevronDown,
   ChevronRight,
@@ -13,6 +11,8 @@ import {
   Search,
   User,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';

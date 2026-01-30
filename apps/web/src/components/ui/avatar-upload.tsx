@@ -7,12 +7,13 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { userApi } from '@/lib/api/client';
-import { getAvatarUrl } from '@/lib/utils/gravatar';
-import { cn } from '@/lib/utils';
-
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { Button } from './button';
+
+import { userApi } from '@/lib/api/client';
+import { cn } from '@/lib/utils';
+import { getAvatarUrl } from '@/lib/utils/gravatar';
+
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string | null;

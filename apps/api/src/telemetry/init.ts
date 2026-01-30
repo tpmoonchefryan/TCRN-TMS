@@ -2,6 +2,7 @@
 // OpenTelemetry initialization for TCRN TMS (PRD P-32)
 
 import { Logger } from '@nestjs/common';
+
 import { createSampler } from './sampler';
 import { SlowRequestProcessor, ErrorCapturingProcessor } from './slow-request-processor';
 

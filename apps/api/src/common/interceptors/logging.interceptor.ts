@@ -3,18 +3,20 @@
 import { randomUUID } from 'crypto';
 
 import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
+    CallHandler,
+    ExecutionContext,
+    Injectable,
+    Logger,
+    NestInterceptor,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 // Extend Express Request to include requestId
+// Extend Express Request to include requestId
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       requestId?: string;

@@ -202,7 +202,7 @@ export class TokenService {
              targetSchema = decoded;
            }
         }
-      } catch (e) {
+      } catch {
         // Ignore parsing errors, fall back to provided schema
       }
     }

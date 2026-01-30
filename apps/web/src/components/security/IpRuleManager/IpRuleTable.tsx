@@ -6,6 +6,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Trash2, Shield, ShieldOff, Clock, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { IpRule } from './index';
+
 import {
   Badge,
   Button,
@@ -21,7 +23,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui';
 
-import { IpRule } from './index';
 
 interface IpRuleTableProps {
   rules: IpRule[];

@@ -1,18 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
-  MembershipListQueryDto,
-  CreateMembershipDto,
-  UpdateMembershipDto,
+    CreateMembershipDto,
+    MembershipListQueryDto,
+    UpdateMembershipDto,
 } from '../dto/customer.dto';
 
 /**

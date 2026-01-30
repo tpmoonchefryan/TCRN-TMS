@@ -5,7 +5,7 @@ import * as https from 'https';
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 
 import { IntegrationLogService } from '../../log';
 
@@ -84,7 +84,7 @@ export class PiiClientService {
           rejectUnauthorized: true,
         });
         this.logger.log('mTLS client configured');
-      } catch (error) {
+      } catch {
         this.logger.warn('Failed to load mTLS certificates, using standard HTTPS');
       }
     }
@@ -109,6 +109,7 @@ export class PiiClientService {
       const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const response = await this.httpClient!.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -159,6 +160,7 @@ export class PiiClientService {
       const url = `${piiServiceUrl}/api/v1/profiles`;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const response = await this.httpClient!.post(url, profile, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -201,6 +203,7 @@ export class PiiClientService {
       const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const response = await this.httpClient!.patch(url, updates, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -246,6 +249,7 @@ export class PiiClientService {
       const url = `${piiServiceUrl}/api/v1/profiles/batch`;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const response = await this.httpClient!.post(
           url,
           { ids, fields },
@@ -295,6 +299,7 @@ export class PiiClientService {
       const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         await this.httpClient!.delete(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -329,6 +334,7 @@ export class PiiClientService {
     const url = `${piiServiceUrl}/health`;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const response = await this.httpClient!.get(url, {
         timeout: 5000,
       });

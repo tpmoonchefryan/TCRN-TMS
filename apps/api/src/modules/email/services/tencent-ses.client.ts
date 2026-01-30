@@ -36,7 +36,9 @@ export class TencentSesClient {
     if (this.isConfigured) {
       this.client = new SesClient({
         credential: {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           secretId: secretId!,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           secretKey: secretKey!,
         },
         region,

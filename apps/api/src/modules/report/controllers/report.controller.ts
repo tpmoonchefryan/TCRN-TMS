@@ -110,7 +110,7 @@ export class ReportController {
     @Query('talent_id', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) _res: Response,
   ) {
     const context = this.buildContext(user, req);
     const result = await this.reportJobService.getDownloadUrl(jobId, talentId, context);

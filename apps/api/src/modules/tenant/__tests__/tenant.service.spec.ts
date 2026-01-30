@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
+import { createTenantSchema, getTenantSchemaName, prisma, setTenantSchema, withTenantContext } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database before importing service
 vi.mock('@tcrn/database', () => ({
@@ -21,7 +22,6 @@ vi.mock('@tcrn/database', () => ({
 }));
 
 import { TenantService } from '../tenant.service';
-import { prisma, getTenantSchemaName, setTenantSchema, createTenantSchema, withTenantContext } from '@tcrn/database';
 
 const mockPrisma = prisma as unknown as {
   tenant: {
@@ -225,8 +225,8 @@ describe('TenantService', () => {
         settings: { timezone: 'Asia/Tokyo', language: 'ja' },
       });
 
-      const result = await service.updateTenantSettings('tenant-123', { language: 'ja' });
-
+      const _result = await service.updateTenantSettings('tenant-123', { language: 'ja' });
+      
       expect(mockPrisma.tenant.update).toHaveBeenCalledWith({
         where: { id: 'tenant-123' },
         data: { settings: { timezone: 'Asia/Tokyo', language: 'ja' } },

@@ -340,6 +340,13 @@ export class UserRoleService {
     }
 
     const updatedAssignments = await this.getUserRoles(userId, tenantSchema);
-    return updatedAssignments.find(a => a.id === assignmentId)!;
+    const updated = updatedAssignments.find(a => a.id === assignmentId);
+    if (!updated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Role assignment not found after update',
+      });
+    }
+    return updated;
   }
 }

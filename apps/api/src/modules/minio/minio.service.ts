@@ -140,14 +140,16 @@ export class MinioService implements OnModuleInit {
   /**
    * Apply lifecycle policy helper
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async applyLifecyclePolicy(bucketName: string, config: any): Promise<void> {
     try {
       await this.client.setBucketLifecycle(bucketName, config);
-    } catch (error: any) {
-      if (error?.code === 'InvalidArgument' || error?.code === 'NotImplemented') {
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
+      if (err?.code === 'InvalidArgument' || err?.code === 'NotImplemented') {
         this.logger.log(`MinIO lifecycle policy not supported for ${bucketName} in this environment`);
       } else {
-        this.logger.warn(`Could not set ${bucketName} lifecycle policy: ${error?.message}`);
+        this.logger.warn(`Could not set ${bucketName} lifecycle policy: ${err?.message}`);
       }
     }
   }

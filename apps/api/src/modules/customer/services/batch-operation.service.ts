@@ -1,16 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import type { Queue } from 'bullmq';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import type { Queue } from 'bullmq';
 
 import { DatabaseService } from '../../database';
 import { QUEUE_NAMES } from '../../queue';
 import {
-  BatchAction,
-  BatchOperationDto,
-  BatchOperationResultDto,
+    BatchAction,
+    BatchOperationDto,
+    BatchOperationResultDto,
 } from '../dto/customer.dto';
 
 // Maximum batch size for synchronous operations
@@ -35,7 +35,7 @@ export class BatchOperationService {
     dto: BatchOperationDto,
     context: RequestContext,
   ): Promise<BatchOperationResultDto | { jobId: string; message: string }> {
-    const { customerIds, action } = dto;
+    const { customerIds, action: _action } = dto;
 
     // Validate batch size
     if (customerIds.length === 0) {
@@ -263,7 +263,7 @@ export class BatchOperationService {
     tenantSchema: string,
     customerId: string,
     dto: BatchOperationDto,
-    context: RequestContext,
+    _context: RequestContext,
   ): Promise<void> {
     // Find active membership
     const membership = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`

@@ -1,22 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
-  CreateCompanyCustomerDto,
-  UpdateCompanyCustomerDto,
-  ProfileType,
-  CustomerAction,
+    CreateCompanyCustomerDto,
+    CustomerAction,
+    ProfileType,
+    UpdateCompanyCustomerDto,
 } from '../dto/customer.dto';
 
 /**
@@ -93,7 +92,7 @@ export class CompanyCustomerService {
       const newCustomer = await tx.customerProfile.create({
         data: {
           talentId: dto.talentId,
-          profileStoreId: talent.profileStoreId!,
+          profileStoreId: talent.profileStoreId ?? '',
           originTalentId: dto.talentId,
           rmProfileId,
           profileType: ProfileType.COMPANY,
@@ -133,7 +132,7 @@ export class CompanyCustomerService {
           await tx.customerExternalId.create({
             data: {
               customerId: newCustomer.id,
-              profileStoreId: talent.profileStoreId!,
+              profileStoreId: talent.profileStoreId ?? '',
               consumerId: consumer.id,
               externalId: dto.externalId,
               createdBy: context.userId,
@@ -163,7 +162,7 @@ export class CompanyCustomerService {
       await tx.customerAccessLog.create({
         data: {
           customerId: newCustomer.id,
-          profileStoreId: talent.profileStoreId!,
+          profileStoreId: talent.profileStoreId ?? '',
           talentId: dto.talentId,
           action: CustomerAction.CREATE,
           operatorId: context.userId,
@@ -241,7 +240,7 @@ export class CompanyCustomerService {
       'updated_at = NOW()',
       'version = version + 1',
     ];
-    const profileParams: any[] = [talentId, context.userId];
+    const profileParams: (string | string[] | Date | null)[] = [talentId, context.userId];
     let paramIndex = 3;
 
     if (dto.nickname !== undefined) {
@@ -289,7 +288,7 @@ export class CompanyCustomerService {
 
     // Build company info update if there are changes
     const companySetParts: string[] = [];
-    const companyParams: any[] = [];
+    const companyParams: (string | Date | null)[] = [];
     let companyParamIndex = 1;
 
     if (dto.companyLegalName !== undefined) {
@@ -337,7 +336,7 @@ export class CompanyCustomerService {
         // updated_at is required (NOT NULL) so we set it to NOW()
         const insertColumns = ['id', 'customer_id', 'updated_at'];
         const insertValues = ['gen_random_uuid()', '$1::uuid', 'NOW()'];
-        const insertParams: any[] = [id];
+        const insertParams: (string | Date | null)[] = [id];
         let insertParamIndex = 2;
 
         if (dto.companyLegalName !== undefined) {

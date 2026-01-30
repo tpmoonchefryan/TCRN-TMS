@@ -144,6 +144,7 @@ export class MarshmallowMessageService {
     const unreadCount = Number(s.unread);
 
     // Get replier info
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const replierIds = items.filter((m) => m.repliedBy).map((m) => m.repliedBy!);
     let userMap = new Map<string, { id: string; username: string }>();
     if (replierIds.length > 0) {
@@ -331,7 +332,7 @@ export class MarshmallowMessageService {
       id: msg.id,
       replyContent: msg.replyContent,
       repliedAt: msg.repliedAt?.toISOString(),
-      repliedBy: { id: context.userId!, username: context.userName! },
+      repliedBy: { id: context.userId ?? '', username: context.userName ?? '' },
     };
   }
 

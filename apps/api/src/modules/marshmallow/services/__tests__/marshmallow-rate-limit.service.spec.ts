@@ -2,8 +2,8 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { MarshmallowRateLimitService, RateLimitConfig } from '../marshmallow-rate-limit.service';
 import { RedisService } from '../../../redis';
+import { MarshmallowRateLimitService, RateLimitConfig } from '../marshmallow-rate-limit.service';
 
 describe.skip('MarshmallowRateLimitService', () => {
   let service: MarshmallowRateLimitService;

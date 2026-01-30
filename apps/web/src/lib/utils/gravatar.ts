@@ -38,9 +38,9 @@ function md5(input: string): string {
     addUnsigned(rotateLeft(addUnsigned(a, addUnsigned(addUnsigned(i(b, c, d), x), ac)), s), b);
 
   const convertToWordArray = (str: string) => {
-    let msgLength = str.length;
-    let numWordTemp = ((msgLength + 8 - (msgLength + 8) % 64) / 64 + 1) * 16;
-    let wordArray = new Array(numWordTemp - 1);
+    const msgLength = str.length;
+    const numWordTemp = ((msgLength + 8 - (msgLength + 8) % 64) / 64 + 1) * 16;
+    const wordArray = new Array(numWordTemp - 1);
     let wordCount;
     let bytePosition = 0;
     let byteCount = 0;

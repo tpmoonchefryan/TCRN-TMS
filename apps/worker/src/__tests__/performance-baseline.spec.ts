@@ -2,9 +2,10 @@
 // Worker Performance Baseline Tests (PRD P-29)
 // Measures and validates CPU/memory usage for worker jobs
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { performance } from 'perf_hooks';
 import * as v8 from 'v8';
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 /**
  * Performance baseline thresholds

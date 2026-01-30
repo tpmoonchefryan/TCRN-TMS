@@ -3,9 +3,10 @@ import { Controller, Get, Logger, NotFoundException, Param, Req, Res, Streamable
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { lookup } from 'mime-types';
-import { BUCKETS, MinioService } from '../minio/minio.service';
 
 import { Public } from '../../common/decorators/public.decorator';
+import { BUCKETS, BucketName, MinioService } from '../minio/minio.service';
+
 
 @ApiTags('Public - Assets')
 @Controller('public/assets')
@@ -36,13 +37,16 @@ export class PublicAssetsController {
       this.logger.log(`Extracted key: ${fullKey}`);
   
       // Security check
-      const ALLOWED_BUCKETS = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
-      if (!ALLOWED_BUCKETS.includes(bucket as any)) {
+      // Security check
+      const ALLOWED_BUCKETS: string[] = [BUCKETS.AVATARS, BUCKETS.HOMEPAGE_ASSETS];
+      if (!ALLOWED_BUCKETS.includes(bucket)) {
         throw new NotFoundException('Bucket not found or not public');
       }
   
-      const stream = await this.minioService.getFileStream(bucket as any, fullKey);
-      const stats = await this.minioService.getFileStats(bucket as any, fullKey);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stream = await this.minioService.getFileStream(bucket as any as BucketName, fullKey);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stats = await this.minioService.getFileStats(bucket as any as BucketName, fullKey);
         
       if (stats) {
         res.set({

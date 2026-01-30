@@ -50,6 +50,29 @@ export interface LoginResult {
  * Auth Service
  * Core authentication logic
  */
+interface RawSystemUser {
+  id: string;
+  username: string;
+  email: string;
+  password_hash: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  preferred_language: string;
+  totp_secret: string | null;
+  is_totp_enabled: boolean;
+  is_active: boolean;
+  force_reset: boolean;
+  password_changed_at: Date | null;
+  locked_until: Date | null;
+}
+
+interface EnrichedSystemUser extends RawSystemUser {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_tier: string;
+  tenant_schema: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -72,7 +95,7 @@ export class AuthService {
     password: string,
     ipAddress: string,
     userAgent?: string,
-    rememberMe?: boolean,
+    _rememberMe?: boolean,
   ): Promise<LoginResult> {
     // First, find the tenant by code
     const tenant = await this.tenantService.getTenantByCode(tenantCode);
@@ -92,21 +115,7 @@ export class AuthService {
     }
 
     // Find user in the specified tenant schema
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      password_hash: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      totp_secret: string | null;
-      is_totp_enabled: boolean;
-      is_active: boolean;
-      force_reset: boolean;
-      password_changed_at: Date | null;
-      locked_until: Date | null;
-    }>>(
+    const users = await prisma.$queryRawUnsafe<Array<RawSystemUser>>(
       `SELECT 
         id, username, email, password_hash,
         display_name, avatar_url, preferred_language,
@@ -118,25 +127,7 @@ export class AuthService {
       login,
     );
 
-    let user: {
-      id: string;
-      username: string;
-      email: string;
-      password_hash: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      totp_secret: string | null;
-      is_totp_enabled: boolean;
-      is_active: boolean;
-      force_reset: boolean;
-      password_changed_at: Date | null;
-      locked_until: Date | null;
-      tenant_id: string;
-      tenant_name: string;
-      tenant_tier: string;
-      tenant_schema: string;
-    } | undefined;
+    let user: EnrichedSystemUser | undefined;
 
     if (users.length > 0) {
       user = {

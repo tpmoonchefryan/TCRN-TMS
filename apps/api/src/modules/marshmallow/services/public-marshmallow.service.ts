@@ -297,7 +297,7 @@ export class PublicMarshmallowService {
     // 8. Handle Image (Bilibili Link)
     let imageUrl: string | null = null;
     let imageUrls: string[] = [];
-    let socialLink: string | null = dto.socialLink || null;
+    const socialLink: string | null = dto.socialLink || null;
 
     if (dto.selectedImageUrls && dto.selectedImageUrls.length > 0) {
         // User explicitly selected images
@@ -866,6 +866,7 @@ export class PublicMarshmallowService {
   /**
    * extracting images from API modules structure
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private extractImagesFromModules(modules: any): string[] {
       const images: string[] = [];
       if (!modules) return [];

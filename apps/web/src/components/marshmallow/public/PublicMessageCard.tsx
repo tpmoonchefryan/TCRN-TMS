@@ -7,6 +7,8 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { EmojiPicker } from './EmojiPicker';
+
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -18,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/utils/gravatar';
 
-import { EmojiPicker } from './EmojiPicker';
 
 // Message type matching backend API response (camelCase)
 interface MarshmallowMessage {

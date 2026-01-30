@@ -1,19 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // PII Profiles Service Unit Tests
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProfilesService } from '../services/profiles.service';
-import { CryptoService } from '../../crypto/services/crypto.service';
-import { AuditService } from '../../audit/services/audit.service';
 import { JwtContext } from '../../auth/strategies/jwt.strategy';
+import { ProfilesService } from '../services/profiles.service';
 
 describe('ProfilesService', () => {
   let service: ProfilesService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPrisma: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockCryptoService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockAuditService: any;
 
   const mockUserContext: JwtContext = {

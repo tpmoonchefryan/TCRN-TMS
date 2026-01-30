@@ -5,6 +5,8 @@
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 
+import { BlocklistEntry } from './index';
+
 import {
   Button,
   Dialog,
@@ -19,7 +21,6 @@ import {
   Checkbox,
 } from '@/components/ui';
 
-import { BlocklistEntry } from './index';
 
 interface BlocklistFormProps {
   entry: BlocklistEntry | null;

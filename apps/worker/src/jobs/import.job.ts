@@ -76,6 +76,17 @@ interface ValidationResult {
 }
 
 /**
+ * Lookup data for validation and processing
+ */
+interface LookupData {
+  platforms: Map<string, string>;
+  membershipClasses: Map<string, string>;
+  membershipTypes: Map<string, string>;
+  membershipLevels: Map<string, string>;
+  customerStatuses: Map<string, string>;
+}
+
+/**
  * Import job processor (PRD §11.7)
  */
 export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = async (
@@ -197,11 +208,12 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
             result.successRows++;
             break;
         }
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.failedRows++;
         result.errors.push({
           row: rowNumber,
-          message: error.message || 'Unknown error',
+          message: errorMessage,
         });
       }
 
@@ -224,11 +236,12 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
     logger.info(`Total: ${result.totalRows}, Success: ${result.successRows}, Failed: ${result.failedRows}, Skipped: ${result.skippedRows}`);
 
     return result;
-  } catch (error: any) {
-    logger.error(`Import job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Import job ${jobId} failed: ${errorMessage}`);
 
     // Update job status to failed
-    await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', result, error.message);
+    await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', result, errorMessage);
 
     throw error;
   } finally {
@@ -280,7 +293,7 @@ async function loadLookupData(prisma: PrismaClient, _schemaName: string) {
 /**
  * Validate a CSV row
  */
-function validateRow(row: CustomerCsvRow, lookupData: any, _rowNumber: number): ValidationResult {
+function validateRow(row: CustomerCsvRow, lookupData: LookupData, _rowNumber: number): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -358,7 +371,7 @@ async function processCustomerCreate(
     talentId: string;
     profileStoreId: string;
     userId: string;
-    lookupData: any;
+    lookupData: LookupData;
     skipDuplicates?: boolean;
   }
 ) {
@@ -460,7 +473,7 @@ async function processCustomerUpdate(
     talentId: string;
     profileStoreId: string;
     userId: string;
-    lookupData: any;
+    lookupData: LookupData;
   }
 ): Promise<boolean> {
   // Find customer by platform identity
@@ -515,7 +528,7 @@ async function processMembershipSync(
   options: {
     talentId: string;
     profileStoreId: string;
-    lookupData: any;
+    lookupData: LookupData;
   }
 ) {
   // Similar to update but focuses on membership records
@@ -547,9 +560,9 @@ async function processMembershipSync(
   }
 
   // Upsert membership record
-  const classId = options.lookupData.membershipClasses.get(row.membership_class_code);
-  const typeId = options.lookupData.membershipTypes.get(`${classId}:${row.membership_type_code}`);
-  const levelId = options.lookupData.membershipLevels.get(`${typeId}:${row.membership_level_code}`);
+  const classId = row.membership_class_code ? options.lookupData.membershipClasses.get(row.membership_class_code) : undefined;
+  const typeId = classId && row.membership_type_code ? options.lookupData.membershipTypes.get(`${classId}:${row.membership_type_code}`) : undefined;
+  const levelId = typeId && row.membership_level_code ? options.lookupData.membershipLevels.get(`${typeId}:${row.membership_level_code}`) : undefined;
 
   if (classId && typeId && levelId) {
     // Find existing membership record

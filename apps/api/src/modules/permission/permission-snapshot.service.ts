@@ -327,8 +327,8 @@ export class PermissionSnapshotService {
       isDirect: boolean;
     }>>();
 
-    console.log(`[PermissionDebug] Calculating for user scopes:`, scopeChain);
-    console.log(`[PermissionDebug] Found assignments:`, assignments);
+    // console.log(`[PermissionDebug] Calculating for user scopes:`, scopeChain);
+    // console.log(`[PermissionDebug] Found assignments:`, assignments);
     
     for (const assignment of assignments) {
       const assignmentScopeKey = `${assignment.scopeType}:${assignment.scopeId}`;
@@ -360,7 +360,7 @@ export class PermissionSnapshotService {
       
       // Get role permissions
       const rolePermissions = await this.getRolePermissions(tenantSchema, assignment.roleId);
-      console.log(`[PermissionDebug] Role ${assignment.roleId} permissions:`, rolePermissions);
+      // console.log(`[PermissionDebug] Role ${assignment.roleId} permissions:`, rolePermissions);
       
       for (const perm of rolePermissions) {
         const key = `${perm.resourceCode}:${perm.action}`;
@@ -369,6 +369,7 @@ export class PermissionSnapshotService {
           permissionsByKey.set(key, []);
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         permissionsByKey.get(key)!.push({
           effect: perm.effect,
           scopeIndex: assignmentScopeIdx,

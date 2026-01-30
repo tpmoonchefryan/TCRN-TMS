@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
 import { QUEUE_NAMES } from '../../queue/queue.module';
-import { EmailTemplateService } from './email-template.service';
-
 import type { SendEmailDto } from '../dto/send-email.dto';
 import type { EmailJobData } from '../interfaces/email.interface';
+
+import { EmailTemplateService } from './email-template.service';
 
 @Injectable()
 export class EmailService {

@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import type { RequestContext } from '@tcrn/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { CustomerProfileService } from '../services/customer-profile.service';
 import { DatabaseService } from '../../database/database.service';
 import { ChangeLogService } from '../../log/services/change-log.service';
 import { TechEventLogService } from '../../log/services/tech-event-log.service';
-import type { RequestContext } from '@tcrn/shared';
 import { ProfileType } from '../dto/customer.dto';
+import { CustomerProfileService } from '../services/customer-profile.service';
 
 describe('CustomerProfileService', () => {
   let service: CustomerProfileService;

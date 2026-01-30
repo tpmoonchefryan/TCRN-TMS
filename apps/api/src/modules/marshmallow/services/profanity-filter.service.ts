@@ -4,13 +4,13 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
 import { RedisService } from '../../redis';
-import { TextNormalizer, detectEvasionTechniques } from '../utils/text-normalizer';
 import {
   getAllProfanityWords,
   getThreatKeywords,
   ProfanityEntry,
   ProfanitySeverity,
 } from '../data/profanity-wordlist';
+import { TextNormalizer, detectEvasionTechniques } from '../utils/text-normalizer';
 
 // =============================================================================
 // Types and Interfaces

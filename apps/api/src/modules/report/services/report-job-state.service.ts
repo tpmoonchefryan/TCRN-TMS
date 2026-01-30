@@ -1,13 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
+    BadRequestException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LogSeverity } from '@tcrn/shared';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
@@ -137,6 +136,7 @@ export class ReportJobStateService {
 
     if (result.count > 0) {
       await this.techEventLog.log({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         eventType: 'SCHEDULED_TASK_COMPLETED' as any,
         scope: 'scheduled',
         severity: LogSeverity.INFO,

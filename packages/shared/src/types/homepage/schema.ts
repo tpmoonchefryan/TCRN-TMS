@@ -19,7 +19,7 @@ export type ComponentType =
 export interface ComponentInstance {
   id: string;               // UUID
   type: ComponentType;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   visible: boolean;
   
   // New: Component-level overrides
@@ -36,7 +36,7 @@ export interface ComponentInstance {
   
   // New: Internationalization
   // Map of locale code (e.g., 'zh', 'ja') to partial props override
-  i18n?: Record<string, Record<string, any>>;
+  i18n?: Record<string, Record<string, unknown>>;
 }
 
 // Homepage Content Structure
@@ -114,5 +114,5 @@ export interface ComponentDefinition {
   name_ja: string;
   icon: string; // Lucide icon name
   category: 'core' | 'media' | 'content' | 'layout' | 'interactive';
-  defaultProps: Record<string, any>;
+  defaultProps: Record<string, unknown>;
 }

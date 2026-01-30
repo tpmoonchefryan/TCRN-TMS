@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '../../redis';
 import { CaptchaMode } from '../dto/marshmallow.dto';
+
 import { TrustScoreService } from './trust-score.service';
 
 // =============================================================================

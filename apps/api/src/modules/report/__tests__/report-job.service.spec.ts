@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { ReportJobService } from '../services/report-job.service';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { ReportType, ReportJobStatus } from '../dto/report.dto';
+import { ReportJobService } from '../services/report-job.service';
 
 // Mock dependencies
 const mockPrisma = {

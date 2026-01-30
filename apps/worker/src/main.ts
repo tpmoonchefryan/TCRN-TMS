@@ -1,15 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { PrismaClient } from '@tcrn/database';
-import { Worker } from 'bullmq';
 import type { ConnectionOptions } from 'bullmq';
+import { Worker } from 'bullmq';
 import { CronJob } from 'cron';
 import Redis from 'ioredis';
 
 import { emailJobProcessor } from './jobs/email.job';
 import { importJobProcessor } from './jobs/import.job';
 import { processLogCleanup } from './jobs/log-cleanup.job';
-import { processTechEventLog, processIntegrationLog } from './jobs/log-processor.job';
+import { processIntegrationLog, processTechEventLog } from './jobs/log-processor.job';
 import { marshmallowExportJobProcessor } from './jobs/marshmallow-export.job';
 import { membershipRenewalJobProcessor, scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
 import { permissionJobProcessor } from './jobs/permission.job';
@@ -17,7 +17,7 @@ import { piiCleanupJobProcessor, schedulePiiCleanupJob } from './jobs/pii-cleanu
 import { piiHealthCheckJobProcessor, setupPiiHealthCheckCron } from './jobs/pii-health-check.job';
 import { reportJobProcessor } from './jobs/report.job';
 import { workerLogger as logger } from './logger';
-import { setupQueues, QUEUE_NAMES, membershipRenewalQueue, piiCleanupQueue, logCleanupQueue, piiHealthCheckQueue } from './queues';
+import { QUEUE_NAMES, logCleanupQueue, membershipRenewalQueue, piiCleanupQueue, piiHealthCheckQueue, setupQueues } from './queues';
 
 // Global Prisma client for scheduled jobs
 let prisma: PrismaClient;
@@ -229,8 +229,9 @@ async function getActiveTenants(): Promise<Array<{ id: string; code: string; sch
       select: { id: true, code: true, schemaName: true },
     });
     return tenants;
-  } catch (error: any) {
-    logger.error(`Failed to fetch active tenants: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to fetch active tenants: ${errorMessage}`);
     return [];
   }
 }
@@ -264,14 +265,16 @@ async function setupScheduledJobs(): Promise<void> {
               tenant.schemaName
             );
             logger.info(`Scheduled membership renewal for tenant: ${tenant.code}`);
-          } catch (error: any) {
-            logger.error(`Failed to schedule membership renewal for tenant ${tenant.code}: ${error.message}`);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error(`Failed to schedule membership renewal for tenant ${tenant.code}: ${errorMessage}`);
           }
         }
         
         logger.info(`Membership renewal scheduled for ${tenants.length} tenants`);
-      } catch (error: any) {
-        logger.error(`Failed to schedule membership renewal: ${error.message}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Failed to schedule membership renewal: ${errorMessage}`);
       }
     },
     null,
@@ -296,8 +299,9 @@ async function setupScheduledJobs(): Promise<void> {
         for (const tenant of tenants) {
           logger.info(`Permission refresh triggered for tenant: ${tenant.code}`);
         }
-      } catch (error: any) {
-        logger.error(`Failed to trigger permission refresh: ${error.message}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Failed to trigger permission refresh: ${errorMessage}`);
       }
     },
     null,
@@ -316,8 +320,9 @@ async function setupScheduledJobs(): Promise<void> {
       try {
         await schedulePiiCleanupJob(piiCleanupQueue);
         logger.info('PII cleanup job scheduled');
-      } catch (error: any) {
-        logger.error(`Failed to schedule PII cleanup: ${error.message}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Failed to schedule PII cleanup: ${errorMessage}`);
       }
     },
     null,
@@ -345,12 +350,14 @@ async function setupScheduledJobs(): Promise<void> {
               { jobId: `log_cleanup_${tenant.code}_${Date.now()}` }
             );
             logger.info(`Scheduled log cleanup for tenant: ${tenant.code}`);
-          } catch (error: any) {
-            logger.error(`Failed to schedule log cleanup for tenant ${tenant.code}: ${error.message}`);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error(`Failed to schedule log cleanup for tenant ${tenant.code}: ${errorMessage}`);
           }
         }
-      } catch (error: any) {
-        logger.error(`Failed to schedule log cleanup: ${error.message}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Failed to schedule log cleanup: ${errorMessage}`);
       }
     },
     null,
@@ -364,8 +371,9 @@ async function setupScheduledJobs(): Promise<void> {
   try {
     await setupPiiHealthCheckCron(piiHealthCheckQueue, 60);
     logger.info('PII health check recurring job scheduled (every 60 seconds)');
-  } catch (error: any) {
-    logger.error(`Failed to setup PII health check cron: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to setup PII health check cron: ${errorMessage}`);
   }
 
   logger.info('Scheduled jobs initialized');
@@ -416,8 +424,9 @@ process.on('uncaughtException', (err) => {
   shutdown();
 });
 
-process.on('unhandledRejection', (reason: any, _promise) => {
-  logger.error(`Unhandled rejection: ${reason?.message || reason}`);
+process.on('unhandledRejection', (reason: unknown, _promise) => {
+  const errorMessage = reason instanceof Error ? reason.message : String(reason);
+  logger.error(`Unhandled rejection: ${errorMessage}`);
 });
 
 // Start workers

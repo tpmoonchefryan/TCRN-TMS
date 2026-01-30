@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+/* eslint-disable import/order */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../redis';
 
@@ -14,8 +16,7 @@ vi.mock('@tcrn/database', () => ({
 }));
 
 // Import after mock setup
-import { SessionService, SessionInfo } from '../session.service';
-import { prisma } from '@tcrn/database';
+import { SessionInfo, SessionService } from '../session.service';
 
 // Get typed mock references
 const mockPrisma = prisma as unknown as {

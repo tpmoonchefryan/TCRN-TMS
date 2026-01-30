@@ -173,10 +173,13 @@ export class LokiPushService implements OnModuleInit {
       if (!streamMap.has(key)) {
         streamMap.set(key, []);
       }
-      streamMap.get(key)!.push([
-        this.toNanoTimestamp(entry.timestamp),
-        JSON.stringify(entry.data),
-      ]);
+      const existing = streamMap.get(key);
+      if (existing) {
+        existing.push([
+          this.toNanoTimestamp(entry.timestamp),
+          JSON.stringify(entry.data),
+        ]);
+      }
     }
 
     const streams = Array.from(streamMap.entries()).map(([key, values]) => {

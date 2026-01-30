@@ -323,7 +323,7 @@ export class CreateIpRuleDto {
   ruleType!: IpRuleType;
 
   @IsString()
-  @Matches(/^[\d.:\/]+$/)
+  @Matches(/^[\d.:/]+$/)
   @MaxLength(64)
   ipPattern!: string;
 

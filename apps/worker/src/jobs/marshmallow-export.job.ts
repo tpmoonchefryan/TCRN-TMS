@@ -251,11 +251,12 @@ export const marshmallowExportJobProcessor: Processor<
       rowCount: totalCount,
       generatedAt: new Date().toISOString(),
     };
-  } catch (error: any) {
-    logger.error(`Marshmallow export job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Marshmallow export job ${jobId} failed: ${errorMessage}`);
 
     // Update job status to failed
-    await updateJobFailed(prisma, tenantSchema, jobId, error.message);
+    await updateJobFailed(prisma, tenantSchema, jobId, errorMessage);
 
     throw error;
   } finally {

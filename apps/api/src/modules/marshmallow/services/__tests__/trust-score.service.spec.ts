@@ -2,8 +2,8 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { TrustScoreService, TrustLevel } from '../trust-score.service';
 import { RedisService } from '../../../redis';
+import { TrustScoreService, TrustLevel } from '../trust-score.service';
 
 // Partially skip tests that need actual service API investigation
 describe('TrustScoreService', () => {

@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { IndividualCustomerService } from '../individual-customer.service';
 import { DatabaseService } from '../../../database';
 import { ChangeLogService, TechEventLogService } from '../../../log';
+import { IndividualCustomerService } from '../individual-customer.service';
 
 // Skip full integration tests - service has complex transaction dependencies
 describe.skip('IndividualCustomerService', () => {

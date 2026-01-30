@@ -17,7 +17,7 @@ export interface ReportJob {
   tenant_id: string;
   talent_id: string;
   report_type: ReportType;
-  filter_criteria: any;
+  filter_criteria: MfrFilterCriteria | Record<string, unknown>;
   format: 'xlsx';
   status: ReportJobStatus;
   

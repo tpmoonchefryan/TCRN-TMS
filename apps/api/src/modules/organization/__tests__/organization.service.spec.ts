@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
+import { prisma } from '@tcrn/database';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock prisma before importing service
 vi.mock('@tcrn/database', () => ({
@@ -13,8 +14,7 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { OrganizationService, OrganizationTree, TalentSummary } from '../organization.service';
-import { prisma } from '@tcrn/database';
+import { OrganizationService } from '../organization.service';
 
 const mockPrisma = prisma as unknown as {
   tenant: { findUnique: ReturnType<typeof vi.fn> };

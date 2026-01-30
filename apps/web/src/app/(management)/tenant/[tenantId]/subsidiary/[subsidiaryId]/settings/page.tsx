@@ -26,6 +26,9 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { BlocklistManager } from '@/components/security/BlocklistManager';
+import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
+import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,9 +67,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
-import { BlocklistManager } from '@/components/security/BlocklistManager';
-import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
 import { configEntityApi, dictionaryApi, subsidiaryApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 

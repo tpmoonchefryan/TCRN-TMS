@@ -7,79 +7,44 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
-// Common
 import { JwtAuthGuard } from './common/guards';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { configValidationSchema } from './config/config.schema';
-
-// Core modules
 import { AuthModule } from './modules/auth';
-
-// Organization modules
-
-// Permission & Role modules
-import { DelegatedAdminModule } from './modules/delegated-admin';
-import { SystemRoleModule } from './modules/system-role';
-import { SystemUserModule } from './modules/system-user';
-
-// Dictionary & Config modules
 import { ConfigModule as AppConfigModule } from './modules/config';
-import { DictionaryModule } from './modules/dictionary';
-
-// Log module
-import { LogModule } from './modules/log';
-
-// Customer module
 import { CustomerModule } from './modules/customer';
 import { DatabaseModule } from './modules/database';
-import { HealthModule } from './modules/health/health.module';
-
-// PII module
-
-// PII Config module
-
-// Queue module
-import { QueueModule } from './modules/queue';
-
-// Import/Export modules
+import { DelegatedAdminModule } from './modules/delegated-admin';
+import { DictionaryModule } from './modules/dictionary';
+import { EmailModule } from './modules/email';
 import { ExportModule } from './modules/export';
-import { ImportModule } from './modules/import';
-
-// Homepage module
+import { HealthModule } from './modules/health/health.module';
 import { HomepageModule } from './modules/homepage';
-
-// Marshmallow module
-import { MarshmallowModule } from './modules/marshmallow';
-
-// Report module
-import { ReportModule } from './modules/report';
-
-// Integration module
+import { ImportModule } from './modules/import';
 import { IntegrationModule } from './modules/integration';
+import { LogModule } from './modules/log';
+import { MarshmallowModule } from './modules/marshmallow';
 import { MinioModule } from './modules/minio';
 import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiModule } from './modules/pii';
 import { PiiConfigModule } from './modules/pii-config';
 import { PublicModule } from './modules/public';
+import { QueueModule } from './modules/queue';
 import { RedisModule } from './modules/redis';
+import { ReportModule } from './modules/report';
 import { RoleModule } from './modules/role';
-
-// Security module
 import { SecurityModule } from './modules/security';
 import { FingerprintInterceptor } from './modules/security/interceptors/fingerprint.interceptor';
 import { GlobalRateLimitMiddleware } from './modules/security/middleware/rate-limit.middleware';
-
-// Email module
-import { EmailModule } from './modules/email';
-
-// Settings module
 import { SettingsModule } from './modules/settings';
 import { SubsidiaryModule } from './modules/subsidiary';
+import { SystemRoleModule } from './modules/system-role';
+import { SystemUserModule } from './modules/system-user';
 import { TalentModule } from './modules/talent';
 import { TenantMiddleware, TenantModule } from './modules/tenant';
+
 @Module({
   imports: [
     // Configuration module

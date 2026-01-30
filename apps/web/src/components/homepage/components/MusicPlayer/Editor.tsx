@@ -4,8 +4,9 @@
 
 import { useTranslations } from 'next-intl';
 
-import { Input, Label } from '@/components/ui';
 import { MusicPlayerProps } from './Preview';
+
+import { Input, Label } from '@/components/ui';
 
 interface MusicPlayerEditorProps {
   props: MusicPlayerProps;

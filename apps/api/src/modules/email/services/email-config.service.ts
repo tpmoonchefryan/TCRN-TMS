@@ -6,7 +6,6 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { DatabaseService } from '../../database';
-
 import type {
   SaveEmailConfigDto,
   EmailConfigResponse,

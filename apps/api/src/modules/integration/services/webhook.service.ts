@@ -1,21 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@tcrn/database';
+// import { Prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
-  CreateWebhookDto,
-  UpdateWebhookDto,
-  WebhookEventType,
+    CreateWebhookDto,
+    UpdateWebhookDto,
+    WebhookEventType,
 } from '../dto/integration.dto';
 
 import { AdapterCryptoService } from './adapter-crypto.service';
@@ -177,10 +177,13 @@ export class WebhookService {
           secret: dto.secret ? this.cryptoService.encrypt(dto.secret) : null,
           events: dto.events,
           headers: dto.headers ?? {},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           retryPolicy: (dto.retryPolicy ?? { maxRetries: 3, backoffMs: 1000 }) as any,
           isActive: true,
           consecutiveFailures: 0,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           createdBy: context.userId!,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           updatedBy: context.userId!,
         },
       });

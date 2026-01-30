@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { CustomerExternalIdService } from '../external-id.service';
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
+import { CustomerExternalIdService } from '../external-id.service';
 
 // Skip tests that require complex internal method mocking
 describe.skip('CustomerExternalIdService', () => {

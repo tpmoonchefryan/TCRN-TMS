@@ -139,7 +139,7 @@ describe('MarshmallowConfigService', () => {
         .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
         .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
 
-      const result = await service.update('talent-123', 'tenant_test', dto, mockContext);
+      const _result = await service.update('talent-123', 'tenant_test', dto, mockContext);
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
     });

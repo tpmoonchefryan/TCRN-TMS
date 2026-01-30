@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  SetMetadata,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+    Injectable,
+    SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -50,7 +50,9 @@ export class UaDetectionGuard implements CanActivate {
 
     // Mark suspicious requests for logging
     if (result.isSuspicious) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (request as any).isSuspiciousUa = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (request as any).uaCheckReason = result.reason;
     }
 

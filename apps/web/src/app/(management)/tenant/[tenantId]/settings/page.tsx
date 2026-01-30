@@ -28,6 +28,12 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AdapterManager } from '@/components/integration/AdapterManager';
+import { WebhookManager } from '@/components/integration/WebhookManager';
+import { BlocklistManager } from '@/components/security/BlocklistManager';
+import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
+import { IpRuleManager } from '@/components/security/IpRuleManager';
+import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,12 +72,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
-import { BlocklistManager } from '@/components/security/BlocklistManager';
-import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
-import { IpRuleManager } from '@/components/security/IpRuleManager';
-import { AdapterManager } from '@/components/integration/AdapterManager';
-import { WebhookManager } from '@/components/integration/WebhookManager';
 import { configEntityApi, dictionaryApi, tenantApi, profileStoreApi, piiServiceConfigApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';

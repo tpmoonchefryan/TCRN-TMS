@@ -15,7 +15,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../../common/guards';
 import { success } from '../../../common/response.util';
-
 import { SaveEmailConfigDto, TestEmailDto } from '../dto/email-config.dto';
 import { EmailConfigService } from '../services/email-config.service';
 import { SmtpClient } from '../services/smtp.client';

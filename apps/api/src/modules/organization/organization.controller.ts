@@ -129,12 +129,14 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     );
 
     // Transform response to match frontend expected structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformNode = (node: any): any => ({
       id: node.id,
       code: node.code,
       displayName: node.name,
       parentId: null, // Will be set by parent
       path: node.path,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       talents: (node.talents || []).map((t: any) => ({
         id: t.id,
         code: t.code,
@@ -151,6 +153,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     return success({
       tenantId: tree.tenant.id,
       subsidiaries: tree.tree.map(transformNode),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       directTalents: (tree.talentsWithoutSubsidiary || []).map((t: any) => ({
         id: t.id,
         code: t.code,

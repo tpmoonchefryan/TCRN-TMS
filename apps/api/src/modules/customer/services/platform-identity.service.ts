@@ -1,19 +1,18 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
-  CreatePlatformIdentityDto,
-  UpdatePlatformIdentityDto,
-  PlatformIdentityHistoryQueryDto,
+    CreatePlatformIdentityDto,
+    PlatformIdentityHistoryQueryDto,
+    UpdatePlatformIdentityDto,
 } from '../dto/customer.dto';
 
 /**
@@ -411,6 +410,7 @@ export class PlatformIdentityService {
 
     // Build dynamic SQL query with filters
     let whereClause = 'pih.customer_id = $1::uuid';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: any[] = [customerId];
     let paramIndex = 2;
 

@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  SetMetadata,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+    Injectable,
+    SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -32,7 +32,10 @@ export class IpAccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const ip = this.getClientIp(request);
 
-    const result = await this.ipAccessService.checkAccess(ip, scope as any);
+    const result = await this.ipAccessService.checkAccess(
+      ip,
+      scope as 'global' | 'admin' | 'public' | 'api',
+    );
 
     if (!result.allowed) {
       throw new ForbiddenException({

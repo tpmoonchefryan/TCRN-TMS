@@ -67,7 +67,7 @@ export class MyPermissionsController {
     );
 
     // Get scope info if specific scope requested
-    let scopeInfo: { type: ScopeType; id: string | null; name: string | null } = {
+    const scopeInfo: { type: ScopeType; id: string | null; name: string | null } = {
       type: scopeType,
       id: scopeId,
       name: null,

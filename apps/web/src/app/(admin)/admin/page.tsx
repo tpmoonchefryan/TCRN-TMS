@@ -3,8 +3,8 @@
 'use client';
 
 import { Activity, Building, Loader2, Settings, ShieldAlert, TrendingUp, Users } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';

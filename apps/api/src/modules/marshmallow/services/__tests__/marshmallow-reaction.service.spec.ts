@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { MarshmallowReactionService } from '../marshmallow-reaction.service';
 import { DatabaseService } from '../../../database';
+import { MarshmallowReactionService } from '../marshmallow-reaction.service';
 
 describe.skip('MarshmallowReactionService', () => {
   let service: MarshmallowReactionService;

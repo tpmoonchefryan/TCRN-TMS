@@ -1,14 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { RequestContext } from '@tcrn/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { HomepageService } from '../homepage.service';
 import { DatabaseService } from '../../../database/database.service';
 import { ChangeLogService } from '../../../log/services/change-log.service';
 import { CdnPurgeService } from '../cdn-purge.service';
-import { ConfigService } from '@nestjs/config';
+import { HomepageService } from '../homepage.service';
+
 
 describe('HomepageService', () => {
   let service: HomepageService;

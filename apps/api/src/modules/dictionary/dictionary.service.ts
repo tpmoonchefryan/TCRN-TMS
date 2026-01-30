@@ -81,7 +81,7 @@ export class DictionaryService {
   /**
    * Get dictionary type details
    */
-  async getType(typeCode: string, language: string = 'en'): Promise<SystemDictionaryType | null> {
+  async getType(typeCode: string, _language: string = 'en'): Promise<SystemDictionaryType | null> {
     const results = await prisma.$queryRawUnsafe<SystemDictionaryType[]>(`
       SELECT 
         id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",

@@ -3,9 +3,10 @@
 'use client';
 
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/lib/utils';
 
-import { useTranslations } from 'next-intl';
 
 export interface ScheduleEvent {
   day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';

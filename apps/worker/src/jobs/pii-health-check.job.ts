@@ -85,10 +85,10 @@ async function checkPiiServiceHealth(
       latencyMs,
       error: `Health status: ${data.status || 'unknown'}`,
     };
-  } catch (error: any) {
+  } catch (error) {
     const latencyMs = Date.now() - startTime;
 
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       return {
         status: 'timeout',
         latencyMs,
@@ -96,10 +96,11 @@ async function checkPiiServiceHealth(
       };
     }
 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
       status: 'error',
       latencyMs,
-      error: error.message || 'Unknown error',
+      error: errorMessage,
     };
   }
 }
@@ -197,8 +198,9 @@ export const piiHealthCheckJobProcessor: Processor<PiiHealthCheckJobData, PiiHea
     logger.info(`Healthy: ${result.healthyCount}/${result.totalConfigs}, Unhealthy: ${result.unhealthyCount}`);
 
     return result;
-  } catch (error: any) {
-    logger.error(`PII health check job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`PII health check job ${jobId} failed: ${errorMessage}`);
     throw error;
   } finally {
     await prisma.$disconnect();

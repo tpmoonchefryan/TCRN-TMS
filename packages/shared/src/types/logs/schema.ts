@@ -8,8 +8,8 @@ export type ChangeAction = 'create' | 'update' | 'deactivate' | 'reactivate';
 
 export interface ChangeLogDiff {
   [field: string]: {
-    old: any;
-    new: any;
+    old: unknown;
+    new: unknown;
   };
 }
 
@@ -56,7 +56,7 @@ export interface TechEventLogEntry {
   span_id: string | null;
   source: string | null;
   message: string | null;
-  payload_json: any | null;
+  payload_json: unknown;
   error_code: string | null;
   error_stack: string | null;
 }
@@ -73,9 +73,9 @@ export interface IntegrationLogEntry {
   endpoint: string;
   method: string;
   request_headers: Record<string, string> | null;
-  request_body: any | null;
+  request_body: unknown;
   response_status: number | null;
-  response_body: any | null;
+  response_body: unknown;
   latency_ms: number | null;
   error_message: string | null;
   trace_id: string | null;

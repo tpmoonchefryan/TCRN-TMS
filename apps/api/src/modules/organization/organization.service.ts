@@ -37,6 +37,18 @@ export interface OrganizationTree {
   talentsWithoutSubsidiary: TalentSummary[];
 }
 
+interface RawSubsidiary {
+  id: string;
+  parent_id: string | null;
+  code: string;
+  path: string;
+  depth: number;
+  name_en: string;
+  name_zh: string | null;
+  name_ja: string | null;
+  is_active: boolean;
+}
+
 /**
  * Organization Service
  * Provides organization tree and breadcrumb navigation
@@ -135,7 +147,7 @@ export class OrganizationService {
     }
 
     // Get name field based on language
-    const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
+    // const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
 
     // Get full tree if no search
     if (!search) {
@@ -271,7 +283,7 @@ export class OrganizationService {
     tree: OrganizationTree,
     tenantSchema: string,
     userId: string,
-    tenantId: string
+    _tenantId: string
   ): Promise<OrganizationTree> {
     const accessScopes = await this.getUserAccessibleScopes(tenantSchema, userId);
     
@@ -430,7 +442,7 @@ export class OrganizationService {
 
   private async buildTreeResponse(
     tenant: { id: string; code: string; name: string },
-    subsidiaries: any[], 
+    subsidiaries: RawSubsidiary[], 
     tenantSchema: string, 
     language: string, 
     includeTalents: boolean, 
@@ -476,6 +488,7 @@ export class OrganizationService {
       nodeMap.set(sub.id, node);
 
       if (sub.parent_id && nodeMap.has(sub.parent_id)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         nodeMap.get(sub.parent_id)!.children.push(node);
       } else if (!sub.parent_id) {
         rootNodes.push(node);
@@ -486,6 +499,7 @@ export class OrganizationService {
 
     if (includeTalents) {
       let talentWhereClause = includeInactive ? '1=1' : 'is_active = true';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const params: any[] = [];
       if (isSearch && searchQuery) {
         talentWhereClause += ` AND (code ILIKE $1 OR name_en ILIKE $1 OR display_name ILIKE $1)`;
@@ -495,6 +509,9 @@ export class OrganizationService {
       // If search, we only want matching talents.
       // If no search, we want ALL talents.
       
+      // If no search, we want ALL talents.
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const talents = await prisma.$queryRawUnsafe<any[]>(`
         SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, display_name, avatar_url, homepage_path, is_active
         FROM "${tenantSchema}".talent
@@ -519,11 +536,13 @@ export class OrganizationService {
          if (!talentsBySubsidiary.has(key)) {
             talentsBySubsidiary.set(key, []);
          }
+         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
          talentsBySubsidiary.get(key)!.push(summary);
        }
 
        for (const [subId, talentList] of talentsBySubsidiary) {
          if (subId && nodeMap.has(subId)) {
+           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
            nodeMap.get(subId)!.talents = talentList;
          }
        }

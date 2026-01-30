@@ -1,25 +1,23 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
-import { LogSeverity } from '@tcrn/shared';
-import { ErrorCodes, TechEventType, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, TechEventType, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService, TechEventLogService } from '../../log';
 import {
-  AdapterListQueryDto,
-  CreateAdapterDto,
-  UpdateAdapterDto,
-  UpdateAdapterConfigsDto,
-  DisableAdapterDto,
-  AdapterType,
-  OwnerType,
+    AdapterListQueryDto,
+    CreateAdapterDto,
+    DisableAdapterDto,
+    OwnerType,
+    UpdateAdapterConfigsDto,
+    UpdateAdapterDto
 } from '../dto/integration.dto';
 
 import { AdapterCryptoService } from './adapter-crypto.service';
@@ -220,7 +218,9 @@ export class AdapterService {
           adapterType: dto.adapterType,
           inherit: dto.inherit ?? true,
           isActive: true,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           createdBy: context.userId!,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           updatedBy: context.userId!,
         },
       });

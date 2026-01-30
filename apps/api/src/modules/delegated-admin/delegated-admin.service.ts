@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -36,7 +36,7 @@ export class DelegatedAdminService {
       scopeType?: DelegateScopeType;
       scopeId?: string;
     } = {},
-    language: string = 'en'
+    language: string = 'en'  
   ): Promise<DelegatedAdminData[]> {
     const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
 
@@ -107,7 +107,7 @@ export class DelegatedAdminService {
         delegateName = users[0]?.name || null;
       } else {
         delegateType = 'role';
-        delegateId = row.adminRoleId!;
+        delegateId = row.adminRoleId!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
         const roles = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
           SELECT COALESCE(${nameField}, name_en) as name FROM "${tenantSchema}".role WHERE id = $1::uuid
         `, row.adminRoleId);
@@ -223,7 +223,7 @@ export class DelegatedAdminService {
 
     // Fetch and return the created record
     const allDelegations = await this.list(tenantSchema, { scopeId: data.scopeId });
-    return allDelegations.find(d => d.id === results[0].id)!;
+    return allDelegations.find(d => d.id === results[0].id)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
   }
 
   /**

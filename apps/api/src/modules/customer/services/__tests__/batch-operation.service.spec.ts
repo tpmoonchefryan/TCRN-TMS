@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { BatchOperationService } from '../batch-operation.service';
 import { DatabaseService } from '../../../database';
 import { BatchAction } from '../../dto/customer.dto';
+import { BatchOperationService } from '../batch-operation.service';
 
 describe('BatchOperationService', () => {
   let service: BatchOperationService;

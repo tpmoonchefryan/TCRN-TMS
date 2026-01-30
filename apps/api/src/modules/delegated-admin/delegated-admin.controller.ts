@@ -108,7 +108,7 @@ export class DelegatedAdminController {
     @Body() dto: CreateDelegatedAdminDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const _language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
 
     const delegation = await this.delegatedAdminService.create(
       user.tenantSchema,

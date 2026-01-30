@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BlocklistService } from '../blocklist.service';
-import { BlocklistMatcherService } from '../blocklist-matcher.service';
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
-import { BlocklistPatternType, BlocklistSeverity, BlocklistAction } from '../../dto/security.dto';
+import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '../../dto/security.dto';
+import { BlocklistMatcherService } from '../blocklist-matcher.service';
+import { BlocklistService } from '../blocklist.service';
 
 describe('BlocklistService', () => {
   let service: BlocklistService;
@@ -211,8 +211,8 @@ describe('BlocklistService', () => {
         nameEn: 'Updated Name',
       };
 
-      const result = await service.update('entry-123', dto, mockContext);
-
+      const _result = await service.update('entry-123', dto, mockContext);
+      
       expect(mockPrisma.blocklistEntry.update).toHaveBeenCalled();
       expect(mockMatcherService.rebuildMatcher).toHaveBeenCalled();
     });

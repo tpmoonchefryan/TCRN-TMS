@@ -24,9 +24,11 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.data!.nickname).toBe('Test User');
-      expect(result.data!.givenName).toBe('John');
-      expect(result.data!.familyName).toBe('Doe');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.nickname).toBe('Test User');
+      expect(data.givenName).toBe('John');
+      expect(data.familyName).toBe('Doe');
       expect(result.warnings).toBeInstanceOf(Array);
     });
 
@@ -50,8 +52,10 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.data!.phoneNumbers.length).toBe(1);
-      expect(result.data!.phoneNumbers[0].number).toBe('+81901234567');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.phoneNumbers.length).toBe(1);
+      expect(data.phoneNumbers[0].number).toBe('+81901234567');
     });
 
     it('should parse emails correctly', () => {
@@ -63,8 +67,10 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.data!.emails.length).toBe(1);
-      expect(result.data!.emails[0].address).toBe('test@example.com');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.emails.length).toBe(1);
+      expect(data.emails[0].address).toBe('test@example.com');
     });
 
     it('should parse tags from comma-separated string', () => {
@@ -75,7 +81,7 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.data!.tags).toEqual(['vip', 'loyal', 'active']);
+      expect(result.data!.tags).toEqual(['vip', 'loyal', 'active']); // eslint-disable-line @typescript-eslint/no-non-null-assertion
     });
 
     it('should handle empty row gracefully', () => {
@@ -85,10 +91,12 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.data!.nickname).toBe('Minimal');
-      expect(result.data!.phoneNumbers).toEqual([]);
-      expect(result.data!.emails).toEqual([]);
-      expect(result.data!.tags).toEqual([]);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.nickname).toBe('Minimal');
+      expect(data.phoneNumbers).toEqual([]);
+      expect(data.emails).toEqual([]);
+      expect(data.tags).toEqual([]);
     });
   });
 
@@ -103,9 +111,11 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseCompanyRow(row, 1);
 
-      expect(result.data!.nickname).toBe('ACME');
-      expect(result.data!.companyLegalName).toBe('ACME Corporation');
-      expect(result.data!.registrationNumber).toBe('12345678');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.nickname).toBe('ACME');
+      expect(data.companyLegalName).toBe('ACME Corporation');
+      expect(data.registrationNumber).toBe('12345678');
     });
 
     it('should handle optional company fields', () => {
@@ -116,8 +126,10 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseCompanyRow(row, 1);
 
-      expect(result.data!.companyLegalName).toBe('Minimal Corporation');
-      expect(result.data!.companyShortName).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = result.data!;
+      expect(data.companyLegalName).toBe('Minimal Corporation');
+      expect(data.companyShortName).toBeUndefined();
       expect(result.warnings).toBeInstanceOf(Array);
     });
 
@@ -130,7 +142,7 @@ describe.skip('ImportParserService', () => {
 
       const result = service.parseCompanyRow(row, 1);
 
-      expect(result.data!.establishmentDate).toBe('2020-01-15');
+      expect(result.data!.establishmentDate).toBe('2020-01-15'); // eslint-disable-line @typescript-eslint/no-non-null-assertion
     });
 
     it.skip('should warn for invalid establishment date', () => {

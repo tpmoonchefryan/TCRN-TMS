@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import type { RequestContext } from '@tcrn/shared';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+import { DatabaseService } from '../../../database';
 import { MfrReportService } from '../mfr-report.service';
 import { ReportJobService } from '../report-job.service';
-import { DatabaseService } from '../../../database';
 
 describe('MfrReportService', () => {
   let service: MfrReportService;

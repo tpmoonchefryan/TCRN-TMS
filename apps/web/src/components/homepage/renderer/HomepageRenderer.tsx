@@ -8,12 +8,13 @@ import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
+import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import { migrateComponentTypes } from '../lib/types';
+
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-import { COMPONENT_REGISTRY } from '../lib/component-registry';
-import { migrateComponentTypes } from '../lib/types';
 
 interface HomepageRendererProps {
   content: HomepageContent;

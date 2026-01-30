@@ -7,6 +7,7 @@ import { TenantContext, TenantService } from './tenant.service';
 
 // Extend Express Request to include tenant context
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       tenantContext?: TenantContext;

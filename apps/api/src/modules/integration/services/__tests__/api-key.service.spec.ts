@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { ApiKeyService } from '../api-key.service';
 import { DatabaseService } from '../../../database';
 import { ChangeLogService, TechEventLogService } from '../../../log';
+import { ApiKeyService } from '../api-key.service';
 
 describe('ApiKeyService', () => {
   let service: ApiKeyService;

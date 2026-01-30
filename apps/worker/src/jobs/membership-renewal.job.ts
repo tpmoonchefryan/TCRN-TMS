@@ -118,7 +118,11 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
         }
 
         // Calculate new expiry date
-        const currentExpiry = membership.validTo!;
+        const currentExpiry = membership.validTo;
+        if (!currentExpiry) {
+          logger.info(`Skipping ${membership.id}: no valid_to date`);
+          continue;
+        }
         const renewalDays = membership.membershipType.defaultRenewalDays;
         const newExpiry = new Date(currentExpiry.getTime() + renewalDays * 24 * 60 * 60 * 1000);
 
@@ -153,12 +157,13 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
         result.renewedCount++;
         logger.info(`${dryRun ? '[DRY RUN] Would renew' : 'Renewed'} membership ${membership.id} for customer ${membership.customer.nickname}`);
         logger.info(`Old expiry: ${currentExpiry.toISOString().split('T')[0]}, New expiry: ${newExpiry.toISOString().split('T')[0]}`);
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push({
           membershipId: membership.id,
-          message: error.message,
+          message: errorMessage,
         });
-        logger.error(`Error renewing membership ${membership.id}: ${error.message}`);
+        logger.error(`Error renewing membership ${membership.id}: ${errorMessage}`);
       }
 
       // Update progress
@@ -200,8 +205,9 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
     logger.info(`Processed: ${result.processedCount}, Renewed: ${result.renewedCount}, Expired: ${result.expiredCount}`);
 
     return result;
-  } catch (error: any) {
-    logger.error(`Membership renewal job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Membership renewal job ${jobId} failed: ${errorMessage}`);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -213,7 +219,7 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
  * Should be called by a cron job (e.g., daily at 2:00 AM)
  */
 export async function scheduleMembershipRenewalJob(
-  queue: any,
+  queue: { add: (name: string, data: MembershipRenewalJobData, opts?: { jobId?: string; removeOnComplete?: { age: number } }) => Promise<void> },
   tenantId: string,
   tenantSchemaName: string
 ) {

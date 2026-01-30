@@ -11,6 +11,7 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards';
@@ -20,10 +21,9 @@ import {
     PreviewEmailTemplateDto,
     UpdateEmailTemplateDto,
 } from '../dto/email-template.dto';
+import type { SupportedLocale } from '../interfaces/email.interface';
 import { EmailTemplateService } from '../services/email-template.service';
 
-import { ApiTags } from '@nestjs/swagger';
-import type { SupportedLocale } from '../interfaces/email.interface';
 
 @ApiTags('Ops - Email')
 @Controller('email-templates')

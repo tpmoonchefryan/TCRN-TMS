@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
-  NestMiddleware,
-  UnauthorizedException,
-  Logger,
+    Injectable,
+    Logger,
+    NestMiddleware,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import * as tls from 'tls';
 
 /**
@@ -67,7 +67,7 @@ export class MtlsMiddleware implements NestMiddleware {
 
       // Check if client certificate was verified by TLS layer
       if (!req.socket.authorized) {
-        const authError = (req.socket as any).authorizationError;
+        const authError = (req.socket as tls.TLSSocket & { authorizationError?: string }).authorizationError;
         this.logger.warn(`Client certificate not authorized: ${authError}`);
         throw new UnauthorizedException('Client certificate verification failed');
       }

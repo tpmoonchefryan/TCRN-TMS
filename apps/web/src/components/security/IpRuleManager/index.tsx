@@ -6,12 +6,13 @@ import { Plus, RefreshCw, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { securityApi } from '@/lib/api/client';
 
 import { IpChecker } from './IpChecker';
 import { IpRuleForm } from './IpRuleForm';
 import { IpRuleTable } from './IpRuleTable';
+
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { securityApi } from '@/lib/api/client';
 
 export interface IpRule {
   id: string;

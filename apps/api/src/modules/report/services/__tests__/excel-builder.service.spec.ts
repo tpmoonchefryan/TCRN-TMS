@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ExcelBuilderService, MfrRowData, MfrMetaData } from '../excel-builder.service';
+import { ExcelBuilderService, MfrRowData } from '../excel-builder.service';
 
 describe('ExcelBuilderService', () => {
   let service: ExcelBuilderService;

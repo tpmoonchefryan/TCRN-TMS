@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database
 vi.mock('@tcrn/database', () => ({
@@ -13,8 +14,7 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { TokenService, AccessTokenPayload } from '../token.service';
-import { prisma } from '@tcrn/database';
+import { TokenService } from '../token.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -146,7 +146,7 @@ describe('TokenService', () => {
     it('should hash refresh token before storage', async () => {
       mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
 
-      const result = await service.generateRefreshToken('user-123', 'tenant_test');
+      const _result = await service.generateRefreshToken('user-123', 'tenant_test');
 
       // The token should be different from what's stored (hashed)
       const insertCall = mockPrisma.$executeRawUnsafe.mock.calls[0];

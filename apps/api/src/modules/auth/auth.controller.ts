@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { randomBytes } from 'crypto';
+
 import {
     BadRequestException,
     Body,
@@ -27,11 +29,9 @@ import { Request, Response } from 'express';
 import { Public } from '../../common/decorators';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
-import { randomBytes } from 'crypto';
-
 import { EmailService } from '../email/services/email.service';
 import { BUCKETS, MinioService } from '../minio/minio.service';
+
 import { AuthService } from './auth.service';
 import {
     ChangePasswordDto,
@@ -176,7 +176,9 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     if (result.type === 'success') {
       // Set refresh token cookie
       const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.id,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.tenant.schemaName,
         userAgent,
         ipAddress,
@@ -244,7 +246,9 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     if (result.type === 'success') {
       // Set refresh token cookie
       const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.id,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.tenant.schemaName,
         userAgent,
         ipAddress,
@@ -349,7 +353,9 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     if (result.type === 'success') {
       // Set refresh token cookie
       const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.id,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.tenant.schemaName,
         userAgent,
         ipAddress,
@@ -644,7 +650,9 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     if (result.type === 'success') {
       // Set refresh token cookie
       const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.id,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.user!.tenant.schemaName,
         userAgent,
         ipAddress,

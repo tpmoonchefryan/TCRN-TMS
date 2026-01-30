@@ -126,7 +126,7 @@ const LEETSPEAK: Record<string, string> = {
   '}': 'd',
   '<': 'c',
   '>': 'd',
-  '\/': 'v',
+  '/': 'v',
   '\\': 'l',
   '^': 'a',
   '*': 'x',

@@ -71,17 +71,19 @@ class CheckPermissionsDto {
   checks: PermissionCheckDto[];
 }
 
-class GetMyPermissionsQueryDto {
-  @ApiPropertyOptional({ description: 'Scope type to filter permissions', example: 'talent', enum: ['tenant', 'subsidiary', 'talent'] })
-  @IsOptional()
-  @IsString()
-  scopeType?: ScopeType;
 
-  @ApiPropertyOptional({ description: 'Scope ID to filter permissions', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @IsOptional()
-  @IsString()
-  scopeId?: string;
-}
+
+// class GetMyPermissionsQueryDto {
+//   @ApiPropertyOptional({ description: 'Scope type to filter permissions', example: 'talent', enum: ['tenant', 'subsidiary', 'talent'] })
+//   @IsOptional()
+//   @IsString()
+//   scopeType?: ScopeType;
+// 
+//   @ApiPropertyOptional({ description: 'Scope ID to filter permissions', example: '550e8400-e29b-41d4-a716-446655440000' })
+//   @IsOptional()
+//   @IsString()
+//   scopeId?: string;
+// }
 
 /**
  * Get localized name based on language

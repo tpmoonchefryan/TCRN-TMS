@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
-import * as crypto from 'crypto';
 
 export interface GeneratedApiKey {
   apiKey: string;

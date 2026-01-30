@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database
 vi.mock('@tcrn/database', () => ({
@@ -11,7 +12,6 @@ vi.mock('@tcrn/database', () => ({
 }));
 
 import { SubsidiaryService } from '../subsidiary.service';
-import { prisma } from '@tcrn/database';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;

@@ -108,7 +108,7 @@ export const permissionJobProcessor: Processor<PermissionJobData, PermissionJobR
           if (!permissions.has(resourceCode)) {
             permissions.set(resourceCode, []);
           }
-          permissions.get(resourceCode)!.push(action);
+          permissions.get(resourceCode)?.push(action);
         }
       }
       rolePermissions.set(role.id, permissions);
@@ -179,10 +179,11 @@ export const permissionJobProcessor: Processor<PermissionJobData, PermissionJobR
         const permissions = rolePermissions.get(ur.roleId);
         if (permissions) {
           for (const [resource, actions] of permissions) {
-            if (!scopePermissions.get(scopeKey)!.has(resource)) {
-              scopePermissions.get(scopeKey)!.set(resource, new Set());
+            const scopePerms = scopePermissions.get(scopeKey);
+            if (scopePerms && !scopePerms.has(resource)) {
+              scopePerms.set(resource, new Set());
             }
-            actions.forEach(a => scopePermissions.get(scopeKey)!.get(resource)!.add(a));
+            actions.forEach(a => scopePerms?.get(resource)?.add(a));
           }
         }
 
@@ -201,10 +202,11 @@ export const permissionJobProcessor: Processor<PermissionJobData, PermissionJobR
             const permissions = rolePermissions.get(ur.roleId);
             if (permissions) {
               for (const [resource, actions] of permissions) {
-                if (!scopePermissions.get(childKey)!.has(resource)) {
-                  scopePermissions.get(childKey)!.set(resource, new Set());
-                }
-                actions.forEach(a => scopePermissions.get(childKey)!.get(resource)!.add(a));
+              const childScopePerms = scopePermissions.get(childKey);
+              if (childScopePerms && !childScopePerms.has(resource)) {
+                childScopePerms.set(resource, new Set());
+              }
+              actions.forEach(a => childScopePerms?.get(resource)?.add(a));
               }
             }
           }
@@ -227,6 +229,7 @@ export const permissionJobProcessor: Processor<PermissionJobData, PermissionJobR
           computedAt: new Date().toISOString(),
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pipeline.hset(redisKey, snapshot as any);
         result.snapshotsUpdated++;
       }
@@ -252,8 +255,9 @@ export const permissionJobProcessor: Processor<PermissionJobData, PermissionJobR
     logger.info(`Users: ${result.usersProcessed}, Snapshots: ${result.snapshotsUpdated}`);
 
     return result;
-  } catch (error: any) {
-    logger.error(`Permission job failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Permission job failed: ${errorMessage}`);
     throw error;
   } finally {
     await prisma.$disconnect();

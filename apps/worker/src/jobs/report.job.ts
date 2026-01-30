@@ -6,7 +6,7 @@ import * as https from 'https';
 import * as os from 'os';
 import * as path from 'path';
 
-import { PrismaClient, Prisma } from '@tcrn/database';
+import { Prisma, PrismaClient } from '@tcrn/database';
 import axios, { AxiosInstance } from 'axios';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
@@ -155,8 +155,9 @@ async function batchGetPiiProfiles(
     }
     
     logger.info(`Fetched ${result.size} PII profiles`);
-  } catch (error: any) {
-    logger.error(`Failed to fetch PII profiles: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to fetch PII profiles: ${errorMessage}`);
     // Don't throw - we'll handle missing PII gracefully
   }
   
@@ -377,7 +378,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       });
 
       // Batch fetch PII if needed
-      let piiMap = new Map<string, PiiProfile>();
+      const piiMap = new Map<string, PiiProfile>();
       if (options?.includePii && piiServiceUrl && serviceJwt) {
         // Collect rm_profile_ids for PII lookup (rmProfileId is on CustomerProfile)
         const rmProfileIds = records
@@ -502,12 +503,13 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       rowCount: processedCount,
       generatedAt: new Date().toISOString(),
     };
-  } catch (error: any) {
-    logger.error(`Report job ${jobId} failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Report job ${jobId} failed: ${errorMessage}`);
 
     // Update job status to failed
     await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', {
-      errorMessage: error.message,
+      errorMessage: errorMessage,
     });
 
     throw error;

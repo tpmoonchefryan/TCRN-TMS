@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { IsEnum, IsOptional, IsString, IsArray, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString, IsArray, IsUUID } from 'class-validator';
 
 export enum ExportJobType {
   CUSTOMER_EXPORT = 'customer_export',

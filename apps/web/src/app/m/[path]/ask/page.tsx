@@ -3,8 +3,8 @@
 'use client';
 
 import { ArrowLeft, CheckCircle2, Link as LinkIcon, Loader2, Send, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { use, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 

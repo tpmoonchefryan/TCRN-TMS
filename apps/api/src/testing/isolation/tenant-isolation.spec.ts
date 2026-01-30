@@ -2,23 +2,22 @@
 // Multi-Tenant Isolation Tests (PRD P-13)
 // Ensures complete data isolation between tenants
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import request from 'supertest';
 import { PrismaClient } from '@tcrn/database';
-import Redis from 'ioredis';
-
 import {
-  createTestTenantFixture,
-  createTestUserInTenant,
-  createTestCustomerInTenant,
-  createTestSubsidiaryInTenant,
-  createTestTalentInTenant,
-  generateMockToken,
-  TenantFixture,
-  TestUser,
+    createTestCustomerInTenant,
+    createTestSubsidiaryInTenant,
+    createTestTalentInTenant,
+    createTestTenantFixture,
+    createTestUserInTenant,
+    generateMockToken,
+    TenantFixture,
+    TestUser,
 } from '@tcrn/shared';
+import Redis from 'ioredis';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../app.module';
 
@@ -49,14 +48,14 @@ describe('Multi-Tenant Isolation Tests', () => {
 
   // Auth tokens
   let tokenA: string;
-  let tokenB: string;
+  let _tokenB: string;
 
   // Test data IDs
   let customerA: { id: string; nickname: string; rmProfileId: string };
   let customerB: { id: string; nickname: string; rmProfileId: string };
   let subsidiaryA: { id: string; code: string };
   let subsidiaryB: { id: string; code: string };
-  let talentA: { id: string; code: string; homepagePath: string };
+  let _talentA: { id: string; code: string; homepagePath: string };
   let talentB: { id: string; code: string; homepagePath: string };
 
   beforeAll(async () => {
@@ -92,7 +91,7 @@ describe('Multi-Tenant Isolation Tests', () => {
       roles: userA.roles,
     });
 
-    tokenB = generateMockToken({
+    _tokenB = generateMockToken({
       userId: userB.id,
       tenantId: userB.tenantId,
       username: userB.username,
@@ -117,7 +116,7 @@ describe('Multi-Tenant Isolation Tests', () => {
       nameEn: 'Subsidiary B',
     });
 
-    talentA = await createTestTalentInTenant(prisma, tenantA, subsidiaryA.id, {
+    _talentA = await createTestTalentInTenant(prisma, tenantA, subsidiaryA.id, {
       code: 'TALENT_A',
       nameEn: 'Talent A',
       homepagePath: 'talent-a',
