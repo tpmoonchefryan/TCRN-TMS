@@ -2,7 +2,7 @@ import { ConsoleLogger, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ApiLogger extends ConsoleLogger {
-  log(message: any, context?: string) {
+  log(message: unknown, context?: string) {
     // Filter out noisy contexts
     const ignoredContexts = [
       'RouterExplorer',

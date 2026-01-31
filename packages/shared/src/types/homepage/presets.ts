@@ -96,18 +96,14 @@ export const DEFAULT_THEME = THEME_PRESETS[ThemePreset.DEFAULT];
 
 export function generateCssVariables(theme: ThemeConfig): Record<string, string> {
   return {
-    '--color-primary': theme.colors.primary,
-    '--color-accent': theme.colors.accent,
-    '--color-background': theme.colors.background,
-    '--color-text': theme.colors.text,
-    '--color-text-secondary': theme.colors.textSecondary || (theme.colors as any).text_secondary,
+    '--color-text-secondary': theme.colors.textSecondary || (theme.colors as unknown as Record<string, unknown>)['text_secondary'] as string,
     '--bg-type': theme.background.type,
     '--bg-value': theme.background.value,
     '--card-background': theme.card.background,
-    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius || (theme.card as any).border_radius),
+    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius || (theme.card as unknown as Record<string, unknown>)['border_radius'] as ThemeCard['borderRadius']),
     '--card-shadow': getShadowValue(theme.card.shadow),
-    '--font-family': getFontFamilyValue(theme.typography.fontFamily || (theme.typography as any).font_family),
-    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight || (theme.typography as any).heading_weight),
+    '--font-family': getFontFamilyValue(theme.typography.fontFamily || (theme.typography as unknown as Record<string, unknown>)['font_family'] as ThemeTypography['fontFamily']),
+    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight || (theme.typography as unknown as Record<string, unknown>)['heading_weight'] as ThemeTypography['headingWeight']),
   };
 }
 
