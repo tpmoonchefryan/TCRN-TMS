@@ -26,6 +26,7 @@ import {
 
 
 
+
     MouseSensor, // Added
     TouchSensor, // Added
     useSensor,
@@ -36,6 +37,7 @@ import {
     SortableContext,
     sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
+import { NextIntlClientProvider } from 'next-intl';
 import React, { useState } from 'react';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
@@ -48,7 +50,6 @@ import jaMessages from '@/i18n/messages/ja.json';
 import zhMessages from '@/i18n/messages/zh.json';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/stores/homepage/editor-store';
-import { NextIntlClientProvider } from 'next-intl';
 
 const MESSAGES: Record<string, any> = {
   default: enMessages,

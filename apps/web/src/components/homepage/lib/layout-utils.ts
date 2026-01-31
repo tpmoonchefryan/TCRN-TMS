@@ -20,7 +20,7 @@ export interface LayoutItem {
  * to components that don't have them yet.
  */
 export function layoutComponents(components: ComponentInstance[]): ComponentInstance[] {
-  const layout: LayoutItem[] = [];
+
   const grid: string[][] = []; // grid[row][col] = componentId
 
   // Helper to check if a spot is occupied

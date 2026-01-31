@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -105,14 +106,14 @@ async function fetchPrimary(uid: string) {
     // Merge cookies
     const sessData = process.env.BILIBILI_SESSDATA || '';
     const hasSessData = !!sessData && sessData.length > 10;
-    console.log(`[BilibiliProxy] Fetching uid=${uid}. SESSDATA present: ${hasSessData}`);
+
 
     const requestHeaders = {
         ...COMMON_HEADERS,
         'Cookie': `${COMMON_HEADERS['Cookie']} ${cookies}; SESSDATA=${sessData};` 
     };
 
-    console.log('Fetching Bilibili:', targetUrl);
+
 
     const response = await fetch(targetUrl, {
       headers: requestHeaders,
