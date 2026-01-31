@@ -1,10 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import Link from 'next/link';
-import React from 'react';
-
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import React from 'react';
 
 import { MarshmallowWidgetProps } from './schema';
 
