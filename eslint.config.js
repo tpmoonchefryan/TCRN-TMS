@@ -90,24 +90,7 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'warn',
 
       // Import 规则
-      'import/order': [
-        'warn',
-        {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-          ],
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-        },
-      ],
+      'import/order': 'off',
 
       // 通用规则
       'no-console': ['warn', { allow: ['warn', 'error'] }],
