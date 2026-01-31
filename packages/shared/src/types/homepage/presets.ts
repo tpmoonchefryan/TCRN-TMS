@@ -117,31 +117,39 @@ export function normalizeTheme(theme: any): ThemeConfig {
   }
 
   // 2. Handle Background (nested vs flat snake_case)
-  if (!normalized.background || !normalized.background.type) {
-    const bgType = theme.background_type;
-    
-    if (bgType) {
-      if (['dots', 'grid', 'text'].includes(bgType)) {
+  // Check raw theme for legacy background_type since normalized already has default background
+  const legacyBgType = theme.background_type;
+
+  if (legacyBgType) {
+      if (['dots', 'grid', 'text'].includes(legacyBgType)) {
         normalized.decorations = {
           ...DEFAULT_THEME.decorations,
-          type: bgType as any,
-          color: theme.decorations_color || theme.background_color || DEFAULT_THEME.decorations.color,
+          ...(normalized.decorations || {}),
+          type: legacyBgType as any,
+          // migrate other potential legacy decoration props if they exist on root
+          color: theme.decorations_color || theme.background_color || normalized.decorations?.color || DEFAULT_THEME.decorations.color,
         };
-        // Background becomes solid/gradient fallback
-        normalized.background = { 
-           type: 'solid', 
-           value: theme.background_value || DEFAULT_THEME.background.value 
-        };
+        
+        // Background becomes solid/gradient fallback if not explicitly set in nested object
+        if (!theme.background || !theme.background.type) {
+             normalized.background = { 
+                type: 'solid', 
+                value: theme.background_value || DEFAULT_THEME.background.value 
+             };
+        }
       } else {
-        normalized.background = {
-          type: bgType,
-          value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
-        };
+        // Legacy background type (solid, gradient, image)
+        // Only apply if nested background is missing
+        if (!theme.background || !theme.background.type) {
+            normalized.background = {
+              type: legacyBgType,
+              value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
+            };
+        }
       }
-    } else if (normalized.background) {
+  } else if (!normalized.background || !normalized.background.type) {
        // Ensure defaults if partial object and no background_type override
-       normalized.background = { ...DEFAULT_THEME.background, ...normalized.background };
-    }
+       normalized.background = { ...DEFAULT_THEME.background, ...(normalized.background || {}) };
   }
 
   // 3. Handle Card (nested vs flat snake_case)
