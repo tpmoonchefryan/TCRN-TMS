@@ -9,6 +9,7 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ApiLogger } from './common/logger/api-logger';
 // Import modules for Swagger definition grouping
 import { AuthModule } from './modules/auth';
 import { ConfigModule as AppConfigModule } from './modules/config';
@@ -40,7 +41,9 @@ import { TenantModule } from './modules/tenant';
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new ApiLogger(),
+  });
   const configService = app.get(ConfigService);
 
   // Security middleware - configured to allow Swagger UI

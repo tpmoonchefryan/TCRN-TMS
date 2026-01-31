@@ -42,7 +42,7 @@ export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicPro
        fetchedUidRef.current = uid; 
        setLoading(true);
        try {
-           const res = await fetch(`/api/bilibili/dynamic?uid=${uid}`);
+           const res = await fetch(`/api-proxy/bilibili/dynamic?uid=${uid}`);
            if (res.ok) {
                const data = await res.json();
                

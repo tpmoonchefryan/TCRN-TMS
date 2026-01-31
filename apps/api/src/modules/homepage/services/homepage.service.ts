@@ -10,7 +10,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import { DEFAULT_THEME, ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -19,26 +19,12 @@ import {
     HomepageResponse,
     SaveDraftDto,
     ThemeConfig,
-    ThemePreset,
-    UpdateSettingsDto,
+    UpdateSettingsDto
 } from '../dto/homepage.dto';
 
 import { CdnPurgeService } from './cdn-purge.service';
 
-// Use snake_case to match @tcrn/shared schema and frontend expectations
-const DEFAULT_THEME = {
-  preset: ThemePreset.DEFAULT,
-  colors: {
-    primary: '#5599FF',
-    accent: '#FF88CC',
-    background: '#FFFFFF',
-    text: '#1A1A1A',
-    text_secondary: '#666666',
-  },
-  background: { type: 'solid', value: '#F5F7FA' },
-  card: { background: '#FFFFFF', border_radius: 'medium', shadow: 'small' },
-  typography: { font_family: 'system', heading_weight: 'bold' },
-} as unknown as ThemeConfig;
+
 
 const _DEFAULT_CONTENT: HomepageContent = {
   version: '1.0',

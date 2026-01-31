@@ -100,14 +100,14 @@ export function generateCssVariables(theme: ThemeConfig): Record<string, string>
     '--color-accent': theme.colors.accent,
     '--color-background': theme.colors.background,
     '--color-text': theme.colors.text,
-    '--color-text-secondary': theme.colors.textSecondary,
+    '--color-text-secondary': theme.colors.textSecondary || (theme.colors as any).text_secondary,
     '--bg-type': theme.background.type,
     '--bg-value': theme.background.value,
     '--card-background': theme.card.background,
-    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius),
+    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius || (theme.card as any).border_radius),
     '--card-shadow': getShadowValue(theme.card.shadow),
-    '--font-family': getFontFamilyValue(theme.typography.fontFamily),
-    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight),
+    '--font-family': getFontFamilyValue(theme.typography.fontFamily || (theme.typography as any).font_family),
+    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight || (theme.typography as any).heading_weight),
   };
 }
 
