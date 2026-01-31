@@ -687,7 +687,7 @@ volumes:
   pii_data:
 EOF
 
-# Copy PII service source code or pull from registry
+# Copy PII service source code or pull from registry.
 # Option A: Build from source
 git clone https://github.com/tpmoonchefryan/tcrn-tms.git
 cp -r tcrn-tms/apps/pii-service/* .
