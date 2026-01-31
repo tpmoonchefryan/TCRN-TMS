@@ -100,19 +100,23 @@ export const DEFAULT_THEME = THEME_PRESETS[ThemePreset.DEFAULT];
  * handling legacy snake_case keys if present.
  */
 export function normalizeTheme(theme: any): ThemeConfig {
-  // If theme is null or undefined, use default
+  // If theme is null or undefined, return default
   if (!theme) return DEFAULT_THEME;
   
+  // Determine base theme from preset
+  const presetKey = (theme.preset as ThemePreset) || ThemePreset.DEFAULT;
+  const baseTheme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
+  
   // Clone to avoid mutation issues
-  const normalized = { ...DEFAULT_THEME, ...theme };
+  const normalized = { ...baseTheme, ...theme };
 
   // 1. Handle Colors (mix of camel and snake)
   if (normalized.colors) {
     const colors = normalized.colors;
     normalized.colors = {
-      ...DEFAULT_THEME.colors,
+      ...baseTheme.colors,
       ...colors,
-      textSecondary: colors.textSecondary || colors.text_secondary || DEFAULT_THEME.colors.textSecondary,
+      textSecondary: colors.textSecondary || colors.text_secondary || baseTheme.colors.textSecondary,
     };
   }
 
@@ -123,18 +127,18 @@ export function normalizeTheme(theme: any): ThemeConfig {
   if (legacyBgType) {
       if (['dots', 'grid', 'text'].includes(legacyBgType)) {
         normalized.decorations = {
-          ...DEFAULT_THEME.decorations,
+          ...baseTheme.decorations,
           ...(normalized.decorations || {}),
           type: legacyBgType as any,
           // migrate other potential legacy decoration props if they exist on root
-          color: theme.decorations_color || theme.background_color || normalized.decorations?.color || DEFAULT_THEME.decorations.color,
+          color: theme.decorations_color || theme.background_color || normalized.decorations?.color || baseTheme.decorations.color,
         };
         
         // Background becomes solid/gradient fallback if not explicitly set in nested object
         if (!theme.background || !theme.background.type) {
              normalized.background = { 
                 type: 'solid', 
-                value: theme.background_value || DEFAULT_THEME.background.value 
+                value: theme.background_value || baseTheme.background.value 
              };
         }
       } else {
@@ -143,24 +147,24 @@ export function normalizeTheme(theme: any): ThemeConfig {
         if (!theme.background || !theme.background.type) {
             normalized.background = {
               type: legacyBgType,
-              value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
+              value: theme.background_value || theme.background?.value || baseTheme.background.value,
             };
         }
       }
   } else if (!normalized.background || !normalized.background.type) {
        // Ensure defaults if partial object and no background_type override
-       normalized.background = { ...DEFAULT_THEME.background, ...(normalized.background || {}) };
+       normalized.background = { ...baseTheme.background, ...(normalized.background || {}) };
   }
 
   // 3. Handle Card (nested vs flat snake_case)
   if (!normalized.card || !normalized.card.borderRadius) {
      const card = normalized.card || {};
      normalized.card = {
-       ...DEFAULT_THEME.card,
+       ...baseTheme.card,
        ...card,
-       borderRadius: card.borderRadius || theme.card_border_radius || (card as any).border_radius || DEFAULT_THEME.card.borderRadius,
-       shadow: card.shadow || theme.card_shadow || DEFAULT_THEME.card.shadow,
-       background: card.background || theme.card_background || DEFAULT_THEME.card.background,
+       borderRadius: card.borderRadius || theme.card_border_radius || (card as any).border_radius || baseTheme.card.borderRadius,
+       shadow: card.shadow || theme.card_shadow || baseTheme.card.shadow,
+       background: card.background || theme.card_background || baseTheme.card.background,
      };
   }
 
@@ -168,10 +172,10 @@ export function normalizeTheme(theme: any): ThemeConfig {
   if (!normalized.typography || !normalized.typography.fontFamily) {
     const typography = normalized.typography || {};
     normalized.typography = {
-      ...DEFAULT_THEME.typography,
+      ...baseTheme.typography,
       ...typography,
-      fontFamily: typography.fontFamily || theme.font_family || (typography as any).font_family || DEFAULT_THEME.typography.fontFamily,
-      headingWeight: typography.headingWeight || theme.heading_weight || (typography as any).heading_weight || DEFAULT_THEME.typography.headingWeight,
+      fontFamily: typography.fontFamily || theme.font_family || (typography as any).font_family || baseTheme.typography.fontFamily,
+      headingWeight: typography.headingWeight || theme.heading_weight || (typography as any).heading_weight || baseTheme.typography.headingWeight,
     };
   }
 
