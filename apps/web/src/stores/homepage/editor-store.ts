@@ -174,7 +174,7 @@ export const useEditorStore = create<EditorState>()(
     },
 
     saveDraft: async (talentId) => {
-      const { content, theme, saveStatus, lastSavedHash } = get();
+      const { content, theme } = get();
       const currentHash = JSON.stringify({ content, theme });
 
 

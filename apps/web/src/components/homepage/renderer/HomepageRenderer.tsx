@@ -62,9 +62,6 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
 
   // Migrate legacy component types to current types
   const migratedContent = migrateComponentTypes(content);
-  // Resolve typography
-  const typography = theme?.typography || (theme as any)?.font || {};
-  
   // Resolve visual style
   const visualStyle = theme?.visualStyle || 'simple';
   
