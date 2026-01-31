@@ -73,12 +73,17 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
     ...(theme?.background?.type === 'image' ? {
       '--bg-image': `url(${theme.background.value})`,
       '--bg-blur': `${theme.background.blur || 0}px`,
-    } : {}),
+      backgroundImage: 'var(--bg-image)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    } : {
+      background: 'var(--bg-value)',
+    }),
     
     // Visual Style specific vars
     '--glass-opacity': visualStyle === 'glass' ? '0.7' : '1',
     '--glass-border': visualStyle === 'glass' ? '1px solid rgba(255,255,255,0.2)' : 'none',
-  } as React.CSSProperties;
+  } as React.CSSProperties & Record<string, any>;
 
   // Animation variants
   const containerVariants = {
