@@ -3,6 +3,7 @@
 
 'use client';
 
+
 import {
     Activity,
     Calendar,
@@ -18,8 +19,9 @@ import {
     User,
     Youtube
 } from 'lucide-react';
-
 import { useTranslations } from 'next-intl';
+
+
 import { ComponentType } from '../lib/types';
 
 import { Button } from '@/components/ui/button';

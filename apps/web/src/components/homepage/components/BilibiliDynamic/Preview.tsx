@@ -24,9 +24,8 @@ export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicPro
   // OR if prop is the hardcoded default "Bilibili Dynamics" (legacy support)
   const displayTitle = (title && title !== 'Bilibili Dynamics') ? title : t('defaultTitle');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [dynamics, setDynamics] = React.useState<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  const [dynamics, setDynamics] = React.useState<DynamicItem[]>([]);
   const [userInfo, setUserInfo] = React.useState<{ name: string; face: string } | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -165,10 +164,28 @@ export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicPro
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function BilibiliCard({ item }: { item: any }) {
+
+interface DynamicItem {
+    id: string;
+    type: string;
+    title: string;
+    content: string;
+    images: string[];
+    duration?: string;
+    date: string | number;
+    likes: number;
+    url: string;
+    author: {
+        name: string;
+        face: string;
+    };
+}
+
+function BilibiliCard({ item }: { item: DynamicItem }) {
     const t = useTranslations('homepageEditor.bilibili');
     const hasImage = item.images && item.images.length > 0;
+// ... (rest of function is fine, just changing signature)
+
     
     const getTypeConfig = (type: string) => {
         switch(type) {

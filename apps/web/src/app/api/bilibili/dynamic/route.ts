@@ -105,7 +105,7 @@ async function fetchPrimary(uid: string) {
     
     // Merge cookies
     const sessData = process.env.BILIBILI_SESSDATA || '';
-    const hasSessData = !!sessData && sessData.length > 10;
+
 
 
     const requestHeaders = {
