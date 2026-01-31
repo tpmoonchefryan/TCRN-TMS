@@ -94,16 +94,83 @@ export const DEFAULT_THEME = THEME_PRESETS[ThemePreset.DEFAULT];
 // Helper Functions
 // =============================================================================
 
-export function generateCssVariables(theme: ThemeConfig): Record<string, string> {
+
+/**
+ * Normalize theme object to ensure it has valid nested structure,
+ * handling legacy snake_case keys if present.
+ */
+export function normalizeTheme(theme: any): ThemeConfig {
+  // If theme is null or undefined, use default
+  if (!theme) return DEFAULT_THEME;
+  
+  // Clone to avoid mutation issues
+  const normalized = { ...DEFAULT_THEME, ...theme };
+
+  // 1. Handle Colors (mix of camel and snake)
+  if (normalized.colors) {
+    const colors = normalized.colors;
+    normalized.colors = {
+      ...DEFAULT_THEME.colors,
+      ...colors,
+      textSecondary: colors.textSecondary || colors.text_secondary || DEFAULT_THEME.colors.textSecondary,
+    };
+  }
+
+  // 2. Handle Background (nested vs flat snake_case)
+  if (!normalized.background || !normalized.background.type) {
+    if (theme.background_type) {
+      normalized.background = {
+        type: theme.background_type,
+        value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
+      };
+    } else if (normalized.background) {
+       // Ensure defaults if partial object
+       normalized.background = { ...DEFAULT_THEME.background, ...normalized.background };
+    }
+  }
+
+  // 3. Handle Card (nested vs flat snake_case)
+  if (!normalized.card || !normalized.card.borderRadius) {
+     const card = normalized.card || {};
+     normalized.card = {
+       ...DEFAULT_THEME.card,
+       ...card,
+       borderRadius: card.borderRadius || theme.card_border_radius || (card as any).border_radius || DEFAULT_THEME.card.borderRadius,
+       shadow: card.shadow || theme.card_shadow || DEFAULT_THEME.card.shadow,
+       background: card.background || theme.card_background || DEFAULT_THEME.card.background,
+     };
+  }
+
+  // 4. Handle Typography (nested vs flat snake_case)
+  if (!normalized.typography || !normalized.typography.fontFamily) {
+    const typography = normalized.typography || {};
+    normalized.typography = {
+      ...DEFAULT_THEME.typography,
+      ...typography,
+      fontFamily: typography.fontFamily || theme.font_family || (typography as any).font_family || DEFAULT_THEME.typography.fontFamily,
+      headingWeight: typography.headingWeight || theme.heading_weight || (typography as any).heading_weight || DEFAULT_THEME.typography.headingWeight,
+    };
+  }
+
+  return normalized;
+}
+
+export function generateCssVariables(rawTheme: ThemeConfig): Record<string, string> {
+  const theme = normalizeTheme(rawTheme);
+  
   return {
-    '--color-text-secondary': theme.colors.textSecondary || (theme.colors as unknown as Record<string, unknown>)['text_secondary'] as string,
+    '--color-primary': theme.colors.primary,
+    '--color-accent': theme.colors.accent,
+    '--color-background': theme.colors.background,
+    '--color-text': theme.colors.text,
+    '--color-text-secondary': theme.colors.textSecondary,
     '--bg-type': theme.background.type,
     '--bg-value': theme.background.value,
     '--card-background': theme.card.background,
-    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius || (theme.card as unknown as Record<string, unknown>)['border_radius'] as ThemeCard['borderRadius']),
+    '--card-border-radius': getBorderRadiusValue(theme.card.borderRadius),
     '--card-shadow': getShadowValue(theme.card.shadow),
-    '--font-family': getFontFamilyValue(theme.typography.fontFamily || (theme.typography as unknown as Record<string, unknown>)['font_family'] as ThemeTypography['fontFamily']),
-    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight || (theme.typography as unknown as Record<string, unknown>)['heading_weight'] as ThemeTypography['headingWeight']),
+    '--font-family': getFontFamilyValue(theme.typography.fontFamily),
+    '--heading-weight': getHeadingWeightValue(theme.typography.headingWeight),
   };
 }
 

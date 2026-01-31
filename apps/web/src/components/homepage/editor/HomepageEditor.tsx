@@ -82,7 +82,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
          const path = settings?.homepagePath;
          if (path) {
            try {
-             await fetch('/api/revalidate', {
+             await fetch('/api-proxy/revalidate', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ path }),

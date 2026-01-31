@@ -77,7 +77,7 @@ export default function HomepagePage() {
   // Helper to invalidate ISR cache for the homepage
   const revalidateHomepage = async (path: string) => {
     try {
-      await fetch('/api/revalidate', {
+      await fetch('/api-proxy/revalidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path }),
