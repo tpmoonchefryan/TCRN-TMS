@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { DEFAULT_THEME } from '@tcrn/shared';
+import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
 import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -102,7 +102,7 @@ export default async function PublicHomepage(props: PageProps) {
       <main className="flex-grow">
         <HomepageRenderer 
           content={data.content} 
-          theme={data.theme || DEFAULT_THEME} 
+          theme={normalizeTheme(data.theme) || DEFAULT_THEME} 
           className="min-h-screen"
         />
       </main>

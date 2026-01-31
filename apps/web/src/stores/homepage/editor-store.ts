@@ -112,37 +112,40 @@ export const useEditorStore = create<EditorState>()(
         
         // Initialize with default or loaded theme
         const rawTheme = draftVersion?.theme || theme || {};
-        // Cast to any to avoid "expression of type 'string' can't be used to index type" error
-        // valid because rawTheme.preset coming from DB is a string matching the enum
-        const presetKey = (rawTheme.preset as ThemePreset) || ThemePreset.DEFAULT;
+        
+        // Normalize raw theme to handle legacy keys
+        const normalizedRaw = normalizeTheme(rawTheme);
+        
+        // Determine preset
+        const presetKey = (normalizedRaw.preset as ThemePreset) || ThemePreset.DEFAULT;
         const baseTheme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
 
         const themeToLoad: ThemeConfig = {
           preset: presetKey,
-          visualStyle: rawTheme.visualStyle ?? baseTheme.visualStyle ?? 'simple',
+          visualStyle: normalizedRaw.visualStyle ?? baseTheme.visualStyle ?? 'simple',
           colors: {
-            ...DEFAULT_THEME.colors,
-            ...(rawTheme.colors || {}),
+            ...baseTheme.colors,
+            ...(normalizedRaw.colors || {}),
           },
           background: {
-            ...DEFAULT_THEME.background,
-            ...(rawTheme.background || {}),
+            ...baseTheme.background,
+            ...(normalizedRaw.background || {}),
           },
           card: {
-            ...DEFAULT_THEME.card,
-            ...(rawTheme.card || {}),
+            ...baseTheme.card,
+            ...(normalizedRaw.card || {}),
           },
           typography: {
-            ...DEFAULT_THEME.typography,
-            ...(rawTheme.typography || {}),
+            ...baseTheme.typography,
+            ...(normalizedRaw.typography || {}),
           },
           decorations: {
-            ...DEFAULT_THEME.decorations,
-            ...(rawTheme.decorations || {}),
+            ...baseTheme.decorations,
+            ...(normalizedRaw.decorations || {}),
           },
           animation: {
-            ...DEFAULT_THEME.animation,
-            ...(rawTheme.animation || {}),
+            ...baseTheme.animation,
+            ...(normalizedRaw.animation || {}),
           },
         };
 

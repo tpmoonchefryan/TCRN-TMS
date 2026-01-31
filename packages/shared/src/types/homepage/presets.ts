@@ -118,13 +118,28 @@ export function normalizeTheme(theme: any): ThemeConfig {
 
   // 2. Handle Background (nested vs flat snake_case)
   if (!normalized.background || !normalized.background.type) {
-    if (theme.background_type) {
-      normalized.background = {
-        type: theme.background_type,
-        value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
-      };
+    const bgType = theme.background_type;
+    
+    if (bgType) {
+      if (['dots', 'grid', 'text'].includes(bgType)) {
+        normalized.decorations = {
+          ...DEFAULT_THEME.decorations,
+          type: bgType as any,
+          color: theme.decorations_color || theme.background_color || DEFAULT_THEME.decorations.color,
+        };
+        // Background becomes solid/gradient fallback
+        normalized.background = { 
+           type: 'solid', 
+           value: theme.background_value || DEFAULT_THEME.background.value 
+        };
+      } else {
+        normalized.background = {
+          type: bgType,
+          value: theme.background_value || theme.background?.value || DEFAULT_THEME.background.value,
+        };
+      }
     } else if (normalized.background) {
-       // Ensure defaults if partial object
+       // Ensure defaults if partial object and no background_type override
        normalized.background = { ...DEFAULT_THEME.background, ...normalized.background };
     }
   }
