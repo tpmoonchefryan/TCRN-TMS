@@ -99,8 +99,8 @@ export function PropertiesPanel() {
         <Label>{t('visualStyle')}</Label>
         <select 
           className="w-full p-2 border rounded text-sm bg-background"
-          value={theme.visual_style || 'simple'}
-          onChange={(e) => setTheme({ visual_style: e.target.value as any })}
+          value={theme.visualStyle || 'simple'}
+          onChange={(e) => setTheme({ visualStyle: e.target.value as any })}
         >
           {['simple', 'glass', 'neo', 'retro', 'flat'].map(style => (
             <option key={style} value={style}>{t(`style_${style}`)}</option>
@@ -145,15 +145,15 @@ export function PropertiesPanel() {
         <div className="flex items-center justify-between">
           <Label className="text-xs">{t('enableEntrance')}</Label>
           <Switch 
-            checked={theme.animation?.enable_entrance ?? true}
-            onCheckedChange={(checked) => setTheme({ animation: { ...theme.animation, enable_entrance: checked } })}
+            checked={theme.animation?.enableEntrance ?? true}
+            onCheckedChange={(checked) => setTheme({ animation: { ...theme.animation, enableEntrance: checked } })}
           />
         </div>
         <div className="flex items-center justify-between">
           <Label className="text-xs">{t('enableHover')}</Label>
           <Switch 
-            checked={theme.animation?.enable_hover ?? true}
-            onCheckedChange={(checked) => setTheme({ animation: { ...theme.animation, enable_hover: checked } })}
+            checked={theme.animation?.enableHover ?? true}
+            onCheckedChange={(checked) => setTheme({ animation: { ...theme.animation, enableHover: checked } })}
           />
         </div>
          <div className="space-y-1">
@@ -185,6 +185,63 @@ export function PropertiesPanel() {
             <option value="text">{t('text')}</option>
           </select>
         </div>
+
+        {theme.decorations?.type !== 'none' && (
+          <div className="grid grid-cols-2 gap-2">
+             <div className="space-y-1">
+              <Label className="text-xs">{t('density')}</Label>
+              <select 
+                className="w-full p-1.5 border rounded text-xs bg-background h-8"
+                value={theme.decorations.density || 'medium'}
+                onChange={(e) => setTheme({ decorations: { ...theme.decorations, density: e.target.value as any } })}
+              >
+                <option value="low">{t('low')}</option>
+                <option value="medium">{t('medium')}</option>
+                <option value="high">{t('high')}</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t('speed')}</Label>
+              <select 
+                className="w-full p-1.5 border rounded text-xs bg-background h-8"
+                value={theme.decorations.speed || 'normal'}
+                onChange={(e) => setTheme({ decorations: { ...theme.decorations, speed: e.target.value as any } })}
+              >
+                <option value="slow">{t('slow')}</option>
+                <option value="normal">{t('normal')}</option>
+                <option value="fast">{t('fast')}</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t('scrollMode')}</Label>
+              <select 
+                className="w-full p-1.5 border rounded text-xs bg-background h-8"
+                value={theme.decorations.scrollMode || 'parallel'}
+                onChange={(e) => setTheme({ decorations: { ...theme.decorations, scrollMode: e.target.value as any } })}
+              >
+                <option value="parallel">{t('parallel')}</option>
+                <option value="alternate">{t('alternate')}</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t('scrollDirection')}</Label>
+              <select 
+                className="w-full p-1.5 border rounded text-xs bg-background h-8"
+                value={theme.decorations.scrollAngle ?? 135}
+                onChange={(e) => setTheme({ decorations: { ...theme.decorations, scrollAngle: Number(e.target.value) } })}
+              >
+                <option value={0}>⬆️ {t('scrollUp')}</option>
+                <option value={45}>↗️ {t('upRight')}</option>
+                <option value={90}>➡️ {t('scrollRight')}</option>
+                <option value={135}>↘️ {t('downRight')}</option>
+                <option value={180}>⬇️ {t('scrollDown')}</option>
+                <option value={225}>↙️ {t('downLeft')}</option>
+                <option value={270}>⬅️ {t('scrollLeft')}</option>
+                <option value={315}>↖️ {t('upLeft')}</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Text Decoration Controls */}
         {theme.decorations?.type === 'text' && (

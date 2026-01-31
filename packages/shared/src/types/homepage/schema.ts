@@ -47,12 +47,13 @@ export interface HomepageContent {
 }
 
 // Theme Configuration
+// Theme Configuration
 export interface ThemeColors {
   primary: string;
   accent: string;
   background: string;
   text: string;
-  text_secondary: string;
+  textSecondary: string;
 }
 
 export interface ThemeBackground {
@@ -64,15 +65,15 @@ export interface ThemeBackground {
 
 export interface ThemeCard {
   background: string;
-  border_radius: 'none' | 'small' | 'medium' | 'large' | 'full';
+  borderRadius: 'none' | 'small' | 'medium' | 'large' | 'full';
   shadow: 'none' | 'small' | 'medium' | 'large' | 'glow' | 'soft';
   border?: string; // CSS border property
-  backdrop_blur?: number; // For glassmorphism settings
+  backdropBlur?: number; // For glassmorphism settings
 }
 
 export interface ThemeAnimation {
-  enable_entrance: boolean;
-  enable_hover: boolean;
+  enableEntrance: boolean;
+  enableHover: boolean;
   intensity: 'low' | 'medium' | 'high';
 }
 
@@ -88,20 +89,37 @@ export interface ThemeDecoration {
   fontFamily?: string;
   textDecoration?: 'none' | 'underline' | 'line-through';
   rotation?: number; // degrees
+  
+  // Customization
+  density?: 'low' | 'medium' | 'high';
+  speed?: 'slow' | 'normal' | 'fast';
+  scrollMode?: 'parallel' | 'alternate';
+  scrollAngle?: number; // 0, 45, 90, 135, 180, 225, 270, 315
+}
+
+// Theme Enums
+export enum ThemePreset {
+  DEFAULT = 'default',
+  DARK = 'dark',
+  SOFT = 'soft',
+  CUTE = 'cute',
+  MINIMAL = 'minimal',
+}
+
+export interface ThemeTypography {
+  fontFamily: 'system' | 'noto-sans' | 'inter' | 'outfit' | 'space-grotesk';
+  headingWeight: 'normal' | 'medium' | 'bold' | 'black';
 }
 
 export interface ThemeConfig {
-  preset: 'default' | 'dark' | 'soft' | 'cute' | 'minimal';
-  visual_style: 'simple' | 'glass' | 'neo' | 'retro' | 'flat';
+  preset: ThemePreset;
+  visualStyle: 'simple' | 'glass' | 'neo' | 'retro' | 'flat';
   
   colors: ThemeColors;
   background: ThemeBackground;
   card: ThemeCard;
   
-  typography: {
-    font_family: 'system' | 'noto-sans' | 'inter' | 'outfit' | 'space-grotesk';
-    heading_weight: 'normal' | 'medium' | 'bold' | 'black';
-  };
+  typography: ThemeTypography;
   
   animation: ThemeAnimation;
   decorations: ThemeDecoration;

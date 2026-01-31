@@ -220,9 +220,9 @@ export function SortableComponent({ comp, isSelected, theme, editingLocale, mess
       <div 
         className={cn(
           "pointer-events-none h-full w-full overflow-hidden transition-all duration-500 ease-out", 
-          isSelected && "pt-10", // Leave space for controls
-          theme.animation?.enable_entrance && "animate-in fade-in slide-in-from-bottom-4",
-          theme.animation?.enable_hover && !isSelected && !isDragging && "hover:scale-[1.02] hover:-translate-y-1"
+          "relative group transition-all duration-200",
+          theme.animation?.enableEntrance && "animate-in fade-in slide-in-from-bottom-4",
+          theme.animation?.enableHover && !isSelected && !isDragging && "hover:scale-[1.02] hover:-translate-y-1"
         )}
         style={{
            animationDuration: theme.animation?.intensity === 'low' ? '1s' : theme.animation?.intensity === 'high' ? '0.3s' : '0.5s'

@@ -67,6 +67,7 @@ class ApiClient {
     }
 
     try {
+
       const response = await fetch(url, {
         ...options,
         headers,
@@ -949,7 +950,7 @@ export const marshmallowApi = {
 export const homepageApi = {
   // Get homepage configuration
   get: (talentId: string) =>
-    apiClient.get<any>(`/api/v1/talents/${talentId}/homepage`),
+    apiClient.get<any>(`/api/v1/talents/${talentId}/homepage`, { _t: Date.now() }),
 
   // Save draft
   saveDraft: (talentId: string, draft: { content: any; theme?: any; settings?: any }) =>

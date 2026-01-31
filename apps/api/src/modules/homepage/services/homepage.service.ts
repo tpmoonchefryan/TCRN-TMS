@@ -188,10 +188,10 @@ export class HomepageService {
       });
     }
 
-    // Calculate content hash
-    const contentHash = this.calculateHash(dto.content);
+    // Calculate content+theme hash (both must match to skip save)
+    const contentHash = this.calculateHash(dto.content, dto.theme);
 
-    // Check if content changed
+    // Check if content+theme changed
     let isNewVersion = true;
     if (homepage.draftVersionId) {
       const currentDrafts = await prisma.$queryRawUnsafe<Array<{
@@ -206,7 +206,7 @@ export class HomepageService {
 
       const currentDraft = currentDrafts[0];
       if (currentDraft?.contentHash === contentHash) {
-        // Content unchanged, just update timestamp
+        // Content AND theme unchanged, skip save
         isNewVersion = false;
         return {
           draftVersion: {
@@ -631,15 +631,14 @@ export class HomepageService {
   }
 
   /**
-   * Calculate content hash
-   */
-  private calculateHash(content: HomepageContent): string {
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(content))
-      .digest('hex');
-  }
-
+ * Calculate content hash (includes theme for change detection)
+ */
+private calculateHash(content: HomepageContent, theme?: ThemeConfig | null): string {
+  return crypto
+    .createHash('sha256')
+    .update(JSON.stringify({ content, theme: theme ?? null }))
+    .digest('hex');
+}
   /**
    * Generate domain verification token
    */

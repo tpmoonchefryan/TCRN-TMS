@@ -3,7 +3,7 @@
 
 'use client';
 
-import { HomepageContent, ThemeConfig } from '@tcrn/shared';
+import { DEFAULT_THEME, HomepageContent, ThemeConfig, generateCssVariables } from '@tcrn/shared';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 import { NextIntlClientProvider, useTranslations } from 'next-intl';
@@ -62,20 +62,25 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
 
   // Migrate legacy component types to current types
   const migratedContent = migrateComponentTypes(content);
-  // Handle both snake_case (from @tcrn/shared) and camelCase (from backend DTO) naming
-  const typography = theme?.typography || {};
-  const fontFamily = (typography as any).font_family || (typography as any).fontFamily || 'system';
+  // Resolve typography
+  const typography = theme?.typography || (theme as any)?.font || {};
+  
+  // Resolve visual style
+  const visualStyle = theme?.visualStyle || 'simple';
   
   // Inject CSS variables for theme
   const style = {
-    '--color-primary': theme?.colors?.primary || '#5599FF',
-    '--color-accent': theme?.colors?.accent || '#FF88CC',
-    '--color-bg': theme?.colors?.background || '#F5F7FA',
-    '--color-text': theme?.colors?.text || '#1A1A1A',
-    backgroundColor: theme?.background?.type === 'solid' ? theme.background.value : undefined,
-    backgroundImage: theme?.background?.type !== 'solid' ? theme?.background?.value : undefined,
-    color: theme?.colors?.text || '#1A1A1A',
-    fontFamily: fontFamily === 'system' ? 'system-ui, sans-serif' : fontFamily,
+    ...generateCssVariables(theme || DEFAULT_THEME),
+    
+    // Background handling
+    ...(theme?.background?.type === 'image' ? {
+      '--bg-image': `url(${theme.background.value})`,
+      '--bg-blur': `${theme.background.blur || 0}px`,
+    } : {}),
+    
+    // Visual Style specific vars
+    '--glass-opacity': visualStyle === 'glass' ? '0.7' : '1',
+    '--glass-border': visualStyle === 'glass' ? '1px solid rgba(255,255,255,0.2)' : 'none',
   } as React.CSSProperties;
 
   // Animation variants
@@ -94,8 +99,6 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
-
-  const visualStyle = theme?.visual_style || 'simple';
 
   return (
     <div 
@@ -131,15 +134,31 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
           className="absolute inset-0 pointer-events-none opacity-[0.2]"
           style={{ 
             backgroundImage: `radial-gradient(${theme.decorations.color || '#000000'}20 2px, transparent 2px)`,
-            backgroundSize: '20px 20px',
+            backgroundSize: (() => {
+               const density = theme.decorations.density || 'medium';
+               const size = density === 'low' ? '40px' : density === 'high' ? '10px' : '20px';
+               return `${size} ${size}`;
+            })(),
             zIndex: 0
           }}
           animate={{
-            backgroundPosition: ["0px 0px", "20px 20px"]
+            backgroundPosition: (() => {
+               const density = theme.decorations.density || 'medium';
+               const sizeVal = density === 'low' ? 40 : density === 'high' ? 10 : 20;
+               const angle = theme.decorations.scrollAngle ?? 135;
+               const rad = (angle * Math.PI) / 180;
+               const dx = Math.round(Math.sin(rad)) * sizeVal;
+               const dy = Math.round(Math.cos(rad) * -1) * sizeVal; // 0deg is Up (negative Y)
+               return ["0px 0px", `${dx}px ${dy}px`];
+            })()
           }}
           transition={{
             repeat: Infinity,
-            duration: 3,
+            repeatType: theme.decorations.scrollMode === 'alternate' ? 'reverse' : 'loop',
+            duration: (() => {
+               const speed = theme.decorations.speed || 'normal';
+               return speed === 'slow' ? 10 : speed === 'fast' ? 1 : 3;
+            })(),
             ease: "linear"
           }}
         />
@@ -150,15 +169,31 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
           className="absolute inset-0 pointer-events-none opacity-[0.15]"
           style={{ 
             backgroundImage: `linear-gradient(${theme.decorations.color || '#000000'}15 1px, transparent 1px), linear-gradient(90deg, ${theme.decorations.color || '#000000'}15 1px, transparent 1px)`,
-            backgroundSize: '30px 30px',
+            backgroundSize: (() => {
+               const density = theme.decorations.density || 'medium';
+               const size = density === 'low' ? '60px' : density === 'high' ? '15px' : '30px';
+               return `${size} ${size}`;
+            })(),
             zIndex: 0
           }}
           animate={{
-            backgroundPosition: ["0px 0px", "30px 30px"]
+            backgroundPosition: (() => {
+               const density = theme.decorations.density || 'medium';
+               const sizeVal = density === 'low' ? 60 : density === 'high' ? 15 : 30;
+               const angle = theme.decorations.scrollAngle ?? 135;
+               const rad = (angle * Math.PI) / 180;
+               const dx = Math.round(Math.sin(rad)) * sizeVal;
+               const dy = Math.round(Math.cos(rad) * -1) * sizeVal;
+               return ["0px 0px", `${dx}px ${dy}px`];
+            })()
           }}
           transition={{
             repeat: Infinity,
-            duration: 3,
+            repeatType: theme.decorations.scrollMode === 'alternate' ? 'reverse' : 'loop',
+            duration: (() => {
+               const speed = theme.decorations.speed || 'normal';
+               return speed === 'slow' ? 10 : speed === 'fast' ? 1 : 3;
+            })(),
             ease: "linear"
           }}
         />
@@ -177,9 +212,19 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
               const fontWeight = d.fontWeight || 'normal';
               const rotation = d.rotation ?? -45;
               const textDecoration = d.textDecoration || 'none';
-              const svgWidth = 200;
-              const svgHeight = 200;
               
+              const density = d.density || 'medium';
+              // Increased base padding values to ensure distinct spacing differences
+              const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+              
+              // Adaptive Sizing: Tile size = Text Width + Padding
+              const textLen = d.text?.length || 1;
+              const estTextWidth = textLen * (fontSize as number); 
+              const size = estTextWidth + basePadding;
+              
+              const svgWidth = size;
+              const svgHeight = size;
+
               const svg = `
                 <svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}'>
                   <text 
@@ -199,17 +244,63 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
                   </text>
                 </svg>
               `.trim().replace(/\s+/g, ' ');
-              return `url("data:image/svg+xml,${svg}")`;
+              
+              const url = `url("data:image/svg+xml,${svg}")`;
+              return d.scrollMode === 'alternate' ? `${url}, ${url}` : url;
             })(),
-            backgroundSize: '200px 200px',
+            backgroundSize: (() => {
+               const d = theme.decorations;
+               const density = d.density || 'medium';
+               const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+               const fontSize = d.fontSize || 24;
+               const textLen = d.text?.length || 1;
+               const estTextWidth = textLen * (fontSize as number);
+               const size = estTextWidth + basePadding;
+               
+               return `${size}px ${size}px`;
+            })(),
             zIndex: 0
           }}
           animate={{
-            backgroundPosition: ["0px 0px", "200px 200px"] // Slower diagonal pan
+            backgroundPosition: (() => {
+               const d = theme.decorations;
+               const density = d.density || 'medium';
+               const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+               const fontSize = d.fontSize || 24;
+               const textLen = d.text?.length || 1;
+               const estTextWidth = textLen * (fontSize as number);
+               const sizeVal = estTextWidth + basePadding;
+
+               const angle = d.scrollAngle ?? 135;
+               const isAlternate = d.scrollMode === 'alternate';
+               
+               const loopSize = sizeVal;
+               const rad = (angle * Math.PI) / 180;
+               
+               // Standard delta
+               const dx = Math.round(Math.sin(rad)) * loopSize;
+               const dy = Math.round(Math.cos(rad) * -1) * loopSize;
+               
+               if (isAlternate) {
+                 const half = sizeVal / 2;
+                 // Layer 1: 0 0 -> dx dy
+                 // Layer 2: half half -> half+dx half+dy
+                 return [
+                   `0px 0px, ${half}px ${half}px`, 
+                   `${dx}px ${dy}px, ${half + dx}px ${half + dy}px`
+                 ];
+               }
+               
+               return ["0px 0px", `${dx}px ${dy}px`];
+            })()
           }}
           transition={{
             repeat: Infinity,
-            duration: 20, // Slow movement for text
+            repeatType: 'loop', 
+            duration: (() => {
+               const speed = theme.decorations.speed || 'normal';
+               return speed === 'slow' ? 40 : speed === 'fast' ? 5 : 20;
+            })(),
             ease: "linear"
           }}
         />
@@ -221,7 +312,7 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
           // Responsive width: mobile default, wider on desktop
           "max-w-md md:max-w-2xl lg:max-w-4xl"
         )}
-        variants={theme?.animation?.enable_entrance ? containerVariants : undefined}
+        variants={theme?.animation?.enableEntrance ? containerVariants : undefined}
         initial="hidden"
         animate="show"
       >
@@ -275,9 +366,9 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
 
               // Visual Style Overrides
               const cardBgHex = theme?.card?.background || '#FFFFFF';
-              const cardRadius = theme?.card?.border_radius === 'none' ? '0rem' : 
-                                 theme?.card?.border_radius === 'large' ? '1rem' : 
-                                 '0.5rem';
+              const cardRadius = theme?.card?.borderRadius === 'none' ? '0rem' : 
+                                 theme?.card?.borderRadius === 'large' ? '1rem' : 
+                                 theme?.card?.borderRadius === 'full' ? '9999px' : '0.5rem';
               
               const visualVars = {
                  '--radius': cardRadius,
@@ -319,8 +410,8 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
                     "md:[grid-row:var(--desktop-row-start)_/_span_var(--desktop-row-span)]",
                     visualClass
                   )}
-                  variants={theme?.animation?.enable_entrance ? itemVariants : undefined}
-                  whileHover={theme?.animation?.enable_hover ? { scale: 1.02 } : undefined}
+                  variants={theme?.animation?.enableEntrance ? itemVariants : undefined}
+                  whileHover={theme?.animation?.enableHover ? { scale: 1.02 } : undefined}
                   style={{ 
                       ...comp.styleOverrides as any, 
                       ...visualVars,

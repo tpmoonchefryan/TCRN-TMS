@@ -3,15 +3,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsEnum,
     IsInt,
+    IsNumber,
     IsObject,
     IsOptional,
     IsString,
-    IsUrl,
     Max,
     MaxLength,
-    Min
+    Min,
+    ValidateNested,
 } from 'class-validator';
 
 // =============================================================================
@@ -44,7 +46,7 @@ export interface HomepageContent {
 }
 
 // =============================================================================
-// Theme Types
+// Theme Types (DTOs - Hybrid: camelCase for Core, snake_case for New Features)
 // =============================================================================
 
 export enum ThemePreset {
@@ -55,37 +57,70 @@ export enum ThemePreset {
   MINIMAL = 'minimal',
 }
 
-export interface ThemeColors {
-  primary: string;
-  accent: string;
-  background: string;
-  text: string;
-  textSecondary: string;
+export class ThemeColors {
+  @IsString() @IsOptional() primary!: string;
+  @IsString() @IsOptional() accent!: string;
+  @IsString() @IsOptional() background!: string;
+  @IsString() @IsOptional() text!: string;
+  @IsString() @IsOptional() textSecondary!: string;
 }
 
-export interface ThemeBackground {
-  type: 'solid' | 'gradient' | 'image';
-  value: string;
-  overlay?: string;
+export class ThemeBackground {
+  @IsString() @IsOptional() type!: 'solid' | 'gradient' | 'image';
+  @IsString() @IsOptional() value!: string;
+  @IsString() @IsOptional() overlay?: string;
+  @IsNumber() @IsOptional() blur?: number;
 }
 
-export interface ThemeCard {
-  background: string;
-  borderRadius: 'none' | 'small' | 'medium' | 'large';
-  shadow: 'none' | 'small' | 'medium' | 'large';
+export class ThemeCard {
+  @IsString() @IsOptional() background!: string;
+  @IsString() @IsOptional() borderRadius!: 'none' | 'small' | 'medium' | 'large' | 'full';
+  @IsString() @IsOptional() shadow!: 'none' | 'small' | 'medium' | 'large' | 'glow' | 'soft';
+  @IsString() @IsOptional() border?: string;
+  @IsNumber() @IsOptional() backdropBlur?: number;
 }
 
-export interface ThemeTypography {
-  fontFamily: 'system' | 'noto-sans' | 'inter';
-  headingWeight: 'normal' | 'medium' | 'bold';
+export class ThemeTypography {
+  @IsString() @IsOptional() fontFamily!: 'system' | 'noto-sans' | 'inter' | 'outfit' | 'space-grotesk';
+  @IsString() @IsOptional() headingWeight!: 'normal' | 'medium' | 'bold' | 'black';
 }
 
-export interface ThemeConfig {
-  preset: ThemePreset;
-  colors: ThemeColors;
-  background: ThemeBackground;
-  card: ThemeCard;
-  typography: ThemeTypography;
+export class ThemeAnimation {
+  @IsBoolean() @IsOptional() enableEntrance!: boolean;
+  @IsBoolean() @IsOptional() enableHover!: boolean;
+  @IsString() @IsOptional() intensity!: 'low' | 'medium' | 'high';
+}
+
+export class ThemeDecoration {
+  @IsString() @IsOptional() type!: 'grid' | 'dots' | 'gradient-blobs' | 'text' | 'none';
+  @IsString() @IsOptional() color?: string;
+  @IsNumber() @IsOptional() opacity?: number;
+
+  // Text Decoration Props
+  @IsString() @IsOptional() text?: string;
+  @IsNumber() @IsOptional() fontSize?: number;
+  @IsOptional() fontWeight?: 'normal' | 'bold' | 'bolder' | 'lighter' | number;
+  @IsString() @IsOptional() fontFamily?: string;
+  @IsString() @IsOptional() textDecoration?: 'none' | 'underline' | 'line-through';
+  @IsNumber() @IsOptional() rotation?: number;
+
+  // Customization
+  @IsString() @IsOptional() density?: 'low' | 'medium' | 'high';
+  @IsString() @IsOptional() speed?: 'slow' | 'normal' | 'fast';
+  @IsString() @IsOptional() scrollMode?: 'parallel' | 'alternate';
+  @IsNumber() @IsOptional() scrollAngle?: number;
+}
+
+export class ThemeConfig {
+  @IsEnum(ThemePreset) @IsOptional() preset!: ThemePreset;
+  @IsString() @IsOptional() visualStyle!: 'simple' | 'glass' | 'neo' | 'retro' | 'flat';
+
+  @ValidateNested() @Type(() => ThemeColors) @IsOptional() colors!: ThemeColors;
+  @ValidateNested() @Type(() => ThemeBackground) @IsOptional() background!: ThemeBackground;
+  @ValidateNested() @Type(() => ThemeCard) @IsOptional() card!: ThemeCard;
+  @ValidateNested() @Type(() => ThemeTypography) @IsOptional() typography!: ThemeTypography;
+  @ValidateNested() @Type(() => ThemeAnimation) @IsOptional() animation!: ThemeAnimation;
+  @ValidateNested() @Type(() => ThemeDecoration) @IsOptional() decorations!: ThemeDecoration;
 }
 
 // =============================================================================
@@ -97,16 +132,17 @@ export class SaveDraftDto {
   @IsObject()
   content!: HomepageContent;
 
-  @ApiPropertyOptional({ description: 'Theme configuration', type: Object })
+  @ApiPropertyOptional({ description: 'Theme configuration', type: ThemeConfig })
   @IsOptional()
-  @IsObject()
+  @ValidateNested()
+  @Type(() => ThemeConfig)
   theme?: ThemeConfig;
 }
 
 export class PublishDto {
   @ApiPropertyOptional({ description: 'Specific version number to publish', example: 1 })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   version?: number;
 }
 
@@ -114,31 +150,36 @@ export class UpdateSettingsDto {
   @ApiPropertyOptional({ description: 'SEO title for the homepage', example: 'My Fan Page', maxLength: 128 })
   @IsOptional()
   @IsString()
-  @MaxLength(128)
   seoTitle?: string;
 
   @ApiPropertyOptional({ description: 'SEO meta description', example: 'Welcome to my fan page!', maxLength: 512 })
   @IsOptional()
   @IsString()
-  @MaxLength(512)
   seoDescription?: string;
 
   @ApiPropertyOptional({ description: 'Open Graph image URL', example: 'https://example.com/og.jpg', maxLength: 512 })
   @IsOptional()
-  @IsUrl()
-  @MaxLength(512)
+  @IsString()
   ogImageUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Custom URL slug', example: 'my-page', maxLength: 64 })
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @ApiPropertyOptional({ description: 'Whether to hide search engine indexing', example: false })
+  @IsOptional()
+  @IsBoolean()
+  hideSearchIndexing?: boolean;
 
   @ApiPropertyOptional({ description: 'Google Analytics ID', example: 'G-XXXXXXXXXX', maxLength: 64 })
   @IsOptional()
   @IsString()
-  @MaxLength(64)
   analyticsId?: string;
 
   @ApiPropertyOptional({ description: 'Custom domain for the homepage', example: 'fanpage.example.com', maxLength: 255, nullable: true })
   @IsOptional()
   @IsString()
-  @MaxLength(255)
   customDomain?: string | null;
 
   @ApiPropertyOptional({ description: 'Custom path for the homepage URL', example: 'my-page', maxLength: 255, nullable: true })

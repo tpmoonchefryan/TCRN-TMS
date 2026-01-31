@@ -27,6 +27,19 @@ import {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     MouseSensor, // Added
     TouchSensor, // Added
     useSensor,
@@ -209,6 +222,57 @@ export function Canvas() {
     }
   };
 
+  const getBgImage = () => {
+    const d = theme.decorations;
+    if (d?.type === 'dots') return `radial-gradient(${d.color || '#000000'}20 1px, transparent 1px)`;
+    if (d?.type === 'grid') return `linear-gradient(${d.color || '#000000'}10 1px, transparent 1px), linear-gradient(90deg, ${d.color || '#000000'}10 1px, transparent 1px)`;
+    if (d?.type === 'text' && d.text) {
+         const color = (d.color || '#000000').replace('#', '%23');
+         const density = d.density || 'medium';
+         // Increased base padding values
+         const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+         
+         const fontFamily = d.fontFamily || 'system-ui';
+         const fontSize = d.fontSize || 24;
+         const fontWeight = d.fontWeight || 'normal';
+         const rotation = d.rotation ?? -45;
+         const textDecoration = d.textDecoration || 'none';
+         const opacity = 0.1;
+
+         // Adaptive Sizing using Padding
+         const textLen = d.text?.length || 1;
+         const estTextWidth = textLen * (fontSize as number); 
+         const size = estTextWidth + basePadding;
+
+         const svgWidth = size;
+         const svgHeight = size;
+
+         const svg = `
+            <svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}'>
+             <text 
+               x='50%' 
+               y='50%' 
+               font-family='${fontFamily}' 
+               font-size='${fontSize}' 
+               font-weight='${fontWeight}' 
+               text-decoration='${textDecoration}'
+               fill='${color}' 
+               fill-opacity='${opacity}' 
+               text-anchor='middle' 
+               dominant-baseline='middle' 
+               transform='rotate(${rotation}, ${svgWidth/2}, ${svgHeight/2})'
+             >
+               ${d.text}
+             </text>
+            </svg>
+         `.trim().replace(/\s+/g, ' ');
+
+         const url = `url("data:image/svg+xml,${svg}")`;
+         return d.scrollMode === 'alternate' ? `${url}, ${url}` : url;
+    }
+    return undefined;
+  };
+
   return (
     <div 
       className={cn(
@@ -217,12 +281,19 @@ export function Canvas() {
       )}
     >
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes bg-move {
+        @keyframes bg-move-parallel {
           0% { background-position: 0 0; }
-          100% { background-position: 20px 20px; }
+          100% { background-position: var(--bg-end-x) var(--bg-end-y); }
         }
-        .animate-bg-move {
-          animation: bg-move 3s linear infinite;
+        @keyframes bg-move-alternate {
+          0% { background-position: 0 0, var(--bg-alt-start-x) var(--bg-alt-start-y); }
+          100% { background-position: var(--bg-end-x) var(--bg-end-y), var(--bg-alt-end-x) var(--bg-alt-end-y); }
+        }
+        .animate-bg-move-parallel {
+          animation: bg-move-parallel linear infinite;
+        }
+        .animate-bg-move-alternate {
+          animation: bg-move-alternate linear infinite;
         }
       `}} />
       <div 
@@ -242,7 +313,8 @@ export function Canvas() {
         <div 
           ref={containerRef}
           className={cn(
-             "w-full relative animate-bg-move",
+             "w-full relative",
+             theme.decorations?.scrollMode === 'alternate' ? "animate-bg-move-alternate" : "animate-bg-move-parallel",
              !isDesktop ? "flex-1 overflow-y-auto custom-scrollbar touch-pan-y" : "min-h-full"
           )} 
           style={{
@@ -251,13 +323,78 @@ export function Canvas() {
             '--color-text': theme.colors.text,
             backgroundColor: theme.background.value,
             color: theme.colors.text,
-            backgroundImage: theme.decorations?.type === 'dots' 
-              ? `radial-gradient(${theme.decorations?.color || '#000000'}20 1px, transparent 1px)`
-              : theme.decorations?.type === 'grid' 
-                ? `linear-gradient(${theme.decorations?.color || '#000000'}10 1px, transparent 1px), linear-gradient(90deg, ${theme.decorations?.color || '#000000'}10 1px, transparent 1px)`
-                : undefined,
-            backgroundSize: theme.decorations?.type === 'dots' ? '20px 20px' : theme.decorations?.type === 'grid' ? '40px 40px' : undefined
-          } as React.CSSProperties}
+            backgroundImage: getBgImage(),
+            ...(() => {
+               const d = theme.decorations;
+               let size = '20px';
+               if (d?.type === 'dots') {
+                  const density = d.density || 'medium';
+                  const sizeVal = density === 'low' ? 40 : density === 'high' ? 10 : 20;
+                  size = `${sizeVal}px`;
+               } else if (d?.type === 'grid') {
+                  const density = d.density || 'medium';
+                  const sizeVal = density === 'low' ? 60 : density === 'high' ? 15 : 30;
+                  size = `${sizeVal}px`;
+               } else if (d?.type === 'text') {
+                  const density = d.density || 'medium';
+                  const sizeVal = density === 'low' ? 400 : density === 'high' ? 100 : 200;
+                  size = `${sizeVal}px`;
+               }
+               
+               if (d?.type === 'none') {
+                 return {};
+               }
+
+
+                // Calculate scroll end position based on angle and size
+                
+                // d is already defined in the closure
+                const density = d.density || 'medium';
+                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+                
+                const fontSize = d.fontSize || 24;
+                const textLen = d.text?.length || 1;
+                const estTextWidth = textLen * (fontSize as number);
+                const sizeVal = estTextWidth + basePadding;
+                
+                const isAlternate = d.scrollMode === 'alternate';
+                const loopSize = sizeVal; // Standard loop size
+                
+                const angle = d.scrollAngle ?? 135;
+                const rad = (angle * Math.PI) / 180;
+                
+                const dx = Math.round(Math.sin(rad)) * loopSize;
+                const dy = Math.round(Math.cos(rad) * -1) * loopSize;
+                
+                // Adjust duration based on loop distance if alternate
+                const durationVal = d.speed === 'slow' ? 40 : d.speed === 'fast' ? 5 : 20;
+                const durationStr = `${durationVal}s`;
+
+                // Calculate bgSize string
+                const bgSizeStr = `${sizeVal}px ${sizeVal}px`;
+                
+                const variables: any = {
+                    '--bg-size': size,
+                    '--bg-end-x': `${dx}px`,
+                    '--bg-end-y': `${dy}px`,
+                };
+                
+                if (isAlternate) {
+                  const half = sizeVal / 2;
+                  variables['--bg-alt-start-x'] = `${half}px`;
+                  variables['--bg-alt-start-y'] = `${half}px`;
+                  variables['--bg-alt-end-x'] = `${half + dx}px`;
+                  variables['--bg-alt-end-y'] = `${half + dy}px`;
+                }
+
+                return {
+                  backgroundSize: bgSizeStr,
+                  animationDuration: durationStr,
+                  animationDirection: 'normal',
+                  ...variables
+                } as any as React.CSSProperties;
+            })()
+          } as any as React.CSSProperties}
         >
           <div className="min-h-full pb-20 pt-8 px-4">
             <DndContext 

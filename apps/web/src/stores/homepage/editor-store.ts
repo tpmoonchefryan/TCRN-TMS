@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, HomepageContent, THEME_PRESETS, ThemeConfig } from '@tcrn/shared';
+import { DEFAULT_THEME, HomepageContent, THEME_PRESETS, ThemeConfig, ThemePreset } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -110,11 +110,16 @@ export const useEditorStore = create<EditorState>()(
         const rawContent = draftVersion?.content || publishedVersion?.content || { version: '1.0', components: [] };
         const contentToLoad = migrateComponentTypes(rawContent);
         
-        // Deep merge with DEFAULT_THEME to ensure all required properties exist
+        // Initialize with default or loaded theme
         const rawTheme = draftVersion?.theme || theme || {};
+        // Cast to any to avoid "expression of type 'string' can't be used to index type" error
+        // valid because rawTheme.preset coming from DB is a string matching the enum
+        const presetKey = (rawTheme.preset as ThemePreset) || ThemePreset.DEFAULT;
+        const baseTheme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
+
         const themeToLoad: ThemeConfig = {
-          preset: rawTheme.preset ?? DEFAULT_THEME.preset,
-          visual_style: rawTheme.visual_style ?? 'simple',
+          preset: presetKey,
+          visualStyle: rawTheme.visualStyle ?? baseTheme.visualStyle ?? 'simple',
           colors: {
             ...DEFAULT_THEME.colors,
             ...(rawTheme.colors || {}),
@@ -172,26 +177,85 @@ export const useEditorStore = create<EditorState>()(
       const { content, theme, saveStatus, lastSavedHash } = get();
       const currentHash = JSON.stringify({ content, theme });
 
+
+
       // Skip if already saved or no changes
-      if (saveStatus === 'saved' || saveStatus === 'saving' || currentHash === lastSavedHash) {
-        return;
-      }
+      // if (saveStatus === 'saved' || saveStatus === 'saving' || currentHash === lastSavedHash) {
+      //   console.log('[DEBUG] saveDraft skipped');
+      //   return;
+      // }
 
       set((state) => {
         state.saveStatus = 'saving';
       });
 
+      set((state) => {
+        state.saveStatus = 'saving';
+      });
+
+      // Sanitization: Ensure strict camelCase for API
+      // Explicitly map properties to avoid leaking snake_case keys via spread
+      const sanitizedTheme: ThemeConfig = {
+        preset: theme.preset,
+        visualStyle: theme.visualStyle,
+        colors: { 
+          primary: theme.colors.primary,
+          accent: theme.colors.accent,
+          background: theme.colors.background,
+          text: theme.colors.text,
+          textSecondary: theme.colors.textSecondary || (theme.colors as unknown as Record<string, string | undefined>).text_secondary as string, 
+        },
+        background: { 
+          type: theme.background.type,
+          value: theme.background.value,
+          overlay: theme.background.overlay,
+          blur: theme.background.blur
+        },
+        card: { 
+          background: theme.card.background,
+          borderRadius: theme.card.borderRadius || (theme.card as unknown as Record<string, string | undefined>).border_radius,
+          shadow: theme.card.shadow,
+          border: theme.card.border,
+          backdropBlur: theme.card.backdropBlur || (theme.card as unknown as Record<string, number | undefined>).backdrop_blur
+        },
+        typography: { 
+          fontFamily: theme.typography.fontFamily || (theme.typography as unknown as Record<string, string | undefined>).font_family,
+          headingWeight: theme.typography.headingWeight || (theme.typography as unknown as Record<string, string | undefined>).heading_weight
+        },
+        animation: {
+           enableEntrance: theme.animation.enableEntrance ?? (theme.animation as unknown as Record<string, boolean | undefined>).enable_entrance,
+           enableHover: theme.animation.enableHover ?? (theme.animation as unknown as Record<string, boolean | undefined>).enable_hover,
+           intensity: theme.animation.intensity
+        },
+        decorations: { 
+          type: theme.decorations.type,
+          color: theme.decorations.color,
+          opacity: theme.decorations.opacity,
+          text: theme.decorations.text,
+          fontSize: theme.decorations.fontSize,
+          fontWeight: theme.decorations.fontWeight,
+          fontFamily: theme.decorations.fontFamily,
+          textDecoration: theme.decorations.textDecoration,
+          rotation: theme.decorations.rotation,
+          density: theme.decorations.density,
+          speed: theme.decorations.speed,
+          scrollMode: theme.decorations.scrollMode,
+          scrollAngle: theme.decorations.scrollAngle
+        }
+      };
+
       try {
         await homepageApi.saveDraft(talentId, {
           content: content,
-          theme: theme,
-        }); // Corrected payload to match SaveDraftDto
+          theme: sanitizedTheme,
+        });
 
         set((state) => {
           state.saveStatus = 'saved';
           state.lastSavedHash = currentHash;
         });
-      } catch {
+      } catch (error) {
+        console.error('[DEBUG] saveDraft failed', error);
         set((state) => {
           state.saveStatus = 'unsaved'; // Revert to unsaved on error
           state.error = 'Failed to save draft';
@@ -314,7 +378,7 @@ export const useEditorStore = create<EditorState>()(
     }),
 
     setThemePreset: (presetName) => set((state) => {
-      const preset = THEME_PRESETS[presetName];
+      const preset = THEME_PRESETS[presetName as ThemePreset];
       if (preset) {
         state.theme = { ...state.theme, ...preset } as ThemeConfig;
         state.saveStatus = 'unsaved';

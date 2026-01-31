@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, import/order */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';

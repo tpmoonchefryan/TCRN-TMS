@@ -43,6 +43,7 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
                 {img.url ? (
                   <img
                     src={img.url}
+                    referrerPolicy="no-referrer"
                     alt={img.alt || `Gallery image ${i + 1}`}
                     className="aspect-[3/4] h-[300px] w-auto object-cover transition-all hover:scale-105"
                   />
@@ -79,6 +80,7 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
              {img.url && (
               <img
                 src={img.url}
+                referrerPolicy="no-referrer"
                 alt={img.alt || `Gallery image ${i + 1}`}
                 className="w-full rounded-lg object-cover"
                 style={{ display: 'block' }}
@@ -103,6 +105,7 @@ export const ImageGallery: React.FC<ImageGalleryProps & { className?: string }> 
              {img.url ? (
                <img
                 src={img.url}
+                referrerPolicy="no-referrer"
                 alt={img.alt || `Gallery image ${i + 1}`}
                 className="h-full w-full object-cover transition-all hover:scale-105"
               />

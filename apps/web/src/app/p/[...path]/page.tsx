@@ -6,8 +6,8 @@ import { notFound } from 'next/navigation';
 
 import { HomepageRenderer } from '@/components/homepage/renderer/HomepageRenderer';
 
-// 15 minutes cache (900 seconds) as per documentation
-export const revalidate = 900; 
+// Disable cache for instant updates during development/testing
+export const revalidate = 0; 
 
 const getPublishedHomepage = async (path: string) => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -15,7 +15,7 @@ const getPublishedHomepage = async (path: string) => {
   try {
     // The path here matches wildcard *path in backend
     const res = await fetch(`${apiUrl}/api/v1/public/homepage/${path}`, {
-      next: { revalidate: 900 }
+      cache: 'no-store' // Ensure we always get fresh data
     });
 
     if (!res.ok) {
