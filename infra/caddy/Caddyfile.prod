@@ -38,6 +38,8 @@ web.prod.tcrn-tms.com {
     
     # Security headers
     header {
+        -X-Frame-Options
+        X-Frame-Options "SAMEORIGIN"
 
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
