@@ -1120,6 +1120,23 @@
     "schedule": "日程表",
     "musicPlayer": "音乐播放器",
     "liveStatus": "直播状态",
+    "bilibiliDynamic": "B站动态",
+    "bilibili": {
+      "title": "标题",
+      "uid": "B站 UID",
+      "hint": "输入要获取动态的用户 ID",
+      "defaultTitle": "B站动态",
+      "unableToLoad": "无法加载动态",
+      "apiRestricted": "由于 API 限制无法直接加载，您可以点击下方按钮前往 Bilibili 查看。",
+      "viewOnBilibili": "在 Bilibili 查看",
+      "typeVideo": "视频",
+      "typeImage": "图片",
+      "typeArticle": "专栏",
+      "typeLive": "直播",
+      "typeOpus": "动态",
+      "typeMusic": "音频",
+      "typePgc": "剧集"
+    },
     "theme": "主题",
     "decorations": "背景装饰",
     "type": "类型",
@@ -1218,10 +1235,16 @@
     "componentSize": "组件尺寸",
     "sizeFull": "全宽 (1/1)",
     "sizeHalf": "半宽 (1/2)",
-    "sizeSmall": "小 (1/3)"
+    "sizeSmall": "小 (1/3)",
+    "componentHeight": "组件高度",
+    "heightAuto": "自动",
+    "heightSmall": "小",
+    "heightMedium": "中",
+    "heightLarge": "大"
   },
   "homepageComponentEditor": {
     "scheduleTitle": "标题",
+    "defaultScheduleTitle": "每周日程",
     "weekOf": "周次",
     "events": "事件列表",
     "addEvent": "添加事件",
@@ -1353,7 +1376,24 @@
     "artistName": "歌手名称",
     "coverUrl": "封面图片 URL",
     "autoPlay": "自动播放（预览）",
-    "isLive": "直播状态（手动覆盖）"
+    "isLive": "直播状态（手动覆盖）",
+    "liveStatus": {
+      "checking": "检查中...",
+      "live": "直播中",
+      "offline": "离线",
+      "defaultTitleLive": "直播间",
+      "defaultTitleOffline": "离线",
+      "popularity": "人气",
+      "watching": "正在观看",
+      "watchNow": "立即观看",
+      "visitChannel": "访问频道"
+    },
+    "musicPlayerText": {
+      "selectPrompt": "选择平台并输入链接"
+    },
+    "videoEmbedText": {
+      "invalidUrl": "无效或不支持的视频链接"
+    }
   },
   "report": {
     "title": "报表",

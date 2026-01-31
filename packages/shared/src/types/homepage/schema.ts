@@ -13,7 +13,8 @@ export type ComponentType =
   | 'MusicPlayer'
   | 'LiveStatus'
   | 'Divider'
-  | 'Spacer';
+  | 'Spacer'
+  | 'BilibiliDynamic';
 
 // Component Instance Structure
 export interface ComponentInstance {

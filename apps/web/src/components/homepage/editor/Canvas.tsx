@@ -17,6 +17,15 @@ import {
 
 
 
+
+
+
+
+
+
+
+
+
     MouseSensor, // Added
     TouchSensor, // Added
     useSensor,
@@ -30,11 +39,23 @@ import {
 import React, { useState } from 'react';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import { layoutComponents } from '../lib/layout-utils';
 
 import { SortableComponent } from './SortableComponent';
 
+import enMessages from '@/i18n/messages/en.json';
+import jaMessages from '@/i18n/messages/ja.json';
+import zhMessages from '@/i18n/messages/zh.json';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/stores/homepage/editor-store';
+import { NextIntlClientProvider } from 'next-intl';
+
+const MESSAGES: Record<string, any> = {
+  default: enMessages,
+  en: enMessages,
+  zh: zhMessages,
+  ja: jaMessages
+};
 
 const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({
@@ -100,32 +121,97 @@ export function Canvas() {
     setDragHeight(null);
   };
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    setActiveId(null);
-    setDragWidth(null);
-    setDragHeight(null);
-
-    if (active && over && active.id !== over.id) {
-      const oldIndex = content.components.findIndex((c) => c.id === active.id);
-      const newIndex = content.components.findIndex((c) => c.id === over.id);
-      moveComponent(oldIndex, newIndex);
-    }
-  };
-
-  // Find active component for Overlay
-  const activeComponent = content.components.find(c => c.id === activeId);
-
   // Scroll Strategy:
   // Desktop: The "Page" grows, and we scroll the "Canvas" (gray area).
   // Mobile: The "Device" is fixed height, and we scroll the "Screen" (inner content).
   const isDesktop = previewDevice === 'desktop';
 
+  // Find active component for Overlay
+  const activeComponent = content.components.find(c => c.id === activeId);
+
+
+
+  // Layout Migration Effect
+  React.useEffect(() => {
+     if (isDesktop && content.components.some(c => !c.props.x || !c.props.y)) {
+         const newComponents = layoutComponents(content.components);
+         // Bulk update if any changed (simple id check)
+         // Since we don't have a bulk update in store, we update one by one or we should add a bulk update action.
+         // For now, let's just update the ones missing props to avoid infinite loop if store ref causes rerender.
+         newComponents.forEach((nc: any) => {
+             const oc = content.components.find(c => c.id === nc.id);
+             if (oc && (oc.props.x !== nc.props.x || oc.props.y !== nc.props.y)) {
+                 useEditorStore.getState().updateComponent(nc.id, nc.props);
+             }
+         });
+     }
+  }, [content.components.length, isDesktop, content.components]); // Add content.components dependency check deep comparison ideally or just length? Warning: infinite loop risk if not careful. Added content.components for now but we guard with props check.
+
+  const handleDragEnd = (event: any) => {
+    const { active, over, delta } = event; // delta contains the x/y movement
+    setActiveId(null);
+    setDragWidth(null);
+    setDragHeight(null);
+
+    // If no movement, treat as click/nothing
+    if (Math.abs(delta.x) < 5 && Math.abs(delta.y) < 5) return;
+
+    if (!isDesktop) {
+        // Mobile: Sortable List Logic (Reorder)
+        if (active && over && active.id !== over.id) {
+            const oldIndex = content.components.findIndex((c) => c.id === active.id);
+            const newIndex = content.components.findIndex((c) => c.id === over.id);
+            moveComponent(oldIndex, newIndex);
+        }
+        return;
+    }
+
+    // Desktop: 2D Grid Logic
+    const component = content.components.find(c => c.id === active.id);
+    if (!component) return;
+
+    // Calculate Grid Delta
+    // We need unit sizes.
+    // Width: (containerWidth - 32 padding - 16*5 gaps) / 6
+    // But easier: dragWidth / colSpan
+    if (!containerRef.current) return;
+    
+    // Measure Grid Cell Size
+    const containerWidth = containerRef.current.offsetWidth - 32; // - padding
+    // Gap = 16px (1rem)
+    const gap = 16;
+    const colWidth = (containerWidth - (gap * 5)) / 6;
+    const rowHeight = 80 + gap; // 5rem + gap
+
+    // Start Position
+    const currentX = (component.props as any).x || 1;
+    const currentY = (component.props as any).y || 1;
+
+    // Delta Steps
+    const dCol = Math.round(delta.x / (colWidth + gap));
+    const dRow = Math.round(delta.y / rowHeight);
+
+    let newX = currentX + dCol;
+    let newY = currentY + dRow;
+
+    // Boundary Checks
+    const colSpan = (component.props as any).colSpan || (component.props as any).w || 6;
+    newX = Math.max(1, Math.min(7 - colSpan, newX)); // Ensure fits in 6 cols
+    newY = Math.max(1, newY); // Min row 1
+
+    if (newX !== currentX || newY !== currentY) {
+        useEditorStore.getState().updateComponent(active.id, {
+            ...component.props,
+            x: newX,
+            y: newY
+        });
+    }
+  };
+
   return (
     <div 
       className={cn(
-        "flex-1 min-h-0 w-full h-full bg-slate-100 dark:bg-slate-900 relative transition-all duration-300 touch-pan-y", // Added h-full
-        // Desktop: Scroll the canvas itself
+        "flex-1 min-h-0 w-full h-full bg-slate-100 dark:bg-slate-900 relative transition-all duration-300 touch-pan-y", 
         isDesktop ? "overflow-y-auto custom-scrollbar p-8 block" : "overflow-hidden flex items-center justify-center p-8"
       )}
     >
@@ -143,11 +229,11 @@ export function Canvas() {
           "bg-white dark:bg-black shadow-2xl relative transition-all duration-300 flex flex-col mx-auto",
           previewDevice === 'mobile' ? "rounded-[3rem] border-8 border-slate-800 overflow-hidden" : 
           previewDevice === 'tablet' ? "rounded-[2rem] border-8 border-slate-800 overflow-hidden" :
-          "rounded-md" // Desktop: No overflow-hidden here, allow grow
+          "rounded-md" 
         )}
         style={{ 
           width: width, 
-          height: isDesktop ? 'auto' : height, // Desktop auto height
+          height: isDesktop ? 'auto' : height, 
           minHeight: isDesktop ? '100%' : undefined
         }}
         onClick={() => selectComponent(null)}
@@ -156,7 +242,6 @@ export function Canvas() {
           ref={containerRef}
           className={cn(
              "w-full relative animate-bg-move",
-             // Mobile: Scroll inside the device screen. Desktop: No internal scroll (handled by parent)
              !isDesktop ? "flex-1 overflow-y-auto custom-scrollbar touch-pan-y" : "min-h-full"
           )} 
           style={{
@@ -178,29 +263,51 @@ export function Canvas() {
               sensors={sensors} 
               collisionDetection={closestCenter} 
               measuring={{ droppable: { strategy: MeasuringStrategy.Always } }} 
-              autoScroll={{ layoutShiftCompensation: false }} // Added autoScroll
+              autoScroll={{ layoutShiftCompensation: false }} 
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              <SortableContext 
-                items={content.components.map(c => c.id)}
-                strategy={rectSortingStrategy}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4 pb-10"> 
-                  {content.components.map((comp) => (
-                    <SortableComponent 
-                      key={comp.id}
-                      comp={comp}
-                      isSelected={selectedComponentId === comp.id}
-                      theme={theme}
-                      editingLocale={useEditorStore.getState().editingLocale}
-                      onSelect={selectComponent}
-                      onRemove={removeComponent}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
+              {isDesktop ? (
+                  // Grid Layout for Desktop
+                  <div className="grid grid-cols-6 auto-rows-[5rem] gap-4 pb-10 relative"> 
+                    {content.components.map((comp) => (
+                      <SortableComponent 
+                        key={comp.id}
+                        comp={comp}
+                        isSelected={selectedComponentId === comp.id}
+                        theme={theme}
+                        editingLocale={useEditorStore.getState().editingLocale}
+                        messages={MESSAGES}
+                        onSelect={selectComponent}
+                        onRemove={removeComponent}
+                        onUpdate={useEditorStore.getState().updateComponent}
+                      />
+                    ))}
+                  </div>
+              ) : (
+                  // Sortable List Layout for Mobile
+                  <SortableContext 
+                    items={content.components.map(c => c.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div className="grid grid-cols-1 gap-4 pb-10"> 
+                      {content.components.map((comp) => (
+                        <SortableComponent 
+                          key={comp.id}
+                          comp={comp}
+                          isSelected={selectedComponentId === comp.id}
+                          theme={theme}
+                          editingLocale={useEditorStore.getState().editingLocale}
+                          messages={MESSAGES}
+                          onSelect={selectComponent}
+                          onRemove={removeComponent}
+                          onUpdate={useEditorStore.getState().updateComponent}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+              )}
 
               <DragOverlay dropAnimation={dropAnimation}>
                 {activeComponent ? (
@@ -219,7 +326,13 @@ export function Canvas() {
                         ...activeComponent.props, 
                         ...(activeComponent.i18n?.[useEditorStore.getState().editingLocale] || {}) 
                       };
-                      return <div className="w-full h-full overflow-hidden"><Preview {...effectiveProps} /></div>;
+                      return (
+                        <div className="w-full h-full overflow-hidden">
+                             <NextIntlClientProvider locale={useEditorStore.getState().editingLocale || 'en'} messages={MESSAGES[useEditorStore.getState().editingLocale] || MESSAGES['default']}>
+                                <Preview {...effectiveProps} />
+                             </NextIntlClientProvider>
+                        </div>
+                      );
                     })()}
                   </div>
                 ) : null}

@@ -1121,6 +1121,23 @@
     "schedule": "Schedule",
     "musicPlayer": "Music Player",
     "liveStatus": "Live Status",
+    "bilibiliDynamic": "Bilibili Dynamic",
+    "bilibili": {
+      "title": "Title",
+      "uid": "Bilibili UID",
+      "hint": "Enter the user ID to fetch dynamics from.",
+      "defaultTitle": "Bilibili Dynamics",
+      "unableToLoad": "Unable to load dynamics",
+      "apiRestricted": "API access is currently restricted. You can still view content directly on Bilibili.",
+      "viewOnBilibili": "View on Bilibili",
+      "typeVideo": "Video",
+      "typeImage": "Image",
+      "typeArticle": "Article",
+      "typeLive": "Live",
+      "typeOpus": "Opus",
+      "typeMusic": "Music",
+      "typePgc": "PGC"
+    },
     "theme": "Theme",
     "decorations": "Background Decorations",
     "type": "Type",
@@ -1219,10 +1236,16 @@
     "componentSize": "Component Size",
     "sizeFull": "Full (1/1)",
     "sizeHalf": "Half (1/2)",
-    "sizeSmall": "Small (1/3)"
+    "sizeSmall": "Small (1/3)",
+    "componentHeight": "Height",
+    "heightAuto": "Auto",
+    "heightSmall": "Small",
+    "heightMedium": "Medium",
+    "heightLarge": "Large"
   },
   "homepageComponentEditor": {
     "scheduleTitle": "Title",
+    "defaultScheduleTitle": "Weekly Schedule",
     "weekOf": "Week Of",
     "events": "Events",
     "addEvent": "Add Event",
@@ -1365,7 +1388,24 @@
     "type": "Type",
     "color": "Color",
     "dots": "Dots",
-    "grid": "Grid"
+    "grid": "Grid",
+    "liveStatus": {
+      "checking": "Checking...",
+      "live": "LIVE",
+      "offline": "OFFLINE",
+      "defaultTitleLive": "Live Stream",
+      "defaultTitleOffline": "Offline",
+      "popularity": "Popularity",
+      "watching": "watching",
+      "watchNow": "Watch Now",
+      "visitChannel": "Visit Channel"
+    },
+    "musicPlayerText": {
+      "selectPrompt": "Select a platform and enter a link"
+    },
+    "videoEmbedText": {
+      "invalidUrl": "Invalid or unsupported video URL"
+    }
   },
   "report": {
     "title": "Reports",

@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { MessageCircle } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import React from 'react';
 
 import { MarshmallowWidgetProps } from './schema';
@@ -27,9 +27,10 @@ export const MarshmallowWidget: React.FC<MarshmallowWidgetProps & { className?: 
   const marshmallowUrl = `/m/${homepagePath}`;
 
   // Default values using i18n if props are missing
-  const effectiveTitle = title || t('marshmallowPlaceholder');
-  const effectiveDescription = description || t('descPlaceholder');
-  const effectiveButtonText = buttonText || t('buttonTextPlaceholder');
+  // Default values using i18n if props are missing or equal to hardcoded defaults
+  const effectiveTitle = (title && title !== 'Marshmallow') ? title : t('marshmallowPlaceholder');
+  const effectiveDescription = (description && description !== 'Anonymous messages are welcome!') ? description : t('descPlaceholder');
+  const effectiveButtonText = (buttonText && buttonText !== 'Send Message') ? buttonText : t('buttonTextPlaceholder');
 
   if (displayMode === 'button') {
     return (

@@ -19,7 +19,8 @@ export type ComponentType =
   | 'MusicPlayer'
   | 'LiveStatus'
   | 'Divider'
-  | 'Spacer';
+  | 'Spacer'
+  | 'BilibiliDynamic';
 
 export interface ComponentInstance {
   id: string;
@@ -43,6 +44,12 @@ export interface ComponentInstance {
   // New: Internationalization
   // Map of locale code (e.g., 'zh', 'ja') to partial props override
   i18n?: Record<string, Record<string, any>>;
+
+  // Layout Props (stored in props):
+  // x: number (1-6) - Grid Column Start
+  // y: number (1-n) - Grid Row Start
+  // w: number (1-6) - Grid Column Span (alias for colSpan)
+  // h: number (1-n) - Grid Row Span (alias for rowSpan)
 }
 
 export interface HomepageContent {

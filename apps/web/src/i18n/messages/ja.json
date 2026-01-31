@@ -1120,6 +1120,23 @@
     "schedule": "スケジュール",
     "musicPlayer": "音楽プレーヤー",
     "liveStatus": "ライブステータス",
+    "bilibiliDynamic": "Bilibili投稿",
+    "bilibili": {
+      "title": "タイトル",
+      "uid": "Bilibili UID",
+      "hint": "投稿を取得するユーザーIDを入力してください",
+      "defaultTitle": "Bilibili投稿",
+      "unableToLoad": "投稿を読み込めませんでした",
+      "apiRestricted": "API制限のため表示できません。Bilibiliで直接ご覧ください。",
+      "viewOnBilibili": "Bilibiliで見る",
+      "typeVideo": "動画",
+      "typeImage": "画像",
+      "typeArticle": "記事",
+      "typeLive": "配信",
+      "typeOpus": "アクティビティ",
+      "typeMusic": "音声",
+      "typePgc": "番組"
+    },
     "theme": "テーマ",
     "decorations": "背景装飾",
     "type": "タイプ",
@@ -1207,10 +1224,16 @@
     "componentSize": "コンポーネントサイズ",
     "sizeFull": "全幅 (1/1)",
     "sizeHalf": "半分 (1/2)",
-    "sizeSmall": "小 (1/3)"
+    "sizeSmall": "小 (1/3)",
+    "componentHeight": "高さ",
+    "heightAuto": "自動",
+    "heightSmall": "小",
+    "heightMedium": "中",
+    "heightLarge": "大"
   },
   "homepageComponentEditor": {
     "scheduleTitle": "タイトル",
+    "defaultScheduleTitle": "週間スケジュール",
     "weekOf": "週",
     "events": "イベント",
     "addEvent": "イベントを追加",
@@ -1342,7 +1365,24 @@
     "artistName": "アーティスト名",
     "coverUrl": "カバー画像URL",
     "autoPlay": "自動再生（プレビュー）",
-    "isLive": "配信中（手動オーバーライド）"
+    "isLive": "配信中（手動オーバーライド）",
+    "liveStatus": {
+      "checking": "確認中...",
+      "live": "配信中",
+      "offline": "オフライン",
+      "defaultTitleLive": "ライブ配信",
+      "defaultTitleOffline": "オフライン",
+      "popularity": "人気",
+      "watching": "視聴中",
+      "watchNow": "今すぐ見る",
+      "visitChannel": "チャンネルへ"
+    },
+    "musicPlayerText": {
+      "selectPrompt": "プラットフォームを選択してリンクを入力してください"
+    },
+    "videoEmbedText": {
+      "invalidUrl": "無効またはサポートされていない動画URL"
+    }
   },
   "report": {
     "title": "レポート",

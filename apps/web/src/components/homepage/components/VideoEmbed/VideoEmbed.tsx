@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { useTranslations } from 'next-intl';
 import React, { useMemo } from 'react';
 
 import { VideoEmbedProps } from './schema';
@@ -29,6 +30,7 @@ export const VideoEmbed: React.FC<VideoEmbedProps & { className?: string }> = ({
   showControls,
   className,
 }) => {
+  const t = useTranslations('homepageComponentEditor.videoEmbedText');
   const videoData = useMemo(() => parseVideoUrl(videoUrl), [videoUrl]);
   
   if (!videoData) {
@@ -36,7 +38,7 @@ export const VideoEmbed: React.FC<VideoEmbedProps & { className?: string }> = ({
     // Fallback for unknown URL? or minimal display
     return (
        <div className={cn("p-4 bg-gray-100 dark:bg-gray-800 rounded text-center text-sm text-muted-foreground", className)}>
-         Invalid or unsupported video URL
+         {t('invalidUrl')}
        </div>
     );
   }

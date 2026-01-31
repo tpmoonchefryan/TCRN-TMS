@@ -4,20 +4,28 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import React from 'react';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
 
 import { Button, Input, Label, Switch } from '@/components/ui';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 export function PropertiesPanel() {
   const t = useTranslations('homepageEditor');
   const { content, selectedComponentId, updateComponent, theme, setTheme, setThemePreset, editingLocale } = useEditorStore();
+  const [activeTab, setActiveTab] = React.useState("theme");
 
   const selectedComponent = content.components.find(c => c.id === selectedComponentId);
+
+  // Auto-switch to component tab when a component is selected
+  React.useEffect(() => {
+    if (selectedComponentId) {
+      setActiveTab("component");
+    }
+  }, [selectedComponentId]);
 
   // Render form based on component type
   const renderComponentForm = () => {
@@ -51,35 +59,8 @@ export function PropertiesPanel() {
           </div>
         )}
         
-        {/* Component Size Control (Grid System) */}
-        {!selectedComponent.id.startsWith('profile') && ( // Profile card usually stays full width or special
-          <div className="space-y-2 border-b pb-4">
-            <Label className="text-xs font-semibold text-muted-foreground">{t('componentSize') || 'Size'}</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: t('sizeFull') || 'Full', value: 6 },
-                { label: t('sizeHalf') || 'Half', value: 3 },
-                { label: t('sizeSmall') || 'Small', value: 2 },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  className={cn(
-                    "text-xs py-1.5 px-2 rounded border transition-colors",
-                    (selectedComponent.props as any).colSpan === opt.value || (!('colSpan' in selectedComponent.props) && opt.value === 6)
-                      ? "bg-primary/10 border-primary text-primary font-medium"
-                      : "bg-background border-border hover:bg-muted"
-                  )}
-                  onClick={() => {
-                    const currentProps = selectedComponent.props;
-                    updateComponent(selectedComponent.id, { ...currentProps, colSpan: opt.value });
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
+
         
         {/* Helper to debug props if needed: <pre>{JSON.stringify(props, null, 2)}</pre> */}
         <EditorComponent 
@@ -311,7 +292,7 @@ export function PropertiesPanel() {
 
   return (
     <div className="flex flex-col h-full border-l bg-white dark:bg-slate-950 w-80 overflow-hidden">
-      <Tabs defaultValue={selectedComponent ? "component" : "theme"} className="flex-1 flex flex-col min-h-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className="border-b px-4">
           <TabsList className="w-full mt-2">
             <TabsTrigger value="component" disabled={!selectedComponent} className="flex-1">{t('component')}</TabsTrigger>

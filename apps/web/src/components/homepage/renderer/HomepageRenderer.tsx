@@ -6,8 +6,12 @@
 import { HomepageContent, ThemeConfig } from '@tcrn/shared';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { NextIntlClientProvider, useTranslations } from 'next-intl';
 import React, { useState } from 'react';
+
+import enMessages from '@/i18n/messages/en.json';
+import jaMessages from '@/i18n/messages/ja.json';
+import zhMessages from '@/i18n/messages/zh.json';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
 import { migrateComponentTypes } from '../lib/types';
@@ -22,6 +26,12 @@ interface HomepageRendererProps {
   theme: ThemeConfig;
   className?: string;
 }
+
+const MESSAGES: Record<string, any> = {
+  en: enMessages,
+  zh: zhMessages,
+  ja: jaMessages
+};
 
 // Helper to convert hex to HSL for Tailwind variables
 function hexToHsl(hex: string): string {
@@ -115,6 +125,7 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
         </DropdownMenu>
       </div>
 
+      <NextIntlClientProvider locale={currentLocale} messages={MESSAGES[currentLocale]}>
       {/* Background Decorations */}
       {theme?.decorations?.type === 'dots' && (
         <motion.div 
@@ -216,21 +227,52 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
         animate="show"
       >
         {migratedContent?.components && migratedContent.components.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 md:auto-rows-[5rem] md:grid-flow-row-dense gap-4">
 
             {migratedContent.components.map(comp => {
               if (!comp.visible) return null;
+              // Resolve Dimensions and Defaults
               const definition = COMPONENT_REGISTRY[comp.type];
               if (!definition) return null;
               
+              const defaultProps = definition.defaultProps || {};
               const Component = definition.preview;
-              const effectiveProps = { ...comp.props, ...(comp.i18n?.[currentLocale] || {}) };
-              const colSpan = (comp.props as any).colSpan || 6;
-              const colSpanClass = {
-                6: 'col-span-1 md:col-span-6',
-                3: 'col-span-1 md:col-span-3',
-                2: 'col-span-1 md:col-span-2'
-              }[colSpan as 2|3|6] || 'col-span-1 md:col-span-6';
+              
+              let effectiveProps = { ...defaultProps, ...comp.props }; // Apply defaults first
+              if (currentLocale && currentLocale !== 'en' && comp.i18n?.[currentLocale]) {
+                   effectiveProps = { ...effectiveProps, ...comp.i18n[currentLocale] };
+              }
+              
+              const props = effectiveProps as any;
+
+              // Resolve Col Span (1-6)
+              // Priority: props.colSpan > props.w > defaultProps.colSpan > 6
+              const colSpan = props.colSpan || props.w || defaultProps.colSpan || 6;
+ 
+              // Resolve Row Span
+              // We prioritize explicit rowSpan if available
+              let rowSpan = props.rowSpan || props.h;
+              if (!rowSpan) {
+                 const heightMode = props.heightMode || defaultProps.heightMode || 'auto';
+                 const isProfile = comp.type === 'ProfileCard';
+                 const autoSpan = isProfile ? 6 : 4;
+                 
+                  // Check if registry has a specific default rowSpan
+                 if (defaultProps.rowSpan) {
+                   rowSpan = defaultProps.rowSpan;
+                 } else {
+                   rowSpan = {
+                       'auto': autoSpan,
+                       'small': 2,
+                       'medium': 4,
+                       'large': 6
+                   }[heightMode as string] || 4;
+                 }
+              }
+
+              // Position
+              const gridColumnStart = props.x || 'auto';
+              const gridRowStart = props.y || 'auto';
 
               // Visual Style Overrides
               const cardBgHex = theme?.card?.background || '#FFFFFF';
@@ -270,10 +312,24 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
               return (
                 <motion.div 
                   key={comp.id} 
-                  className={cn("relative group/render", colSpanClass, visualClass)}
+                  className={cn(
+                    "relative group/render", 
+                    "col-span-1", // Mobile default
+                    // Desktop Grid Positioning (Matching SortableComponent)
+                    "md:[grid-column:var(--desktop-col-start)_/_span_var(--desktop-col-span)]", 
+                    "md:[grid-row:var(--desktop-row-start)_/_span_var(--desktop-row-span)]",
+                    visualClass
+                  )}
                   variants={theme?.animation?.enable_entrance ? itemVariants : undefined}
                   whileHover={theme?.animation?.enable_hover ? { scale: 1.02 } : undefined}
-                  style={{ ...comp.styleOverrides as any, ...visualVars }}
+                  style={{ 
+                      ...comp.styleOverrides as any, 
+                      ...visualVars,
+                      '--desktop-col-start': gridColumnStart,
+                      '--desktop-row-start': gridRowStart,
+                      '--desktop-col-span': `${colSpan}`, // Raw number
+                      '--desktop-row-span': `${rowSpan}`, // Raw number
+                  } as React.CSSProperties}
                 >
                   <Component {...effectiveProps} />
                 </motion.div>
@@ -286,6 +342,7 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
           </div>
         )}
       </motion.div>
+      </NextIntlClientProvider>
     </div>
   );
 }

@@ -43,11 +43,13 @@ const TYPE_COLORS = {
 export function Schedule({ title = 'Weekly Schedule', events = [], weekOf }: ScheduleProps) {
   const t = useTranslations('homepageComponentEditor');
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+  
+  const displayTitle = (title && title !== 'Weekly Schedule') ? title : t('defaultScheduleTitle');
 
   return (
     <div className="w-full h-full bg-card rounded-xl border shadow-sm p-4">
       <div className="mb-4 text-center">
-        <h3 className="text-xl font-bold">{title}</h3>
+        <h3 className="text-xl font-bold">{displayTitle}</h3>
         {weekOf && <p className="text-xs text-muted-foreground">{t('weekOf')} {weekOf}</p>}
       </div>
       

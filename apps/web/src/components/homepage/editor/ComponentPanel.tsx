@@ -3,8 +3,8 @@
 
 'use client';
 
-import { ComponentType } from '@tcrn/shared';
 import {
+    Activity,
     Calendar,
     Candy,
     Image as ImageIcon,
@@ -19,6 +19,7 @@ import {
     Youtube
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ComponentType } from '../lib/types';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,6 +31,7 @@ const COMPONENTS_LIST: { type: ComponentType, labelKey: string, icon: any }[] = 
   { type: 'SocialLinks', labelKey: 'socialLinks', icon: Share2 },
   { type: 'Schedule', labelKey: 'schedule', icon: Calendar },
   { type: 'LiveStatus', labelKey: 'liveStatus', icon: Radio },
+  { type: 'BilibiliDynamic', labelKey: 'bilibiliDynamic', icon: Activity },
   { type: 'MusicPlayer', labelKey: 'musicPlayer', icon: Music },
   { type: 'ImageGallery', labelKey: 'imageGallery', icon: ImageIcon },
   { type: 'VideoEmbed', labelKey: 'videoEmbed', icon: Youtube },

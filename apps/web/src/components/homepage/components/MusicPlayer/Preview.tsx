@@ -3,8 +3,8 @@
 'use client';
 
 import { Music } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import React from 'react';
-
 
 export interface MusicPlayerProps {
   platform?: 'spotify' | 'apple' | 'soundcloud' | 'youtube_music' | 'file';
@@ -82,13 +82,14 @@ const getEmbedUrl = (platform: string, value: string) => {
 };
 
 export function MusicPlayer({ platform = 'spotify', embedValue }: MusicPlayerProps) {
+  const t = useTranslations('homepageComponentEditor.musicPlayerText');
   const embedUrl = React.useMemo(() => getEmbedUrl(platform, embedValue || ''), [platform, embedValue]);
 
   if (!embedValue || !embedUrl) {
     return (
       <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl border border-dashed flex items-center justify-center p-8 text-muted-foreground gap-2">
         <Music size={20} />
-        <span>Select a platform and enter a link</span>
+        <span>{t('selectPrompt')}</span>
       </div>
     );
   }

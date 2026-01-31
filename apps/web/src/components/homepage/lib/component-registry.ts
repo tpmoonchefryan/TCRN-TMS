@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Calendar, Image, Link, MessageCircle, Minus, MoveVertical, Music, Radio, Share2, Type, User, Youtube } from 'lucide-react';
+import { Activity, Calendar, Image, Link, MessageCircle, Minus, MoveVertical, Music, Radio, Share2, Type, User, Youtube } from 'lucide-react';
 
+import {
+    BilibiliDynamic,
+    defaultProps as BilibiliDynamicDefaultProps,
+    BilibiliDynamicEditor
+} from '../components/BilibiliDynamic';
 import {
     Divider,
     defaultProps as DividerDefaultProps,
@@ -202,5 +207,16 @@ export const COMPONENT_REGISTRY: Record<ComponentType, ComponentDefinition> = {
     defaultProps: LiveStatusDefaultProps,
     preview: LiveStatus,
     editor: LiveStatusEditor
+  },
+  BilibiliDynamic: {
+    type: 'BilibiliDynamic',
+    nameEn: 'Bilibili Dynamic',
+    nameZh: 'B站动态',
+    nameJa: 'Bilibili投稿',
+    icon: Activity,
+    category: 'interactive',
+    defaultProps: BilibiliDynamicDefaultProps,
+    preview: BilibiliDynamic,
+    editor: BilibiliDynamicEditor
   }
 };

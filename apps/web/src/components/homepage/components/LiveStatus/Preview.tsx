@@ -4,6 +4,7 @@
 'use client';
 
 import { ExternalLink, Twitch, Twitter, Youtube } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -29,12 +30,33 @@ export const defaultProps: LiveStatusProps = {
   title: '🔴 [KAROKE] Singing untill I drop! come join!',
 };
 
+const BilibiliIcon = ({ size = 24, className }: { size?: number, className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <rect x="3" y="6" width="18" height="14" rx="2" />
+    <path d="M8 3L11 6" />
+    <path d="M16 3L13 6" />
+    <circle cx="9" cy="13" r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="13" r="1.5" fill="currentColor" stroke="none"/>
+  </svg>
+);
+
 const PLATFORM_ICONS = {
   youtube: Youtube,
   twitch: Twitch,
   twitter: Twitter,
-  bilibili: ExternalLink, // No icon for bilibili yet
+  bilibili: BilibiliIcon,
   other: ExternalLink,
+  // weibo? 
 };
 
 const PLATFORM_COLORS = {
@@ -54,31 +76,13 @@ export function LiveStatus({
   viewers: viewersProp, 
   title: titleProp 
 }: LiveStatusProps) {
+  const t = useTranslations('homepageComponentEditor.liveStatus');
   const Icon = PLATFORM_ICONS[platform] || ExternalLink;
   const colorClass = PLATFORM_COLORS[platform] || PLATFORM_COLORS.other;
 
   const [isFetching, setIsFetching] = React.useState(false);
   const [fetchedData, setFetchedData] = React.useState<{ isLive: boolean; title?: string; viewers?: string; coverUrl?: string; } | null>(null);
 
-  // Determine if we should use manual props or fetched data
-  // Implementation Note: User can toggle "isLive" switch in editor. 
-  // If user *manually* toggles it to TRUE, we respect that (Override).
-  // But usually we want: if override is FALSE (default?), we auto-fetch.
-  // Actually, the Schema prop is `isLive`. The editor calls it "Is Live (Manual Override)".
-  // Let's assume if `channelId` is present, we try to fetch on mount.
-  // If the fetch is successful, we display the fetched status.
-  // If the user has explicitly set `isLive: true` in props, maybe that takes precedence?
-  // Let's adopt a policy: 
-  // 1. If `channelId` exists, fetch.
-  // 2. If fetch returns `isLive: true`, use it.
-  // 3. IF fetch returns false or fails, AND `isLiveProp` (manual override) is true, use manual.
-  // Wait, usually "Override" implies it beats everything. 
-  // Let's say: If Manual Override is OFF (which we can't strictly know unless we add a prop `useAutoFetch` or similar, or assume `isLive` acts as the override state).
-  // Current Editor UI: "Is Live (Manual Override)". This suggests `isLive` PROP is the override.
-  // So: Default `isLive` is false (or true). 
-  // Let's try: Always fetch if `channelId` exists. Display fetched data if available. Fallback to props if fetch fails or if user wants to force-show live state manually?
-  // User request: "support fetching... don't auto-poll, just on fresh page".
-  
   React.useEffect(() => {
     if (!channelId || !['bilibili', 'youtube'].includes(platform)) return;
 
@@ -104,12 +108,10 @@ export function LiveStatus({
   const isLive = fetchedData ? fetchedData.isLive : isLiveProp;
   const title = (fetchedData?.title) || titleProp;
   const viewers = (fetchedData?.viewers) || viewersProp;
-  const coverUrl = fetchedData?.coverUrl; // TODO: allow manual cover override? Schema doesn't have it yet.
+  const coverUrl = fetchedData?.coverUrl; 
   
-  // Auto-fill channel name if fetched, or fallback to prop
   const displayChannelName = (fetchedData as any)?.channelName || channelName || (channelId ? `Channel ${channelId}` : '');
 
-  // Auto-construct URL if missing in Auto Mode
   let finalStreamUrl = streamUrl;
   if (!finalStreamUrl && channelId) {
       if (platform === 'bilibili') finalStreamUrl = `https://live.bilibili.com/${channelId}`;
@@ -118,8 +120,8 @@ export function LiveStatus({
 
   return (
     <div className="w-full h-full relative group rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border bg-card">
-      {/* Background Cover Image */}
-      {coverUrl && isLive && (
+      {/* Background Cover Image (Live) */}
+      {coverUrl && isLive ? (
         <div className="absolute inset-0">
           <img 
             src={coverUrl} 
@@ -128,6 +130,29 @@ export function LiveStatus({
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
+        </div>
+      ) : (
+        /* Offline / No Cover Background Design */
+        <div className="absolute inset-0 overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+           {/* 1. Subtle Gradient */}
+           <div className="absolute inset-0 bg-gradient-to-br from-slate-200/50 to-slate-300/50 dark:from-slate-700/50 dark:to-slate-800/50" />
+           
+           {/* 2. Geometric Pattern (Dots) */}
+           <div className="absolute inset-0 opacity-[0.4]" 
+                style={{ 
+                    backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', 
+                    backgroundSize: '20px 20px',
+                    color: 'var(--border)' 
+                }} 
+           />
+
+           {/* 3. Watermark Icon */}
+           <div className="absolute -right-6 -bottom-6 opacity-[0.07] dark:opacity-[0.05] transform -rotate-12 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-110">
+               <Icon size={140} />
+           </div>
+           
+           {/* 4. Ambient Glow */}
+           <div className="absolute top-0 center w-full h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none dark:from-white/5" />
         </div>
       )}
 
@@ -143,30 +168,30 @@ export function LiveStatus({
                 <span className={cn("font-semibold text-sm truncate", coverUrl && isLive && "text-white/90")}>{displayChannelName}</span>
             </div>
              {isFetching ? (
-                <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse text-muted-foreground">Checking...</span>
+                <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse text-muted-foreground">{t('checking')}</span>
              ) : isLive ? (
                <span className="flex items-center gap-2 text-white font-bold px-2 py-0.5 bg-red-500 rounded-full text-xs shadow-sm">
                  <span className="relative flex h-2 w-2">
                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                  </span>
-                 LIVE
+                 {t('live')}
                </span>
              ) : (
-                <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-muted-foreground">OFFLINE</span>
+                <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-muted-foreground">{t('offline')}</span>
              )}
         </div>
         
         <div className="space-y-3">
              <h3 className={cn("font-bold text-lg leading-tight line-clamp-2", coverUrl && isLive ? "text-white" : "")}>
-               {title || (isLive ? 'Live Stream' : 'Offline')}
+               {title || (isLive ? t('defaultTitleLive') : t('defaultTitleOffline'))}
              </h3>
              
              <div className="flex items-center justify-between">
                  <div className={cn("text-sm", coverUrl && isLive ? "text-white/80" : "text-muted-foreground")}>
                     {isLive && (
                     <span>
-                        {viewers} {platform === 'bilibili' ? 'Popularity' : 'watching'}
+                        {viewers} {platform === 'bilibili' ? t('popularity') : t('watching')}
                     </span>
                     )}
                  </div>
@@ -177,7 +202,7 @@ export function LiveStatus({
                     className={cn("shrink-0", !coverUrl && isLive && "bg-red-600 hover:bg-red-700 text-white")}
                     onClick={() => finalStreamUrl && window.open(finalStreamUrl, '_blank')}
                 >
-                    {isLive ? "Watch Now" : "Visit Channel"}
+                    {isLive ? t('watchNow') : t('visitChannel')}
                 </Button>
              </div>
         </div>
