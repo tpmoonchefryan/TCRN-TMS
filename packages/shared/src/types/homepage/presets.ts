@@ -1,6 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ThemeCard, ThemeConfig, ThemePreset, ThemeTypography } from './schema';
+import { 
+  ThemeCard, 
+  ThemeConfig, 
+  ThemePreset, 
+  ThemeTypography,
+  ThemeBackground,
+  ThemeColors,
+  ThemeDecoration
+} from './schema';
 
 export const THEME_PRESETS: Record<ThemePreset, ThemeConfig> = {
   [ThemePreset.DEFAULT]: {
@@ -96,23 +104,57 @@ export const DEFAULT_THEME = THEME_PRESETS[ThemePreset.DEFAULT];
 
 
 /**
+ * Type to handle legacy incoming theme data which may contain snake_case properties
+ * or be partial/loose.
+ */
+interface LegacyThemeInput extends Partial<Omit<ThemeConfig, 'colors' | 'card' | 'typography'>> {
+  // Legacy root props
+  background_type?: 'solid' | 'gradient' | 'image' | 'dots' | 'grid' | 'text';
+  background_value?: string;
+  background_color?: string; // used for decoration color
+  card_border_radius?: string; // legacy string or mismatch
+  card_shadow?: string;
+  card_background?: string;
+  font_family?: string;
+  heading_weight?: string;
+  decorations_color?: string;
+
+  // Nested overrides with potential legacy keys
+  colors?: Partial<ThemeColors> & { text_secondary?: string };
+  card?: Partial<ThemeCard> & { border_radius?: string };
+  typography?: Partial<ThemeTypography> & { font_family?: string; heading_weight?: string };
+  
+  // Implicit allowance for other props (though we try to be specific above)
+  [key: string]: unknown;
+}
+
+/**
  * Normalize theme object to ensure it has valid nested structure,
  * handling legacy snake_case keys if present.
  */
-export function normalizeTheme(theme: any): ThemeConfig {
+export function normalizeTheme(input: unknown): ThemeConfig {
   // If theme is null or undefined, return default
-  if (!theme) return DEFAULT_THEME;
+  if (!input) return DEFAULT_THEME;
+  
+  const theme = input as LegacyThemeInput;
   
   // Determine base theme from preset
   const presetKey = (theme.preset as ThemePreset) || ThemePreset.DEFAULT;
   const baseTheme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
   
   // Clone to avoid mutation issues
-  const normalized = { ...baseTheme, ...theme };
+  // We start with baseTheme and overlay what we can verify
+  const normalized: ThemeConfig = { ...baseTheme };
+  
+  // Copy over direct matches if they exist and match type (shallow copy parts)
+  if (theme.visualStyle) normalized.visualStyle = theme.visualStyle;
+  if (theme.animation) normalized.animation = { ...baseTheme.animation, ...theme.animation };
+  // Decorations might need merging logic below, but simple copy first
+  if (theme.decorations) normalized.decorations = { ...baseTheme.decorations, ...theme.decorations };
 
   // 1. Handle Colors (mix of camel and snake)
-  if (normalized.colors) {
-    const colors = normalized.colors;
+  if (theme.colors) {
+    const colors = theme.colors;
     normalized.colors = {
       ...baseTheme.colors,
       ...colors,
@@ -129,7 +171,7 @@ export function normalizeTheme(theme: any): ThemeConfig {
         normalized.decorations = {
           ...baseTheme.decorations,
           ...(normalized.decorations || {}),
-          type: legacyBgType as any,
+          type: legacyBgType as ThemeDecoration['type'],
           // migrate other potential legacy decoration props if they exist on root
           color: theme.decorations_color || theme.background_color || normalized.decorations?.color || baseTheme.decorations.color,
         };
@@ -145,37 +187,47 @@ export function normalizeTheme(theme: any): ThemeConfig {
         // Legacy background type (solid, gradient, image)
         // Only apply if nested background is missing
         if (!theme.background || !theme.background.type) {
+            // We know legacyBgType is one of 'solid' | 'gradient' | 'image' here effectively
+            // but TS sees the union. Cast or check is fine.
             normalized.background = {
-              type: legacyBgType,
+              type: legacyBgType as ThemeBackground['type'],
               value: theme.background_value || theme.background?.value || baseTheme.background.value,
             };
         }
       }
-  } else if (!normalized.background || !normalized.background.type) {
+  } else if (theme.background) {
        // Ensure defaults if partial object and no background_type override
-       normalized.background = { ...baseTheme.background, ...(normalized.background || {}) };
+       normalized.background = { ...baseTheme.background, ...theme.background };
   }
 
   // 3. Handle Card (nested vs flat snake_case)
-  if (!normalized.card || !normalized.card.borderRadius) {
-     const card = normalized.card || {};
+  const themeCard = theme.card || {};
+  // Check for root legacy props first or nested legacy props
+  const borderRadiusRaw = themeCard.borderRadius || theme.card_border_radius || themeCard.border_radius;
+  const shadowRaw = themeCard.shadow || theme.card_shadow;
+  const backgroundRaw = themeCard.background || theme.card_background;
+
+  if (themeCard || borderRadiusRaw || shadowRaw || backgroundRaw) {
      normalized.card = {
        ...baseTheme.card,
-       ...card,
-       borderRadius: card.borderRadius || theme.card_border_radius || (card as any).border_radius || baseTheme.card.borderRadius,
-       shadow: card.shadow || theme.card_shadow || baseTheme.card.shadow,
-       background: card.background || theme.card_background || baseTheme.card.background,
+       ...themeCard,
+       borderRadius: (borderRadiusRaw as ThemeCard['borderRadius']) || baseTheme.card.borderRadius,
+       shadow: (shadowRaw as ThemeCard['shadow']) || baseTheme.card.shadow,
+       background: backgroundRaw || baseTheme.card.background,
      };
   }
 
   // 4. Handle Typography (nested vs flat snake_case)
-  if (!normalized.typography || !normalized.typography.fontFamily) {
-    const typography = normalized.typography || {};
+  const themeTypography = theme.typography || {};
+  const fontFamilyRaw = themeTypography.fontFamily || theme.font_family || themeTypography.font_family;
+  const headingWeightRaw = themeTypography.headingWeight || theme.heading_weight || themeTypography.heading_weight;
+
+  if (themeTypography || fontFamilyRaw || headingWeightRaw) {
     normalized.typography = {
       ...baseTheme.typography,
-      ...typography,
-      fontFamily: typography.fontFamily || theme.font_family || (typography as any).font_family || baseTheme.typography.fontFamily,
-      headingWeight: typography.headingWeight || theme.heading_weight || (typography as any).heading_weight || baseTheme.typography.headingWeight,
+      ...themeTypography,
+      fontFamily: (fontFamilyRaw as ThemeTypography['fontFamily']) || baseTheme.typography.fontFamily,
+      headingWeight: (headingWeightRaw as ThemeTypography['headingWeight']) || baseTheme.typography.headingWeight,
     };
   }
 
