@@ -62,4 +62,4 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:4000';
-process.env.NODE_ENV = 'test';
+// process.env.NODE_ENV is set automatically by Vitest and is read-only in types
