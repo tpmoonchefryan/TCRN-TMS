@@ -110,10 +110,14 @@ describe('HomepageEditor Component', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    // Mock fetch for revalidation
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) })));
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('Basic Rendering', () => {
