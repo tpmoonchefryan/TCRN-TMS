@@ -165,7 +165,7 @@ Drag-and-drop homepage builder for talents:
 - **Profile Card**: Enhanced personalization with local avatar upload and customizable layout
 - **Custom Domains**: Support for talent-owned domains with DNS verification
 - **SEO Optimization**: Automatic meta tags and Open Graph support
-- **Example Page**: [https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
+- **Example Page**: [https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
 ### Security Management
 

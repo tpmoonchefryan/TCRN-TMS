@@ -165,7 +165,7 @@ Loki 集成支持跨所有日志的全文搜索。
 - **个人名片**：增强的个性化设置，支持本地头像上传和自定义布局
 - **自定义域名**：支持艺人自有域名，带 DNS 验证
 - **SEO 优化**：自动生成 meta 标签和 Open Graph 支持
-- **示例页面**：[https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
+- **示例页面**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
 ### 安全管理
 

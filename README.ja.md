@@ -165,7 +165,7 @@ Loki統合により、すべてのログで全文検索が可能です。
 - **プロフィールカード**：ローカルアバターアップロードとカスタマイズ可能なレイアウトによるパーソナライゼーション強化
 - **カスタムドメイン**：DNS検証付きタレント所有ドメインをサポート
 - **SEO最適化**：自動メタタグとOpen Graphサポート
-- **サンプルページ**：[https://web.prod.tcrn-tms.com/p/test_talent](https://web.prod.tcrn-tms.com/p/test_talent)
+- **サンプルページ**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
 ### セキュリティ管理
 
