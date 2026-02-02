@@ -139,7 +139,7 @@ describe('MarshmallowConfigService', () => {
         .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
         .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
 
-      const _result = await service.update('talent-123', 'tenant_test', dto, mockContext);
+      await service.update('talent-123', 'tenant_test', dto, mockContext);
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
     });
@@ -185,8 +185,6 @@ describe('MarshmallowConfigService', () => {
   });
   describe('setCustomDomain', () => {
     it('should set custom domain if valid and unique', async () => {
-      const result = { customDomain: 'marshmallow.example.com', token: 'token', txtRecord: 'tcrn-verify=token' };
-      
       // 1. getOrCreate -> calls...
       //    1.1 Get config -> found
       //    1.2 Get stats

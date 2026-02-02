@@ -7,6 +7,7 @@ import { Response } from 'express';
 import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
+import { HomepageContent } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
 @ApiTags('Public - Homepage')
@@ -25,7 +26,7 @@ export class CalendarController {
   ) {
     const data = await this.publicHomepageService.getPublishedHomepageOrThrow(path);
     const talentName = data.talent.displayName;
-    const homepageTitle = data.seo?.title || `${talentName}'s Schedule`;
+    // const homepageTitle = data.seo?.title || `${talentName}'s Schedule`;
 
     const calendar = ical({
       name: `${talentName} Schedule`,
@@ -36,9 +37,10 @@ export class CalendarController {
 
     // Parse content to find Schedule components
     // Content structure is { components: [...] }
-    const content = data.content as any;
+    const content = data.content as HomepageContent;
     if (content?.components && Array.isArray(content.components)) {
       const scheduleComponents = content.components.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.type === 'Schedule' && c.visible !== false
       );
 
