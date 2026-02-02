@@ -7,7 +7,7 @@ import { Response } from 'express';
 import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
-import { UaCheckMode } from '../../../security/guards/ua-detection.guard';
+import { UaCheckMode } from '../../security/guards/ua-detection.guard';
 import { HomepageContent } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
