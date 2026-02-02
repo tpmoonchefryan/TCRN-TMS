@@ -30,6 +30,7 @@ export enum ComponentType {
   MARSHMALLOW_WIDGET = 'MarshmallowWidget',
   DIVIDER = 'Divider',
   SPACER = 'Spacer',
+  SCHEDULE = 'Schedule',
 }
 
 export interface ComponentInstance {

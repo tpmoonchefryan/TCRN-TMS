@@ -8,7 +8,7 @@ import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
 import { UaCheckMode } from '../../security/guards/ua-detection.guard';
-import { HomepageContent } from '../dto/homepage.dto';
+import { ComponentInstance, ComponentType, HomepageContent } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
 @ApiTags('Public - Homepage')
@@ -33,16 +33,15 @@ export class CalendarController {
     // Parse content to find Schedule components
     // Content structure is { components: [...] }
     const content = data.content as HomepageContent;
-    let componentTimezone = null;
-    let scheduleComponents: any[] = [];
+    let componentTimezone: string | null = null;
+    let scheduleComponents: ComponentInstance[] = [];
 
     if (content?.components && Array.isArray(content.components)) {
       scheduleComponents = content.components.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (c: any) => c.type === 'Schedule' && c.visible !== false
+        (c: ComponentInstance) => c.type === ComponentType.SCHEDULE && c.visible !== false
       );
       if (scheduleComponents.length > 0) {
-        componentTimezone = (scheduleComponents[0].props as any)?.timezone;
+        componentTimezone = (scheduleComponents[0].props as { timezone?: string })?.timezone || null;
       }
     }
 
