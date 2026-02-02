@@ -7,6 +7,7 @@ import { Response } from 'express';
 import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
+import { UaCheckMode } from '../../../security/guards/ua-detection.guard';
 import { HomepageContent } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
@@ -17,6 +18,7 @@ export class CalendarController {
 
   @Get(':path/calendar.ics')
   @Public()
+  @UaCheckMode('skip')
   @ApiOperation({ summary: 'Get homepage schedule as iCalendar' })
   @ApiResponse({ status: 200, description: 'Returns ICS file' })
   @ApiResponse({ status: 404, description: 'Homepage not found' })
