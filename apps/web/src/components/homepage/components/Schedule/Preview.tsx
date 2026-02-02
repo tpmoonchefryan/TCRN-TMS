@@ -56,8 +56,8 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
 
   const getWebcalUrl = () => {
     if (typeof window === 'undefined' || !homepagePath) return '';
-    const host = window.location.host;
-    return `webcal://${host}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
+    const origin = window.location.origin;
+    return `${origin}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
   };
 
   const subscribeUrl = getWebcalUrl();
