@@ -94,7 +94,10 @@ export class CalendarController {
 
     res.set({
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${path}-schedule.ics"`,
+      'Content-Disposition': 'inline; filename="calendar.ics"',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     });
     res.send(calendar.toString());
   }

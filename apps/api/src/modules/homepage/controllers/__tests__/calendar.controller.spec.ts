@@ -81,7 +81,10 @@ describe('CalendarController', () => {
       expect(mockPublicHomepageService.getPublishedHomepageOrThrow).toHaveBeenCalledWith('test-path');
       expect(mockRes.set).toHaveBeenCalledWith({
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': expect.stringContaining('attachment; filename='),
+        'Content-Disposition': 'inline; filename="calendar.ics"',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       });
       expect(mockRes.send).toHaveBeenCalled();
       

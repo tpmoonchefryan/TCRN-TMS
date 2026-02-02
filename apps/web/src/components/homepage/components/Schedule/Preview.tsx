@@ -54,10 +54,17 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
   const [copied, setCopied] = useState(false);
   const displayTitle = (title && title !== 'Weekly Schedule') ? title : t('defaultScheduleTitle');
 
+  const getWebcalUrl = () => {
+    if (typeof window === 'undefined' || !homepagePath) return '';
+    const host = window.location.host;
+    return `webcal://${host}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
+  };
+
+  const subscribeUrl = getWebcalUrl();
+
   const handleCopyLink = () => {
-    if (!homepagePath) return;
-    const url = `${window.location.origin}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
-    navigator.clipboard.writeText(url);
+    if (!subscribeUrl) return;
+    navigator.clipboard.writeText(subscribeUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -84,12 +91,17 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
                    <p className="text-sm text-muted-foreground">{t('subscribeInstructions')}</p>
                    <div className="flex items-center gap-2">
                      <code className="flex-1 text-[10px] bg-muted p-2 rounded break-all select-all leading-tight">
-                       {`${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/public/homepage/${homepagePath}/calendar.ics`}
+                       {subscribeUrl}
                      </code>
                      <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={handleCopyLink}>
                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                      </Button>
                    </div>
+                   <Button className="w-full" asChild>
+                     <a href={subscribeUrl} target="_blank" rel="noopener noreferrer">
+                       {t('subscribeCalendar')}
+                     </a>
+                   </Button>
                  </div>
                </PopoverContent>
              </Popover>
