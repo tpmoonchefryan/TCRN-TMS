@@ -4,7 +4,7 @@
 
 
 import { Calendar as CalendarIcon, Check, Copy } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -55,10 +55,12 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
   const [copied, setCopied] = useState(false);
   const displayTitle = (title && title !== 'Weekly Schedule') ? title : t('defaultScheduleTitle');
 
+  const locale = useLocale();
+
   const getWebcalUrl = () => {
     if (typeof window === 'undefined' || !homepagePath) return '';
     const origin = window.location.origin;
-    return `${origin}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
+    return `${origin}/api/v1/public/homepage/${homepagePath}/calendar.ics?lang=${locale}`;
   };
 
   const subscribeUrl = getWebcalUrl();

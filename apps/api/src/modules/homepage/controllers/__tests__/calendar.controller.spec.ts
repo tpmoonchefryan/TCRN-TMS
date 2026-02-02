@@ -76,7 +76,7 @@ describe('CalendarController', () => {
         send: vi.fn(),
       } as unknown as Response;
 
-      await controller.getCalendar('test-path', mockRes);
+      await controller.getCalendar('test-path', 'zh', mockRes);
 
       expect(mockPublicHomepageService.getPublishedHomepageOrThrow).toHaveBeenCalledWith('test-path');
       expect(mockRes.set).toHaveBeenCalledWith(expect.objectContaining({
@@ -88,7 +88,7 @@ describe('CalendarController', () => {
       
       // Verify content contains event title
       const sendCall = (mockRes.send as any).mock.calls[0][0];
-      expect(sendCall).toContain('SUMMARY:[STREAM] Stream 1');
+      expect(sendCall).toContain('SUMMARY:[其他] Stream 1');
     });
   });
 });

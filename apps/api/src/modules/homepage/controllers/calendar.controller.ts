@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { addDays, addHours, isValid, parseISO, setHours, setMinutes, startOfWeek } from 'date-fns';
 import { Response } from 'express';
@@ -24,11 +24,17 @@ export class CalendarController {
   @ApiResponse({ status: 404, description: 'Homepage not found' })
   async getCalendar(
     @Param('path') path: string,
+    @Query('lang') lang: string = 'zh',
     @Res() res: Response,
   ) {
     const data = await this.publicHomepageService.getPublishedHomepageOrThrow(path);
     const talentName = data.talent.displayName;
-    // const homepageTitle = data.seo?.title || `${talentName}'s Schedule`;
+    const targetLang = ['zh', 'en', 'ja'].includes(lang) ? lang : 'zh';
+
+    // Localize Calendar Name
+    let calendarName = `${talentName}的日程表`;
+    if (targetLang === 'en') calendarName = `${talentName}'s Schedule`;
+    if (targetLang === 'ja') calendarName = `${talentName}のスケジュール`;
 
     // Parse content to find Schedule components
     // Content structure is { components: [...] }
@@ -46,7 +52,7 @@ export class CalendarController {
     }
 
     const calendar = ical({
-      name: `${talentName} Schedule`,
+      name: calendarName,
       url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://tcrn.app'}/p/${path}`,
       method: ICalCalendarMethod.PUBLISH,
       timezone: componentTimezone || data.talent.timezone || 'UTC', // Prefer component timezone
@@ -74,6 +80,31 @@ export class CalendarController {
             mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6
         };
 
+        // Event Type Helpers
+        const getEventTypeLabel = (type: string, l: string) => {
+           const typeMap: Record<string, Record<string, string>> = {
+               game: { zh: '游戏', en: 'GAME', ja: 'ゲーム' },
+               chat: { zh: '杂谈', en: 'CHAT', ja: '雑談' },
+               singing: { zh: '歌回', en: 'SINGING', ja: '歌枠' },
+               collab: { zh: '联动', en: 'COLLAB', ja: 'コラボ' },
+               other: { zh: '其他', en: 'OTHER', ja: 'その他' },
+           };
+           const normalizedType = type?.toLowerCase() || 'other';
+           return typeMap[normalizedType]?.[l] || typeMap['other'][l];
+        };
+
+        const getStreamerLabel = (l: string) => {
+            if (l === 'en') return 'Streamer';
+            if (l === 'ja') return '配信者';
+            return '主播';
+        };
+
+        const getTypeLabel = (l: string) => {
+             if (l === 'en') return 'Type';
+             if (l === 'ja') return 'タイプ';
+             return '类型';
+        };
+
         for (const event of events) {
             if (!event.day || !event.time || !event.title) continue;
             
@@ -90,11 +121,14 @@ export class CalendarController {
             eventDate = setHours(eventDate, hours);
             eventDate = setMinutes(eventDate, minutes);
 
+            const typeLabel = getEventTypeLabel(event.type, targetLang);
+            const prefix = `[${typeLabel}]`;
+
             calendar.createEvent({
                 start: eventDate,
                 end: addHours(eventDate, 1),
-                summary: `[${event.type?.toUpperCase() || 'STREAM'}] ${event.title}`,
-                description: `Type: ${event.type}\nStreamer: ${talentName}`,
+                summary: `${prefix} ${event.title}`,
+                description: `${getTypeLabel(targetLang)}: ${typeLabel}\n${getStreamerLabel(targetLang)}: ${talentName}`,
             });
         }
       }

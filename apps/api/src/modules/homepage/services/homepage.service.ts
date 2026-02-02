@@ -503,7 +503,7 @@ export class HomepageService {
       });
     }
 
-    // Check custom domain uniqueness
+    // Verify custom domain uniqueness
     if (dto.customDomain) {
       const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
         SELECT id FROM "${tenantSchema}".talent_homepage
@@ -540,7 +540,8 @@ export class HomepageService {
     }
     if (dto.customDomain !== undefined) {
       oldValue.customDomain = homepage.customDomain;
-      newValue.customDomain = dto.customDomain;
+      // Normalization: Treat empty string as null
+      newValue.customDomain = dto.customDomain || null;
     }
     if (dto.homepagePath !== undefined) {
        // Note: homepagePath is on Talent, but we log it here for completeness
@@ -548,7 +549,19 @@ export class HomepageService {
     }
 
     // Update homepage
-    const customDomainVerified = dto.customDomain !== homepage.customDomain ? false : homepage.customDomainVerified;
+    const newCustomDomain = dto.customDomain !== undefined 
+      ? (dto.customDomain || null) 
+      : homepage.customDomain;
+      
+    // If custom domain changed, reset verification
+    const customDomainVerified = newCustomDomain !== homepage.customDomain ? false : homepage.customDomainVerified;
+    const customDomainVerificationToken = newCustomDomain !== homepage.customDomain ? null : undefined; // If changed, clear token? Logic in setCustomDomain clears it.
+
+    // Note: setCustomDomain logic clears token and verification. We should probably mirror that here or rely on setCustomDomain.
+    // However, updateSettings is often used for SEO, so we should be careful about side-effects on domain.
+    // Since we are creating a sql string, if we want to clear token we need to add it to SET list.
+    // For now, let's just match the previous behavior but fix the empty string issue.
+    
     await prisma.$queryRawUnsafe(`
       UPDATE "${tenantSchema}".talent_homepage
       SET seo_title = $2, seo_description = $3, og_image_url = $4, analytics_id = $5,
@@ -556,7 +569,7 @@ export class HomepageService {
       WHERE id = $1::uuid
     `, homepage.id, dto.seoTitle ?? homepage.seoTitle, dto.seoDescription ?? homepage.seoDescription,
        dto.ogImageUrl ?? homepage.ogImageUrl, dto.analyticsId ?? homepage.analyticsId,
-       dto.customDomain ?? homepage.customDomain, customDomainVerified);
+       newCustomDomain, customDomainVerified);
 
     // Record change log
     await prisma.$queryRawUnsafe(`
