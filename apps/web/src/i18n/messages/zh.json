@@ -1261,6 +1261,7 @@
   },
   "homepageComponentEditor": {
     "scheduleTitle": "标题",
+    "timezone": "时区",
     "defaultScheduleTitle": "每周日程",
     "weekOf": "周次",
     "events": "事件列表",

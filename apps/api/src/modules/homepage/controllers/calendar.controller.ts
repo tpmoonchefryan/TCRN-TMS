@@ -30,21 +30,28 @@ export class CalendarController {
     const talentName = data.talent.displayName;
     // const homepageTitle = data.seo?.title || `${talentName}'s Schedule`;
 
+    // Parse content to find Schedule components
+    // Content structure is { components: [...] }
+    const content = data.content as HomepageContent;
+    let componentTimezone = null;
+    let scheduleComponents: any[] = [];
+
+    if (content?.components && Array.isArray(content.components)) {
+      scheduleComponents = content.components.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (c: any) => c.type === 'Schedule' && c.visible !== false
+      );
+      if (scheduleComponents.length > 0) {
+        componentTimezone = (scheduleComponents[0].props as any)?.timezone;
+      }
+    }
+
     const calendar = ical({
       name: `${talentName} Schedule`,
       url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://tcrn.app'}/p/${path}`,
       method: ICalCalendarMethod.PUBLISH,
-      timezone: data.talent.timezone || 'UTC', // Use talent's timezone
+      timezone: componentTimezone || data.talent.timezone || 'UTC', // Prefer component timezone
     });
-
-    // Parse content to find Schedule components
-    // Content structure is { components: [...] }
-    const content = data.content as HomepageContent;
-    if (content?.components && Array.isArray(content.components)) {
-      const scheduleComponents = content.components.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (c: any) => c.type === 'Schedule' && c.visible !== false
-      );
 
       for (const comp of scheduleComponents) {
         const props = comp.props as Record<string, unknown>;
@@ -92,7 +99,6 @@ export class CalendarController {
             });
         }
       }
-    }
 
     res.set({
       'Content-Type': 'text/calendar; charset=utf-8',

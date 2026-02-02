@@ -1262,6 +1262,7 @@
   },
   "homepageComponentEditor": {
     "scheduleTitle": "Title",
+    "timezone": "Timezone",
     "defaultScheduleTitle": "Weekly Schedule",
     "weekOf": "Week Of",
     "events": "Events",

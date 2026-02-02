@@ -26,6 +26,7 @@ export interface ScheduleProps {
   events?: ScheduleEvent[];
   weekOf?: string;
   homepagePath?: string;
+  timezone?: string;
 }
 
 export const defaultProps: ScheduleProps = {
@@ -47,7 +48,7 @@ const TYPE_COLORS = {
   other: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 };
 
-export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homepagePath }: ScheduleProps) {
+export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homepagePath, timezone }: ScheduleProps) {
   const t = useTranslations('homepageComponentEditor');
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
   
@@ -74,7 +75,12 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
       <div className="mb-4 relative flex items-start justify-center min-h-[3rem]">
         <div className="text-center w-full px-8">
           <h3 className="text-xl font-bold">{displayTitle}</h3>
-          {weekOf && <p className="text-xs text-muted-foreground">{t('weekOf')} {weekOf}</p>}
+          {weekOf && (
+            <div className="flex flex-col gap-1 items-center">
+              <p className="text-xs text-muted-foreground">{t('weekOf')} {weekOf}</p>
+              {timezone && <p className="text-[10px] text-muted-foreground/80">({timezone})</p>}
+            </div>
+          )}
         </div>
         
         {homepagePath && (

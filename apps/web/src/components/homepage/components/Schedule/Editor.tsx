@@ -58,6 +58,25 @@ export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
           onChange={(e) => onChange({ ...props, weekOf: e.target.value })} 
         />
       </div>
+      <div className="space-y-2">
+        <Label>{t('timezone')}</Label>
+        <Select 
+          value={props.timezone || 'UTC'} 
+          onValueChange={(v) => onChange({ ...props, timezone: v })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="UTC">UTC</SelectItem>
+            <SelectItem value="Asia/Shanghai">Asia/Shanghai (UTC+8)</SelectItem>
+            <SelectItem value="Asia/Tokyo">Asia/Tokyo (UTC+9)</SelectItem>
+            <SelectItem value="America/Los_Angeles">America/Los_Angeles (UTC-8/7)</SelectItem>
+            <SelectItem value="America/New_York">America/New_York (UTC-5/4)</SelectItem>
+            <SelectItem value="Europe/London">Europe/London (UTC+0/1)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">

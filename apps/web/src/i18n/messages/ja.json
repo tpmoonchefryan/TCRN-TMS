@@ -1250,6 +1250,7 @@
   },
   "homepageComponentEditor": {
     "scheduleTitle": "タイトル",
+    "timezone": "タイムゾーン",
     "defaultScheduleTitle": "週間スケジュール",
     "weekOf": "週",
     "events": "イベント",
