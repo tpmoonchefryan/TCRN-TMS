@@ -27,11 +27,11 @@ import { HomepageSchedulerService } from './services/homepage-scheduler.service'
 @Module({
   imports: [HttpModule, LogModule, ScheduleModule.forRoot()],
   controllers: [
+    CalendarController,
     HomepageController,
     PublicHomepageController,
     DomainLookupController,
     InternalDomainController,
-    CalendarController,
   ],
   providers: [
     HomepageService,
