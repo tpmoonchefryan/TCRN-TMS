@@ -45,11 +45,12 @@ export class CalendarController {
       );
 
       for (const comp of scheduleComponents) {
-        const props = comp.props || {};
-        const weekOfStr = props.weekOf; // "YYYY-MM-DD"
-        const events = props.events || [];
+        const props = comp.props as Record<string, unknown>;
+        const weekOfStr = typeof props.weekOf === 'string' ? props.weekOf : undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const events = (Array.isArray(props.events) ? props.events : []) as any[];
 
-        if (!Array.isArray(events) || events.length === 0) continue;
+        if (events.length === 0) continue;
 
         // Determine the start of the week
         // If weekOf is present, use it. Otherwise, assume current week.
