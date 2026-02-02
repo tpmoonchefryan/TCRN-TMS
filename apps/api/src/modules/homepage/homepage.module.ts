@@ -9,6 +9,7 @@ import { RateLimiterService } from '../../common/services/rate-limiter.service';
 import { LogModule } from '../log/log.module';
 
 import {
+    CalendarController,
     DomainLookupController,
     HomepageController,
     InternalDomainController,
@@ -25,7 +26,13 @@ import { HomepageSchedulerService } from './services/homepage-scheduler.service'
 
 @Module({
   imports: [HttpModule, LogModule, ScheduleModule.forRoot()],
-  controllers: [HomepageController, PublicHomepageController, DomainLookupController, InternalDomainController],
+  controllers: [
+    HomepageController,
+    PublicHomepageController,
+    DomainLookupController,
+    InternalDomainController,
+    CalendarController,
+  ],
   providers: [
     HomepageService,
     HomepageVersionService,

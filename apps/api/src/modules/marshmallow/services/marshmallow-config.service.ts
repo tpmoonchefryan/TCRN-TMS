@@ -432,6 +432,19 @@ export class MarshmallowConfigService {
       return { customDomain: null, token: null, txtRecord: null };
     }
 
+    // Check for uniqueness
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id FROM "${tenantSchema}".marshmallow_config
+      WHERE custom_domain = $1 AND talent_id != $2::uuid
+    `, customDomain.toLowerCase(), talentId);
+
+    if (existing.length > 0) {
+      throw new ConflictException({
+        code: ErrorCodes.RES_ALREADY_EXISTS,
+        message: 'Domain already in use',
+      });
+    }
+
     // Generate verification token
     const token = crypto.randomBytes(32).toString('hex');
     const txtRecord = `tcrn-verify=${token}`;

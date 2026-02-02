@@ -10,6 +10,7 @@ export interface PublicHomepageData {
   talent: {
     displayName: string;
     avatarUrl: string | null;
+    timezone?: string | null;
   };
   content: HomepageContent;
   theme: ThemeConfig;
@@ -51,8 +52,9 @@ export class PublicHomepageService {
         displayName: string;
         avatarUrl: string | null;
         homepagePath: string | null;
+        timezone: string | null;
       }>>(`
-        SELECT id, display_name as "displayName", avatar_url as "avatarUrl", homepage_path as "homepagePath"
+        SELECT id, display_name as "displayName", avatar_url as "avatarUrl", homepage_path as "homepagePath", timezone
         FROM "${schema}".talent
         WHERE (LOWER(homepage_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
       `, path);
@@ -122,6 +124,7 @@ export class PublicHomepageService {
           talent: {
             displayName: talent.displayName,
             avatarUrl: talent.avatarUrl,
+            timezone: talent.timezone,
           },
           content: version.content as unknown as HomepageContent,
           theme: version.theme as unknown as ThemeConfig,
@@ -171,7 +174,7 @@ export class PublicHomepageService {
         isPublished: true,
       },
       include: {
-        talent: { select: { displayName: true, avatarUrl: true } },
+        talent: { select: { displayName: true, avatarUrl: true, timezone: true } },
       },
     });
 
@@ -191,6 +194,7 @@ export class PublicHomepageService {
       talent: {
         displayName: homepage.talent.displayName,
         avatarUrl: homepage.talent.avatarUrl,
+        timezone: homepage.talent.timezone,
       },
       content: version.content as unknown as HomepageContent,
       theme: version.theme as unknown as ThemeConfig,

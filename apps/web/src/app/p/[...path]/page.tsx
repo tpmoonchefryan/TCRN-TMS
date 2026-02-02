@@ -104,6 +104,7 @@ export default async function PublicHomepage(props: PageProps) {
           content={data.content} 
           theme={normalizeTheme(data.theme) || DEFAULT_THEME} 
           className="min-h-screen"
+          homepagePath={pathStr}
         />
       </main>
       

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -181,6 +181,46 @@ describe('MarshmallowConfigService', () => {
 
       await expect(service.getOrCreate('invalid-talent', 'tenant_test'))
         .rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('setCustomDomain', () => {
+    it('should set custom domain if valid and unique', async () => {
+      const result = { customDomain: 'marshmallow.example.com', token: 'token', txtRecord: 'tcrn-verify=token' };
+      
+      // 1. getOrCreate -> calls...
+      //    1.1 Get config -> found
+      //    1.2 Get stats
+      //    1.3 Get talent URL
+      // 2. Uniqueness check -> empty (unique)
+      // 3. Update -> void
+      
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
+        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
+        .mockResolvedValueOnce([{ homepagePath: 'test' }]) // getOrCreate: Talent URL
+        .mockResolvedValueOnce([]); // Uniqueness check: Not found (OK)
+
+      const response = await service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext);
+
+      expect(response.customDomain).toBe('marshmallow.example.com');
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException if domain is already in use', async () => {
+      // 1. getOrCreate -> calls...
+      //    1.1 Get config -> found
+      //    1.2 Get stats
+      //    1.3 Get talent URL
+      // 2. Uniqueness check -> found (conflict)
+      
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
+        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
+        .mockResolvedValueOnce([{ homepagePath: 'test' }]) // getOrCreate: Talent URL
+        .mockResolvedValueOnce([{ id: 'other-config-ID' }]); // Uniqueness check: Found (Conflict)
+
+      await expect(service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext))
+        .rejects.toThrow(ConflictException);
     });
   });
 });

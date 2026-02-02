@@ -24,6 +24,7 @@ interface HomepageRendererProps {
   content: HomepageContent;
   theme: ThemeConfig;
   className?: string;
+  homepagePath?: string;
 }
 
 const MESSAGES: Record<string, any> = {
@@ -56,7 +57,7 @@ function hexToHsl(hex: string): string {
   return `${(h * 360).toFixed(1)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
 }
 
-export function HomepageRenderer({ content, theme, className }: HomepageRendererProps) {
+export function HomepageRenderer({ content, theme, className, homepagePath }: HomepageRendererProps) {
   const t = useTranslations('homepageEditor');
   const [currentLocale, setCurrentLocale] = useState('en');
 
@@ -330,7 +331,7 @@ export function HomepageRenderer({ content, theme, className }: HomepageRenderer
               const defaultProps = definition.defaultProps || {};
               const Component = definition.preview;
               
-              let effectiveProps = { ...defaultProps, ...comp.props }; // Apply defaults first
+              let effectiveProps = { ...defaultProps, ...comp.props, homepagePath }; // Apply defaults first
               if (currentLocale && currentLocale !== 'en' && comp.i18n?.[currentLocale]) {
                    effectiveProps = { ...effectiveProps, ...comp.i18n[currentLocale] };
               }

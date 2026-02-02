@@ -3,7 +3,13 @@
 'use client';
 
 
+import { Calendar as CalendarIcon, Check, Copy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 import { cn } from '@/lib/utils';
 
@@ -19,6 +25,7 @@ export interface ScheduleProps {
   title?: string;
   events?: ScheduleEvent[];
   weekOf?: string;
+  homepagePath?: string;
 }
 
 export const defaultProps: ScheduleProps = {
@@ -40,17 +47,54 @@ const TYPE_COLORS = {
   other: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 };
 
-export function Schedule({ title = 'Weekly Schedule', events = [], weekOf }: ScheduleProps) {
+export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homepagePath }: ScheduleProps) {
   const t = useTranslations('homepageComponentEditor');
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
   
+  const [copied, setCopied] = useState(false);
   const displayTitle = (title && title !== 'Weekly Schedule') ? title : t('defaultScheduleTitle');
+
+  const handleCopyLink = () => {
+    if (!homepagePath) return;
+    const url = `${window.location.origin}/api/v1/public/homepage/${homepagePath}/calendar.ics`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="w-full h-full bg-card rounded-xl border shadow-sm p-4">
-      <div className="mb-4 text-center">
-        <h3 className="text-xl font-bold">{displayTitle}</h3>
-        {weekOf && <p className="text-xs text-muted-foreground">{t('weekOf')} {weekOf}</p>}
+      <div className="mb-4 relative flex items-start justify-center min-h-[3rem]">
+        <div className="text-center w-full px-8">
+          <h3 className="text-xl font-bold">{displayTitle}</h3>
+          {weekOf && <p className="text-xs text-muted-foreground">{t('weekOf')} {weekOf}</p>}
+        </div>
+        
+        {homepagePath && (
+          <div className="absolute right-0 top-0">
+             <Popover>
+               <PopoverTrigger asChild>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                   <CalendarIcon className="h-4 w-4" />
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-80" align="end">
+                 <div className="space-y-4">
+                   <h4 className="font-medium leading-none">{t('subscribeCalendar')}</h4>
+                   <p className="text-sm text-muted-foreground">{t('subscribeInstructions')}</p>
+                   <div className="flex items-center gap-2">
+                     <code className="flex-1 text-[10px] bg-muted p-2 rounded break-all select-all leading-tight">
+                       {`${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/public/homepage/${homepagePath}/calendar.ics`}
+                     </code>
+                     <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={handleCopyLink}>
+                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                     </Button>
+                   </div>
+                 </div>
+               </PopoverContent>
+             </Popover>
+          </div>
+        )}
       </div>
       
       <div className="space-y-2">
