@@ -555,7 +555,6 @@ export class HomepageService {
       
     // If custom domain changed, reset verification
     const customDomainVerified = newCustomDomain !== homepage.customDomain ? false : homepage.customDomainVerified;
-    const customDomainVerificationToken = newCustomDomain !== homepage.customDomain ? null : undefined; // If changed, clear token? Logic in setCustomDomain clears it.
 
     // Note: setCustomDomain logic clears token and verification. We should probably mirror that here or rely on setCustomDomain.
     // However, updateSettings is often used for SEO, so we should be careful about side-effects on domain.
