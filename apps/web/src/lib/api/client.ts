@@ -2063,6 +2063,7 @@ export const talentDomainApi = {
       customDomain: string | null;
       customDomainVerified: boolean;
       customDomainVerificationToken: string | null;
+      customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare';
       homepageCustomPath: string | null;
       marshmallowCustomPath: string | null;
     }>(`/api/v1/talents/${talentId}/custom-domain`),
@@ -2085,6 +2086,11 @@ export const talentDomainApi = {
       homepageCustomPath: string | null;
       marshmallowCustomPath: string | null;
     }>(`/api/v1/talents/${talentId}/custom-domain/paths`, paths),
+
+  updateSslMode: (talentId: string, sslMode: 'auto' | 'self_hosted' | 'cloudflare') =>
+    apiClient.patch<{
+      customDomainSslMode: string;
+    }>(`/api/v1/talents/${talentId}/custom-domain/ssl-mode`, { sslMode }),
 };
 
 // Platform Config API (for AC tenant admin)

@@ -704,6 +704,7 @@ export class TalentService {
     customDomain: string | null;
     customDomainVerified: boolean;
     customDomainVerificationToken: string | null;
+    customDomainSslMode: string;
     homepageCustomPath: string | null;
     marshmallowCustomPath: string | null;
   } | null> {
@@ -711,6 +712,7 @@ export class TalentService {
       customDomain: string | null;
       customDomainVerified: boolean;
       customDomainVerificationToken: string | null;
+      customDomainSslMode: string;
       homepageCustomPath: string | null;
       marshmallowCustomPath: string | null;
     }>>(`
@@ -718,6 +720,7 @@ export class TalentService {
         custom_domain as "customDomain",
         custom_domain_verified as "customDomainVerified",
         custom_domain_verification_token as "customDomainVerificationToken",
+        custom_domain_ssl_mode as "customDomainSslMode",
         homepage_path as "homepageCustomPath",
         marshmallow_path as "marshmallowCustomPath"
       FROM "${tenantSchema}".talent
@@ -911,6 +914,26 @@ export class TalentService {
         homepage_path as "homepageCustomPath",
         marshmallow_path as "marshmallowCustomPath"
     `, ...params);
+
+    return results[0];
+  }
+
+  /**
+   * Update SSL mode for custom domain
+   */
+  async updateSslMode(
+    talentId: string,
+    tenantSchema: string,
+    sslMode: 'auto' | 'self_hosted' | 'cloudflare'
+  ): Promise<{ customDomainSslMode: string }> {
+    const results = await prisma.$queryRawUnsafe<Array<{
+      customDomainSslMode: string;
+    }>>(`
+      UPDATE "${tenantSchema}".talent
+      SET custom_domain_ssl_mode = $2, updated_at = now()
+      WHERE id = $1::uuid
+      RETURNING custom_domain_ssl_mode as "customDomainSslMode"
+    `, talentId, sslMode);
 
     return results[0];
   }

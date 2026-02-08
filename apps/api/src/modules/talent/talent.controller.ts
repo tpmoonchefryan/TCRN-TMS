@@ -541,4 +541,23 @@ export class TalentController {
     );
     return success(result);
   }
+
+  /**
+   * PATCH /api/v1/talents/:id/custom-domain/ssl-mode
+   * Update SSL mode for custom domain
+   */
+  @Patch(':id/custom-domain/ssl-mode')
+  @ApiOperation({ summary: 'Update custom domain SSL mode' })
+  async updateSslMode(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { sslMode: 'auto' | 'self_hosted' | 'cloudflare' },
+  ) {
+    const result = await this.talentService.updateSslMode(
+      id,
+      user.tenantSchema,
+      body.sslMode
+    );
+    return success(result);
+  }
 }

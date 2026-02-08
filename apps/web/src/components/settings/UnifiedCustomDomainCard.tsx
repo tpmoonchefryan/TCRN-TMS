@@ -3,16 +3,16 @@
 'use client';
 
 import {
-    AlertCircle,
-    CheckCircle2,
-    Copy,
-    Edit,
-    ExternalLink,
-    Globe,
-    Loader2,
-    MessageSquareHeart,
-    Plus,
-    Trash2
+  AlertCircle,
+  CheckCircle2,
+  Copy,
+  Edit,
+  ExternalLink,
+  Globe,
+  Loader2,
+  MessageSquareHeart,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,7 +26,7 @@ import { Label } from '@/components/ui/label';
 import { platformConfigApi, talentDomainApi } from '@/lib/api/client';
 
 import { DnsSetupGuide } from './DnsSetupGuide';
-import { type SslMode } from './SslModeSelector';
+import { type SslMode,SslModeSelector } from './SslModeSelector';
 
 interface UnifiedCustomDomainCardProps {
   talentId: string;
@@ -63,6 +63,8 @@ export function UnifiedCustomDomainCard({
   const [isEditing, setIsEditing] = useState(false);
   const [showDnsInstructions, setShowDnsInstructions] = useState(false);
   const [platformBaseDomain, setPlatformBaseDomain] = useState<string>('proxy.tcrn.app');
+  const [sslMode, setSslMode] = useState<SslMode>('auto');
+  const [isSavingSslMode, setIsSavingSslMode] = useState(false);
 
   // Fetch config
   const fetchConfig = useCallback(async () => {
@@ -75,6 +77,7 @@ export function UnifiedCustomDomainCard({
         setDomainInput(data.customDomain || '');
         setHomepagePath(data.homepageCustomPath || '/');
         setMarshmallowPath(data.marshmallowCustomPath || '/ask');
+        setSslMode(data.customDomainSslMode || 'auto');
         // Show DNS instructions if domain set but not verified
         if (data.customDomain && !data.customDomainVerified) {
           setShowDnsInstructions(true);
@@ -191,6 +194,25 @@ export function UnifiedCustomDomainCard({
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success(t('copiedToClipboard'));
+  };
+
+  // Handle SSL mode change
+  const handleSslModeChange = async (newMode: SslMode) => {
+    setSslMode(newMode);
+    setIsSavingSslMode(true);
+    try {
+      const response = await talentDomainApi.updateSslMode(talentId, newMode);
+      if (response.success) {
+        toast.success(t('sslMode.saved'));
+        fetchConfig();
+      }
+    } catch (error: unknown) {
+      toast.error((error as Error)?.message || tc('error'));
+      // Revert on error
+      setSslMode(config?.customDomainSslMode || 'auto');
+    } finally {
+      setIsSavingSslMode(false);
+    }
   };
 
   if (isLoading) {
@@ -345,6 +367,15 @@ export function UnifiedCustomDomainCard({
                   placeholder="/ask"
                 />
               </div>
+            </div>
+
+            {/* SSL Mode Selector */}
+            <div className="pt-4 border-t">
+              <SslModeSelector
+                value={sslMode}
+                onChange={handleSslModeChange}
+                disabled={isSavingSslMode}
+              />
             </div>
 
             {/* Save Paths Button */}
