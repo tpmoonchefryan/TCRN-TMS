@@ -163,7 +163,10 @@ Loki統合により、すべてのログで全文検索が可能です。
 - **バージョン履歴**：任意の公開済みバージョンにロールバック
 - **ライブステータス統合**：Bilibili/YouTubeのリアルタイム配信ステータスとカバー画像表示
 - **プロフィールカード**：ローカルアバターアップロードとカスタマイズ可能なレイアウトによるパーソナライゼーション強化
-- **カスタムドメイン**：DNS検証付きタレント所有ドメインをサポート
+- **カスタムドメイン**：DNS検証と柔軟なSSLオプション付きタレント所有ドメインをサポート：
+  - **自動（Let's Encrypt）**：自動証明書プロビジョニングと更新
+  - **セルフホスト型プロキシ**：Nginx/Caddyで独自SSL証明書を使用（[設定ガイド](docs/custom-domain/self-hosted-proxy.ja.md)）
+  - **Cloudflare for SaaS**：グローバルCDN付きエッジSSL（[設定ガイド](docs/custom-domain/cloudflare-saas.ja.md)）
 - **SEO最適化**：自動メタタグとOpen Graphサポート
 - **サンプルページ**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 

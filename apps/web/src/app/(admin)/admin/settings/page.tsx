@@ -347,10 +347,10 @@ export default function PlatformSettingsPage() {
                     {t('systemBaseDomainHint')}
                   </p>
                   <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                    <p className="font-medium mb-2">{t('subdomainPreview') || 'Subdomain Preview'}</p>
+                    <p className="font-medium mb-2">{t('urlPreview') || 'URL Preview'}</p>
                     <div className="space-y-1 text-muted-foreground font-mono text-xs">
-                      <p>Homepage: <span className="text-foreground">{'{talentCode}'}.p.{systemBaseDomain}</span></p>
-                      <p>Marshmallow: <span className="text-foreground">{'{talentCode}'}.m.{systemBaseDomain}</span></p>
+                      <p>Homepage: <span className="text-foreground">{systemBaseDomain}/p/{'{talentCode}'}</span></p>
+                      <p>Marshmallow: <span className="text-foreground">{systemBaseDomain}/m/{'{talentCode}'}</span></p>
                     </div>
                   </div>
                 </div>

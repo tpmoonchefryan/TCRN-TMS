@@ -8,8 +8,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
 import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '../../dto/security.dto';
-import { BlocklistMatcherService } from '../blocklist-matcher.service';
 import { BlocklistService } from '../blocklist.service';
+import { BlocklistMatcherService } from '../blocklist-matcher.service';
 
 const TEST_SCHEMA = 'tenant_test';
 

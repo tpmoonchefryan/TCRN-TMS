@@ -163,7 +163,10 @@ Loki 集成支持跨所有日志的全文搜索。
 - **版本历史**：回滚到任意已发布版本
 - **直播状态集成**：实时 Bilibili/YouTube 直播状态显示，支持封面图
 - **个人名片**：增强的个性化设置，支持本地头像上传和自定义布局
-- **自定义域名**：支持艺人自有域名，带 DNS 验证
+- **自定义域名**：支持艺人自有域名，带 DNS 验证和灵活的 SSL 选项：
+  - **自动签发 (Let's Encrypt)**：自动证书配置和续期
+  - **自托管代理**：使用 Nginx/Caddy 配置自有 SSL 证书（[配置指南](docs/custom-domain/self-hosted-proxy.zh.md)）
+  - **Cloudflare for SaaS**：边缘 SSL，带全球 CDN（[配置指南](docs/custom-domain/cloudflare-saas.zh.md)）
 - **SEO 优化**：自动生成 meta 标签和 Open Graph 支持
 - **示例页面**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 

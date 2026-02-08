@@ -181,6 +181,7 @@ model Talent {
   descriptionJa  String?  @map("description_ja") @db.Text
   avatarUrl      String?  @map("avatar_url") @db.VarChar(512)
   homepagePath   String?  @unique @map("homepage_path") @db.VarChar(128)
+  marshmallowPath String? @unique @map("marshmallow_path") @db.VarChar(128)
   timezone       String   @default("UTC") @db.VarChar(64)
   isActive       Boolean  @default(true) @map("is_active")
   settings       Json     @default("{}") @db.JsonB
@@ -189,6 +190,14 @@ model Talent {
   createdBy      String   @map("created_by") @db.Uuid
   updatedBy      String   @map("updated_by") @db.Uuid
   version        Int      @default(1)
+  
+  // Unified custom domain settings
+  customDomain                  String?  @unique @map("custom_domain") @db.VarChar(255)
+  customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
+  customDomainVerificationToken String?  @map("custom_domain_verification_token") @db.VarChar(64)
+  customDomainSslMode           String   @default("auto") @map("custom_domain_ssl_mode") @db.VarChar(32)
+  homepageCustomPath            String?  @default("/") @map("homepage_custom_path") @db.VarChar(128)
+  marshmallowCustomPath         String?  @default("/ask") @map("marshmallow_custom_path") @db.VarChar(128)
 
   // Relations
   subsidiary            Subsidiary?          @relation(fields: [subsidiaryId], references: [id])
@@ -208,6 +217,8 @@ model Talent {
   @@index([profileStoreId])
   @@index([path])
   @@index([homepagePath])
+  @@index([marshmallowPath])
+  @@index([customDomain])
   @@map("talent")
   @@schema("tenant_template")
 }

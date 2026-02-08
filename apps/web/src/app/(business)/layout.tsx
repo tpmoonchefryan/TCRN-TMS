@@ -35,6 +35,12 @@ export default function BusinessLayout({
 
   const [showTalentModal, setShowTalentModal] = useState(false);
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure consistent SSR/CSR - both render loading initially
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Calculate top offset for staging banner
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
@@ -89,10 +95,9 @@ export default function BusinessLayout({
     router,
   ]);
 
-  // No redundant manual checks needed, AuthGuard handles it
-  
-  // Wait for auth hydration only - talent loading is handled inside the layout
-  if (!authHydrated) {
+  // Show loading state during SSR and initial client render for hydration match
+  // Also show loading if auth store hasn't hydrated yet
+  if (!isClient || !authHydrated) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

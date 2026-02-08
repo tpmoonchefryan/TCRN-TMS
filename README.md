@@ -163,7 +163,10 @@ Drag-and-drop homepage builder for talents:
 - **Version History**: Rollback to any previous published version
 - **Live Status Integration**: Real-time Bilibili/YouTube stream status with cover image support
 - **Profile Card**: Enhanced personalization with local avatar upload and customizable layout
-- **Custom Domains**: Support for talent-owned domains with DNS verification
+- **Custom Domains**: Support for talent-owned domains with DNS verification and flexible SSL options:
+  - **Auto (Let's Encrypt)**: Automatic certificate provisioning and renewal
+  - **Self-Hosted Proxy**: Use your own SSL certificate with Nginx/Caddy ([Setup Guide](docs/custom-domain/self-hosted-proxy.md))
+  - **Cloudflare for SaaS**: Edge SSL with global CDN ([Setup Guide](docs/custom-domain/cloudflare-saas.md))
 - **SEO Optimization**: Automatic meta tags and Open Graph support
 - **Example Page**: [https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 

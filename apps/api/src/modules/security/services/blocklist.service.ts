@@ -18,7 +18,6 @@ import {
     TestBlocklistDto,
     UpdateBlocklistDto,
 } from '../dto/security.dto';
-
 import { BlocklistMatcherService } from './blocklist-matcher.service';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';

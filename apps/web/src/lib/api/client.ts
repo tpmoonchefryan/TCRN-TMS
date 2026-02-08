@@ -2033,7 +2033,7 @@ export const externalBlocklistApi = {
 
 // Talent Domain API (for custom domain configuration)
 export const talentDomainApi = {
-  // Homepage domain
+  // Homepage domain (legacy - kept for backward compatibility)
   setHomepageDomain: (talentId: string, customDomain: string | null) =>
     apiClient.post<{ customDomain: string | null; token: string | null; txtRecord: string | null }>(
       `/api/v1/talents/${talentId}/homepage/domain`,
@@ -2045,7 +2045,7 @@ export const talentDomainApi = {
       {}
     ),
 
-  // Marshmallow domain
+  // Marshmallow domain (legacy - kept for backward compatibility)
   setMarshmallowDomain: (talentId: string, customDomain: string | null) =>
     apiClient.post<{ customDomain: string | null; token: string | null; txtRecord: string | null }>(
       `/api/v1/talents/${talentId}/marshmallow/config/domain`,
@@ -2056,6 +2056,35 @@ export const talentDomainApi = {
       `/api/v1/talents/${talentId}/marshmallow/config/verify-domain`,
       {}
     ),
+
+  // Unified custom domain management
+  getConfig: (talentId: string) =>
+    apiClient.get<{
+      customDomain: string | null;
+      customDomainVerified: boolean;
+      customDomainVerificationToken: string | null;
+      homepageCustomPath: string | null;
+      marshmallowCustomPath: string | null;
+    }>(`/api/v1/talents/${talentId}/custom-domain`),
+
+  setDomain: (talentId: string, customDomain: string | null) =>
+    apiClient.post<{
+      customDomain: string | null;
+      token: string | null;
+      txtRecord: string | null;
+    }>(`/api/v1/talents/${talentId}/custom-domain`, { customDomain }),
+
+  verifyDomain: (talentId: string) =>
+    apiClient.post<{ verified: boolean; message: string }>(
+      `/api/v1/talents/${talentId}/custom-domain/verify`,
+      {}
+    ),
+
+  updatePaths: (talentId: string, paths: { homepageCustomPath?: string; marshmallowCustomPath?: string }) =>
+    apiClient.patch<{
+      homepageCustomPath: string | null;
+      marshmallowCustomPath: string | null;
+    }>(`/api/v1/talents/${talentId}/custom-domain/paths`, paths),
 };
 
 // Platform Config API (for AC tenant admin)

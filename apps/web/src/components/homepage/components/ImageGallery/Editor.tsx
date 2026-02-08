@@ -127,7 +127,7 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
               <div className="flex items-center gap-2">
                 <div className="h-10 w-10 bg-slate-200 rounded overflow-hidden shrink-0 flex items-center justify-center">
                    {img.url ? (
-                     <img src={img.url} alt="" className="h-full w-full object-cover" />
+                     <img src={img.url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                    ) : (
                      <ImageIcon size={16} className="text-muted-foreground" />
                    )}

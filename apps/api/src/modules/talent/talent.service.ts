@@ -688,4 +688,253 @@ export class TalentService {
 
     return results[0];
   }
+
+  // =============================================================================
+  // UNIFIED CUSTOM DOMAIN MANAGEMENT
+  // =============================================================================
+
+  /**
+   * Get unified custom domain configuration
+   * homepage_path → Homepage routing, marshmallow_path → Marshmallow routing
+   */
+  async getCustomDomainConfig(
+    talentId: string,
+    tenantSchema: string
+  ): Promise<{
+    customDomain: string | null;
+    customDomainVerified: boolean;
+    customDomainVerificationToken: string | null;
+    homepageCustomPath: string | null;
+    marshmallowCustomPath: string | null;
+  } | null> {
+    const results = await prisma.$queryRawUnsafe<Array<{
+      customDomain: string | null;
+      customDomainVerified: boolean;
+      customDomainVerificationToken: string | null;
+      homepageCustomPath: string | null;
+      marshmallowCustomPath: string | null;
+    }>>(`
+      SELECT 
+        custom_domain as "customDomain",
+        custom_domain_verified as "customDomainVerified",
+        custom_domain_verification_token as "customDomainVerificationToken",
+        homepage_path as "homepageCustomPath",
+        marshmallow_path as "marshmallowCustomPath"
+      FROM "${tenantSchema}".talent
+      WHERE id = $1::uuid
+    `, talentId);
+    return results[0] || null;
+  }
+
+  /**
+   * Set custom domain for talent
+   */
+  async setCustomDomain(
+    talentId: string,
+    tenantSchema: string,
+    customDomain: string | null
+  ): Promise<{ 
+    customDomain: string | null; 
+    token: string | null; 
+    txtRecord: string | null 
+  }> {
+    if (!customDomain) {
+      // Remove custom domain
+      await prisma.$queryRawUnsafe(`
+        UPDATE "${tenantSchema}".talent
+        SET 
+          custom_domain = NULL, 
+          custom_domain_verified = false, 
+          custom_domain_verification_token = NULL,
+          updated_at = now()
+        WHERE id = $1::uuid
+      `, talentId);
+      return { customDomain: null, token: null, txtRecord: null };
+    }
+
+    const normalizedDomain = customDomain.toLowerCase().trim();
+
+    // Check for uniqueness within tenant
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id FROM "${tenantSchema}".talent
+      WHERE custom_domain = $1 AND id != $2::uuid
+    `, normalizedDomain, talentId);
+
+    if (existing.length > 0) {
+      throw new BadRequestException({
+        code: ErrorCodes.RES_ALREADY_EXISTS,
+        message: 'Domain already in use by another talent',
+      });
+    }
+
+    // Generate verification token
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const txtRecord = `tcrn-verify=${token}`;
+
+    // Update talent with new domain and token
+    await prisma.$queryRawUnsafe(`
+      UPDATE "${tenantSchema}".talent
+      SET 
+        custom_domain = $2, 
+        custom_domain_verified = false, 
+        custom_domain_verification_token = $3,
+        updated_at = now()
+      WHERE id = $1::uuid
+    `, talentId, normalizedDomain, token);
+
+    return { customDomain: normalizedDomain, token, txtRecord };
+  }
+
+  /**
+   * Verify custom domain by checking DNS TXT record
+   */
+  async verifyCustomDomain(
+    talentId: string,
+    tenantSchema: string
+  ): Promise<{ verified: boolean; message: string }> {
+    // Get current domain config
+    const config = await this.getCustomDomainConfig(talentId, tenantSchema);
+    
+    if (!config) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Talent not found',
+      });
+    }
+
+    if (!config.customDomain) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'No custom domain set',
+      });
+    }
+
+    if (!config.customDomainVerificationToken) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'No verification token generated. Please set the custom domain first.',
+      });
+    }
+
+    try {
+      const { promises: dns } = await import('dns');
+      
+      // Query TXT records for the _tcrn-verify subdomain
+      const verifyDomain = `_tcrn-verify.${config.customDomain}`;
+      const records = await dns.resolveTxt(verifyDomain);
+      const flatRecords = records.flat();
+      
+      const expectedRecord = `tcrn-verify=${config.customDomainVerificationToken}`;
+      const found = flatRecords.some(record => record === expectedRecord);
+
+      if (found) {
+        // Update verification status
+        await prisma.$queryRawUnsafe(`
+          UPDATE "${tenantSchema}".talent
+          SET custom_domain_verified = true, updated_at = now()
+          WHERE id = $1::uuid
+        `, talentId);
+
+        return { verified: true, message: 'Domain verified successfully' };
+      } else {
+        return { 
+          verified: false, 
+          message: `TXT record not found. Expected: ${expectedRecord}` 
+        };
+      }
+    } catch {
+      return { 
+        verified: false, 
+        message: 'DNS lookup failed. Please ensure the TXT record is properly configured.' 
+      };
+    }
+  }
+
+  /**
+   * Update service paths for custom domain
+   * homepage_path is used by public-homepage.service.ts for routing
+   * marshmallow_path is used by public-marshmallow.service.ts for routing
+   */
+  async updateServicePaths(
+    talentId: string,
+    tenantSchema: string,
+    paths: {
+      homepageCustomPath?: string;
+      marshmallowCustomPath?: string;
+    }
+  ): Promise<{
+    homepageCustomPath: string | null;
+    marshmallowCustomPath: string | null;
+  }> {
+    const updates: string[] = [];
+    const params: unknown[] = [talentId];
+    let paramIndex = 2;
+
+    const hp = paths.homepageCustomPath?.trim().replace(/^\//, '') || null;
+    const mm = paths.marshmallowCustomPath?.trim().replace(/^\//, '') || null;
+
+    // Update homepage_path (used for homepage routing)
+    if (paths.homepageCustomPath !== undefined) {
+      updates.push(`homepage_path = $${paramIndex++}`);
+      params.push(hp);
+    }
+    
+    // Update marshmallow_path (used for marshmallow routing)
+    if (paths.marshmallowCustomPath !== undefined) {
+      updates.push(`marshmallow_path = $${paramIndex++}`);
+      params.push(mm);
+    }
+
+    if (updates.length === 0) {
+      // No updates, just return current values
+      const current = await prisma.$queryRawUnsafe<Array<{
+        homepageCustomPath: string | null;
+        marshmallowCustomPath: string | null;
+      }>>(`
+        SELECT homepage_path as "homepageCustomPath", marshmallow_path as "marshmallowCustomPath"
+        FROM "${tenantSchema}".talent WHERE id = $1::uuid
+      `, talentId);
+      return current[0];
+    }
+
+    updates.push('updated_at = now()');
+
+    const results = await prisma.$queryRawUnsafe<Array<{
+      homepageCustomPath: string | null;
+      marshmallowCustomPath: string | null;
+    }>>(`
+      UPDATE "${tenantSchema}".talent
+      SET ${updates.join(', ')}
+      WHERE id = $1::uuid
+      RETURNING 
+        homepage_path as "homepageCustomPath",
+        marshmallow_path as "marshmallowCustomPath"
+    `, ...params);
+
+    return results[0];
+  }
+
+  /**
+   * Find talent by custom domain
+   */
+  async findByCustomDomain(
+    customDomain: string,
+    tenantSchema: string
+  ): Promise<TalentData | null> {
+    const results = await prisma.$queryRawUnsafe<TalentData[]>(`
+      SELECT 
+        id, subsidiary_id as "subsidiaryId", profile_store_id as "profileStoreId", code, path,
+        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        display_name as "displayName",
+        description_en as "descriptionEn", description_zh as "descriptionZh", 
+        description_ja as "descriptionJa",
+        avatar_url as "avatarUrl", homepage_path as "homepagePath", timezone,
+        is_active as "isActive", settings,
+        created_at as "createdAt", updated_at as "updatedAt", version
+      FROM "${tenantSchema}".talent
+      WHERE custom_domain = $1 AND custom_domain_verified = true
+    `, customDomain.toLowerCase());
+    return results[0] || null;
+  }
 }

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
@@ -122,6 +122,10 @@ class UpdateTalentDto {
   @IsOptional()
   @IsObject()
   settings?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsArray()
+  socialLinks?: Array<{ platform: string; url: string; label?: string }>;
 
   @IsInt()
   @Min(1)
@@ -461,5 +465,80 @@ export class TalentController {
       isActive: true,
       version: talent.version,
     });
+  }
+
+  // =============================================================================
+  // UNIFIED CUSTOM DOMAIN MANAGEMENT
+  // =============================================================================
+
+  /**
+   * GET /api/v1/talents/:id/custom-domain
+   * Get custom domain configuration
+   */
+  @Get(':id/custom-domain')
+  @ApiOperation({ summary: 'Get custom domain configuration' })
+  async getCustomDomainConfig(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    const config = await this.talentService.getCustomDomainConfig(id, user.tenantSchema);
+    if (!config) {
+      return { success: false, error: { code: 'NOT_FOUND', message: 'Talent not found' } };
+    }
+    return success(config);
+  }
+
+  /**
+   * POST /api/v1/talents/:id/custom-domain
+   * Set custom domain
+   */
+  @Post(':id/custom-domain')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set custom domain' })
+  async setCustomDomain(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { customDomain: string | null },
+  ) {
+    const result = await this.talentService.setCustomDomain(
+      id,
+      user.tenantSchema,
+      body.customDomain
+    );
+    return success(result);
+  }
+
+  /**
+   * POST /api/v1/talents/:id/custom-domain/verify
+   * Verify custom domain
+   */
+  @Post(':id/custom-domain/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify custom domain' })
+  async verifyCustomDomain(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    const result = await this.talentService.verifyCustomDomain(id, user.tenantSchema);
+    return success(result);
+  }
+
+  /**
+   * PATCH /api/v1/talents/:id/custom-domain/paths
+   * Update service paths for custom domain
+   */
+  @Patch(':id/custom-domain/paths')
+  @ApiOperation({ summary: 'Update custom domain service paths' })
+  async updateServicePaths(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { homepageCustomPath?: string; marshmallowCustomPath?: string },
+  ) {
+    const result = await this.talentService.updateServicePaths(
+      id,
+      user.tenantSchema,
+      body
+    );
+    return success(result);
   }
 }

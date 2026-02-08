@@ -41,7 +41,7 @@ export class PublicMarshmallowService {
 
   /**
    * Find talent and config by path (multi-tenant)
-   * Searches by homepage_path first, then by code
+   * Searches by marshmallow_path first, then by code as fallback
    */
   private async findTalentAndConfigByPath(path: string) {
     const prisma = this.databaseService.getPrisma();
@@ -53,7 +53,7 @@ export class PublicMarshmallowService {
 
     for (const t of tenants) {
       const schema = t.schemaName;
-      // Search by homepage_path or code (for streamer mode fallback)
+      // Search by marshmallow_path or code (for fallback compatibility)
       const talents = await prisma.$queryRawUnsafe<Array<{
         id: string;
         displayName: string;
@@ -61,7 +61,7 @@ export class PublicMarshmallowService {
       }>>(`
         SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
         FROM "${schema}".talent
-        WHERE (LOWER(homepage_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
+        WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
       `, path);
 
       if (talents.length > 0) {
@@ -472,7 +472,7 @@ export class PublicMarshmallowService {
     // Search for talent across all tenant schemas
     for (const t of tenants) {
       const schema = t.schemaName;
-      // Search by homepage_path or code (for streamer mode fallback)
+      // Search by marshmallow_path or code (for fallback compatibility)
       const talents = await prisma.$queryRawUnsafe<Array<{
         id: string;
         displayName: string;
@@ -480,7 +480,7 @@ export class PublicMarshmallowService {
       }>>(`
         SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
         FROM "${schema}".talent
-        WHERE (LOWER(homepage_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
+        WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
       `, path);
 
       if (talents.length > 0) {
@@ -669,7 +669,7 @@ export class PublicMarshmallowService {
     const prisma = this.databaseService.getPrisma();
 
     // Verify the message belongs to the talent in the SSO token
-    // Support both homepage_path and code for path matching
+    // Support both marshmallow_path and code for path matching
     const messages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       isRead: boolean;
@@ -680,7 +680,7 @@ export class PublicMarshmallowService {
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
       JOIN "${context.tenantSchema}".talent t ON c.talent_id = t.id
-      WHERE m.id = $1::uuid AND (LOWER(t.homepage_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+      WHERE m.id = $1::uuid AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
     `, messageId, path);
 
     if (messages.length === 0) {
@@ -742,7 +742,7 @@ export class PublicMarshmallowService {
     const prisma = this.databaseService.getPrisma();
 
     // Verify the message belongs to the talent in the SSO token
-    // Support both homepage_path and code for path matching
+    // Support both marshmallow_path and code for path matching
     const messages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       status: string;
@@ -753,7 +753,7 @@ export class PublicMarshmallowService {
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
       JOIN "${context.tenantSchema}".talent t ON c.talent_id = t.id
-      WHERE m.id = $1::uuid AND (LOWER(t.homepage_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+      WHERE m.id = $1::uuid AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
     `, messageId, path);
 
     if (messages.length === 0) {

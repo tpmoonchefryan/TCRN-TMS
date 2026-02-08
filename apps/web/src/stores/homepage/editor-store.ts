@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, HomepageContent, normalizeTheme,THEME_PRESETS, ThemeConfig, ThemePreset } from '@tcrn/shared';
+import { DEFAULT_THEME, HomepageContent, normalizeTheme, THEME_PRESETS, ThemeConfig, ThemePreset } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -29,7 +29,6 @@ interface EditorState {
     homepagePath: string | null;
     seoTitle: string | null;
     seoDescription: string | null;
-    customDomain: string | null;
     ogImageUrl: string | null;
     analyticsId: string | null;
   } | null;
@@ -103,7 +102,7 @@ export const useEditorStore = create<EditorState>()(
       });
       try {
         const response = await homepageApi.get(talentId);
-        const { draftVersion, publishedVersion, theme, customDomain, homepagePath, seoTitle, seoDescription, ogImageUrl, analyticsId, version } = response.data;
+        const { draftVersion, publishedVersion, theme, homepagePath, seoTitle, seoDescription, ogImageUrl, analyticsId, version } = response.data;
 
         // Prioritize draft, fallback to published, then default
         // Also migrate legacy component types to current types
@@ -156,7 +155,6 @@ export const useEditorStore = create<EditorState>()(
              homepagePath,
              seoTitle,
              seoDescription,
-             customDomain,
              ogImageUrl,
              analyticsId
           };
@@ -307,7 +305,6 @@ export const useEditorStore = create<EditorState>()(
               homepagePath: response.data.homepagePath,
               seoTitle: response.data.seoTitle,
               seoDescription: response.data.seoDescription,
-              customDomain: response.data.customDomain,
               ogImageUrl: response.data.ogImageUrl,
               analyticsId: response.data.analyticsId,
             };

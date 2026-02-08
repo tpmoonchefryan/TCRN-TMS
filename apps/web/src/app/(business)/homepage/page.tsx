@@ -12,7 +12,8 @@ import { SettingsDialog } from '@/components/homepage/editor/SettingsDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { homepageApi } from '@/lib/api/client';
+import { useUIMode } from '@/hooks/use-ui-mode';
+import { homepageApi, talentDomainApi } from '@/lib/api/client';
 import { useTalentStore } from '@/stores/talent-store';
 
 // Homepage status interface
@@ -22,6 +23,7 @@ interface HomepageStatus {
   publishedAt?: string;
   pageViews?: number;
   customDomain?: string | null;
+  customDomainVerified?: boolean;
   hasDraftChanges?: boolean;
   draftUpdatedAt?: string;
   homepagePath?: string | null;
@@ -35,6 +37,25 @@ export default function HomepagePage() {
   const [homepageStatus, setHomepageStatus] = useState<HomepageStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { switchToManagementUI, currentTenantId } = useUIMode();
+
+  // Build talent settings URL based on talent's position in organization
+  const getTalentSettingsUrl = () => {
+    if (!currentTenantId || !currentTalent) return null;
+    
+    if (currentTalent.subsidiaryId) {
+      return `/tenant/${currentTenantId}/subsidiary/${currentTalent.subsidiaryId}/talent/${currentTalent.id}/settings`;
+    }
+    return `/tenant/${currentTenantId}/talent/${currentTalent.id}/settings`;
+  };
+
+  const handleDomainSettingsClick = () => {
+    const url = getTalentSettingsUrl();
+    if (url) {
+      switchToManagementUI();
+      router.push(url);
+    }
+  };
 
   // Fetch homepage data
   const fetchHomepage = useCallback(async () => {
@@ -42,15 +63,23 @@ export default function HomepagePage() {
     
     setIsLoading(true);
     try {
-      const response = await homepageApi.get(currentTalent.id);
-      if (response.success && response.data) {
-        const data = response.data;
+      // Fetch homepage status and domain config in parallel
+      const [homepageResponse, domainResponse] = await Promise.all([
+        homepageApi.get(currentTalent.id),
+        talentDomainApi.getConfig(currentTalent.id).catch(() => ({ data: null })),
+      ]);
+
+      if (homepageResponse.success && homepageResponse.data) {
+        const data = homepageResponse.data;
+        // Use unified domain data from talent table, fallback to homepage data for backward compatibility
+        const domainData = domainResponse.data;
         setHomepageStatus({
           isPublished: data.isPublished || false,
           lastPublishedAt: data.publishedAt || data.lastPublishedAt,
           publishedAt: data.publishedAt,
           pageViews: data.pageViews || 0,
-          customDomain: data.customDomain,
+          customDomain: domainData?.customDomain || data.customDomain || null,
+          customDomainVerified: domainData?.customDomainVerified || false,
           hasDraftChanges: data.hasDraftChanges || (data.draftVersion && !data.publishedVersion),
           draftUpdatedAt: data.draftUpdatedAt,
           homepagePath: data.homepagePath,
@@ -62,6 +91,7 @@ export default function HomepagePage() {
         isPublished: false,
         pageViews: 0,
         customDomain: null,
+        customDomainVerified: false,
         hasDraftChanges: false,
         homepagePath: currentTalent?.path || null,
       });
@@ -201,7 +231,7 @@ export default function HomepagePage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href={`/p/${homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()}`} target="_blank">
+          <Link href={`/p/${(homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()).replace(/^p\//i, '')}`} target="_blank">
             <Button variant="outline">
               <Eye size={16} className="mr-2" />
               {t('preview')}
@@ -277,29 +307,47 @@ export default function HomepagePage() {
               <label className="text-sm text-muted-foreground">{t('defaultUrl')}</label>
               <div className="flex items-center gap-2 mt-1">
                 <code className="flex-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-sm truncate">
-                  /p/{homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()}
+                  /p/{(homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()).replace(/^p\//i, '')}
                 </code>
-                <Link href={`/p/${homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()}`} target="_blank">
+                <Link href={`/p/${(homepageStatus?.homepagePath || currentTalent.homepagePath || currentTalent.code.toLowerCase()).replace(/^p\//i, '')}`} target="_blank">
                   <Button variant="ghost" size="icon" className="shrink-0">
                     <ExternalLink size={14} />
                   </Button>
                 </Link>
               </div>
             </div>
-            {homepageStatus?.customDomain && (
+            {homepageStatus?.customDomain ? (
               <div>
                 <label className="text-sm text-muted-foreground">{t('customDomain')}</label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="flex-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-sm truncate">
                     {homepageStatus.customDomain}
                   </code>
-                  <Badge variant="outline" className="text-green-600 border-green-200">
-                    {t('verified')}
-                  </Badge>
+                  {homepageStatus.customDomainVerified ? (
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      {t('verified')}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600 border-amber-200">
+                      {t('notVerified')}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm text-muted-foreground">{t('customDomain')}</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-muted-foreground">{t('notConfigured')}</span>
                 </div>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">{t('domainSettingsNote')}</p>
+            <button 
+              onClick={handleDomainSettingsClick}
+              className="text-xs text-primary hover:underline"
+            >
+              {t('manageDomainInSettings')}
+            </button>
           </CardContent>
         </Card>
 

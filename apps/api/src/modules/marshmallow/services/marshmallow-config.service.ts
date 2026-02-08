@@ -514,8 +514,9 @@ export class MarshmallowConfigService {
     }
 
     try {
-      // Query TXT records for the domain
-      const records = await dns.resolveTxt(config.customDomain);
+      // Query TXT records for the _tcrn-verify subdomain
+      const verifyDomain = `_tcrn-verify.${config.customDomain}`;
+      const records = await dns.resolveTxt(verifyDomain);
       const flatRecords = records.flat();
       
       const expectedRecord = `tcrn-verify=${config.customDomainVerificationToken}`;

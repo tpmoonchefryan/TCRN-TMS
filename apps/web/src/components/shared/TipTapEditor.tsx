@@ -36,6 +36,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   className,
 }) => {
   const editor = useEditor({
+    immediatelyRender: false, // Fix SSR hydration mismatch in Next.js
     extensions: [
       StarterKit.configure({
         heading: {

@@ -46,9 +46,15 @@ export class HomepageService {
   async getOrCreate(talentId: string, tenantSchema: string): Promise<HomepageResponse> {
     const prisma = this.databaseService.getPrisma();
 
-    // First check if talent exists in the tenant schema
-    const talent = await prisma.$queryRawUnsafe<Array<{ id: string; homepagePath: string | null }>>(`
-      SELECT id, homepage_path as "homepagePath"
+    // First check if talent exists in the tenant schema - also get domain info from talent table
+    const talent = await prisma.$queryRawUnsafe<Array<{ 
+      id: string; 
+      homepagePath: string | null;
+      customDomain: string | null;
+      customDomainVerified: boolean;
+    }>>(`
+      SELECT id, homepage_path as "homepagePath",
+             custom_domain as "customDomain", custom_domain_verified as "customDomainVerified"
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
     `, talentId);
@@ -62,15 +68,13 @@ export class HomepageService {
 
     const talentRecord = talent[0];
 
-    // Query homepage using raw SQL with tenant schema
+    // Query homepage using raw SQL with tenant schema (domain info now from talent table)
     const homepages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       talentId: string;
       isPublished: boolean;
       publishedVersionId: string | null;
       draftVersionId: string | null;
-      customDomain: string | null;
-      customDomainVerified: boolean;
       seoTitle: string | null;
       seoDescription: string | null;
       ogImageUrl: string | null;
@@ -83,7 +87,6 @@ export class HomepageService {
       SELECT 
         id, talent_id as "talentId", is_published as "isPublished",
         published_version_id as "publishedVersionId", draft_version_id as "draftVersionId",
-        custom_domain as "customDomain", custom_domain_verified as "customDomainVerified",
         seo_title as "seoTitle", seo_description as "seoDescription",
         og_image_url as "ogImageUrl", analytics_id as "analyticsId",
         theme, created_at as "createdAt", updated_at as "updatedAt", version
@@ -103,7 +106,6 @@ export class HomepageService {
         RETURNING 
           id, talent_id as "talentId", is_published as "isPublished",
           published_version_id as "publishedVersionId", draft_version_id as "draftVersionId",
-          custom_domain as "customDomain", custom_domain_verified as "customDomainVerified",
           seo_title as "seoTitle", seo_description as "seoDescription",
           og_image_url as "ogImageUrl", analytics_id as "analyticsId",
           theme, created_at as "createdAt", updated_at as "updatedAt", version
@@ -129,8 +131,8 @@ export class HomepageService {
       isPublished: homepage.isPublished,
       publishedVersion,
       draftVersion,
-      customDomain: homepage.customDomain,
-      customDomainVerified: homepage.customDomainVerified,
+      customDomain: talentRecord.customDomain,
+      customDomainVerified: talentRecord.customDomainVerified,
       seoTitle: homepage.seoTitle,
       seoDescription: homepage.seoDescription,
       ogImageUrl: homepage.ogImageUrl,
@@ -270,14 +272,14 @@ export class HomepageService {
     const prisma = this.databaseService.getPrisma();
     const tenantSchema = context.tenantSchema ?? '';
 
-    // Get homepage and talent info
+    // Get homepage and talent info (customDomain now from talent table)
     const homepages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       draftVersionId: string | null;
       customDomain: string | null;
       homepagePath: string | null;
     }>>(`
-      SELECT h.id, h.draft_version_id as "draftVersionId", h.custom_domain as "customDomain", t.homepage_path as "homepagePath"
+      SELECT h.id, h.draft_version_id as "draftVersionId", t.custom_domain as "customDomain", t.homepage_path as "homepagePath"
       FROM "${tenantSchema}".talent_homepage h
       JOIN "${tenantSchema}".talent t ON t.id = h.talent_id
       WHERE h.talent_id = $1::uuid
@@ -362,13 +364,13 @@ export class HomepageService {
     const prisma = this.databaseService.getPrisma();
     const tenantSchema = context.tenantSchema ?? '';
 
-    // Get homepage and talent info
+    // Get homepage and talent info (customDomain now from talent table)
     const homepages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       customDomain: string | null;
       homepagePath: string | null;
     }>>(`
-      SELECT h.id, h.custom_domain as "customDomain", t.homepage_path as "homepagePath"
+      SELECT h.id, t.custom_domain as "customDomain", t.homepage_path as "homepagePath"
       FROM "${tenantSchema}".talent_homepage h
       JOIN "${tenantSchema}".talent t ON t.id = h.talent_id
       WHERE h.talent_id = $1::uuid
@@ -419,20 +421,17 @@ export class HomepageService {
     const prisma = this.databaseService.getPrisma();
     const tenantSchema = context.tenantSchema ?? '';
 
-    // Get homepage
+    // Get homepage (domain info removed - now managed via TalentDomainService)
     const homepages = await prisma.$queryRawUnsafe<Array<{
       id: string;
       seoTitle: string | null;
       seoDescription: string | null;
       ogImageUrl: string | null;
       analyticsId: string | null;
-      customDomain: string | null;
-      customDomainVerified: boolean;
       version: number;
     }>>(`
       SELECT id, seo_title as "seoTitle", seo_description as "seoDescription",
-             og_image_url as "ogImageUrl", analytics_id as "analyticsId",
-             custom_domain as "customDomain", custom_domain_verified as "customDomainVerified", version
+             og_image_url as "ogImageUrl", analytics_id as "analyticsId", version
       FROM "${tenantSchema}".talent_homepage
       WHERE talent_id = $1::uuid
     `, talentId);
@@ -501,20 +500,7 @@ export class HomepageService {
       });
     }
 
-    // Verify custom domain uniqueness
-    if (dto.customDomain) {
-      const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
-        SELECT id FROM "${tenantSchema}".talent_homepage
-        WHERE custom_domain = $1 AND id != $2::uuid
-      `, dto.customDomain, homepage.id);
 
-      if (existing.length > 0) {
-        throw new ConflictException({
-          code: ErrorCodes.RES_ALREADY_EXISTS,
-          message: 'Domain already in use',
-        });
-      }
-    }
 
     // Track old/new values for change log
     const oldValue: Record<string, unknown> = {};
@@ -536,37 +522,19 @@ export class HomepageService {
       oldValue.analyticsId = homepage.analyticsId;
       newValue.analyticsId = dto.analyticsId;
     }
-    if (dto.customDomain !== undefined) {
-      oldValue.customDomain = homepage.customDomain;
-      // Normalization: Treat empty string as null
-      newValue.customDomain = dto.customDomain || null;
-    }
     if (dto.homepagePath !== undefined) {
        // Note: homepagePath is on Talent, but we log it here for completeness
        newValue.homepagePath = dto.homepagePath;
     }
 
-    // Update homepage
-    const newCustomDomain = dto.customDomain !== undefined 
-      ? (dto.customDomain || null) 
-      : homepage.customDomain;
-      
-    // If custom domain changed, reset verification
-    const customDomainVerified = newCustomDomain !== homepage.customDomain ? false : homepage.customDomainVerified;
-
-    // Note: setCustomDomain logic clears token and verification. We should probably mirror that here or rely on setCustomDomain.
-    // However, updateSettings is often used for SEO, so we should be careful about side-effects on domain.
-    // Since we are creating a sql string, if we want to clear token we need to add it to SET list.
-    // For now, let's just match the previous behavior but fix the empty string issue.
-    
+    // Update homepage (domain management removed - now via TalentDomainService)
     await prisma.$queryRawUnsafe(`
       UPDATE "${tenantSchema}".talent_homepage
       SET seo_title = $2, seo_description = $3, og_image_url = $4, analytics_id = $5,
-          custom_domain = $6, custom_domain_verified = $7, version = version + 1, updated_at = now()
+          version = version + 1, updated_at = now()
       WHERE id = $1::uuid
     `, homepage.id, dto.seoTitle ?? homepage.seoTitle, dto.seoDescription ?? homepage.seoDescription,
-       dto.ogImageUrl ?? homepage.ogImageUrl, dto.analyticsId ?? homepage.analyticsId,
-       newCustomDomain, customDomainVerified);
+       dto.ogImageUrl ?? homepage.ogImageUrl, dto.analyticsId ?? homepage.analyticsId);
 
     // Record change log
     await prisma.$queryRawUnsafe(`
@@ -635,155 +603,9 @@ private calculateHash(content: HomepageContent, theme?: ThemeConfig | null): str
     .update(JSON.stringify({ content, theme: theme ?? null }))
     .digest('hex');
 }
-  /**
-   * Generate domain verification token
-   */
-  async generateVerificationToken(
-    talentId: string,
-    context: RequestContext,
-  ): Promise<{ token: string; txtRecord: string }> {
-    const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema ?? '';
-
-    // Generate random token
-    const token = crypto.randomBytes(32).toString('hex');
-    const txtRecord = `tcrn-verify=${token}`;
-
-    // Store token in database
-    await prisma.$queryRawUnsafe(`
-      UPDATE "${tenantSchema}".talent_homepage
-      SET custom_domain_verification_token = $2, updated_at = now()
-      WHERE talent_id = $1::uuid
-    `, talentId, token);
-
-    return { token, txtRecord };
-  }
-
-  /**
-   * Verify custom domain by checking DNS TXT record
-   */
-  async verifyCustomDomain(
-    talentId: string,
-    context: RequestContext,
-  ): Promise<{ verified: boolean; message: string }> {
-    const { promises: dns } = await import('dns');
-    const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema ?? '';
-
-    // Get homepage with domain info
-    const homepages = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      customDomain: string | null;
-      customDomainVerificationToken: string | null;
-    }>>(`
-      SELECT id, custom_domain as "customDomain", 
-             custom_domain_verification_token as "customDomainVerificationToken"
-      FROM "${tenantSchema}".talent_homepage
-      WHERE talent_id = $1::uuid
-    `, talentId);
-
-    const homepage = homepages[0];
-    if (!homepage) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Homepage not found',
-      });
-    }
-
-    if (!homepage.customDomain) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'No custom domain set',
-      });
-    }
-
-    if (!homepage.customDomainVerificationToken) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'No verification token generated. Please generate a token first.',
-      });
-    }
-
-    try {
-      // Query TXT records for the domain
-      const records = await dns.resolveTxt(homepage.customDomain);
-      const flatRecords = records.flat();
-      
-      const expectedRecord = `tcrn-verify=${homepage.customDomainVerificationToken}`;
-      const found = flatRecords.some(record => record === expectedRecord);
-
-      if (found) {
-        // Update verification status
-        await prisma.$queryRawUnsafe(`
-          UPDATE "${tenantSchema}".talent_homepage
-          SET custom_domain_verified = true, updated_at = now()
-          WHERE id = $1::uuid
-        `, homepage.id);
-
-        return { verified: true, message: 'Domain verified successfully' };
-      } else {
-        return { 
-          verified: false, 
-          message: `TXT record not found. Expected: ${expectedRecord}` 
-        };
-      }
-    } catch (error) {
-      this.logger.warn(`DNS verification failed for ${homepage.customDomain}: ${error}`);
-      return { 
-        verified: false, 
-        message: 'DNS lookup failed. Please ensure the TXT record is properly configured.' 
-      };
-    }
-  }
-
-  /**
-   * Set custom domain for homepage
-   */
-  async setCustomDomain(
-    talentId: string,
-    customDomain: string | null,
-    context: RequestContext,
-  ): Promise<{ customDomain: string | null; token: string | null; txtRecord: string | null }> {
-    const prisma = this.databaseService.getPrisma();
-    const tenantSchema = context.tenantSchema ?? '';
-
-    // Ensure homepage exists
-    const homepage = await this.getOrCreate(talentId, tenantSchema);
-    if (!homepage) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Homepage not found',
-      });
-    }
-
-    if (!customDomain) {
-      // Remove custom domain
-      await prisma.$queryRawUnsafe(`
-        UPDATE "${tenantSchema}".talent_homepage
-        SET custom_domain = NULL, 
-            custom_domain_verified = false, 
-            custom_domain_verification_token = NULL,
-            updated_at = now()
-        WHERE talent_id = $1::uuid
-      `, talentId);
-      return { customDomain: null, token: null, txtRecord: null };
-    }
-
-    // Generate verification token
-    const token = crypto.randomBytes(32).toString('hex');
-    const txtRecord = `tcrn-verify=${token}`;
-
-    // Update homepage with new domain and token
-    await prisma.$queryRawUnsafe(`
-      UPDATE "${tenantSchema}".talent_homepage
-      SET custom_domain = $2, 
-          custom_domain_verified = false, 
-          custom_domain_verification_token = $3,
-          updated_at = now()
-      WHERE talent_id = $1::uuid
-    `, talentId, customDomain.toLowerCase(), token);
-
-    return { customDomain: customDomain.toLowerCase(), token, txtRecord };
-  }
+  // Domain management methods removed - now handled by TalentDomainService
+  // See: talent-domain.service.ts for setCustomDomain, generateVerificationToken, verifyDomain
 }
+
+
 

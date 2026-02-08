@@ -36,7 +36,7 @@ export const ProfileCard: React.FC<ProfileCardRendererProps> = (props) => {
   return (
     <div className={cn("flex flex-col items-center text-center p-6 gap-4", className)}>
       <Avatar className={cn("w-24 h-24 border-4 border-[var(--hp-card-bg)] shadow-md", avatarClass)}>
-        <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" />
+        <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" referrerPolicy="no-referrer" />
         <AvatarFallback className="text-2xl uppercase bg-[var(--hp-primary)] text-white">
           {displayName.slice(0, 2)}
         </AvatarFallback>

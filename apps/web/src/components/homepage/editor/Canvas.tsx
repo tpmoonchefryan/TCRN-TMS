@@ -22,6 +22,7 @@ import {
     SortableContext,
     sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
+import { motion } from 'framer-motion';
 import { NextIntlClientProvider } from 'next-intl';
 import React, { useState } from 'react';
 
@@ -281,6 +282,178 @@ export function Canvas() {
         }}
         onClick={() => selectComponent(null)}
       >
+        {/* Background Decorations - Using Framer Motion */}
+        {theme.decorations?.type === 'dots' && (
+          <motion.div 
+            className="absolute inset-0 pointer-events-none opacity-[0.2]"
+            style={{ 
+              backgroundImage: `radial-gradient(${theme.decorations.color || '#000000'}20 2px, transparent 2px)`,
+              backgroundSize: (() => {
+                const density = theme.decorations.density || 'medium';
+                const size = density === 'low' ? '40px' : density === 'high' ? '10px' : '20px';
+                return `${size} ${size}`;
+              })(),
+              zIndex: 0
+            }}
+            animate={{
+              backgroundPosition: (() => {
+                const density = theme.decorations.density || 'medium';
+                const sizeVal = density === 'low' ? 40 : density === 'high' ? 10 : 20;
+                const angle = theme.decorations.scrollAngle ?? 135;
+                const rad = (angle * Math.PI) / 180;
+                const dx = Math.round(Math.sin(rad)) * sizeVal;
+                const dy = Math.round(Math.cos(rad) * -1) * sizeVal;
+                return ["0px 0px", `${dx}px ${dy}px`];
+              })()
+            }}
+            transition={{
+              repeat: Infinity,
+              repeatType: theme.decorations.scrollMode === 'alternate' ? 'reverse' : 'loop',
+              duration: (() => {
+                const speed = theme.decorations.speed || 'normal';
+                return speed === 'slow' ? 10 : speed === 'fast' ? 1 : 3;
+              })(),
+              ease: "linear"
+            }}
+          />
+        )}
+        
+        {theme.decorations?.type === 'grid' && (
+          <motion.div 
+            className="absolute inset-0 pointer-events-none opacity-[0.15]"
+            style={{ 
+              backgroundImage: `linear-gradient(${theme.decorations.color || '#000000'}15 1px, transparent 1px), linear-gradient(90deg, ${theme.decorations.color || '#000000'}15 1px, transparent 1px)`,
+              backgroundSize: (() => {
+                const density = theme.decorations.density || 'medium';
+                const size = density === 'low' ? '60px' : density === 'high' ? '15px' : '30px';
+                return `${size} ${size}`;
+              })(),
+              zIndex: 0
+            }}
+            animate={{
+              backgroundPosition: (() => {
+                const density = theme.decorations.density || 'medium';
+                const sizeVal = density === 'low' ? 60 : density === 'high' ? 15 : 30;
+                const angle = theme.decorations.scrollAngle ?? 135;
+                const rad = (angle * Math.PI) / 180;
+                const dx = Math.round(Math.sin(rad)) * sizeVal;
+                const dy = Math.round(Math.cos(rad) * -1) * sizeVal;
+                return ["0px 0px", `${dx}px ${dy}px`];
+              })()
+            }}
+            transition={{
+              repeat: Infinity,
+              repeatType: theme.decorations.scrollMode === 'alternate' ? 'reverse' : 'loop',
+              duration: (() => {
+                const speed = theme.decorations.speed || 'normal';
+                return speed === 'slow' ? 10 : speed === 'fast' ? 1 : 3;
+              })(),
+              ease: "linear"
+            }}
+          />
+        )}
+
+        {theme.decorations?.type === 'text' && theme.decorations.text && (
+          <motion.div 
+            className="absolute inset-0 pointer-events-none"
+            style={{ 
+              backgroundImage: (() => {
+                const d = theme.decorations;
+                const color = (d.color || '#000000').replace('#', '%23');
+                const opacity = 0.1;
+                const fontSize = d.fontSize || 24;
+                const fontFamily = d.fontFamily || 'system-ui';
+                const fontWeight = d.fontWeight || 'normal';
+                const rotation = d.rotation ?? -45;
+                const textDecoration = d.textDecoration || 'none';
+                
+                const density = d.density || 'medium';
+                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+                
+                const textLen = d.text?.length || 1;
+                const estTextWidth = textLen * (fontSize as number); 
+                const size = estTextWidth + basePadding;
+                
+                const svgWidth = size;
+                const svgHeight = size;
+
+                const svg = `
+                  <svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}'>
+                    <text 
+                      x='50%' 
+                      y='50%' 
+                      font-family='${fontFamily}' 
+                      font-size='${fontSize}' 
+                      font-weight='${fontWeight}' 
+                      text-decoration='${textDecoration}'
+                      fill='${color}' 
+                      fill-opacity='${opacity}' 
+                      text-anchor='middle' 
+                      dominant-baseline='middle' 
+                      transform='rotate(${rotation}, ${svgWidth/2}, ${svgHeight/2})'
+                    >
+                      ${d.text}
+                    </text>
+                  </svg>
+                `.trim().replace(/\s+/g, ' ');
+                
+                const url = `url("data:image/svg+xml,${svg}")`;
+                return d.scrollMode === 'alternate' ? `${url}, ${url}` : url;
+              })(),
+              backgroundSize: (() => {
+                const d = theme.decorations;
+                const density = d.density || 'medium';
+                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+                const fontSize = d.fontSize || 24;
+                const textLen = d.text?.length || 1;
+                const estTextWidth = textLen * (fontSize as number);
+                const size = estTextWidth + basePadding;
+                
+                return `${size}px ${size}px`;
+              })(),
+              zIndex: 0
+            }}
+            animate={{
+              backgroundPosition: (() => {
+                const d = theme.decorations;
+                const density = d.density || 'medium';
+                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+                const fontSize = d.fontSize || 24;
+                const textLen = d.text?.length || 1;
+                const estTextWidth = textLen * (fontSize as number);
+                const sizeVal = estTextWidth + basePadding;
+
+                const angle = d.scrollAngle ?? 135;
+                const isAlternate = d.scrollMode === 'alternate';
+                
+                const loopSize = sizeVal;
+                const rad = (angle * Math.PI) / 180;
+                
+                const dx = Math.round(Math.sin(rad)) * loopSize;
+                const dy = Math.round(Math.cos(rad) * -1) * loopSize;
+                
+                if (isAlternate) {
+                  const half = sizeVal / 2;
+                  return [
+                    `0px 0px, ${half}px ${half}px`, 
+                    `${dx}px ${dy}px, ${half + dx}px ${half + dy}px`
+                  ];
+                }
+                
+                return ["0px 0px", `${dx}px ${dy}px`];
+              })()
+            }}
+            transition={{
+              repeat: Infinity,
+              repeatType: 'loop', 
+              duration: (() => {
+                const speed = theme.decorations.speed || 'normal';
+                return speed === 'slow' ? 40 : speed === 'fast' ? 5 : 20;
+              })(),
+              ease: "linear"
+            }}
+          />
+        )}
         <div 
           ref={containerRef}
           className={cn(

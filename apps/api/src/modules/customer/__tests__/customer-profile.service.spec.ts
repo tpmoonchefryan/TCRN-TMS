@@ -18,7 +18,7 @@ describe('CustomerProfileService', () => {
   let service: CustomerProfileService;
   let module: TestingModule;
   let testTalentId: string | null = null;
-  let testCustomerId: string | null = null;
+  const testCustomerId: string | null = null;
 
   const mockContext: RequestContext = {
     tenantId: 'tenant-test',

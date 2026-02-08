@@ -120,42 +120,10 @@ export class HomepageController {
     return this.homepageService.updateSettings(talentId, dto, context);
   }
 
-  // =========================================================================
-  // Domain Verification
-  // =========================================================================
 
-  /**
-   * Set custom domain
-   */
-  @Post('domain')
-  @RequirePermissions({ resource: 'talent.homepage', action: 'update' })
-  @ApiOperation({ summary: 'Set custom domain for homepage' })
-  @ApiResponse({ status: 200, description: 'Custom domain set with verification token' })
-  async setCustomDomain(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: { customDomain: string | null },
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    const context = this.buildContext(user, req);
-    return this.homepageService.setCustomDomain(talentId, dto.customDomain, context);
-  }
+  // Domain management routes removed - now handled by TalentDomainService
+  // See: /talents/:talentId/custom-domain endpoints
 
-  /**
-   * Verify custom domain
-   */
-  @Post('verify-domain')
-  @RequirePermissions({ resource: 'talent.homepage', action: 'update' })
-  @ApiOperation({ summary: 'Verify custom domain DNS configuration' })
-  @ApiResponse({ status: 200, description: 'Domain verification result' })
-  async verifyCustomDomain(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    const context = this.buildContext(user, req);
-    return this.homepageService.verifyCustomDomain(talentId, context);
-  }
 
   // =========================================================================
   // Version Management

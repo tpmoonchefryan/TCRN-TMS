@@ -6,7 +6,6 @@ import {
     AlertCircle,
     ArrowLeft,
     BookOpen,
-    CheckCircle2,
     Copy,
     Database,
     Edit,
@@ -14,7 +13,6 @@ import {
     Globe,
     Image,
     Layers,
-    Link as LinkIcon,
     Loader2,
     Lock,
     MessageSquareHeart,
@@ -25,7 +23,7 @@ import {
     Settings,
     Shield,
     Sparkles,
-    Trash2,
+    Trash2
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -36,6 +34,7 @@ import { BlocklistManager } from '@/components/security/BlocklistManager';
 import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
 import { CustomDomainDialog } from '@/components/settings/CustomDomainDialog';
 import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
+import { UnifiedCustomDomainCard } from '@/components/settings/UnifiedCustomDomainCard';
 import {
     CONFIG_ENTITY_TYPES,
     ConfigEntity,
@@ -563,165 +562,12 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
               </CardContent>
             </Card>
 
-            {/* External Pages Domain Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{tTalent('externalPagesDomain')}</CardTitle>
-                <CardDescription>{tTalent('externalPagesDomainDesc')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Homepage Path */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Globe size={14} /> {tTalent('homepagePath')}
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center px-3 bg-slate-100 dark:bg-slate-800 rounded-l-md border border-r-0 text-sm text-muted-foreground">
-                      /p/
-                    </div>
-                    <Input
-                      value={talent.homepagePath}
-                      onChange={(e) => setTalent({ ...talent, homepagePath: e.target.value })}
-                      className="rounded-l-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Homepage Domain Settings */}
-                <div className="p-4 border rounded-lg space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Globe size={16} /> {tTalent('homepageDomain')}
-                  </h4>
-                  
-                  {/* Homepage System Subdomain */}
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">{tTalent('systemSubdomain')}</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={`${talent.code?.toLowerCase() || 'talent'}.p.tcrn.app`}
-                        readOnly
-                        className="bg-muted text-muted-foreground"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://${talent.code?.toLowerCase() || 'talent'}.p.tcrn.app`);
-                          toast.success(tTalent('copiedToClipboard'));
-                        }}
-                      >
-                        <Copy size={14} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Homepage Custom Domain */}
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                      <LinkIcon size={14} /> {tTalent('customDomain')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      {talent.externalPagesDomain.homepage?.customDomain ? (
-                        <>
-                          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-muted rounded-md text-sm">
-                            {talent.externalPagesDomain.homepage.customDomainVerified ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />
-                            )}
-                            <span className="truncate">{talent.externalPagesDomain.homepage.customDomain}</span>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setHomepageDomainDialogOpen(true)}
-                          >
-                            <Edit size={14} className="mr-1" />
-                            {tTalent('editCustomDomain')}
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          onClick={() => setHomepageDomainDialogOpen(true)}
-                        >
-                          <Plus size={14} className="mr-1" />
-                          {tTalent('addCustomDomain')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Marshmallow Domain Settings */}
-                <div className="p-4 border rounded-lg space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <MessageSquareHeart size={16} /> {tTalent('marshmallowDomain')}
-                  </h4>
-                  
-                  {/* Marshmallow System Subdomain */}
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">{tTalent('systemSubdomain')}</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={`${talent.code?.toLowerCase() || 'talent'}.m.tcrn.app`}
-                        readOnly
-                        className="bg-muted text-muted-foreground"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://${talent.code?.toLowerCase() || 'talent'}.m.tcrn.app`);
-                          toast.success(tTalent('copiedToClipboard'));
-                        }}
-                      >
-                        <Copy size={14} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Marshmallow Custom Domain */}
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                      <LinkIcon size={14} /> {tTalent('customDomain')}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      {talent.externalPagesDomain.marshmallow?.customDomain ? (
-                        <>
-                          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-muted rounded-md text-sm">
-                            {talent.externalPagesDomain.marshmallow.customDomainVerified ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />
-                            )}
-                            <span className="truncate">{talent.externalPagesDomain.marshmallow.customDomain}</span>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMarshmallowDomainDialogOpen(true)}
-                          >
-                            <Edit size={14} className="mr-1" />
-                            {tTalent('editCustomDomain')}
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          onClick={() => setMarshmallowDomainDialogOpen(true)}
-                        >
-                          <Plus size={14} className="mr-1" />
-                          {tTalent('addCustomDomain')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground">{tTalent('systemSubdomainDesc')}</p>
-              </CardContent>
-            </Card>
+            {/* Unified Custom Domain Card */}
+            <UnifiedCustomDomainCard
+              talentId={talentId}
+              talentCode={talent.code}
+              onDomainChange={fetchTalent}
+            />
 
             {/* Social Links Card */}
             <Card>
