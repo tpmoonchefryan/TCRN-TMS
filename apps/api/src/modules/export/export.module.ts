@@ -4,7 +4,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 
 import { QUEUE_NAMES } from '../queue';
-
 import { ExportController } from './controllers/export.controller';
 import { ExportJobService } from './services/export-job.service';
 

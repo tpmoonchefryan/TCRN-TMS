@@ -1,14 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { 
-  ThemeCard, 
-  ThemeConfig, 
-  ThemePreset, 
-  ThemeTypography,
   ThemeBackground,
+  ThemeCard, 
   ThemeColors,
-  ThemeDecoration
-} from './schema';
+  ThemeConfig, 
+  ThemeDecoration,
+  ThemePreset, 
+  ThemeTypography} from './schema';
 
 export const THEME_PRESETS: Record<ThemePreset, ThemeConfig> = {
   [ThemePreset.DEFAULT]: {

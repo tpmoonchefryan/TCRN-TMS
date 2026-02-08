@@ -1,12 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { createHash, randomUUID } from 'crypto';
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
+import { createHash, randomUUID } from 'crypto';
 
 /**
  * JWT Access Token Payload

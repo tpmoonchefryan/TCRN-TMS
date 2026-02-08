@@ -2,7 +2,7 @@
 
 import { NotFoundException } from '@nestjs/common';
 import type { RequestContext } from '@tcrn/shared';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
 import { MfrReportService } from '../mfr-report.service';

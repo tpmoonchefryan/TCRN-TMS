@@ -8,7 +8,6 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
 // DTO for query parameters

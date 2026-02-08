@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { PrismaClient, Prisma } from '.prisma/pii-client';
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject,Injectable } from '@nestjs/common';
+
+import { Prisma,PrismaClient } from '.prisma/pii-client';
 
 export interface AuditLogData {
   profileId: string;

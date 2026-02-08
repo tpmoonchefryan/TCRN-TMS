@@ -1,18 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+// Self-hosted fonts (PRD §5 可商用字体 - OFL-1.1 licensed)
+import '@/styles/globals.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/noto-sans-jp';
+import '@fontsource-variable/noto-sans-sc';
+
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { Toaster } from 'sonner';
 
 import { StagingBanner } from '@/components/staging-banner';
-
-// Self-hosted fonts (PRD §5 可商用字体 - OFL-1.1 licensed)
-import '@fontsource-variable/inter';
-import '@fontsource-variable/noto-sans-sc';
-import '@fontsource-variable/noto-sans-jp';
-
-import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'TCRN TMS - Talent Management System',
@@ -34,7 +33,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <StagingBanner />
-          <main>{children}</main>
+          <main suppressHydrationWarning>{children}</main>
           <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
       </body>

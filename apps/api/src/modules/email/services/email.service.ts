@@ -7,7 +7,6 @@ import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '../../queue/queue.module';
 import type { SendEmailDto } from '../dto/send-email.dto';
 import type { EmailJobData } from '../interfaces/email.interface';
-
 import { EmailTemplateService } from './email-template.service';
 
 @Injectable()

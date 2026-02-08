@@ -116,7 +116,10 @@ yarn.lock
 .context/*
 technical_readme.md
 tech_readme.md
-.agent/rules/*
+.agent/*
+.agents/*
+.gitignore
+.cursor/*
 
 # Upgrade documentation (temporary)
 UPGRADE-*.md

@@ -7,12 +7,12 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
-import { Button } from './button';
-
 import { userApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/utils/gravatar';
+
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Button } from './button';
 
 
 interface AvatarUploadProps {

@@ -130,4 +130,4 @@ export async function checkDatabaseConnection(): Promise<boolean> {
   }
 }
 
-export { PrismaClient, Prisma } from '@prisma/client';
+export { Prisma,PrismaClient } from '@prisma/client';

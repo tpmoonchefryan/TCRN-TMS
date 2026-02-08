@@ -6,6 +6,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default [
   // 全局忽略
@@ -22,6 +23,14 @@ export default [
       // Integration tests (not in tsconfig)
       'apps/api/test/**',
       'apps/pii-service/test/**',
+      // Web test files (migrated from .eslintignore)
+      'apps/web/vitest.config.ts',
+      'apps/web/vitest.setup.ts',
+      'apps/web/**/*.spec.ts',
+      'apps/web/**/*.spec.tsx',
+      'apps/web/**/*.test.ts',
+      'apps/web/**/*.test.tsx',
+      'apps/web/src/components/__tests__/**',
     ],
   },
 
@@ -72,6 +81,7 @@ export default [
     plugins: {
       '@typescript-eslint': tseslint,
       import: importPlugin,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       ...eslint.configs.recommended.rules,
@@ -91,6 +101,8 @@ export default [
 
       // Import 规则
       'import/order': 'off',
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
 
       // 通用规则
       'no-console': ['warn', { allow: ['warn', 'error'] }],

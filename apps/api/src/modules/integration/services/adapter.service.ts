@@ -7,7 +7,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
-import { ErrorCodes, LogSeverity, TechEventType, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, type RequestContext,TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService, TechEventLogService } from '../../log';
@@ -19,7 +19,6 @@ import {
     UpdateAdapterConfigsDto,
     UpdateAdapterDto
 } from '../dto/integration.dto';
-
 import { AdapterCryptoService } from './adapter-crypto.service';
 
 // Config keys that should be encrypted

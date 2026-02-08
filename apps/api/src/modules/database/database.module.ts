@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Global, Logger, Module, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { prisma, disconnectPrisma } from '@tcrn/database';
+import { Global, Logger, Module, OnModuleDestroy,OnModuleInit } from '@nestjs/common';
+import { disconnectPrisma,prisma } from '@tcrn/database';
 
 import { DatabaseService } from './database.service';
 

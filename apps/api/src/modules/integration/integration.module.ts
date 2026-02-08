@@ -7,8 +7,8 @@ import { ApiKeyGuard } from './guards';
 import {
   AdapterCryptoService,
   AdapterService,
-  WebhookService,
   ApiKeyService,
+  WebhookService,
 } from './services';
 
 @Module({

@@ -8,9 +8,30 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { SystemDictionary } from '@/components/admin/system-dictionary';
+import { RateLimitStats } from '@/components/security/RateLimitStats';
 import { EmailConfigPanel } from '@/components/settings/EmailConfigPanel';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { platformConfigApi } from '@/lib/api/client';
+
+// Config keys for platform settings
+const CONFIG_KEYS = {
+  baseDomain: 'system.baseDomain',
+  platformName: 'system.platformName',
+  supportEmail: 'system.supportEmail',
+  adminEmail: 'system.adminEmail',
+  sessionTimeout: 'security.sessionTimeout',
+  maxLoginAttempts: 'security.maxLoginAttempts',
+  logRetention: 'data.logRetention',
+} as const;
+
+interface PlatformSettings {
+  platformName: string;
+  supportEmail: string;
+  adminEmail: string;
+  sessionTimeout: number;
+  maxLoginAttempts: number;
+  logRetention: number;
+}
 
 export default function PlatformSettingsPage() {
   const t = useTranslations('adminConsole.settings');
@@ -22,29 +43,126 @@ export default function PlatformSettingsPage() {
   const [isDomainLoading, setIsDomainLoading] = useState(true);
   const [isDomainSaving, setIsDomainSaving] = useState(false);
 
-  // Load domain setting
-  const loadDomainSetting = useCallback(async () => {
+  // Platform settings state
+  const [settings, setSettings] = useState<PlatformSettings>({
+    platformName: 'TCRN TMS',
+    supportEmail: 'support@tcrn-tms.com',
+    adminEmail: 'admin@tcrn-tms.com',
+    sessionTimeout: 30,
+    maxLoginAttempts: 5,
+    logRetention: 90,
+  });
+  const [originalSettings, setOriginalSettings] = useState<PlatformSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load all settings
+  const loadSettings = useCallback(async () => {
     try {
+      setIsLoading(true);
       setIsDomainLoading(true);
-      const response = await platformConfigApi.get('system.baseDomain');
-      if (response.success && response.data?.value) {
-        const domainConfig = response.data.value as { domain?: string };
+      
+      // Load all settings in parallel
+      const [
+        domainRes,
+        platformNameRes,
+        supportEmailRes,
+        adminEmailRes,
+        sessionTimeoutRes,
+        maxLoginAttemptsRes,
+        logRetentionRes,
+      ] = await Promise.all([
+        platformConfigApi.get(CONFIG_KEYS.baseDomain),
+        platformConfigApi.get(CONFIG_KEYS.platformName),
+        platformConfigApi.get(CONFIG_KEYS.supportEmail),
+        platformConfigApi.get(CONFIG_KEYS.adminEmail),
+        platformConfigApi.get(CONFIG_KEYS.sessionTimeout),
+        platformConfigApi.get(CONFIG_KEYS.maxLoginAttempts),
+        platformConfigApi.get(CONFIG_KEYS.logRetention),
+      ]);
+
+      // Extract domain
+      if (domainRes.success && domainRes.data?.value) {
+        const domainConfig = domainRes.data.value as { domain?: string };
         if (domainConfig.domain) {
           setSystemBaseDomain(domainConfig.domain);
         }
       }
+
+      // Build settings object
+      const loadedSettings: PlatformSettings = {
+        platformName: (platformNameRes.data?.value as string) || 'TCRN TMS',
+        supportEmail: (supportEmailRes.data?.value as string) || 'support@tcrn-tms.com',
+        adminEmail: (adminEmailRes.data?.value as string) || 'admin@tcrn-tms.com',
+        sessionTimeout: (sessionTimeoutRes.data?.value as number) || 30,
+        maxLoginAttempts: (maxLoginAttemptsRes.data?.value as number) || 5,
+        logRetention: (logRetentionRes.data?.value as number) || 90,
+      };
+
+      setSettings(loadedSettings);
+      setOriginalSettings(loadedSettings);
     } catch {
-      // Use default if not found
+      // Use defaults on error
     } finally {
+      setIsLoading(false);
       setIsDomainLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadDomainSetting();
-  }, [loadDomainSetting]);
+    loadSettings();
+  }, [loadSettings]);
 
-  // Save domain setting
+  // Check if settings have changed
+  const hasChanges = originalSettings && (
+    settings.platformName !== originalSettings.platformName ||
+    settings.supportEmail !== originalSettings.supportEmail ||
+    settings.adminEmail !== originalSettings.adminEmail ||
+    settings.sessionTimeout !== originalSettings.sessionTimeout ||
+    settings.maxLoginAttempts !== originalSettings.maxLoginAttempts ||
+    settings.logRetention !== originalSettings.logRetention
+  );
+
+  // Save all settings
+  const handleSaveSettings = async () => {
+    if (!hasChanges) return;
+    
+    try {
+      setIsSaving(true);
+      
+      // Save changed settings
+      const savePromises: Promise<unknown>[] = [];
+      
+      if (settings.platformName !== originalSettings?.platformName) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.platformName, settings.platformName));
+      }
+      if (settings.supportEmail !== originalSettings?.supportEmail) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.supportEmail, settings.supportEmail));
+      }
+      if (settings.adminEmail !== originalSettings?.adminEmail) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.adminEmail, settings.adminEmail));
+      }
+      if (settings.sessionTimeout !== originalSettings?.sessionTimeout) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.sessionTimeout, settings.sessionTimeout));
+      }
+      if (settings.maxLoginAttempts !== originalSettings?.maxLoginAttempts) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.maxLoginAttempts, settings.maxLoginAttempts));
+      }
+      if (settings.logRetention !== originalSettings?.logRetention) {
+        savePromises.push(platformConfigApi.set(CONFIG_KEYS.logRetention, settings.logRetention));
+      }
+
+      await Promise.all(savePromises);
+      setOriginalSettings({ ...settings });
+      toast.success(tCommon('success'));
+    } catch {
+      toast.error(tCommon('error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Save domain setting (separate button)
   const handleSaveDomain = async () => {
     if (!systemBaseDomain.trim()) {
       toast.error(t('domainRequired') || 'Domain is required');
@@ -60,13 +178,18 @@ export default function PlatformSettingsPage() {
 
     try {
       setIsDomainSaving(true);
-      await platformConfigApi.set('system.baseDomain', { domain: systemBaseDomain.trim().toLowerCase() });
+      await platformConfigApi.set(CONFIG_KEYS.baseDomain, { domain: systemBaseDomain.trim().toLowerCase() });
       toast.success(tCommon('success'));
     } catch {
       toast.error(tCommon('error'));
     } finally {
       setIsDomainSaving(false);
     }
+  };
+
+  // Handle input changes
+  const updateSetting = <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -81,8 +204,16 @@ export default function PlatformSettingsPage() {
           </p>
         </div>
         {activeTab !== 'dictionary' && activeTab !== 'email' && (
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <Save size={16} className="mr-2" />
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={handleSaveSettings}
+            disabled={!hasChanges || isSaving}
+          >
+            {isSaving ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={16} className="mr-2" />
+            )}
             {tCommon('saveChanges')}
           </Button>
         )}
@@ -120,14 +251,30 @@ export default function PlatformSettingsPage() {
                 <CardDescription>Basic platform configuration</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Platform Name</Label>
-                  <Input defaultValue="TCRN TMS" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Support Email</Label>
-                  <Input defaultValue="support@tcrn-tms.com" />
-                </div>
+                {isLoading ? (
+                  <div className="flex items-center gap-2 py-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm text-muted-foreground">{tCommon('loading')}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Platform Name</Label>
+                      <Input
+                        value={settings.platformName}
+                        onChange={(e) => updateSetting('platformName', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Support Email</Label>
+                      <Input
+                        type="email"
+                        value={settings.supportEmail}
+                        onChange={(e) => updateSetting('supportEmail', e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -140,10 +287,21 @@ export default function PlatformSettingsPage() {
                 <CardDescription>Notification preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Admin Email</Label>
-                  <Input defaultValue="admin@tcrn-tms.com" />
-                </div>
+                {isLoading ? (
+                  <div className="flex items-center gap-2 py-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm text-muted-foreground">{tCommon('loading')}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Admin Email</Label>
+                    <Input
+                      type="email"
+                      value={settings.adminEmail}
+                      onChange={(e) => updateSetting('adminEmail', e.target.value)}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -218,14 +376,35 @@ export default function PlatformSettingsPage() {
                 <CardDescription>Security and access settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Session Timeout (minutes)</Label>
-                  <Input type="number" defaultValue="30" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Login Attempts</Label>
-                  <Input type="number" defaultValue="5" />
-                </div>
+                {isLoading ? (
+                  <div className="flex items-center gap-2 py-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm text-muted-foreground">{tCommon('loading')}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Session Timeout (minutes)</Label>
+                      <Input
+                        type="number"
+                        min={5}
+                        max={480}
+                        value={settings.sessionTimeout}
+                        onChange={(e) => updateSetting('sessionTimeout', parseInt(e.target.value) || 30)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Login Attempts</Label>
+                      <Input
+                        type="number"
+                        min={3}
+                        max={20}
+                        value={settings.maxLoginAttempts}
+                        onChange={(e) => updateSetting('maxLoginAttempts', parseInt(e.target.value) || 5)}
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -238,12 +417,30 @@ export default function PlatformSettingsPage() {
                 <CardDescription>Data retention and backup</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Log Retention (days)</Label>
-                  <Input type="number" defaultValue="90" />
-                </div>
+                {isLoading ? (
+                  <div className="flex items-center gap-2 py-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm text-muted-foreground">{tCommon('loading')}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Log Retention (days)</Label>
+                    <Input
+                      type="number"
+                      min={7}
+                      max={365}
+                      value={settings.logRetention}
+                      onChange={(e) => updateSetting('logRetention', parseInt(e.target.value) || 90)}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Rate Limit Stats */}
+          <div className="mt-6">
+            <RateLimitStats />
           </div>
         </TabsContent>
 

@@ -8,6 +8,10 @@ export const LinkButtonSchema = z.object({
   style: z.enum(['solid', 'outline', 'ghost', 'link']).default('solid'),
   icon: z.string().optional(), // Lucide icon name, handled by renderer
   fullWidth: z.boolean().default(true),
+  // New fields
+  hoverEffect: z.enum(['none', 'scale', 'glow', 'lift', 'shake']).default('none'),
+  customColor: z.string().optional(),
+  openInNewTab: z.boolean().default(false),
 });
 
 export type LinkButtonProps = z.infer<typeof LinkButtonSchema>;
@@ -18,4 +22,7 @@ export const defaultProps: LinkButtonProps = {
   style: 'solid',
   icon: undefined,
   fullWidth: true,
+  hoverEffect: 'none',
+  customColor: '',
+  openInNewTab: false,
 };

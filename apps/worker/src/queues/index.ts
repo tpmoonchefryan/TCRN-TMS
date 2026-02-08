@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Queue } from 'bullmq';
 import type { ConnectionOptions } from 'bullmq';
+import { Queue } from 'bullmq';
 
 import { workerLogger as logger } from '../logger';
 
@@ -225,14 +225,14 @@ export async function setupQueues(connection: ConnectionOptions): Promise<void> 
 }
 
 export { 
+  emailQueue,
+  exportQueue,
   importQueue, 
-  reportQueue, 
-  permissionQueue, 
-  membershipRenewalQueue, 
-  logQueue, 
   logCleanupQueue,
+  logQueue, 
+  membershipRenewalQueue, 
+  permissionQueue, 
   piiCleanupQueue, 
   piiHealthCheckQueue,
-  exportQueue,
-  emailQueue,
+  reportQueue, 
 };

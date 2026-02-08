@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 
 import type {
   CreateEmailTemplateDto,
-  UpdateEmailTemplateDto,
   EmailTemplateQueryDto,
+  UpdateEmailTemplateDto,
 } from '../dto/email-template.dto';
 import type { RenderedEmail, SupportedLocale } from '../interfaces/email.interface';
 

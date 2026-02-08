@@ -2,10 +2,10 @@
 
 'use client';
 
+import { TestBlocklistSchema } from '@tcrn/shared';
 import { AlertTriangle, CheckCircle2, Play, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 
 // Local enum to avoid import issues with @tcrn/shared in client components
 const BlocklistPatternType = {
@@ -16,6 +16,7 @@ const BlocklistPatternType = {
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea } from '@/components/ui';
 import { securityApi } from '@/lib/api/client';
+import { useZodForm } from '@/lib/form';
 
 interface PatternTesterProps {
   defaultPattern?: string;
@@ -35,31 +36,32 @@ export function PatternTester({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit } = useForm({
+  const form = useZodForm(TestBlocklistSchema, {
     defaultValues: {
       pattern: defaultPattern,
-      pattern_type: defaultPatternType,
-      test_content: 'This is a test message that might contain badword or spam.',
+      patternType: defaultPatternType as 'keyword' | 'regex' | 'wildcard',
+      testContent: 'This is a test message that might contain badword or spam.',
     },
   });
 
+  const { register, handleSubmit } = form;
+
   // Keep form synced with props if needed, but for now simple state
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onTest = async (data: any) => {
+  const onTest = async (data: { pattern: string; patternType: string; testContent: string }) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { pattern, pattern_type, test_content } = data;
+      const { pattern, patternType, testContent } = data;
       
-      if (!pattern || !test_content) {
+      if (!pattern || !testContent) {
         setResult(null);
         return;
       }
 
       // Call the backend API for pattern testing
-      const response = await securityApi.testBlocklistPattern(test_content, pattern, pattern_type);
+      const response = await securityApi.testBlocklistPattern(testContent, pattern, patternType);
       
       if (response.success && response.data) {
         const apiResult = response.data;
@@ -72,28 +74,28 @@ export function PatternTester({
           // Fallback: build highlighting client-side
           try {
             let regex: RegExp | null = null;
-            if (pattern_type === 'keyword') {
+            if (patternType === 'keyword') {
               regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            } else if (pattern_type === 'regex') {
+            } else if (patternType === 'regex') {
               regex = new RegExp(pattern, 'gi');
-            } else if (pattern_type === 'wildcard') {
+            } else if (patternType === 'wildcard') {
               const regexStr = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
               regex = new RegExp(regexStr, 'gi');
             }
             if (regex) {
-              highlightedContent = test_content.replace(regex, (match: string) => 
+              highlightedContent = testContent.replace(regex, (match: string) => 
                 `<span class="bg-red-200 text-red-900 px-0.5 rounded border border-red-300">${match}</span>`
               );
             }
           } catch {
-            highlightedContent = test_content;
+            highlightedContent = testContent;
           }
         }
         
         setResult({
           matched: apiResult.matched,
           positions: apiResult.positions || [],
-          highlightedContent: highlightedContent || test_content,
+          highlightedContent: highlightedContent || testContent,
         });
       } else {
         setError(t('testFailed'));
@@ -126,7 +128,7 @@ export function PatternTester({
             <Label className="text-xs">{t('patternType')}</Label>
             <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                {...register('pattern_type')}
+            {...register('patternType')}
             >
                 <option value={BlocklistPatternType.KEYWORD}>{t('keyword')}</option>
                 <option value={BlocklistPatternType.REGEX}>{t('regex')}</option>
@@ -138,7 +140,7 @@ export function PatternTester({
         <div className="space-y-2">
           <Label className="text-xs">{t('testContent')}</Label>
           <Textarea 
-            {...register('test_content')} 
+            {...register('testContent')} 
             className="bg-white dark:bg-slate-950 min-h-[80px]"
             placeholder={t('testContentPlaceholder')}
           />

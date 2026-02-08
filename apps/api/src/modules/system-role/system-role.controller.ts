@@ -3,7 +3,6 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiTags } from '@nestjs/swagger';
 
 import { success } from '../../common/response.util';
-
 import { CreateSystemRoleDto } from './dto/create-system-role.dto';
 import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
 import { SystemRoleService } from './system-role.service';

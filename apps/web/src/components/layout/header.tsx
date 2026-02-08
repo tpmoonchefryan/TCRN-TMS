@@ -4,8 +4,9 @@
 'use client';
 
 import { Bell, Check, Home, Languages, Layout, LogOut, Menu, Search, Settings, User } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import NextImage from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
@@ -109,7 +110,7 @@ export function Header() {
   return (
     <>
       <header 
-        className="fixed right-0 left-0 md:left-64 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 px-6 flex items-center justify-between dark:bg-slate-950/80 dark:border-slate-800 transition-all"
+        className="fixed right-0 left-0 md:left-64 h-16 glass-header px-6 flex items-center justify-between animate-fade-in"
         style={{ top: topOffset }}
       >
         <div className="flex items-center gap-4">
@@ -157,10 +158,13 @@ export function Header() {
                   <p className="text-xs text-slate-400">{tenantCode || 'Unknown Tenant'}</p>
                 </div>
                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-pink-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
-                  <img 
+                  <NextImage 
                     src={avatarUrl} 
                     alt={displayName} 
-                    className="w-full h-full object-cover" 
+                    width={36}
+                    height={36}
+                    className="w-full h-full object-cover"
+                    unoptimized
                   />
                 </div>
               </button>

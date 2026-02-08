@@ -5,10 +5,10 @@ import * as LucideIcons from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
-import { LinkButtonProps } from './schema';
-
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+import { LinkButtonProps } from './schema';
 
 export const LinkButton: React.FC<LinkButtonProps & { className?: string }> = ({
   label,

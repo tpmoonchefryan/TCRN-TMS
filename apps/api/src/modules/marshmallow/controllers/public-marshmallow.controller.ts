@@ -15,6 +15,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
 import { Public } from '../../../common/decorators';
+import { RateLimiterGuard } from '../../../common/guards/rate-limiter.guard';
 import { TokenService } from '../../auth/token.service';
 import { UaDetectionGuard } from '../../homepage/guards/ua-detection.guard';
 import {
@@ -30,7 +31,7 @@ import { PublicMarshmallowService } from '../services/public-marshmallow.service
 
 @ApiTags('Public - Marshmallow')
 @Controller('public/marshmallow')
-@UseGuards(UaDetectionGuard)
+@UseGuards(RateLimiterGuard, UaDetectionGuard)
 export class PublicMarshmallowController {
   constructor(
     private readonly publicService: PublicMarshmallowService,

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { History, Activity, Network, Search } from 'lucide-react';
+import { Activity, History, Network, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';

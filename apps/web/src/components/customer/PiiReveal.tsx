@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PiiServiceError, piiTokenManager, type PiiProfile } from '@/lib/pii';
+import { type PiiProfile,PiiServiceError, piiTokenManager } from '@/lib/pii';
 import { cn } from '@/lib/utils';
 import { useTalentStore } from '@/stores/talent-store';
 

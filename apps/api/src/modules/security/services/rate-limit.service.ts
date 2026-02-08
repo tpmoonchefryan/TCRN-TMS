@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger,OnModuleInit } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
 

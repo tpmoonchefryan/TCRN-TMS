@@ -1,10 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import * as crypto from 'crypto';
-
-import { BadRequestException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
+import { BadRequestException, forwardRef,Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
+import * as crypto from 'crypto';
 
 import { PasswordService } from '../auth/password.service';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';

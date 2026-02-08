@@ -6,9 +6,6 @@ import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { useState } from 'react';
 
-
-import { TalentSwitcherCompact } from './talent-switcher';
-
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,6 +16,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { TalentInfo } from '@/stores/talent-store';
+
+import { TalentSwitcherCompact } from './talent-switcher';
 
 interface TalentSelectModalProps {
   open: boolean;

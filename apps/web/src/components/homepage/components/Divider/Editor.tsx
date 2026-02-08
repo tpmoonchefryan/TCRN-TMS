@@ -4,8 +4,6 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { DividerProps } from './schema';
-
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -14,6 +12,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+
+import { DividerProps } from './schema';
 
 interface DividerEditorProps {
   props: DividerProps;

@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Membership Statistics Property-Based Tests
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, expect, it } from 'vitest';
 
 // ============================================================================
 // Types
@@ -210,6 +210,9 @@ describe('Membership Statistics Properties', () => {
     it('should respect start date constraint', () => {
       fc.assert(
         fc.property(fc.array(membershipArb, { maxLength: 50 }), dateArb, (memberships, startDate) => {
+          // Skip invalid dates
+          if (isNaN(startDate.getTime())) return;
+          
           const filtered = filterMembershipsByDateRange(memberships, startDate, null);
           filtered.forEach((m) => {
             expect(m.validFrom >= startDate).toBe(true);
@@ -222,6 +225,9 @@ describe('Membership Statistics Properties', () => {
     it('should respect end date constraint', () => {
       fc.assert(
         fc.property(fc.array(membershipArb, { maxLength: 50 }), dateArb, (memberships, endDate) => {
+          // Skip invalid dates
+          if (isNaN(endDate.getTime())) return;
+          
           const filtered = filterMembershipsByDateRange(memberships, null, endDate);
           filtered.forEach((m) => {
             expect(m.validFrom <= endDate).toBe(true);

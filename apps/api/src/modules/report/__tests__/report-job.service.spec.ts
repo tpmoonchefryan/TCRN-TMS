@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ReportType, ReportJobStatus } from '../dto/report.dto';
+import { ReportJobStatus, ReportType } from '../dto/report.dto';
 import { ReportJobService } from '../services/report-job.service';
 
 // Mock dependencies
@@ -18,6 +18,8 @@ const mockPrisma = {
     update: vi.fn(),
     count: vi.fn(),
   },
+  $queryRawUnsafe: vi.fn(),
+  $executeRawUnsafe: vi.fn(),
 };
 
 const mockDatabaseService = {
@@ -65,23 +67,19 @@ describe('ReportJobService', () => {
     };
 
     it('should create a report job successfully', async () => {
-      const mockTalent = {
+      // Mock query for talent lookup
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'talent-123',
-        subsidiaryId: 'sub-123',
-        profileStoreId: 'store-123',
-      };
-
-      const mockJob = {
+        subsidiary_id: 'sub-123',
+        profile_store_id: 'store-123',
+      }]);
+      
+      // Mock query for job creation  
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'job-123',
-        talentId: 'talent-123',
-        reportType: ReportType.MFR,
         status: ReportJobStatus.PENDING,
-        createdAt: new Date('2026-01-23T10:00:00Z'),
-        queuedAt: new Date('2026-01-23T10:00:00Z'),
-      };
-
-      mockPrisma.talent.findUnique.mockResolvedValue(mockTalent);
-      mockPrisma.reportJob.create.mockResolvedValue(mockJob);
+        created_at: new Date('2026-01-23T10:00:00Z'),
+      }]);
 
       const result = await service.create(
         ReportType.MFR,
@@ -92,22 +90,13 @@ describe('ReportJobService', () => {
         mockContext,
       );
 
-      // Service returns formatted response, not raw job object
       expect(result).toEqual({
         jobId: 'job-123',
         status: ReportJobStatus.PENDING,
         estimatedRows: 100,
         createdAt: '2026-01-23T10:00:00.000Z',
       });
-      expect(mockPrisma.talent.findUnique).toHaveBeenCalledWith({
-        where: { id: 'talent-123' },
-        select: {
-          id: true,
-          subsidiaryId: true,
-          profileStoreId: true,
-        },
-      });
-      expect(mockPrisma.reportJob.create).toHaveBeenCalled();
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
       expect(mockTechEventLog.log).toHaveBeenCalled();
     });
 
@@ -125,7 +114,7 @@ describe('ReportJobService', () => {
     });
 
     it('should throw NotFoundException when talent not found', async () => {
-      mockPrisma.talent.findUnique.mockResolvedValue(null);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(
         service.create(
@@ -140,11 +129,11 @@ describe('ReportJobService', () => {
     });
 
     it('should throw NotFoundException when talent has no profile store', async () => {
-      mockPrisma.talent.findUnique.mockResolvedValue({
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'talent-123',
-        subsidiaryId: 'sub-123',
-        profileStoreId: null, // No profile store
-      });
+        subsidiary_id: 'sub-123',
+        profile_store_id: null,
+      }]);
 
       await expect(
         service.create(
@@ -159,17 +148,16 @@ describe('ReportJobService', () => {
     });
 
     it('should log tech event on job creation', async () => {
-      mockPrisma.talent.findUnique.mockResolvedValue({
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'talent-123',
-        subsidiaryId: 'sub-123',
-        profileStoreId: 'store-123',
-      });
-      mockPrisma.reportJob.create.mockResolvedValue({
+        subsidiary_id: 'sub-123',
+        profile_store_id: 'store-123',
+      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'job-123',
-        reportType: ReportType.MFR,
-        createdAt: new Date('2026-01-23T10:00:00Z'),
-        queuedAt: new Date('2026-01-23T10:00:00Z'),
-      });
+        status: ReportJobStatus.PENDING,
+        created_at: new Date('2026-01-23T10:00:00Z'),
+      }]);
 
       await service.create(
         ReportType.MFR,
@@ -188,22 +176,24 @@ describe('ReportJobService', () => {
             reportType: ReportType.MFR,
           }),
         }),
+        // Service passes context as second argument
+        expect.anything(),
       );
     });
   });
 
   describe('Row limit validation', () => {
     it('should accept exactly 50000 rows', async () => {
-      mockPrisma.talent.findUnique.mockResolvedValue({
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'talent-123',
-        subsidiaryId: 'sub-123',
-        profileStoreId: 'store-123',
-      });
-      mockPrisma.reportJob.create.mockResolvedValue({
+        subsidiary_id: 'sub-123',
+        profile_store_id: 'store-123',
+      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'job-123',
-        queuedAt: new Date(),
-        createdAt: new Date(),
-      });
+        status: ReportJobStatus.PENDING,
+        created_at: new Date(),
+      }]);
 
       // Should not throw for exactly 50000
       await expect(

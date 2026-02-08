@@ -2,6 +2,6 @@
 
 export * from './api';
 export * from './auth';
-export * from './entity';
 export * from './change-log';
+export * from './entity';
 export * from './log-types';

@@ -1,16 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { BadRequestException,Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 import { DatabaseService } from '../../database';
 import type {
-  SaveEmailConfigDto,
-  EmailConfigResponse,
   DecryptedEmailConfig,
+  EmailConfigResponse,
   EmailProvider,
+  SaveEmailConfigDto,
 } from '../dto/email-config.dto';
 
 const EMAIL_CONFIG_KEY = 'email.config';

@@ -4,8 +4,7 @@
 
 import { performance } from 'perf_hooks';
 import * as v8 from 'v8';
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll,beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Performance baseline thresholds

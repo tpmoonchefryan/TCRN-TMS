@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, HomepageContent, THEME_PRESETS, ThemeConfig, ThemePreset, normalizeTheme } from '@tcrn/shared';
+import { DEFAULT_THEME, HomepageContent, normalizeTheme,THEME_PRESETS, ThemeConfig, ThemePreset } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';

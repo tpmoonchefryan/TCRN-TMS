@@ -3,36 +3,36 @@
 
 'use client';
 
+import { ForgotPasswordSchema } from '@tcrn/shared';
 import { ArrowLeft, CheckCircle2, Mail, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { authApi } from '@/lib/api/client';
+import { useZodForm } from '@/lib/form';
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('auth.forgotPassword');
   const tAuth = useTranslations('auth');
 
-  const [email, setEmail] = useState('');
-  const [tenantCode, setTenantCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useZodForm(ForgotPasswordSchema, {
+    defaultValues: {
+      tenantCode: '',
+      email: '',
+    },
+  });
+
+  const handleSubmit = form.handleSubmit(async (data) => {
     setError('');
-
-    if (!email || !tenantCode) {
-      setError(t('allFieldsRequired') || 'All fields are required');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const response = await authApi.forgotPassword(email, tenantCode);
+      const response = await authApi.forgotPassword(data.email, data.tenantCode);
       if (response.success) {
         setSuccess(true);
       } else {
@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  });
 
   if (success) {
     return (
@@ -110,12 +110,13 @@ export default function ForgotPasswordPage() {
                 id="tenantCode"
                 type="text"
                 placeholder={tAuth('tenantCodePlaceholder') || 'e.g. HOLOLIVE'}
-                value={tenantCode}
-                onChange={(e) => setTenantCode(e.target.value)}
+                {...form.register('tenantCode')}
                 disabled={isLoading}
-                required
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
+              {form.formState.errors.tenantCode && (
+                <p className="text-xs text-destructive">{form.formState.errors.tenantCode.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -126,13 +127,14 @@ export default function ForgotPasswordPage() {
                 id="email"
                 type="email"
                 placeholder={t('emailPlaceholder') || 'your.email@example.com'}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...form.register('email')}
                 disabled={isLoading}
-                required
                 autoComplete="email"
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
+              {form.formState.errors.email && (
+                <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+              )}
             </div>
 
             <Button

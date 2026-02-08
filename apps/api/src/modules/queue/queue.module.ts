@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BullModule } from '@nestjs/bullmq';
-import { Module, Global } from '@nestjs/common';
+import { Global,Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 // Queue names (must match worker definitions)

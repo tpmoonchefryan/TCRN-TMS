@@ -23,8 +23,8 @@ import {
     UpdateSettingsDto,
     VersionListQueryDto,
 } from '../dto/homepage.dto';
-import { HomepageVersionService } from '../services/homepage-version.service';
 import { HomepageService } from '../services/homepage.service';
+import { HomepageVersionService } from '../services/homepage-version.service';
 
 @ApiTags('Ops - Homepage')
 @Controller('talents/:talentId/homepage')

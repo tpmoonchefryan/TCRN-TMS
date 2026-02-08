@@ -3,14 +3,11 @@
 
 'use client';
 
-import { DEFAULT_THEME, HomepageContent, ThemeConfig, generateCssVariables } from '@tcrn/shared';
+import { DEFAULT_THEME, generateCssVariables,HomepageContent, ThemeConfig } from '@tcrn/shared';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 import { NextIntlClientProvider, useTranslations } from 'next-intl';
 import React, { useState } from 'react';
-
-import { COMPONENT_REGISTRY } from '../lib/component-registry';
-import { migrateComponentTypes } from '../lib/types';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -18,6 +15,9 @@ import enMessages from '@/i18n/messages/en.json';
 import jaMessages from '@/i18n/messages/ja.json';
 import zhMessages from '@/i18n/messages/zh.json';
 import { cn } from '@/lib/utils';
+
+import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import { migrateComponentTypes } from '../lib/types';
 
 
 interface HomepageRendererProps {

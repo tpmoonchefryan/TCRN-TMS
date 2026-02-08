@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { User, Building2 } from 'lucide-react';
+import { Building2,User } from 'lucide-react';
 import React from 'react';
 
 import { Badge } from '@/components/ui/badge';

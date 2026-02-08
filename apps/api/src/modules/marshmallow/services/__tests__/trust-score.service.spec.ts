@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
-import { TrustScoreService, TrustLevel } from '../trust-score.service';
+import { TrustLevel,TrustScoreService } from '../trust-score.service';
 
 // Partially skip tests that need actual service API investigation
 describe('TrustScoreService', () => {

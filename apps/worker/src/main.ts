@@ -17,7 +17,7 @@ import { piiCleanupJobProcessor, schedulePiiCleanupJob } from './jobs/pii-cleanu
 import { piiHealthCheckJobProcessor, setupPiiHealthCheckCron } from './jobs/pii-health-check.job';
 import { reportJobProcessor } from './jobs/report.job';
 import { workerLogger as logger } from './logger';
-import { QUEUE_NAMES, logCleanupQueue, membershipRenewalQueue, piiCleanupQueue, piiHealthCheckQueue, setupQueues } from './queues';
+import { logCleanupQueue, membershipRenewalQueue, piiCleanupQueue, piiHealthCheckQueue, QUEUE_NAMES, setupQueues } from './queues';
 
 // Global Prisma client for scheduled jobs
 let prisma: PrismaClient;

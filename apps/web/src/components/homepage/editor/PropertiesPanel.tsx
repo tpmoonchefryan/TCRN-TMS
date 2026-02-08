@@ -6,12 +6,12 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { COMPONENT_REGISTRY } from '../lib/component-registry';
-
 import { Button, Input, Label, Switch } from '@/components/ui';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEditorStore } from '@/stores/homepage/editor-store';
+
+import { COMPONENT_REGISTRY } from '../lib/component-registry';
 
 export function PropertiesPanel() {
   const t = useTranslations('homepageEditor');

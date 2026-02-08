@@ -5,8 +5,6 @@ import { Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { ImageGalleryProps } from './schema';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +16,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+
+import { ImageGalleryProps } from './schema';
 
 
 interface ImageGalleryEditorProps {

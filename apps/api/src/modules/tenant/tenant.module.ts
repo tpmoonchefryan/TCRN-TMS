@@ -2,10 +2,10 @@
 
 import { Global, Module } from '@nestjs/common';
 
-import { TenantContextGuard } from './tenant-context.guard';
 import { TenantController } from './tenant.controller';
 import { TenantMiddleware } from './tenant.middleware';
 import { TenantService } from './tenant.service';
+import { TenantContextGuard } from './tenant-context.guard';
 
 @Global()
 @Module({

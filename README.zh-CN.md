@@ -185,6 +185,44 @@ Loki 集成支持跨所有日志的全文搜索。
 - **队列处理**：BullMQ Worker，带重试和限流
 - **预置模板**：密码重置、登录验证、会员提醒
 
+### 性能优化
+
+生产级性能特性：
+
+| 特性 | 实现方式 |
+|-----|---------|
+| **动态导入** | 7+ 大型组件通过 `dynamic.tsx` 懒加载 |
+| **列表虚拟化** | `@tanstack/react-virtual` 处理长列表 |
+| **图片优化** | `next/image` 配置远程模式 |
+| **记忆化** | 高频组件使用 `React.memo` |
+
+### 可访问性
+
+符合 WCAG 2.1 AA 标准：
+
+- **减少动画**：尊重系统 `prefers-reduced-motion` 偏好设置
+- **键盘导航**：所有交互元素支持完整键盘操作
+- **屏幕阅读器**：全局使用语义化 HTML 和 ARIA 标签
+
+### 错误处理
+
+三级错误边界架构：
+
+```
+app/error.tsx              → 全局兜底
+app/(business)/error.tsx   → 业务区域兜底
+app/(admin)/admin/error.tsx → 管理区域兜底
+```
+
+### 表单验证
+
+基于 Zod 的端到端类型安全验证：
+
+- **145+ Zod Schemas**：覆盖认证、客户、棉花糖、主页模块
+- **后端**：`ZodValidationPipe` 自动请求验证
+- **前端**：`useZodForm` hook 管理表单状态
+- **Swagger 集成**：从 Zod schemas 自动生成 API 文档
+
 ---
 
 ## 🏗️ 系统架构
@@ -246,6 +284,7 @@ Loki 集成支持跨所有日志的全文搜索。
 | | TypeScript | 5.8.3 |
 | | Tailwind CSS | 3.4.17 |
 | | Zustand | 5.0.5 |
+| | TanStack React Virtual | 3.13.18 |
 | **后端** | NestJS | 11.1.6 |
 | | Prisma ORM | 6.14.0 |
 | | BullMQ | 5.66.5 |
@@ -797,6 +836,8 @@ curl -X POST /api/v1/auth/login \
 | **日志** | `GET /logs/changes` | 查询变更日志 |
 | | `GET /logs/events` | 查询系统事件 |
 | | `GET /logs/search` | Loki 全文搜索 |
+| **合规** | `GET /compliance/data-map` | 数据映射报告 |
+| | `GET /compliance/privacy-impact` | 隐私影响评估 |
 
 ### 响应格式
 

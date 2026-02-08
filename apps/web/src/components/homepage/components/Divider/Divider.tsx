@@ -2,9 +2,9 @@
 
 import React from 'react';
 
-import { DividerProps } from './schema';
-
 import { cn } from '@/lib/utils';
+
+import { DividerProps } from './schema';
 
 export const Divider: React.FC<DividerProps & { className?: string }> = ({
   style,

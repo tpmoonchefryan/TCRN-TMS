@@ -4,9 +4,9 @@
 import {
   Controller,
   Get,
-  Query,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 

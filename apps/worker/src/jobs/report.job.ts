@@ -1,17 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Report Job Processor (PRD §20)
 
-import * as fs from 'fs';
-import * as https from 'https';
-import * as os from 'os';
-import * as path from 'path';
-
 import { Prisma, PrismaClient } from '@tcrn/database';
 import axios, { AxiosInstance } from 'axios';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
+import * as fs from 'fs';
+import * as https from 'https';
 import jwt from 'jsonwebtoken';
 import * as Minio from 'minio';
+import * as os from 'os';
+import * as path from 'path';
 
 import { reportLogger as logger } from '../logger';
 

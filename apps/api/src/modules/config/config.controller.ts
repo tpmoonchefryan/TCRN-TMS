@@ -20,7 +20,6 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
-
 import { BlocklistService } from './blocklist.service';
 import { ConfigService } from './config.service';
 import { CONFIG_TABLE_NAMES, ConfigEntityType, OwnerType } from './config.types';

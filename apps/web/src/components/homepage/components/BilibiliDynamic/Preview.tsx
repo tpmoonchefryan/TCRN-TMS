@@ -7,14 +7,28 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+export type BilibiliFilterType = 'all' | 'video' | 'image' | 'article' | 'live';
+export type BilibiliCardStyle = 'compact' | 'standard' | 'expanded';
+
 export interface BilibiliDynamicProps {
   uid?: string;
   title?: string;
+  maxItems?: number;
+  filterType?: BilibiliFilterType;
+  cardStyle?: BilibiliCardStyle;
+  // P2 advanced features
+  refreshInterval?: number; // Minutes, 0 = disabled
+  showHeader?: boolean;
 }
 
 export const defaultProps: BilibiliDynamicProps = {
   uid: '401742377', 
-  title: 'Bilibili Dynamics'
+  title: 'Bilibili Dynamics',
+  maxItems: 5,
+  filterType: 'all',
+  cardStyle: 'standard',
+  refreshInterval: 0,
+  showHeader: true,
 };
 
 export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicProps) {

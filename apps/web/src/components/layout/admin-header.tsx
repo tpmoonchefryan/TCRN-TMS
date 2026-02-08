@@ -4,8 +4,9 @@
 'use client';
 
 import { Bell, Check, Languages, LogOut, Menu, Settings, User } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import NextImage from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
@@ -70,7 +71,7 @@ export function AdminHeader() {
 
   return (
     <header 
-      className="fixed right-0 left-0 md:left-64 h-16 bg-white/80 backdrop-blur-md border-b border-purple-100 z-30 px-6 flex items-center justify-between dark:bg-slate-950/80 dark:border-slate-800 transition-all"
+      className="fixed right-0 left-0 md:left-64 h-16 glass-header border-purple-100 dark:border-slate-800 px-6 flex items-center justify-between animate-fade-in"
       style={{ top: topOffset }}
     >
       <div className="flex items-center gap-4">
@@ -108,10 +109,13 @@ export function AdminHeader() {
                 <p className="text-xs text-purple-500 font-medium">{tenantCode || 'AC'}</p>
               </div>
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-100 to-pink-100 flex items-center justify-center border-2 border-purple-200 shadow-sm overflow-hidden">
-                <img 
+                <NextImage 
                   src={`https://api.dicebear.com/7.x/notionists/svg?seed=${avatarSeed}`} 
                   alt={displayName} 
-                  className="w-full h-full object-cover" 
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                  unoptimized
                 />
               </div>
             </button>

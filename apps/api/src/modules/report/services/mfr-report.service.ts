@@ -10,7 +10,6 @@ import {
     MfrSearchResult,
     ReportType,
 } from '../dto/report.dto';
-
 import { ReportJobService } from './report-job.service';
 
 @Injectable()

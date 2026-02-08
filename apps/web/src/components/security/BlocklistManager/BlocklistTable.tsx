@@ -18,8 +18,6 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { BlocklistEntry } from './index';
-
 import {
     Badge,
     Button,
@@ -34,6 +32,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui';
+
+import { BlocklistEntry } from './index';
 
 
 interface BlocklistTableProps {

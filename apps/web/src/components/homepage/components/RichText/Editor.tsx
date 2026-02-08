@@ -4,8 +4,7 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { RichTextProps } from './schema';
-
+import { TipTapEditor } from '@/components/shared/TipTapEditor';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -14,7 +13,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+
+import { RichTextProps } from './schema';
 
 interface RichTextEditorProps {
   props: RichTextProps;
@@ -28,16 +28,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ props, onChange 
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>{t('content')}</Label>
-        <Textarea 
-          value={props.contentHtml} 
-          onChange={(e) => onChange({ contentHtml: e.target.value })}
-          placeholder={t('htmlPlaceholder')}
-          rows={10}
-          className="font-mono text-sm"
+        <TipTapEditor
+          content={props.contentHtml}
+          onChange={(html) => onChange({ contentHtml: html })}
         />
-        <p className="text-xs text-muted-foreground">
-          {t('htmlSupportHint')}
-        </p>
       </div>
 
       <div className="space-y-2">

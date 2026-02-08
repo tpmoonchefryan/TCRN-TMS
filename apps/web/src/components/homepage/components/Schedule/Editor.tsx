@@ -5,9 +5,9 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 
-import { ScheduleEvent, ScheduleProps } from './Preview';
-
 import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+
+import { ScheduleEvent, ScheduleProps } from './Preview';
 
 interface ScheduleEditorProps {
   props: ScheduleProps;

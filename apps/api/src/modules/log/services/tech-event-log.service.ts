@@ -2,14 +2,13 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  TechEventType,
-  TechEventScope,
   LogSeverity,
   type RequestContext,
+  TechEventScope,
+  TechEventType,
 } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
-
 import { LogMaskingService } from './log-masking.service';
 
 export interface TechEventLogDto {

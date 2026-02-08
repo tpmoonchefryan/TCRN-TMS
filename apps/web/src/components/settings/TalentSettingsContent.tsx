@@ -25,6 +25,7 @@ import {
     Settings,
     Shield,
     Sparkles,
+    Trash2,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -35,6 +36,12 @@ import { BlocklistManager } from '@/components/security/BlocklistManager';
 import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
 import { CustomDomainDialog } from '@/components/settings/CustomDomainDialog';
 import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
+import {
+    CONFIG_ENTITY_TYPES,
+    ConfigEntity,
+    DICTIONARY_TYPES,
+    DictionaryRecord,
+} from '@/components/shared/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,53 +68,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { configEntityApi, dictionaryApi, talentApi, talentDomainApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 
-// Configuration Entity Types (using singular kebab-case format to match backend API)
-const CONFIG_ENTITY_TYPES = [
-  { code: 'customer-status', name: 'Customer Status', nameZh: '客户状态', description: 'Customer lifecycle status definitions', icon: '👤' },
-  { code: 'business-segment', name: 'Business Segment', nameZh: '业务分类', description: 'Business segment definitions', icon: '📊' },
-  { code: 'reason-category', name: 'Reason Category', nameZh: '原因分类', description: 'Reason category definitions', icon: '📋' },
-  { code: 'inactivation-reason', name: 'Inactivation Reason', nameZh: '停用原因', description: 'Customer inactivation reasons', icon: '🚫' },
-  { code: 'membership-class', name: 'Membership Class', nameZh: '会籍等级', description: 'Membership tier definitions', icon: '🎫' },
-  { code: 'membership-type', name: 'Membership Type', nameZh: '会籍类型', description: 'Platform-specific membership types', icon: '🎭' },
-  { code: 'membership-level', name: 'Membership Level', nameZh: '会籍级别', description: 'Tier levels within membership types', icon: '⭐' },
-  { code: 'consent', name: 'Consent', nameZh: '同意声明', description: 'Customer consent definitions', icon: '✅' },
-  { code: 'blocklist-entry', name: 'Blocklist Entry', nameZh: '屏蔽词条', description: 'Content blocklist patterns', icon: '🛡️' },
-];
-
-// System Dictionary Types
-const DICTIONARY_TYPES = [
-  { code: 'countries', name: 'Countries', nameZh: '国家/地区', icon: '🌍' },
-  { code: 'languages', name: 'Languages', nameZh: '语言', icon: '🗣️' },
-  { code: 'timezones', name: 'Timezones', nameZh: '时区', icon: '🕐' },
-  { code: 'currencies', name: 'Currencies', nameZh: '货币', icon: '💰' },
-  { code: 'genders', name: 'Genders', nameZh: '性别', icon: '⚧️' },
-  { code: 'profile_types', name: 'Profile Types', nameZh: '档案类型', icon: '📋' },
-  { code: 'social_platforms', name: 'Social Platforms', nameZh: '社交平台', icon: '📱' },
-];
-
-// Type definitions
-interface ConfigEntity {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  ownerType: 'tenant' | 'subsidiary' | 'talent';
-  ownerLevel: string;
-  isActive: boolean;
-  isForceUse: boolean;
-  isSystem: boolean;
-  sortOrder: number;
-  inheritedFrom?: string;
-}
-
-interface DictionaryRecord {
-  code: string;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  isActive: boolean;
-}
+// NOTE: CONFIG_ENTITY_TYPES, DICTIONARY_TYPES, ConfigEntity, DictionaryRecord
+// are now imported from @/components/shared/constants
 
 interface SocialLink {
   platform: string;
@@ -184,13 +146,13 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
 
   // Config Entity state
   const [configEntities, setConfigEntities] = useState<Record<string, ConfigEntity[]>>({});
-  const [selectedEntityType, setSelectedEntityType] = useState(CONFIG_ENTITY_TYPES[0].code);
+  const [selectedEntityType, setSelectedEntityType] = useState<string>(CONFIG_ENTITY_TYPES[0].code);
   const [entitySearch, setEntitySearch] = useState('');
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   // Dictionary state
   const [dictionaryRecords, setDictionaryRecords] = useState<Record<string, DictionaryRecord[]>>({});
-  const [selectedDictType, setSelectedDictType] = useState(DICTIONARY_TYPES[0].code);
+  const [selectedDictType, setSelectedDictType] = useState<string>(DICTIONARY_TYPES[0].code);
   const [dictSearch, setDictSearch] = useState('');
   const [isLoadingDict, setIsLoadingDict] = useState(false);
   const [dictCounts, setDictCounts] = useState<Record<string, number>>({});
@@ -198,6 +160,10 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
   // Custom domain dialog state
   const [homepageDomainDialogOpen, setHomepageDomainDialogOpen] = useState(false);
   const [marshmallowDomainDialogOpen, setMarshmallowDomainDialogOpen] = useState(false);
+
+  // Social links editing state
+  const [editedSocialLinks, setEditedSocialLinks] = useState<SocialLink[]>([]);
+  const [socialLinksChanged, setSocialLinksChanged] = useState(false);
 
   // Fetch talent data
   const fetchTalent = useCallback(async () => {
@@ -233,6 +199,9 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
             marshmallow: data.externalPagesDomain?.marshmallow || null,
           },
         });
+        // Initialize editable social links
+        setEditedSocialLinks(data.socialLinks || []);
+        setSocialLinksChanged(false);
       }
     } catch {
       toast.error(tc('error'));
@@ -338,7 +307,9 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
         homepagePath: talent.homepagePath,
         timezone: talent.timezone,
         version: talent.version,
+        socialLinks: editedSocialLinks.filter(link => link.platform && link.url),
       });
+      setSocialLinksChanged(false);
       toast.success(tc('success'));
       fetchTalent();
     } catch {
@@ -389,6 +360,30 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
       return { verified: response.data.verified, message: response.data.message || 'Verification complete' };
     }
     return { verified: false, message: 'Verification failed' };
+  };
+
+  // Social Links handlers
+  const handleAddSocialLink = () => {
+    setEditedSocialLinks([...editedSocialLinks, { platform: '', url: '' }]);
+    setSocialLinksChanged(true);
+  };
+
+  const handleUpdateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...editedSocialLinks];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditedSocialLinks(updated);
+    setSocialLinksChanged(true);
+  };
+
+  const handleRemoveSocialLink = (index: number) => {
+    setEditedSocialLinks(editedSocialLinks.filter((_, i) => i !== index));
+    setSocialLinksChanged(true);
+  };
+
+  const handleOpenSocialLink = (url: string) => {
+    if (url) {
+      window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+    }
   };
 
   // Filter config entities
@@ -731,20 +726,48 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
             {/* Social Links Card */}
             <Card>
               <CardHeader>
-                <CardTitle>{tTalent('socialLinks')}</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{tTalent('socialLinks')}</span>
+                  {socialLinksChanged && (
+                    <Badge variant="outline" className="text-xs">{tc('unsaved')}</Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {talent.socialLinks.map((link, index) => (
+                  {editedSocialLinks.map((link, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Input value={link.platform} className="w-24" readOnly />
-                      <Input value={link.url} className="flex-1" readOnly />
-                      <Button variant="ghost" size="icon">
+                      <Input
+                        value={link.platform}
+                        onChange={(e) => handleUpdateSocialLink(index, 'platform', e.target.value)}
+                        placeholder={tTalent('platformPlaceholder')}
+                        className="w-32"
+                      />
+                      <Input
+                        value={link.url}
+                        onChange={(e) => handleUpdateSocialLink(index, 'url', e.target.value)}
+                        placeholder="https://..."
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenSocialLink(link.url)}
+                        disabled={!link.url}
+                      >
                         <ExternalLink size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSocialLink(index)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
                       </Button>
                     </div>
                   ))}
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleAddSocialLink}>
                     <Plus size={14} className="mr-2" />
                     {tTalent('addLink')}
                   </Button>

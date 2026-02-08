@@ -7,11 +7,6 @@ import { Filter, Plus, RefreshCw, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
-
-import { BlocklistForm } from './BlocklistForm';
-import { BlocklistTable } from './BlocklistTable';
-import { PatternTester } from './PatternTester';
-
 import {
     Button,
     Card,
@@ -23,6 +18,10 @@ import {
     Switch,
 } from '@/components/ui';
 import { securityApi } from '@/lib/api/client';
+
+import { BlocklistForm } from './BlocklistForm';
+import { BlocklistTable } from './BlocklistTable';
+import { PatternTester } from './PatternTester';
 
 export interface BlocklistEntry {
   id: string;

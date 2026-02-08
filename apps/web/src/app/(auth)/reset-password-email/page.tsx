@@ -3,14 +3,16 @@
 
 'use client';
 
+import { ResetPasswordByTokenSchema } from '@tcrn/shared';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { authApi } from '@/lib/api/client';
+import { useZodForm } from '@/lib/form';
 
 export default function ResetPasswordEmailPage() {
   const t = useTranslations('auth.resetPasswordEmail');
@@ -20,19 +22,33 @@ export default function ResetPasswordEmailPage() {
   const token = searchParams.get('token');
   const tenantCode = searchParams.get('tenant');
 
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const form = useZodForm(ResetPasswordByTokenSchema, {
+    defaultValues: {
+      token: token || '',
+      tenantCode: tenantCode || '',
+      newPassword: '',
+      newPasswordConfirm: '',
+    },
+    mode: 'onChange',
+  });
+
+  const newPassword = form.watch('newPassword');
+  const confirmPassword = form.watch('newPasswordConfirm');
+
   // Redirect if no token
   useEffect(() => {
     if (!token || !tenantCode) {
       router.push('/login');
+    } else {
+      form.setValue('token', token);
+      form.setValue('tenantCode', tenantCode);
     }
-  }, [token, tenantCode, router]);
+  }, [token, tenantCode, router, form]);
 
   // Validate password in real-time
   useEffect(() => {
@@ -57,26 +73,16 @@ export default function ResetPasswordEmailPage() {
     setPasswordErrors(errors);
   }, [newPassword, t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = form.handleSubmit(async (data) => {
     setError('');
-
-    if (newPassword !== confirmPassword) {
-      setError(t('passwordMismatch') || 'Passwords do not match');
-      return;
-    }
 
     if (passwordErrors.length > 0) {
       return;
     }
 
-    if (!token || !tenantCode) {
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const response = await authApi.resetPasswordByToken(token, tenantCode, newPassword, confirmPassword);
+      const response = await authApi.resetPasswordByToken(data.token, data.tenantCode, data.newPassword, data.newPasswordConfirm);
       if (response.success) {
         setSuccess(true);
         setTimeout(() => {
@@ -90,7 +96,7 @@ export default function ResetPasswordEmailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  });
 
   const passwordMatch = newPassword === confirmPassword;
   const isValid = passwordErrors.length === 0 && passwordMatch && newPassword.length >= 12;
@@ -153,10 +159,8 @@ export default function ResetPasswordEmailPage() {
                 id="newPassword"
                 type="password"
                 placeholder="••••••••••••"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                {...form.register('newPassword')}
                 disabled={isLoading}
-                required
                 autoComplete="new-password"
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
@@ -179,20 +183,21 @@ export default function ResetPasswordEmailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-slate-600 font-medium">
+              <Label htmlFor="newPasswordConfirm" className="text-slate-600 font-medium">
                 {t('confirmPassword') || 'Confirm Password'}
               </Label>
               <Input
-                id="confirmPassword"
+                id="newPasswordConfirm"
                 type="password"
                 placeholder="••••••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                {...form.register('newPasswordConfirm')}
                 disabled={isLoading}
-                required
                 autoComplete="new-password"
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
+              {form.formState.errors.newPasswordConfirm && (
+                <p className="text-xs text-destructive">{form.formState.errors.newPasswordConfirm.message}</p>
+              )}
               {confirmPassword.length > 0 && !passwordMatch && (
                 <p className="text-xs text-destructive">{t('passwordMismatch') || 'Passwords do not match'}</p>
               )}

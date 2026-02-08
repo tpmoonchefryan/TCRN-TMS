@@ -18,7 +18,6 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
 import { DelegatedAdminService, DelegateScopeType, DelegateType } from './delegated-admin.service';
 
 // DTOs

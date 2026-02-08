@@ -20,8 +20,6 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { WebhookDialog } from './WebhookDialog';
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +50,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { integrationApi } from '@/lib/api/client';
+
+import { WebhookDialog } from './WebhookDialog';
 
 
 interface WebhookItem {

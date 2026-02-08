@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import { lookup } from 'mime-types';
 
 import { Public } from '../../common/decorators/public.decorator';
-import { BUCKETS, BucketName, MinioService } from '../minio/minio.service';
+import { BucketName, BUCKETS, MinioService } from '../minio/minio.service';
 
 
 @ApiTags('Public - Assets')

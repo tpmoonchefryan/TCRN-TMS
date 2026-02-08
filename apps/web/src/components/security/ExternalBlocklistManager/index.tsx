@@ -3,27 +3,25 @@
 'use client';
 
 import {
-  Globe,
-  Link2,
-  Type,
-  Shield,
-  Plus,
-  Pencil,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  ExternalLink,
-  Lock,
+  ArrowDownFromLine,
   Ban,
   Check,
-  ArrowDownFromLine,
+  ExternalLink,
   Filter,
+  Globe,
+  Link2,
+  Lock,
+  Pencil,
+  Plus,
+  Shield,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  Type,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback,useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-import { PatternDialog } from './PatternDialog';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,6 +57,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { externalBlocklistApi, type ExternalBlocklistPattern } from '@/lib/api/client';
+
+import { PatternDialog } from './PatternDialog';
 
 interface ExternalBlocklistManagerProps {
   scopeType?: 'tenant' | 'subsidiary' | 'talent';

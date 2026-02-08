@@ -4,8 +4,8 @@
 'use client';
 
 import { Archive, ChevronLeft, ChevronRight, ExternalLink, Flag, Inbox, Loader2, MessageSquareHeart, Radio, Settings, Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

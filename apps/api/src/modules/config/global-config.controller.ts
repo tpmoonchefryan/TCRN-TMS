@@ -14,7 +14,6 @@ import { IsNotEmpty } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
 import { GlobalConfigService } from './global-config.service';
 
 // DTOs

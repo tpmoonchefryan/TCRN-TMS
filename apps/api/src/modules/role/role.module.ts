@@ -3,7 +3,6 @@
 import { Module } from '@nestjs/common';
 
 import { DelegatedAdminModule } from '../delegated-admin';
-
 import { RoleController } from './role.controller';
 import { RoleService } from './role.service';
 import { UserRoleController } from './user-role.controller';

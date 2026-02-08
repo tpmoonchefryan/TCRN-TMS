@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConfigService } from '@nestjs/config';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import 'reflect-metadata';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
 import { CaptchaMode } from '../../dto/marshmallow.dto';

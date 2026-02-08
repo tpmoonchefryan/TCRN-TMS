@@ -1,14 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
 import { Request } from 'express';
-
 
 import { TenantService } from './tenant.service';
 

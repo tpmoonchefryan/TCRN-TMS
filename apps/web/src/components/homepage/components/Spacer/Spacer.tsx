@@ -2,23 +2,31 @@
 
 import React from 'react';
 
-import { SpacerProps } from './schema';
-
 import { cn } from '@/lib/utils';
+
+import { SpacerProps } from './schema';
 
 export const Spacer: React.FC<SpacerProps & { className?: string }> = ({
   height,
+  customHeight,
   className,
 }) => {
-  const heightClasses = {
+  const heightClasses: Record<string, string> = {
     small: 'h-4',
     medium: 'h-8',
     large: 'h-16',
     xl: 'h-24',
     xxl: 'h-32',
+    custom: '',
   };
 
+  // Use customHeight for custom size, otherwise use preset
+  const heightStyle = height === 'custom' && customHeight ? { height: `${customHeight}px` } : undefined;
+
   return (
-    <div className={cn(heightClasses[height], "w-full", className)} />
+    <div 
+      className={cn(heightClasses[height] || '', "w-full", className)} 
+      style={heightStyle}
+    />
   );
 };

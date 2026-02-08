@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../redis/redis.service';
 import { PermissionSnapshotService } from '../permission-snapshot.service';
@@ -9,6 +9,17 @@ describe('PermissionSnapshotService', () => {
   let service: PermissionSnapshotService;
   let redisService: Partial<RedisService>;
   let redisHashes: Map<string, Record<string, string>>;
+
+  // Helper function to get the correct key format
+  const getKey = (tenantSchema: string, userId: string, scopeType?: string, scopeId?: string | null) => {
+    if (scopeType && scopeId) {
+      return `perm:${tenantSchema}:${userId}:${scopeType}:${scopeId}`;
+    }
+    if (scopeType) {
+      return `perm:${tenantSchema}:${userId}:${scopeType}:null`;
+    }
+    return `perm:${tenantSchema}:${userId}`;
+  };
 
   beforeEach(() => {
     redisHashes = new Map();
@@ -32,6 +43,9 @@ describe('PermissionSnapshotService', () => {
         return Array.from(redisHashes.keys()).filter(k => k.startsWith(prefix));
       }),
       expire: vi.fn(),
+      exists: vi.fn().mockImplementation(async (key: string) => {
+        return redisHashes.has(key);
+      }),
     };
 
     service = new PermissionSnapshotService(redisService as RedisService);
@@ -42,7 +56,8 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {
+      // Use tenant:null scope key (default when no scope specified)
+      redisHashes.set(getKey(tenantSchema, userId, 'tenant'), {
         'customer.profile:read': 'grant',
         'customer.profile:write': 'grant',
       });
@@ -61,7 +76,7 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'tenant'), {
         'customer.profile:read': 'grant',
       });
 
@@ -79,7 +94,7 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {});
+      redisHashes.set(getKey(tenantSchema, userId, 'tenant'), {});
 
       const result = await service.checkPermission(
         tenantSchema,
@@ -95,7 +110,7 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'tenant'), {
         'customer.profile:admin': 'grant',
       });
 
@@ -113,7 +128,7 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'tenant'), {
         '*:admin': 'grant',
       });
 
@@ -133,7 +148,7 @@ describe('PermissionSnapshotService', () => {
       const tenantSchema = 'tenant_test';
       const userId = 'user-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, {
+      redisHashes.set(getKey(tenantSchema, userId), {
         'customer.profile:read': 'grant',
         'customer.profile:write': 'grant',
         'customer.pii:read': 'deny',
@@ -164,7 +179,7 @@ describe('PermissionSnapshotService', () => {
       const userId = 'user-1';
       const subsidiaryId = 'sub-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}:subsidiary:${subsidiaryId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'subsidiary', subsidiaryId), {
         'customer.profile:read': 'grant',
       });
 
@@ -185,7 +200,7 @@ describe('PermissionSnapshotService', () => {
       const userId = 'user-1';
       const talentId = 'talent-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}:talent:${talentId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'talent', talentId), {
         'customer.profile:read': 'grant',
         'customer.profile:write': 'grant',
       });
@@ -207,9 +222,12 @@ describe('PermissionSnapshotService', () => {
       const userId = 'user-1';
 
       // User has permission for talent-1
-      redisHashes.set(`perm:${tenantSchema}:${userId}:talent:talent-1`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'talent', 'talent-1'), {
         'customer.profile:read': 'grant',
       });
+      
+      // Set empty permissions for talent-2 so exists returns true but no permission found
+      redisHashes.set(getKey(tenantSchema, userId, 'talent', 'talent-2'), {});
 
       // Check permission for talent-2 (no permissions set)
       const result = await service.checkPermission(
@@ -231,9 +249,9 @@ describe('PermissionSnapshotService', () => {
       const userId = 'user-1';
 
       // Set up some snapshot data
-      redisHashes.set(`perm:${tenantSchema}:${userId}`, { 'resource:read': 'grant' });
-      redisHashes.set(`perm:${tenantSchema}:${userId}:talent:t1`, { 'resource:read': 'grant' });
-      redisHashes.set(`perm:${tenantSchema}:${userId}:subsidiary:s1`, { 'resource:read': 'grant' });
+      redisHashes.set(getKey(tenantSchema, userId), { 'resource:read': 'grant' });
+      redisHashes.set(getKey(tenantSchema, userId, 'talent', 't1'), { 'resource:read': 'grant' });
+      redisHashes.set(getKey(tenantSchema, userId, 'subsidiary', 's1'), { 'resource:read': 'grant' });
 
       await service.deleteUserSnapshots(tenantSchema, userId);
 
@@ -248,7 +266,7 @@ describe('PermissionSnapshotService', () => {
       const userId = 'user-1';
       const subsidiaryId = 'sub-1';
 
-      redisHashes.set(`perm:${tenantSchema}:${userId}:subsidiary:${subsidiaryId}`, {
+      redisHashes.set(getKey(tenantSchema, userId, 'subsidiary', subsidiaryId), {
         'customer.profile:read': 'grant',
         'customer.profile:write': 'deny',
       });

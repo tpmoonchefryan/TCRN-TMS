@@ -18,8 +18,8 @@ import {
     Unlock,
     User
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -124,6 +124,13 @@ export default function UserSettingsPage() {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showRemove2FADialog, setShowRemove2FADialog] = useState(false);
   const [showPasswordExpiryDialog, setShowPasswordExpiryDialog] = useState(false);
+
+  // Dialog form state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [enableExpiry, setEnableExpiry] = useState(false);
+  const [expiryDays, setExpiryDays] = useState(90);
 
   // Role management state
   const [selectedScope, setSelectedScope] = useState<TreeNode | null>(null);
@@ -313,6 +320,83 @@ export default function UserSettingsPage() {
 
   const handleScopeSelect = (node: TreeNode) => {
     setSelectedScope(node);
+  };
+
+  // Password change handler
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error(t('passwordRequired') || 'Please enter both password fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t('passwordMismatch') || 'Passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error(t('passwordTooShort') || 'Password must be at least 8 characters');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await systemUserApi.resetPassword(userId, { newPassword, forceReset: false });
+      toast.success(t('passwordChanged') || 'Password changed successfully');
+      setShowPasswordDialog(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Remove 2FA handler
+  const handleRemove2FA = async () => {
+    setIsSubmitting(true);
+    try {
+      await systemUserApi.disableTotp(userId);
+      toast.success(t('2faRemoved') || '2FA has been disabled');
+      setShowRemove2FADialog(false);
+      if (user) {
+        setUser({ ...user, isTotpEnabled: false });
+      }
+    } catch (error: any) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Password expiry handler
+  const handleSavePasswordExpiry = async () => {
+    setIsSubmitting(true);
+    try {
+      await systemUserApi.setPasswordExpiry(userId, {
+        enabled: enableExpiry,
+        expiresInDays: enableExpiry ? expiryDays : undefined,
+      });
+      toast.success(t('expirySettingsSaved') || 'Password expiry settings saved');
+      setShowPasswordExpiryDialog(false);
+      // Update local user state
+      if (user) {
+        const newExpiresAt = enableExpiry
+          ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+        setUser({ ...user, passwordExpiresAt: newExpiresAt });
+      }
+    } catch (error: any) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Reset dialog state when opening password expiry
+  const handleOpenPasswordExpiryDialog = () => {
+    setEnableExpiry(!!user?.passwordExpiresAt);
+    setExpiryDays(90);
+    setShowPasswordExpiryDialog(true);
   };
 
   // Helper: Build a flat map of all nodes with their parent info
@@ -788,7 +872,13 @@ export default function UserSettingsPage() {
       </Tabs>
 
       {/* Change Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+      <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+        setShowPasswordDialog(open);
+        if (!open) {
+          setNewPassword('');
+          setConfirmPassword('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('changePassword')}</DialogTitle>
@@ -799,18 +889,31 @@ export default function UserSettingsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t('newPassword')}</Label>
-              <Input type="password" placeholder={t('enterNewPassword')} />
+              <Input
+                type="password"
+                placeholder={t('enterNewPassword')}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t('confirmPassword')}</Label>
-              <Input type="password" placeholder={t('confirmNewPassword')} />
+              <Input
+                type="password"
+                placeholder={t('confirmNewPassword')}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
               {tc('cancel')}
             </Button>
-            <Button>{t('savePassword')}</Button>
+            <Button onClick={handleChangePassword} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 size={16} className="mr-2 animate-spin" /> : null}
+              {t('savePassword')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -831,7 +934,10 @@ export default function UserSettingsPage() {
             <Button variant="outline" onClick={() => setShowRemove2FADialog(false)}>
               {tc('cancel')}
             </Button>
-            <Button variant="destructive">{t('remove2FA')}</Button>
+            <Button variant="destructive" onClick={handleRemove2FA} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 size={16} className="mr-2 animate-spin" /> : null}
+              {t('remove2FA')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -847,19 +953,36 @@ export default function UserSettingsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="enable-expiry" className="rounded" />
+              <input
+                type="checkbox"
+                id="enable-expiry"
+                className="rounded"
+                checked={enableExpiry}
+                onChange={(e) => setEnableExpiry(e.target.checked)}
+              />
               <Label htmlFor="enable-expiry">{t('enableExpiry')}</Label>
             </div>
             <div className="space-y-2">
               <Label>{t('expiresInDays')}</Label>
-              <Input type="number" placeholder="90" defaultValue={90} />
+              <Input
+                type="number"
+                placeholder="90"
+                value={expiryDays}
+                onChange={(e) => setExpiryDays(parseInt(e.target.value) || 90)}
+                disabled={!enableExpiry}
+                min={7}
+                max={365}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordExpiryDialog(false)}>
               {tc('cancel')}
             </Button>
-            <Button>{t('saveSettings')}</Button>
+            <Button onClick={handleSavePasswordExpiry} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 size={16} className="mr-2 animate-spin" /> : null}
+              {t('saveSettings')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

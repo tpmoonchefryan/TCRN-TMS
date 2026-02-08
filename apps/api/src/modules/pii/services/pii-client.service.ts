@@ -1,11 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import * as fs from 'fs';
-import * as https from 'https';
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import * as fs from 'fs';
+import * as https from 'https';
 
 import { IntegrationLogService } from '../../log';
 

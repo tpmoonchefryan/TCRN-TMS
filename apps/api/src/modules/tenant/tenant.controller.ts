@@ -23,7 +23,6 @@ import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, Matches, Min, MinLengt
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
-
 import { TenantService } from './tenant.service';
 
 // DTOs

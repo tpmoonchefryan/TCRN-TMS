@@ -1,26 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
-  Req,
+  Controller,
+  Delete,
+  Get,
+  Param,
   ParseUUIDPipe,
+  Patch,
+  Post,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader,ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { CurrentContext } from '../auth/decorators/current-context.decorator';
 import { JwtContext } from '../auth/strategies/jwt.strategy';
-
 import {
+  BatchGetProfilesDto,
   CreatePiiProfileDto,
   UpdatePiiProfileDto,
-  BatchGetProfilesDto,
 } from './dto/profile.dto';
 import { ProfilesService } from './services/profiles.service';
 

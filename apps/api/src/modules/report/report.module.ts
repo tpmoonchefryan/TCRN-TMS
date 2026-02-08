@@ -3,13 +3,12 @@
 import { Module } from '@nestjs/common';
 
 import { MinioModule } from '../minio';
-
 import { ReportController } from './controllers';
 import {
+  ExcelBuilderService,
+  MfrReportService,
   ReportJobService,
   ReportJobStateService,
-  MfrReportService,
-  ExcelBuilderService,
 } from './services';
 
 @Module({

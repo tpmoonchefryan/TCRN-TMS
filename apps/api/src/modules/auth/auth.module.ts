@@ -1,12 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Module, forwardRef } from '@nestjs/common';
+import { forwardRef,Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import { AuthRateLimiterGuard } from '../../common/guards/auth-rate-limiter.guard';
 import { EmailModule } from '../email';
+import { LogModule } from '../log';
 import { MinioModule } from '../minio/minio.module';
-
 import { AuthController, UserController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
@@ -17,6 +18,7 @@ import { TotpService } from './totp.service';
 @Module({
   imports: [
     MinioModule,
+    LogModule,
     forwardRef(() => EmailModule),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -38,7 +40,9 @@ import { TotpService } from './totp.service';
     TotpService,
     TokenService,
     SessionService,
+    AuthRateLimiterGuard,
   ],
-  exports: [AuthService, PasswordService, TotpService, TokenService],
+  exports: [AuthService, PasswordService, TotpService, TokenService, AuthRateLimiterGuard],
 })
 export class AuthModule {}
+

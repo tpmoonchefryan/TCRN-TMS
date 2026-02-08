@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { prisma, getTenantSchemaName, setTenantSchema, createTenantSchema, withTenantContext, Prisma, PrismaClient } from '@tcrn/database';
+import { createTenantSchema, getTenantSchemaName, Prisma, prisma, PrismaClient,setTenantSchema, withTenantContext } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
 type Tenant = Awaited<ReturnType<PrismaClient['tenant']['findFirst']>>;

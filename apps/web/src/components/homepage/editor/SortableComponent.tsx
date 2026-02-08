@@ -8,10 +8,10 @@ import { GripVertical, Trash2 } from 'lucide-react';
 import { NextIntlClientProvider } from 'next-intl';
 import React from 'react';
 
-import { COMPONENT_REGISTRY } from '../lib/component-registry';
-
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+import { COMPONENT_REGISTRY } from '../lib/component-registry';
 
 interface SortableComponentProps {
   comp: ComponentInstance;

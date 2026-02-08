@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { Job } from 'bullmq';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { membershipRenewalJobProcessor, MembershipRenewalJobData, MembershipRenewalJobResult } from '../membership-renewal.job';
+import { MembershipRenewalJobData, membershipRenewalJobProcessor, MembershipRenewalJobResult } from '../membership-renewal.job';
 
 // Mock PrismaClient
 const mockPrisma = {

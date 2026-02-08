@@ -12,34 +12,6 @@ import {
     KeyboardSensor,
     MeasuringStrategy // Added
     ,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     MouseSensor, // Added
     TouchSensor, // Added
     useSensor,
@@ -53,16 +25,15 @@ import {
 import { NextIntlClientProvider } from 'next-intl';
 import React, { useState } from 'react';
 
-import { COMPONENT_REGISTRY } from '../lib/component-registry';
-import { layoutComponents } from '../lib/layout-utils';
-
-import { SortableComponent } from './SortableComponent';
-
 import enMessages from '@/i18n/messages/en.json';
 import jaMessages from '@/i18n/messages/ja.json';
 import zhMessages from '@/i18n/messages/zh.json';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/stores/homepage/editor-store';
+
+import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import { layoutComponents } from '../lib/layout-utils';
+import { SortableComponent } from './SortableComponent';
 
 const MESSAGES: Record<string, any> = {
   default: enMessages,

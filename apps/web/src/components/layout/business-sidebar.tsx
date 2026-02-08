@@ -13,14 +13,15 @@ import {
     UserCog,
     Users,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { TalentSwitcher } from '@/components/talent/talent-switcher';
 import { useCurrentTalent } from '@/hooks/use-current-talent';
+import { useFeatureToggle } from '@/hooks/use-feature-toggle';
 import { useUIMode } from '@/hooks/use-ui-mode';
 import { cn, isStaging } from '@/lib/utils';
 
@@ -67,6 +68,7 @@ export function BusinessSidebar() {
   const t = useTranslations('navigation');
   const { switchToManagementUI, currentTenantId } = useUIMode();
   const { currentTalent } = useCurrentTalent();
+  const { marshmallowEnabled, homepageEnabled } = useFeatureToggle();
 
   // Calculate top offset for staging banner
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
@@ -131,21 +133,27 @@ export function BusinessSidebar() {
             />
           </NavGroup>
 
-          {/* Page Management */}
-          <NavGroup title={t('homepage')}>
-            <NavItem
-              href="/homepage"
-              icon={<Globe size={18} />}
-              label={t('homepage')}
-              isActive={pathname === '/homepage' || pathname?.startsWith('/homepage/')}
-            />
-            <NavItem
-              href="/marshmallow"
-              icon={<MessageSquareHeart size={18} />}
-              label={t('marshmallow')}
-              isActive={pathname === '/marshmallow' || pathname?.startsWith('/marshmallow/')}
-            />
-          </NavGroup>
+          {/* Page Management - only show if at least one feature is enabled */}
+          {(homepageEnabled || marshmallowEnabled) && (
+            <NavGroup title={t('homepage')}>
+              {homepageEnabled && (
+                <NavItem
+                  href="/homepage"
+                  icon={<Globe size={18} />}
+                  label={t('homepage')}
+                  isActive={pathname === '/homepage' || pathname?.startsWith('/homepage/')}
+                />
+              )}
+              {marshmallowEnabled && (
+                <NavItem
+                  href="/marshmallow"
+                  icon={<MessageSquareHeart size={18} />}
+                  label={t('marshmallow')}
+                  isActive={pathname === '/marshmallow' || pathname?.startsWith('/marshmallow/')}
+                />
+              )}
+            </NavGroup>
+          )}
 
           {/* Reports */}
           <NavGroup title={t('reports')}>

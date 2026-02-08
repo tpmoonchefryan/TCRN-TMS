@@ -2,9 +2,9 @@
 
 import React from 'react';
 
-import { defaultProps, RichTextProps } from './schema';
-
 import { cn } from '@/lib/utils';
+
+import { defaultProps, RichTextProps } from './schema';
 
 interface RichTextRendererProps extends Partial<RichTextProps> {
   className?: string;

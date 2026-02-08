@@ -64,7 +64,7 @@ const ROLE_PERMISSIONS: Record<string, Record<string, ActionType[]>> = {
  * if (hasAnyPermission(['customer.profile', 'report.mfr'], ActionType.READ)) { ... }
  */
 export function usePermission() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, effectivePermissions } = useAuthStore();
 
   // Get user's role codes
   const userRoles = useMemo(() => {
@@ -92,7 +92,33 @@ export function usePermission() {
     // Wildcard permission (admin)
     if (hasWildcardPermission) return true;
 
-    // Check direct permissions from user object (if backend provides flattened list)
+    // 1. Check effectivePermissions from backend API (highest priority)
+    if (effectivePermissions) {
+      const actions = Array.isArray(action) ? action : [action];
+      for (const a of actions) {
+        const permKey = `${resource}:${a}`;
+        
+        // Check explicit deny first
+        if (effectivePermissions[permKey] === 'deny') {
+          return false;
+        }
+        
+        // Check explicit grant
+        if (effectivePermissions[permKey] === 'grant') {
+          return true;
+        }
+        
+        // Check wildcard grant (e.g., "customer:*" or "*:read")
+        if (effectivePermissions[`${resource}:*`] === 'grant') {
+          return true;
+        }
+        if (effectivePermissions[`*:${a}`] === 'grant') {
+          return true;
+        }
+      }
+    }
+
+    // 2. Check direct permissions from user object (legacy format)
     if (user.permissions && Array.isArray(user.permissions)) {
       const actions = Array.isArray(action) ? action : [action];
       for (const a of actions) {
@@ -103,7 +129,7 @@ export function usePermission() {
       }
     }
 
-    // Check role-based permissions
+    // 3. Fallback: Check role-based permissions (hardcoded matrix)
     for (const roleCode of userRoles) {
       const rolePerms = ROLE_PERMISSIONS[roleCode];
       if (!rolePerms) continue;
@@ -138,7 +164,7 @@ export function usePermission() {
     }
 
     return false;
-  }, [user, isAuthenticated, userRoles, hasWildcardPermission]);
+  }, [user, isAuthenticated, userRoles, hasWildcardPermission, effectivePermissions]);
 
   /**
    * Check if user has permission for any of the given resources

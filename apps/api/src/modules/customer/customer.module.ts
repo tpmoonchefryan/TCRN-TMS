@@ -4,22 +4,21 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 
 import { QUEUE_NAMES } from '../queue';
-
 import {
   CustomerController,
-  PlatformIdentityController,
-  MembershipController,
   ExternalIdController,
+  MembershipController,
+  PlatformIdentityController,
 } from './controllers';
 import {
   BatchOperationService,
+  CompanyCustomerService,
+  CustomerExternalIdService,
   CustomerProfileService,
   IndividualCustomerService,
-  CompanyCustomerService,
-  PlatformIdentityService,
   MembershipRecordService,
-  CustomerExternalIdService,
   MembershipSchedulerService,
+  PlatformIdentityService,
 } from './services';
 
 @Module({

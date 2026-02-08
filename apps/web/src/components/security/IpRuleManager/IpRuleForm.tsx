@@ -2,42 +2,40 @@
 
 'use client';
 
+import { CreateIpRuleSchema } from '@tcrn/shared';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Textarea,
+    Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    Input,
+    Label,
+    Textarea,
 } from '@/components/ui';
+import { useZodForm } from '@/lib/form';
 
 interface IpRuleFormProps {
   onSubmit: (data: { ruleType: string; ipPattern: string; scope: string; reason?: string }) => void;
   onCancel: () => void;
 }
 
-interface FormData {
-  ruleType: 'whitelist' | 'blacklist';
-  ipPattern: string;
-  scope: 'global' | 'admin' | 'public' | 'api';
-  reason: string;
-  expiresInHours: string;
-}
+// Frontend form schema - extend CreateIpRuleSchema for form-specific needs
+const IpRuleFormSchema = CreateIpRuleSchema.omit({ expiresAt: true }).extend({
+  expiresInHours: z.string().optional(),
+});
 
-// IPv4 or CIDR regex
-const IP_PATTERN = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+type FormData = z.infer<typeof IpRuleFormSchema>;
 
 export function IpRuleForm({ onSubmit, onCancel }: IpRuleFormProps) {
   const t = useTranslations('security');
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const form = useZodForm(IpRuleFormSchema, {
     defaultValues: {
       ruleType: 'blacklist',
       ipPattern: '',
@@ -47,33 +45,9 @@ export function IpRuleForm({ onSubmit, onCancel }: IpRuleFormProps) {
     },
   });
 
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = form;
+
   const selectedRuleType = watch('ruleType');
-
-  const validateIpPattern = (value: string) => {
-    if (!IP_PATTERN.test(value)) {
-      return t('invalidIpPattern');
-    }
-
-    // Validate each octet
-    const parts = value.split('/');
-    const octets = parts[0].split('.');
-    for (const octet of octets) {
-      const num = parseInt(octet, 10);
-      if (num < 0 || num > 255) {
-        return t('invalidIpPattern');
-      }
-    }
-
-    // Validate CIDR prefix
-    if (parts[1]) {
-      const prefix = parseInt(parts[1], 10);
-      if (prefix < 0 || prefix > 32) {
-        return t('invalidCidrPrefix');
-      }
-    }
-
-    return true;
-  };
 
   const onFormSubmit = (data: FormData) => {
     onSubmit({
@@ -111,10 +85,7 @@ export function IpRuleForm({ onSubmit, onCancel }: IpRuleFormProps) {
             <Label htmlFor="ipPattern">{t('ipPattern')} *</Label>
             <Input
               id="ipPattern"
-              {...register('ipPattern', { 
-                required: t('ipPatternRequired'),
-                validate: validateIpPattern,
-              })}
+              {...register('ipPattern')}
               placeholder={t('ipPatternPlaceholder')}
               className="font-mono"
             />

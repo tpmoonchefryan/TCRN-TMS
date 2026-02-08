@@ -1,7 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import * as crypto from 'crypto';
-
 import {
     BadRequestException,
     ConflictException,
@@ -11,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_THEME, ErrorCodes, type RequestContext } from '@tcrn/shared';
+import * as crypto from 'crypto';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -21,7 +20,6 @@ import {
     ThemeConfig,
     UpdateSettingsDto
 } from '../dto/homepage.dto';
-
 import { CdnPurgeService } from './cdn-purge.service';
 
 

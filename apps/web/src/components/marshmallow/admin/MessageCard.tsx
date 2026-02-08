@@ -17,7 +17,7 @@ import {
     X
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,7 +68,7 @@ interface MessageCardProps {
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export function MessageCard({ 
+export const MessageCard = memo(function MessageCard({ 
   message, 
   selected, 
   onSelect,
@@ -367,4 +367,4 @@ export function MessageCard({
       </div>
     </Card>
   );
-}
+});

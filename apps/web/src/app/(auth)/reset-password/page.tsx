@@ -3,12 +3,14 @@
 
 'use client';
 
+import { ForceResetPasswordSchema } from '@tcrn/shared';
 import { AlertTriangle, CheckCircle2, Lock, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
+import { useZodForm } from '@/lib/form';
 import { useAuthStore } from '@/stores/auth-store';
 
 
@@ -21,17 +23,29 @@ export default function ResetPasswordPage() {
   const sessionToken = searchParams.get('token');
   const reason = searchParams.get('reason');
 
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
+
+  const form = useZodForm(ForceResetPasswordSchema, {
+    defaultValues: {
+      sessionToken: sessionToken || '',
+      newPassword: '',
+      newPasswordConfirm: '',
+    },
+    mode: 'onChange',
+  });
+
+  const newPassword = form.watch('newPassword');
+  const confirmPassword = form.watch('newPasswordConfirm');
 
   // Redirect if no token
   useEffect(() => {
     if (!sessionToken) {
       router.push('/login');
+    } else {
+      form.setValue('sessionToken', sessionToken);
     }
-  }, [sessionToken, router]);
+  }, [sessionToken, router, form]);
 
   // Validate password in real-time
   useEffect(() => {
@@ -56,30 +70,21 @@ export default function ResetPasswordPage() {
     setPasswordErrors(errors);
   }, [newPassword, t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = form.handleSubmit(async (data) => {
     clearError();
-
-    if (newPassword !== confirmPassword) {
-      return;
-    }
 
     if (passwordErrors.length > 0) {
       return;
     }
 
-    if (!sessionToken) {
-      return;
-    }
-
-    const result = await resetPassword(sessionToken, newPassword);
+    const result = await resetPassword(data.sessionToken, data.newPassword);
     if (result) {
       setSuccess(true);
       setTimeout(() => {
         router.push('/');
       }, 2000);
     }
-  };
+  });
 
   const getReasonMessage = () => {
     switch (reason) {
@@ -153,10 +158,8 @@ export default function ResetPasswordPage() {
                 id="newPassword"
                 type="password"
                 placeholder={t('newPassword.placeholder')}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                {...form.register('newPassword')}
                 disabled={isLoading}
-                required
                 autoComplete="new-password"
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
@@ -179,20 +182,21 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-slate-600 font-medium">
+              <Label htmlFor="newPasswordConfirm" className="text-slate-600 font-medium">
                 {t('confirmPassword.label')}
               </Label>
               <Input
-                id="confirmPassword"
+                id="newPasswordConfirm"
                 type="password"
                 placeholder={t('confirmPassword.placeholder')}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                {...form.register('newPasswordConfirm')}
                 disabled={isLoading}
-                required
                 autoComplete="new-password"
                 className="bg-white/50 focus:bg-white transition-all border-slate-200"
               />
+              {form.formState.errors.newPasswordConfirm && (
+                <p className="text-xs text-destructive">{form.formState.errors.newPasswordConfirm.message}</p>
+              )}
               {confirmPassword.length > 0 && !passwordMatch && (
                 <p className="text-xs text-destructive">{t('confirmPassword.mismatch')}</p>
               )}

@@ -8,10 +8,10 @@ import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import {
-  VersionListQueryDto,
-  VersionListItem,
   HomepageContent,
   ThemeConfig,
+  VersionListItem,
+  VersionListQueryDto,
 } from '../dto/homepage.dto';
 
 @Injectable()

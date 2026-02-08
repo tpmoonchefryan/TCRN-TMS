@@ -21,12 +21,11 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-
-import { ComponentType } from '../lib/types';
-
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEditorStore } from '@/stores/homepage/editor-store';
+
+import { ComponentType } from '../lib/types';
 
 
 const COMPONENTS_LIST: { type: ComponentType, labelKey: string, icon: any }[] = [

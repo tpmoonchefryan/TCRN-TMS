@@ -1,18 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ErrorCodes } from '@tcrn/shared';
 import { Request } from 'express';
 
-
 import { PermissionSnapshotService, ScopeType } from '../../modules/permission/permission-snapshot.service';
-import { RequiredPermission, PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
+import { PERMISSIONS_KEY,RequiredPermission } from '../decorators/require-permissions.decorator';
 
 /**
  * Permission Guard

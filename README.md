@@ -185,6 +185,44 @@ Integrated with Tencent Cloud SES:
 - **Queue Processing**: BullMQ worker with retry and rate limiting
 - **Preset Templates**: Password reset, login verification, membership alerts
 
+### Performance Optimization
+
+Production-grade performance features:
+
+| Feature | Implementation |
+|---------|----------------|
+| **Dynamic Imports** | 7+ large components lazy-loaded via `dynamic.tsx` |
+| **List Virtualization** | `@tanstack/react-virtual` for long lists |
+| **Image Optimization** | `next/image` with remote patterns configured |
+| **Memoization** | `React.memo` on high-frequency components |
+
+### Accessibility
+
+WCAG 2.1 AA compliant:
+
+- **Reduced Motion**: Respects `prefers-reduced-motion` system preference
+- **Keyboard Navigation**: Full keyboard support for all interactive elements
+- **Screen Readers**: Semantic HTML and ARIA labels throughout
+
+### Error Handling
+
+Three-tier error boundary architecture:
+
+```
+app/error.tsx              → Global fallback
+app/(business)/error.tsx   → Business section fallback
+app/(admin)/admin/error.tsx → Admin section fallback
+```
+
+### Form Validation
+
+End-to-end type-safe validation with Zod:
+
+- **145+ Zod Schemas**: Covering Auth, Customer, Marshmallow, Homepage modules
+- **Backend**: `ZodValidationPipe` for automatic request validation
+- **Frontend**: `useZodForm` hook for form state management
+- **Swagger Integration**: Auto-generated API docs from Zod schemas
+
 ---
 
 ## 🏗️ Architecture
@@ -246,6 +284,7 @@ Integrated with Tencent Cloud SES:
 | | TypeScript | 5.8.3 |
 | | Tailwind CSS | 3.4.17 |
 | | Zustand | 5.0.5 |
+| | TanStack React Virtual | 3.13.18 |
 | **Backend** | NestJS | 11.1.6 |
 | | Prisma ORM | 6.14.0 |
 | | BullMQ | 5.66.5 |
@@ -797,6 +836,8 @@ curl -X POST /api/v1/auth/login \
 | **Logs** | `GET /logs/changes` | Query change logs |
 | | `GET /logs/events` | Query system events |
 | | `GET /logs/search` | Loki full-text search |
+| **Compliance** | `GET /compliance/data-map` | Data mapping report |
+| | `GET /compliance/privacy-impact` | Privacy impact assessment |
 
 ### Response Format
 

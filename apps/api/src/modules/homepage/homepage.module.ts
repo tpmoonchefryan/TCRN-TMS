@@ -7,7 +7,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RateLimiterGuard } from '../../common/guards/rate-limiter.guard';
 import { RateLimiterService } from '../../common/services/rate-limiter.service';
 import { LogModule } from '../log/log.module';
-
 import {
     CalendarController,
     DomainLookupController,

@@ -1,20 +1,23 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Module } from '@nestjs/common';
+import { forwardRef,Module } from '@nestjs/common';
 
-import { SecurityController } from './controllers';
+import { AuthModule } from '../auth';
+import { RateLimitStatsController, SecurityController } from './controllers';
 import { IpAccessGuard, UaDetectionGuard } from './guards';
 import {
-  FingerprintService,
-  BlocklistMatcherService,
-  BlocklistService,
-  IpAccessService,
-  UaDetectionService,
-  RateLimitService,
+    BlocklistMatcherService,
+    BlocklistService,
+    FingerprintService,
+    IpAccessService,
+    RateLimitService,
+    RateLimitStatsService,
+    UaDetectionService,
 } from './services';
 
 @Module({
-  controllers: [SecurityController],
+  imports: [forwardRef(() => AuthModule)],
+  controllers: [SecurityController, RateLimitStatsController],
   providers: [
     FingerprintService,
     BlocklistMatcherService,
@@ -22,6 +25,7 @@ import {
     IpAccessService,
     UaDetectionService,
     RateLimitService,
+    RateLimitStatsService,
     IpAccessGuard,
     UaDetectionGuard,
   ],
@@ -32,8 +36,10 @@ import {
     IpAccessService,
     UaDetectionService,
     RateLimitService,
+    RateLimitStatsService,
     IpAccessGuard,
     UaDetectionGuard,
   ],
 })
 export class SecurityModule {}
+

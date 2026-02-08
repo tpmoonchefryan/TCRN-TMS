@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -7,8 +7,6 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-import { PermissionSelector } from './permission-selector';
 
 import {
     Button,
@@ -24,6 +22,8 @@ import {
 } from '@/components/ui';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { systemRoleApi } from '@/lib/api/client';
+
+import { PermissionSelector } from './permission-selector';
 
 interface EditRoleDialogProps {
   open: boolean;
@@ -69,12 +69,8 @@ export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRole
                 description: roleData.description || '',
              });
              
-             if (roleData.rolePolicies) {
-                const perms = roleData.rolePolicies.map((rp: any) => ({
-                    resource: rp.policy.resource.code,
-                    action: rp.policy.action
-                }));
-                setPermissions(perms);
+             if (roleData.permissions) {
+                setPermissions(roleData.permissions);
              }
           }
         } catch (error) {

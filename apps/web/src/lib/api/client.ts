@@ -692,6 +692,7 @@ export const talentApi = {
     avatarUrl?: string;
     homepagePath?: string;
     timezone?: string;
+    socialLinks?: Array<{ platform: string; url: string }>;
     version: number;
   }) =>
     apiClient.patch<any>(`/api/v1/talents/${id}`, data),
@@ -1145,6 +1146,31 @@ export const securityApi = {
       '/api/v1/ip-access-rules/check',
       { ip, scope }
     ),
+
+  // Rate Limit Stats
+  getRateLimitStats: () =>
+    apiClient.get<{
+      summary: {
+        totalRequests24h: number;
+        blockedRequests24h: number;
+        uniqueIPs24h: number;
+        currentlyBlocked: number;
+      };
+      topEndpoints: Array<{
+        endpoint: string;
+        method: string;
+        current: number;
+        limit: number;
+        resetIn: number;
+      }>;
+      topIPs: Array<{
+        ip: string;
+        requests: number;
+        blocked: boolean;
+        lastSeen: string;
+      }>;
+      lastUpdated: string;
+    }>('/api/v1/rate-limit/stats'),
 };
 
 // Tenant API (Platform Admin)
@@ -1555,6 +1581,32 @@ export const logApi = {
     app?: string;
   }) =>
     apiClient.post<any>('/api/v1/logs/search', params),
+
+  // Unified log search (for LogViewer component)
+  searchUnified: (params?: {
+    keyword?: string;
+    stream?: string;
+    severity?: string;
+    start?: string;
+    end?: string;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.keyword) queryParams.append('keyword', params.keyword);
+    if (params?.stream) queryParams.append('stream', params.stream);
+    if (params?.severity) queryParams.append('severity', params.severity);
+    if (params?.start) queryParams.append('start', params.start);
+    if (params?.end) queryParams.append('end', params.end);
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    const queryStr = queryParams.toString();
+    return apiClient.get<Array<{
+      timestamp: string;
+      level: string;
+      message: string;
+      source: string;
+      metadata?: Record<string, unknown>;
+    }>>(`/api/v1/logs/search${queryStr ? `?${queryStr}` : ''}`);
+  },
 };
 
 
@@ -1625,6 +1677,12 @@ export const systemUserApi = {
 
   setScopeAccess: (id: string, accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }>) =>
     apiClient.post<any>(`/api/v1/system-users/${id}/scope-access`, { accesses }),
+
+  disableTotp: (id: string) =>
+    apiClient.post<any>(`/api/v1/system-users/${id}/disable-totp`, {}),
+
+  setPasswordExpiry: (id: string, options: { enabled: boolean; expiresInDays?: number }) =>
+    apiClient.post<any>(`/api/v1/system-users/${id}/password-expiry`, options),
 };
 
 // Permission API

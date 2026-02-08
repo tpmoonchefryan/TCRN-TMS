@@ -7,8 +7,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { PermissionSelector } from './permission-selector';
-
 import {
     Button,
     Dialog,
@@ -23,6 +21,8 @@ import {
 } from '@/components/ui';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { systemRoleApi } from '@/lib/api/client';
+
+import { PermissionSelector } from './permission-selector';
 
 interface CreateRoleDialogProps {
   open: boolean;

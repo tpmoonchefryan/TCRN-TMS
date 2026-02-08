@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -85,8 +86,11 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // Global validation pipe
+  // Global validation pipes
+  // 1. ZodValidationPipe for Zod DTOs (createZodDto)
+  // 2. ValidationPipe for class-validator DTOs (legacy compatibility)
   app.useGlobalPipes(
+    new ZodValidationPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,

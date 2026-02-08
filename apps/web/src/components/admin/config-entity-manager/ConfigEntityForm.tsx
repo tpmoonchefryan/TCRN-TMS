@@ -4,8 +4,6 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { ConfigEntity, ConfigEntityType, ENTITY_TYPE_CONFIGS, ExtraFieldConfig } from './types';
-
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -27,6 +25,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+
+import { ConfigEntity, ConfigEntityType, ENTITY_TYPE_CONFIGS, ExtraFieldConfig } from './types';
 
 
 interface ConfigEntityFormProps {

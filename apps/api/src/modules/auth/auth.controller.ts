@@ -1,7 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { randomBytes } from 'crypto';
-
 import {
     BadRequestException,
     Body,
@@ -10,6 +8,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
     Param,
     Patch,
     Post,
@@ -18,20 +17,22 @@ import {
     Res,
     UnauthorizedException,
     UploadedFile,
+    UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
+import { randomBytes } from 'crypto';
 import { Request, Response } from 'express';
 
 import { Public } from '../../common/decorators';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthRateLimiterGuard } from '../../common/guards/auth-rate-limiter.guard';
 import { success } from '../../common/response.util';
 import { EmailService } from '../email/services/email.service';
 import { BUCKETS, MinioService } from '../minio/minio.service';
-
 import { AuthService } from './auth.service';
 import {
     ChangePasswordDto,
@@ -52,7 +53,10 @@ import { TotpService } from './totp.service';
 
 @ApiTags('Auth')
 @Controller('auth')
+@UseGuards(AuthRateLimiterGuard)
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly passwordService: PasswordService,
@@ -473,7 +477,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
         },
       );
     } catch (error) {
-      console.error('Failed to send password reset email:', error);
+      this.logger.error(`Failed to send password reset email: ${error}`);
       // Don't throw - still return success for security
     }
 

@@ -4,8 +4,7 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { LinkButtonProps } from './schema';
-
+import { IconPicker } from '@/components/shared/IconPicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,6 +15,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+
+import { LinkButtonProps } from './schema';
 
 interface LinkButtonEditorProps {
   props: LinkButtonProps;
@@ -45,39 +46,90 @@ export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onCha
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>{t('style')}</Label>
-        <Select 
-          value={props.style} 
-          onValueChange={(v: any) => onChange({ style: v })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="solid">{t('solid')}</SelectItem>
-            <SelectItem value="outline">{t('outline')}</SelectItem>
-            <SelectItem value="ghost">{t('ghost')}</SelectItem>
-            <SelectItem value="link">{t('link')}</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>{t('style')}</Label>
+          <Select 
+            value={props.style} 
+            onValueChange={(v: any) => onChange({ style: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="solid">{t('solid')}</SelectItem>
+              <SelectItem value="outline">{t('outline')}</SelectItem>
+              <SelectItem value="ghost">{t('ghost')}</SelectItem>
+              <SelectItem value="link">{t('link')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* New: Hover Effect */}
+        <div className="space-y-2">
+          <Label>{t('hoverEffect')}</Label>
+          <Select 
+            value={props.hoverEffect || 'none'} 
+            onValueChange={(v: any) => onChange({ hoverEffect: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t('none')}</SelectItem>
+              <SelectItem value="scale">{t('hoverScale')}</SelectItem>
+              <SelectItem value="glow">{t('hoverGlow')}</SelectItem>
+              <SelectItem value="lift">{t('hoverLift')}</SelectItem>
+              <SelectItem value="shake">{t('hoverShake')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-2">
         <Label>{t('iconName')}</Label>
-        <Input 
+        <IconPicker 
           value={props.icon || ''} 
-          onChange={(e) => onChange({ icon: e.target.value || undefined })}
-          placeholder={t('iconHint')}
+          onChange={(iconName) => onChange({ icon: iconName || undefined })}
         />
       </div>
 
-      <div className="flex items-center justify-between">
-        <Label>{t('fullWidth')}</Label>
-        <Switch 
-          checked={props.fullWidth} 
-          onCheckedChange={(checked) => onChange({ fullWidth: checked })} 
-        />
+      {/* New: Custom Color */}
+      <div className="space-y-2">
+        <Label>{t('customColor')}</Label>
+        <div className="flex gap-2">
+          <input
+            type="color"
+            value={props.customColor || '#3b82f6'}
+            onChange={(e) => onChange({ customColor: e.target.value })}
+            className="w-10 h-10 rounded border cursor-pointer"
+          />
+          <Input 
+            value={props.customColor || ''} 
+            onChange={(e) => onChange({ customColor: e.target.value })}
+            placeholder="#3b82f6"
+            className="flex-1"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center justify-between">
+          <Label>{t('fullWidth')}</Label>
+          <Switch 
+            checked={props.fullWidth} 
+            onCheckedChange={(checked) => onChange({ fullWidth: checked })} 
+          />
+        </div>
+
+        {/* New: Open in New Tab */}
+        <div className="flex items-center justify-between">
+          <Label>{t('openInNewTab')}</Label>
+          <Switch 
+            checked={props.openInNewTab || false} 
+            onCheckedChange={(checked) => onChange({ openInNewTab: checked })} 
+          />
+        </div>
       </div>
     </div>
   );

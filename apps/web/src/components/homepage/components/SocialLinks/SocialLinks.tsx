@@ -5,9 +5,9 @@ import { Facebook, Github, Instagram, Link as LinkIcon, Mail, Twitter, Youtube }
 import Link from 'next/link';
 import React from 'react';
 
-import { defaultProps, SocialLinksProps } from './schema';
-
 import { cn } from '@/lib/utils';
+
+import { defaultProps, SocialLinksProps } from './schema';
 
 // Simple mapping for now - ideally this comes from a shared icon registry or system dictionary
 const PLATFORM_ICONS: Record<string, any> = {

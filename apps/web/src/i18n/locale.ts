@@ -4,7 +4,7 @@
 
 import { cookies } from 'next/headers';
 
-import { Locale, locales, defaultLocale } from './request';
+import { defaultLocale,Locale, locales } from './request';
 
 const COOKIE_NAME = 'NEXT_LOCALE';
 

@@ -3,10 +3,10 @@
 
 import React from 'react';
 
-import { defaultProps, ProfileCardProps } from './schema';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+
+import { defaultProps, ProfileCardProps } from './schema';
 
 interface ProfileCardRendererProps extends Partial<ProfileCardProps> {
   className?: string;

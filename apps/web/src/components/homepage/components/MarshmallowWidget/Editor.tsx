@@ -4,8 +4,6 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { MarshmallowWidgetProps } from './schema';
-
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,6 +14,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+
+import { MarshmallowWidgetProps } from './schema';
 
 interface MarshmallowWidgetEditorProps {
   props: MarshmallowWidgetProps;

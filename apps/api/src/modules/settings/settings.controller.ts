@@ -13,7 +13,6 @@ import { IsInt, IsObject, IsString, Min } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
 import { ScopeSettings, SettingsService } from './settings.service';
 
 // DTOs

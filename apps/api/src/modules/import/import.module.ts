@@ -6,7 +6,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 import { QUEUE_NAMES } from '../queue';
-
 import { ImportController } from './controllers';
 import { ImportJobService, ImportParserService } from './services';
 

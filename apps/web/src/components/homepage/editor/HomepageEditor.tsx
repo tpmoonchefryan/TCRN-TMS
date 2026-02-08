@@ -4,20 +4,20 @@
 'use client';
 
 import { ArrowLeft, Eye, History, Monitor, MoreHorizontal, Redo2, Save, Settings, Smartphone, Tablet, Undo2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React from 'react'; // Added for React.useState
 import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'; // Added
+import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { Canvas } from './Canvas';
 import { ComponentPanel } from './ComponentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { SettingsDialog } from './SettingsDialog'; // Added
 import { VersionHistory } from './VersionHistory'; // Added
-
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'; // Added
-import { useEditorStore } from '@/stores/homepage/editor-store';
 
 interface HomepageEditorProps {
   talentId: string;

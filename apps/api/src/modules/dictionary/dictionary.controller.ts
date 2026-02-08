@@ -19,7 +19,6 @@ import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, Mi
 import { Request } from 'express';
 
 import { paginated, success } from '../../common/response.util';
-
 import { DictionaryService } from './dictionary.service';
 
 // =====================================================

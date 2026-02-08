@@ -4,9 +4,9 @@
 import { useTranslations } from 'next-intl';
 import React, { useMemo } from 'react';
 
-import { VideoEmbedProps } from './schema';
-
 import { cn } from '@/lib/utils';
+
+import { VideoEmbedProps } from './schema';
 
 // Helper to extract embed ID and platform
 function parseVideoUrl(url: string | undefined) {

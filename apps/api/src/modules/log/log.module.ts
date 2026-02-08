@@ -1,25 +1,26 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Module, Global, forwardRef } from '@nestjs/common';
+import { forwardRef,Global, Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth';
-
 import {
-  ChangeLogController,
-  TechEventLogController,
-  IntegrationLogController,
-  LogSearchController,
+    ChangeLogController,
+    ComplianceReportController,
+    IntegrationLogController,
+    LogSearchController,
+    TechEventLogController,
 } from './controllers';
 import {
-  LogMaskingService,
-  ChangeLogService,
-  ChangeLogQueryService,
-  TechEventLogService,
-  TechEventLogQueryService,
-  IntegrationLogService,
-  IntegrationLogQueryService,
-  LokiPushService,
-  LokiQueryService,
+    ChangeLogQueryService,
+    ChangeLogService,
+    ComplianceReportService,
+    IntegrationLogQueryService,
+    IntegrationLogService,
+    LogMaskingService,
+    LokiPushService,
+    LokiQueryService,
+    TechEventLogQueryService,
+    TechEventLogService,
 } from './services';
 
 @Global()
@@ -30,6 +31,7 @@ import {
     TechEventLogController,
     IntegrationLogController,
     LogSearchController,
+    ComplianceReportController,
   ],
   providers: [
     LogMaskingService,
@@ -41,6 +43,7 @@ import {
     IntegrationLogQueryService,
     LokiPushService,
     LokiQueryService,
+    ComplianceReportService,
   ],
   exports: [
     LogMaskingService,
@@ -52,6 +55,7 @@ import {
     IntegrationLogQueryService,
     LokiPushService,
     LokiQueryService,
+    ComplianceReportService,
   ],
 })
 export class LogModule {}

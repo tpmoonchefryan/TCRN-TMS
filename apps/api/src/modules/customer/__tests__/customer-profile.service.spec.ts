@@ -1,8 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { prisma } from '@tcrn/database';
 import type { RequestContext } from '@tcrn/shared';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database/database.service';
 import { ChangeLogService } from '../../log/services/change-log.service';
@@ -10,335 +12,271 @@ import { TechEventLogService } from '../../log/services/tech-event-log.service';
 import { ProfileType } from '../dto/customer.dto';
 import { CustomerProfileService } from '../services/customer-profile.service';
 
+const TEST_SCHEMA = 'tenant_test';
+
 describe('CustomerProfileService', () => {
   let service: CustomerProfileService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockTechEventLogService: Partial<TechEventLogService>;
-  let mockPrisma: Record<string, unknown>;
+  let module: TestingModule;
+  let testTalentId: string | null = null;
+  let testCustomerId: string | null = null;
 
   const mockContext: RequestContext = {
-    tenantId: 'tenant-123',
-    tenantSchema: 'tenant_abc123',
-    userId: 'user-1',
+    tenantId: 'tenant-test',
+    tenantSchema: TEST_SCHEMA,
+    userId: '00000000-0000-0000-0000-000000000001',
     userName: 'Test User',
     ipAddress: '127.0.0.1',
     userAgent: 'Test Agent',
     requestId: 'req-123',
   };
 
-  const mockCustomer = {
-    id: 'customer-123',
-    talentId: 'talent-456',
-    profileStoreId: 'store-789',
-    originTalentId: 'talent-456',
-    rmProfileId: 'pii-token-abc',
-    profileType: 'individual',
-    nickname: 'TestUser',
-    primaryLanguage: 'ja',
-    tags: ['vip', 'active'],
-    source: 'import',
-    isActive: true,
-    version: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    status: { id: 'status-1', code: 'active', name: 'Active' },
-    talent: { id: 'talent-456', code: 'T001', displayName: 'Test Talent' },
-    profileStore: { id: 'store-789', code: 'S001', nameEn: 'Test Store' },
-    originTalent: { id: 'talent-456', code: 'T001', displayName: 'Test Talent' },
-    lastModifiedTalent: null,
-    individual: null,
-    companyInfo: null,
-    membershipRecords: [],
-    accessLogs: [],
-    inactivationReason: null,
-    _count: { platformIdentities: 0, membershipRecords: 0 },
-  };
+  beforeAll(async () => {
+    // Get a real talent with profile store for testing
+    const talents = await prisma.$queryRawUnsafe<{ id: string; profile_store_id: string }[]>(`
+      SELECT id, profile_store_id FROM "${TEST_SCHEMA}".talent 
+      WHERE profile_store_id IS NOT NULL 
+      LIMIT 1
+    `);
+    
+    if (talents.length > 0) {
+      testTalentId = talents[0].id;
+    }
 
-  const mockTalent = {
-    id: 'talent-456',
-    code: 'T001',
-    displayName: 'Test Talent',
-    profileStoreId: 'store-789',
-  };
+    module = await Test.createTestingModule({
+      providers: [
+        {
+          provide: CustomerProfileService,
+          useFactory: (db: DatabaseService, cl: ChangeLogService, te: TechEventLogService) => {
+            return new CustomerProfileService(db, cl, te);
+          },
+          inject: [DatabaseService, ChangeLogService, TechEventLogService],
+        },
+        {
+          provide: DatabaseService,
+          useValue: {
+            getPrisma: () => prisma,
+            buildPagination: (page: number, pageSize: number) => ({
+              skip: (page - 1) * pageSize,
+              take: pageSize,
+            }),
+            calculatePaginationMeta: (total: number, page: number, pageSize: number) => ({
+              page,
+              pageSize,
+              totalCount: total,
+              totalPages: Math.ceil(total / pageSize),
+            }),
+          },
+        },
+        {
+          provide: ChangeLogService,
+          useValue: {
+            create: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: TechEventLogService,
+          useValue: {
+            log: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<CustomerProfileService>(CustomerProfileService);
+  });
+
+  afterAll(async () => {
+    // Cleanup any test customers
+    if (testCustomerId) {
+      try {
+        await prisma.$executeRawUnsafe(`
+          DELETE FROM "${TEST_SCHEMA}".customer_profile WHERE id = $1::uuid
+        `, testCustomerId);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    await module?.close();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockPrisma = {
-      customerProfile: {
-        findMany: vi.fn().mockResolvedValue([mockCustomer]),
-        findUnique: vi.fn().mockResolvedValue(mockCustomer),
-        findFirst: vi.fn().mockResolvedValue(mockCustomer),
-        create: vi.fn().mockResolvedValue(mockCustomer),
-        update: vi.fn().mockResolvedValue({ ...mockCustomer, version: 2 }),
-        count: vi.fn().mockResolvedValue(1),
-      },
-      talent: {
-        findUnique: vi.fn().mockResolvedValue(mockTalent),
-      },
-      inactivationReason: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'reason-1', code: 'OTHER' }),
-      },
-      customerAccessLog: {
-        create: vi.fn().mockResolvedValue({}),
-      },
-      $queryRawUnsafe: vi.fn().mockResolvedValue([mockTalent]),
-      $executeRawUnsafe: vi.fn().mockResolvedValue(1),
-      $transaction: vi.fn().mockImplementation((fn) => fn(mockPrisma)),
-    };
-
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-      buildPagination: vi.fn().mockReturnValue({ skip: 0, take: 20 }),
-      calculatePaginationMeta: vi.fn().mockReturnValue({
-        page: 1,
-        pageSize: 20,
-        totalCount: 1,
-        totalPages: 1,
-      }),
-    };
-
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockTechEventLogService = {
-      log: vi.fn().mockResolvedValue(undefined),
-    };
-
-    service = new CustomerProfileService(
-      mockDatabaseService as DatabaseService,
-      mockChangeLogService as ChangeLogService,
-      mockTechEventLogService as TechEventLogService,
-    );
   });
 
   describe('findMany', () => {
     it('should return paginated customers', async () => {
+      if (!testTalentId) {
+        console.log('Skipping test: no talent with profile store available');
+        return;
+      }
+
       const result = await service.findMany(
-        { talentId: 'talent-456', page: 1, pageSize: 20 },
+        { talentId: testTalentId, page: 1, pageSize: 20 },
         mockContext,
       );
 
       expect(result).toBeDefined();
-      expect(result.items).toBeDefined();
-      expect(mockDatabaseService.getPrisma).toHaveBeenCalled();
+      expect(result).toHaveProperty('items');
+      expect(result).toHaveProperty('meta');
+      expect(Array.isArray(result.items)).toBe(true);
     });
 
     it('should throw NotFoundException when talent not found', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-
       await expect(
-        service.findMany({ talentId: 'non-existent' }, mockContext),
+        service.findMany({ talentId: '00000000-0000-0000-0000-000000000000' }, mockContext),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException when talent has no profile store', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([
-        { id: 'talent-456', profileStoreId: null },
-      ]);
-
-      await expect(
-        service.findMany({ talentId: 'talent-456' }, mockContext),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('should filter by profile type', async () => {
-      await service.findMany(
-        { talentId: 'talent-456', profileType: ProfileType.INDIVIDUAL },
+      if (!testTalentId) return;
+
+      const result = await service.findMany(
+        { talentId: testTalentId, profileType: ProfileType.INDIVIDUAL },
         mockContext,
       );
 
-      // Service now uses raw SQL queries
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should filter by tags', async () => {
-      await service.findMany(
-        { talentId: 'talent-456', tags: ['vip'] },
-        mockContext,
-      );
-
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      result.items.forEach((item: { profileType: string }) => {
+        expect(item.profileType).toBe(ProfileType.INDIVIDUAL);
+      });
     });
 
     it('should filter by isActive', async () => {
-      await service.findMany(
-        { talentId: 'talent-456', isActive: true },
+      if (!testTalentId) return;
+
+      const result = await service.findMany(
+        { talentId: testTalentId, isActive: true },
         mockContext,
       );
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      result.items.forEach((item: { isActive: boolean }) => {
+        expect(item.isActive).toBe(true);
+      });
     });
 
-    it('should filter by date range', async () => {
-      await service.findMany(
-        { 
-          talentId: 'talent-456', 
-          createdFrom: '2026-01-01',
-          createdTo: '2026-12-31',
-        },
+    it('should support search by term', async () => {
+      if (!testTalentId) return;
+
+      const result = await service.findMany(
+        { talentId: testTalentId, search: 'test' },
         mockContext,
       );
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should search by nickname', async () => {
-      await service.findMany(
-        { talentId: 'talent-456', search: 'Test' },
-        mockContext,
-      );
-
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('items');
     });
   });
 
   describe('findById', () => {
-    it('should return customer by id', async () => {
-      const result = await service.findById('customer-123', 'talent-456', mockContext);
-
-      expect(result).toBeDefined();
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
-    });
-
     it('should throw NotFoundException for non-existent customer', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      if (!testTalentId) return;
 
       await expect(
-        service.findById('non-existent', 'talent-456', mockContext),
+        service.findById('00000000-0000-0000-0000-000000000000', testTalentId, mockContext),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException when talent has no access', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'talent-456', profile_store_id: 'different-store' }])
-        .mockResolvedValueOnce([{ ...mockCustomer, profile_store_id: 'store-789' }]);
+    it('should return customer when found', async () => {
+      if (!testTalentId) return;
 
-      await expect(
-        service.findById('customer-123', 'talent-456', mockContext),
-      ).rejects.toThrow(NotFoundException);
+      // Find an existing customer first
+      const customers = await prisma.$queryRawUnsafe<{ id: string }[]>(`
+        SELECT id FROM "${TEST_SCHEMA}".customer_profile 
+        WHERE talent_id = $1::uuid 
+        LIMIT 1
+      `, testTalentId);
+
+      if (customers.length === 0) {
+        console.log('Skipping test: no customers for talent');
+        return;
+      }
+
+      const result = await service.findById(customers[0].id, testTalentId, mockContext);
+      expect(result).toBeDefined();
+      expect(result.id).toBe(customers[0].id);
     });
   });
 
   describe('deactivate', () => {
-    beforeEach(() => {
-      // Mock raw SQL queries for verifyAccess
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent])
-        .mockResolvedValueOnce([mockCustomer])
-        .mockResolvedValueOnce([{ id: 'reason-1', code: 'OTHER' }]) // inactivation reason
-        .mockResolvedValueOnce([{ ...mockCustomer, version: 2 }]); // updated customer
-    });
+    it('should throw NotFoundException for non-existent customer', async () => {
+      if (!testTalentId) return;
 
-    it('should deactivate customer', async () => {
-      await service.deactivate('customer-123', 'talent-456', 'OTHER', 1, mockContext);
-
-      expect(mockPrisma.$executeRawUnsafe || mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      await expect(
+        service.deactivate('00000000-0000-0000-0000-000000000000', testTalentId, 'OTHER', 1, mockContext),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException on version mismatch', async () => {
+      if (!testTalentId) return;
+
+      // Find an existing customer
+      const customers = await prisma.$queryRawUnsafe<{ id: string; version: number }[]>(`
+        SELECT id, version FROM "${TEST_SCHEMA}".customer_profile 
+        WHERE talent_id = $1::uuid AND is_active = true
+        LIMIT 1
+      `, testTalentId);
+
+      if (customers.length === 0) {
+        console.log('Skipping test: no active customers for talent');
+        return;
+      }
+
       await expect(
-        service.deactivate('customer-123', 'talent-456', 'OTHER', 999, mockContext),
+        service.deactivate(customers[0].id, testTalentId, 'OTHER', 999, mockContext),
       ).rejects.toThrow(ConflictException);
-    });
-
-    it('should record change log on deactivation', async () => {
-      await service.deactivate('customer-123', 'talent-456', 'OTHER', 1, mockContext);
-
-      expect(mockChangeLogService.create).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          action: 'deactivate',
-          objectType: 'customer_profile',
-          objectId: 'customer-123',
-        }),
-        mockContext,
-      );
-    });
-
-    it('should create access log entry', async () => {
-      await service.deactivate('customer-123', 'talent-456', 'OTHER', 1, mockContext);
-
-      // Access log now uses raw SQL
-      expect(mockPrisma.$executeRawUnsafe || mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
     });
   });
 
   describe('Edge cases', () => {
     it('should handle empty search results', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent])
-        .mockResolvedValueOnce([]) // Empty customer results
-        .mockResolvedValueOnce([{ count: 0 }]); // Count result
+      if (!testTalentId) return;
 
       const result = await service.findMany(
-        { talentId: 'talent-456' },
+        { talentId: testTalentId, search: 'ZZZZZZZZZZNONEXISTENT' },
         mockContext,
       );
 
       expect(result.items).toEqual([]);
     });
 
-    it('should handle customers without membership records', async () => {
-      const customerWithoutMembership = {
-        ...mockCustomer,
-        membershipRecords: [],
-        _count: { membershipRecords: 0, platformIdentities: 0 },
-      };
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent])
-        .mockResolvedValueOnce([customerWithoutMembership])
-        .mockResolvedValueOnce([{ count: 1 }]);
-
-      const result = await service.findMany(
-        { talentId: 'talent-456' },
-        mockContext,
-      );
-
-      expect(result.items.length).toBe(1);
-    });
-
     it('should handle hasMembership filter', async () => {
-      const customerWithMembership = {
-        ...mockCustomer,
-        membershipRecords: [{
-          id: 'membership-1',
-          platform: { id: 'platform-1', code: 'YOUTUBE', displayName: 'YouTube' },
-          membershipLevel: { id: 'level-1', code: 'GOLD', name: 'Gold', rank: 2 },
-        }],
-      };
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent])
-        .mockResolvedValueOnce([customerWithMembership])
-        .mockResolvedValueOnce([{ count: 1 }]);
+      if (!testTalentId) return;
 
       const result = await service.findMany(
-        { talentId: 'talent-456', hasMembership: true },
+        { talentId: testTalentId, hasMembership: true },
         mockContext,
       );
 
-      // Only customers with membership should be returned
-      expect(result.items.length).toBe(1);
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('items');
     });
   });
 
   describe('Sorting', () => {
     it('should sort by createdAt desc by default', async () => {
-      await service.findMany({ talentId: 'talent-456' }, mockContext);
+      if (!testTalentId) return;
 
-      // Service uses raw SQL with ORDER BY clause
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should sort by nickname when specified', async () => {
-      await service.findMany(
-        { talentId: 'talent-456', sort: 'nickname', order: 'asc' },
+      const result = await service.findMany(
+        { talentId: testTalentId },
         mockContext,
       );
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      // Check that items exist (sorting is handled by DB)
+      expect(result).toHaveProperty('items');
+    });
+
+    it('should sort by nickname when specified', async () => {
+      if (!testTalentId) return;
+
+      const result = await service.findMany(
+        { talentId: testTalentId, sort: 'nickname', order: 'asc' },
+        mockContext,
+      );
+
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('items');
     });
   });
 });

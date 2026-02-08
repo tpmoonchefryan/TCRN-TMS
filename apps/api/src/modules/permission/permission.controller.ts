@@ -15,9 +15,8 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-
-import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 import { PermissionAction, PermissionEffect, PermissionService } from './permission.service';
+import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
 // DTOs
 class ListPermissionsQueryDto {

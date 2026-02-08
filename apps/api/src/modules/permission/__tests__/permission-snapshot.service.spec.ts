@@ -31,6 +31,17 @@ describe('PermissionSnapshotService', () => {
   const testRoleId = '550e8400-e29b-41d4-a716-446655440002';
   const testScopeId = '550e8400-e29b-41d4-a716-446655440003';
 
+  // Helper function to get the correct key format
+  const getKey = (userId: string, scopeType?: string, scopeId?: string | null) => {
+    if (scopeType && scopeId) {
+      return `perm:${testTenantSchema}:${userId}:${scopeType}:${scopeId}`;
+    }
+    if (scopeType) {
+      return `perm:${testTenantSchema}:${userId}:${scopeType}:null`;
+    }
+    return `perm:${testTenantSchema}:${userId}`;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     redisHashes = new Map();
@@ -55,6 +66,9 @@ describe('PermissionSnapshotService', () => {
         return Array.from(redisHashes.keys()).filter(k => k.startsWith(prefix));
       }),
       expire: vi.fn().mockResolvedValue(1),
+      exists: vi.fn().mockImplementation(async (key: string) => {
+        return redisHashes.has(key);
+      }),
     };
 
     service = new PermissionSnapshotService(mockRedisService as RedisService);
@@ -65,8 +79,12 @@ describe('PermissionSnapshotService', () => {
   });
 
   describe('checkPermission', () => {
+    // When no scope is specified, service defaults to 'tenant' scope with null scopeId
+    // The key format is: perm:{schema}:{userId}:tenant:null
+    
     it('should return true when permission is granted', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      // Set permission at tenant:null scope (default when no scope specified)
+      redisHashes.set(getKey(testUserId, 'tenant'), {
         'customer.profile:read': 'grant',
       });
 
@@ -81,7 +99,7 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should return false when permission is denied', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      redisHashes.set(getKey(testUserId, 'tenant'), {
         'customer.profile:delete': 'deny',
       });
 
@@ -95,8 +113,10 @@ describe('PermissionSnapshotService', () => {
       expect(result).toBe(false);
     });
 
-    it('should return false when permission does not exist', async () => {
-      // No permissions set
+    it('should return false when permission does not exist and no roles found', async () => {
+      // Set empty permissions - key exists but no matching permission
+      redisHashes.set(getKey(testUserId, 'tenant'), {});
+
       const result = await service.checkPermission(
         testTenantSchema,
         testUserId,
@@ -108,7 +128,7 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should return true when user has admin permission for resource', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      redisHashes.set(getKey(testUserId, 'tenant'), {
         'customer.profile:admin': 'grant',
       });
 
@@ -123,7 +143,7 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should return true when user has global admin permission', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      redisHashes.set(getKey(testUserId, 'tenant'), {
         '*:admin': 'grant',
       });
 
@@ -138,7 +158,7 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should use scope-specific key when scope is provided', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}:talent:${testScopeId}`, {
+      redisHashes.set(getKey(testUserId, 'talent', testScopeId), {
         'customer.profile:read': 'grant',
       });
 
@@ -153,7 +173,7 @@ describe('PermissionSnapshotService', () => {
 
       expect(result).toBe(true);
       expect(mockRedisService.hget).toHaveBeenCalledWith(
-        `perm:${testTenantSchema}:${testUserId}:talent:${testScopeId}`,
+        getKey(testUserId, 'talent', testScopeId),
         'customer.profile:read'
       );
     });
@@ -161,7 +181,7 @@ describe('PermissionSnapshotService', () => {
 
   describe('getUserPermissions', () => {
     it('should return all permissions for a user', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      redisHashes.set(getKey(testUserId), {
         'customer.profile:read': 'grant',
         'customer.profile:write': 'grant',
         'customer.pii:read': 'deny',
@@ -183,7 +203,7 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should filter out invalid permission values', async () => {
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}`, {
+      redisHashes.set(getKey(testUserId), {
         'valid.resource:read': 'grant',
         'invalid.resource:read': 'invalid_value',
         'another.resource:write': 'deny',
@@ -293,6 +313,9 @@ describe('PermissionSnapshotService', () => {
 
   describe('Snapshot Key Generation', () => {
     it('should generate correct key for tenant scope', async () => {
+      // Set permission so exists returns true
+      redisHashes.set(getKey(testUserId, 'tenant'), {});
+      
       await service.checkPermission(
         testTenantSchema,
         testUserId,
@@ -309,6 +332,8 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should generate correct key for subsidiary scope', async () => {
+      redisHashes.set(getKey(testUserId, 'subsidiary', testScopeId), {});
+      
       await service.checkPermission(
         testTenantSchema,
         testUserId,
@@ -325,6 +350,8 @@ describe('PermissionSnapshotService', () => {
     });
 
     it('should generate correct key for talent scope', async () => {
+      redisHashes.set(getKey(testUserId, 'talent', testScopeId), {});
+      
       await service.checkPermission(
         testTenantSchema,
         testUserId,

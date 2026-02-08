@@ -5,7 +5,6 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { HealthCheckResponse } from '@tcrn/shared';
 
 import { Public } from '../../common/decorators/public.decorator';
-
 import { HealthService } from './health.service';
 
 @ApiTags('Public - Health')

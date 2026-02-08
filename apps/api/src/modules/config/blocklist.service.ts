@@ -3,7 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 
-import { OwnerType, BlocklistEntryFields } from './config.types';
+import { BlocklistEntryFields,OwnerType } from './config.types';
 
 export interface BlocklistMatch {
   entryId: string;

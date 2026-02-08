@@ -4,7 +4,6 @@ import { Module } from '@nestjs/common';
 
 import { SubsidiaryModule } from '../subsidiary';
 import { TalentModule } from '../talent';
-
 import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 

@@ -143,6 +143,24 @@ const SETTING_FIELDS: SettingField[] = [
     type: 'boolean',
     category: 'security',
   },
+  {
+    key: 'passwordPolicy.minLength',
+    labelKey: 'minPasswordLength',
+    type: 'number',
+    category: 'security',
+  },
+  {
+    key: 'passwordPolicy.requireSpecial',
+    labelKey: 'requireSpecialChar',
+    type: 'boolean',
+    category: 'security',
+  },
+  {
+    key: 'passwordPolicy.maxAgeDays',
+    labelKey: 'passwordMaxAgeDays',
+    type: 'number',
+    category: 'security',
+  },
 ];
 
 // Setting categories
@@ -158,6 +176,34 @@ interface HierarchicalSettingsPanelProps {
   scopeId?: string;
   scopeName?: string;
   readOnly?: boolean;
+}
+
+// Helper to get nested value using dot notation
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  const keys = path.split('.');
+  let current: unknown = obj;
+  for (const key of keys) {
+    if (current && typeof current === 'object' && key in (current as Record<string, unknown>)) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}
+
+// Helper to set nested value using dot notation
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+  const keys = path.split('.');
+  if (keys.length === 1) {
+    return { ...obj, [path]: value };
+  }
+  
+  const result = { ...obj };
+  const [firstKey, ...restKeys] = keys;
+  const nestedObj = (result[firstKey] as Record<string, unknown>) || {};
+  result[firstKey] = setNestedValue({ ...nestedObj }, restKeys.join('.'), value);
+  return result;
 }
 
 export function HierarchicalSettingsPanel({
@@ -218,10 +264,7 @@ export function HierarchicalSettingsPanel({
 
   // Handle setting value change
   const handleSettingChange = (key: string, value: unknown) => {
-    setEditedSettings(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    setEditedSettings(prev => setNestedValue(prev, key, value));
   };
 
   // Save settings
@@ -316,7 +359,7 @@ export function HierarchicalSettingsPanel({
 
   // Render a setting field
   const renderSettingField = (field: SettingField) => {
-    const value = editedSettings[field.key];
+    const value = getNestedValue(editedSettings, field.key);
     const overridden = isOverridden(field.key);
     const inheritedFrom = getInheritanceSource(field.key);
     const canReset = overridden && scopeType !== 'tenant' && !readOnly;
@@ -444,9 +487,9 @@ export function HierarchicalSettingsPanel({
         <div className="flex items-center gap-2">
           <Info size={16} className="text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            {scopeType === 'tenant' && 'Tenant-level settings apply to all subsidiaries and talents unless overridden.'}
-            {scopeType === 'subsidiary' && 'Override tenant settings for this subsidiary and its talents.'}
-            {scopeType === 'talent' && 'Override inherited settings for this talent only.'}
+            {scopeType === 'tenant' && t('tenantScopeDesc')}
+            {scopeType === 'subsidiary' && t('subsidiaryScopeDesc')}
+            {scopeType === 'talent' && t('talentScopeDesc')}
           </span>
         </div>
         {!readOnly && hasChanges && (
@@ -469,16 +512,10 @@ export function HierarchicalSettingsPanel({
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <CategoryIcon size={18} />
-                {category.key === 'general' && 'General Settings'}
-                {category.key === 'features' && 'Feature Toggles'}
-                {category.key === 'import' && 'Import Settings'}
-                {category.key === 'security' && 'Security Settings'}
+                {t(`category.${category.key}.title`)}
               </CardTitle>
               <CardDescription>
-                {category.key === 'general' && 'Language, timezone, and formatting preferences'}
-                {category.key === 'features' && 'Enable or disable platform features'}
-                {category.key === 'import' && 'Customer data import configuration'}
-                {category.key === 'security' && 'Authentication and access control settings'}
+                {t(`category.${category.key}.description`)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -493,14 +530,18 @@ export function HierarchicalSettingsPanel({
         <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              Override Summary
+              {t('overrideSummary')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-blue-600 dark:text-blue-400">
-              {settingsData.overrides.length} setting(s) overridden at this level:
+              {t('overrideCount', { count: settingsData.overrides.length })}
               <span className="font-medium ml-1">
-                {settingsData.overrides.map(key => t(key as any)).join(', ')}
+                {settingsData.overrides.map(key => {
+                  // Find the field definition to get the labelKey
+                  const field = SETTING_FIELDS.find(f => f.key === key);
+                  return field ? t(field.labelKey as any) : key;
+                }).join(', ')}
               </span>
             </p>
           </CardContent>

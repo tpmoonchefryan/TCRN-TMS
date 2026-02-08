@@ -17,7 +17,6 @@ import {
     UpdateWebhookDto,
     WebhookEventType,
 } from '../dto/integration.dto';
-
 import { AdapterCryptoService } from './adapter-crypto.service';
 
 const WEBHOOK_EVENTS = Object.values(WebhookEventType).map((event) => ({

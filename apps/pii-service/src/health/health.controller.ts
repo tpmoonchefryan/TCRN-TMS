@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { PrismaClient } from '.prisma/pii-client';
 import { Controller, Get, Inject } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation,ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../auth/decorators/public.decorator';
 import { CryptoService } from '../crypto/services/crypto.service';
+import { PrismaClient } from '.prisma/pii-client';
 
 @ApiTags('Health')
 @Controller('health')

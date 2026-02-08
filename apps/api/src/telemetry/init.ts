@@ -4,7 +4,7 @@
 import { Logger } from '@nestjs/common';
 
 import { createSampler } from './sampler';
-import { SlowRequestProcessor, ErrorCapturingProcessor } from './slow-request-processor';
+import { ErrorCapturingProcessor,SlowRequestProcessor } from './slow-request-processor';
 
 const logger = new Logger('Telemetry');
 

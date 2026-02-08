@@ -3,8 +3,8 @@
 import { Injectable } from '@nestjs/common';
 import {
   DataMaskingService,
-  PERSONAL_INFO_FIELDS,
   getSensitiveFieldsForEntity,
+  PERSONAL_INFO_FIELDS,
 } from '@tcrn/shared';
 
 /**

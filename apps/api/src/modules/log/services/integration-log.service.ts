@@ -4,7 +4,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationDirection, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
-
 import { LogMaskingService } from './log-masking.service';
 
 export interface InboundLogDto {

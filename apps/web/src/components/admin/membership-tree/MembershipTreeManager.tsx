@@ -3,8 +3,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { ConfigEntityForm } from '../config-entity-manager';
-
 import {
     Accordion,
     AccordionContent,
@@ -22,6 +20,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { configEntityApi } from '@/lib/api/client';
+
+import { ConfigEntityForm } from '../config-entity-manager';
 
 
 interface MembershipLevel {

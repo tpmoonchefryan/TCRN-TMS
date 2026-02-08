@@ -3,9 +3,10 @@
 
 'use client';
 
+import { SubmitMessageSchema } from '@tcrn/shared';
 import { ArrowLeft, CheckCircle2, Link as LinkIcon, Loader2, Send, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { use, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -16,10 +17,14 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { publicApi } from '@/lib/api/client';
+import { useZodForm } from '@/lib/form';
 
 // Cloudflare Turnstile Site Key (use test key in development)
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'; // Test key
-console.log('[Debug] Turnstile Site Key:', TURNSTILE_SITE_KEY);
+if (process.env.NODE_ENV === 'development') {
+   
+  console.log('[Debug] Turnstile Site Key:', TURNSTILE_SITE_KEY);
+}
 
 // Config type matching backend API response (camelCase)
 interface MarshmallowConfig {
@@ -89,18 +94,31 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
   const [config, setConfig] = useState<MarshmallowConfig>(DEFAULT_CONFIG);
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   
-  const [content, setContent] = useState('');
-  const [senderName, setSenderName] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [fingerprint, setFingerprint] = useState('');
   const [honeypot, setHoneypot] = useState('');  // Honeypot field - should remain empty
-  const [socialLink, setSocialLink] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  
+  // Form with Zod validation
+  const form = useZodForm(SubmitMessageSchema, {
+    defaultValues: {
+      content: '',
+      senderName: '',
+      isAnonymous: true,
+      fingerprint: '',
+      socialLink: '',
+      honeypot: '',
+    },
+  });
+
+  const content = form.watch('content');
+  const isAnonymous = form.watch('isAnonymous');
+  const senderName = form.watch('senderName');
+  const socialLink = form.watch('socialLink');
   
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -110,8 +128,11 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
 
   // Generate fingerprint on mount
   useEffect(() => {
-    generateFingerprint().then(setFingerprint);
-  }, []);
+    generateFingerprint().then(fp => {
+      setFingerprint(fp);
+      form.setValue('fingerprint', fp);
+    });
+  }, [form]);
 
   // Load config
   useEffect(() => {
@@ -181,12 +202,11 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     }
   }, [isSubmitted]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) return;
+  const handleSubmit = form.handleSubmit(async (data) => {
+    if (!data.content.trim()) return;
 
     // Validate content length
-    if (content.length < config.minMessageLength) {
+    if (data.content.length < config.minMessageLength) {
       toast.error(t('messageTooShort', { min: config.minMessageLength }));
       return;
     }
@@ -198,7 +218,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     }
 
     // Validate sender name for non-anonymous
-    if (!isAnonymous && !senderName.trim()) {
+    if (!data.isAnonymous && !data.senderName?.trim()) {
       toast.error(t('enterName'));
       return;
     }
@@ -208,13 +228,13 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     try {
       // Real API call with all required fields
       const response = await publicApi.submitMarshmallow(path, {
-        content,
-        senderName: isAnonymous ? undefined : senderName.trim(),
-        isAnonymous,
+        content: data.content,
+        senderName: data.isAnonymous ? undefined : data.senderName?.trim(),
+        isAnonymous: data.isAnonymous,
         turnstileToken: turnstileToken || undefined,
-        fingerprint,
+        fingerprint: data.fingerprint,
         honeypot: honeypot || undefined,  // Pass honeypot value for bot detection
-        socialLink: socialLink.trim() || undefined,
+        socialLink: data.socialLink?.trim() || undefined,
         selectedImageUrls: selectedImages.length > 0 ? selectedImages : undefined,
       });
 
@@ -235,10 +255,10 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     } finally {
       setIsSubmitting(false);
     }
-  };
+  });
 
   const handlePreviewImage = async () => {
-    if (!socialLink.trim()) return;
+    if (!socialLink?.trim()) return;
     
     setLoadingPreview(true);
     setPreviewImage(null);
@@ -291,7 +311,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
           {config.thankYouText || t('defaultThankYou')}
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { setIsSubmitted(false); setContent(''); setSenderName(''); setSocialLink(''); }}>
+          <Button variant="outline" onClick={() => { setIsSubmitted(false); form.reset(); form.setValue('fingerprint', fingerprint); }}>
             {t('sendAnother')}
           </Button>
           <Button asChild>
@@ -356,7 +376,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
               <Switch
                 id="anonymous-toggle"
                 checked={isAnonymous}
-                onCheckedChange={setIsAnonymous}
+                onCheckedChange={(checked) => form.setValue('isAnonymous', checked)}
               />
             </div>
           )}
@@ -369,8 +389,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
               </Label>
               <Input
                 id="sender-name"
-                value={senderName}
-                onChange={e => setSenderName(e.target.value)}
+                {...form.register('senderName')}
                 placeholder={t('namePlaceholder')}
                 maxLength={64}
                 className="border-slate-200"
@@ -381,19 +400,18 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
           {/* Message Content */}
           <div className="relative">
             <Textarea
-              value={content}
-              onChange={e => setContent(e.target.value)}
+              {...form.register('content')}
               placeholder={config.placeholderText || t('messagePlaceholder')}
               className="min-h-[200px] resize-none border-0 focus-visible:ring-0 p-0 pr-10 text-base leading-relaxed placeholder:text-slate-300"
               maxLength={config.maxMessageLength}
               autoFocus
             />
             <div className="absolute bottom-0 left-0 text-xs text-slate-300 font-medium">
-              {t('characterCount', { count: content.length, max: config.maxMessageLength })}
+              {t('characterCount', { count: content?.length || 0, max: config.maxMessageLength })}
             </div>
             <div className="absolute bottom-0 right-0">
               <EmojiPicker 
-                onEmojiSelect={(emoji) => setContent(prev => prev + emoji)}
+                onEmojiSelect={(emoji) => form.setValue('content', (content || '') + emoji)}
                 disabled={isSubmitting}
               />
             </div>
@@ -405,24 +423,23 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                     id="social-link"
-                    value={socialLink}
+                    {...form.register('socialLink')}
+                    placeholder="https://www.bilibili.com/opus/......"
+                    className="pl-9 pr-20 border-slate-200"
                     onChange={e => {
-                        setSocialLink(e.target.value);
-                        setSocialLink(e.target.value);
+                        form.setValue('socialLink', e.target.value);
                         if (previewImages.length > 0) {
                              setPreviewImages([]); 
                              setSelectedImages([]);
                         }
                     }}
-                    placeholder="https://www.bilibili.com/opus/......"
-                    className="pl-9 pr-20 border-slate-200"
                 />
                 <Button
                     type="button"
                     variant="ghost" 
                     size="sm"
                     className="absolute right-1 top-1 h-8 text-xs text-slate-500 hover:text-[var(--mm-primary)]"
-                    disabled={!socialLink.trim() || loadingPreview}
+                    disabled={!socialLink?.trim() || loadingPreview}
                     onClick={handlePreviewImage}
                 >
                     {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : t('getImage')}
@@ -488,7 +505,7 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
             <Button 
               type="submit" 
               className="w-full h-12 text-base font-semibold rounded-xl bg-[var(--mm-primary)] hover:bg-[var(--mm-primary)]/90"
-              disabled={!content.trim() || isSubmitting || !turnstileVerified || (!isAnonymous && !senderName.trim())}
+              disabled={!content?.trim() || isSubmitting || !turnstileVerified || (!isAnonymous && !senderName?.trim())}
             >
               {isSubmitting ? (
                 <>

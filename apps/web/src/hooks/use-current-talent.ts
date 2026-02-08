@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 
-import { useTalentStore, TalentInfo } from '@/stores/talent-store';
+import { TalentInfo,useTalentStore } from '@/stores/talent-store';
 
 /**
  * Hook for managing the current talent context in business UI.

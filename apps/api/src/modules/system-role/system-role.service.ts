@@ -2,7 +2,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service';
-
 import { CreateSystemRoleDto } from './dto/create-system-role.dto';
 import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
 

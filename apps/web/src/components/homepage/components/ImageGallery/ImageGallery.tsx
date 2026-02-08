@@ -2,10 +2,10 @@
 
 import React from 'react';
 
-import { ImageGalleryProps } from './schema';
-
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+
+import { ImageGalleryProps } from './schema';
 
 // Simple Grid/Masonry implementation
 // For real Masonry, consider react-masonry-css but for now CSS columns works okay for simple use cases

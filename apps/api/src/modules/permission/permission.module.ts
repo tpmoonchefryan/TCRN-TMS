@@ -3,10 +3,10 @@
 import { Global, Module } from '@nestjs/common';
 
 import { MyPermissionsController } from './my-permissions.controller';
-import { PermissionSchedulerService } from './permission-scheduler.service';
-import { PermissionSnapshotService } from './permission-snapshot.service';
 import { PermissionController } from './permission.controller';
 import { PermissionService } from './permission.service';
+import { PermissionSchedulerService } from './permission-scheduler.service';
+import { PermissionSnapshotService } from './permission-snapshot.service';
 
 @Global()
 @Module({

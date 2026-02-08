@@ -4,10 +4,8 @@
 
 import { Check, MessageCircle, Plus, Share2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-import { EmojiPicker } from './EmojiPicker';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -19,6 +17,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/utils/gravatar';
+
+import { EmojiPicker } from './EmojiPicker';
 
 
 // Message type matching backend API response (camelCase)
@@ -73,7 +73,7 @@ const getFingerprint = async (): Promise<string> => {
   return Math.abs(hash).toString(36);
 };
 
-export function PublicMessageCard({ 
+export const PublicMessageCard = memo(function PublicMessageCard({ 
   message, 
   reactionsEnabled, 
   allowedReactions,
@@ -397,7 +397,7 @@ export function PublicMessageCard({
       </div>
     </div>
   );
-}
+});
 
 // Separated ReactionBar component for cleaner logic
 function ReactionBar({

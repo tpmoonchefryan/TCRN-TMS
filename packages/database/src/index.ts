@@ -9,72 +9,64 @@ export * from './client';
 
 // Re-export Prisma types for convenience
 export type {
-  // Public Schema
-  Tenant,
-  GlobalConfig,
-  
-  // Organization
-  Subsidiary,
-  Talent,
-  
-  // User & Permission
-  SystemUser,
-  RecoveryCode,
-  Role,
-  Resource,
-  Policy,
-  RolePolicy,
-  UserRole,
-  DelegatedAdmin,
-  RefreshToken,
-  
-  // Customer Management
-  PiiServiceConfig,
-  ProfileStore,
-  CustomerProfile,
-  CustomerCompanyInfo,
-  CustomerExternalId,
-  CustomerAccessLog,
-  PlatformIdentity,
-  PlatformIdentityHistory,
-  MembershipRecord,
-  ConsentAgreement,
-  
+  AdapterConfig,
+  AddressType,
+  BlocklistEntry,
   // Configuration Entities
   BusinessSegment,
-  CommunicationType,
-  AddressType,
-  CustomerStatus,
-  ReasonCategory,
-  InactivationReason,
-  MembershipClass,
-  MembershipType,
-  MembershipLevel,
-  Consent,
-  Consumer,
-  SocialPlatform,
-  BlocklistEntry,
-  IpAccessRule,
-  
   // Logging
   ChangeLog,
-  TechnicalEventLog,
-  IntegrationLog,
-  
-  // External Pages
-  TalentHomepage,
+  CommunicationType,
+  Consent,
+  ConsentAgreement,
+  Consumer,
+  CustomerAccessLog,
+  CustomerCompanyInfo,
+  CustomerExternalId,
+  CustomerProfile,
+  CustomerStatus,
+  DelegatedAdmin,
+  ExternalBlocklistPattern,
+  GlobalConfig,
   HomepageVersion,
+  // Jobs
+  ImportJob,
+  InactivationReason,
+  // Integration
+  IntegrationAdapter,
+  IntegrationLog,
+  IpAccessRule,
   MarshmallowConfig,
   MarshmallowMessage,
   MarshmallowReaction,
-  ExternalBlocklistPattern,
-  
-  // Jobs
-  ImportJob,
+  MembershipClass,
+  MembershipLevel,
+  MembershipRecord,
+  MembershipType,
+  // Customer Management
+  PiiServiceConfig,
+  PlatformIdentity,
+  PlatformIdentityHistory,
+  Policy,
+  ProfileStore,
+  ReasonCategory,
+  RecoveryCode,
+  RefreshToken,
   ReportJob,
-  
-  // Integration
-  IntegrationAdapter,
-  AdapterConfig,
+  Resource,
+  Role,
+  RolePolicy,
+  SocialPlatform,
+  // Organization
+  Subsidiary,
+  // User & Permission
+  SystemUser,
+  Talent,
+  // External Pages
+  TalentHomepage,
+  TechnicalEventLog,
+  // Public Schema
+  Tenant,
+  UserRole,
   Webhook,
 } from '@prisma/client';

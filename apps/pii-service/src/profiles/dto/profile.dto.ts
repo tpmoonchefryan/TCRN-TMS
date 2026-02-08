@@ -2,17 +2,17 @@
 
 import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsUUID,
-  IsOptional,
+  ArrayMaxSize,
   IsArray,
-  ValidateNested,
-  IsEnum,
   IsBoolean,
   IsDateString,
-  MaxLength,
   IsEmail,
-  ArrayMaxSize,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateNested,
 } from 'class-validator';
 
 export class PhoneNumberDto {

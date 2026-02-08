@@ -4,9 +4,17 @@ import type { SystemUser } from '@tcrn/shared';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { apiClient, authApi, organizationApi, permissionApi } from '@/lib/api/client';
+
 import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
 
-import { apiClient, authApi, organizationApi } from '@/lib/api/client';
+/**
+ * Scope for permission fetching
+ */
+export interface PermissionScope {
+  scopeType?: 'GLOBAL' | 'TENANT' | 'SUBSIDIARY' | 'TALENT';
+  scopeId?: string;
+}
 
 /**
  * Extended user type that includes runtime properties returned from login API
@@ -41,6 +49,10 @@ export interface AuthState {
   isAuthenticated: boolean;
   isAcTenant: boolean;
   
+  // Permission state
+  effectivePermissions: Record<string, 'grant' | 'deny'> | null;
+  currentScope: PermissionScope | null;
+  
   // Transient state
   isLoading: boolean;
   isRefreshing: boolean;
@@ -66,6 +78,8 @@ export interface AuthState {
   setHasHydrated: (state: boolean) => void;
   setUser: (user: AuthUser) => void;
   fetchAccessibleTalents: () => Promise<void>;
+  fetchMyPermissions: (scope?: PermissionScope) => Promise<void>;
+  clearPermissions: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -76,6 +90,10 @@ export const useAuthStore = create<AuthState>()(
       tenantId: null,
       isAuthenticated: false,
       isAcTenant: false,
+      
+      // Permission state
+      effectivePermissions: null,
+      currentScope: null,
       
       isLoading: false,
       isRefreshing: false,
@@ -149,6 +167,29 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      fetchMyPermissions: async (scope?: PermissionScope) => {
+        try {
+          const response = await permissionApi.getMyPermissions({
+            scopeType: scope?.scopeType,
+            scopeId: scope?.scopeId,
+          });
+          
+          if (response.success && response.data) {
+            set({
+              effectivePermissions: response.data.permissions,
+              currentScope: scope || { scopeType: 'GLOBAL' },
+            });
+          }
+        } catch {
+          // Silently fail - permissions will use fallback
+          console.warn('Failed to fetch permissions from backend, using fallback');
+        }
+      },
+
+      clearPermissions: () => {
+        set({ effectivePermissions: null, currentScope: null });
+      },
+
       login: async (login: string, password: string, tenantCode: string) => {
         set({ isLoading: true, error: null });
         
@@ -197,6 +238,9 @@ export const useAuthStore = create<AuthState>()(
               // Fetch accessible talents after successful login
               await get().fetchAccessibleTalents();
               
+              // Fetch user's effective permissions from backend
+              await get().fetchMyPermissions();
+              
               return { success: true };
             }
           }
@@ -235,6 +279,9 @@ export const useAuthStore = create<AuthState>()(
             // Fetch accessible talents after successful TOTP verification
             await get().fetchAccessibleTalents();
             
+            // Fetch user's effective permissions from backend
+            await get().fetchMyPermissions();
+            
             return true;
           }
           set({
@@ -271,6 +318,9 @@ export const useAuthStore = create<AuthState>()(
               // Fetch accessible talents after successful password reset
               await get().fetchAccessibleTalents();
               
+              // Fetch user's effective permissions from backend
+              await get().fetchMyPermissions();
+              
               return true;
             }
           }
@@ -305,6 +355,8 @@ export const useAuthStore = create<AuthState>()(
           tenantId: null,
           isAuthenticated: false,
           isAcTenant: false,
+          effectivePermissions: null,
+          currentScope: null,
         });
       },
 
@@ -342,6 +394,8 @@ export const useAuthStore = create<AuthState>()(
         if (apiClient.getAccessToken()) {
           // Reload accessible talents on session restore
           await get().fetchAccessibleTalents();
+          // Refresh permissions
+          await get().fetchMyPermissions();
           return true;
         }
 
@@ -356,13 +410,15 @@ export const useAuthStore = create<AuthState>()(
               set({ user: meRes.data });
               // Reload accessible talents after successful refresh
               await get().fetchAccessibleTalents();
+              // Refresh permissions
+              await get().fetchMyPermissions();
               return true;
             }
           } catch {
             // Ignore me fetch error
           }
         }
-        
+
         return false;
       },
 

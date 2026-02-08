@@ -225,6 +225,9 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
       { name: 'consentVersion', label: 'Version', type: 'text', required: true, placeholder: '1.0.0' },
       { name: 'effectiveFrom', label: 'Effective From', type: 'text', required: true },
       { name: 'expiresAt', label: 'Expires At', type: 'text' },
+      { name: 'contentMarkdownEn', label: 'Content (English)', type: 'textarea' },
+      { name: 'contentMarkdownZh', label: 'Content (中文)', type: 'textarea' },
+      { name: 'contentMarkdownJa', label: 'Content (日本語)', type: 'textarea' },
       { name: 'contentUrl', label: 'Content URL', type: 'url' },
       { name: 'isRequired', label: 'Required', type: 'boolean' },
     ],
@@ -245,7 +248,9 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
       ]},
       { name: 'contactName', label: 'Contact Name', type: 'text' },
       { name: 'contactEmail', label: 'Contact Email', type: 'text' },
+      { name: 'allowedIps', label: 'Allowed IPs', type: 'text', placeholder: '192.168.1.1, 10.0.0.0/8' },
       { name: 'rateLimit', label: 'Rate Limit (per minute)', type: 'number' },
+      { name: 'notes', label: 'Notes', type: 'textarea' },
     ],
   },
   'blocklist-entry': {
@@ -269,6 +274,7 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
         { value: 'replace', label: 'Replace' },
       ]},
       { name: 'replacement', label: 'Replacement Text', type: 'text', placeholder: '***' },
+      { name: 'scope', label: 'Scope', type: 'text', placeholder: 'marshmallow, profile' },
       { name: 'severity', label: 'Severity', type: 'select', required: true, options: [
         { value: 'low', label: 'Low' },
         { value: 'medium', label: 'Medium' },
@@ -293,6 +299,7 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
       ]},
       { name: 'healthCheckUrl', label: 'Health Check URL', type: 'url' },
       { name: 'healthCheckIntervalSec', label: 'Health Check Interval (sec)', type: 'number' },
+      { name: 'isHealthy', label: 'Health Status', type: 'boolean' },
     ],
   },
   'profile-store': {
@@ -304,9 +311,12 @@ export const ENTITY_TYPE_CONFIGS: Record<ConfigEntityType, ConfigEntityTypeConfi
     descriptionZh: '客户PII数据管理的档案存储库',
     descriptionJa: '顧客PIIデータ管理用プロファイルストア',
     extraFields: [
-      { name: 'piiServiceConfigCode', label: 'PII Service Config', type: 'select' },
+      { name: 'piiServiceConfigId', label: 'PII Service Config', type: 'select' },
       { name: 'piiProxyUrl', label: 'PII Proxy URL', type: 'url' },
       { name: 'isDefault', label: 'Is Default', type: 'boolean' },
     ],
+    hasParent: true,
+    parentType: 'pii-service-config',
+    parentFieldName: 'piiServiceConfigId',
   },
 };

@@ -7,7 +7,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
-import { ErrorCodes, TechEventType, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, type RequestContext,TechEventType } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 import { DatabaseService } from '../../database';

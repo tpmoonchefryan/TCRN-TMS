@@ -14,8 +14,6 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
-import { MarshmallowMessage, MessageCard } from './MessageCard';
-
 import {
     Badge,
     Button,
@@ -31,6 +29,8 @@ import {
     TabsTrigger
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+import { MarshmallowMessage, MessageCard } from './MessageCard';
 
 interface ModerationQueueProps {
   messages: MarshmallowMessage[];

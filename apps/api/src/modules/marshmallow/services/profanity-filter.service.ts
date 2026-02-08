@@ -10,7 +10,7 @@ import {
   ProfanityEntry,
   ProfanitySeverity,
 } from '../data/profanity-wordlist';
-import { TextNormalizer, detectEvasionTechniques } from '../utils/text-normalizer';
+import { detectEvasionTechniques,TextNormalizer } from '../utils/text-normalizer';
 
 // =============================================================================
 // Types and Interfaces

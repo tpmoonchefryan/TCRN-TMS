@@ -17,7 +17,6 @@ import { IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min,
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
-
 import { TalentService } from './talent.service';
 
 // DTOs

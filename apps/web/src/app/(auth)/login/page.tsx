@@ -2,28 +2,30 @@
 
 'use client';
 
+import { LoginSchema, TotpVerifySchema } from '@tcrn/shared';
 import { ArrowLeft, Globe, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle, 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Input, 
-  Label 
+import {
+    Button,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    Input,
+    Label
 } from '@/components/ui';
 import { setUserLocale } from '@/i18n/locale';
 import { userApi } from '@/lib/api/client';
+import { useZodForm } from '@/lib/form';
 import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -45,24 +47,36 @@ export default function LoginPage() {
   // Steps: 'credentials' | 'totp'
   const [step, setStep] = useState<'credentials' | 'totp'>('credentials');
   
-  // Credentials State
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [tenantCode, setTenantCode] = useState('');
+  // Session token for TOTP step
+  const [_sessionToken, setSessionToken] = useState('');
   
-  // TOTP State
-  const [totpCode, setTotpCode] = useState('');
-  const [sessionToken, setSessionToken] = useState('');
+  // Credentials Form with Zod validation
+  const credentialsForm = useZodForm(LoginSchema, {
+    defaultValues: {
+      tenantCode: '',
+      login: '',
+      password: '',
+      rememberMe: false,
+    },
+  });
+  
+  // TOTP Form with Zod validation
+  const totpForm = useZodForm(TotpVerifySchema, {
+    defaultValues: {
+      sessionToken: '',
+      code: '',
+    },
+  });
   
   // Language selection state - default to current locale
   const [selectedLanguage, setSelectedLanguage] = useState<LocaleCode>(currentLocale as LocaleCode);
 
   // Sync saved tenant code after hydration
   useEffect(() => {
-    if (_hasHydrated && savedTenantCode && !tenantCode) {
-      setTenantCode(savedTenantCode);
+    if (_hasHydrated && savedTenantCode && !credentialsForm.getValues('tenantCode')) {
+      credentialsForm.setValue('tenantCode', savedTenantCode);
     }
-  }, [_hasHydrated, savedTenantCode]);
+  }, [_hasHydrated, savedTenantCode, credentialsForm]);
 
   // Handle language change
   const handleLanguageChange = async (code: LocaleCode) => {
@@ -88,13 +102,10 @@ export default function LoginPage() {
   // Calculate top offset for staging banner
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT + 16 : 16; // 16px base margin
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCredentialsSubmit = credentialsForm.handleSubmit(async (data) => {
     clearError();
 
-    if (!tenantCode || !username || !password) return;
-
-    const result = await login(username, password, tenantCode);
+    const result = await login(data.login, data.password, data.tenantCode);
     
     if (result.success) {
       if (result.passwordResetRequired && result.sessionToken) {
@@ -106,13 +117,14 @@ export default function LoginPage() {
         router.push(`/reset-password?${params.toString()}`);
       } else if (result.totpRequired && result.sessionToken) {
         setSessionToken(result.sessionToken);
+        totpForm.setValue('sessionToken', result.sessionToken);
         setStep('totp');
       } else {
         // Update language preference after successful login
         await updateLanguagePreference();
         
         // AC tenant goes to admin console, others go to home
-        const normalizedTenantCode = tenantCode.toUpperCase();
+        const normalizedTenantCode = data.tenantCode.toUpperCase();
         if (normalizedTenantCode === 'AC') {
           router.push('/admin');
         } else {
@@ -120,33 +132,30 @@ export default function LoginPage() {
         }
       }
     }
-  };
+  });
 
-  const handleTotpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleTotpSubmit = totpForm.handleSubmit(async (data) => {
     clearError();
 
-    if (!totpCode || !sessionToken) return;
-
-    const success = await verifyTotp(sessionToken, totpCode);
+    const success = await verifyTotp(data.sessionToken, data.code);
     if (success) {
       // Update language preference after successful TOTP verification
       await updateLanguagePreference();
       
       // AC tenant goes to admin console, others go to home
-      const normalizedTenantCode = tenantCode.toUpperCase();
+      const normalizedTenantCode = credentialsForm.getValues('tenantCode').toUpperCase();
       if (normalizedTenantCode === 'AC') {
         router.push('/admin');
       } else {
         router.push('/');
       }
     }
-  };
+  });
 
   const handleBackToCredentials = () => {
     clearError();
     setStep('credentials');
-    setTotpCode('');
+    totpForm.reset();
     setSessionToken('');
   };
 
@@ -220,33 +229,35 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="tenant" className="text-slate-600 font-medium">{t('tenant') || 'Tenant Code'}</Label>
+                <Label htmlFor="tenantCode" className="text-slate-600 font-medium">{t('tenant') || 'Tenant Code'}</Label>
                 <Input
-                  id="tenant"
+                  id="tenantCode"
                   type="text"
                   placeholder={t('tenantCodePlaceholder') || 'e.g. HOLOLIVE'}
-                  value={tenantCode}
-                  onChange={(e) => setTenantCode(e.target.value)}
+                  {...credentialsForm.register('tenantCode')}
                   disabled={isLoading}
-                  required
                   autoComplete="organization"
                   className="bg-white/50 focus:bg-white transition-all border-slate-200"
                 />
+                {credentialsForm.formState.errors.tenantCode && (
+                  <p className="text-xs text-destructive">{credentialsForm.formState.errors.tenantCode.message}</p>
+                )}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-slate-600 font-medium">{t('username') || 'Username'}</Label>
+                <Label htmlFor="login" className="text-slate-600 font-medium">{t('username') || 'Username'}</Label>
                 <Input
-                  id="username"
+                  id="login"
                   type="text"
                   placeholder={t('usernamePlaceholder') || 'Enter your username'}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  {...credentialsForm.register('login')}
                   disabled={isLoading}
-                  required
                   autoComplete="username"
                   className="bg-white/50 focus:bg-white transition-all border-slate-200"
                 />
+                {credentialsForm.formState.errors.login && (
+                  <p className="text-xs text-destructive">{credentialsForm.formState.errors.login.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -260,20 +271,21 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder={t('passwordPlaceholder') || '••••••••'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  {...credentialsForm.register('password')}
                   disabled={isLoading}
-                  required
                   autoComplete="current-password"
-                   className="bg-white/50 focus:bg-white transition-all border-slate-200"
+                  className="bg-white/50 focus:bg-white transition-all border-slate-200"
                 />
+                {credentialsForm.formState.errors.password && (
+                  <p className="text-xs text-destructive">{credentialsForm.formState.errors.password.message}</p>
+                )}
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600 text-white shadow-lg shadow-blue-500/20 border-none h-11" 
                 loading={isLoading} 
-                disabled={!tenantCode || !username || !password}
+                disabled={!credentialsForm.formState.isValid || isLoading}
               >
                 {t('signIn') || 'Sign In'}
               </Button>
@@ -301,36 +313,41 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="totp" className="text-slate-600 font-medium text-center block w-full">
+                <Label htmlFor="code" className="text-slate-600 font-medium text-center block w-full">
                   {t('authCode') || 'Authentication Code'}
                 </Label>
                 <div className="flex justify-center">
                   <Input
-                    id="totp"
+                    id="code"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={6}
                     placeholder="000000"
-                    value={totpCode}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, '');
-                      if (val.length <= 6) setTotpCode(val);
-                    }}
+                    {...totpForm.register('code', {
+                      onChange: (e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        if (val.length <= 6) {
+                          totpForm.setValue('code', val);
+                        }
+                      },
+                    })}
                     disabled={isLoading}
-                    required
                     autoComplete="one-time-code"
                     className="bg-white/50 focus:bg-white transition-all border-slate-200 text-center text-2xl tracking-[0.5em] h-14 w-48 font-mono"
                     autoFocus
                   />
                 </div>
+                {totpForm.formState.errors.code && (
+                  <p className="text-xs text-destructive text-center">{totpForm.formState.errors.code.message}</p>
+                )}
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600 text-white shadow-lg shadow-blue-500/20 border-none h-11" 
                 loading={isLoading} 
-                disabled={totpCode.length !== 6}
+                disabled={totpForm.watch('code')?.length !== 6 || isLoading}
               >
                 {t('verify') || 'Verify'}
               </Button>

@@ -22,14 +22,19 @@ import {
     Settings,
     Shield,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { BlocklistManager } from '@/components/security/BlocklistManager';
-import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
 import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
+import {
+    CONFIG_ENTITY_TYPES,
+    ConfigEntity,
+    DICTIONARY_TYPES,
+    DictionaryRecord,
+} from '@/components/shared/constants';
+import { SecurityPanel } from '@/components/shared/SecurityPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,53 +76,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { configEntityApi, dictionaryApi, subsidiaryApi } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 
-// Configuration Entity Types (using singular kebab-case format to match backend API)
-const CONFIG_ENTITY_TYPES = [
-  { code: 'customer-status', name: 'Customer Status', nameZh: '客户状态', description: 'Customer lifecycle status definitions', icon: '👤' },
-  { code: 'business-segment', name: 'Business Segment', nameZh: '业务分类', description: 'Business segment definitions', icon: '📊' },
-  { code: 'reason-category', name: 'Reason Category', nameZh: '原因分类', description: 'Reason category definitions', icon: '📋' },
-  { code: 'inactivation-reason', name: 'Inactivation Reason', nameZh: '停用原因', description: 'Customer inactivation reasons', icon: '🚫' },
-  { code: 'membership-class', name: 'Membership Class', nameZh: '会籍等级', description: 'Membership tier definitions', icon: '🎫' },
-  { code: 'membership-type', name: 'Membership Type', nameZh: '会籍类型', description: 'Platform-specific membership types', icon: '🎭' },
-  { code: 'membership-level', name: 'Membership Level', nameZh: '会籍级别', description: 'Tier levels within membership types', icon: '⭐' },
-  { code: 'consent', name: 'Consent', nameZh: '同意声明', description: 'Customer consent definitions', icon: '✅' },
-  { code: 'blocklist-entry', name: 'Blocklist Entry', nameZh: '屏蔽词条', description: 'Content blocklist patterns', icon: '🛡️' },
-];
-
-// System Dictionary Types
-const DICTIONARY_TYPES = [
-  { code: 'countries', name: 'Countries', nameZh: '国家/地区', icon: '🌍' },
-  { code: 'languages', name: 'Languages', nameZh: '语言', icon: '🗣️' },
-  { code: 'timezones', name: 'Timezones', nameZh: '时区', icon: '🕐' },
-  { code: 'currencies', name: 'Currencies', nameZh: '货币', icon: '💰' },
-  { code: 'genders', name: 'Genders', nameZh: '性别', icon: '⚧️' },
-  { code: 'profile_types', name: 'Profile Types', nameZh: '档案类型', icon: '📋' },
-  { code: 'social_platforms', name: 'Social Platforms', nameZh: '社交平台', icon: '📱' },
-];
-
-// Type definitions
-interface ConfigEntity {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  ownerType: 'tenant' | 'subsidiary' | 'talent';
-  ownerLevel: string;
-  isActive: boolean;
-  isForceUse: boolean;
-  isSystem: boolean;
-  sortOrder: number;
-  inheritedFrom?: string;
-}
-
-interface DictionaryRecord {
-  code: string;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  isActive: boolean;
-}
+// NOTE: CONFIG_ENTITY_TYPES, DICTIONARY_TYPES, ConfigEntity, DictionaryRecord
+// are now centralized in @/components/shared/constants
 
 interface SubsidiaryData {
   id: string;
@@ -154,7 +114,7 @@ export default function SubsidiarySettingsPage() {
 
   // Config Entity state
   const [configEntities, setConfigEntities] = useState<Record<string, ConfigEntity[]>>({});
-  const [selectedEntityType, setSelectedEntityType] = useState(CONFIG_ENTITY_TYPES[0].code);
+  const [selectedEntityType, setSelectedEntityType] = useState<string>(CONFIG_ENTITY_TYPES[0].code);
   const [entitySearch, setEntitySearch] = useState('');
   const [editingEntity, setEditingEntity] = useState<ConfigEntity | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -162,7 +122,7 @@ export default function SubsidiarySettingsPage() {
 
   // Dictionary state
   const [dictionaryRecords, setDictionaryRecords] = useState<Record<string, DictionaryRecord[]>>({});
-  const [selectedDictType, setSelectedDictType] = useState(DICTIONARY_TYPES[0].code);
+  const [selectedDictType, setSelectedDictType] = useState<string>(DICTIONARY_TYPES[0].code);
   const [dictSearch, setDictSearch] = useState('');
   const [isLoadingDict, setIsLoadingDict] = useState(false);
   const [dictCounts, setDictCounts] = useState<Record<string, number>>({});
@@ -882,15 +842,9 @@ export default function SubsidiarySettingsPage() {
           </div>
         </TabsContent>
 
-        {/* Security Tab - Blocklist Management */}
+        {/* Security Tab - Unified Security Panel */}
         <TabsContent value="security" className="mt-6">
-          <div className="space-y-8">
-            {/* System Blocklist (Internal content filtering) */}
-            <BlocklistManager scopeType="subsidiary" scopeId={subsidiary.id} />
-            
-            {/* External Blocklist (URL/Domain filtering for Marshmallow) */}
-            <ExternalBlocklistManager scopeType="subsidiary" scopeId={subsidiary.id} />
-          </div>
+          <SecurityPanel scopeType="subsidiary" scopeId={subsidiary.id} />
         </TabsContent>
 
         {/* Settings Tab */}

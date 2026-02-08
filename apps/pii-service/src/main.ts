@@ -1,12 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import * as fs from 'fs';
-
-import { ValidationPipe, Logger } from '@nestjs/common';
 import type { NestApplicationOptions } from '@nestjs/common';
+import { Logger,ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { DocumentBuilder,SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
 
 import { AppModule } from './app.module';
 import { createMtlsMiddleware } from './auth/middlewares/mtls.middleware';

@@ -4,12 +4,14 @@
 
 'use client';
 
+import { SubmitMessageSchema } from '@tcrn/shared';
 import { AlertCircle, ArrowLeft, CheckCircle, Link as LinkIcon, Loader2, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { useZodForm } from '@/lib/form';
 
 // Mock config - would come from API
 const getMarshmallowConfig = (talentPath: string) => {
@@ -48,17 +50,25 @@ export default function MarshmallowPage() {
   
   const config = getMarshmallowConfig(talentPath);
   
-  const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  
-  // Social Link State
-  const [socialLink, setSocialLink] = useState('');
-
-  // Generate a simple fingerprint for now if one doesn't exist
-  // In a real app, use a proper fingerprint library like @fingerprintjs/fingerprintjs
   const [fingerprint, setFingerprint] = useState('');
+
+  // Form with Zod validation
+  const form = useZodForm(SubmitMessageSchema, {
+    defaultValues: {
+      content: '',
+      isAnonymous: true,
+      fingerprint: '',
+      socialLink: '',
+    },
+  });
+
+  const message = form.watch('content');
+  const socialLink = form.watch('socialLink');
+
+  // Generate fingerprint on mount
   useEffect(() => {
     let fp = localStorage.getItem('marshmallow_device_fp');
     if (!fp) {
@@ -66,14 +76,13 @@ export default function MarshmallowPage() {
       localStorage.setItem('marshmallow_device_fp', fp);
     }
     setFingerprint(fp);
-  }, []);
+    form.setValue('fingerprint', fp);
+  }, [form]);
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (message.length < config.minLength) {
+  const handleSubmit = form.handleSubmit(async (data) => {
+    if (data.content.length < config.minLength) {
       setErrorMessage(`Message must be at least ${config.minLength} characters.`);
       setSubmitStatus('error');
       return;
@@ -83,37 +92,31 @@ export default function MarshmallowPage() {
     setErrorMessage('');
 
     try {
-      const formData = new FormData(); // Keeping FormData for compatibility or switching to JSON?
-      // Actually controller expects DTO body now for submitMessage if we removed FileInterceptor? 
-      // Wait, I updated controller to use @Body() dto: SubmitMessageDto.
-      // So I should send JSON now.
-      
       const payload = {
-          content: message,
-          isAnonymous: true,
-          fingerprint,
-          socialLink: socialLink.trim() || undefined,
+        content: data.content,
+        isAnonymous: data.isAnonymous,
+        fingerprint: data.fingerprint,
+        socialLink: data.socialLink?.trim() || undefined,
       };
 
       // Call API
       const response = await fetch(`/api/v1/public/marshmallow/${talentPath}/submit`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-         const data = await response.json().catch(() => ({}));
-         throw new Error(data.message || 'Submission failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Submission failed');
       }
       
       // Success
       setSubmitStatus('success');
-      setSubmitStatus('success');
-      setMessage('');
-      setSocialLink('');
+      form.reset();
+      form.setValue('fingerprint', fingerprint);
     } catch (error) {
       console.error('Submit error:', error);
       setSubmitStatus('error');
@@ -121,7 +124,7 @@ export default function MarshmallowPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  });
 
   if (!config) {
     return (
@@ -227,8 +230,7 @@ export default function MarshmallowPage() {
                 <div className="space-y-2">
                    <div className="relative">
                     <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      {...form.register('content')}
                       placeholder={config.placeholderText}
                       maxLength={config.maxLength}
                       rows={6}
@@ -243,8 +245,7 @@ export default function MarshmallowPage() {
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
-                            value={socialLink}
-                            onChange={(e) => setSocialLink(e.target.value)}
+                            {...form.register('socialLink')}
                             placeholder="Bilibili Dynamic Link (Optional)"
                             className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                             disabled={isSubmitting}
@@ -257,7 +258,7 @@ export default function MarshmallowPage() {
 
                   <div className="flex justify-end text-xs text-muted-foreground">
                         <span>
-                        {message.length} / {config.maxLength}
+                        {message?.length || 0} / {config.maxLength}
                         </span>
                   </div>
                 </div>

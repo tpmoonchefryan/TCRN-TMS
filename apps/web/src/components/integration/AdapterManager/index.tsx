@@ -19,9 +19,6 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { AdapterConfigDialog } from './AdapterConfigDialog';
-import { AdapterDialog } from './AdapterDialog';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +39,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { integrationApi } from '@/lib/api/client';
+
+import { AdapterConfigDialog } from './AdapterConfigDialog';
+import { AdapterDialog } from './AdapterDialog';
 
 
 interface Adapter {

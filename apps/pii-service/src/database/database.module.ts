@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { PrismaClient } from '.prisma/pii-client';
 import { Global, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+
+import { PrismaClient } from '.prisma/pii-client';
 
 @Global()
 @Module({

@@ -2,24 +2,26 @@
 
 'use client';
 
+import { CreateBlocklistSchema } from '@tcrn/shared';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
-
-import { BlocklistEntry } from './index';
+import { z } from 'zod';
 
 import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Textarea,
-  Checkbox,
+    Button,
+    Checkbox,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    Input,
+    Label,
+    Textarea,
 } from '@/components/ui';
+import { useZodForm } from '@/lib/form';
+
+import { BlocklistEntry } from './index';
 
 
 interface BlocklistFormProps {
@@ -28,20 +30,23 @@ interface BlocklistFormProps {
   onCancel: () => void;
 }
 
-interface FormData {
-  pattern: string;
-  patternType: 'keyword' | 'regex' | 'wildcard';
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  description: string;
-  category: string;
-  severity: 'low' | 'medium' | 'high';
-  action: 'reject' | 'flag' | 'replace';
-  replacement: string;
-  scope: string[];
-  inherit: boolean;
-}
+// Frontend form schema - subset of CreateBlocklistSchema for the form
+const BlocklistFormSchema = CreateBlocklistSchema.pick({
+  pattern: true,
+  patternType: true,
+  nameEn: true,
+  nameZh: true,
+  nameJa: true,
+  description: true,
+  category: true,
+  severity: true,
+  action: true,
+  replacement: true,
+  scope: true,
+  inherit: true,
+});
+
+type FormData = z.infer<typeof BlocklistFormSchema>;
 
 const SCOPE_OPTIONS = [
   'marshmallow',
@@ -55,7 +60,7 @@ export function BlocklistForm({ entry, onSubmit, onCancel }: BlocklistFormProps)
   const t = useTranslations('security');
   const isEditing = !!entry;
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const form = useZodForm(BlocklistFormSchema, {
     defaultValues: {
       pattern: entry?.pattern || '',
       patternType: entry?.patternType || 'keyword',
@@ -71,6 +76,8 @@ export function BlocklistForm({ entry, onSubmit, onCancel }: BlocklistFormProps)
       inherit: entry?.inherit ?? true,
     },
   });
+
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = form;
 
   const selectedScope = watch('scope');
   const selectedAction = watch('action');

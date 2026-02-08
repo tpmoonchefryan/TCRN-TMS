@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { createHash, randomBytes } from 'crypto';
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
+import { createHash, randomBytes } from 'crypto';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
 

@@ -5,70 +5,68 @@ import { Activity, Calendar, Image, Link, MessageCircle, Minus, MoveVertical, Mu
 
 import {
     BilibiliDynamic,
-    defaultProps as BilibiliDynamicDefaultProps,
-    BilibiliDynamicEditor
-} from '../components/BilibiliDynamic';
+    BilibiliDynamicEditor,
+    defaultProps as BilibiliDynamicDefaultProps} from '../components/BilibiliDynamic';
 import {
-    Divider,
     defaultProps as DividerDefaultProps,
+    Divider,
     DividerEditor
 } from '../components/Divider';
 import {
-    ImageGallery,
     defaultProps as ImageGalleryDefaultProps,
+    ImageGallery,
     ImageGalleryEditor
 } from '../components/ImageGallery';
 import {
-    LinkButton,
     defaultProps as LinkButtonDefaultProps,
+    LinkButton,
     LinkButtonEditor
 } from '../components/LinkButton';
 import {
-    LiveStatus,
     defaultProps as LiveStatusDefaultProps,
+    LiveStatus,
     LiveStatusEditor
 } from '../components/LiveStatus';
 import {
-    MarshmallowWidget,
     defaultProps as MarshmallowWidgetDefaultProps,
+    MarshmallowWidget,
     MarshmallowWidgetEditor
 } from '../components/MarshmallowWidget';
 import {
-    MusicPlayer,
     defaultProps as MusicPlayerDefaultProps,
+    MusicPlayer,
     MusicPlayerEditor
 } from '../components/MusicPlayer';
 import {
-    ProfileCard,
     defaultProps as ProfileCardDefaultProps,
+    ProfileCard,
     ProfileCardEditor
 } from '../components/ProfileCard';
 import {
-    RichText,
     defaultProps as RichTextDefaultProps,
+    RichText,
     RichTextEditor
 } from '../components/RichText';
 import {
-    Schedule,
     defaultProps as ScheduleDefaultProps,
+    Schedule,
     ScheduleEditor
 } from '../components/Schedule';
 import {
-    SocialLinks,
     defaultProps as SocialLinksDefaultProps,
+    SocialLinks,
     SocialLinksEditor
 } from '../components/SocialLinks';
 import {
-    Spacer,
     defaultProps as SpacerDefaultProps,
+    Spacer,
     SpacerEditor
 } from '../components/Spacer';
 import {
-    VideoEmbed,
     defaultProps as VideoEmbedDefaultProps,
+    VideoEmbed,
     VideoEmbedEditor
 } from '../components/VideoEmbed';
-
 import { ComponentDefinition, ComponentType } from './types';
 
 // Placeholder components (will be replaced by actual implementations)

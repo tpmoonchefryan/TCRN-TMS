@@ -2,11 +2,11 @@
 
 import { InjectQueue } from '@nestjs/bullmq';
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { ErrorCodes, type RequestContext, LogSeverity, TechEventType } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
 
 import { DatabaseService } from '../../database';

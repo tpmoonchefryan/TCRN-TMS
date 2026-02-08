@@ -17,7 +17,6 @@ import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
-
 import { SystemUserService } from './system-user.service';
 
 // DTOs
