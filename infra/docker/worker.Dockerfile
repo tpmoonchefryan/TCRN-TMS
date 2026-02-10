@@ -31,9 +31,13 @@ RUN pnpm install --frozen-lockfile
 # Copy Prisma schema for generation
 COPY packages/database/prisma ./packages/database/prisma
 
-# Copy source code
-COPY packages/shared ./packages/shared
-COPY packages/database ./packages/database
+# Copy source code (copy only src/ to avoid overwriting pnpm node_modules symlinks)
+COPY packages/shared/src ./packages/shared/src
+COPY packages/shared/.eslintrc.js ./packages/shared/.eslintrc.js
+COPY packages/database/src ./packages/database/src
+COPY packages/database/scripts ./packages/database/scripts
+COPY packages/database/tsup.config.ts ./packages/database/tsup.config.ts
+COPY packages/database/.eslintrc.js ./packages/database/.eslintrc.js
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/worker ./apps/worker
 

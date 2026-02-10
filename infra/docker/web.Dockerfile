@@ -25,8 +25,9 @@ COPY packages/shared/tsup.config.ts ./packages/shared/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY packages/shared ./packages/shared
+# Copy source code (copy only src/ to avoid overwriting pnpm node_modules symlinks)
+COPY packages/shared/src ./packages/shared/src
+COPY packages/shared/.eslintrc.js ./packages/shared/.eslintrc.js
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/web ./apps/web
 
