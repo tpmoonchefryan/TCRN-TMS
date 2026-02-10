@@ -94,10 +94,9 @@ jobs:
             echo "📊 Running database migrations..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -c "cd /app/packages/database && npx prisma migrate deploy && npx tsx scripts/apply-migrations.ts" || true
             
-            # Clean up old images and build cache
-            echo "🧹 Cleaning up old images and cache..."
-            docker image prune -a -f
-            docker builder prune -a -f
+            # Clean up old images and build cache (run in background to avoid SSH timeout)
+            echo "🧹 Cleaning up old images and cache (background)..."
+            nohup sh -c 'docker image prune -a -f && docker builder prune -a -f' > /tmp/docker-cleanup.log 2>&1 &
             
             echo "✅ Deployment completed successfully!"
 
