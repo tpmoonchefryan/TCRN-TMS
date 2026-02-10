@@ -10,7 +10,7 @@ WORKDIR /app
 RUN npm install -g pnpm@9.15.4
 
 # Copy workspace configuration
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY turbo.json ./
 
 # Copy package.json files for all workspaces
@@ -38,7 +38,7 @@ COPY packages/database/src ./packages/database/src
 COPY packages/database/scripts ./packages/database/scripts
 COPY packages/database/tsup.config.ts ./packages/database/tsup.config.ts
 COPY packages/database/.eslintrc.js ./packages/database/.eslintrc.js
-COPY packages/eslint-config ./packages/eslint-config
+COPY packages/eslint-config/*.js ./packages/eslint-config/
 COPY apps/worker/src ./apps/worker/src
 COPY apps/worker/tsconfig.json ./apps/worker/tsconfig.json
 COPY apps/worker/tsup.config.ts ./apps/worker/tsup.config.ts

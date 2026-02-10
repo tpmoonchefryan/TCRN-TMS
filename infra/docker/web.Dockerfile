@@ -10,7 +10,7 @@ WORKDIR /app
 RUN npm install -g pnpm@9.15.4
 
 # Copy workspace configuration
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY turbo.json ./
 
 # Copy package.json files for all workspaces
@@ -28,7 +28,7 @@ RUN pnpm install --frozen-lockfile
 # Copy source code (copy only src/ to avoid overwriting pnpm node_modules symlinks)
 COPY packages/shared/src ./packages/shared/src
 COPY packages/shared/.eslintrc.js ./packages/shared/.eslintrc.js
-COPY packages/eslint-config ./packages/eslint-config
+COPY packages/eslint-config/*.js ./packages/eslint-config/
 COPY apps/web/src ./apps/web/src
 COPY apps/web/public ./apps/web/public
 COPY apps/web/middleware.ts ./apps/web/middleware.ts

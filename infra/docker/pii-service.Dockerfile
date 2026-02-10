@@ -11,7 +11,7 @@ WORKDIR /app
 RUN npm install -g pnpm@9.15.4
 
 # Copy workspace configuration
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY turbo.json ./
 
 # Copy package.json files for all workspaces
@@ -30,7 +30,7 @@ RUN cd apps/pii-service && pnpm prisma generate
 
 # Copy source code
 COPY packages/shared ./packages/shared
-COPY packages/eslint-config ./packages/eslint-config
+COPY packages/eslint-config/*.js ./packages/eslint-config/
 COPY apps/pii-service ./apps/pii-service
 
 # Build packages
