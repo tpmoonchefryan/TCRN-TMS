@@ -1,0 +1,81 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+.next
+out
+build
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*
+!.env.sample
+!.env.local.sample
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Testing
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Turbo
+.turbo
+
+# Git
+.git
+.gitignore
+
+# mTLS Certificates
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Cache
+.cache
+.parcel-cache
+
+# Documentation & context
+.context
+.agent
+.agents
+.cursor
+.gemini
+docs
+*.md
+!packages/database/prisma/*.md
+
+# Debug files
+.debug
+debug-*.ts
+debug-*.js
+cookies.txt
+
+# Backup files
+*.backup
+*.bak
