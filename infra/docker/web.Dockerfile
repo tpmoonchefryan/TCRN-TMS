@@ -29,7 +29,15 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/src ./packages/shared/src
 COPY packages/shared/.eslintrc.js ./packages/shared/.eslintrc.js
 COPY packages/eslint-config ./packages/eslint-config
-COPY apps/web ./apps/web
+COPY apps/web/src ./apps/web/src
+COPY apps/web/public ./apps/web/public
+COPY apps/web/middleware.ts ./apps/web/middleware.ts
+COPY apps/web/next.config.js ./apps/web/next.config.js
+COPY apps/web/next-env.d.ts ./apps/web/next-env.d.ts
+COPY apps/web/postcss.config.js ./apps/web/postcss.config.js
+COPY apps/web/tailwind.config.js ./apps/web/tailwind.config.js
+COPY apps/web/tsconfig.json ./apps/web/tsconfig.json
+COPY apps/web/.eslintrc.js ./apps/web/.eslintrc.js
 
 # Build shared packages first
 RUN pnpm --filter @tcrn/shared build

@@ -39,7 +39,10 @@ COPY packages/database/scripts ./packages/database/scripts
 COPY packages/database/tsup.config.ts ./packages/database/tsup.config.ts
 COPY packages/database/.eslintrc.js ./packages/database/.eslintrc.js
 COPY packages/eslint-config ./packages/eslint-config
-COPY apps/worker ./apps/worker
+COPY apps/worker/src ./apps/worker/src
+COPY apps/worker/tsconfig.json ./apps/worker/tsconfig.json
+COPY apps/worker/tsup.config.ts ./apps/worker/tsup.config.ts
+COPY apps/worker/.eslintrc.js ./apps/worker/.eslintrc.js
 
 # Build packages
 ARG NODE_ENV=production
