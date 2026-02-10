@@ -5,7 +5,7 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build --no-turbopack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
     "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts' --fix",
