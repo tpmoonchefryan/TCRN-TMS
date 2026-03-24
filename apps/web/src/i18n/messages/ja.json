@@ -490,8 +490,8 @@
       "cloudflare": "Cloudflare SaaS",
       "cloudflareDesc": "Cloudflare for SaaSを通じてエッジでSSLを管理",
       "viewDocs": "セットアップガイドを見る",
-      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/self-hosted-proxy.md",
-      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/cloudflare-saas.md",
+      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/README.ja.md#self-hosted-proxy-setup",
+      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/README.ja.md#cloudflare-for-saas-setup",
       "saved": "SSLモードを保存しました"
     }
   },

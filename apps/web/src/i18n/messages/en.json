@@ -490,8 +490,8 @@
       "cloudflare": "Cloudflare SaaS",
       "cloudflareDesc": "SSL is managed through Cloudflare for SaaS with edge-termination",
       "viewDocs": "View Setup Guide",
-      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/self-hosted-proxy.md",
-      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/cloudflare-saas.md",
+      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS#self-hosted-proxy-setup",
+      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS#cloudflare-for-saas-setup",
       "saved": "SSL mode saved successfully"
     }
   },

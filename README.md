@@ -37,6 +37,7 @@
 - [Tech Stack](#-tech-stack)
 - [Quick Start](#-quick-start)
 - [Production Deployment](#-production-deployment)
+- [Custom Domain Setup](#-custom-domain-setup)
 - [PII Proxy Service Deployment](#-pii-proxy-service-deployment)
 - [API Reference](#-api-reference)
 - [Security](#-security)
@@ -111,9 +112,9 @@ A complete anonymous question box system inspired by Japanese "Marshmallow" serv
 - **Export Capability**: Export messages to CSV/JSON/XLSX
 
 <p align="center">
-  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">
-  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow Preview2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow Preview3" width="1200">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_streamermode.png" alt="Marshmallow Preview2" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_audit.png" alt="Marshmallow Preview3" width="1200">
 </p>
 
 ### 📊 MFR Report Generation
@@ -165,8 +166,8 @@ Drag-and-drop homepage builder for talents:
 - **Profile Card**: Enhanced personalization with local avatar upload and customizable layout
 - **Custom Domains**: Support for talent-owned domains with DNS verification and flexible SSL options:
   - **Auto (Let's Encrypt)**: Automatic certificate provisioning and renewal
-  - **Self-Hosted Proxy**: Use your own SSL certificate with Nginx/Caddy ([Setup Guide](docs/custom-domain/self-hosted-proxy.md))
-  - **Cloudflare for SaaS**: Edge SSL with global CDN ([Setup Guide](docs/custom-domain/cloudflare-saas.md))
+  - **Self-Hosted Proxy**: Use your own SSL certificate with Nginx/Caddy ([Setup Guide](#self-hosted-proxy-setup))
+  - **Cloudflare for SaaS**: Edge SSL with global CDN ([Setup Guide](#cloudflare-for-saas-setup))
 - **SEO Optimization**: Automatic meta tags and Open Graph support
 - **Example Page**: [https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
@@ -528,6 +529,125 @@ server {
 - [ ] Email service credentials configured
 - [ ] Backup strategy implemented
 - [ ] Monitoring and alerting configured
+
+---
+
+## 🌍 Custom Domain Setup
+
+TCRN TMS supports two custom-domain modes for public pages.
+
+<a id="self-hosted-proxy-setup"></a>
+
+### Self-Hosted Proxy Setup
+
+Use this mode when the customer manages their own SSL certificate and reverse proxy.
+
+Requirements:
+
+- A public server with Nginx or Caddy
+- A valid SSL certificate and private key
+- DNS access for the custom domain
+- The target public page path, such as `/p/joi_channel`
+
+Example Nginx configuration:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/ssl/certs/your-domain.crt;
+    ssl_certificate_key /etc/ssl/private/your-domain.key;
+
+    location / {
+        proxy_pass https://YOUR_TCRN_DOMAIN/p/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+
+    location /ask {
+        proxy_pass https://YOUR_TCRN_DOMAIN/m/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Example Caddy configuration:
+
+```caddyfile
+your-domain.com {
+    tls /etc/ssl/certs/your-domain.crt /etc/ssl/private/your-domain.key
+
+    handle {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /p/YOUR_TALENT_PATH{uri}
+        }
+    }
+
+    handle /ask* {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /m/YOUR_TALENT_PATH{uri}
+        }
+    }
+}
+```
+
+Replace:
+
+- `your-domain.com` with the customer-owned domain
+- `YOUR_TCRN_DOMAIN` with the platform public domain
+- `YOUR_TALENT_PATH` with the talent slug
+
+<a id="cloudflare-for-saas-setup"></a>
+
+### Cloudflare for SaaS Setup
+
+Use this mode when the platform manages certificates at the Cloudflare edge.
+
+Platform-side steps:
+
+1. Enable `SSL/TLS -> Custom Hostnames` in Cloudflare.
+2. Configure the fallback origin for the TCRN TMS public entry.
+3. Create the custom hostname after domain verification.
+
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostnames" \
+  -H "Authorization: Bearer {api_token}" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "hostname": "talent.customer.com",
+    "ssl": {
+      "method": "txt",
+      "type": "dv"
+    }
+  }'
+```
+
+Customer-side steps:
+
+1. Add the CNAME record provided by the platform.
+2. Add the TXT verification record shown in TCRN TMS.
+3. Wait for DNS propagation and certificate issuance.
+4. Verify that `https://your-domain.com` resolves to the expected public page.
 
 ---
 
@@ -918,6 +1038,6 @@ Commercial use requires a separate license agreement. For enterprise licensing o
 
 ## 📞 Support
 
-- **Documentation**: [docs/](./docs/)
+- **Documentation**: Public visitor docs are in this README and [SECURITY.md](./SECURITY.md)
 - **Issues**: [GitHub Issues](https://github.com/tpmoonchefryan/tcrn-tms/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/tpmoonchefryan/tcrn-tms/discussions)

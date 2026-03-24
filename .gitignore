@@ -108,12 +108,15 @@ pnpm-lock.yaml.backup
 # Lock files (keep pnpm-lock.yaml)
 package-lock.json
 yarn.lock
+skills-lock.json
 
 # Generated files
 *.generated.*
 
 # Prompts related files
 .context/*
+.llm/*
+.references/*
 technical_readme.md
 tech_readme.md
 .agent/*

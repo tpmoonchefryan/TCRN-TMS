@@ -19,7 +19,7 @@
 
 ---
 
-## � 待办事项
+## 📋 待办事项
 
 - **适配器和 Webhook 开发**
   - 对接 Bilibili 直播开放平台，支持更多集成功能（自动更新观众信息、记录会籍有效期、消费记录等）
@@ -27,7 +27,7 @@
 
 ---
 
-## �📖 目录
+## 📖 目录
 
 - [待办事项](#-待办事项)
 - [项目简介](#-项目简介)
@@ -37,6 +37,7 @@
 - [技术栈](#-技术栈)
 - [快速开始](#-快速开始)
 - [生产环境部署](#-生产环境部署)
+- [自定义域名配置](#-自定义域名配置)
 - [PII 代理服务部署](#-pii-代理服务部署)
 - [API 参考](#-api-参考)
 - [安全机制](#-安全机制)
@@ -111,9 +112,9 @@
 - **导出功能**：支持导出消息为 CSV/JSON/XLSX
 
 <p align="center">
-  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">
-  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow 预览2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow 预览3" width="1200">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_streamermode.png" alt="Marshmallow 预览2" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_audit.png" alt="Marshmallow 预览3" width="1200">
 </p>
 
 ### 📊 MFR 报表生成
@@ -165,8 +166,8 @@ Loki 集成支持跨所有日志的全文搜索。
 - **个人名片**：增强的个性化设置，支持本地头像上传和自定义布局
 - **自定义域名**：支持艺人自有域名，带 DNS 验证和灵活的 SSL 选项：
   - **自动签发 (Let's Encrypt)**：自动证书配置和续期
-  - **自托管代理**：使用 Nginx/Caddy 配置自有 SSL 证书（[配置指南](docs/custom-domain/self-hosted-proxy.zh.md)）
-  - **Cloudflare for SaaS**：边缘 SSL，带全球 CDN（[配置指南](docs/custom-domain/cloudflare-saas.zh.md)）
+  - **自托管代理**：使用 Nginx/Caddy 配置自有 SSL 证书（[配置指南](#self-hosted-proxy-setup)）
+  - **Cloudflare for SaaS**：边缘 SSL，带全球 CDN（[配置指南](#cloudflare-for-saas-setup)）
 - **SEO 优化**：自动生成 meta 标签和 Open Graph 支持
 - **示例页面**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
@@ -528,6 +529,125 @@ server {
 - [ ] 配置邮件服务凭证
 - [ ] 实施备份策略
 - [ ] 配置监控和告警
+
+---
+
+## 🌍 自定义域名配置
+
+TCRN TMS 支持两种公开页自定义域名模式。
+
+<a id="self-hosted-proxy-setup"></a>
+
+### 自托管代理配置
+
+当客户希望自行管理 SSL 证书与反向代理时，使用该模式。
+
+前置要求：
+
+- 一台可公网访问的服务器，安装 Nginx 或 Caddy
+- 有效的 SSL 证书和私钥
+- 可修改自定义域名的 DNS
+- 明确目标公开页面路径，例如 `/p/joi_channel`
+
+Nginx 示例：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/ssl/certs/your-domain.crt;
+    ssl_certificate_key /etc/ssl/private/your-domain.key;
+
+    location / {
+        proxy_pass https://YOUR_TCRN_DOMAIN/p/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+
+    location /ask {
+        proxy_pass https://YOUR_TCRN_DOMAIN/m/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Caddy 示例：
+
+```caddyfile
+your-domain.com {
+    tls /etc/ssl/certs/your-domain.crt /etc/ssl/private/your-domain.key
+
+    handle {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /p/YOUR_TALENT_PATH{uri}
+        }
+    }
+
+    handle /ask* {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /m/YOUR_TALENT_PATH{uri}
+        }
+    }
+}
+```
+
+请替换：
+
+- `your-domain.com` 为客户自有域名
+- `YOUR_TCRN_DOMAIN` 为平台公开域名
+- `YOUR_TALENT_PATH` 为艺人 slug
+
+<a id="cloudflare-for-saas-setup"></a>
+
+### Cloudflare for SaaS 配置
+
+当平台通过 Cloudflare 边缘托管证书时，使用该模式。
+
+平台侧步骤：
+
+1. 在 Cloudflare 中启用 `SSL/TLS -> Custom Hostnames`。
+2. 配置指向 TCRN TMS 公开入口的 fallback origin。
+3. 域名验证完成后，调用 API 创建 custom hostname。
+
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostnames" \
+  -H "Authorization: Bearer {api_token}" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "hostname": "talent.customer.com",
+    "ssl": {
+      "method": "txt",
+      "type": "dv"
+    }
+  }'
+```
+
+客户侧步骤：
+
+1. 添加平台提供的 CNAME 记录。
+2. 添加 TCRN TMS 页面中提示的 TXT 验证记录。
+3. 等待 DNS 生效与证书签发。
+4. 验证 `https://your-domain.com` 是否能打开预期公开页面。
 
 ---
 
@@ -918,6 +1038,6 @@ curl -X POST /api/v1/auth/login \
 
 ## 📞 支持
 
-- **文档**：[docs/](./docs/)
+- **文档**：公开访客文档见本 README 与 [SECURITY.md](./SECURITY.md)
 - **问题反馈**：[GitHub Issues](https://github.com/tpmoonchefryan/tcrn-tms/issues)
 - **讨论区**：[GitHub Discussions](https://github.com/tpmoonchefryan/tcrn-tms/discussions)

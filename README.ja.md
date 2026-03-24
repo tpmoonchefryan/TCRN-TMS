@@ -37,6 +37,7 @@
 - [技術スタック](#-技術スタック)
 - [クイックスタート](#-クイックスタート)
 - [本番環境デプロイ](#-本番環境デプロイ)
+- [カスタムドメイン設定](#-カスタムドメイン設定)
 - [PIIプロキシサービスデプロイ](#-piiプロキシサービスデプロイ)
 - [APIリファレンス](#-apiリファレンス)
 - [セキュリティ](#-セキュリティ)
@@ -111,9 +112,9 @@
 - **エクスポート機能**：メッセージをCSV/JSON/XLSXにエクスポート
 
 <p align="center">
-  <img src="docs/images/marshmallow_preview_externalpage.png" alt="Marshmallow プレビュー" width="600">
-  <img src="docs/images/marshmallow_preview_streamermode.png" alt="Marshmallow プレビュー2" width="600">
-  <img src="docs/images/marshmallow_preview_audit.png" alt="Marshmallow プレビュー3" width="1200">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow プレビュー" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_streamermode.png" alt="Marshmallow プレビュー2" width="600">
+  <img src=".github/readme-assets/marshmallow/marshmallow_preview_audit.png" alt="Marshmallow プレビュー3" width="1200">
 </p>
 
 ### 📊 MFRレポート生成
@@ -165,8 +166,8 @@ Loki統合により、すべてのログで全文検索が可能です。
 - **プロフィールカード**：ローカルアバターアップロードとカスタマイズ可能なレイアウトによるパーソナライゼーション強化
 - **カスタムドメイン**：DNS検証と柔軟なSSLオプション付きタレント所有ドメインをサポート：
   - **自動（Let's Encrypt）**：自動証明書プロビジョニングと更新
-  - **セルフホスト型プロキシ**：Nginx/Caddyで独自SSL証明書を使用（[設定ガイド](docs/custom-domain/self-hosted-proxy.ja.md)）
-  - **Cloudflare for SaaS**：グローバルCDN付きエッジSSL（[設定ガイド](docs/custom-domain/cloudflare-saas.ja.md)）
+  - **セルフホスト型プロキシ**：Nginx/Caddyで独自SSL証明書を使用（[設定ガイド](#self-hosted-proxy-setup)）
+  - **Cloudflare for SaaS**：グローバルCDN付きエッジSSL（[設定ガイド](#cloudflare-for-saas-setup)）
 - **SEO最適化**：自動メタタグとOpen Graphサポート
 - **サンプルページ**：[https://web.prod.tcrn-tms.com/p/joi_channel](https://web.prod.tcrn-tms.com/p/joi_channel)
 
@@ -528,6 +529,125 @@ server {
 - [ ] メールサービス認証情報を設定
 - [ ] バックアップ戦略を実装
 - [ ] 監視とアラートを設定
+
+---
+
+## 🌍 カスタムドメイン設定
+
+TCRN TMS は公開ページ向けに 2 つのカスタムドメイン方式を提供します。
+
+<a id="self-hosted-proxy-setup"></a>
+
+### セルフホスト型プロキシ設定
+
+顧客側で SSL 証明書とリバースプロキシを管理したい場合に使います。
+
+前提条件：
+
+- Nginx または Caddy を動かせる公開サーバー
+- 有効な SSL 証明書と秘密鍵
+- カスタムドメインの DNS を変更できること
+- 対象となる公開ページパス。例: `/p/joi_channel`
+
+Nginx の例：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/ssl/certs/your-domain.crt;
+    ssl_certificate_key /etc/ssl/private/your-domain.key;
+
+    location / {
+        proxy_pass https://YOUR_TCRN_DOMAIN/p/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+
+    location /ask {
+        proxy_pass https://YOUR_TCRN_DOMAIN/m/YOUR_TALENT_PATH;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Caddy の例：
+
+```caddyfile
+your-domain.com {
+    tls /etc/ssl/certs/your-domain.crt /etc/ssl/private/your-domain.key
+
+    handle {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /p/YOUR_TALENT_PATH{uri}
+        }
+    }
+
+    handle /ask* {
+        reverse_proxy https://YOUR_TCRN_DOMAIN {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            rewrite /m/YOUR_TALENT_PATH{uri}
+        }
+    }
+}
+```
+
+置き換える値：
+
+- `your-domain.com`: 顧客所有のドメイン
+- `YOUR_TCRN_DOMAIN`: プラットフォームの公開ドメイン
+- `YOUR_TALENT_PATH`: タレント slug
+
+<a id="cloudflare-for-saas-setup"></a>
+
+### Cloudflare for SaaS 設定
+
+プラットフォーム側で Cloudflare エッジ証明書を管理する場合に使います。
+
+プラットフォーム側の手順：
+
+1. Cloudflare の `SSL/TLS -> Custom Hostnames` を有効化します。
+2. TCRN TMS 公開入口を向く fallback origin を設定します。
+3. ドメイン検証後に API から custom hostname を作成します。
+
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostnames" \
+  -H "Authorization: Bearer {api_token}" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "hostname": "talent.customer.com",
+    "ssl": {
+      "method": "txt",
+      "type": "dv"
+    }
+  }'
+```
+
+顧客側の手順：
+
+1. プラットフォームが案内する CNAME レコードを追加します。
+2. TCRN TMS に表示される TXT 検証レコードを追加します。
+3. DNS 反映と証明書発行を待ちます。
+4. `https://your-domain.com` が期待どおりの公開ページを開くことを確認します。
 
 ---
 
@@ -918,6 +1038,6 @@ curl -X POST /api/v1/auth/login \
 
 ## 📞 サポート
 
-- **ドキュメント**：[docs/](./docs/)
+- **ドキュメント**：公開ドキュメントは本 README と [SECURITY.md](./SECURITY.md) を参照してください
 - **Issue**：[GitHub Issues](https://github.com/tpmoonchefryan/tcrn-tms/issues)
 - **ディスカッション**：[GitHub Discussions](https://github.com/tpmoonchefryan/tcrn-tms/discussions)

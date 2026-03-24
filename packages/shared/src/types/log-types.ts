@@ -2,7 +2,7 @@
 
 /**
  * Log Module Types
- * Based on .context/07-日志模块.md specification
+ * Based on .context/modules/11-logging-observability-worker/technical_details.md
  */
 
 // =============================================================================

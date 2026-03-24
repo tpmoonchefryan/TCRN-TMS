@@ -490,8 +490,8 @@
       "cloudflare": "Cloudflare SaaS",
       "cloudflareDesc": "通过 Cloudflare for SaaS 在边缘节点管理 SSL",
       "viewDocs": "查看配置指南",
-      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/self-hosted-proxy.md",
-      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/docs/custom-domain/cloudflare-saas.md",
+      "selfHostedDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/README.zh-CN.md#self-hosted-proxy-setup",
+      "cloudflareDocsUrl": "https://github.com/tpmoonchefryan/TCRN-TMS/blob/main/README.zh-CN.md#cloudflare-for-saas-setup",
       "saved": "SSL 模式保存成功"
     }
   },
