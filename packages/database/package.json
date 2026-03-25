@@ -38,6 +38,7 @@
     "db:normalize-tenant-scope-assignments": "tsx scripts/normalize-tenant-scope-assignments.ts",
     "db:export-tenant-scope-normalization-rollback": "tsx scripts/export-tenant-scope-normalization-rollback.ts",
     "db:verify-legacy-prune-runtime": "tsx scripts/verify-legacy-prune-runtime.ts",
+    "db:verify-schema-rollout": "tsx scripts/verify-schema-rollout.ts",
     "db:prune-legacy-rbac": "tsx scripts/prune-legacy-rbac.ts",
     "db:export-legacy-rbac-rollback": "tsx scripts/export-legacy-rbac-rollback.ts",
     "db:cleanup-broken-tenants": "tsx scripts/cleanup-broken-tenant-metadata.ts",
