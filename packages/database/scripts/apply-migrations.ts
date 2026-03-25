@@ -96,7 +96,7 @@ async function applyMigrationToSchema(
       success++;
     } catch (error: any) {
       const msg = error.message || '';
-      // Ignore "already exists" and "does not exist" errors (for IF NOT EXISTS / IF EXISTS)
+      // Ignore common idempotency conflicts when replaying tenant SQL across existing schemas.
       if (
         msg.includes('already exists') ||
         msg.includes('does not exist') ||
@@ -106,7 +106,9 @@ async function applyMigrationToSchema(
         skipped++;
       } else {
         errors++;
-        console.error(`      Error in ${targetSchema}: ${msg.substring(0, 100)}`);
+        console.error(
+          `      Error in ${migrationName} for ${targetSchema}: ${msg.substring(0, 100)}`
+        );
       }
     }
   }
@@ -162,11 +164,13 @@ async function applyMigrations() {
   }
 
   console.log('\n' + '='.repeat(50));
-  console.log(`✅ Migration complete:`);
+  console.log(totalErrors > 0 ? '❌ Migration completed with errors:' : '✅ Migration complete:');
   console.log(`   - Statements executed: ${totalSuccess}`);
   console.log(`   - Statements skipped (already applied): ${totalSkipped}`);
   if (totalErrors > 0) {
     console.log(`   - Errors: ${totalErrors}`);
+    console.error('❌ Non-ignorable tenant migration errors detected; failing the process.');
+    process.exitCode = 1;
   }
 }
 
