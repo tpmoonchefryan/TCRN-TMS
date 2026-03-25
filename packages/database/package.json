@@ -31,6 +31,16 @@
     "db:reset": "prisma migrate reset --force && pnpm db:seed",
     "db:apply-migrations": "tsx scripts/apply-migrations.ts",
     "db:sync-schemas": "tsx scripts/sync-tenant-schemas.ts",
+    "db:sync-rbac": "tsx scripts/sync-rbac-contract.ts",
+    "db:audit-legacy-rbac": "tsx scripts/audit-legacy-rbac.ts",
+    "db:audit-tenant-scope-assignments": "tsx scripts/audit-tenant-scope-assignments.ts",
+    "db:plan-tenant-scope-normalization": "tsx scripts/plan-tenant-scope-normalization.ts",
+    "db:normalize-tenant-scope-assignments": "tsx scripts/normalize-tenant-scope-assignments.ts",
+    "db:export-tenant-scope-normalization-rollback": "tsx scripts/export-tenant-scope-normalization-rollback.ts",
+    "db:verify-legacy-prune-runtime": "tsx scripts/verify-legacy-prune-runtime.ts",
+    "db:prune-legacy-rbac": "tsx scripts/prune-legacy-rbac.ts",
+    "db:export-legacy-rbac-rollback": "tsx scripts/export-legacy-rbac-rollback.ts",
+    "db:cleanup-broken-tenants": "tsx scripts/cleanup-broken-tenant-metadata.ts",
     "db:create-tenant": "tsx scripts/create-tenant-schema.ts",
     "db:init": "pnpm db:apply-migrations && pnpm db:generate && pnpm db:seed",
     "db:refresh-snapshots": "tsx scripts/refresh-permission-snapshots.ts",
@@ -38,6 +48,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.14.0",
+    "@tcrn/shared": "workspace:*",
     "argon2": "0.44.0"
   },
   "devDependencies": {

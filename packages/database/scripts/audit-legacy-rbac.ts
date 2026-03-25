@@ -1,0 +1,730 @@
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// Read-only audit for legacy RBAC resources that still exist in tenant schemas.
+
+import path from 'node:path';
+import { PrismaClient } from '@prisma/client';
+import { fileURLToPath } from 'node:url';
+
+import { getSchemaSyncFailureReason } from './sync-rbac-contract';
+
+export interface CliOptions {
+  schemas: string[];
+  skipTemplate: boolean;
+  includeHistoricalRoles: boolean;
+  includeCompatResources: boolean;
+  json: boolean;
+}
+
+export interface LegacyResourceTarget {
+  legacyCode: string;
+  canonicalCode: string | null;
+  note: string;
+}
+
+export interface ResourceGrantEntry {
+  roleCode: string;
+  action: string;
+  effect: string;
+}
+
+export interface ResourceAudit {
+  code: string;
+  present: boolean;
+  isActive: boolean | null;
+  policyCount: number;
+  rolePolicyCount: number;
+  assignedRoleCount: number;
+  affectedUserCount: number;
+  roleCodes: string[];
+  grants: ResourceGrantEntry[];
+}
+
+export type PruneReadiness =
+  | 'absent'
+  | 'legacy_unmapped'
+  | 'blocked_by_canonical_gap'
+  | 'covered_requires_snapshot_refresh'
+  | 'covered_assigned_verified'
+  | 'covered_unassigned';
+
+export interface LegacyTargetAudit {
+  legacyCode: string;
+  canonicalCode: string | null;
+  note: string;
+  legacy: ResourceAudit;
+  canonical: ResourceAudit | null;
+  legacyOnlyGrants: string[];
+  canonicalOnlyGrants: string[];
+  readiness: PruneReadiness;
+  reason: string;
+}
+
+export interface HistoricalRoleAudit {
+  roleCode: string;
+  present: boolean;
+  isActive: boolean | null;
+  assignedUsers: number;
+}
+
+export interface CompatResourceTarget {
+  code: string;
+  note: string;
+}
+
+export interface CompatResourceAudit {
+  code: string;
+  note: string;
+  resource: ResourceAudit;
+}
+
+export interface SchemaLegacyAudit {
+  schemaName: string;
+  targets: LegacyTargetAudit[];
+  historicalRoles: HistoricalRoleAudit[];
+  compatResources: CompatResourceAudit[];
+}
+
+export interface SkippedSchemaAudit {
+  schemaName: string;
+  reason: string;
+}
+
+export interface LegacyRbacAuditSummary {
+  audited: SchemaLegacyAudit[];
+  skipped: SkippedSchemaAudit[];
+}
+
+const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
+  {
+    legacyCode: 'config.customer_status',
+    canonicalCode: null,
+    note: 'No direct canonical replacement found in shared RBAC catalog.',
+  },
+  {
+    legacyCode: 'config.membership',
+    canonicalCode: null,
+    note: 'No direct canonical replacement found in shared RBAC catalog.',
+  },
+  {
+    legacyCode: 'config.platform',
+    canonicalCode: null,
+    note: 'No direct canonical replacement found in shared RBAC catalog.',
+  },
+  {
+    legacyCode: 'homepage',
+    canonicalCode: 'talent.homepage',
+    note: 'Legacy external-page resource.',
+  },
+  {
+    legacyCode: 'log.change',
+    canonicalCode: 'log.change_log',
+    note: 'Legacy log resource name.',
+  },
+  {
+    legacyCode: 'log.integration',
+    canonicalCode: 'log.integration_log',
+    note: 'Legacy log resource name.',
+  },
+  {
+    legacyCode: 'log.security',
+    canonicalCode: null,
+    note: 'No direct canonical replacement found in shared RBAC catalog.',
+  },
+  {
+    legacyCode: 'marshmallow',
+    canonicalCode: 'talent.marshmallow',
+    note: 'Legacy external-page resource.',
+  },
+  {
+    legacyCode: 'system',
+    canonicalCode: 'tenant.manage',
+    note: 'Legacy tenant/platform management resource.',
+  },
+] as const;
+
+const HISTORICAL_ROLE_CODES = [
+  'SUPER_ADMIN',
+  'INTEGRATION_ADMIN',
+  'INTEGRATION_VIEWER',
+  'TENANT_ADMIN',
+] as const;
+
+const COMPAT_RESOURCE_TARGETS: readonly CompatResourceTarget[] = [
+  {
+    code: 'system_user.manage',
+    note: 'Legacy user-management fallback checked by UserRoleService.',
+  },
+  {
+    code: 'system_user.self',
+    note: 'Legacy self-profile resource from pre-catalog RBAC shape.',
+  },
+  {
+    code: 'role.manage',
+    note: 'Legacy role-management resource from pre-catalog RBAC shape.',
+  },
+  {
+    code: 'config.entity',
+    note: 'Legacy generic config resource from pre-catalog RBAC shape.',
+  },
+  {
+    code: 'config.blocklist',
+    note: 'Legacy blocklist config resource from pre-catalog RBAC shape.',
+  },
+] as const;
+
+function parseCliArgs(argv: string[]): CliOptions {
+  const schemas: string[] = [];
+  let skipTemplate = false;
+  let includeHistoricalRoles = false;
+  let includeCompatResources = false;
+  let json = false;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--') {
+      continue;
+    }
+
+    if (arg === '--schema') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --schema');
+      }
+
+      schemas.push(value);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--skip-template') {
+      skipTemplate = true;
+      continue;
+    }
+
+    if (arg === '--include-historical-roles') {
+      includeHistoricalRoles = true;
+      continue;
+    }
+
+    if (arg === '--include-compat-resources') {
+      includeCompatResources = true;
+      continue;
+    }
+
+    if (arg === '--json') {
+      json = true;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return {
+    schemas,
+    skipTemplate,
+    includeHistoricalRoles,
+    includeCompatResources,
+    json,
+  };
+}
+
+async function getTenantSchemasFromPublic(prisma: PrismaClient): Promise<string[]> {
+  const tenants = await prisma.$queryRawUnsafe<Array<{ schema_name: string | null }>>(`
+    SELECT schema_name
+    FROM public.tenant
+    WHERE schema_name IS NOT NULL
+      AND schema_name != ''
+    ORDER BY schema_name
+  `);
+
+  return tenants
+    .map((tenant) => tenant.schema_name)
+    .filter((schemaName): schemaName is string => Boolean(schemaName));
+}
+
+async function getTargetSchemas(
+  prisma: PrismaClient,
+  options: CliOptions,
+): Promise<string[]> {
+  if (options.schemas.length > 0) {
+    return [...new Set(options.schemas)];
+  }
+
+  const schemas = await getTenantSchemasFromPublic(prisma);
+
+  if (!options.skipTemplate) {
+    schemas.unshift('tenant_template');
+  }
+
+  return [...new Set(schemas)];
+}
+
+function emptyResourceAudit(code: string): ResourceAudit {
+  return {
+    code,
+    present: false,
+    isActive: null,
+    policyCount: 0,
+    rolePolicyCount: 0,
+    assignedRoleCount: 0,
+    affectedUserCount: 0,
+    roleCodes: [],
+    grants: [],
+  };
+}
+
+interface ResourceRow {
+  id: string;
+  is_active: boolean;
+}
+
+interface CountRow {
+  count: bigint;
+}
+
+interface AssignmentCountRow {
+  assignedRoleCount: bigint;
+  affectedUserCount: bigint;
+}
+
+interface HistoricalRoleRow {
+  roleCode: string;
+  isActive: boolean;
+  assignedUsers: bigint;
+}
+
+async function tableExists(
+  prisma: PrismaClient,
+  schemaName: string,
+  tableName: string,
+): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = $1
+          AND table_name = $2
+      ) AS exists
+    `,
+    schemaName,
+    tableName,
+  );
+
+  return rows[0]?.exists ?? false;
+}
+
+async function getResourceAudit(
+  prisma: PrismaClient,
+  schemaName: string,
+  resourceCode: string,
+): Promise<ResourceAudit> {
+  const resourceRows = await prisma.$queryRawUnsafe<ResourceRow[]>(
+    `SELECT id, is_active FROM "${schemaName}".resource WHERE code = $1`,
+    resourceCode,
+  );
+
+  if (resourceRows.length === 0) {
+    return emptyResourceAudit(resourceCode);
+  }
+
+  const resource = resourceRows[0];
+  const hasUserRoleTable = await tableExists(prisma, schemaName, 'user_role');
+
+  const [policyRows, rolePolicyRows, assignmentRows, grants] = await Promise.all([
+    prisma.$queryRawUnsafe<CountRow[]>(
+      `SELECT COUNT(*)::bigint AS count FROM "${schemaName}".policy WHERE resource_id = CAST($1 AS uuid)`,
+      resource.id,
+    ),
+    prisma.$queryRawUnsafe<CountRow[]>(
+      `
+        SELECT COUNT(*)::bigint AS count
+        FROM "${schemaName}".role_policy rp
+        JOIN "${schemaName}".policy p ON p.id = rp.policy_id
+        WHERE p.resource_id = CAST($1 AS uuid)
+      `,
+      resource.id,
+    ),
+    hasUserRoleTable
+      ? prisma.$queryRawUnsafe<AssignmentCountRow[]>(
+          `
+            SELECT
+              COUNT(DISTINCT ur.id)::bigint AS "assignedRoleCount",
+              COUNT(DISTINCT ur.user_id)::bigint AS "affectedUserCount"
+            FROM "${schemaName}".user_role ur
+            JOIN "${schemaName}".role_policy rp ON rp.role_id = ur.role_id
+            JOIN "${schemaName}".policy p ON p.id = rp.policy_id
+            WHERE p.resource_id = CAST($1 AS uuid)
+          `,
+          resource.id,
+        )
+      : Promise.resolve([{ assignedRoleCount: 0n, affectedUserCount: 0n }]),
+    prisma.$queryRawUnsafe<ResourceGrantEntry[]>(
+      `
+        SELECT
+          r.code AS "roleCode",
+          p.action AS action,
+          COALESCE(rp.effect, 'grant') AS effect
+        FROM "${schemaName}".role_policy rp
+        JOIN "${schemaName}".role r ON r.id = rp.role_id
+        JOIN "${schemaName}".policy p ON p.id = rp.policy_id
+        WHERE p.resource_id = CAST($1 AS uuid)
+        GROUP BY r.code, p.action, COALESCE(rp.effect, 'grant')
+        ORDER BY r.code, p.action, COALESCE(rp.effect, 'grant')
+      `,
+      resource.id,
+    ),
+  ]);
+
+  const roleCodes = [...new Set(grants.map((grant) => grant.roleCode))];
+
+  return {
+    code: resourceCode,
+    present: true,
+    isActive: resource.is_active,
+    policyCount: Number(policyRows[0]?.count ?? 0n),
+    rolePolicyCount: Number(rolePolicyRows[0]?.count ?? 0n),
+    assignedRoleCount: Number(assignmentRows[0]?.assignedRoleCount ?? 0n),
+    affectedUserCount: Number(assignmentRows[0]?.affectedUserCount ?? 0n),
+    roleCodes,
+    grants,
+  };
+}
+
+function emptyHistoricalRoleAudit(roleCode: string): HistoricalRoleAudit {
+  return {
+    roleCode,
+    present: false,
+    isActive: null,
+    assignedUsers: 0,
+  };
+}
+
+async function getHistoricalRoleAudits(
+  prisma: PrismaClient,
+  schemaName: string,
+): Promise<HistoricalRoleAudit[]> {
+  const hasRoleTable = await tableExists(prisma, schemaName, 'role');
+
+  if (!hasRoleTable) {
+    return HISTORICAL_ROLE_CODES.map((roleCode) => emptyHistoricalRoleAudit(roleCode));
+  }
+
+  const hasUserRoleTable = await tableExists(prisma, schemaName, 'user_role');
+  const rows = await prisma.$queryRawUnsafe<HistoricalRoleRow[]>(
+    `
+      SELECT
+        r.code AS "roleCode",
+        r.is_active AS "isActive",
+        ${hasUserRoleTable ? 'COUNT(DISTINCT ur.user_id)::bigint' : '0::bigint'} AS "assignedUsers"
+      FROM "${schemaName}".role r
+      ${hasUserRoleTable ? `LEFT JOIN "${schemaName}".user_role ur ON ur.role_id = r.id` : ''}
+      WHERE r.code = ANY($1::text[])
+      GROUP BY r.code, r.is_active
+      ORDER BY r.code
+    `,
+    [...HISTORICAL_ROLE_CODES],
+  );
+
+  const rowMap = new Map(rows.map((row) => [row.roleCode, row]));
+
+  return HISTORICAL_ROLE_CODES.map((roleCode) => {
+    const row = rowMap.get(roleCode);
+
+    if (!row) {
+      return emptyHistoricalRoleAudit(roleCode);
+    }
+
+    return {
+      roleCode,
+      present: true,
+      isActive: row.isActive,
+      assignedUsers: Number(row.assignedUsers),
+    };
+  });
+}
+
+async function getCompatResourceAudits(
+  prisma: PrismaClient,
+  schemaName: string,
+): Promise<CompatResourceAudit[]> {
+  return Promise.all(
+    COMPAT_RESOURCE_TARGETS.map(async (target) => ({
+      code: target.code,
+      note: target.note,
+      resource: await getResourceAudit(prisma, schemaName, target.code),
+    })),
+  );
+}
+
+function formatGrant(grant: ResourceGrantEntry): string {
+  return `${grant.roleCode}:${grant.action}:${grant.effect}`;
+}
+
+function compareTarget(
+  target: LegacyResourceTarget,
+  legacy: ResourceAudit,
+  canonical: ResourceAudit | null,
+): LegacyTargetAudit {
+  if (!legacy.present) {
+    return {
+      legacyCode: target.legacyCode,
+      canonicalCode: target.canonicalCode,
+      note: target.note,
+      legacy,
+      canonical,
+      legacyOnlyGrants: [],
+      canonicalOnlyGrants: canonical?.grants.map(formatGrant) ?? [],
+      readiness: 'absent',
+      reason: 'Legacy resource is already absent in this schema.',
+    };
+  }
+
+  if (!target.canonicalCode) {
+    return {
+      legacyCode: target.legacyCode,
+      canonicalCode: target.canonicalCode,
+      note: target.note,
+      legacy,
+      canonical,
+      legacyOnlyGrants: legacy.grants.map(formatGrant),
+      canonicalOnlyGrants: [],
+      readiness: 'legacy_unmapped',
+      reason: target.note,
+    };
+  }
+
+  if (!canonical?.present) {
+    return {
+      legacyCode: target.legacyCode,
+      canonicalCode: target.canonicalCode,
+      note: target.note,
+      legacy,
+      canonical,
+      legacyOnlyGrants: legacy.grants.map(formatGrant),
+      canonicalOnlyGrants: [],
+      readiness: 'blocked_by_canonical_gap',
+      reason: `Canonical resource ${target.canonicalCode} is missing in this schema.`,
+    };
+  }
+
+  const legacyGrantSet = new Set(legacy.grants.map(formatGrant));
+  const canonicalGrantSet = new Set(canonical.grants.map(formatGrant));
+  const legacyOnlyGrants = [...legacyGrantSet].filter((grant) => !canonicalGrantSet.has(grant));
+  const canonicalOnlyGrants = [...canonicalGrantSet].filter((grant) => !legacyGrantSet.has(grant));
+
+  if (legacyOnlyGrants.length > 0) {
+    return {
+      legacyCode: target.legacyCode,
+      canonicalCode: target.canonicalCode,
+      note: target.note,
+      legacy,
+      canonical,
+      legacyOnlyGrants,
+      canonicalOnlyGrants,
+      readiness: 'blocked_by_canonical_gap',
+      reason: 'Canonical grant set does not yet cover all legacy role/action/effect entries.',
+    };
+  }
+
+  if (legacy.assignedRoleCount > 0 || legacy.affectedUserCount > 0) {
+    return {
+      legacyCode: target.legacyCode,
+      canonicalCode: target.canonicalCode,
+      note: target.note,
+      legacy,
+      canonical,
+      legacyOnlyGrants,
+      canonicalOnlyGrants,
+      readiness: 'covered_requires_snapshot_refresh',
+      reason: 'Canonical grant set covers legacy entries, but assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.',
+    };
+  }
+
+  return {
+    legacyCode: target.legacyCode,
+    canonicalCode: target.canonicalCode,
+    note: target.note,
+    legacy,
+    canonical,
+    legacyOnlyGrants,
+    canonicalOnlyGrants,
+    readiness: 'covered_unassigned',
+    reason: 'Canonical grant set covers legacy entries and no assigned roles/users currently depend on this legacy resource.',
+  };
+}
+
+export async function auditSchema(
+  prisma: PrismaClient,
+  schemaName: string,
+  options: CliOptions,
+): Promise<SchemaLegacyAudit> {
+  const targets = await Promise.all(
+    LEGACY_RESOURCE_TARGETS.map(async (target) => {
+      const legacy = await getResourceAudit(prisma, schemaName, target.legacyCode);
+      const canonical = target.canonicalCode
+        ? await getResourceAudit(prisma, schemaName, target.canonicalCode)
+        : null;
+
+      return compareTarget(target, legacy, canonical);
+    }),
+  );
+  const historicalRoles = options.includeHistoricalRoles
+    ? await getHistoricalRoleAudits(prisma, schemaName)
+    : [];
+  const compatResources = options.includeCompatResources
+    ? await getCompatResourceAudits(prisma, schemaName)
+    : [];
+
+  return {
+    schemaName,
+    targets,
+    historicalRoles,
+    compatResources,
+  };
+}
+
+export async function auditLegacyRbac(
+  prisma: PrismaClient,
+  options: CliOptions,
+): Promise<LegacyRbacAuditSummary> {
+  const schemas = await getTargetSchemas(prisma, options);
+  const audited: SchemaLegacyAudit[] = [];
+  const skipped: SkippedSchemaAudit[] = [];
+
+  for (const schemaName of schemas) {
+    const failureReason = await getSchemaSyncFailureReason(prisma, schemaName);
+
+    if (failureReason) {
+      skipped.push({ schemaName, reason: failureReason });
+      continue;
+    }
+
+    audited.push(await auditSchema(prisma, schemaName, options));
+  }
+
+  return {
+    audited,
+    skipped,
+  };
+}
+
+function printSummary(summary: LegacyRbacAuditSummary): void {
+  for (const schemaAudit of summary.audited) {
+    console.log(`\nSchema: ${schemaAudit.schemaName}`);
+
+    if (schemaAudit.historicalRoles.length > 0) {
+      console.log(
+        'Historical roles (separate from resource-level assignedRoles/affectedUsers counts):',
+      );
+
+      for (const role of schemaAudit.historicalRoles) {
+        if (!role.present) {
+          console.log(`- ${role.roleCode}: absent`);
+          continue;
+        }
+
+        console.log(
+          `- ${role.roleCode}: active=${String(role.isActive)} assignedUsers=${role.assignedUsers}`,
+        );
+      }
+    }
+
+    if (schemaAudit.compatResources.length > 0) {
+      console.log('Compat resources (legacy fallback / pre-catalog codes):');
+
+      for (const compatResource of schemaAudit.compatResources) {
+        if (!compatResource.resource.present) {
+          console.log(`- ${compatResource.code}: absent`);
+          continue;
+        }
+
+        console.log(
+          `- ${compatResource.code}: active=${String(compatResource.resource.isActive)} policies=${compatResource.resource.policyCount} rolePolicies=${compatResource.resource.rolePolicyCount} assignedRoles=${compatResource.resource.assignedRoleCount} affectedUsers=${compatResource.resource.affectedUserCount}`,
+        );
+
+        if (compatResource.resource.roleCodes.length > 0) {
+          console.log(`  roles: ${compatResource.resource.roleCodes.join(', ')}`);
+        }
+
+        console.log(`  note: ${compatResource.note}`);
+      }
+    }
+
+    for (const target of schemaAudit.targets) {
+      const canonicalLabel = target.canonicalCode ?? 'no canonical replacement';
+      console.log(`- ${target.legacyCode} -> ${canonicalLabel} [${target.readiness}]`);
+
+      if (target.legacy.present) {
+        console.log(
+          `  legacy active=${String(target.legacy.isActive)} policies=${target.legacy.policyCount} rolePolicies=${target.legacy.rolePolicyCount} assignedRoles=${target.legacy.assignedRoleCount} affectedUsers=${target.legacy.affectedUserCount}`,
+        );
+      } else {
+        console.log('  legacy resource absent');
+      }
+
+      if (target.legacy.roleCodes.length > 0) {
+        console.log(`  legacy roles: ${target.legacy.roleCodes.join(', ')}`);
+      }
+
+      if (target.canonical?.present) {
+        console.log(
+          `  canonical active=${String(target.canonical.isActive)} policies=${target.canonical.policyCount} rolePolicies=${target.canonical.rolePolicyCount} assignedRoles=${target.canonical.assignedRoleCount} affectedUsers=${target.canonical.affectedUserCount}`,
+        );
+      }
+
+      if (target.legacyOnlyGrants.length > 0) {
+        console.log(`  legacy-only grants: ${target.legacyOnlyGrants.join(', ')}`);
+      }
+
+      if (target.canonicalOnlyGrants.length > 0) {
+        console.log(`  canonical-only grants: ${target.canonicalOnlyGrants.join(', ')}`);
+      }
+
+      console.log(`  note: ${target.reason}`);
+    }
+  }
+
+  if (summary.skipped.length > 0) {
+    console.log('\nSkipped schemas:');
+
+    for (const skipped of summary.skipped) {
+      console.log(`- ${skipped.schemaName}: ${skipped.reason}`);
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  const prisma = new PrismaClient();
+  const options = parseCliArgs(process.argv.slice(2));
+
+  try {
+    const summary = await auditLegacyRbac(prisma, options);
+
+    if (options.json) {
+      console.log(JSON.stringify(summary, null, 2));
+      return;
+    }
+
+    printSummary(summary);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+function isDirectExecution(): boolean {
+  if (!process.argv[1]) {
+    return false;
+  }
+
+  return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+}
+
+if (isDirectExecution()) {
+  main().catch((error) => {
+    console.error('Legacy RBAC audit failed:', error);
+    process.exit(1);
+  });
+}

@@ -47,6 +47,7 @@ export * from './utils/i18n-helper';
 export * from './utils/string';
 
 // Feature schema - direct exports for non-conflicting modules
+export * from './rbac/catalog';
 export * from './types/config';
 export * from './types/homepage/presets';
 export * from './types/homepage/schema';
@@ -86,4 +87,3 @@ export * from './testing';
 
 // Zod Schemas (for frontend/backend validation)
 export * from './schemas';
-
