@@ -48,8 +48,10 @@ export class DomainLookupController {
     }
 
     return {
-      path: result.path,
-      type: result.type,
+      path: result.homepagePath,
+      type: 'homepage',
+      homepagePath: result.homepagePath,
+      marshmallowPath: result.marshmallowPath,
     };
   }
 }

@@ -15,13 +15,28 @@ const domainCache = new Map<string, {
 
 const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 
+function extractHostname(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    const normalized = value.replace(/^https?:\/\//, '');
+    const hostname = normalized.split('/')[0]?.split(':')[0]?.toLowerCase();
+    return hostname || null;
+  }
+}
+
 // Known app domains that should not be treated as custom domains
-const APP_DOMAINS = [
+const APP_DOMAINS = Array.from(new Set([
   'localhost',
   '127.0.0.1',
   'tcrn.app',
-  // Add your production domains here
-];
+  extractHostname(process.env.NEXT_PUBLIC_APP_URL),
+  extractHostname(process.env.NEXT_PUBLIC_API_URL),
+].filter((value): value is string => Boolean(value))));
 
 function isAppDomain(hostname: string): boolean {
   // Check if this is a known app domain or subdomain

@@ -5,8 +5,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../database';
 
 export interface DomainLookupResult {
-  path: string;
-  type: 'homepage' | 'marshmallow';
+  homepagePath: string;
+  marshmallowPath: string;
   tenantSchema: string;
   talentId: string;
 }
@@ -27,70 +27,52 @@ export class DomainLookupService {
     // Normalize domain (lowercase, remove trailing dot)
     const normalizedDomain = domain.toLowerCase().replace(/\.$/, '');
 
-    // Get all active tenants
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
-      SELECT schema_name as "schemaName" FROM public.tenant WHERE is_active = true
-    `);
+    const tenants = await prisma.tenant.findMany({
+      where: { isActive: true },
+      select: { schemaName: true },
+    });
 
     for (const tenant of tenants) {
       const schema = tenant.schemaName;
 
-      // 1. Check TalentHomepage for custom domain
-      const homepageResult = await prisma.$queryRawUnsafe<Array<{
-        talentId: string;
-        path: string;
-      }>>(`
-        SELECT 
-          th.talent_id as "talentId",
-          COALESCE(t.homepage_path, t.code) as "path"
-        FROM "${schema}".talent_homepage th
-        JOIN "${schema}".talent t ON t.id = th.talent_id
-        WHERE LOWER(th.custom_domain) = $1
-          AND th.custom_domain_verified = true
-          AND th.is_published = true
-          AND t.is_active = true
-      `, normalizedDomain);
+      try {
+        const results = await prisma.$queryRawUnsafe<Array<{
+          talentId: string;
+          homepagePath: string | null;
+          marshmallowPath: string | null;
+          code: string;
+        }>>(`
+          SELECT
+            id as "talentId",
+            homepage_path as "homepagePath",
+            marshmallow_path as "marshmallowPath",
+            LOWER(code) as "code"
+          FROM "${schema}".talent
+          WHERE LOWER(custom_domain) = $1
+            AND custom_domain_verified = true
+            AND is_active = true
+          LIMIT 1
+        `, normalizedDomain);
 
-      if (homepageResult.length > 0) {
-        this.logger.debug(`[lookupDomain] Found homepage for domain: "${domain}" in schema: "${schema}"`);
-        return {
-          path: homepageResult[0].path,
-          type: 'homepage',
-          tenantSchema: schema,
-          talentId: homepageResult[0].talentId,
-        };
-      }
+        if (results.length > 0) {
+          const result = results[0];
+          const homepagePath = result.homepagePath || result.code;
+          const marshmallowPath = result.marshmallowPath || result.code;
 
-      // 2. Check MarshmallowConfig for custom domain
-      const marshmallowResult = await prisma.$queryRawUnsafe<Array<{
-        talentId: string;
-        path: string;
-      }>>(`
-        SELECT 
-          mc.talent_id as "talentId",
-          COALESCE(t.homepage_path, t.code) as "path"
-        FROM "${schema}".marshmallow_config mc
-        JOIN "${schema}".talent t ON t.id = mc.talent_id
-        WHERE LOWER(mc.custom_domain) = $1
-          AND mc.custom_domain_verified = true
-          // Marshmallow config doesn't have is_enabled, logic should be inferred or column verified.
-          // Based on logs, the error is specifically about mc.path. Let's fix that first.
-          // IMPORTANT: Check if mc.is_enabled exists. Schema shows it doesn't.
-          // Looking at schema.prisma lines 1350-1363 for marshmallow_config:
-          // It has: talentId, customDomain, customDomainVerified, customDomainVerificationToken
-          // It DOES NOT have is_enabled. It seems this query is incorrect on multiple fronts.
-          // Let's remove is_enabled check as well if it doesn't exist.
-          AND t.is_active = true
-      `, normalizedDomain);
+          this.logger.debug(
+            `[lookupDomain] Found unified domain "${domain}" in schema "${schema}" -> homepage "${homepagePath}", marshmallow "${marshmallowPath}"`,
+          );
 
-      if (marshmallowResult.length > 0) {
-        this.logger.debug(`[lookupDomain] Found marshmallow for domain: "${domain}" in schema: "${schema}"`);
-        return {
-          path: marshmallowResult[0].path,
-          type: 'marshmallow',
-          tenantSchema: schema,
-          talentId: marshmallowResult[0].talentId,
-        };
+          return {
+            homepagePath,
+            marshmallowPath,
+            tenantSchema: schema,
+            talentId: result.talentId,
+          };
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.debug(`[lookupDomain] Skipping schema "${schema}" due to lookup error: ${message}`);
       }
     }
 

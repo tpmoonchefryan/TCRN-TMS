@@ -5,13 +5,30 @@ import { NextResponse } from 'next/server';
 
 import { defaultLocale, locales } from './i18n/request';
 
+function extractHostname(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    const normalized = value.replace(/^https?:\/\//, '');
+    const hostname = normalized.split('/')[0]?.split(':')[0]?.toLowerCase();
+    return hostname || null;
+  }
+}
+
 // Main domains that should NOT be processed for custom domain routing
-const MAIN_DOMAINS = [
+const MAIN_DOMAINS = Array.from(new Set([
   'localhost',
   'tcrn.app',
   'tcrn.local',
   '127.0.0.1',
-];
+  extractHostname(process.env.NEXT_PUBLIC_APP_URL),
+  extractHostname(process.env.NEXT_PUBLIC_API_URL),
+  extractHostname(process.env.API_URL),
+].filter((value): value is string => Boolean(value))));
 
 // System subdomain suffixes for automatic routing
 const MARSHMALLOW_SUBDOMAIN_SUFFIX = '.m.tcrn.app';
@@ -24,7 +41,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http:
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 // In-memory domain mapping cache (use Redis in production)
-const domainCache = new Map<string, { path: string; type: string; expiry: number }>();
+const domainCache = new Map<string, { homepagePath: string; marshmallowPath: string; expiry: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -58,7 +75,7 @@ function extractTalentFromSubdomain(hostname: string): { talentCode: string; typ
 /**
  * Get domain mapping from cache or API (production only)
  */
-async function getDomainMapping(domain: string): Promise<{ path: string; type: string } | null> {
+async function getDomainMapping(domain: string): Promise<{ homepagePath: string; marshmallowPath: string } | null> {
   // Skip API calls in development to avoid blocking
   if (isDevelopment) {
     return null;
@@ -67,7 +84,10 @@ async function getDomainMapping(domain: string): Promise<{ path: string; type: s
   // Check cache first
   const cached = domainCache.get(domain);
   if (cached && cached.expiry > Date.now()) {
-    return { path: cached.path, type: cached.type };
+    return {
+      homepagePath: cached.homepagePath,
+      marshmallowPath: cached.marshmallowPath,
+    };
   }
 
   try {
@@ -84,16 +104,25 @@ async function getDomainMapping(domain: string): Promise<{ path: string; type: s
       return null;
     }
 
-    const data = await res.json();
-    
+    const payload = await res.json();
+    const data = payload?.success === true && payload.data
+      ? payload.data
+      : payload;
+    const homepagePath = data?.homepagePath || data?.path;
+    const marshmallowPath = data?.marshmallowPath || data?.path;
+
+    if (!homepagePath || !marshmallowPath) {
+      return null;
+    }
+
     // Cache the result
     domainCache.set(domain, {
-      path: data.path,
-      type: data.type,
+      homepagePath,
+      marshmallowPath,
       expiry: Date.now() + CACHE_TTL,
     });
 
-    return { path: data.path, type: data.type };
+    return { homepagePath, marshmallowPath };
   } catch (error) {
     // Log error but don't block the request
     console.warn(`Domain lookup failed for ${domain}:`, error);
@@ -138,10 +167,21 @@ export async function proxy(request: NextRequest) {
     // Handle custom domains (production only)
     const mapping = await getDomainMapping(hostname);
     if (mapping) {
-      const basePath = mapping.type === 'marshmallow' ? '/m' : '/p';
       // Use new URL(request.url) to preserve query parameters (e.g., ?sso=xxx)
       const targetUrl = new URL(request.url);
-      targetUrl.pathname = `${basePath}/${mapping.path}${pathname}`;
+
+      const normalizedPathname = pathname.replace(/\/+$/, '') || '/';
+      if (normalizedPathname === '/ask' || normalizedPathname.startsWith('/ask/')) {
+        const subpath = normalizedPathname.slice(4);
+        targetUrl.pathname = subpath
+          ? `/m/${mapping.marshmallowPath}${subpath}`
+          : `/m/${mapping.marshmallowPath}`;
+        return NextResponse.rewrite(targetUrl);
+      }
+
+      targetUrl.pathname = normalizedPathname === '/'
+        ? `/p/${mapping.homepagePath}`
+        : `/p/${mapping.homepagePath}${normalizedPathname}`;
       return NextResponse.rewrite(targetUrl);
     }
   }
