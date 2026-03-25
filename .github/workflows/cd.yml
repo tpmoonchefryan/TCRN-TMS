@@ -73,6 +73,7 @@ jobs:
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          command_timeout: 30m
           script: |
             set -e
             echo "🚀 Starting deployment..."
@@ -107,7 +108,9 @@ jobs:
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          command_timeout: 5m
           script: |
+            set -e
             echo "🔍 Verifying deployment..."
             cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
             
@@ -117,8 +120,22 @@ jobs:
             # Wait for services to be ready
             sleep 10
             
-            # Health check
-            curl -sf http://localhost:4000/health || echo "⚠️ API health check pending..."
+            # Probe the API from inside its container because the production compose
+            # topology only exposes port 4000 on the internal Docker network.
+            for attempt in $(seq 1 12); do
+              if docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc "wget -qO- http://127.0.0.1:4000/api/v1/health >/dev/null"; then
+                echo "✅ API health check passed"
+                break
+              fi
+
+              if [ "$attempt" -eq 12 ]; then
+                echo "❌ API health check failed after retries"
+                exit 1
+              fi
+
+              echo "⏳ Waiting for API health... ($attempt/12)"
+              sleep 5
+            done
             
             echo "✅ Deployment verification completed!"
 
