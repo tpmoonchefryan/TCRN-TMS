@@ -2,11 +2,85 @@
 // UAT Organization Structure - Creates subsidiaries and talents for testing
 
 import { PrismaClient } from '@prisma/client';
+
+import { getDefaultPiiSeedConfig } from './_pii-seed-config';
 import { UatTenantResult } from './20-uat-tenant';
 
 export interface UatOrganizationResult {
   subsidiaries: Record<string, string>;
   talents: Record<string, string>;
+}
+
+async function upsertTenantDefaultPiiConfig(
+  prisma: PrismaClient,
+  schema: string,
+  systemUserId: string,
+): Promise<string | null> {
+  const defaultPiiSeedConfig = getDefaultPiiSeedConfig();
+  if (!defaultPiiSeedConfig) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "${schema}".pii_service_config
+       SET is_active = false,
+           is_healthy = false,
+           updated_at = now(),
+           updated_by = $1::uuid
+       WHERE code = 'DEFAULT_PII'`,
+      systemUserId,
+    );
+    return null;
+  }
+
+  const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${schema}".pii_service_config
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
+      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
+      created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
+      'Default PII service configured from environment', '从环境变量配置的默认PII服务', '環境変数から設定されたデフォルトPIIサービス',
+      $1, 'mtls', $2, 60, false, true,
+      now(), now(), $3::uuid, $3::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       name_en = EXCLUDED.name_en,
+       description_en = EXCLUDED.description_en,
+       description_zh = EXCLUDED.description_zh,
+       description_ja = EXCLUDED.description_ja,
+       api_url = EXCLUDED.api_url,
+       health_check_url = EXCLUDED.health_check_url,
+       is_active = true,
+       is_healthy = false,
+       updated_at = now(),
+       updated_by = EXCLUDED.updated_by
+     RETURNING id`,
+    defaultPiiSeedConfig.apiUrl,
+    defaultPiiSeedConfig.healthCheckUrl,
+    systemUserId,
+  );
+
+  return result[0]?.id ?? null;
+}
+
+async function upsertTenantDefaultProfileStore(
+  prisma: PrismaClient,
+  schema: string,
+  piiConfigId: string | null,
+  systemUserId: string,
+): Promise<string> {
+  const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `INSERT INTO "${schema}".profile_store
+     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
+      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
+      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
+      $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET 
+       name_en = EXCLUDED.name_en,
+       pii_service_config_id = EXCLUDED.pii_service_config_id
+     RETURNING id`,
+    piiConfigId,
+    systemUserId,
+  );
+
+  return result[0].id;
 }
 
 export async function seedUatOrganization(
@@ -25,36 +99,15 @@ export async function seedUatOrganization(
   const corpSchema = uatTenants.corpSchemaName;
 
   // First, create a PII Service Config for the tenant
-  const corpPiiConfigResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${corpSchema}".pii_service_config 
-     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
-      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
-      created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
-      'Default PII service for UAT testing', '用于UAT测试的默认PII服务', 'UATテスト用のデフォルトPIIサービス',
-      'http://localhost:4001', 'mtls', 'http://localhost:4001/health', 60, true, true,
-      now(), now(), $1::uuid, $1::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name_en = EXCLUDED.name_en
-     RETURNING id`,
-    systemUserId
-  );
-  const corpPiiConfigId = corpPiiConfigResult[0].id;
+  const corpPiiConfigId = await upsertTenantDefaultPiiConfig(prisma, corpSchema, systemUserId);
 
   // Then, create a profile store linked to the PII Service Config
-  const corpProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${corpSchema}".profile_store 
-     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
-      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
-      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
-      $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET 
-       name_en = EXCLUDED.name_en,
-       pii_service_config_id = EXCLUDED.pii_service_config_id
-     RETURNING id`,
-    corpPiiConfigId, systemUserId
+  const corpProfileStoreId = await upsertTenantDefaultProfileStore(
+    prisma,
+    corpSchema,
+    corpPiiConfigId,
+    systemUserId,
   );
-  const corpProfileStoreId = corpProfileStoreResult[0].id;
 
   // Level 1: Headquarters
   const hqResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -123,36 +176,15 @@ export async function seedUatOrganization(
   const soloSchema = uatTenants.soloSchemaName;
 
   // First, create a PII Service Config for the solo tenant
-  const soloPiiConfigResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".pii_service_config 
-     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
-      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
-      created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
-      'Default PII service for UAT testing', '用于UAT测试的默认PII服务', 'UATテスト用のデフォルトPIIサービス',
-      'http://localhost:4001', 'mtls', 'http://localhost:4001/health', 60, true, true,
-      now(), now(), $1::uuid, $1::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name_en = EXCLUDED.name_en
-     RETURNING id`,
-    systemUserId
-  );
-  const soloPiiConfigId = soloPiiConfigResult[0].id;
+  const soloPiiConfigId = await upsertTenantDefaultPiiConfig(prisma, soloSchema, systemUserId);
 
   // Create profile store for solo tenant linked to PII Service Config
-  const soloProfileStoreResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".profile_store 
-     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
-      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
-      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
-      $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET 
-       name_en = EXCLUDED.name_en,
-       pii_service_config_id = EXCLUDED.pii_service_config_id
-     RETURNING id`,
-    soloPiiConfigId, systemUserId
+  const soloProfileStoreId = await upsertTenantDefaultProfileStore(
+    prisma,
+    soloSchema,
+    soloPiiConfigId,
+    systemUserId,
   );
-  const soloProfileStoreId = soloProfileStoreResult[0].id;
 
   // Create solo talent (no subsidiary)
   const soloTalent = {

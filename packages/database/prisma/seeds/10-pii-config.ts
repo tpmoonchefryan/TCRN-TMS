@@ -3,6 +3,8 @@
 
 import { PrismaClient } from '@prisma/client';
 
+import { getDefaultPiiSeedConfig } from './_pii-seed-config';
+
 export async function seedPiiConfig(prisma: PrismaClient) {
   console.log('  → Creating PII service configuration...');
 
@@ -14,43 +16,67 @@ export async function seedPiiConfig(prisma: PrismaClient) {
   // =========================================================================
   // PII Service Config
   // =========================================================================
-  const piiServiceConfig = await prisma.piiServiceConfig.upsert({
+  const defaultPiiSeedConfig = getDefaultPiiSeedConfig();
+  const existingDefaultPiiConfig = await prisma.piiServiceConfig.findUnique({
     where: { code: 'DEFAULT_PII' },
-    update: {
-      nameEn: 'Default PII Service',
-      nameZh: '默认PII服务',
-      nameJa: 'デフォルトPIIサービス',
-      descriptionEn: 'Default PII service for development and testing',
-      descriptionZh: '用于开发和测试的默认PII服务',
-      descriptionJa: '開発およびテスト用のデフォルトPIIサービス',
-      apiUrl: 'http://localhost:4001',
-      authType: 'mtls',
-      healthCheckUrl: 'http://localhost:4001/health',
-      healthCheckIntervalSec: 60,
-      isHealthy: true,
-      isActive: true,
-      updatedBy: adminUser?.id,
-    },
-    create: {
-      code: 'DEFAULT_PII',
-      nameEn: 'Default PII Service',
-      nameZh: '默认PII服务',
-      nameJa: 'デフォルトPIIサービス',
-      descriptionEn: 'Default PII service for development and testing',
-      descriptionZh: '用于开发和测试的默认PII服务',
-      descriptionJa: '開発およびテスト用のデフォルトPIIサービス',
-      apiUrl: 'http://localhost:4001',
-      authType: 'mtls',
-      healthCheckUrl: 'http://localhost:4001/health',
-      healthCheckIntervalSec: 60,
-      isHealthy: true,
-      isActive: true,
-      createdBy: adminUser?.id,
-      updatedBy: adminUser?.id,
-    },
+    select: { id: true },
   });
 
-  console.log(`    ✓ Created PII service config: ${piiServiceConfig.code}`);
+  let piiServiceConfigId: string | null = null;
+
+  if (defaultPiiSeedConfig) {
+    const piiServiceConfig = await prisma.piiServiceConfig.upsert({
+      where: { code: 'DEFAULT_PII' },
+      update: {
+        nameEn: 'Default PII Service',
+        nameZh: '默认PII服务',
+        nameJa: 'デフォルトPIIサービス',
+        descriptionEn: 'Default PII service configured from environment',
+        descriptionZh: '从环境变量配置的默认PII服务',
+        descriptionJa: '環境変数から設定されたデフォルトPIIサービス',
+        apiUrl: defaultPiiSeedConfig.apiUrl,
+        authType: 'mtls',
+        healthCheckUrl: defaultPiiSeedConfig.healthCheckUrl,
+        healthCheckIntervalSec: 60,
+        isHealthy: false,
+        isActive: true,
+        updatedBy: adminUser?.id,
+      },
+      create: {
+        code: 'DEFAULT_PII',
+        nameEn: 'Default PII Service',
+        nameZh: '默认PII服务',
+        nameJa: 'デフォルトPIIサービス',
+        descriptionEn: 'Default PII service configured from environment',
+        descriptionZh: '从环境变量配置的默认PII服务',
+        descriptionJa: '環境変数から設定されたデフォルトPIIサービス',
+        apiUrl: defaultPiiSeedConfig.apiUrl,
+        authType: 'mtls',
+        healthCheckUrl: defaultPiiSeedConfig.healthCheckUrl,
+        healthCheckIntervalSec: 60,
+        isHealthy: false,
+        isActive: true,
+        createdBy: adminUser?.id,
+        updatedBy: adminUser?.id,
+      },
+    });
+
+    piiServiceConfigId = piiServiceConfig.id;
+    console.log(`    ✓ Upserted PII service config: ${piiServiceConfig.code} -> ${defaultPiiSeedConfig.apiUrl}`);
+  } else if (existingDefaultPiiConfig) {
+    await prisma.piiServiceConfig.update({
+      where: { id: existingDefaultPiiConfig.id },
+      data: {
+        isActive: false,
+        isHealthy: false,
+        updatedBy: adminUser?.id,
+      },
+    });
+
+    console.log('    ✓ Deactivated DEFAULT_PII because PII_SERVICE_URL is not configured');
+  } else {
+    console.log('    ✓ Skipped DEFAULT_PII because PII_SERVICE_URL is not configured');
+  }
 
   // =========================================================================
   // Profile Store
@@ -64,7 +90,7 @@ export async function seedPiiConfig(prisma: PrismaClient) {
       descriptionEn: 'Default profile store for customer PII data',
       descriptionZh: '客户PII数据的默认存储',
       descriptionJa: '顧客PIIデータのデフォルトストア',
-      piiServiceConfigId: piiServiceConfig.id,
+      piiServiceConfigId,
       isDefault: true,
       isActive: true,
       updatedBy: adminUser?.id,
@@ -77,7 +103,7 @@ export async function seedPiiConfig(prisma: PrismaClient) {
       descriptionEn: 'Default profile store for customer PII data',
       descriptionZh: '客户PII数据的默认存储',
       descriptionJa: '顧客PIIデータのデフォルトストア',
-      piiServiceConfigId: piiServiceConfig.id,
+      piiServiceConfigId,
       isDefault: true,
       isActive: true,
       createdBy: adminUser?.id,
