@@ -18,6 +18,7 @@ export interface PiiHealthCheckJobData {
  * PII health check result for a single config
  */
 export interface PiiHealthCheckResult {
+  tenantSchema: string;
   configId: string;
   configCode: string;
   apiUrl: string;
@@ -41,6 +42,38 @@ export interface PiiHealthCheckJobResult {
  * Health check timeout in milliseconds
  */
 const HEALTH_CHECK_TIMEOUT_MS = 10000;
+
+interface TenantPiiConfigRow {
+  configId: string;
+  configCode: string;
+  apiUrl: string;
+  isHealthy: boolean;
+}
+
+async function findReferencedPiiConfigs(
+  prisma: PrismaClient,
+  tenantSchema: string,
+  checkAll: boolean,
+): Promise<TenantPiiConfigRow[]> {
+  const whereClause = checkAll
+    ? "ps.pii_service_config_id IS NOT NULL"
+    : "psc.is_active = true AND ps.is_active = true AND ps.pii_service_config_id IS NOT NULL";
+
+  return prisma.$queryRawUnsafe<TenantPiiConfigRow[]>(`
+    SELECT DISTINCT
+      psc.id as "configId",
+      psc.code as "configCode",
+      psc.api_url as "apiUrl",
+      psc.is_healthy as "isHealthy"
+    FROM "${tenantSchema}".pii_service_config psc
+    INNER JOIN "${tenantSchema}".profile_store ps
+      ON ps.pii_service_config_id = psc.id
+    WHERE ${whereClause}
+      AND psc.api_url IS NOT NULL
+      AND btrim(psc.api_url) <> ''
+    ORDER BY psc.code
+  `);
+}
 
 /**
  * Check health of a single PII service
@@ -126,17 +159,27 @@ export const piiHealthCheckJobProcessor: Processor<PiiHealthCheckJobData, PiiHea
   };
 
   try {
-    // 1. Get all PII service configurations
-    const configs = await prisma.piiServiceConfig.findMany({
-      where: checkAll ? {} : { isActive: true },
-      select: {
-        id: true,
-        code: true,
-        apiUrl: true,
-        isHealthy: true,
-        lastHealthCheckAt: true,
-      },
+    const tenants = await prisma.tenant.findMany({
+      where: { isActive: true },
+      select: { schemaName: true },
     });
+
+    const configs: Array<TenantPiiConfigRow & { tenantSchema: string }> = [];
+
+    for (const tenant of tenants) {
+      try {
+        const tenantConfigs = await findReferencedPiiConfigs(prisma, tenant.schemaName, Boolean(checkAll));
+        configs.push(
+          ...tenantConfigs.map((config) => ({
+            ...config,
+            tenantSchema: tenant.schemaName,
+          })),
+        );
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn(`Skipping PII config lookup for schema ${tenant.schemaName}: ${errorMessage}`);
+      }
+    }
 
     result.totalConfigs = configs.length;
     logger.info(`Found ${configs.length} PII service configs to check`);
@@ -149,15 +192,16 @@ export const piiHealthCheckJobProcessor: Processor<PiiHealthCheckJobData, PiiHea
     // 2. Check health of each service
     for (let i = 0; i < configs.length; i++) {
       const config = configs[i];
-      logger.info(`Checking PII service: ${config.code} (${config.apiUrl})`);
+      logger.info(`Checking PII service: ${config.tenantSchema}/${config.configCode} (${config.apiUrl})`);
 
       const healthResult = await checkPiiServiceHealth(config.apiUrl);
       const isHealthy = healthResult.status === 'ok';
 
       // Store result
       result.results.push({
-        configId: config.id,
-        configCode: config.code,
+        tenantSchema: config.tenantSchema,
+        configId: config.configId,
+        configCode: config.configCode,
         apiUrl: config.apiUrl,
         status: healthResult.status,
         latencyMs: healthResult.latencyMs,
@@ -173,18 +217,21 @@ export const piiHealthCheckJobProcessor: Processor<PiiHealthCheckJobData, PiiHea
 
       // 3. Update config status in database
       const statusChanged = config.isHealthy !== isHealthy;
-      
-      await prisma.piiServiceConfig.update({
-        where: { id: config.id },
-        data: {
-          isHealthy,
-          lastHealthCheckAt: new Date(),
-        },
-      });
+
+      await prisma.$executeRawUnsafe(
+        `
+          UPDATE "${config.tenantSchema}".pii_service_config
+          SET is_healthy = $1,
+              last_health_check_at = now()
+          WHERE id = $2::uuid
+        `,
+        isHealthy,
+        config.configId,
+      );
 
       if (statusChanged) {
         logger.warn(
-          `PII service ${config.code} status changed: ${config.isHealthy ? 'healthy' : 'unhealthy'} → ${isHealthy ? 'healthy' : 'unhealthy'}`
+          `PII service ${config.tenantSchema}/${config.configCode} status changed: ${config.isHealthy ? 'healthy' : 'unhealthy'} → ${isHealthy ? 'healthy' : 'unhealthy'}`
         );
       }
 
