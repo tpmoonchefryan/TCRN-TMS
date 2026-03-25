@@ -4,21 +4,17 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // These tests should be run with package-specific configs:
-    // - E2E tests use Playwright
-    // - Integration tests need complete NestJS modules, run with: pnpm test:integration
-    // - Web tests need jsdom environment, run with: pnpm --filter @tcrn/web exec vitest
-    // - Worker/PII tests need process isolation
+    // Root Vitest is intentionally reserved for root-only utility tests.
+    // Workspace tests run through package-level configs and root pnpm/turbo scripts.
+    include: ['tests/root/**/*.{test,spec}.{ts,tsx,js,jsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
+      '.references/**',
       'e2e/**',
       '**/e2e/**',
-      '**/test/integration/**',
-      '**/testing/isolation/**',
-      'apps/web/**',       // Use: pnpm --filter @tcrn/web exec vitest
-      'apps/worker/**',    // Use: pnpm --filter @tcrn/worker exec vitest
-      'apps/pii-service/**', // Use: pnpm --filter @tcrn/pii-service exec vitest
+      'apps/**',
+      'packages/**',
     ],
     passWithNoTests: true,
   },

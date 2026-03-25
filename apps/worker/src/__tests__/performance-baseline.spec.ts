@@ -276,24 +276,40 @@ describe('Worker Performance Baseline', () => {
 
   describe('Memory Cleanup', () => {
     it('should release memory after large operation', async () => {
-      // Create large data
-      await simulateReportGeneration(10000);
-      const beforeGC = getMemoryUsageMB().heapUsed;
-
-      // Force cleanup
       forceGC();
       await new Promise((resolve) => setTimeout(resolve, 100));
       forceGC();
+      const baseline = getMemoryUsageMB().heapUsed;
 
-      const afterGC = getMemoryUsageMB().heapUsed;
+      // Run the workload twice and ensure the retained heap stabilizes instead of
+      // climbing on each repetition. V8 can legitimately keep a higher watermark
+      // after the first large allocation.
+      await simulateReportGeneration(10000);
+      forceGC();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      forceGC();
+      const afterFirstGC = getMemoryUsageMB().heapUsed;
+
+      await simulateReportGeneration(10000);
+      forceGC();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      forceGC();
+      const afterSecondGC = getMemoryUsageMB().heapUsed;
+
+      const retainedAfterFirstRun = Math.max(afterFirstGC - baseline, 0);
+      const retainedAfterSecondRun = Math.max(afterSecondGC - baseline, 0);
+      const retainedDrift = Math.max(afterSecondGC - afterFirstGC, 0);
 
       console.log('Memory Cleanup:');
-      console.log(`  Before GC: ${beforeGC.toFixed(2)} MB`);
-      console.log(`  After GC: ${afterGC.toFixed(2)} MB`);
-      console.log(`  Released: ${(beforeGC - afterGC).toFixed(2)} MB`);
+      console.log(`  Baseline: ${baseline.toFixed(2)} MB`);
+      console.log(`  After First GC: ${afterFirstGC.toFixed(2)} MB`);
+      console.log(`  After Second GC: ${afterSecondGC.toFixed(2)} MB`);
+      console.log(`  Retained After First Run: ${retainedAfterFirstRun.toFixed(2)} MB`);
+      console.log(`  Retained After Second Run: ${retainedAfterSecondRun.toFixed(2)} MB`);
+      console.log(`  Retained Drift: ${retainedDrift.toFixed(2)} MB`);
 
-      // Should release at least 50% of memory
-      expect(afterGC).toBeLessThan(beforeGC * 0.8);
+      expect(retainedDrift).toBeLessThan(10);
+      expect(afterSecondGC).toBeLessThan(THRESHOLDS.memory.baseline);
     });
   });
 });

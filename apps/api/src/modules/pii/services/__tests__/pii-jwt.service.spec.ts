@@ -86,16 +86,19 @@ describe('PiiJwtService', () => {
       );
     });
 
-    it('should include iat, exp, and jti in payload', async () => {
+    it('should include jti in payload and pass TTL via sign options', async () => {
       await service.issueAccessToken(accessTokenParams);
 
       const signCall = (mockJwtService.sign as ReturnType<typeof vi.fn>).mock.calls[0];
       const payload = signCall[0] as PiiAccessJwtPayload;
+      const options = signCall[1];
 
-      expect(payload.iat).toBeDefined();
-      expect(payload.exp).toBeDefined();
       expect(payload.jti).toBeDefined();
-      expect(payload.exp - payload.iat).toBe(300); // TTL
+      expect(options).toEqual(
+        expect.objectContaining({
+          expiresIn: 300,
+        }),
+      );
     });
 
     it('should log token issuance event', async () => {
@@ -175,13 +178,19 @@ describe('PiiJwtService', () => {
       );
     });
 
-    it('should include correct TTL for service tokens', async () => {
+    it('should pass correct TTL for service tokens via sign options', async () => {
       await service.issueServiceToken(serviceTokenParams);
 
       const signCall = (mockJwtService.sign as ReturnType<typeof vi.fn>).mock.calls[0];
       const payload = signCall[0] as ServiceJwtPayload;
+      const options = signCall[1];
 
-      expect(payload.exp - payload.iat).toBe(1800); // 30 minutes
+      expect(payload.jti).toBeDefined();
+      expect(options).toEqual(
+        expect.objectContaining({
+          expiresIn: 1800,
+        }),
+      );
     });
 
     it('should log service token issuance event', async () => {

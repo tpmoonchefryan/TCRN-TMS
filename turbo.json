@@ -13,24 +13,19 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"],
       "outputs": []
     },
     "lint:fix": {
-      "dependsOn": ["^build"],
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build"],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
+      "outputs": [],
       "env": ["NODE_ENV"]
     },
     "test:cov": {
-      "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
     },

@@ -120,6 +120,7 @@ describe('MembershipRenewalJobProcessor', () => {
       mockPrisma.membershipRecord.findMany.mockResolvedValueOnce([
         {
           id: 'membership-1',
+          validTo: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
           customer: { id: 'customer-1', nickname: 'User', isActive: true },
           membershipType: { externalControl: false, defaultRenewalDays: 30 },
         },
