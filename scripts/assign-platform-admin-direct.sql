@@ -86,9 +86,8 @@ BEGIN
     WHERE user_id = $1
       AND role_id = $2
       AND scope_type = ''tenant''
-      AND COALESCE(scope_id, ''00000000-0000-0000-0000-000000000000'') = COALESCE($3, ''00000000-0000-0000-0000-000000000000'')
     LIMIT 1
-  ', tenant_schema_name) INTO existing_assignment_id USING user_id_val, role_id_val, tenant_id;
+  ', tenant_schema_name) INTO existing_assignment_id USING user_id_val, role_id_val;
 
   IF existing_assignment_id IS NOT NULL THEN
     RAISE NOTICE '用户 "%" 已经拥有 PLATFORM_ADMIN 角色（分配 ID: %）', USERNAME, existing_assignment_id;
@@ -98,8 +97,8 @@ BEGIN
   -- 5. 创建角色分配
   EXECUTE format('
     INSERT INTO %I.user_role (id, user_id, role_id, scope_type, scope_id, inherit, granted_at)
-    VALUES (gen_random_uuid(), $1, $2, ''tenant'', $3, false, now())
-  ', tenant_schema_name) USING user_id_val, role_id_val, tenant_id;
+    VALUES (gen_random_uuid(), $1, $2, ''tenant'', NULL, false, now())
+  ', tenant_schema_name) USING user_id_val, role_id_val;
 
   RAISE NOTICE '==========================================';
   RAISE NOTICE '成功为租户 "%" 的用户 "%" 赋予 PLATFORM_ADMIN 角色', TENANT_CODE, USERNAME;

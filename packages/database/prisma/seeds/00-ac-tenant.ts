@@ -177,20 +177,18 @@ export async function seedAcAdminUser(prisma: PrismaClient, acTenant: AcTenantRe
   // Assign PLATFORM_ADMIN role at AC tenant scope in the tenant schema
   const existingRoleAssignment = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM "${schemaName}".user_role 
-     WHERE user_id = $1::uuid AND role_id = $2::uuid AND scope_type = 'tenant' AND scope_id = $3::uuid 
+     WHERE user_id = $1::uuid AND role_id = $2::uuid AND scope_type = 'tenant'
      LIMIT 1`,
     userId,
-    roleId,
-    acTenant.tenant.id
+    roleId
   );
 
   if (existingRoleAssignment.length === 0) {
     await prisma.$executeRawUnsafe(
       `INSERT INTO "${schemaName}".user_role (id, user_id, role_id, scope_type, scope_id, inherit)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', $3::uuid, true)`,
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', NULL, true)`,
       userId,
-      roleId,
-      acTenant.tenant.id
+      roleId
     );
   }
 

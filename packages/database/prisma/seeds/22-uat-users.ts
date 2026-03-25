@@ -10,9 +10,81 @@ export interface UatUsersResult {
   soloUsers: Record<string, string>;
 }
 
+type UserScopeType = 'tenant' | 'subsidiary' | 'talent';
+
+interface SeedUserAssignment {
+  username: string;
+  email: string;
+  displayName: string;
+  role: string;
+  scopeType: UserScopeType;
+  scopeId: string | null;
+}
+
 // UAT test users password hash
 // To change: generate a new hash using argon2.hash(password, { type: argon2id, memoryCost: 65536, timeCost: 3, parallelism: 4 })
 const UAT_PASSWORD_HASH = '$argon2id$v=19$m=65536,t=3,p=4$eWdU+URfBlHb+0NUSAJzkg$X/uf1UQnNYSaDBNb8va2TqqFHrvolM9rcVhfOdqNiLs';
+
+function normalizeScopeId(scopeType: UserScopeType, scopeId: string | null): string | null {
+  return scopeType === 'tenant' ? null : scopeId;
+}
+
+async function ensureUserRoleAssignment(
+  prisma: PrismaClient,
+  schemaName: string,
+  userId: string,
+  roleId: string,
+  scopeType: UserScopeType,
+  scopeId: string | null,
+): Promise<void> {
+  const normalizedScopeId = normalizeScopeId(scopeType, scopeId);
+
+  if (scopeType === 'tenant') {
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
+        SELECT id
+        FROM "${schemaName}".user_role
+        WHERE user_id = $1::uuid
+          AND role_id = $2::uuid
+          AND scope_type = 'tenant'
+        LIMIT 1
+      `,
+      userId,
+      roleId,
+    );
+
+    if (existing.length > 0) {
+      return;
+    }
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${schemaName}".user_role (id, user_id, role_id, scope_type, scope_id, inherit)
+        VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', NULL, true)
+      `,
+      userId,
+      roleId,
+    );
+
+    return;
+  }
+
+  if (!normalizedScopeId) {
+    return;
+  }
+
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO "${schemaName}".user_role (id, user_id, role_id, scope_type, scope_id, inherit)
+      VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4::uuid, true)
+      ON CONFLICT DO NOTHING
+    `,
+    userId,
+    roleId,
+    scopeType,
+    normalizedScopeId,
+  );
+}
 
 export async function seedUatUsers(
   prisma: PrismaClient,
@@ -38,10 +110,10 @@ export async function seedUatUsers(
     corpRoleMap[role.code] = role.id;
   }
 
-  const corpUsersList = [
+  const corpUsersList: SeedUserAssignment[] = [
     // Tenant Admins (2) - ADMIN at tenant scope
-    { username: 'corp_admin', email: 'corp.admin@uat.test', displayName: 'Corp Admin', role: 'ADMIN', scopeType: 'tenant', scopeId: uatTenants.corpTenant.id },
-    { username: 'corp_admin2', email: 'corp.admin2@uat.test', displayName: 'Corp Admin 2', role: 'ADMIN', scopeType: 'tenant', scopeId: uatTenants.corpTenant.id },
+    { username: 'corp_admin', email: 'corp.admin@uat.test', displayName: 'Corp Admin', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
+    { username: 'corp_admin2', email: 'corp.admin2@uat.test', displayName: 'Corp Admin 2', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
     
     // Subsidiary Managers (2) - ADMIN at subsidiary scope
     { username: 'gaming_manager', email: 'gaming.manager@uat.test', displayName: 'Gaming Division Manager', role: 'ADMIN', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_GAMING'] },
@@ -53,7 +125,7 @@ export async function seedUatUsers(
     { username: 'hana_manager', email: 'hana.manager@uat.test', displayName: 'Hana Manager', role: 'TALENT_MANAGER', scopeType: 'talent', scopeId: uatOrg.talents['TALENT_HANA'] },
     
     // Read-only Users (3) - VIEWER at different scopes
-    { username: 'viewer_hq', email: 'viewer.hq@uat.test', displayName: 'HQ Viewer', role: 'VIEWER', scopeType: 'tenant', scopeId: uatTenants.corpTenant.id },
+    { username: 'viewer_hq', email: 'viewer.hq@uat.test', displayName: 'HQ Viewer', role: 'VIEWER', scopeType: 'tenant', scopeId: null },
     { username: 'viewer_gaming', email: 'viewer.gaming@uat.test', displayName: 'Gaming Viewer', role: 'VIEWER', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_GAMING'] },
     { username: 'viewer_sakura', email: 'viewer.sakura@uat.test', displayName: 'Sakura Viewer', role: 'VIEWER', scopeType: 'talent', scopeId: uatOrg.talents['TALENT_SAKURA'] },
   ];
@@ -71,12 +143,14 @@ export async function seedUatUsers(
 
     // Assign role
     const roleId = corpRoleMap[user.role];
-    if (roleId && user.scopeId) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "${corpSchema}".user_role (id, user_id, role_id, scope_type, scope_id, inherit)
-         VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4::uuid, true)
-         ON CONFLICT DO NOTHING`,
-        userResult[0].id, roleId, user.scopeType, user.scopeId
+    if (roleId) {
+      await ensureUserRoleAssignment(
+        prisma,
+        corpSchema,
+        userResult[0].id,
+        roleId,
+        user.scopeType,
+        user.scopeId,
       );
     }
   }
@@ -97,15 +171,15 @@ export async function seedUatUsers(
     soloRoleMap[role.code] = role.id;
   }
 
-  const soloUsersList = [
+  const soloUsersList: SeedUserAssignment[] = [
     // Owner (Admin at tenant scope)
-    { username: 'solo_owner', email: 'solo.owner@uat.test', displayName: 'Solo Owner', role: 'ADMIN', scopeType: 'tenant', scopeId: uatTenants.soloTenant.id },
+    { username: 'solo_owner', email: 'solo.owner@uat.test', displayName: 'Solo Owner', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
     
     // Content Manager at talent scope
     { username: 'solo_content', email: 'solo.content@uat.test', displayName: 'Solo Content Manager', role: 'CONTENT_MANAGER', scopeType: 'talent', scopeId: uatOrg.talents['TALENT_SOLO_STAR'] },
     
     // Viewer at tenant scope
-    { username: 'solo_viewer', email: 'solo.viewer@uat.test', displayName: 'Solo Viewer', role: 'VIEWER', scopeType: 'tenant', scopeId: uatTenants.soloTenant.id },
+    { username: 'solo_viewer', email: 'solo.viewer@uat.test', displayName: 'Solo Viewer', role: 'VIEWER', scopeType: 'tenant', scopeId: null },
   ];
 
   for (const user of soloUsersList) {
@@ -121,12 +195,14 @@ export async function seedUatUsers(
 
     // Assign role
     const roleId = soloRoleMap[user.role];
-    if (roleId && user.scopeId) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "${soloSchema}".user_role (id, user_id, role_id, scope_type, scope_id, inherit)
-         VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4::uuid, true)
-         ON CONFLICT DO NOTHING`,
-        userResult[0].id, roleId, user.scopeType, user.scopeId
+    if (roleId) {
+      await ensureUserRoleAssignment(
+        prisma,
+        soloSchema,
+        userResult[0].id,
+        roleId,
+        user.scopeType,
+        user.scopeId,
       );
     }
   }
