@@ -102,7 +102,9 @@ function getHighestMembershipLevel(memberships: Membership[]): string | null {
 
 const platformCodeArb = fc.constantFrom('YOUTUBE', 'BILIBILI', 'TWITCH', 'NICONICO');
 const levelCodeArb = fc.constantFrom('BRONZE', 'SILVER', 'GOLD', 'PLATINUM');
-const dateArb = fc.date({ min: new Date('2020-01-01'), max: new Date('2027-12-31') });
+const dateArb = fc
+  .date({ min: new Date('2020-01-01'), max: new Date('2027-12-31') })
+  .filter((date) => !Number.isNaN(date.getTime()));
 
 const membershipArb: fc.Arbitrary<Membership> = fc.record({
   id: fc.uuid(),

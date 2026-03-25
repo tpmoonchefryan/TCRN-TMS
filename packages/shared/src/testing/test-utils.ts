@@ -1,5 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  RBAC_POLICY_DEFINITIONS,
+  RBAC_RESOURCES,
+  RBAC_ROLE_TEMPLATES,
+} from '../rbac/catalog';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -35,6 +41,11 @@ export interface TestUser {
   token?: string;
 }
 
+interface TestTenantArtifacts {
+  tenantId: string;
+  schemaName: string;
+}
+
 export interface MockPrismaClient {
   tenant: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -61,6 +72,137 @@ declare const vi: {
   fn: () => ReturnType<typeof Function>;
 };
 
+const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
+  role.permissions.flatMap((permission) =>
+    permission.actions.map((action) => ({
+      roleCode: role.code,
+      resourceCode: permission.resourceCode,
+      action,
+      effect: permission.effect ?? 'grant',
+    })),
+  ),
+);
+
+async function seedRbacContractIntoSchema(
+  prisma: {
+    $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+  },
+  schemaName: string,
+): Promise<void> {
+  for (const resource of RBAC_RESOURCES) {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "${schemaName}".resource (
+        id, code, module, name_en, name_zh, name_ja, sort_order, is_active, created_at, updated_at
+      )
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, NOW(), NOW())
+      ON CONFLICT (code) DO UPDATE
+      SET module = EXCLUDED.module,
+          name_en = EXCLUDED.name_en,
+          name_zh = EXCLUDED.name_zh,
+          name_ja = EXCLUDED.name_ja,
+          sort_order = EXCLUDED.sort_order,
+          is_active = true,
+          updated_at = NOW()
+    `, resource.code, resource.module, resource.nameEn, resource.nameZh, resource.nameJa, resource.sortOrder);
+  }
+
+  for (const policy of RBAC_POLICY_DEFINITIONS) {
+    await prisma.$executeRawUnsafe(`
+      WITH resource_lookup AS (
+        SELECT id FROM "${schemaName}".resource WHERE code = $1
+      )
+      INSERT INTO "${schemaName}".policy (
+        id, resource_id, action, is_active, created_at, updated_at
+      )
+      SELECT gen_random_uuid(), r.id, $2, true, NOW(), NOW()
+      FROM resource_lookup r
+      ON CONFLICT (resource_id, action) DO UPDATE
+      SET is_active = true,
+          updated_at = NOW()
+    `, policy.resourceCode, policy.action);
+  }
+
+  for (const role of RBAC_ROLE_TEMPLATES) {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "${schemaName}".role (
+        id, code, name_en, name_zh, name_ja, description, is_system, is_active, created_at, updated_at, version
+      )
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, NOW(), NOW(), 1)
+      ON CONFLICT (code) DO UPDATE
+      SET name_en = EXCLUDED.name_en,
+          name_zh = EXCLUDED.name_zh,
+          name_ja = EXCLUDED.name_ja,
+          description = EXCLUDED.description,
+          is_system = EXCLUDED.is_system,
+          is_active = true,
+          updated_at = NOW()
+    `, role.code, role.nameEn, role.nameZh, role.nameJa, role.description, role.isSystem);
+  }
+
+  for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
+    await prisma.$executeRawUnsafe(`
+      WITH role_lookup AS (
+        SELECT id FROM "${schemaName}".role WHERE code = $1
+      ),
+      policy_lookup AS (
+        SELECT p.id
+        FROM "${schemaName}".policy p
+        JOIN "${schemaName}".resource r ON r.id = p.resource_id
+        WHERE r.code = $2 AND p.action = $3
+      )
+      INSERT INTO "${schemaName}".role_policy (
+        id, role_id, policy_id, effect, created_at
+      )
+      SELECT gen_random_uuid(), rl.id, pl.id, $4, NOW()
+      FROM role_lookup rl
+      CROSS JOIN policy_lookup pl
+      ON CONFLICT (role_id, policy_id) DO UPDATE SET effect = EXCLUDED.effect
+    `, entry.roleCode, entry.resourceCode, entry.action, entry.effect);
+  }
+}
+
+async function cleanupTestTenantArtifacts(
+  prisma: {
+    tenant: {
+      delete: (args: { where: { id: string } }) => Promise<unknown>;
+    };
+    $executeRawUnsafe: (query: string) => Promise<unknown>;
+  },
+  artifacts: TestTenantArtifacts,
+  options: {
+    swallowErrors?: boolean;
+    logPrefix?: string;
+  } = {},
+): Promise<void> {
+  const errors: unknown[] = [];
+
+  try {
+    await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${artifacts.schemaName}" CASCADE`);
+  } catch (error) {
+    errors.push(error);
+  }
+
+  try {
+    await prisma.tenant.delete({ where: { id: artifacts.tenantId } });
+  } catch (error) {
+    errors.push(error);
+  }
+
+  if (errors.length === 0) {
+    return;
+  }
+
+  if (options.swallowErrors) {
+    for (const error of errors) {
+      console.warn(`${options.logPrefix ?? 'Cleanup warning'} for ${artifacts.schemaName}:`, error);
+    }
+    return;
+  }
+
+  const [firstError] = errors;
+  throw firstError instanceof Error ? firstError : new Error(String(firstError));
+}
+
 // =============================================================================
 // User Context Helpers
 // =============================================================================
@@ -73,7 +215,7 @@ export function createTestUserContext(overrides?: Partial<UserContext>): UserCon
     userId: 'test-user-id',
     tenantId: 'test-tenant-id',
     schemaName: 'tenant_test',
-    roles: ['TENANT_ADMIN'],
+    roles: ['ADMIN'],
     permissions: new Map(),
     ...overrides,
   };
@@ -173,13 +315,13 @@ export async function createTestTenantFixture(
       delete: (args: { where: { id: string } }) => Promise<unknown>;
     };
     $executeRawUnsafe: (query: string) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
   },
   suffix: string = ''
 ): Promise<TenantFixture> {
   const tenantCode = generateTestTenantCode(suffix);
   const schemaName = generateSchemaName(tenantCode);
 
-  // Create tenant record
   const tenant = await prisma.tenant.create({
     data: {
       code: tenantCode,
@@ -191,44 +333,74 @@ export async function createTestTenantFixture(
     },
   });
 
-  // Create schema (copy from template)
-  await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+  try {
+    await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
 
-  // Copy tables from tenant_template schema
-  const templateTables = [
-    'subsidiary',
-    'talent',
-    'system_user',
-    'system_role',
-    'role_policy',
-    'user_role',
-    'customer',
-    'platform_identity',
-    'membership',
-    'change_log',
-    'technical_event_log',
-    'integration_log',
-  ];
-
-  for (const table of templateTables) {
-    await prisma.$executeRawUnsafe(
-      `CREATE TABLE IF NOT EXISTS "${schemaName}"."${table}" (LIKE "tenant_template"."${table}" INCLUDING ALL)`
+    const templateTables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
+      `SELECT tablename FROM pg_tables WHERE schemaname = 'tenant_template' ORDER BY tablename`
     );
+
+    for (const { tablename } of templateTables) {
+      await prisma.$executeRawUnsafe(
+        `CREATE TABLE IF NOT EXISTS "${schemaName}"."${tablename}" (LIKE tenant_template."${tablename}" INCLUDING ALL)`
+      );
+    }
+
+    const seedTables = [
+      'resource',
+      'role',
+      'policy',
+      'role_policy',
+      'social_platform',
+      'pii_service_config',
+      'profile_store',
+      'blocklist_entry',
+      'external_blocklist_pattern',
+    ];
+
+    for (const table of seedTables) {
+      if (!templateTables.some((item) => item.tablename === table)) {
+        continue;
+      }
+
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "${schemaName}"."${table}"
+        SELECT * FROM tenant_template."${table}"
+        ON CONFLICT DO NOTHING
+      `);
+    }
+
+    await seedRbacContractIntoSchema(prisma, schemaName);
+  } catch (error) {
+    await cleanupTestTenantArtifacts(
+      prisma,
+      {
+        tenantId: tenant.id,
+        schemaName,
+      },
+      {
+        swallowErrors: true,
+        logPrefix: 'Fixture rollback warning',
+      },
+    );
+    throw error;
   }
 
   return {
     tenant,
     schemaName,
     cleanup: async () => {
-      try {
-        // Drop schema cascade
-        await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
-        // Delete tenant record
-        await prisma.tenant.delete({ where: { id: tenant.id } });
-      } catch (error) {
-        // Ignore cleanup errors in tests
-        console.warn(`Cleanup warning for ${schemaName}:`, error);
-      }
+      await cleanupTestTenantArtifacts(
+        prisma,
+        {
+          tenantId: tenant.id,
+          schemaName,
+        },
+        {
+          swallowErrors: true,
+          logPrefix: 'Cleanup warning',
+        },
+      );
     },
   };
 }
@@ -243,26 +415,38 @@ export async function createTestUserInTenant(
   },
   tenantFixture: TenantFixture,
   username: string,
-  roles: string[] = ['TENANT_ADMIN']
+  roles: string[] = ['ADMIN']
 ): Promise<TestUser> {
   const userId = crypto.randomUUID();
   const email = `${username}@test.local`;
+  const passwordHash =
+    '$argon2id$v=19$m=65536,t=3,p=4$gyJDmMv4EDc/W8LEkp3Zbw$xWYYRsj+Jfn1xELTKSlXg8AAM+zvG+nAX3rHoOdABTM';
 
   // Insert user into tenant schema
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".system_user 
-    (id, username, email, password_hash, is_active, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, true, NOW(), NOW())
-  `, userId, username, email, '$argon2id$v=19$m=65536,t=3,p=4$placeholder');
+    (id, username, email, password_hash, password_changed_at, is_active, created_at, updated_at)
+    VALUES ($1::uuid, $2, $3, $4, NOW(), true, NOW(), NOW())
+  `, userId, username, email, passwordHash);
 
   // Assign roles
   for (const roleCode of roles) {
+    const roleIds = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".role
+      WHERE code = $1 AND is_active = true
+      LIMIT 1
+    `, roleCode);
+
+    if (!roleIds.length) {
+      throw new Error(`Role not found in ${tenantFixture.schemaName}: ${roleCode}`);
+    }
+
     await prisma.$executeRawUnsafe(`
-      INSERT INTO "${tenantFixture.schemaName}".user_role (id, user_id, role_code, created_at)
-      SELECT gen_random_uuid(), $1, code, NOW()
-      FROM "${tenantFixture.schemaName}".system_role
-      WHERE code = $2
-    `, userId, roleCode);
+      INSERT INTO "${tenantFixture.schemaName}".user_role
+      (id, user_id, role_id, scope_type, scope_id, inherit, granted_at, granted_by)
+      VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', NULL, true, NOW(), NULL)
+    `, userId, roleIds[0].id);
   }
 
   return {
@@ -285,26 +469,65 @@ export async function createTestUserInTenant(
 export async function createTestCustomerInTenant(
   prisma: {
     $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
   },
   tenantFixture: TenantFixture,
   overrides: Partial<{
     nickname: string;
     profileType: string;
     rmProfileId: string;
+    talentId: string;
+    profileStoreId: string;
+    createdBy: string;
   }> = {}
 ): Promise<{ id: string; nickname: string; rmProfileId: string }> {
   const customerId = crypto.randomUUID();
   const rmProfileId = overrides.rmProfileId || crypto.randomUUID();
 
+  const createdBy = overrides.createdBy || (
+    await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".system_user
+      ORDER BY created_at ASC
+      LIMIT 1
+    `)
+  )[0]?.id;
+
+  const talent = overrides.talentId
+    ? { id: overrides.talentId, profileStoreId: overrides.profileStoreId || null }
+    : (
+      await prisma.$queryRawUnsafe<Array<{ id: string; profileStoreId: string | null }>>(`
+        SELECT id, profile_store_id as "profileStoreId"
+        FROM "${tenantFixture.schemaName}".talent
+        WHERE is_active = true
+        ORDER BY created_at ASC
+        LIMIT 1
+      `)
+    )[0];
+
+  if (!createdBy) {
+    throw new Error(`No system user found in ${tenantFixture.schemaName}`);
+  }
+
+  if (!talent?.id || !talent.profileStoreId) {
+    throw new Error(`No active talent with profile store found in ${tenantFixture.schemaName}`);
+  }
+
   await prisma.$executeRawUnsafe(`
-    INSERT INTO "${tenantFixture.schemaName}".customer 
-    (id, nickname, profile_type, rm_profile_id, status, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, 'active', NOW(), NOW())
+    INSERT INTO "${tenantFixture.schemaName}".customer_profile
+    (
+      id, talent_id, profile_store_id, origin_talent_id, rm_profile_id, profile_type,
+      nickname, tags, is_active, created_at, updated_at, created_by, updated_by
+    )
+    VALUES ($1::uuid, $2::uuid, $3::uuid, $2::uuid, $4::uuid, $5, $6, '{}', true, NOW(), NOW(), $7::uuid, $7::uuid)
   `, 
     customerId, 
-    overrides.nickname || 'Test Customer',
+    talent.id,
+    talent.profileStoreId,
+    rmProfileId,
     overrides.profileType || 'individual',
-    rmProfileId
+    overrides.nickname || 'Test Customer',
+    createdBy,
   );
 
   return {
@@ -320,21 +543,35 @@ export async function createTestCustomerInTenant(
 export async function createTestSubsidiaryInTenant(
   prisma: {
     $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
   },
   tenantFixture: TenantFixture,
   overrides: Partial<{
     code: string;
     nameEn: string;
+    createdBy: string;
   }> = {}
 ): Promise<{ id: string; code: string }> {
   const subsidiaryId = crypto.randomUUID();
   const code = overrides.code || `SUB_${Date.now().toString(36)}`;
+  const createdBy = overrides.createdBy || (
+    await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".system_user
+      ORDER BY created_at ASC
+      LIMIT 1
+    `)
+  )[0]?.id;
+
+  if (!createdBy) {
+    throw new Error(`No system user found in ${tenantFixture.schemaName}`);
+  }
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".subsidiary 
-    (id, code, name_en, is_active, created_at, updated_at)
-    VALUES ($1, $2, $3, true, NOW(), NOW())
-  `, subsidiaryId, code, overrides.nameEn || 'Test Subsidiary');
+    (id, code, path, depth, name_en, is_active, created_at, updated_at, created_by, updated_by)
+    VALUES ($1::uuid, $2, $3, 0, $4, true, NOW(), NOW(), $5::uuid, $5::uuid)
+  `, subsidiaryId, code, `/${code}/`, overrides.nameEn || 'Test Subsidiary', createdBy);
 
   return { id: subsidiaryId, code };
 }
@@ -345,6 +582,7 @@ export async function createTestSubsidiaryInTenant(
 export async function createTestTalentInTenant(
   prisma: {
     $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
   },
   tenantFixture: TenantFixture,
   subsidiaryId: string | null,
@@ -352,17 +590,58 @@ export async function createTestTalentInTenant(
     code: string;
     nameEn: string;
     homepagePath: string;
+    displayName: string;
+    profileStoreId: string;
+    createdBy: string;
   }> = {}
 ): Promise<{ id: string; code: string; homepagePath: string }> {
   const talentId = crypto.randomUUID();
   const code = overrides.code || `TALENT_${Date.now().toString(36)}`;
   const homepagePath = overrides.homepagePath || code.toLowerCase().replace(/_/g, '-');
+  const createdBy = overrides.createdBy || (
+    await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".system_user
+      ORDER BY created_at ASC
+      LIMIT 1
+    `)
+  )[0]?.id;
+  const subsidiaryPath = subsidiaryId
+    ? (
+      await prisma.$queryRawUnsafe<Array<{ path: string }>>(`
+        SELECT path
+        FROM "${tenantFixture.schemaName}".subsidiary
+        WHERE id = $1::uuid
+        LIMIT 1
+      `, subsidiaryId)
+    )[0]?.path || '/'
+    : '/';
+  const profileStoreId = overrides.profileStoreId || (
+    await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".profile_store
+      WHERE is_active = true
+      ORDER BY is_default DESC, created_at ASC
+      LIMIT 1
+    `)
+  )[0]?.id;
+
+  if (!createdBy) {
+    throw new Error(`No system user found in ${tenantFixture.schemaName}`);
+  }
+
+  if (!profileStoreId) {
+    throw new Error(`No active profile store found in ${tenantFixture.schemaName}`);
+  }
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".talent 
-    (id, code, name_en, subsidiary_id, homepage_path, is_active, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
-  `, talentId, code, overrides.nameEn || 'Test Talent', subsidiaryId, homepagePath);
+    (
+      id, code, path, name_en, display_name, subsidiary_id, profile_store_id,
+      homepage_path, is_active, created_at, updated_at, created_by, updated_by
+    )
+    VALUES ($1::uuid, $2, $3, $4, $5, $6::uuid, $7::uuid, $8, true, NOW(), NOW(), $9::uuid, $9::uuid)
+  `, talentId, code, `${subsidiaryPath}${code}/`, overrides.nameEn || 'Test Talent', overrides.displayName || overrides.nameEn || 'Test Talent', subsidiaryId, profileStoreId, homepagePath, createdBy);
 
   return { id: talentId, code, homepagePath };
 }

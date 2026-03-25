@@ -34,6 +34,7 @@ export class CompanyCustomerService {
    */
   async create(dto: CreateCompanyCustomerDto, context: RequestContext) {
     const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
     // Get talent and its profile store using raw SQL with tenant schema
     const talents = await prisma.$queryRawUnsafe<Array<{
@@ -64,23 +65,25 @@ export class CompanyCustomerService {
     // Get status if provided
     let statusId: string | null = null;
     if (dto.statusCode) {
-      const status = await prisma.customerStatus.findFirst({
-        where: { code: dto.statusCode, isActive: true },
-      });
-      if (status) {
-        statusId = status.id;
-      }
+      const statuses = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        SELECT id
+        FROM "${schema}".customer_status
+        WHERE code = $1 AND is_active = true
+        LIMIT 1
+      `, dto.statusCode);
+      statusId = statuses[0]?.id ?? null;
     }
 
     // Get business segment if provided
     let businessSegmentId: string | null = null;
     if (dto.businessSegmentCode) {
-      const segment = await prisma.businessSegment.findFirst({
-        where: { code: dto.businessSegmentCode, isActive: true },
-      });
-      if (segment) {
-        businessSegmentId = segment.id;
-      }
+      const segments = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        SELECT id
+        FROM "${schema}".business_segment
+        WHERE code = $1 AND is_active = true
+        LIMIT 1
+      `, dto.businessSegmentCode);
+      businessSegmentId = segments[0]?.id ?? null;
     }
 
     // Generate rm_profile_id (not used for company profiles but required by schema)
@@ -88,56 +91,83 @@ export class CompanyCustomerService {
 
     // Create customer profile with company info
     const customer = await prisma.$transaction(async (tx) => {
-      // Create customer profile
-      const newCustomer = await tx.customerProfile.create({
-        data: {
-          talentId: dto.talentId,
-          profileStoreId: talent.profileStoreId ?? '',
-          originTalentId: dto.talentId,
-          rmProfileId,
-          profileType: ProfileType.COMPANY,
-          nickname: dto.nickname,
-          primaryLanguage: dto.primaryLanguage,
-          statusId,
-          tags: dto.tags || [],
-          source: dto.source,
-          notes: dto.notes,
-          createdBy: context.userId,
-          updatedBy: context.userId,
-        },
-      });
+      const insertedCustomers = await tx.$queryRawUnsafe<Array<{
+        id: string;
+        nickname: string;
+        createdAt: Date;
+      }>>(`
+        INSERT INTO "${schema}".customer_profile (
+          id, talent_id, profile_store_id, origin_talent_id, rm_profile_id,
+          profile_type, nickname, primary_language, status_id, tags, source,
+          notes, created_by, updated_by, created_at, updated_at
+        )
+        VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, $3::uuid,
+          $4, $5, $6, $7::uuid, $8::text[], $9,
+          $10, $11::uuid, $11::uuid, NOW(), NOW()
+        )
+        RETURNING id, nickname, created_at as "createdAt"
+      `,
+        dto.talentId,
+        talent.profileStoreId,
+        rmProfileId,
+        ProfileType.COMPANY,
+        dto.nickname,
+        dto.primaryLanguage ?? null,
+        statusId,
+        dto.tags || [],
+        dto.source ?? null,
+        dto.notes ?? null,
+        context.userId,
+      );
+
+      const newCustomer = insertedCustomers[0];
 
       // Create company info
-      await tx.customerCompanyInfo.create({
-        data: {
-          customerId: newCustomer.id,
-          companyLegalName: dto.companyLegalName,
-          companyShortName: dto.companyShortName,
-          registrationNumber: dto.registrationNumber,
-          vatId: dto.vatId,
-          establishmentDate: dto.establishmentDate
-            ? new Date(dto.establishmentDate)
-            : null,
-          businessSegmentId,
-          website: dto.website,
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "${schema}".customer_company_info (
+          id, customer_id, company_legal_name, company_short_name, registration_number,
+          vat_id, establishment_date, business_segment_id, website, created_at, updated_at
+        )
+        VALUES (
+          gen_random_uuid(), $1::uuid, $2, $3, $4,
+          $5, $6, $7::uuid, $8, NOW(), NOW()
+        )
+      `,
+        newCustomer.id,
+        dto.companyLegalName,
+        dto.companyShortName ?? null,
+        dto.registrationNumber ?? null,
+        dto.vatId ?? null,
+        dto.establishmentDate ? new Date(dto.establishmentDate) : null,
+        businessSegmentId,
+        dto.website ?? null,
+      );
 
       // Create external ID if provided
       if (dto.externalId && dto.consumerCode) {
-        const consumer = await tx.consumer.findFirst({
-          where: { code: dto.consumerCode, isActive: true },
-        });
-        if (consumer) {
-          await tx.customerExternalId.create({
-            data: {
-              customerId: newCustomer.id,
-              profileStoreId: talent.profileStoreId ?? '',
-              consumerId: consumer.id,
-              externalId: dto.externalId,
-              createdBy: context.userId,
-            },
-          });
+        const consumers = await tx.$queryRawUnsafe<Array<{ id: string }>>(`
+          SELECT id
+          FROM "${schema}".consumer
+          WHERE code = $1 AND is_active = true
+          LIMIT 1
+        `, dto.consumerCode);
+
+        if (consumers[0]) {
+          await tx.$executeRawUnsafe(`
+            INSERT INTO "${schema}".customer_external_id (
+              id, customer_id, profile_store_id, consumer_id, external_id, created_by, created_at
+            )
+            VALUES (
+              gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5::uuid, NOW()
+            )
+          `,
+            newCustomer.id,
+            talent.profileStoreId,
+            consumers[0].id,
+            dto.externalId,
+            context.userId,
+          );
         }
       }
 
@@ -159,19 +189,25 @@ export class CompanyCustomerService {
       }, context);
 
       // Record access log
-      await tx.customerAccessLog.create({
-        data: {
-          customerId: newCustomer.id,
-          profileStoreId: talent.profileStoreId ?? '',
-          talentId: dto.talentId,
-          action: CustomerAction.CREATE,
-          operatorId: context.userId,
-          operatorName: context.userName,
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-          requestId: context.requestId,
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "${schema}".customer_access_log (
+          id, customer_id, profile_store_id, talent_id, action,
+          operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
+          $5::uuid, $6, $7::inet, $8, $9, NOW()
+        )
+      `,
+        newCustomer.id,
+        talent.profileStoreId,
+        dto.talentId,
+        CustomerAction.CREATE,
+        context.userId,
+        context.userName,
+        context.ipAddress || '0.0.0.0',
+        context.userAgent,
+        context.requestId,
+      );
 
       return newCustomer;
     });

@@ -6,7 +6,6 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext,TechEventType } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -37,6 +36,7 @@ export class IndividualCustomerService {
    */
   async create(dto: CreateIndividualCustomerDto, context: RequestContext) {
     const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
     // Get talent and its profile store using raw SQL with tenant schema
     const talents = await prisma.$queryRawUnsafe<Array<{
@@ -67,12 +67,13 @@ export class IndividualCustomerService {
     // Get status if provided
     let statusId: string | null = null;
     if (dto.statusCode) {
-      const status = await prisma.customerStatus.findFirst({
-        where: { code: dto.statusCode, isActive: true },
-      });
-      if (status) {
-        statusId = status.id;
-      }
+      const statuses = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        SELECT id
+        FROM "${schema}".customer_status
+        WHERE code = $1 AND is_active = true
+        LIMIT 1
+      `, dto.statusCode);
+      statusId = statuses[0]?.id ?? null;
     }
 
     // Generate rm_profile_id for PII link
@@ -90,24 +91,37 @@ export class IndividualCustomerService {
 
     // Create customer profile
     const customer = await prisma.$transaction(async (tx) => {
-      // Create customer profile
-      const newCustomer = await tx.customerProfile.create({
-        data: {
-          talentId: dto.talentId,
-          profileStoreId: talent.profileStoreId ?? '',
-          originTalentId: dto.talentId,
-          rmProfileId,
-          profileType: ProfileType.INDIVIDUAL,
-          nickname: dto.nickname,
-          primaryLanguage: dto.primaryLanguage,
-          statusId,
-          tags: dto.tags || [],
-          source: dto.source,
-          notes: dto.notes,
-          createdBy: context.userId,
-          updatedBy: context.userId,
-        },
-      });
+      const insertedCustomers = await tx.$queryRawUnsafe<Array<{
+        id: string;
+        nickname: string;
+        createdAt: Date;
+      }>>(`
+        INSERT INTO "${schema}".customer_profile (
+          id, talent_id, profile_store_id, origin_talent_id, rm_profile_id,
+          profile_type, nickname, primary_language, status_id, tags, source,
+          notes, created_by, updated_by, created_at, updated_at
+        )
+        VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, $3::uuid,
+          $4, $5, $6, $7::uuid, $8::text[], $9,
+          $10, $11::uuid, $11::uuid, NOW(), NOW()
+        )
+        RETURNING id, nickname, created_at as "createdAt"
+      `,
+        dto.talentId,
+        talent.profileStoreId,
+        rmProfileId,
+        ProfileType.INDIVIDUAL,
+        dto.nickname,
+        dto.primaryLanguage ?? null,
+        statusId,
+        dto.tags || [],
+        dto.source ?? null,
+        dto.notes ?? null,
+        context.userId,
+      );
+
+      const newCustomer = insertedCustomers[0];
 
       // TODO: Store PII search hints
       // In the current PII design, individual PII data is stored in remote encrypted vault.
@@ -120,19 +134,28 @@ export class IndividualCustomerService {
 
       // Create external ID if provided
       if (dto.externalId && dto.consumerCode) {
-        const consumer = await tx.consumer.findFirst({
-          where: { code: dto.consumerCode, isActive: true },
-        });
-        if (consumer) {
-          await tx.customerExternalId.create({
-            data: {
-              customerId: newCustomer.id,
-              profileStoreId: talent.profileStoreId ?? '',
-              consumerId: consumer.id,
-              externalId: dto.externalId,
-              createdBy: context.userId,
-            },
-          });
+        const consumers = await tx.$queryRawUnsafe<Array<{ id: string }>>(`
+          SELECT id
+          FROM "${schema}".consumer
+          WHERE code = $1 AND is_active = true
+          LIMIT 1
+        `, dto.consumerCode);
+
+        if (consumers[0]) {
+          await tx.$executeRawUnsafe(`
+            INSERT INTO "${schema}".customer_external_id (
+              id, customer_id, profile_store_id, consumer_id, external_id, created_by, created_at
+            )
+            VALUES (
+              gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5::uuid, NOW()
+            )
+          `,
+            newCustomer.id,
+            talent.profileStoreId,
+            consumers[0].id,
+            dto.externalId,
+            context.userId,
+          );
         }
       }
 
@@ -153,19 +176,25 @@ export class IndividualCustomerService {
       }, context);
 
       // Record access log
-      await tx.customerAccessLog.create({
-        data: {
-          customerId: newCustomer.id,
-          profileStoreId: talent.profileStoreId ?? '',
-          talentId: dto.talentId,
-          action: CustomerAction.CREATE,
-          operatorId: context.userId,
-          operatorName: context.userName,
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-          requestId: context.requestId,
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "${schema}".customer_access_log (
+          id, customer_id, profile_store_id, talent_id, action,
+          operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
+          $5::uuid, $6, $7::inet, $8, $9, NOW()
+        )
+      `,
+        newCustomer.id,
+        talent.profileStoreId,
+        dto.talentId,
+        CustomerAction.CREATE,
+        context.userId,
+        context.userName,
+        context.ipAddress || '0.0.0.0',
+        context.userAgent,
+        context.requestId,
+      );
 
       return newCustomer;
     });
@@ -207,6 +236,7 @@ export class IndividualCustomerService {
     context: RequestContext,
   ) {
     const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
     // Verify access using tenant schema
     const customer = await this.verifyAccess(id, talentId, ProfileType.INDIVIDUAL, context);
@@ -223,34 +253,62 @@ export class IndividualCustomerService {
     let statusId: string | undefined;
     if (dto.statusCode !== undefined) {
       if (dto.statusCode) {
-        const status = await prisma.customerStatus.findFirst({
-          where: { code: dto.statusCode, isActive: true },
-        });
-        statusId = status?.id ?? undefined;
+        const statuses = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+          SELECT id
+          FROM "${schema}".customer_status
+          WHERE code = $1 AND is_active = true
+          LIMIT 1
+        `, dto.statusCode);
+        statusId = statuses[0]?.id ?? undefined;
       } else {
         statusId = undefined;
       }
     }
 
-    // Build update data
-    const updateData: Prisma.CustomerProfileUpdateInput = {
-      lastModifiedTalent: { connect: { id: talentId } },
-      updatedBy: context.userId,
-      version: { increment: 1 },
-    };
+    const updateSetParts: string[] = [
+      'last_modified_talent_id = $1::uuid',
+      'updated_by = $2::uuid',
+      'updated_at = NOW()',
+      'version = version + 1',
+    ];
+    const updateParams: (string | string[] | null)[] = [talentId, context.userId];
+    let paramIndex = 3;
 
-    if (dto.nickname !== undefined) updateData.nickname = dto.nickname;
-    if (dto.primaryLanguage !== undefined) updateData.primaryLanguage = dto.primaryLanguage;
-    if (statusId !== undefined) updateData.status = { connect: { id: statusId } };
-    if (dto.tags !== undefined) updateData.tags = dto.tags;
-    if (dto.notes !== undefined) updateData.notes = dto.notes;
+    if (dto.nickname !== undefined) {
+      updateSetParts.push(`nickname = $${paramIndex++}`);
+      updateParams.push(dto.nickname);
+    }
+    if (dto.primaryLanguage !== undefined) {
+      updateSetParts.push(`primary_language = $${paramIndex++}`);
+      updateParams.push(dto.primaryLanguage);
+    }
+    if (statusId !== undefined) {
+      updateSetParts.push(`status_id = $${paramIndex++}::uuid`);
+      updateParams.push(statusId ?? null);
+    }
+    if (dto.tags !== undefined) {
+      updateSetParts.push(`tags = $${paramIndex++}::text[]`);
+      updateParams.push(dto.tags);
+    }
+    if (dto.notes !== undefined) {
+      updateSetParts.push(`notes = $${paramIndex++}`);
+      updateParams.push(dto.notes ?? null);
+    }
 
-    // Update
     const updated = await prisma.$transaction(async (tx) => {
-      const result = await tx.customerProfile.update({
-        where: { id },
-        data: updateData,
-      });
+      const updatedRows = await tx.$queryRawUnsafe<Array<{
+        id: string;
+        nickname: string;
+        version: number;
+        updatedAt: Date;
+      }>>(`
+        UPDATE "${schema}".customer_profile
+        SET ${updateSetParts.join(', ')}
+        WHERE id = $${paramIndex}::uuid
+        RETURNING id, nickname, version, updated_at as "updatedAt"
+      `, ...updateParams, id);
+
+      const result = updatedRows[0];
 
       // Record change log
       await this.changeLogService.create(tx, {
@@ -267,28 +325,34 @@ export class IndividualCustomerService {
         },
         newValue: {
           nickname: result.nickname,
-          primaryLanguage: result.primaryLanguage,
-          statusId: result.statusId,
-          tags: result.tags,
-          notes: result.notes,
+          primaryLanguage: dto.primaryLanguage ?? customer.primaryLanguage,
+          statusId: statusId ?? customer.statusId,
+          tags: dto.tags ?? customer.tags,
+          notes: dto.notes ?? customer.notes,
         },
       }, context);
 
       // Record access log
-      await tx.customerAccessLog.create({
-        data: {
-          customerId: id,
-          profileStoreId: customer.profileStoreId,
-          talentId,
-          action: CustomerAction.UPDATE,
-          fieldChanges: updateData as Prisma.InputJsonValue,
-          operatorId: context.userId,
-          operatorName: context.userName,
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-          requestId: context.requestId,
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "${schema}".customer_access_log (
+          id, customer_id, profile_store_id, talent_id, action,
+          field_changes, operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
+          $5::jsonb, $6::uuid, $7, $8::inet, $9, $10, NOW()
+        )
+      `,
+        id,
+        customer.profileStoreId,
+        talentId,
+        CustomerAction.UPDATE,
+        JSON.stringify(dto),
+        context.userId,
+        context.userName,
+        context.ipAddress || '0.0.0.0',
+        context.userAgent,
+        context.requestId,
+      );
 
       return result;
     });
@@ -370,6 +434,7 @@ export class IndividualCustomerService {
     context: RequestContext,
   ) {
     const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
 
     // Verify access using tenant schema
     const customer = await this.verifyAccess(id, talentId, ProfileType.INDIVIDUAL, context);
@@ -420,30 +485,36 @@ export class IndividualCustomerService {
       void searchHintPhoneLast4;
 
       // Record access log
-      await tx.customerAccessLog.create({
-        data: {
-          customerId: id,
-          profileStoreId: customer.profileStoreId,
-          talentId,
-          action: CustomerAction.PII_UPDATE,
-          fieldChanges: { fieldsUpdated: Object.keys(dto.pii) } as Prisma.InputJsonValue,
-          operatorId: context.userId,
-          operatorName: context.userName,
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-          requestId: context.requestId,
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "${schema}".customer_access_log (
+          id, customer_id, profile_store_id, talent_id, action,
+          field_changes, operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
+          $5::jsonb, $6::uuid, $7, $8::inet, $9, $10, NOW()
+        )
+      `,
+        id,
+        customer.profileStoreId,
+        talentId,
+        CustomerAction.PII_UPDATE,
+        JSON.stringify({ fieldsUpdated: Object.keys(dto.pii) }),
+        context.userId,
+        context.userName,
+        context.ipAddress || '0.0.0.0',
+        context.userAgent,
+        context.requestId,
+      );
 
       // Update version
-      await tx.customerProfile.update({
-        where: { id },
-        data: {
-          lastModifiedTalentId: talentId,
-          updatedBy: context.userId,
-          version: { increment: 1 },
-        },
-      });
+      await tx.$executeRawUnsafe(`
+        UPDATE "${schema}".customer_profile
+        SET last_modified_talent_id = $2::uuid,
+            updated_by = $3::uuid,
+            version = version + 1,
+            updated_at = NOW()
+        WHERE id = $1::uuid
+      `, id, talentId, context.userId);
     });
 
     return {

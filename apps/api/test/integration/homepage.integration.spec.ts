@@ -3,9 +3,10 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
@@ -40,8 +41,7 @@ describeFn('Homepage Integration Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    await app.init();
+    await bootstrapTestApp(app);
 
     prisma = new PrismaClient();
   });
@@ -82,14 +82,13 @@ describeFn('Homepage Integration Tests', () => {
       if (!dbAvailable) return;
 
       const response = await request(app.getHttpServer())
-        .put('/api/v1/homepage/config')
+        .patch('/api/v1/talents/550e8400-e29b-41d4-a716-446655440000/homepage/settings')
         .send({
-          theme: 'default',
-          sections: [],
+          isPublished: false,
         })
         .expect(401);
 
-      expect(response.body).toHaveProperty('message');
+      expect(response.body.error.message).toBeDefined();
     });
   });
 

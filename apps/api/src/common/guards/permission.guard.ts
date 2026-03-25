@@ -7,11 +7,16 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, resolveRbacPermission } from '@tcrn/shared';
 import { Request } from 'express';
 
 import { PermissionSnapshotService, ScopeType } from '../../modules/permission/permission-snapshot.service';
-import { PERMISSIONS_KEY,RequiredPermission } from '../decorators/require-permissions.decorator';
+import {
+  type PermissionResolver,
+  PERMISSIONS_KEY,
+  type RequiredPermission,
+  RESOLVED_PERMISSIONS_KEY,
+} from '../decorators/require-permissions.decorator';
 
 /**
  * Permission Guard
@@ -26,18 +31,28 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Get required permissions from decorator
-    const requiredPermissions = this.reflector.getAllAndOverride<RequiredPermission[]>(
+    // Get statically declared permissions from decorator
+    const declaredPermissions = this.reflector.getAllAndOverride<RequiredPermission[]>(
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
 
+    const request = context.switchToHttp().getRequest<Request>();
+    const permissionResolver = this.reflector.getAllAndOverride<PermissionResolver>(
+      RESOLVED_PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    const resolvedPermissions = permissionResolver ? permissionResolver(request) : [];
+    const requiredPermissions = [
+      ...(declaredPermissions ?? []),
+      ...resolvedPermissions,
+    ];
+
     // If no permissions required, allow access
-    if (!requiredPermissions || requiredPermissions.length === 0) {
+    if (requiredPermissions.length === 0) {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
     const user = (request as unknown as { user?: { id?: string; tenantSchema?: string } }).user;
 
     // If no user, deny access
@@ -54,19 +69,24 @@ export class PermissionGuard implements CanActivate {
 
     // Check each required permission
     for (const perm of requiredPermissions) {
+      const { checkedAction } = resolveRbacPermission(perm.resource, perm.action);
       const hasPermission = await this.permissionService.checkPermission(
         user.tenantSchema,
         user.id,
         perm.resource,
-        perm.action,
+        checkedAction,
         scopeType,
         scopeId,
       );
 
       if (!hasPermission) {
+        const permissionLabel = perm.action === checkedAction
+          ? `${perm.resource}:${perm.action}`
+          : `${perm.resource}:${perm.action} (checked as ${perm.resource}:${checkedAction})`;
+
         throw new ForbiddenException({
           code: ErrorCodes.PERM_ACCESS_DENIED,
-          message: `Permission denied: ${perm.resource}:${perm.action}`,
+          message: `Permission denied: ${permissionLabel}`,
         });
       }
     }

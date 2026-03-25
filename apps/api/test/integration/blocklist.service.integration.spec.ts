@@ -5,11 +5,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService } from '../../../log';
-import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '../../dto/security.dto';
-import { BlocklistService } from '../blocklist.service';
-import { BlocklistMatcherService } from '../blocklist-matcher.service';
+import { DatabaseService } from '@/modules/database/database.service';
+import { ChangeLogService } from '@/modules/log/services/change-log.service';
+import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '@/modules/security/dto/security.dto';
+import { BlocklistService } from '@/modules/security/services/blocklist.service';
+import { BlocklistMatcherService } from '@/modules/security/services/blocklist-matcher.service';
 
 const TEST_SCHEMA = 'tenant_test';
 

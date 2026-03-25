@@ -45,7 +45,6 @@ export class SecurityController {
   // =========================================================================
 
   @Post('security/fingerprint')
-  @RequirePermissions({ resource: 'system', action: 'read' })
   @ApiOperation({ summary: 'Get technical fingerprint' })
   async getFingerprint(@CurrentUser() user: { id: string; tenantId: string }) {
     const { fingerprint, version } = this.fingerprintService.generateVersionedFingerprint(
@@ -228,6 +227,8 @@ export class SecurityController {
       ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
       userAgent: req.headers['user-agent'],
       requestId: req.headers['x-request-id'] as string,
+      tenantId: user.tenantId,
+      tenantSchema: user.tenantSchema,
     };
   }
 }

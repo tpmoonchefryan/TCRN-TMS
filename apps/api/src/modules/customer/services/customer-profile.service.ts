@@ -102,7 +102,7 @@ export class CustomerProfileService {
     }
 
     if (tags && tags.length > 0) {
-      conditions.push(`cp.tags @> $${paramIndex}::text[]`);
+      conditions.push(`cp.tags @> $${paramIndex}::varchar[]`);
       params.push(tags);
       paramIndex++;
     }

@@ -345,12 +345,13 @@ export class MarshmallowController {
   }
 
   private buildContext(
-    user: { id: string; username: string },
+    user: { id: string; username: string; tenantSchema: string },
     req: Request,
   ): RequestContext {
     return {
       userId: user.id,
       userName: user.username,
+      tenantSchema: user.tenantSchema,
       ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
       userAgent: req.headers['user-agent'],
       requestId: req.headers['x-request-id'] as string,

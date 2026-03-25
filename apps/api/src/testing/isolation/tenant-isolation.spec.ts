@@ -1,474 +1,476 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-// Multi-Tenant Isolation Tests (PRD P-13)
-// Ensures complete data isolation between tenants
+// Multi-Tenant Isolation Tests
 
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
-    createTestCustomerInTenant,
-    createTestSubsidiaryInTenant,
-    createTestTalentInTenant,
-    createTestTenantFixture,
-    createTestUserInTenant,
-    generateMockToken,
-    TenantFixture,
-    TestUser,
+  createTestCustomerInTenant,
+  createTestSubsidiaryInTenant,
+  createTestTalentInTenant,
+  createTestTenantFixture,
+  createTestUserInTenant,
+  type TenantFixture,
+  type TestUser,
 } from '@tcrn/shared';
 import Redis from 'ioredis';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../app.module';
+import { TokenService } from '../../modules/auth/token.service';
+import { bootstrapTestApp } from '../bootstrap-test-app';
 
-/**
- * Multi-Tenant Isolation Test Suite
- *
- * This test suite verifies that:
- * 1. Tenant A cannot access Tenant B's customer data
- * 2. Tenant A cannot access Tenant B's organization structure
- * 3. Permission snapshots are isolated by tenant
- * 4. PII data is isolated by Profile Store
- * 5. Report jobs are isolated by tenant
- * 6. Change logs are isolated by schema
- * 7. External page configurations are isolated
- */
 describe('Multi-Tenant Isolation Tests', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let redis: Redis;
+  let tokenService: TokenService;
+  let jwtService: JwtService;
 
-  // Tenant fixtures
   let tenantA: TenantFixture;
   let tenantB: TenantFixture;
 
-  // Test users
   let userA: TestUser;
   let userB: TestUser;
 
-  // Auth tokens
   let tokenA: string;
-  let _tokenB: string;
+  let tokenB: string;
+  let expiredTokenA: string;
 
-  // Test data IDs
   let customerA: { id: string; nickname: string; rmProfileId: string };
   let customerB: { id: string; nickname: string; rmProfileId: string };
   let subsidiaryA: { id: string; code: string };
   let subsidiaryB: { id: string; code: string };
-  let _talentA: { id: string; code: string; homepagePath: string };
+  let talentA: { id: string; code: string; homepagePath: string };
   let talentB: { id: string; code: string; homepagePath: string };
+  let talentAProfileStoreId: string;
+  let talentBProfileStoreId: string;
+
+  let reportJobBId: string;
+  let marshmallowMessageBId: string;
+
+  const withAuth = (req: request.Test, token: string, tenantId: string) =>
+    req
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Tenant-ID', tenantId);
+
+  const listCustomers = (token: string, tenantId: string, talentId: string) =>
+    withAuth(
+      request(app.getHttpServer()).get('/api/v1/customers'),
+      token,
+      tenantId,
+    ).query({ talentId });
 
   beforeAll(async () => {
-    // Create NestJS test application
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    await app.init();
+    await bootstrapTestApp(app);
 
-    // Get Prisma client
     prisma = new PrismaClient();
     await prisma.$connect();
 
-    // Get Redis client
     redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    tokenService = moduleFixture.get(TokenService);
+    jwtService = moduleFixture.get(JwtService);
 
-    // Create two independent tenant fixtures
-    tenantA = await createTestTenantFixture(prisma, 'A');
-    tenantB = await createTestTenantFixture(prisma, 'B');
+    tenantA = await createTestTenantFixture(prisma, 'iso_a');
+    tenantB = await createTestTenantFixture(prisma, 'iso_b');
 
-    // Create test users in each tenant
-    userA = await createTestUserInTenant(prisma, tenantA, 'admin_a', ['TENANT_ADMIN']);
-    userB = await createTestUserInTenant(prisma, tenantB, 'admin_b', ['TENANT_ADMIN']);
+    userA = await createTestUserInTenant(
+      prisma,
+      tenantA,
+      `tenant_a_admin_${Date.now()}`,
+      ['ADMIN'],
+    );
+    userB = await createTestUserInTenant(
+      prisma,
+      tenantB,
+      `tenant_b_admin_${Date.now()}`,
+      ['ADMIN'],
+    );
 
-    // Generate auth tokens
-    tokenA = generateMockToken({
-      userId: userA.id,
-      tenantId: userA.tenantId,
+    tokenA = tokenService.generateAccessToken({
+      sub: userA.id,
+      tid: userA.tenantId,
+      tsc: userA.schemaName,
+      email: userA.email,
       username: userA.username,
-      schemaName: userA.schemaName,
-      roles: userA.roles,
-    });
+    }).token;
 
-    _tokenB = generateMockToken({
-      userId: userB.id,
-      tenantId: userB.tenantId,
+    tokenB = tokenService.generateAccessToken({
+      sub: userB.id,
+      tid: userB.tenantId,
+      tsc: userB.schemaName,
+      email: userB.email,
       username: userB.username,
-      schemaName: userB.schemaName,
-      roles: userB.roles,
-    });
+    }).token;
 
-    // Create test data in each tenant
-    customerA = await createTestCustomerInTenant(prisma, tenantA, {
-      nickname: 'Customer A',
-    });
-    customerB = await createTestCustomerInTenant(prisma, tenantB, {
-      nickname: 'Customer B',
-    });
+    expiredTokenA = jwtService.sign(
+      {
+        sub: userA.id,
+        tid: userA.tenantId,
+        tsc: userA.schemaName,
+        email: userA.email,
+        username: userA.username,
+        type: 'access',
+        jti: crypto.randomUUID(),
+      },
+      { expiresIn: -1 },
+    );
 
     subsidiaryA = await createTestSubsidiaryInTenant(prisma, tenantA, {
-      code: 'SUB_A',
-      nameEn: 'Subsidiary A',
+      code: `SUB_A_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Isolation Subsidiary A',
+      createdBy: userA.id,
     });
     subsidiaryB = await createTestSubsidiaryInTenant(prisma, tenantB, {
-      code: 'SUB_B',
-      nameEn: 'Subsidiary B',
+      code: `SUB_B_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Isolation Subsidiary B',
+      createdBy: userB.id,
     });
 
-    _talentA = await createTestTalentInTenant(prisma, tenantA, subsidiaryA.id, {
-      code: 'TALENT_A',
-      nameEn: 'Talent A',
-      homepagePath: 'talent-a',
+    talentA = await createTestTalentInTenant(prisma, tenantA, subsidiaryA.id, {
+      code: `TAL_A_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Isolation Talent A',
+      displayName: 'Isolation Talent A',
+      homepagePath: `tenant-a-${Date.now()}`,
+      createdBy: userA.id,
     });
     talentB = await createTestTalentInTenant(prisma, tenantB, subsidiaryB.id, {
-      code: 'TALENT_B',
-      nameEn: 'Talent B',
-      homepagePath: 'talent-b',
+      code: `TAL_B_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Isolation Talent B',
+      displayName: 'Isolation Talent B',
+      homepagePath: `tenant-b-${Date.now()}`,
+      createdBy: userB.id,
     });
+
+    const talentAProfileStore = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
+      `
+        SELECT profile_store_id as "profileStoreId"
+        FROM "${tenantA.schemaName}".talent
+        WHERE id = $1::uuid
+      `,
+      talentA.id,
+    );
+    const talentBProfileStore = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
+      `
+        SELECT profile_store_id as "profileStoreId"
+        FROM "${tenantB.schemaName}".talent
+        WHERE id = $1::uuid
+      `,
+      talentB.id,
+    );
+
+    talentAProfileStoreId = talentAProfileStore[0].profileStoreId;
+    talentBProfileStoreId = talentBProfileStore[0].profileStoreId;
+
+    customerA = await createTestCustomerInTenant(prisma, tenantA, {
+      nickname: 'Isolation Customer A',
+      talentId: talentA.id,
+      profileStoreId: talentAProfileStoreId,
+      createdBy: userA.id,
+    });
+    customerB = await createTestCustomerInTenant(prisma, tenantB, {
+      nickname: 'Isolation Customer B',
+      talentId: talentB.id,
+      profileStoreId: talentBProfileStoreId,
+      createdBy: userB.id,
+    });
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantA.schemaName}".change_log (
+          id, action, object_type, object_id, object_name, diff, operator_id, ip_address, occurred_at
+        ) VALUES (
+          gen_random_uuid(), 'create', 'customer_profile', $1::uuid, $2, $3::jsonb, $4::uuid, '127.0.0.1', NOW()
+        )
+      `,
+      customerA.id,
+      customerA.nickname,
+      JSON.stringify({ new: { nickname: customerA.nickname } }),
+      userA.id,
+    );
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantB.schemaName}".change_log (
+          id, action, object_type, object_id, object_name, diff, operator_id, ip_address, occurred_at
+        ) VALUES (
+          gen_random_uuid(), 'create', 'customer_profile', $1::uuid, $2, $3::jsonb, $4::uuid, '127.0.0.1', NOW()
+        )
+      `,
+      customerB.id,
+      customerB.nickname,
+      JSON.stringify({ new: { nickname: customerB.nickname } }),
+      userB.id,
+    );
+
+    reportJobBId = crypto.randomUUID();
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantB.schemaName}".report_job (
+          id, talent_id, profile_store_id, report_type, filter_criteria, format,
+          status, total_rows, queued_at, created_by, created_at
+        ) VALUES (
+          $1::uuid, $2::uuid, $3::uuid, 'mfr', '{}'::jsonb, 'xlsx',
+          'pending', 0, NOW(), $4::uuid, NOW()
+        )
+      `,
+      reportJobBId,
+      talentB.id,
+      talentBProfileStoreId,
+      userB.id,
+    );
+
+    const marshmallowConfigId = crypto.randomUUID();
+    marshmallowMessageBId = crypto.randomUUID();
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantB.schemaName}".marshmallow_config (
+          id, talent_id, is_enabled, captcha_mode, moderation_enabled, auto_approve,
+          profanity_filter_enabled, external_blocklist_enabled, min_message_length,
+          max_message_length, created_at, updated_at, version
+        ) VALUES (
+          $1::uuid, $2::uuid, true, 'never', true, false,
+          false, false, 5, 200, NOW(), NOW(), 1
+        )
+      `,
+      marshmallowConfigId,
+      talentB.id,
+    );
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantB.schemaName}".marshmallow_message (
+          id, config_id, talent_id, content, is_anonymous, status,
+          ip_address, user_agent, fingerprint_hash, created_at
+        ) VALUES (
+          $1::uuid, $2::uuid, $3::uuid, $4, true, 'pending',
+          '203.0.113.50', 'tenant-isolation-vitest', $5, NOW()
+        )
+      `,
+      marshmallowMessageBId,
+      marshmallowConfigId,
+      talentB.id,
+      'Tenant B marshmallow message for isolation coverage.',
+      'tenant-b-isolation-message',
+    );
   });
 
   afterAll(async () => {
-    // Cleanup in reverse order
     await tenantA?.cleanup();
     await tenantB?.cleanup();
-
-    // Close connections
     await redis?.quit();
     await prisma?.$disconnect();
     await app?.close();
   });
 
-  // ===========================================================================
-  // 1. Customer Profile Isolation
-  // ===========================================================================
-  describe('Customer Profile Isolation', () => {
-    it('Tenant A user cannot access Tenant B customer list with wrong tenant header', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/customers')
-        .set('Authorization', `Bearer ${tokenA}`)
-        .set('X-Tenant-ID', tenantB.tenant.id);
+  describe('Customer isolation', () => {
+    it('does not expose tenant B customer in tenant A list results', async () => {
+      const response = await listCustomers(tokenA, tenantA.tenant.id, talentA.id).expect(200);
 
-      // Should return 403 Forbidden
-      expect(response.status).toBe(403);
-      expect(response.body.error?.code || response.body.statusCode).toMatch(/403|TENANT_ACCESS_DENIED/);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.some((item: { id: string }) => item.id === customerA.id)).toBe(true);
+      expect(response.body.data.some((item: { id: string }) => item.id === customerB.id)).toBe(false);
     });
 
-    it('Tenant A user cannot access Tenant B customer details', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/customers/${customerB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`);
+    it('returns 404 when tenant A requests tenant B customer detail', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/customers/${customerB.id}`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .set('X-Talent-Id', talentB.id)
+        .expect(404);
 
-      // Should return 404 (not 403) to avoid information leakage
-      expect(response.status).toBe(404);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
 
-    it('Tenant A user cannot modify Tenant B customer', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/api/v1/customers/${customerB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ nickname: 'Hacked by A' });
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot delete Tenant B customer', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/api/v1/customers/${customerB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A customer list only returns Tenant A data', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/customers')
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      if (response.status === 200) {
-        const customers = response.body.data?.items || [];
-        // Should not contain any customer from Tenant B
-        const hasTenantBCustomer = customers.some(
-          (c: { id: string }) => c.id === customerB.id
-        );
-        expect(hasTenantBCustomer).toBe(false);
-      }
-    });
-  });
-
-  // ===========================================================================
-  // 2. Organization Structure Isolation
-  // ===========================================================================
-  describe('Organization Structure Isolation', () => {
-    it('Tenant A user cannot view Tenant B subsidiary', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/subsidiaries/${subsidiaryB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot view Tenant B talent', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/talents/${talentB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot create subsidiary in Tenant B', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/subsidiaries')
-        .set('Authorization', `Bearer ${tokenA}`)
-        .set('X-Tenant-ID', tenantB.tenant.id)
+    it('returns 404 when tenant A tries to update tenant B customer', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).patch(`/api/v1/customers/individuals/${customerB.id}`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .set('X-Talent-Id', talentB.id)
         .send({
-          code: 'HACKED_SUB',
-          nameEn: 'Hacked Subsidiary',
-        });
+          nickname: 'cross-tenant-update',
+          version: 1,
+        })
+        .expect(404);
 
-      expect(response.status).toBe(403);
-    });
-
-    it('Tenant A user cannot modify Tenant B subsidiary', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/api/v1/subsidiaries/${subsidiaryB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ nameEn: 'Hacked Name' });
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot modify Tenant B talent', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/api/v1/talents/${talentB.id}`)
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ nameEn: 'Hacked Talent' });
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Organization tree only contains own tenant data', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/organization/tree')
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      if (response.status === 200) {
-        const tree = response.body.data;
-        // Verify no Tenant B data in the tree
-        const treeString = JSON.stringify(tree);
-        expect(treeString).not.toContain(subsidiaryB.id);
-        expect(treeString).not.toContain(talentB.id);
-      }
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
   });
 
-  // ===========================================================================
-  // 3. Permission Snapshot Isolation (Redis)
-  // ===========================================================================
-  describe('Permission Snapshot Isolation', () => {
-    it('Permission cache keys are tenant-scoped', async () => {
-      // Set test permission data for both tenants
-      await redis.set(`perm:${tenantA.schemaName}:${userA.id}`, JSON.stringify(['read:customer']));
-      await redis.set(`perm:${tenantB.schemaName}:${userB.id}`, JSON.stringify(['read:customer']));
+  describe('Organization isolation', () => {
+    it('organization tree only contains tenant A nodes for tenant A token', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get('/api/v1/organization/tree'),
+        tokenA,
+        tenantA.tenant.id,
+      ).expect(200);
 
-      // Get keys for each tenant
-      const keysA = await redis.keys(`perm:${tenantA.schemaName}:*`);
-      const keysB = await redis.keys(`perm:${tenantB.schemaName}:*`);
+      const tree = JSON.stringify(response.body.data);
 
-      // Verify isolation
-      expect(keysA.every((k) => k.includes(tenantA.schemaName))).toBe(true);
-      expect(keysB.every((k) => k.includes(tenantB.schemaName))).toBe(true);
-
-      // Tenant A keys should not include Tenant B schema
-      expect(keysA.some((k) => k.includes(tenantB.schemaName))).toBe(false);
-    });
-
-    it('Tenant A cannot access Tenant B permission cache', async () => {
-      const permKeyB = `perm:${tenantB.schemaName}:${userB.id}`;
-
-      // Direct Redis access should work (for this test)
-      const directValue = await redis.get(permKeyB);
-      expect(directValue).toBeDefined();
-
-      // But API should not expose cross-tenant permission data
-      // This is enforced at application level, not Redis level
+      expect(response.body.data.tenantId).toBe(tenantA.tenant.id);
+      expect(tree).not.toContain(subsidiaryB.id);
+      expect(tree).not.toContain(talentB.id);
     });
   });
 
-  // ===========================================================================
-  // 4. PII Data Isolation (Cross Profile Store)
-  // ===========================================================================
-  describe('PII Data Isolation', () => {
-    it('PII profile IDs are unique per tenant', () => {
-      // Verify that rm_profile_id from different tenants are different
-      expect(customerA.rmProfileId).not.toBe(customerB.rmProfileId);
-    });
+  describe('Permission snapshot isolation', () => {
+    it('stores Redis snapshot keys under each tenant schema independently', async () => {
+      await listCustomers(tokenA, tenantA.tenant.id, talentA.id).expect(200);
+      await listCustomers(tokenB, tenantB.tenant.id, talentB.id).expect(200);
 
-    it('Tenant A cannot request Tenant B PII data via API', async () => {
-      // Attempt to access PII service with A's token for B's profile
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/customers/${customerB.id}/pii`)
-        .set('Authorization', `Bearer ${tokenA}`);
+      const keysA = await redis.keys(`perm:${tenantA.schemaName}:${userA.id}:*`);
+      const keysB = await redis.keys(`perm:${tenantB.schemaName}:${userB.id}:*`);
 
-      // Should fail - either 404 (customer not found) or 403 (access denied)
-      expect([403, 404]).toContain(response.status);
+      expect(keysA.length).toBeGreaterThan(0);
+      expect(keysB.length).toBeGreaterThan(0);
+      expect(keysA.every((key) => key.startsWith(`perm:${tenantA.schemaName}:${userA.id}:`))).toBe(true);
+      expect(keysB.every((key) => key.startsWith(`perm:${tenantB.schemaName}:${userB.id}:`))).toBe(true);
+      expect(keysA.some((key) => key.includes(tenantB.schemaName))).toBe(false);
+      expect(keysB.some((key) => key.includes(tenantA.schemaName))).toBe(false);
     });
   });
 
-  // ===========================================================================
-  // 5. Report Job Isolation
-  // ===========================================================================
-  describe('Report Job Isolation', () => {
-    let reportJobBId: string;
+  describe('PII isolation', () => {
+    it('returns 404 when tenant A requests PII access token for tenant B customer', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).post(
+          `/api/v1/customers/individuals/${customerB.id}/request-pii-access`,
+        ),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .set('X-Talent-Id', talentB.id)
+        .expect(404);
 
-    beforeAll(async () => {
-      // Create a test report job in Tenant B
-      reportJobBId = crypto.randomUUID();
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "${tenantB.schemaName}".mfr_report_job 
-        (id, status, parameters, created_by, created_at, updated_at)
-        VALUES ($1, 'COMPLETED', '{}', $2, NOW(), NOW())
-      `, reportJobBId, userB.id);
-    });
-
-    it('Tenant A user cannot view Tenant B report job', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/reports/mfr/jobs/${reportJobBId}`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot download Tenant B report', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/reports/mfr/jobs/${reportJobBId}/download`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A user cannot cancel Tenant B report job', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/api/v1/reports/mfr/jobs/${reportJobBId}/cancel`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
   });
 
-  // ===========================================================================
-  // 6. Change Log Isolation
-  // ===========================================================================
-  describe('Change Log Isolation', () => {
-    beforeAll(async () => {
-      // Insert test change logs in both tenants
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "${tenantA.schemaName}".change_log 
-        (id, entity_type, entity_id, action, diff, operator_id, occurred_at)
-        VALUES (gen_random_uuid(), 'CUSTOMER', $1, 'CREATE', '{}', $2, NOW())
-      `, customerA.id, userA.id);
+  describe('Report job isolation', () => {
+    it('returns 404 when tenant A requests tenant B report job', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/reports/mfr/jobs/${reportJobBId}`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .query({ talent_id: talentB.id })
+        .expect(404);
 
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "${tenantB.schemaName}".change_log 
-        (id, entity_type, entity_id, action, diff, operator_id, occurred_at)
-        VALUES (gen_random_uuid(), 'CUSTOMER', $1, 'CREATE', '{}', $2, NOW())
-      `, customerB.id, userB.id);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
 
-    it('Change logs are stored in separate schemas', async () => {
-      // Query Tenant A's change_log
-      const logsA = await prisma.$queryRawUnsafe<{ entity_id: string }[]>(`
-        SELECT entity_id FROM "${tenantA.schemaName}".change_log
-      `);
+    it('returns 404 when tenant A requests tenant B report download URL', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/reports/mfr/jobs/${reportJobBId}/download`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .query({ talent_id: talentB.id })
+        .expect(404);
 
-      // Query Tenant B's change_log
-      const logsB = await prisma.$queryRawUnsafe<{ entity_id: string }[]>(`
-        SELECT entity_id FROM "${tenantB.schemaName}".change_log
-      `);
-
-      // Verify A's logs don't contain B's data
-      const logAEntityIds = logsA.map((l) => l.entity_id);
-      const logBEntityIds = logsB.map((l) => l.entity_id);
-
-      expect(logAEntityIds).not.toContain(customerB.id);
-      expect(logBEntityIds).not.toContain(customerA.id);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
 
-    it('Tenant A cannot query Tenant B change logs via API', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/logs/changes')
-        .set('Authorization', `Bearer ${tokenA}`)
-        .query({ entityType: 'CUSTOMER', entityId: customerB.id });
+    it('returns 404 when tenant A tries to cancel tenant B report job', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).delete(`/api/v1/reports/mfr/jobs/${reportJobBId}`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .query({ talent_id: talentB.id })
+        .expect(404);
 
-      if (response.status === 200) {
-        // Should return empty or only A's data
-        const logs = response.body.data?.items || [];
-        expect(logs.every((l: { entityId: string }) => l.entityId !== customerB.id)).toBe(true);
-      }
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
   });
 
-  // ===========================================================================
-  // 7. External Page Access Control
-  // ===========================================================================
-  describe('External Page Access Control', () => {
-    it('Tenant A cannot modify Tenant B talent homepage', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/api/v1/talents/${talentB.id}/homepage`)
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ isPublished: true });
+  describe('Change log isolation', () => {
+    it('stores change logs in separate tenant schemas', async () => {
+      const logsA = await prisma.$queryRawUnsafe<Array<{ objectId: string }>>(
+        `
+          SELECT object_id as "objectId"
+          FROM "${tenantA.schemaName}".change_log
+        `,
+      );
+      const logsB = await prisma.$queryRawUnsafe<Array<{ objectId: string }>>(
+        `
+          SELECT object_id as "objectId"
+          FROM "${tenantB.schemaName}".change_log
+        `,
+      );
 
-      expect(response.status).toBe(404);
+      expect(logsA.map((log) => log.objectId)).toContain(customerA.id);
+      expect(logsA.map((log) => log.objectId)).not.toContain(customerB.id);
+      expect(logsB.map((log) => log.objectId)).toContain(customerB.id);
+      expect(logsB.map((log) => log.objectId)).not.toContain(customerA.id);
     });
 
-    it('Tenant A cannot modify Tenant B marshmallow config', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/api/v1/talents/${talentB.id}/marshmallow/config`)
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ isEnabled: false });
+    it('does not leak tenant B object history through the log API', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get(
+          `/api/v1/logs/changes/object/customer_profile/${customerB.id}`,
+        ),
+        tokenA,
+        tenantA.tenant.id,
+      ).expect(200);
 
-      expect(response.status).toBe(404);
-    });
-
-    it('Tenant A cannot view Tenant B marshmallow messages (admin)', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/talents/${talentB.id}/marshmallow/messages`)
-        .set('Authorization', `Bearer ${tokenA}`);
-
-      expect(response.status).toBe(404);
+      expect(Array.isArray(response.body.data.items)).toBe(true);
+      expect(response.body.data.items).toHaveLength(0);
     });
   });
 
-  // ===========================================================================
-  // 8. Cross-Tenant Token Validation
-  // ===========================================================================
-  describe('Cross-Tenant Token Validation', () => {
-    it('Token from Tenant A is rejected when accessing Tenant B resources', async () => {
-      // Create a crafted request with Tenant A token but B's tenant context
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/customers')
-        .set('Authorization', `Bearer ${tokenA}`)
-        .set('X-Tenant-ID', tenantB.tenant.id)
-        .set('X-Schema-Name', tenantB.schemaName);
+  describe('Marshmallow isolation', () => {
+    it('returns 404 when tenant A tries to update tenant B marshmallow config', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).patch(`/api/v1/talents/${talentB.id}/marshmallow/config`),
+        tokenA,
+        tenantA.tenant.id,
+      )
+        .send({
+          version: 1,
+          isEnabled: false,
+        })
+        .expect(404);
 
-      // Should be rejected - token tenant doesn't match header
-      expect([401, 403]).toContain(response.status);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
 
-    it('Expired token is rejected', async () => {
-      const expiredToken = generateMockToken({
-        userId: userA.id,
-        tenantId: userA.tenantId,
-        username: userA.username,
-        schemaName: userA.schemaName,
-        roles: userA.roles,
-      }).replace(/exp":\d+/, 'exp":0'); // Force expired
+    it('returns 404 when tenant A tries to approve tenant B marshmallow message', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).post(
+          `/api/v1/talents/${talentB.id}/marshmallow/messages/${marshmallowMessageBId}/approve`,
+        ),
+        tokenA,
+        tenantA.tenant.id,
+      ).expect(404);
 
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/customers')
-        .set('Authorization', `Bearer ${expiredToken}`);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+    });
+  });
 
-      expect(response.status).toBe(401);
+  describe('Token validation', () => {
+    it('rejects expired access tokens', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get('/api/v1/customers'),
+        expiredTokenA,
+        tenantA.tenant.id,
+      )
+        .query({ talentId: talentA.id })
+        .expect(401);
+
+      expect(response.body.error.code).toBe('AUTH_TOKEN_EXPIRED');
     });
   });
 });

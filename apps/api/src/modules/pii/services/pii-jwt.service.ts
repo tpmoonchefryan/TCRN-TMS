@@ -20,8 +20,8 @@ export interface PiiAccessJwtPayload {
   psi: string;           // Profile Store ID
   type: 'pii_access';    // Token type
   act: string[];         // Allowed actions
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
   jti: string;
 }
 
@@ -36,8 +36,8 @@ export interface ServiceJwtPayload {
   original_user_id: string;
   psi: string;           // Profile Store ID
   act: string[];
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
   jti: string;
 }
 
@@ -71,9 +71,7 @@ export class PiiJwtService {
     const { userId, tenantId, tenantSchema, rmProfileId, profileStoreId, actions } = params;
 
     const jti = uuidv4();
-    const now = Math.floor(Date.now() / 1000);
-
-    const payload: PiiAccessJwtPayload = {
+    const payload: Omit<PiiAccessJwtPayload, 'iat' | 'exp'> = {
       sub: userId,
       tid: tenantId,
       tsc: tenantSchema,
@@ -81,14 +79,13 @@ export class PiiJwtService {
       psi: profileStoreId,
       type: 'pii_access',
       act: actions,
-      iat: now,
-      exp: now + this.accessTokenTtl,
       jti,
     };
 
     const token = this.jwtService.sign(payload, {
       secret: this.jwtSecret,
       algorithm: 'HS256',
+      expiresIn: this.accessTokenTtl,
     });
 
     // Log token issuance
@@ -129,9 +126,7 @@ export class PiiJwtService {
     const { service, tenantId, profileStoreId, jobId, originalUserId, actions } = params;
 
     const jti = uuidv4();
-    const now = Math.floor(Date.now() / 1000);
-
-    const payload: ServiceJwtPayload = {
+    const payload: Omit<ServiceJwtPayload, 'iat' | 'exp'> = {
       sub: service,
       tid: tenantId,
       type: 'report_service',
@@ -139,14 +134,13 @@ export class PiiJwtService {
       original_user_id: originalUserId,
       psi: profileStoreId,
       act: actions,
-      iat: now,
-      exp: now + this.serviceTokenTtl,
       jti,
     };
 
     const token = this.jwtService.sign(payload, {
       secret: this.jwtSecret,
       algorithm: 'HS256',
+      expiresIn: this.serviceTokenTtl,
     });
 
     // Log service token issuance

@@ -39,6 +39,41 @@ export class PublicMarshmallowService {
 
   private readonly logger = new Logger(PublicMarshmallowService.name);
 
+  private async getSearchableTenantSchemas() {
+    const prisma = this.databaseService.getPrisma();
+
+    return prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
+      SELECT t.schema_name as "schemaName"
+      FROM public.tenant t
+      WHERE t.is_active = true
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'talent'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'marshmallow_config'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'marshmallow_message'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'system_user'
+        )
+      ORDER BY t.schema_name
+    `);
+  }
+
   /**
    * Find talent and config by path (multi-tenant)
    * Searches by marshmallow_path first, then by code as fallback
@@ -46,66 +81,71 @@ export class PublicMarshmallowService {
   private async findTalentAndConfigByPath(path: string) {
     const prisma = this.databaseService.getPrisma();
 
-    // Get all active tenants to search across schemas
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
-      SELECT schema_name as "schemaName" FROM public.tenant WHERE is_active = true
-    `);
+    const tenants = await this.getSearchableTenantSchemas();
 
     for (const t of tenants) {
       const schema = t.schemaName;
-      // Search by marshmallow_path or code (for fallback compatibility)
-      const talents = await prisma.$queryRawUnsafe<Array<{
-        id: string;
-        displayName: string;
-        avatarUrl: string | null;
-      }>>(`
-        SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
-        FROM "${schema}".talent
-        WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
-      `, path);
-
-      if (talents.length > 0) {
-        const talent = talents[0];
-
-        // Get config from the same tenant schema
-        const configs = await prisma.$queryRawUnsafe<Array<{
+      try {
+        // Search by marshmallow_path or code (for fallback compatibility)
+        const talents = await prisma.$queryRawUnsafe<Array<{
           id: string;
-          isEnabled: boolean;
-          title: string;
-          welcomeText: string;
-          placeholderText: string;
-          thankYouText: string;
-          allowAnonymous: boolean;
-          captchaMode: string;
-          moderationEnabled: boolean;
-          autoApprove: boolean;
-          profanityFilterEnabled: boolean;
-          externalBlocklistEnabled: boolean;
-          maxMessageLength: number;
-          minMessageLength: number;
-          rateLimitPerIp: number;
-          rateLimitWindowHours: number;
-          reactionsEnabled: boolean;
-          allowedReactions: string[];
-          theme: Record<string, unknown>;
+          displayName: string;
+          avatarUrl: string | null;
         }>>(`
-          SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
-                 placeholder_text as "placeholderText", thank_you_text as "thankYouText",
-                 allow_anonymous as "allowAnonymous", captcha_mode as "captchaMode",
-                 moderation_enabled as "moderationEnabled", auto_approve as "autoApprove",
-                 profanity_filter_enabled as "profanityFilterEnabled",
-                 external_blocklist_enabled as "externalBlocklistEnabled",
-                 max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
-                 rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
-                 reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme
-          FROM "${schema}".marshmallow_config
-          WHERE talent_id = $1::uuid
-        `, talent.id);
+          SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
+          FROM "${schema}".talent
+          WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
+        `, path);
 
-        const config = configs[0];
-        if (config) {
-          return { talent, config, tenantSchema: schema };
+        if (talents.length > 0) {
+          const talent = talents[0];
+
+          // Get config from the same tenant schema
+          const configs = await prisma.$queryRawUnsafe<Array<{
+            id: string;
+            isEnabled: boolean;
+            title: string;
+            welcomeText: string;
+            placeholderText: string;
+            thankYouText: string;
+            allowAnonymous: boolean;
+            captchaMode: string;
+            moderationEnabled: boolean;
+            autoApprove: boolean;
+            profanityFilterEnabled: boolean;
+            externalBlocklistEnabled: boolean;
+            maxMessageLength: number;
+            minMessageLength: number;
+            rateLimitPerIp: number;
+            rateLimitWindowHours: number;
+            reactionsEnabled: boolean;
+            allowedReactions: string[];
+            theme: Record<string, unknown>;
+          }>>(`
+            SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
+                   placeholder_text as "placeholderText", thank_you_text as "thankYouText",
+                   allow_anonymous as "allowAnonymous", captcha_mode as "captchaMode",
+                   moderation_enabled as "moderationEnabled", auto_approve as "autoApprove",
+                   profanity_filter_enabled as "profanityFilterEnabled",
+                   external_blocklist_enabled as "externalBlocklistEnabled",
+                   max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
+                   rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
+                   reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme
+            FROM "${schema}".marshmallow_config
+            WHERE talent_id = $1::uuid
+          `, talent.id);
+
+          const config = configs[0];
+          if (config) {
+            return { talent, config, tenantSchema: schema };
+          }
         }
+      } catch (error) {
+        this.logger.warn(
+          `Skipping marshmallow schema ${schema} during public lookup: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
     }
 
@@ -215,6 +255,10 @@ export class PublicMarshmallowService {
           ip: context.ip,
           fingerprint: dto.fingerprint,
         },
+      }, {
+        tenantSchema,
+        ipAddress: context.ip,
+        userAgent: context.userAgent,
       });
 
       throw new ForbiddenException({
@@ -267,6 +311,10 @@ export class PublicMarshmallowService {
           score: filterResult.score,
           ip: context.ip,
         },
+      }, {
+        tenantSchema,
+        ipAddress: context.ip,
+        userAgent: context.userAgent,
       });
 
       throw new BadRequestException({
@@ -461,10 +509,7 @@ export class PublicMarshmallowService {
   async getConfig(path: string) {
     const prisma = this.databaseService.getPrisma();
 
-    // Get all active tenants to search across schemas
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
-      SELECT schema_name as "schemaName" FROM public.tenant WHERE is_active = true
-    `);
+    const tenants = await this.getSearchableTenantSchemas();
 
     let talent: { id: string; displayName: string; avatarUrl: string | null } | null = null;
     let tenantSchema: string | null = null;
@@ -472,21 +517,29 @@ export class PublicMarshmallowService {
     // Search for talent across all tenant schemas
     for (const t of tenants) {
       const schema = t.schemaName;
-      // Search by marshmallow_path or code (for fallback compatibility)
-      const talents = await prisma.$queryRawUnsafe<Array<{
-        id: string;
-        displayName: string;
-        avatarUrl: string | null;
-      }>>(`
-        SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
-        FROM "${schema}".talent
-        WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
-      `, path);
+      try {
+        // Search by marshmallow_path or code (for fallback compatibility)
+        const talents = await prisma.$queryRawUnsafe<Array<{
+          id: string;
+          displayName: string;
+          avatarUrl: string | null;
+        }>>(`
+          SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
+          FROM "${schema}".talent
+          WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
+        `, path);
 
-      if (talents.length > 0) {
-        talent = talents[0];
-        tenantSchema = schema;
-        break;
+        if (talents.length > 0) {
+          talent = talents[0];
+          tenantSchema = schema;
+          break;
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Skipping marshmallow schema ${schema} during public config lookup: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
     }
 
@@ -643,6 +696,9 @@ export class PublicMarshmallowService {
         fingerprint: context.fingerprint,
         ip: context.ip,
       },
+    }, {
+      tenantSchema,
+      ipAddress: context.ip,
     });
 
     return {

@@ -3,9 +3,17 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import {
+  createTestTenantFixture,
+  createTestUserInTenant,
+  type TenantFixture,
+  type TestUser,
+} from '@tcrn/shared';
+
 import { AppModule } from '../../src/app.module';
+import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
@@ -26,13 +34,29 @@ const describeFn = process.env.SKIP_INTEGRATION_TESTS ? describe.skip : describe
 describeFn('Auth Integration Tests', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
-  let testUser: {
-    id: string;
-    username: string;
-    email: string;
-    password: string;
-  };
+  let tenantFixture: TenantFixture;
+  let testUser: TestUser & { password: string };
   let dbAvailable = false;
+  let ipCounter = 10;
+
+  const nextIp = (): string => `198.51.100.${ipCounter++}`;
+
+  const login = (
+    overrides: Partial<{
+      tenantCode: string;
+      login: string;
+      password: string;
+    }> = {},
+    ip = nextIp(),
+  ) =>
+    request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({
+        tenantCode: overrides.tenantCode ?? tenantFixture.tenant.code,
+        login: overrides.login ?? testUser.username,
+        password: overrides.password ?? testUser.password,
+      });
 
   beforeAll(async () => {
     dbAvailable = await checkDatabaseConnection();
@@ -46,53 +70,35 @@ describeFn('Auth Integration Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    await app.init();
+    await bootstrapTestApp(app);
 
     prisma = new PrismaClient();
+    tenantFixture = await createTestTenantFixture(prisma, 'auth');
 
-    // Create test user
-    const passwordHash = '$argon2id$v=19$m=65536,t=3,p=4$c2VlZHRlc3RzYWx0$S8M7F3rQ3UmC9Y5r6V8x2K4w1L6n3P0q2R4t6U8v0A0';
-    
+    const user = await createTestUserInTenant(
+      prisma,
+      tenantFixture,
+      `auth_user_${Date.now()}`,
+      ['ADMIN'],
+    );
+
     testUser = {
-      id: '',
-      username: `test_user_${Date.now()}`,
-      email: `test_${Date.now()}@integration.test`,
+      ...user,
       password: 'TestPassword123!',
     };
-
-    const user = await prisma.systemUser.create({
-      data: {
-        username: testUser.username,
-        email: testUser.email,
-        passwordHash,
-        isActive: true,
-      },
-    });
-    testUser.id = user.id;
   });
 
   afterAll(async () => {
     if (!dbAvailable) return;
     
-    // Cleanup
-    if (testUser?.id) {
-      await prisma.refreshToken.deleteMany({ where: { userId: testUser.id } });
-      await prisma.systemUser.delete({ where: { id: testUser.id } }).catch(() => {});
-    }
+    await tenantFixture?.cleanup();
     await prisma?.$disconnect();
     await app?.close();
   });
 
   describe('POST /api/v1/auth/login', () => {
     it('should login successfully with correct credentials', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: testUser.username,
-          password: testUser.password,
-        })
-        .expect(200);
+      const response = await login().expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.accessToken).toBeDefined();
@@ -101,28 +107,20 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail with incorrect password', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: testUser.username,
-          password: 'WrongPassword123!',
-        })
-        .expect(401);
+      const response = await login({ password: 'WrongPassword123!' }).expect(401);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.code).toBe('AUTH_INVALID_CREDENTIALS');
+      expect(response.body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
     });
 
     it('should fail with non-existent user', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: 'non_existent_user',
-          password: 'AnyPassword123!',
-        })
-        .expect(401);
+      const response = await login({
+        login: 'non_existent_user',
+        password: 'AnyPassword123!',
+      }).expect(401);
 
       expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
     });
 
     it('should fail with missing credentials', async () => {
@@ -132,6 +130,7 @@ describeFn('Auth Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
   });
 
@@ -139,13 +138,7 @@ describeFn('Auth Integration Tests', () => {
     let refreshToken: string;
 
     beforeEach(async () => {
-      // Login to get refresh token
-      const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: testUser.username,
-          password: testUser.password,
-        });
+      const loginResponse = await login();
 
       refreshToken = loginResponse.headers['set-cookie']?.[0] || '';
     });
@@ -166,6 +159,7 @@ describeFn('Auth Integration Tests', () => {
         .expect(401);
 
       expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('AUTH_REFRESH_TOKEN_INVALID');
     });
   });
 
@@ -174,12 +168,7 @@ describeFn('Auth Integration Tests', () => {
     let refreshToken: string;
 
     beforeEach(async () => {
-      const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: testUser.username,
-          password: testUser.password,
-        });
+      const loginResponse = await login();
 
       accessToken = loginResponse.body.data.accessToken;
       refreshToken = loginResponse.headers['set-cookie']?.[0] || '';
@@ -196,29 +185,26 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail without access token', async () => {
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post('/api/v1/auth/logout')
         .expect(401);
+
+      expect(response.body.success).toBe(false);
     });
   });
 
-  describe('GET /api/v1/auth/me', () => {
+  describe('GET /api/v1/users/me', () => {
     let accessToken: string;
 
     beforeEach(async () => {
-      const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: testUser.username,
-          password: testUser.password,
-        });
+      const loginResponse = await login();
 
       accessToken = loginResponse.body.data.accessToken;
     });
 
     it('should return current user info', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v1/auth/me')
+        .get('/api/v1/users/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
@@ -229,59 +215,60 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/auth/me')
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
         .expect(401);
+
+      expect(response.body.success).toBe(false);
     });
 
     it('should fail with invalid token', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/auth/me')
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401);
+
+      expect(response.body.success).toBe(false);
     });
   });
 
   describe('Account Lockout', () => {
-    let lockoutUser: { id: string; username: string };
+    let lockoutUser: TestUser & { password: string };
 
     beforeAll(async () => {
-      const passwordHash = '$argon2id$v=19$m=65536,t=3,p=4$c2VlZHRlc3RzYWx0$S8M7F3rQ3UmC9Y5r6V8x2K4w1L6n3P0q2R4t6U8v0A0';
-      const user = await prisma.systemUser.create({
-        data: {
-          username: `lockout_user_${Date.now()}`,
-          email: `lockout_${Date.now()}@test.com`,
-          passwordHash,
-          isActive: true,
-        },
-      });
-      lockoutUser = { id: user.id, username: user.username };
-    });
-
-    afterAll(async () => {
-      await prisma.systemUser.delete({ where: { id: lockoutUser.id } }).catch(() => {});
+      const user = await createTestUserInTenant(
+        prisma,
+        tenantFixture,
+        `lockout_user_${Date.now()}`,
+        ['ADMIN'],
+      );
+      lockoutUser = {
+        ...user,
+        password: 'TestPassword123!',
+      };
     });
 
     it('should lock account after multiple failed attempts', async () => {
-      // Attempt multiple failed logins
       for (let i = 0; i < 5; i++) {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/login')
-          .send({
-            username: lockoutUser.username,
+        await login(
+          {
+            login: lockoutUser.username,
             password: 'WrongPassword!',
-          });
+          },
+          nextIp(),
+        );
       }
 
-      // Next attempt should be locked
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          username: lockoutUser.username,
-          password: 'WrongPassword!',
-        });
+      const response = await login(
+        {
+          login: lockoutUser.username,
+          password: lockoutUser.password,
+        },
+        nextIp(),
+      ).expect(401);
 
-      expect(response.body.code).toBe('AUTH_ACCOUNT_LOCKED');
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('AUTH_ACCOUNT_LOCKED');
     });
   });
 });

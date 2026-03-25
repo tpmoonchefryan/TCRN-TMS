@@ -161,6 +161,8 @@ export class UserRoleService {
     },
     grantedBy: string
   ): Promise<UserRoleAssignment> {
+    const normalizedScopeId = data.scopeType === 'tenant' ? null : (data.scopeId || null);
+
     // Check if role exists and get role code - support both roleId and roleCode
     let roles: Array<{ id: string; code: string }>;
     
@@ -233,9 +235,14 @@ export class UserRoleService {
     // Check for duplicate assignment
     const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
       SELECT id FROM "${tenantSchema}".user_role
-      WHERE user_id = CAST($1 AS uuid) AND role_id = CAST($2 AS uuid) AND scope_type = $3 
-        AND COALESCE(scope_id, '00000000-0000-0000-0000-000000000000') = COALESCE(CAST($4 AS uuid), '00000000-0000-0000-0000-000000000000')
-    `, userId, roleId, data.scopeType, data.scopeId || null);
+      WHERE user_id = CAST($1 AS uuid)
+        AND role_id = CAST($2 AS uuid)
+        AND scope_type = $3 
+        AND (
+          ($3 = 'tenant')
+          OR COALESCE(scope_id, '00000000-0000-0000-0000-000000000000') = COALESCE(CAST($4 AS uuid), '00000000-0000-0000-0000-000000000000')
+        )
+    `, userId, roleId, data.scopeType, normalizedScopeId);
 
     if (existing.length > 0) {
       throw new BadRequestException({
@@ -250,7 +257,7 @@ export class UserRoleService {
         (id, user_id, role_id, scope_type, scope_id, inherit, granted_at, granted_by, expires_at)
       VALUES 
         (gen_random_uuid(), CAST($1 AS uuid), CAST($2 AS uuid), $3, CAST($4 AS uuid), $5, now(), CAST($6 AS uuid), $7)
-    `, userId, roleId, data.scopeType, data.scopeId || null, data.inherit, grantedBy, data.expiresAt || null);
+    `, userId, roleId, data.scopeType, normalizedScopeId, data.inherit, grantedBy, data.expiresAt || null);
 
     // Refresh permission snapshot
     await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);

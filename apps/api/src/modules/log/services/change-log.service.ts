@@ -112,13 +112,14 @@ export class ChangeLogService {
    */
   private calculateDiff(
     oldValue: Record<string, unknown> | null,
-    newValue: Record<string, unknown>,
+    newValue: Record<string, unknown> | null | undefined,
   ): ChangeLogDiff {
     const diff: ChangeLogDiff = {};
+    const safeNewValue = newValue ?? {};
 
     if (!oldValue) {
       // Create operation - all fields are new
-      for (const [key, value] of Object.entries(newValue)) {
+      for (const [key, value] of Object.entries(safeNewValue)) {
         if (!this.isSystemField(key)) {
           diff[key] = { old: null, new: value };
         }
@@ -129,14 +130,14 @@ export class ChangeLogService {
     // Update operation - only record changed fields
     const allKeys = new Set([
       ...Object.keys(oldValue),
-      ...Object.keys(newValue),
+      ...Object.keys(safeNewValue),
     ]);
 
     for (const key of allKeys) {
       if (this.isSystemField(key)) continue;
 
       const oldVal = oldValue[key];
-      const newVal = newValue[key];
+      const newVal = safeNewValue[key];
 
       if (!this.isEqual(oldVal, newVal)) {
         diff[key] = { old: oldVal, new: newVal };

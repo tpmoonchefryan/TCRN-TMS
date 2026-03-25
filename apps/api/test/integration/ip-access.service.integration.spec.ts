@@ -5,11 +5,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService } from '../../../log';
-import { RedisService } from '../../../redis';
-import { IpRuleScope, IpRuleType } from '../../dto/security.dto';
-import { IpAccessService } from '../ip-access.service';
+import { DatabaseService } from '@/modules/database/database.service';
+import { ChangeLogService } from '@/modules/log/services/change-log.service';
+import { RedisService } from '@/modules/redis/redis.service';
+import { IpRuleScope, IpRuleType } from '@/modules/security/dto/security.dto';
+import { IpAccessService } from '@/modules/security/services/ip-access.service';
 
 describe('IpAccessService', () => {
   let service: IpAccessService;

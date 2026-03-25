@@ -3,11 +3,13 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
-import * as request from 'supertest';
 
+import {
+  IntegrationLogService,
+  TechEventLogService,
+} from '../../src/modules/log';
 import { PiiJwtService } from '../../src/modules/pii/services/pii-jwt.service';
 import { PiiClientService } from '../../src/modules/pii/services/pii-client.service';
 
@@ -40,9 +42,10 @@ describe('PII Architecture Integration Tests', () => {
         providers: [
           PiiJwtService,
           {
-            provide: 'TechEventLogService',
+            provide: TechEventLogService,
             useValue: {
               log: vi.fn().mockResolvedValue(undefined),
+              piiAccess: vi.fn().mockResolvedValue(undefined),
             },
           },
         ],
@@ -53,7 +56,7 @@ describe('PII Architecture Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await module.close();
+      await module?.close();
     });
 
     it('should issue a valid PII access token', async () => {
@@ -146,7 +149,7 @@ describe('PII Architecture Integration Tests', () => {
         providers: [
           PiiClientService,
           {
-            provide: 'IntegrationLogService',
+            provide: IntegrationLogService,
             useValue: {
               logOutbound: vi.fn().mockResolvedValue(undefined),
             },
@@ -158,7 +161,7 @@ describe('PII Architecture Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await module.close();
+      await module?.close();
     });
 
     it('should have retry configuration', () => {
@@ -201,10 +204,9 @@ describe('PII Architecture Integration Tests', () => {
         sub: 'user-123',
         tid: 'tenant-456',
         type: 'pii_access',
-        exp: Math.floor(Date.now() / 1000) - 60, // Expired 1 minute ago
       };
 
-      const expiredToken = jwtService.sign(payload);
+      const expiredToken = jwtService.sign(payload, { expiresIn: -60 });
 
       expect(() => {
         jwtService.verify(expiredToken);

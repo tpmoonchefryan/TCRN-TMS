@@ -14,6 +14,7 @@ import { IsNotEmpty } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
+import { RequirePlatformConfigPermission } from './config-rbac';
 import { GlobalConfigService } from './global-config.service';
 
 // DTOs
@@ -51,9 +52,9 @@ export class GlobalConfigController {
    * Get platform config by key
    */
   @Get(':key')
+  @RequirePlatformConfigPermission('read')
   @ApiOperation({ summary: 'Get platform config by key' })
   async get(
-    @CurrentUser() user: AuthenticatedUser,
     @Param('key') key: string,
   ) {
     // Any authenticated user can read config
@@ -74,6 +75,7 @@ export class GlobalConfigController {
    * Set platform config (AC tenant only)
    */
   @Put(':key')
+  @RequirePlatformConfigPermission('write')
   @ApiOperation({ summary: 'Set platform config (AC tenant only)' })
   async set(
     @CurrentUser() user: AuthenticatedUser,
@@ -93,6 +95,7 @@ export class GlobalConfigController {
    * List all platform configs (AC tenant only)
    */
   @Get()
+  @RequirePlatformConfigPermission('admin')
   @ApiOperation({ summary: 'List all platform configs (AC tenant only)' })
   async list(@CurrentUser() user: AuthenticatedUser) {
     // Only AC tenant can list all configs

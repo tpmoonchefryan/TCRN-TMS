@@ -70,7 +70,6 @@ export class TenantService {
     tier?: 'ac' | 'standard';
     settings?: Record<string, unknown>;
   }): Promise<Tenant> {
-    // Create tenant record in public schema
     const tenant = await prisma.tenant.create({
       data: {
         code: data.code,
@@ -81,16 +80,32 @@ export class TenantService {
       },
     });
 
-    // Create tenant schema
-    const schemaName = await createTenantSchema(tenant.id);
+    const fallbackSchemaName = getTenantSchemaName(tenant.id);
 
-    // Update tenant with schema name
-    const updatedTenant = await prisma.tenant.update({
-      where: { id: tenant.id },
-      data: { schemaName },
-    });
+    try {
+      const schemaName = await createTenantSchema(tenant.id);
 
-    return updatedTenant;
+      return await prisma.tenant.update({
+        where: { id: tenant.id },
+        data: { schemaName },
+      });
+    } catch (error) {
+      try {
+        await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${fallbackSchemaName}" CASCADE`);
+      } catch {
+        // Best-effort rollback; preserve original failure below.
+      }
+
+      try {
+        await prisma.tenant.delete({
+          where: { id: tenant.id },
+        });
+      } catch {
+        // Best-effort rollback; preserve original failure below.
+      }
+
+      throw error;
+    }
   }
 
   /**

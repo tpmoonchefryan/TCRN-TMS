@@ -3,9 +3,10 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
@@ -43,8 +44,7 @@ describeFn('Report Integration Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    await app.init();
+    await bootstrapTestApp(app);
 
     prisma = new PrismaClient();
 
@@ -74,7 +74,8 @@ describeFn('Report Integration Tests', () => {
       if (!dbAvailable || !testTalentId) return;
 
       const response = await request(app.getHttpServer())
-        .get(`/api/v1/report/talent/${testTalentId}/jobs`)
+        .get('/api/v1/reports/mfr/jobs')
+        .query({ talentId: testTalentId })
         .expect(401);
 
       expect(response.body).toHaveProperty('message');
@@ -84,9 +85,10 @@ describeFn('Report Integration Tests', () => {
       if (!dbAvailable) return;
 
       const response = await request(app.getHttpServer())
-        .get('/api/v1/report/talent/invalid-uuid/jobs')
+        .get('/api/v1/reports/mfr/jobs/00000000-0000-0000-0000-000000000000')
+        .query({ talent_id: 'invalid-uuid' })
         .set('Authorization', `Bearer ${authToken || 'test-token'}`)
-        .expect(401); // Will fail auth first
+        .expect(401);
 
       expect(response.body).toBeDefined();
     });
@@ -97,13 +99,12 @@ describeFn('Report Integration Tests', () => {
       if (!dbAvailable || !testTalentId) return;
 
       const response = await request(app.getHttpServer())
-        .post(`/api/v1/report/talent/${testTalentId}/jobs`)
+        .post('/api/v1/reports/mfr/jobs')
         .set('Authorization', `Bearer ${authToken || 'test-token'}`)
         .send({
-          reportType: 'mfr',
+          talentId: testTalentId,
           filters: {},
           format: 'xlsx',
-          estimatedRows: 60000,
         });
 
       // Will fail auth or validation
@@ -116,11 +117,12 @@ describeFn('Report Integration Tests', () => {
       if (!dbAvailable || !testTalentId) return;
 
       const response = await request(app.getHttpServer())
-        .post(`/api/v1/report/talent/${testTalentId}/search`)
+        .post('/api/v1/reports/mfr/search')
         .set('Authorization', `Bearer ${authToken || 'test-token'}`)
         .send({
+          talentId: testTalentId,
           filters: {},
-          limit: 20,
+          previewLimit: 20,
         });
 
       // Will fail auth but validates endpoint exists
@@ -134,7 +136,8 @@ describeFn('Report Integration Tests', () => {
 
       const fakeJobId = '00000000-0000-0000-0000-000000000000';
       const response = await request(app.getHttpServer())
-        .get(`/api/v1/report/talent/${testTalentId}/jobs/${fakeJobId}/download`)
+        .get(`/api/v1/reports/mfr/jobs/${fakeJobId}/download`)
+        .query({ talent_id: testTalentId })
         .set('Authorization', `Bearer ${authToken || 'test-token'}`);
 
       expect([401, 404]).toContain(response.status);

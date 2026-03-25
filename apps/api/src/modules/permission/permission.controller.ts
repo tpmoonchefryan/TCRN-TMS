@@ -1,16 +1,22 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-    Body,
-    Controller,
-    Get,
-    Post,
-    Query,
-    Req,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import {
+  normalizePermissionAction,
+  type PermissionActionInput,
+  RBAC_ACTION_INPUTS,
+  RBAC_CANONICAL_ACTIONS,
+} from '@tcrn/shared';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -25,9 +31,13 @@ class ListPermissionsQueryDto {
   @IsString()
   resourceCode?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by action type', example: 'read', enum: ['create', 'read', 'update', 'delete', 'manage'] })
+  @ApiPropertyOptional({
+    description: 'Filter by stored canonical action type',
+    example: 'read',
+    enum: RBAC_CANONICAL_ACTIONS,
+  })
   @IsOptional()
-  @IsString()
+  @IsIn(RBAC_CANONICAL_ACTIONS)
   action?: PermissionAction;
 
   @ApiPropertyOptional({ description: 'Filter by effect type', example: 'allow', enum: ['allow', 'deny'] })
@@ -47,9 +57,13 @@ class PermissionCheckDto {
   @IsString()
   resource: string;
 
-  @ApiProperty({ description: 'Action to check', example: 'read' })
-  @IsString()
-  action: string;
+  @ApiProperty({
+    description: 'Action to check. Aliases create/update/export are normalized to write/write/execute.',
+    example: 'read',
+    enum: RBAC_ACTION_INPUTS,
+  })
+  @IsIn(RBAC_ACTION_INPUTS)
+  action: PermissionActionInput;
 
   @ApiPropertyOptional({ description: 'Scope type for contextual check', example: 'subsidiary', enum: ['tenant', 'subsidiary', 'talent'] })
   @IsOptional()
@@ -177,17 +191,19 @@ export class PermissionController {
   ) {
     const results = await Promise.all(
       dto.checks.map(async (check) => {
+        const checkedAction = normalizePermissionAction(check.action);
         const allowed = await this.snapshotService.checkPermission(
           user.tenantSchema,
           user.id,
           check.resource,
-          check.action,
+          checkedAction,
           check.scopeType,
           check.scopeId,
         );
         return {
           resource: check.resource,
           action: check.action,
+          checkedAction,
           allowed,
         };
       })

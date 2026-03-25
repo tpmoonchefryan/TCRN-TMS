@@ -6,11 +6,11 @@ import { prisma } from '@tcrn/database';
 import type { RequestContext } from '@tcrn/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../database/database.service';
-import { ChangeLogService } from '../../log/services/change-log.service';
-import { TechEventLogService } from '../../log/services/tech-event-log.service';
-import { ProfileType } from '../dto/customer.dto';
-import { CustomerProfileService } from '../services/customer-profile.service';
+import { DatabaseService } from '@/modules/database/database.service';
+import { ChangeLogService } from '@/modules/log/services/change-log.service';
+import { TechEventLogService } from '@/modules/log/services/tech-event-log.service';
+import { ProfileType } from '@/modules/customer/dto/customer.dto';
+import { CustomerProfileService } from '@/modules/customer/services/customer-profile.service';
 
 const TEST_SCHEMA = 'tenant_test';
 

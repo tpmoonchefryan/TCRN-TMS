@@ -3,6 +3,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
@@ -11,7 +12,38 @@ import { DatabaseService } from '../../database';
 
 @Injectable()
 export class MarshmallowReactionService {
+  private readonly logger = new Logger(MarshmallowReactionService.name);
+
   constructor(private readonly databaseService: DatabaseService) {}
+
+  private async getSearchableTenantSchemas() {
+    const prisma = this.databaseService.getPrisma();
+
+    return prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
+      SELECT t.schema_name as "schemaName"
+      FROM public.tenant t
+      WHERE t.is_active = true
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'marshmallow_message'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'marshmallow_config'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM information_schema.tables it
+          WHERE it.table_schema = t.schema_name
+            AND it.table_name = 'marshmallow_reaction'
+        )
+      ORDER BY t.schema_name
+    `);
+  }
 
   /**
    * Find message and tenant schema by message ID (cross-tenant search)
@@ -30,43 +62,47 @@ export class MarshmallowReactionService {
   } | null> {
     const prisma = this.databaseService.getPrisma();
 
-    // Get all active tenants
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
-      SELECT schema_name as "schemaName" FROM public.tenant WHERE is_active = true
-    `);
+    const tenants = await this.getSearchableTenantSchemas();
 
     for (const t of tenants) {
       const schema = t.schemaName;
+      try {
+        // Search for message in this tenant
+        const messages = await prisma.$queryRawUnsafe<Array<{
+          id: string;
+          status: string;
+          configId: string;
+          reactionsEnabled: boolean;
+          allowedReactions: string[];
+        }>>(`
+          SELECT m.id, m.status, m.config_id as "configId",
+                 c.reactions_enabled as "reactionsEnabled", c.allowed_reactions as "allowedReactions"
+          FROM "${schema}".marshmallow_message m
+          JOIN "${schema}".marshmallow_config c ON m.config_id = c.id
+          WHERE m.id = $1::uuid
+        `, messageId);
 
-      // Search for message in this tenant
-      const messages = await prisma.$queryRawUnsafe<Array<{
-        id: string;
-        status: string;
-        configId: string;
-        reactionsEnabled: boolean;
-        allowedReactions: string[];
-      }>>(`
-        SELECT m.id, m.status, m.config_id as "configId",
-               c.reactions_enabled as "reactionsEnabled", c.allowed_reactions as "allowedReactions"
-        FROM "${schema}".marshmallow_message m
-        JOIN "${schema}".marshmallow_config c ON m.config_id = c.id
-        WHERE m.id = $1::uuid
-      `, messageId);
-
-      if (messages.length > 0) {
-        const msg = messages[0];
-        return {
-          tenantSchema: schema,
-          message: {
-            id: msg.id,
-            status: msg.status,
-            configId: msg.configId,
-          },
-          config: {
-            reactionsEnabled: msg.reactionsEnabled,
-            allowedReactions: msg.allowedReactions,
-          },
-        };
+        if (messages.length > 0) {
+          const msg = messages[0];
+          return {
+            tenantSchema: schema,
+            message: {
+              id: msg.id,
+              status: msg.status,
+              configId: msg.configId,
+            },
+            config: {
+              reactionsEnabled: msg.reactionsEnabled,
+              allowedReactions: msg.allowedReactions,
+            },
+          };
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Skipping marshmallow reaction lookup in schema ${schema}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
     }
 
@@ -212,27 +248,33 @@ export class MarshmallowReactionService {
     }
 
     // Otherwise, search across all tenants (slower but fallback)
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
-      SELECT schema_name as "schemaName" FROM public.tenant WHERE is_active = true
-    `);
+    const tenants = await this.getSearchableTenantSchemas();
 
     const result: Record<string, string[]> = {};
 
     for (const t of tenants) {
-      const reactions = await prisma.$queryRawUnsafe<Array<{
-        messageId: string;
-        reaction: string;
-      }>>(`
-        SELECT message_id as "messageId", reaction
-        FROM "${t.schemaName}".marshmallow_reaction
-        WHERE message_id = ANY($1::uuid[]) AND fingerprint_hash = $2
-      `, messageIds, fingerprint);
+      try {
+        const reactions = await prisma.$queryRawUnsafe<Array<{
+          messageId: string;
+          reaction: string;
+        }>>(`
+          SELECT message_id as "messageId", reaction
+          FROM "${t.schemaName}".marshmallow_reaction
+          WHERE message_id = ANY($1::uuid[]) AND fingerprint_hash = $2
+        `, messageIds, fingerprint);
 
-      for (const r of reactions) {
-        if (!result[r.messageId]) {
-          result[r.messageId] = [];
+        for (const r of reactions) {
+          if (!result[r.messageId]) {
+            result[r.messageId] = [];
+          }
+          result[r.messageId].push(r.reaction);
         }
-        result[r.messageId].push(r.reaction);
+      } catch (error) {
+        this.logger.warn(
+          `Skipping marshmallow reaction scan in schema ${t.schemaName}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
     }
 

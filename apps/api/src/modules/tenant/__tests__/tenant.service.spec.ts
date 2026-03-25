@@ -13,7 +13,9 @@ vi.mock('@tcrn/database', () => ({
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
     },
+    $executeRawUnsafe: vi.fn(),
   },
   getTenantSchemaName: vi.fn(),
   setTenantSchema: vi.fn(),
@@ -30,7 +32,9 @@ const mockPrisma = prisma as unknown as {
     findMany: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
   };
+  $executeRawUnsafe: ReturnType<typeof vi.fn>;
 };
 
 describe('TenantService', () => {
@@ -191,6 +195,31 @@ describe('TenantService', () => {
         data: expect.objectContaining({
           settings: { theme: 'dark' },
         }),
+      });
+    });
+
+    it('should roll back tenant metadata when schema creation fails', async () => {
+      const newTenant = { ...mockTenant, schemaName: '' };
+      const schemaFailure = new Error('schema creation failed');
+
+      mockPrisma.tenant.create.mockResolvedValue(newTenant);
+      (getTenantSchemaName as ReturnType<typeof vi.fn>).mockReturnValue('tenant_abc123');
+      (createTenantSchema as ReturnType<typeof vi.fn>).mockRejectedValue(schemaFailure);
+      mockPrisma.tenant.delete.mockResolvedValue(newTenant);
+      mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+
+      await expect(
+        service.createTenant({
+          code: 'TEST_TENANT',
+          name: 'Test Tenant',
+        }),
+      ).rejects.toThrow(schemaFailure);
+
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        'DROP SCHEMA IF EXISTS "tenant_abc123" CASCADE',
+      );
+      expect(mockPrisma.tenant.delete).toHaveBeenCalledWith({
+        where: { id: 'tenant-123' },
       });
     });
   });

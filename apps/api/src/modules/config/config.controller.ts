@@ -19,10 +19,12 @@ import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min, MinLength
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { paginated, success } from '../../common/response.util';
 import { BlocklistService } from './blocklist.service';
 import { ConfigService } from './config.service';
-import { CONFIG_TABLE_NAMES, ConfigEntityType, OwnerType } from './config.types';
+import { OwnerType } from './config.types';
+import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConsumerKeyService } from './consumer-key.service';
 
 // DTOs
@@ -260,13 +262,6 @@ class TestBlocklistTextDto {
 }
 
 /**
- * Validate entity type
- */
-function isValidEntityType(type: string): type is ConfigEntityType {
-  return type in CONFIG_TABLE_NAMES;
-}
-
-/**
  * Config Controller
  * Generic CRUD operations for configuration entities
  * Route: /api/v1/configuration-entity/:entityType
@@ -284,8 +279,9 @@ export class ConfigController {
   /**
    * GET /api/v1/config/:entityType
    * List config entities
-   */
+  */
   @Get(':entityType')
+  @RequireConfigEntityPermission('read')
   @ApiOperation({ summary: 'List config entities' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -293,17 +289,12 @@ export class ConfigController {
     @Query() query: ListConfigQueryDto,
     @Req() req: Request,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
 
     const { data, total } = await this.configService.list(
-      entityType,
+      validEntityType,
       user.tenantSchema,
       {
         scopeType: query.scopeType,
@@ -331,8 +322,9 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType
    * Create config entity
-   */
+  */
   @Post(':entityType')
+  @RequireConfigEntityPermission('create')
   @ApiOperation({ summary: 'Create config entity' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
@@ -340,23 +332,18 @@ export class ConfigController {
     @Body() dto: CreateConfigDto,
     @Req() req: Request,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
 
     const entity = await this.configService.create(
-      entityType,
+      validEntityType,
       user.tenantSchema,
       dto,
       user.id
     );
 
-    const result = await this.configService.findById(entityType, entity.id, user.tenantSchema, language);
+    const result = await this.configService.findById(validEntityType, entity.id, user.tenantSchema, language);
 
     return success(result);
   }
@@ -364,8 +351,9 @@ export class ConfigController {
   /**
    * GET /api/v1/config/:entityType/:id
    * Get config entity details
-   */
+  */
   @Get(':entityType/:id')
+  @RequireConfigEntityPermission('read')
   @ApiOperation({ summary: 'Get config entity details' })
   async getById(
     @CurrentUser() user: AuthenticatedUser,
@@ -373,16 +361,11 @@ export class ConfigController {
     @Param('id') id: string,
     @Req() req: Request,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
 
-    const entity = await this.configService.findById(entityType, id, user.tenantSchema, language);
+    const entity = await this.configService.findById(validEntityType, id, user.tenantSchema, language);
     if (!entity) {
       throw new NotFoundException({
         code: 'CONFIG_NOT_FOUND',
@@ -396,8 +379,9 @@ export class ConfigController {
   /**
    * PATCH /api/v1/config/:entityType/:id
    * Update config entity
-   */
+  */
   @Patch(':entityType/:id')
+  @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Update config entity' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
@@ -406,24 +390,19 @@ export class ConfigController {
     @Body() dto: UpdateConfigDto,
     @Req() req: Request,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
 
     const entity = await this.configService.update(
-      entityType,
+      validEntityType,
       id,
       user.tenantSchema,
       dto,
       user.id
     );
 
-    const result = await this.configService.findById(entityType, entity.id, user.tenantSchema, language);
+    const result = await this.configService.findById(validEntityType, entity.id, user.tenantSchema, language);
 
     return success(result);
   }
@@ -431,9 +410,10 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/deactivate
    * Deactivate config entity
-   */
+  */
   @Post(':entityType/:id/deactivate')
   @HttpCode(HttpStatus.OK)
+  @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Deactivate config entity' })
   async deactivate(
     @CurrentUser() user: AuthenticatedUser,
@@ -441,15 +421,10 @@ export class ConfigController {
     @Param('id') id: string,
     @Body() body: { version: number },
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const entity = await this.configService.deactivate(
-      entityType,
+      validEntityType,
       id,
       user.tenantSchema,
       body.version,
@@ -466,9 +441,10 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/reactivate
    * Reactivate config entity
-   */
+  */
   @Post(':entityType/:id/reactivate')
   @HttpCode(HttpStatus.OK)
+  @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Reactivate config entity' })
   async reactivate(
     @CurrentUser() user: AuthenticatedUser,
@@ -476,15 +452,10 @@ export class ConfigController {
     @Param('id') id: string,
     @Body() body: { version: number },
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     const entity = await this.configService.reactivate(
-      entityType,
+      validEntityType,
       id,
       user.tenantSchema,
       body.version,
@@ -500,9 +471,10 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/disable
    * Disable inherited config in current scope
-   */
+  */
   @Post(':entityType/:id/disable')
   @HttpCode(HttpStatus.OK)
+  @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Disable inherited config' })
   async disable(
     @CurrentUser() user: AuthenticatedUser,
@@ -510,15 +482,10 @@ export class ConfigController {
     @Param('id') id: string,
     @Body() dto: ScopeDto,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     await this.configService.disableInScope(
-      entityType,
+      validEntityType,
       id,
       user.tenantSchema,
       dto.scopeType,
@@ -534,9 +501,10 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/enable
    * Enable previously disabled inherited config
-   */
+  */
   @Post(':entityType/:id/enable')
   @HttpCode(HttpStatus.OK)
+  @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Enable inherited config' })
   async enable(
     @CurrentUser() user: AuthenticatedUser,
@@ -544,15 +512,10 @@ export class ConfigController {
     @Param('id') id: string,
     @Body() dto: ScopeDto,
   ) {
-    if (!isValidEntityType(entityType)) {
-      throw new NotFoundException({
-        code: 'ENTITY_TYPE_NOT_FOUND',
-        message: `Entity type '${entityType}' not found`,
-      });
-    }
+    const validEntityType = assertValidConfigEntityType(entityType);
 
     await this.configService.enableInScope(
-      entityType,
+      validEntityType,
       id,
       user.tenantSchema,
       dto.scopeType,
@@ -567,8 +530,9 @@ export class ConfigController {
   /**
    * GET /api/v1/configuration-entity/membership-tree
    * Get full membership tree structure (Class -> Type -> Level)
-   */
+  */
   @Get('membership-tree')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership tree' })
   async getMembershipTree(
     @CurrentUser() user: AuthenticatedUser,
@@ -593,8 +557,9 @@ export class ConfigController {
   /**
    * GET /api/v1/configuration-entity/membership-classes/:classId/types
    * Get types under a specific membership class
-   */
+  */
   @Get('membership-classes/:classId/types')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership types by class' })
   async getMembershipTypesByClass(
     @CurrentUser() user: AuthenticatedUser,
@@ -627,8 +592,9 @@ export class ConfigController {
   /**
    * GET /api/v1/configuration-entity/membership-types/:typeId/levels
    * Get levels under a specific membership type
-   */
+  */
   @Get('membership-types/:typeId/levels')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership levels by type' })
   async getMembershipLevelsByType(
     @CurrentUser() user: AuthenticatedUser,
@@ -661,9 +627,10 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:id/generate-key
    * Generate a new API key for a consumer
-   */
+  */
   @Post('consumer/:id/generate-key')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Generate API key for consumer' })
   async generateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
@@ -685,9 +652,10 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:id/rotate-key
    * Rotate (regenerate) API key for a consumer
-   */
+  */
   @Post('consumer/:id/rotate-key')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Rotate API key for consumer' })
   async rotateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
@@ -709,9 +677,10 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:id/revoke-key
    * Revoke API key for a consumer
-   */
+  */
   @Post('consumer/:id/revoke-key')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Revoke API key for consumer' })
   async revokeConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
@@ -731,9 +700,10 @@ export class ConfigController {
   /**
    * POST /api/v1/config/blocklist-entry/test
    * Test text against blocklist
-   */
+  */
   @Post('blocklist-entry/test')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'security.blocklist', action: 'read' })
   @ApiOperation({ summary: 'Test blocklist' })
   async testBlocklist(
     @CurrentUser() user: AuthenticatedUser,
@@ -752,8 +722,9 @@ export class ConfigController {
   /**
    * GET /api/v1/config/blocklist-entry/effective
    * Get effective blocklist entries
-   */
+  */
   @Get('blocklist-entry/effective')
+  @RequirePermissions({ resource: 'security.blocklist', action: 'read' })
   @ApiOperation({ summary: 'Get effective blocklist' })
   async getEffectiveBlocklist(
     @CurrentUser() user: AuthenticatedUser,

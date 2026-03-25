@@ -2,8 +2,13 @@
 
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import {
+  isCanonicalPermissionAction,
+  type PermissionAction as RbacPermissionAction,
+  RBAC_MODULE_LABELS,
+} from '@tcrn/shared';
 
-export type PermissionAction = 'read' | 'write' | 'delete' | 'execute' | 'admin';
+export type PermissionAction = RbacPermissionAction;
 export type PermissionEffect = 'allow' | 'deny';
 
 export interface PermissionData {
@@ -188,8 +193,8 @@ export class PermissionService {
                  : language === 'ja' ? (res.nameJa || res.nameEn) 
                  : res.nameEn;
       
-      const actions = res.actions 
-        ? res.actions.split(',').filter(a => a) as PermissionAction[]
+      const actions = res.actions
+        ? res.actions.split(',').filter(isCanonicalPermissionAction)
         : [];
       
       const moduleResources = moduleMap.get(res.module);
@@ -202,23 +207,16 @@ export class PermissionService {
       }
     }
 
-    // Module name mapping
-    const moduleNames: Record<string, string> = {
-      org: language === 'zh' ? '组织管理' : language === 'ja' ? '組織管理' : 'Organization',
-      customer: language === 'zh' ? '客户管理' : language === 'ja' ? '顧客管理' : 'Customer',
-      membership: language === 'zh' ? '会员管理' : language === 'ja' ? '会員管理' : 'Membership',
-      page: language === 'zh' ? '页面管理' : language === 'ja' ? 'ページ管理' : 'Pages',
-      report: language === 'zh' ? '报表管理' : language === 'ja' ? 'レポート管理' : 'Reports',
-      config: language === 'zh' ? '配置管理' : language === 'ja' ? '設定管理' : 'Configuration',
-      integration: language === 'zh' ? '集成管理' : language === 'ja' ? '統合管理' : 'Integration',
-      system: language === 'zh' ? '系统管理' : language === 'ja' ? 'システム管理' : 'System',
-    };
-
     const result: ResourceDefinition[] = [];
     for (const [module, resourceList] of moduleMap) {
+      const moduleLabels = RBAC_MODULE_LABELS[module as keyof typeof RBAC_MODULE_LABELS];
+      const moduleName = moduleLabels
+        ? (language === 'zh' ? moduleLabels.zh : language === 'ja' ? moduleLabels.ja : moduleLabels.en)
+        : module;
+
       result.push({
         module,
-        moduleName: moduleNames[module] || module,
+        moduleName,
         resources: resourceList,
       });
     }

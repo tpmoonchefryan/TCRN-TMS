@@ -151,7 +151,7 @@ export class MarshmallowExportService {
         talent_id: talentId,
         format: dto.format,
       },
-    });
+    }, context);
 
     return {
       jobId,

@@ -3,9 +3,10 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
@@ -40,8 +41,7 @@ describeFn('Organization Integration Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    await app.init();
+    await bootstrapTestApp(app);
 
     prisma = new PrismaClient();
   });
@@ -61,7 +61,7 @@ describeFn('Organization Integration Tests', () => {
         .get('/api/v1/tenants')
         .expect(401);
 
-      expect(response.body).toHaveProperty('message');
+      expect(response.body.error.message).toBeDefined();
     });
   });
 
@@ -73,7 +73,7 @@ describeFn('Organization Integration Tests', () => {
         .get('/api/v1/subsidiaries')
         .expect(401);
 
-      expect(response.body).toHaveProperty('message');
+      expect(response.body.error.message).toBeDefined();
     });
 
     it('should validate subsidiary code format', async () => {
@@ -101,7 +101,7 @@ describeFn('Organization Integration Tests', () => {
         .get('/api/v1/talents')
         .expect(401);
 
-      expect(response.body).toHaveProperty('message');
+      expect(response.body.error.message).toBeDefined();
     });
 
     it('should validate homepage path format', async () => {
