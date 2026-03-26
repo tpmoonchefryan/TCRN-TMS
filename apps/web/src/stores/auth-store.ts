@@ -179,10 +179,13 @@ export const useAuthStore = create<AuthState>()(
               effectivePermissions: response.data.permissions,
               currentScope: scope || { scopeType: 'GLOBAL' },
             });
+            return;
           }
+
+          set({ effectivePermissions: null, currentScope: null });
         } catch {
-          // Silently fail - permissions will use fallback
-          console.warn('Failed to fetch permissions from backend, using fallback');
+          set({ effectivePermissions: null, currentScope: null });
+          console.warn('Failed to fetch permissions from backend; permission checks will fail closed');
         }
       },
 

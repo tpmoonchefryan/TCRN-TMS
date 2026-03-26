@@ -19,7 +19,7 @@ interface PermissionGuardProps {
  * PermissionGuard Component
  * 
  * Conditionally renders children based on user permissions.
- * Uses the usePermission hook to check against role-based permissions.
+ * Uses backend-derived effective permissions from the usePermission hook.
  * 
  * Usage:
  * <PermissionGuard resource="customer.profile" action={ActionType.WRITE}>
