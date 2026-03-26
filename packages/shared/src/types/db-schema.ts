@@ -11,7 +11,6 @@ import {
     ConsumerCategory,
     CustomerAccessAction,
     DirectionType,
-    EffectType,
     ExternalPatternType,
     IdentityChangeType,
     IpRuleScope,
@@ -28,7 +27,8 @@ import {
     ScopeType,
     SeverityLevel,
     TenantTier,
-    VersionStatus
+    VersionStatus,
+    type PolicyEffect
 } from './enums';
 
 // Base Interfaces
@@ -144,7 +144,7 @@ export interface Resource extends SoftDeletableEntity, LocalizableEntity {
 export interface Policy extends SoftDeletableEntity {
   resource_id: string;
   action: ActionType;
-  effect: EffectType;
+  effect: PolicyEffect;
   conditions?: Record<string, unknown>;
   description?: string;
 }

@@ -5,11 +5,12 @@ import { prisma } from '@tcrn/database';
 import {
   isCanonicalPermissionAction,
   type PermissionAction as RbacPermissionAction,
+  type PolicyEffect,
   RBAC_MODULE_LABELS,
 } from '@tcrn/shared';
 
 export type PermissionAction = RbacPermissionAction;
-export type PermissionEffect = 'allow' | 'deny';
+export type PermissionEffect = PolicyEffect;
 
 export interface PermissionData {
   id: string;

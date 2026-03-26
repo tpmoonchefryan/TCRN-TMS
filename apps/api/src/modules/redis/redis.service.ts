@@ -2,6 +2,7 @@
 
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { RbacRolePolicyEffect } from '@tcrn/shared';
 import Redis from 'ioredis';
 
 /**
@@ -85,7 +86,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     userId: string,
     scopeType: string,
     scopeId: string,
-    permissions: Record<string, 'allow' | 'deny'>
+    permissions: Record<string, RbacRolePolicyEffect>
   ): Promise<void> {
     const key = this.getPermissionKey(tenantSchema, userId, scopeType, scopeId);
     
@@ -108,7 +109,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     userId: string,
     scopeType: string,
     scopeId: string
-  ): Promise<Record<string, 'allow' | 'deny'> | null> {
+  ): Promise<Record<string, RbacRolePolicyEffect> | null> {
     const key = this.getPermissionKey(tenantSchema, userId, scopeType, scopeId);
     const result = await this.client.hgetall(key);
     
@@ -116,7 +117,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
     
-    return result as Record<string, 'allow' | 'deny'>;
+    return result as Record<string, RbacRolePolicyEffect>;
   }
 
   /**
@@ -128,10 +129,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     scopeType: string,
     scopeId: string,
     resourceAction: string
-  ): Promise<'allow' | 'deny' | null> {
+  ): Promise<RbacRolePolicyEffect | null> {
     const key = this.getPermissionKey(tenantSchema, userId, scopeType, scopeId);
     const result = await this.client.hget(key, resourceAction);
-    return result as 'allow' | 'deny' | null;
+    return result as RbacRolePolicyEffect | null;
   }
 
   /**

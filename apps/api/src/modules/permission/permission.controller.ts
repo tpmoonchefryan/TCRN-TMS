@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags 
 import {
   normalizePermissionAction,
   type PermissionActionInput,
+  POLICY_EFFECTS,
   RBAC_ACTION_INPUTS,
   RBAC_CANONICAL_ACTIONS,
 } from '@tcrn/shared';
@@ -40,9 +41,13 @@ class ListPermissionsQueryDto {
   @IsIn(RBAC_CANONICAL_ACTIONS)
   action?: PermissionAction;
 
-  @ApiPropertyOptional({ description: 'Filter by effect type', example: 'allow', enum: ['allow', 'deny'] })
+  @ApiPropertyOptional({
+    description: 'Filter by stored policy effect metadata (`allow` or `deny`). Runtime permission snapshots use `grant`/`deny` separately.',
+    example: 'allow',
+    enum: POLICY_EFFECTS,
+  })
   @IsOptional()
-  @IsString()
+  @IsIn(POLICY_EFFECTS)
   effect?: PermissionEffect;
 
   @ApiPropertyOptional({ description: 'Filter by active status', example: true })

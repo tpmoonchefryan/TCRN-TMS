@@ -46,7 +46,12 @@ export const RBAC_MODULE_LABELS = {
 } as const;
 
 export type RbacModuleCode = keyof typeof RBAC_MODULE_LABELS;
-export type RbacRolePolicyEffect = 'grant' | 'deny';
+export const RBAC_ROLE_POLICY_EFFECTS = [
+  'grant',
+  'deny',
+] as const;
+
+export type RbacRolePolicyEffect = (typeof RBAC_ROLE_POLICY_EFFECTS)[number];
 
 interface LocalizedLabel {
   nameEn: string;

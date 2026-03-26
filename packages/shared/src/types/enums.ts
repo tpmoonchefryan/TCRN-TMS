@@ -57,6 +57,17 @@ export enum ActionType {
 }
 
 /**
+ * Stored policy effect values.
+ * Distinct from runtime role-policy / permission-snapshot effects (`grant` | `deny`).
+ */
+export const POLICY_EFFECTS = [
+  'allow',
+  'deny',
+] as const;
+
+export type PolicyEffect = (typeof POLICY_EFFECTS)[number];
+
+/**
  * Effect Type Enum (Permission)
  */
 export enum EffectType {
