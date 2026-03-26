@@ -3,6 +3,7 @@
 
 'use client';
 
+import type { RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
 import { Edit, Key, Loader2, MoreHorizontal, Plus, Search, Shield, ShieldAlert, ShieldCheck, Trash2, UserCog, Users } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -70,7 +71,7 @@ interface SystemRole {
   isActive: boolean;
   permissionCount?: number;
   userCount?: number;
-  permissions?: Array<{ resource: string; action: string }>;
+  permissions?: RolePermissionInput[];
 }
 
 // Available permissions (will be loaded from API)
@@ -134,7 +135,7 @@ export default function UserManagementPage() {
   const [editingRole, setEditingRole] = useState<SystemRole | null>(null);
   const [isCreatingRole, setIsCreatingRole] = useState(false);
   // Three-state permission effects: grant | deny | unset (unset = not in map)
-  const [permissionEffects, setPermissionEffects] = useState<Record<string, 'grant' | 'deny'>>({});
+  const [permissionEffects, setPermissionEffects] = useState<Record<string, RbacRolePolicyEffect>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch users from API
@@ -307,11 +308,10 @@ export default function UserManagementPage() {
         setIsCreatingRole(false);
         setEditingRole({ ...fullRole });
         // Extract current permissions with their effects
-        const effects: Record<string, 'grant' | 'deny'> = {};
+        const effects: Record<string, RbacRolePolicyEffect> = {};
         for (const p of fullRole.permissions || []) {
           const key = `${p.resource}:${p.action}`;
-          // Default to 'grant' if effect not specified (backward compatibility)
-          effects[key] = (p as any).effect === 'deny' ? 'deny' : 'grant';
+          effects[key] = p.effect === 'deny' ? 'deny' : 'grant';
         }
         setPermissionEffects(effects);
         setShowRoleDialog(true);
@@ -410,7 +410,7 @@ export default function UserManagementPage() {
   };
 
   // Get permission effect for display
-  const getPermissionEffect = (permCode: string): 'grant' | 'deny' | 'unset' => {
+  const getPermissionEffect = (permCode: string): RbacRolePolicyEffect | 'unset' => {
     return permissionEffects[permCode] || 'unset';
   };
 

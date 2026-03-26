@@ -3,8 +3,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiTags } from '@nestjs/swagger';
 
 import { success } from '../../common/response.util';
-import { CreateSystemRoleDto } from './dto/create-system-role.dto';
-import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
+import { CreateSystemRoleZodDto, UpdateSystemRoleZodDto } from './dto/system-role-zod.dto';
 import { SystemRoleService } from './system-role.service';
 
 @ApiTags('System - System Roles')
@@ -13,7 +12,7 @@ export class SystemRoleController {
   constructor(private readonly systemRoleService: SystemRoleService) {}
 
   @Post()
-  async create(@Body() createSystemRoleDto: CreateSystemRoleDto) {
+  async create(@Body() createSystemRoleDto: CreateSystemRoleZodDto) {
     const role = await this.systemRoleService.create(createSystemRoleDto);
     return success(role);
   }
@@ -40,7 +39,7 @@ export class SystemRoleController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateSystemRoleDto: UpdateSystemRoleDto) {
+  async update(@Param('id') id: string, @Body() updateSystemRoleDto: UpdateSystemRoleZodDto) {
     const role = await this.systemRoleService.update(id, updateSystemRoleDto);
     return success(role);
   }

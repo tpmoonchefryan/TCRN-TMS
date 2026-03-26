@@ -2,7 +2,7 @@
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, type RbacRolePolicyEffect } from '@tcrn/shared';
 
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
@@ -24,7 +24,7 @@ export interface RolePermission {
   id: string;
   resourceCode: string;
   action: string;
-  effect: 'grant' | 'deny';
+  effect: RbacRolePolicyEffect;
   name: string;
 }
 
@@ -153,7 +153,7 @@ export class RoleService {
         p.id,
         r.code as "resourceCode",
         p.action,
-        p.effect,
+        rp.effect as effect,
         COALESCE(r.${nameField}, r.name_en) as name
       FROM "${tenantSchema}".role_policy rp
       JOIN "${tenantSchema}".policy p ON rp.policy_id = p.id

@@ -1,15 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { CreateSystemRoleInput, RbacRolePolicyEffect, RolePermissionInput, UpdateSystemRoleInput } from '@tcrn/shared';
 
 import { DatabaseService } from '../database/database.service';
-import { CreateSystemRoleDto } from './dto/create-system-role.dto';
-import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
 
 @Injectable()
 export class SystemRoleService {
   constructor(private db: DatabaseService) {}
 
-  async create(createDto: CreateSystemRoleDto) {
+  async create(createDto: CreateSystemRoleInput) {
     const { permissions, ...roleData } = createDto;
 
     const existing = await this.db.getPrisma().role.findUnique({
@@ -108,6 +107,7 @@ export class SystemRoleService {
     const permissions = role.rolePolicies.map((rp) => ({
       resource: rp.policy.resource.code,
       action: rp.policy.action,
+      effect: rp.effect,
     }));
 
     return {
@@ -118,7 +118,7 @@ export class SystemRoleService {
     };
   }
 
-  async update(id: string, updateDto: UpdateSystemRoleDto) {
+  async update(id: string, updateDto: UpdateSystemRoleInput) {
     const { permissions, ...roleData } = updateDto;
 
     return this.db.getPrisma().$transaction(async (tx) => {
@@ -173,7 +173,7 @@ export class SystemRoleService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any, 
     roleId: string, 
-    permissions: { resource: string; action: string; effect?: 'grant' | 'deny' }[]
+    permissions: RolePermissionInput[]
   ) {
     // Find all matching policies (policy table no longer has effect field)
     const policies = await tx.policy.findMany({
@@ -198,7 +198,7 @@ export class SystemRoleService {
     }
 
     // Create RolePolicy entries with effect
-    const rolePolicyData: Array<{ roleId: string; policyId: string; effect: string }> = [];
+    const rolePolicyData: Array<{ roleId: string; policyId: string; effect: RbacRolePolicyEffect }> = [];
     for (const perm of permissions) {
       const key = `${perm.resource}:${perm.action}`;
       const policyId = policyMap.get(key);
@@ -206,7 +206,7 @@ export class SystemRoleService {
         rolePolicyData.push({
           roleId,
           policyId,
-          effect: perm.effect || 'grant', // Default to 'grant' if not specified
+          effect: perm.effect ?? 'grant',
         });
       }
     }

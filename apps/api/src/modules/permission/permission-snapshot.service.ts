@@ -2,6 +2,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import type { RbacRolePolicyEffect } from '@tcrn/shared';
 
 import { RedisService } from '../redis/redis.service';
 
@@ -17,7 +18,7 @@ interface RoleAssignment {
 interface Permission {
   resourceCode: string;
   action: string;
-  effect: 'grant' | 'deny';
+  effect: RbacRolePolicyEffect;
 }
 
 /**
@@ -130,11 +131,11 @@ export class PermissionSnapshotService {
     userId: string,
     scopeType?: ScopeType,
     scopeId?: string | null
-  ): Promise<Record<string, 'grant' | 'deny'>> {
+  ): Promise<Record<string, RbacRolePolicyEffect>> {
     const key = this.getSnapshotKey(tenantSchema, userId, scopeType, scopeId);
     const data = await this.redisService.hgetall(key);
     
-    const result: Record<string, 'grant' | 'deny'> = {};
+    const result: Record<string, RbacRolePolicyEffect> = {};
     for (const [k, v] of Object.entries(data)) {
       if (v === 'grant' || v === 'deny') {
         result[k] = v;
@@ -313,7 +314,7 @@ export class PermissionSnapshotService {
     scopeChain: Array<{ type: ScopeType; id: string | null }>,
     targetScopeType: ScopeType,
     targetScopeId: string | null
-  ): Promise<Record<string, 'grant' | 'deny'>> {
+  ): Promise<Record<string, RbacRolePolicyEffect>> {
     // Map scope to its index in chain (higher = closer to target)
     const scopeIndex = new Map<string, number>();
     scopeChain.forEach((scope, idx) => {
@@ -322,7 +323,7 @@ export class PermissionSnapshotService {
     
     // Collect all permissions from all applicable roles
     const permissionsByKey = new Map<string, Array<{
-      effect: 'grant' | 'deny';
+      effect: RbacRolePolicyEffect;
       scopeIndex: number;
       isDirect: boolean;
     }>>();
@@ -383,7 +384,7 @@ export class PermissionSnapshotService {
     // If ANY entry has Deny, result is Deny
     // Otherwise, if ANY entry has Grant, result is Grant
     // If no entries (all Unset), permission is not included in result
-    const result: Record<string, 'grant' | 'deny'> = {};
+    const result: Record<string, RbacRolePolicyEffect> = {};
     
     for (const [key, entries] of permissionsByKey) {
       // Check if any entry has deny (deny takes precedence regardless of scope)

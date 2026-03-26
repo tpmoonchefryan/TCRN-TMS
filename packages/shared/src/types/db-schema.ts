@@ -30,6 +30,7 @@ import {
     VersionStatus,
     type PolicyEffect
 } from './enums';
+import type { RbacRolePolicyEffect } from '../rbac/catalog';
 
 // Base Interfaces
 export interface BaseEntity {
@@ -152,6 +153,7 @@ export interface Policy extends SoftDeletableEntity {
 export interface RolePolicy extends BaseEntity {
   role_id: string;
   policy_id: string;
+  effect: RbacRolePolicyEffect;
 }
 
 export interface UserRole extends BaseEntity {

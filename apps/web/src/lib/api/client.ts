@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
+
 import { useAuthStore } from '@/stores/auth-store';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -33,6 +35,8 @@ export interface ApiError {
   message: string;
   statusCode: number;
 }
+
+export type EffectivePermissionMap = Record<string, RbacRolePolicyEffect>;
 
 class ApiClient {
   private baseUrl: string;
@@ -1701,7 +1705,7 @@ export const permissionApi = {
     apiClient.get<{
       userId: string;
       scope: { type: string; id: string | null; name: string | null };
-      permissions: Record<string, 'grant' | 'deny'>;
+      permissions: EffectivePermissionMap;
       roles: Array<{
         code: string;
         name: string;
@@ -1768,7 +1772,7 @@ export const systemRoleApi = {
     nameJa?: string; 
     description?: string; 
     isActive?: boolean;
-    permissions?: Array<{ resource: string; action: string }>;
+    permissions?: RolePermissionInput[];
   }) =>
     apiClient.post<any>('/api/v1/system-roles', data),
 
@@ -1778,7 +1782,7 @@ export const systemRoleApi = {
     nameJa?: string; 
     description?: string; 
     isActive?: boolean;
-    permissions?: Array<{ resource: string; action: string }>;
+    permissions?: RolePermissionInput[];
   }) =>
     apiClient.patch<any>(`/api/v1/system-roles/${id}`, data),
 

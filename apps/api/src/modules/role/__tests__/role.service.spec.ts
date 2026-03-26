@@ -164,6 +164,10 @@ describe('RoleService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].resourceCode).toBe('CUSTOMER');
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('rp.effect as effect'),
+        'role-123',
+      );
     });
 
     it('should support different languages', async () => {
