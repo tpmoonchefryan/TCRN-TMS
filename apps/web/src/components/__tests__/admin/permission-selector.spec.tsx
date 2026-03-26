@@ -105,4 +105,27 @@ describe('PermissionSelector', () => {
     await user.click(screen.getByTestId('perm-customer.export-read-unset'));
     expect(handleChange).toHaveBeenLastCalledWith([]);
   });
+
+  it('fails closed when resource loading fails', async () => {
+    mockGetResources.mockRejectedValueOnce(new Error('network failed'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    render(
+      <PermissionSelector
+        value={[]}
+        onChange={vi.fn()}
+        labels={labels}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockGetResources).toHaveBeenCalled();
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(screen.queryByText('Customer Export')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('perm-customer.export-read-grant')).not.toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
 });

@@ -12,7 +12,7 @@ function createTestResources(): ResourceDefinition[] {
   return [
     {
       module: 'customer',
-      module_name: 'Customer Management',
+      moduleName: 'Customer Management',
       resources: [
         {
           code: 'customer.profile',
@@ -28,7 +28,7 @@ function createTestResources(): ResourceDefinition[] {
     },
     {
       module: 'report',
-      module_name: 'Report Module',
+      moduleName: 'Report Module',
       resources: [
         {
           code: 'report.mfr',
@@ -43,16 +43,16 @@ function createTestResources(): ResourceDefinition[] {
 function createTestPermissions(): Permission[] {
   return [
     // Customer Profile permissions
-    { id: 'perm-1', resource_code: 'customer.profile', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-2', resource_code: 'customer.profile', action: ActionType.WRITE, effect: EffectType.ALLOW },
-    { id: 'perm-3', resource_code: 'customer.profile', action: ActionType.DELETE, effect: EffectType.ALLOW },
+    { id: 'perm-1', resourceCode: 'customer.profile', action: ActionType.READ, effect: EffectType.ALLOW },
+    { id: 'perm-2', resourceCode: 'customer.profile', action: ActionType.WRITE, effect: EffectType.ALLOW },
+    { id: 'perm-3', resourceCode: 'customer.profile', action: ActionType.DELETE, effect: EffectType.ALLOW },
     // Customer PII permissions
-    { id: 'perm-4', resource_code: 'customer.pii', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-5', resource_code: 'customer.pii', action: ActionType.ADMIN, effect: EffectType.ALLOW },
+    { id: 'perm-4', resourceCode: 'customer.pii', action: ActionType.READ, effect: EffectType.ALLOW },
+    { id: 'perm-5', resourceCode: 'customer.pii', action: ActionType.ADMIN, effect: EffectType.ALLOW },
     // Report MFR permissions
-    { id: 'perm-6', resource_code: 'report.mfr', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-7', resource_code: 'report.mfr', action: ActionType.WRITE, effect: EffectType.ALLOW },
-    { id: 'perm-8', resource_code: 'report.mfr', action: ActionType.EXECUTE, effect: EffectType.ALLOW },
+    { id: 'perm-6', resourceCode: 'report.mfr', action: ActionType.READ, effect: EffectType.ALLOW },
+    { id: 'perm-7', resourceCode: 'report.mfr', action: ActionType.WRITE, effect: EffectType.ALLOW },
+    { id: 'perm-8', resourceCode: 'report.mfr', action: ActionType.EXECUTE, effect: EffectType.ALLOW },
   ];
 }
 
@@ -364,7 +364,7 @@ describe('PermissionMatrix Component', () => {
       const resourcesWithNoMatch: ResourceDefinition[] = [
         {
           module: 'unknown',
-          module_name: 'Unknown Module',
+          moduleName: 'Unknown Module',
           resources: [
             {
               code: 'unknown.resource',

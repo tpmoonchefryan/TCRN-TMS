@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
+import type { Permission, RbacRolePolicyEffect, ResourceDefinition, RolePermissionInput } from '@tcrn/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -1692,10 +1692,10 @@ export const systemUserApi = {
 // Permission API
 export const permissionApi = {
   list: (params?: { resourceCode?: string; action?: string; isActive?: boolean }) =>
-    apiClient.get<any[]>('/api/v1/permissions', params),
+    apiClient.get<Permission[]>('/api/v1/permissions', params),
 
   getResources: () =>
-    apiClient.get<any[]>('/api/v1/permissions/resources'),
+    apiClient.get<ResourceDefinition[]>('/api/v1/permissions/resources'),
   
   check: (checks: Array<{ resource: string; action: string; scopeType?: string; scopeId?: string }>) =>
     apiClient.post<{ results: Array<{ resource: string; action: string; allowed: boolean }> }>('/api/v1/permissions/check', { checks }),

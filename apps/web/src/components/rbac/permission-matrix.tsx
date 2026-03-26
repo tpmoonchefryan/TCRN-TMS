@@ -1,6 +1,6 @@
 'use client';
 
-import { ActionType, Permission, ResourceDefinition } from '@tcrn/shared';
+import { ActionType, type Permission, type ResourceDefinition } from '@tcrn/shared';
 
 import { Card, CardContent, CardHeader, CardTitle, Checkbox } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ export function PermissionMatrix({
     onChange(newSelected);
   };
 
-  const toggleRow = (resourceCode: string, resourcePerms: Permission[]) => {
+  const toggleRow = (resourcePerms: Permission[]) => {
     if (readOnly) return;
 
     const resourcePermIds = resourcePerms.map(p => p.id);
@@ -55,16 +55,15 @@ export function PermissionMatrix({
         <Card key={module.module}>
           <CardHeader className="py-3 bg-muted/30">
             <CardTitle className="text-base font-semibold text-primary">
-              {module.module_name || module.module}
+              {module.moduleName || module.module}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
               {module.resources.map((res) => {
                 // Find matching permissions for this resource row
-                // We match by resource_code and actions defined in the definition
-                // The actual Permission objects have 'id' which we need for selection
-                const relevantPermissions = permissions.filter(p => p.resource_code === res.code);
+                // We match by resourceCode and actions defined in the definition
+                const relevantPermissions = permissions.filter((permission) => permission.resourceCode === res.code);
                 
                 return (
                   <div key={res.code} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
@@ -79,7 +78,7 @@ export function PermissionMatrix({
                         <Checkbox 
                           id={`all-${res.code}`}
                           checked={relevantPermissions.every(p => selectedPermissionIds.includes(p.id))}
-                          onCheckedChange={() => toggleRow(res.code, relevantPermissions)}
+                          onCheckedChange={() => toggleRow(relevantPermissions)}
                           disabled={readOnly}
                         />
                         <label

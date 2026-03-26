@@ -1,15 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import type { RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
+import type { RolePermissionInput } from '@tcrn/shared';
 import { Edit, Key, Loader2, MoreHorizontal, Plus, Search, Shield, ShieldAlert, ShieldCheck, Trash2, UserCog, Users } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { PermissionSelector } from '@/components/admin/permission-selector';
 import { DelegatedAdminPanel } from '@/components/rbac/delegated-admin-panel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { permissionApi, systemRoleApi, systemUserApi } from '@/lib/api/client';
+import { systemRoleApi, systemUserApi } from '@/lib/api/client';
 
 
 // User interface from API
@@ -72,13 +73,6 @@ interface SystemRole {
   permissionCount?: number;
   userCount?: number;
   permissions?: RolePermissionInput[];
-}
-
-// Available permissions (will be loaded from API)
-interface Permission {
-  code: string;
-  name: string;
-  category: string;
 }
 
 export default function UserManagementPage() {
@@ -121,7 +115,6 @@ export default function UserManagementPage() {
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [roles, setRoles] = useState<SystemRole[]>([]);
-  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
 
@@ -134,8 +127,7 @@ export default function UserManagementPage() {
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [editingRole, setEditingRole] = useState<SystemRole | null>(null);
   const [isCreatingRole, setIsCreatingRole] = useState(false);
-  // Three-state permission effects: grant | deny | unset (unset = not in map)
-  const [permissionEffects, setPermissionEffects] = useState<Record<string, RbacRolePolicyEffect>>({});
+  const [rolePermissions, setRolePermissions] = useState<RolePermissionInput[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch users from API
@@ -172,53 +164,10 @@ export default function UserManagementPage() {
     }
   }, []);
 
-  // Fetch available permissions
-  const fetchPermissions = useCallback(async () => {
-    try {
-      const response = await permissionApi.getResources();
-      if (response.success && response.data) {
-        // Transform resources to permission format
-        // Backend returns: [{ module, moduleName, resources: [{ code, name, actions }] }]
-        const perms: Permission[] = [];
-        (response.data as any[]).forEach((moduleData: any) => {
-          if (moduleData.resources) {
-            moduleData.resources.forEach((resource: any) => {
-              if (resource.actions) {
-                resource.actions.forEach((action: string) => {
-                  perms.push({
-                    code: `${resource.code}:${action}`,
-                    name: `${action.charAt(0).toUpperCase() + action.slice(1)} ${resource.name || resource.code}`,
-                    category: moduleData.moduleName || moduleData.module || 'General',
-                  });
-                });
-              }
-            });
-          }
-        });
-        setAvailablePermissions(perms);
-      }
-    } catch (error) {
-      // Use fallback permissions if API fails
-      setAvailablePermissions([
-        { code: 'customer.profile:read', name: 'View Customers', category: 'Customer' },
-        { code: 'customer.profile:write', name: 'Edit Customers', category: 'Customer' },
-        { code: 'customer.profile:delete', name: 'Delete Customers', category: 'Customer' },
-        { code: 'org.talent:read', name: 'View Talents', category: 'Organization' },
-        { code: 'org.talent:write', name: 'Edit Talents', category: 'Organization' },
-        { code: 'report.dashboard:read', name: 'View Reports', category: 'Reports' },
-        { code: 'config.settings:read', name: 'View Settings', category: 'Configuration' },
-        { code: 'config.settings:write', name: 'Edit Settings', category: 'Configuration' },
-        { code: 'system.user:read', name: 'View Users', category: 'System' },
-        { code: 'system.user:write', name: 'Edit Users', category: 'System' },
-      ]);
-    }
-  }, []);
-
   // Load data on mount
   useEffect(() => {
     fetchUsers();
     fetchRoles();
-    fetchPermissions();
   }, []);
 
   // Refetch users when search changes (debounced)
@@ -295,7 +244,7 @@ export default function UserManagementPage() {
       isActive: true,
       permissions: [],
     });
-    setPermissionEffects({});
+    setRolePermissions([]);
     setShowRoleDialog(true);
   };
 
@@ -307,13 +256,7 @@ export default function UserManagementPage() {
         const fullRole = response.data as SystemRole;
         setIsCreatingRole(false);
         setEditingRole({ ...fullRole });
-        // Extract current permissions with their effects
-        const effects: Record<string, RbacRolePolicyEffect> = {};
-        for (const p of fullRole.permissions || []) {
-          const key = `${p.resource}:${p.action}`;
-          effects[key] = p.effect === 'deny' ? 'deny' : 'grant';
-        }
-        setPermissionEffects(effects);
+        setRolePermissions(fullRole.permissions || []);
         setShowRoleDialog(true);
       } else {
         toast.error(te('generic'));
@@ -334,14 +277,6 @@ export default function UserManagementPage() {
     
     setIsSaving(true);
     try {
-      // Convert permission effects to array format with effect field
-      const permissions = Object.entries(permissionEffects).map(([code, effect]) => {
-        const parts = code.split(':');
-        const action = parts.pop() || '';
-        const resource = parts.join(':');
-        return { resource, action, effect };
-      });
-      
       if (isCreatingRole) {
         // Create new role
         await systemRoleApi.create({
@@ -350,7 +285,7 @@ export default function UserManagementPage() {
           nameZh: editingRole.nameZh,
           nameJa: editingRole.nameJa,
           description: editingRole.description,
-          permissions,
+          permissions: rolePermissions,
         });
         toast.success(t('roleCreated'));
       } else {
@@ -360,7 +295,7 @@ export default function UserManagementPage() {
           nameZh: editingRole.nameZh,
           nameJa: editingRole.nameJa,
           description: editingRole.description,
-          permissions,
+          permissions: rolePermissions,
         });
         toast.success(t('roleUpdated'));
       }
@@ -368,50 +303,13 @@ export default function UserManagementPage() {
       setShowRoleDialog(false);
       setEditingRole(null);
       setIsCreatingRole(false);
+      setRolePermissions([]);
       fetchRoles(); // Refresh roles list
     } catch (error: any) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
-  };
-
-  // Permission dependency definitions
-  // write/delete require read; admin is independent
-  const PERMISSION_DEPS: Record<string, string[]> = {
-    write: ['read'],   // write requires read
-    delete: ['read'],  // delete requires read
-  };
-
-  // Reverse dependencies (for unchecking)
-  const PERMISSION_DEPENDENTS: Record<string, string[]> = {
-    read: ['write', 'delete'],  // unchecking read also unchecks write and delete
-  };
-
-  // Handle three-state permission toggle: unset -> grant -> deny -> unset
-  const handleTogglePermission = (permCode: string) => {
-    setPermissionEffects(prev => {
-      const currentEffect = prev[permCode];
-      const newEffects = { ...prev };
-      
-      if (currentEffect === undefined) {
-        // unset -> grant
-        newEffects[permCode] = 'grant';
-      } else if (currentEffect === 'grant') {
-        // grant -> deny
-        newEffects[permCode] = 'deny';
-      } else {
-        // deny -> unset (remove from map)
-        delete newEffects[permCode];
-      }
-      
-      return newEffects;
-    });
-  };
-
-  // Get permission effect for display
-  const getPermissionEffect = (permCode: string): RbacRolePolicyEffect | 'unset' => {
-    return permissionEffects[permCode] || 'unset';
   };
 
   // User action handlers
@@ -459,9 +357,6 @@ export default function UserManagementPage() {
       role.nameEn.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
       (role.nameZh || '').includes(roleSearchQuery)
   );
-
-  // Get unique permission categories
-  const permissionCategories = [...new Set(availablePermissions.map(p => p.category))];
 
   const handleUserClick = (userId: string) => {
     router.push(`/tenant/${tenantId}/user-management/${userId}`);
@@ -831,63 +726,16 @@ export default function UserManagementPage() {
                 <Label>{tr('permissions')}</Label>
                 <p className="text-sm text-muted-foreground">{tr('selectPermissionsThreeState')}</p>
                 <div className="border rounded-lg p-4 max-h-80 overflow-y-auto">
-                  {permissionCategories.map(category => (
-                    <div key={category} className="mb-4 last:mb-0">
-                      <h4 className="font-medium text-sm mb-2 capitalize">{category}</h4>
-                      <div className="space-y-2">
-                        {availablePermissions.filter(p => p.category === category).map(perm => {
-                          const effect = getPermissionEffect(perm.code);
-                          return (
-                            <div key={perm.code} className="flex items-center justify-between gap-2">
-                              <span className="text-sm flex-1">{perm.name}</span>
-                              <div className="flex gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => !editingRole.isSystem && setPermissionEffects(prev => ({ ...prev, [perm.code]: 'grant' }))}
-                                  disabled={editingRole.isSystem}
-                                  className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                                    effect === 'grant' 
-                                      ? 'bg-green-500 text-white' 
-                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                                  } ${editingRole.isSystem ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                  {tr('grant')}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => !editingRole.isSystem && setPermissionEffects(prev => ({ ...prev, [perm.code]: 'deny' }))}
-                                  disabled={editingRole.isSystem}
-                                  className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                                    effect === 'deny' 
-                                      ? 'bg-red-500 text-white' 
-                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                                  } ${editingRole.isSystem ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                  {tr('deny')}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => !editingRole.isSystem && setPermissionEffects(prev => {
-                                    const newEffects = { ...prev };
-                                    delete newEffects[perm.code];
-                                    return newEffects;
-                                  })}
-                                  disabled={editingRole.isSystem}
-                                  className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                                    effect === 'unset' 
-                                      ? 'bg-gray-400 text-white' 
-                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                                  } ${editingRole.isSystem ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                  {tr('unset')}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                  <PermissionSelector
+                    value={rolePermissions}
+                    onChange={setRolePermissions}
+                    labels={{
+                      grant: tr('grant'),
+                      deny: tr('deny'),
+                      unset: tr('unset'),
+                    }}
+                    disabled={editingRole.isSystem || isSaving}
+                  />
                 </div>
               </div>
             </div>

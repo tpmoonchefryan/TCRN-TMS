@@ -1,45 +1,92 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Role } from './db-schema';
-import { ActionType, type PolicyEffect } from './enums';
+import type { PermissionAction, RbacRolePolicyEffect } from '../rbac/catalog';
+import type { PolicyEffect } from './enums';
 
 export interface Permission {
   id: string;
-  resource_code: string;
-  action: ActionType;
+  resourceCode: string;
+  action: PermissionAction;
   effect: PolicyEffect;
   name?: string;
-  description?: string;
-  is_system?: boolean;
+  description?: string | null;
+  isSystem?: boolean;
+  isActive?: boolean;
+}
+
+export interface LocalizedPermissionData extends Omit<Permission, 'name'> {
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResourceActionDefinition {
+  code: string;
+  name: string;
+  actions: PermissionAction[];
 }
 
 export interface ResourceDefinition {
   module: string;
-  module_name: string;
-  resources: {
-    code: string;
-    name: string;
-    actions: ActionType[];
-  }[];
+  moduleName: string;
+  resources: ResourceActionDefinition[];
 }
 
-export interface RoleDetail extends Role {
-  permissions: Permission[];
-  user_count?: number;
+export interface RolePermission {
+  id: string;
+  resourceCode: string;
+  action: PermissionAction;
+  effect: RbacRolePolicyEffect;
+  name: string;
+}
+
+export interface RoleSummary {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  isActive: boolean;
+  permissionCount: number;
+  userCount: number;
+  createdAt: string;
+  version: number;
+}
+
+export interface RoleDetail {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  description: string | null;
+  isSystem: boolean;
+  isActive: boolean;
+  permissions: RolePermission[];
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  permissionCount?: number;
+  userCount?: number;
 }
 
 export interface CreateRoleRequest {
   code: string;
-  name_en: string;
-  name_zh?: string;
-  name_ja?: string;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
   description?: string;
-  permission_ids: string[];
+  permissionIds: string[];
 }
 
 export interface UpdateRoleRequest {
-  name_en?: string;
-  name_zh?: string;
-  name_ja?: string;
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
   description?: string;
+  version: number;
 }

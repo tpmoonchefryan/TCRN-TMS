@@ -2,7 +2,7 @@
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes, type RbacRolePolicyEffect } from '@tcrn/shared';
+import { ErrorCodes, type RolePermission } from '@tcrn/shared';
 
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
@@ -18,14 +18,6 @@ export interface RoleData {
   createdAt: Date;
   updatedAt: Date;
   version: number;
-}
-
-export interface RolePermission {
-  id: string;
-  resourceCode: string;
-  action: string;
-  effect: RbacRolePolicyEffect;
-  name: string;
 }
 
 /**

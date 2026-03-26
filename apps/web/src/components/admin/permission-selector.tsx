@@ -1,4 +1,4 @@
-import type { PermissionAction, RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
+import type { PermissionAction, RbacRolePolicyEffect, ResourceDefinition, RolePermissionInput } from '@tcrn/shared';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -6,16 +6,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { permissionApi } from '@/lib/api/client';
-
-interface ResourceDefinition {
-  module: string;
-  moduleName: string;
-  resources: Array<{
-    code: string;
-    name: string;
-    actions: PermissionAction[];
-  }>;
-}
 
 interface PermissionSelectorLabels {
   grant: string;
@@ -43,6 +33,7 @@ export function PermissionSelector({ value, onChange, labels, disabled }: Permis
         }
       } catch (error) {
         console.error('Failed to fetch resources:', error);
+        setResources([]);
       } finally {
         setLoading(false);
       }

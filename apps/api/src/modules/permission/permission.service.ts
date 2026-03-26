@@ -4,38 +4,15 @@ import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import {
   isCanonicalPermissionAction,
+  type LocalizedPermissionData,
   type PermissionAction as RbacPermissionAction,
   type PolicyEffect,
   RBAC_MODULE_LABELS,
+  type ResourceDefinition,
 } from '@tcrn/shared';
 
 export type PermissionAction = RbacPermissionAction;
 export type PermissionEffect = PolicyEffect;
-
-export interface PermissionData {
-  id: string;
-  resourceCode: string;
-  action: PermissionAction;
-  effect: PermissionEffect;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  description: string | null;
-  isSystem?: boolean;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ResourceDefinition {
-  module: string;
-  moduleName: string;
-  resources: Array<{
-    code: string;
-    name: string;
-    actions: PermissionAction[];
-  }>;
-}
 
 /**
  * Permission Service
@@ -54,7 +31,7 @@ export class PermissionService {
       effect?: PermissionEffect;
       isActive?: boolean;
     } = {}
-  ): Promise<PermissionData[]> {
+  ): Promise<LocalizedPermissionData[]> {
     let whereClause = '1=1';
     const params: unknown[] = [];
     let paramIndex = 1;
@@ -76,7 +53,7 @@ export class PermissionService {
       params.push(options.isActive);
     }
 
-    const results = await prisma.$queryRawUnsafe<PermissionData[]>(`
+    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 
@@ -101,8 +78,8 @@ export class PermissionService {
   /**
    * Get permission by ID
    */
-  async findById(id: string, tenantSchema: string): Promise<PermissionData | null> {
-    const results = await prisma.$queryRawUnsafe<PermissionData[]>(`
+  async findById(id: string, tenantSchema: string): Promise<LocalizedPermissionData | null> {
+    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 
@@ -125,11 +102,11 @@ export class PermissionService {
   /**
    * Get permissions by IDs
    */
-  async findByIds(ids: string[], tenantSchema: string): Promise<PermissionData[]> {
+  async findByIds(ids: string[], tenantSchema: string): Promise<LocalizedPermissionData[]> {
     if (ids.length === 0) return [];
 
     const placeholders = ids.map((_, i) => `$${i + 1}::uuid`).join(',');
-    const results = await prisma.$queryRawUnsafe<PermissionData[]>(`
+    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 

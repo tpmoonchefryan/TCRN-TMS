@@ -1,6 +1,6 @@
 'use client';
 
-import { RoleDetail } from '@tcrn/shared';
+import type { RoleDetail, RoleSummary } from '@tcrn/shared';
 import { MoreHorizontal, Pencil, Shield, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,7 +20,7 @@ import {
 } from '@/components/ui';
 
 interface RoleListProps {
-  roles: RoleDetail[];
+  roles: Array<RoleSummary | RoleDetail>;
 }
 
 export function RoleList({ roles }: RoleListProps) {
@@ -42,21 +42,19 @@ export function RoleList({ roles }: RoleListProps) {
             <TableRow key={role.id}>
               <TableCell className="font-medium">
                 <div className="flex flex-col">
-                  <span>{role.name_en}</span>
+                  <span>{role.name}</span>
                   <span className="text-xs text-muted-foreground truncate max-w-[200px]">
                     {role.description}
                   </span>
                 </div>
               </TableCell>
               <TableCell>
-          /* eslint-disable @typescript-eslint/no-unused-vars */
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial Licenses
                 <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
                   {role.code}
                 </code>
               </TableCell>
               <TableCell>
-                {role.is_system ? (
+                {role.isSystem ? (
                   <Badge variant="secondary" className="gap-1">
                     <Shield size={10} /> System
                   </Badge>
@@ -68,11 +66,11 @@ export function RoleList({ roles }: RoleListProps) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{role.user_count || 0}</span>
+                  <span className="text-sm font-medium">{role.userCount || 0}</span>
                 </div>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {new Date(role.updated_at).toLocaleDateString()}
+                {new Date('updatedAt' in role ? role.updatedAt : role.createdAt).toLocaleDateString()}
               </TableCell>
               <TableCell>
                 <DropdownMenu>
@@ -89,7 +87,7 @@ export function RoleList({ roles }: RoleListProps) {
                         Edit Role
                       </Link>
                     </DropdownMenuItem>
-                    {!role.is_system && (
+                    {!role.isSystem && (
                       <DropdownMenuItem className="text-red-600">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
