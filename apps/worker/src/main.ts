@@ -7,10 +7,10 @@ import { CronJob } from 'cron';
 import Redis from 'ioredis';
 
 import { emailJobProcessor } from './jobs/email.job';
+import { exportJobProcessor } from './jobs/export.job';
 import { importJobProcessor } from './jobs/import.job';
 import { processLogCleanup } from './jobs/log-cleanup.job';
 import { processIntegrationLog, processTechEventLog } from './jobs/log-processor.job';
-import { marshmallowExportJobProcessor } from './jobs/marshmallow-export.job';
 import { membershipRenewalJobProcessor, scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
 import { permissionJobProcessor } from './jobs/permission.job';
 import { piiCleanupJobProcessor, schedulePiiCleanupJob } from './jobs/pii-cleanup.job';
@@ -132,14 +132,7 @@ async function initializeWorkers(): Promise<void> {
   // Export Worker (handles marshmallow exports and other export types)
   const exportWorker = new Worker(
     QUEUE_NAMES.EXPORT,
-    async (job) => {
-      // Route to appropriate processor based on job name
-      if (job.name === 'marshmallow-export') {
-        return marshmallowExportJobProcessor(job);
-      }
-      // Add other export types here
-      throw new Error(`Unknown export job type: ${job.name}`);
-    },
+    exportJobProcessor,
     {
       connection,
       concurrency: 2, // Allow 2 concurrent exports

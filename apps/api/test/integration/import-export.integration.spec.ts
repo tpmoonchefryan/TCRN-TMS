@@ -202,6 +202,37 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
 
+    it('should reject supported-but-unimplemented generic export job types', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).post('/api/v1/exports'),
+      )
+        .send({
+          jobType: ExportJobType.REPORT_EXPORT,
+          format: ExportFormat.CSV,
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toContain('customer_export only');
+    });
+
+    it('should reject includePii for generic customer exports', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).post('/api/v1/exports'),
+      )
+        .send({
+          jobType: ExportJobType.CUSTOMER_EXPORT,
+          format: ExportFormat.CSV,
+          includePii: true,
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toContain('includePii');
+    });
+
     it('should list export jobs for the current talent profile store', async () => {
       await ensureExportJob();
 

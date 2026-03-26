@@ -127,7 +127,7 @@ export class MarshmallowExportService {
     );
 
     // Queue for processing
-    await this.exportQueue.add('marshmallow-export', {
+    await this.exportQueue.add('marshmallow_export', {
       jobId,
       talentId,
       tenantSchema,

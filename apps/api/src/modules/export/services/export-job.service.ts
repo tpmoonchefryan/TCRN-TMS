@@ -39,6 +39,20 @@ export class ExportJobService {
     dto: CreateExportJobDto,
     context: RequestContext,
   ): Promise<ExportJobResponse> {
+    if (dto.jobType !== ExportJobType.CUSTOMER_EXPORT) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Generic /exports currently supports customer_export only',
+      });
+    }
+
+    if (dto.includePii) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Customer export does not support includePii yet',
+      });
+    }
+
     const prisma = this.databaseService.getPrisma();
     const schema = context.tenantSchema;
 
@@ -101,7 +115,7 @@ export class ExportJobService {
     const job = jobs[0];
 
     // Queue for processing
-    await this.exportQueue.add('process-export', {
+    await this.exportQueue.add(dto.jobType, {
       jobId: job.id,
       jobType: dto.jobType,
       talentId,

@@ -20,11 +20,12 @@ import { reportLogger as logger } from '../logger';
 function createMinioClient(): Minio.Client {
   const endpoint = process.env.MINIO_ENDPOINT || 'localhost:9000';
   const [endpointHost, endpointPort] = endpoint.split(':');
+  const useSSL = process.env.MINIO_USE_SSL === 'true';
   
   return new Minio.Client({
     endPoint: endpointHost,
     port: parseInt(endpointPort || '9000', 10),
-    useSSL: process.env.NODE_ENV === 'production',
+    useSSL,
     accessKey: process.env.MINIO_ROOT_USER || 'minioadmin',
     secretKey: process.env.MINIO_ROOT_PASSWORD || '',
   });
