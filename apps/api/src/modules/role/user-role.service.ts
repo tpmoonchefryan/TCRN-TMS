@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -31,10 +31,51 @@ export interface UserRoleAssignment {
  */
 @Injectable()
 export class UserRoleService {
+  private readonly logger = new Logger(UserRoleService.name);
+
   constructor(
     private readonly snapshotService: PermissionSnapshotService,
     private readonly delegatedAdminService: DelegatedAdminService,
   ) {}
+
+  /**
+   * Transitional compatibility path while non-local environments are still being audited
+   * for stale `system_user.manage` grants.
+   */
+  private async hasTenantAdminPermission(
+    tenantSchema: string,
+    grantorUserId: string,
+  ): Promise<boolean> {
+    const hasCanonicalAdmin = await this.snapshotService.checkPermission(
+      tenantSchema,
+      grantorUserId,
+      'system_user',
+      'admin',
+      'tenant',
+      null,
+    );
+
+    if (hasCanonicalAdmin) {
+      return true;
+    }
+
+    const hasLegacyAdmin = await this.snapshotService.checkPermission(
+      tenantSchema,
+      grantorUserId,
+      'system_user.manage',
+      'admin',
+      'tenant',
+      null,
+    );
+
+    if (hasLegacyAdmin) {
+      this.logger.warn(
+        `Using legacy RBAC fallback system_user.manage:admin for role assignment in ${tenantSchema} (user ${grantorUserId})`,
+      );
+    }
+
+    return hasLegacyAdmin;
+  }
 
   /**
    * Get user's role assignments
@@ -95,27 +136,7 @@ export class UserRoleService {
     scopeType: ScopeType,
     scopeId: string | null
   ): Promise<boolean> {
-    // Check if grantor has admin permission at tenant level (ADMIN role at tenant scope)
-    let isAdmin = await this.snapshotService.checkPermission(
-      tenantSchema,
-      grantorUserId,
-      'system_user',
-      'admin',
-      'tenant',
-      null,
-    );
-
-    // Compat: Check system_user.manage (seed.ts) if system_user (TenantController) check fails
-    if (!isAdmin) {
-      isAdmin = await this.snapshotService.checkPermission(
-        tenantSchema,
-        grantorUserId,
-        'system_user.manage',
-        'admin',
-        'tenant',
-        null,
-      );
-    }
+    const isAdmin = await this.hasTenantAdminPermission(tenantSchema, grantorUserId);
 
     if (isAdmin) {
       return true; // Admin at tenant level can assign any role at any scope
