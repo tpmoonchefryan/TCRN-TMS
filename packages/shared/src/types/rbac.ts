@@ -66,6 +66,69 @@ export interface SystemRoleRecord {
   permissions?: SystemRolePermission[];
 }
 
+export type RbacScopeType = 'tenant' | 'subsidiary' | 'talent';
+
+export interface UserRoleAssignmentRole {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface UserRoleAssignmentGrantor {
+  id: string;
+  username: string | null;
+}
+
+export interface UserRoleAssignmentRecord {
+  id: string;
+  role: UserRoleAssignmentRole;
+  scopeType: RbacScopeType;
+  scopeId: string | null;
+  scopeName: string | null;
+  scopePath: string | null;
+  inherit: boolean;
+  grantedAt: string;
+  grantedBy: UserRoleAssignmentGrantor | null;
+  expiresAt: string | null;
+}
+
+export interface AssignUserRoleRequest {
+  roleId?: string;
+  roleCode?: string;
+  scopeType: RbacScopeType;
+  scopeId?: string | null;
+  inherit: boolean;
+  expiresAt?: string | null;
+}
+
+export interface AssignUserRoleResponse {
+  id: string;
+  userId: string;
+  roleId: string;
+  scopeType: RbacScopeType;
+  scopeId: string | null;
+  inherit: boolean;
+  grantedAt: string;
+  snapshotUpdateQueued: boolean;
+}
+
+export interface UpdateUserRoleAssignmentRequest {
+  inherit?: boolean;
+  expiresAt?: string | null;
+}
+
+export interface UpdateUserRoleAssignmentResponse {
+  id: string;
+  inherit: boolean;
+  expiresAt: string | null;
+  snapshotUpdateQueued: boolean;
+}
+
+export interface RemoveUserRoleAssignmentResponse {
+  message: string;
+  snapshotUpdateQueued: boolean;
+}
+
 export interface RoleSummary {
   id: string;
   code: string;

@@ -1,7 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { Permission, RbacRolePolicyEffect, ResourceDefinition, RolePermissionInput, SystemRoleRecord } from '@tcrn/shared';
+import type {
+  AssignUserRoleRequest,
+  AssignUserRoleResponse,
+  Permission,
+  RbacRolePolicyEffect,
+  RbacScopeType,
+  RemoveUserRoleAssignmentResponse,
+  ResourceDefinition,
+  RolePermissionInput,
+  SystemRoleRecord,
+  UpdateUserRoleAssignmentResponse,
+  UserRoleAssignmentRecord,
+} from '@tcrn/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -2145,39 +2157,36 @@ export const marshmallowExportApi = {
 // User Role API - for managing user role assignments
 export const userRoleApi = {
   // Get user roles (optionally filtered by scope)
-  getUserRoles: (userId: string, scopeType?: string, scopeId?: string) =>
-    apiClient.get<any[]>(`/api/v1/users/${userId}/roles`, { scopeType, scopeId }),
+  getUserRoles: (userId: string, scopeType?: RbacScopeType, scopeId?: string) =>
+    apiClient.get<UserRoleAssignmentRecord[]>(`/api/v1/users/${userId}/roles`, { scopeType, scopeId }),
 
   // Assign role to user
-  assignRole: (userId: string, data: {
-    roleId?: string;
-    roleCode?: string;
-    scopeType: string;
-    scopeId?: string;
-    inherit?: boolean;
-  }) => {
+  assignRole: (userId: string, data: AssignUserRoleRequest) => {
     // Build payload, only include roleId/roleCode if they have actual values
     const payload: Record<string, unknown> = {
       scopeType: data.scopeType,
       scopeId: data.scopeId,
       inherit: data.inherit,
     };
+    if (data.expiresAt !== undefined) {
+      payload.expiresAt = data.expiresAt;
+    }
     if (data.roleCode && data.roleCode.trim()) {
       payload.roleCode = data.roleCode.trim();
     }
     if (data.roleId && data.roleId.trim()) {
       payload.roleId = data.roleId.trim();
     }
-    return apiClient.post<any>(`/api/v1/users/${userId}/roles`, payload);
+    return apiClient.post<AssignUserRoleResponse>(`/api/v1/users/${userId}/roles`, payload);
   },
 
   // Remove role assignment
   removeRole: (userId: string, assignmentId: string) =>
-    apiClient.delete<any>(`/api/v1/users/${userId}/roles/${assignmentId}`),
+    apiClient.delete<RemoveUserRoleAssignmentResponse>(`/api/v1/users/${userId}/roles/${assignmentId}`),
 
   // Update role inheritance
   updateRoleInherit: (userId: string, assignmentId: string, inherit: boolean) =>
-    apiClient.patch<any>(`/api/v1/users/${userId}/roles/${assignmentId}`, { inherit }),
+    apiClient.patch<UpdateUserRoleAssignmentResponse>(`/api/v1/users/${userId}/roles/${assignmentId}`, { inherit }),
 };
 
 // Email Configuration API - for AC tenant to manage email settings

@@ -3,7 +3,7 @@
 
 'use client';
 
-import type { SystemRoleRecord } from '@tcrn/shared';
+import type { RbacScopeType, SystemRoleRecord } from '@tcrn/shared';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -44,6 +44,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { systemRoleApi, systemUserApi, userRoleApi } from '@/lib/api/client';
+import type { UserRoleAssignmentState } from '@/lib/rbac/user-role-assignment';
+import {
+    findUserRoleAssignment,
+    getRbacScopeKey,
+    toUserRoleAssignmentState,
+} from '@/lib/rbac/user-role-assignment';
 import { useTalentStore } from '@/stores/talent-store';
 
 // User interface from API
@@ -60,15 +66,6 @@ interface SystemUserDetail {
   forceReset: boolean;
   lastLoginAt?: string | null;
   createdAt: string;
-}
-
-// Role interface
-interface UserRole {
-  id: string;
-  code: string;
-  scopeType: string;
-  scopeId: string;
-  inherit: boolean;
 }
 
 export default function UserSettingsPage() {
@@ -103,7 +100,7 @@ export default function UserSettingsPage() {
 
   const [activeTab, setActiveTab] = useState('details');
   const [user, setUser] = useState<SystemUserDetail | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRoleAssignmentState[]>([]);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<SystemRoleRecord[]>([]);
   const [isLoadingAvailableRoles, setIsLoadingAvailableRoles] = useState(true);
@@ -177,7 +174,11 @@ export default function UserSettingsPage() {
       if (response.success && response.data) {
         const newAccessState: Record<string, AccessibilityState> = {};
         for (const access of response.data) {
-          const key = access.scopeType === 'tenant' ? tenantId : (access.scopeId || '');
+          const key = getRbacScopeKey(
+            access.scopeType as RbacScopeType,
+            access.scopeId,
+            tenantId,
+          );
           if (key) {
             newAccessState[key] = {
               enabled: true,
@@ -201,13 +202,7 @@ export default function UserSettingsPage() {
     try {
       const response = await userRoleApi.getUserRoles(userId);
       if (response.success && response.data) {
-        setUserRoles(response.data.map((r: any) => ({
-          id: r.id,
-          code: r.roleCode || r.role?.code || r.code,
-          scopeType: r.scopeType,
-          scopeId: r.scopeId,
-          inherit: r.inherit ?? false,
-        })));
+        setUserRoles(response.data.map(toUserRoleAssignmentState));
       }
     } catch (error) {
       // Keep empty roles
@@ -225,9 +220,7 @@ export default function UserSettingsPage() {
   const handleRoleToggle = async (role: SystemRoleRecord) => {
     if (!selectedScope || isAssigningRole) return;
 
-    const existingAssignment = userRoles.find(
-      (r) => r.code === role.code && r.scopeId === selectedScope.id
-    );
+    const existingAssignment = findUserRoleAssignment(userRoles, role.code, selectedScope, tenantId);
 
     setIsAssigningRole(true);
     try {
@@ -251,17 +244,17 @@ export default function UserSettingsPage() {
         const assignData = {
           roleCode,
           scopeType: selectedScope.type,
-          scopeId: selectedScope.id,
+          scopeId: selectedScope.type === 'tenant' ? null : selectedScope.id,
           inherit: selectedScope.type !== 'talent',
         };
         const response = await userRoleApi.assignRole(userId, assignData);
         if (response.success && response.data) {
-          const newRole: UserRole = {
+          const newRole: UserRoleAssignmentState = {
             id: response.data.id,
             code: role.code,
-            scopeType: selectedScope.type,
-            scopeId: selectedScope.id,
-            inherit: selectedScope.type !== 'talent',
+            scopeType: response.data.scopeType,
+            scopeId: response.data.scopeId,
+            inherit: response.data.inherit,
           };
           setUserRoles((prev) => [...prev, newRole]);
           toast.success(t('roleAssigned'));
@@ -278,9 +271,7 @@ export default function UserSettingsPage() {
   const handleInheritToggle = async (roleCode: string, newInherit: boolean) => {
     if (!selectedScope) return;
 
-    const assignment = userRoles.find(
-      (r) => r.code === roleCode && r.scopeId === selectedScope.id
-    );
+    const assignment = findUserRoleAssignment(userRoles, roleCode, selectedScope, tenantId);
     if (!assignment) return;
 
     try {
@@ -792,9 +783,7 @@ export default function UserSettingsPage() {
                   ) : (
                     <div className="space-y-3">
                       {availableRoles.map((role) => {
-                        const assignment = userRoles.find(
-                          (r) => r.code === role.code && r.scopeId === selectedScope.id
-                        );
+                        const assignment = findUserRoleAssignment(userRoles, role.code, selectedScope, tenantId);
                         const isAssigned = !!assignment;
                         return (
                           <div
