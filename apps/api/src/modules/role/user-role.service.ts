@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -31,22 +31,19 @@ export interface UserRoleAssignment {
  */
 @Injectable()
 export class UserRoleService {
-  private readonly logger = new Logger(UserRoleService.name);
-
   constructor(
     private readonly snapshotService: PermissionSnapshotService,
     private readonly delegatedAdminService: DelegatedAdminService,
   ) {}
 
   /**
-   * Transitional compatibility path while non-local environments are still being audited
-   * for stale `system_user.manage` grants.
+   * Tenant-level system-user admin is the only supported grant path for role assignment.
    */
   private async hasTenantAdminPermission(
     tenantSchema: string,
     grantorUserId: string,
   ): Promise<boolean> {
-    const hasCanonicalAdmin = await this.snapshotService.checkPermission(
+    return this.snapshotService.checkPermission(
       tenantSchema,
       grantorUserId,
       'system_user',
@@ -54,27 +51,6 @@ export class UserRoleService {
       'tenant',
       null,
     );
-
-    if (hasCanonicalAdmin) {
-      return true;
-    }
-
-    const hasLegacyAdmin = await this.snapshotService.checkPermission(
-      tenantSchema,
-      grantorUserId,
-      'system_user.manage',
-      'admin',
-      'tenant',
-      null,
-    );
-
-    if (hasLegacyAdmin) {
-      this.logger.warn(
-        `Using legacy RBAC fallback system_user.manage:admin for role assignment in ${tenantSchema} (user ${grantorUserId})`,
-      );
-    }
-
-    return hasLegacyAdmin;
   }
 
   /**
