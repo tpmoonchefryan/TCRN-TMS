@@ -303,6 +303,13 @@ End-to-end type-safe validation with Zod:
 | **Deployment** | Docker | - |
 | | Kubernetes | - |
 
+Current runtime status for the infrastructure above:
+
+- `NATS JetStream` is an active dependency in the current local and production Compose stack.
+- `Grafana Loki` has real push/query paths and a running Compose service, but log shipping and search are still opt-in through `LOKI_ENABLED=true`.
+- `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned for future rollout; distributed tracing is not enabled by default in the current runtime.
+- `Prometheus` is a reserved roadmap item and is not part of the current Compose deployment.
+
 ---
 
 ## 🚀 Quick Start
@@ -326,6 +333,7 @@ cd tcrn-tms
 pnpm install
 
 # 3. Start infrastructure services
+# Includes the core runtime dependencies plus optional local observability/PII helpers
 docker-compose up -d postgres redis minio nats loki tempo pii-postgres pii-service
 
 # 4. Configure environment

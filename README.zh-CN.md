@@ -303,6 +303,13 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 | **部署** | Docker | - |
 | | Kubernetes | - |
 
+以上基础设施的当前运行状态如下：
+
+- `NATS JetStream` 是当前本地与生产 Compose 栈中的真实运行依赖。
+- `Grafana Loki` 已有真实写入/查询代码路径，Compose 中也会启动对应服务，但日志推送与搜索仍需通过 `LOKI_ENABLED=true` 显式启用。
+- `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。
+- `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
+
 ---
 
 ## 🚀 快速开始
@@ -326,6 +333,7 @@ cd tcrn-tms
 pnpm install
 
 # 3. 启动基础设施服务
+# 同时启动核心运行依赖，以及本地可选的观测/PII 辅助服务
 docker-compose up -d postgres redis minio nats loki tempo pii-postgres pii-service
 
 # 4. 配置环境变量

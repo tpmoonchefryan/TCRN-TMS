@@ -303,6 +303,13 @@ Zodによるエンドツーエンドの型安全バリデーション：
 | **デプロイ** | Docker | - |
 | | Kubernetes | - |
 
+上記インフラの現在のランタイム状態は次のとおりです。
+
+- `NATS JetStream` は現在のローカル/本番 Compose スタックで実際に使われている依存です。
+- `Grafana Loki` には実際の push/query 経路があり Compose サービスも起動しますが、ログ送信と検索は `LOKI_ENABLED=true` の明示設定が必要です。
+- `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。
+- `Prometheus` は現時点ではロードマップ上の予約項目で、現在の Compose デプロイには含まれません。
+
 ---
 
 ## 🚀 クイックスタート
@@ -326,6 +333,7 @@ cd tcrn-tms
 pnpm install
 
 # 3. インフラサービスを起動
+# コア依存に加えて、ローカルの観測/PII補助サービスも起動します
 docker-compose up -d postgres redis minio nats loki tempo pii-postgres pii-service
 
 # 4. 環境変数を設定
