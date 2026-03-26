@@ -26,6 +26,7 @@ import {
   ExportJobType,
 } from '../../src/modules/export/dto/export.dto';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
+import { removeExportQueueJobsByDataJobIds } from './queue-test-utils';
 
 describe('Import/Export Integration Tests', () => {
   let app: INestApplication;
@@ -35,6 +36,7 @@ describe('Import/Export Integration Tests', () => {
   let accessToken: string;
   let talentId: string;
   let exportJobId: string | undefined;
+  const createdExportQueueJobIds = new Set<string>();
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
     req
@@ -48,20 +50,26 @@ describe('Import/Export Integration Tests', () => {
     return req;
   };
 
-  const createExportJob = () =>
-    withAuth(
+  const createExportJob = async () => {
+    const response = await withAuth(
       request(app.getHttpServer()).post('/api/v1/exports'),
-    ).send({
-      jobType: ExportJobType.CUSTOMER_EXPORT,
-      format: ExportFormat.CSV,
-    });
+    )
+      .send({
+        jobType: ExportJobType.CUSTOMER_EXPORT,
+        format: ExportFormat.CSV,
+      })
+      .expect(201);
+
+    createdExportQueueJobIds.add(response.body.data.id);
+    return response;
+  };
 
   const ensureExportJob = async (): Promise<string> => {
     if (exportJobId) {
       return exportJobId;
     }
 
-    const response = await createExportJob().expect(201);
+    const response = await createExportJob();
     exportJobId = response.body.data.id;
     return exportJobId;
   };
@@ -109,6 +117,7 @@ describe('Import/Export Integration Tests', () => {
   });
 
   afterAll(async () => {
+    await removeExportQueueJobsByDataJobIds(createdExportQueueJobIds);
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
     await app?.close();
@@ -178,7 +187,7 @@ describe('Import/Export Integration Tests', () => {
 
   describe('Export Jobs', () => {
     it('should create an export job for customer data', async () => {
-      const response = await createExportJob().expect(201);
+      const response = await createExportJob();
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.id).toBeDefined();

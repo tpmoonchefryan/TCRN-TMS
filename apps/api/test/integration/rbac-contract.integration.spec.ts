@@ -19,6 +19,7 @@ import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
 import { ExportFormat, ExportJobType } from '../../src/modules/export/dto/export.dto';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
+import { removeExportQueueJobsByDataJobIds } from './queue-test-utils';
 
 describe('RBAC Contract Integration', () => {
   let app: INestApplication;
@@ -33,6 +34,7 @@ describe('RBAC Contract Integration', () => {
 
   const users = new Map<string, TestUser>();
   const accessTokens = new Map<string, string>();
+  const createdExportQueueJobIds = new Set<string>();
 
   const issueToken = (user: TestUser): string =>
     tokenService.generateAccessToken({
@@ -161,6 +163,7 @@ describe('RBAC Contract Integration', () => {
       });
     }
 
+    await removeExportQueueJobsByDataJobIds(createdExportQueueJobIds);
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
     await app?.close();
@@ -182,6 +185,7 @@ describe('RBAC Contract Integration', () => {
     expect(response.body.data.id).toBeDefined();
     expect(response.body.data.status).toBe('pending');
     expect(response.body.data.jobType).toBe(ExportJobType.CUSTOMER_EXPORT);
+    createdExportQueueJobIds.add(response.body.data.id);
   });
 
   it('allows CONTENT_MANAGER through the guard on export -> execute routes', async () => {
@@ -197,6 +201,7 @@ describe('RBAC Contract Integration', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.data.jobId).toBeDefined();
     expect(response.body.data.status).toBe('pending');
+    createdExportQueueJobIds.add(response.body.data.jobId);
   });
 
   it('allows CUSTOMER_MANAGER to read membership configuration routes', async () => {
