@@ -2,6 +2,7 @@
 
 'use client';
 
+import type { SystemRoleRecord } from '@tcrn/shared';
 import { Loader2, Plus, RefreshCw, Search, Shield, Trash2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -12,29 +13,17 @@ import { EditRoleDialog } from '@/components/admin/edit-role-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
 import { systemRoleApi } from '@/lib/api/client';
 
-interface Role {
-  id: string;
-  code: string;
-  nameEn: string;
-  description?: string;
-  isSystem: boolean;
-  isActive: boolean;
-  createdAt: string;
-  userCount?: number;
-  permissionCount?: number;
-}
-
 export default function RolesPage() {
   const t = useTranslations('adminConsole.roles');
   const tCommon = useTranslations('common');
   const [searchQuery, setSearchQuery] = useState('');
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
+  const [roleToEdit, setRoleToEdit] = useState<SystemRoleRecord | null>(null);
 
   const fetchRoles = useCallback(async () => {
     setIsLoading(true);
@@ -64,12 +53,12 @@ export default function RolesPage() {
     setIsCreateDialogOpen(true);
   };
 
-  const handleEditRole = (role: Role) => {
+  const handleEditRole = (role: SystemRoleRecord) => {
     setRoleToEdit(role);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteRole = async (role: Role) => {
+  const handleDeleteRole = async (role: SystemRoleRecord) => {
     if (!confirm(tCommon('confirmDelete'))) return;
 
     try {

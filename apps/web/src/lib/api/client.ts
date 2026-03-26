@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { Permission, RbacRolePolicyEffect, ResourceDefinition, RolePermissionInput } from '@tcrn/shared';
+import type { Permission, RbacRolePolicyEffect, ResourceDefinition, RolePermissionInput, SystemRoleRecord } from '@tcrn/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -1759,11 +1759,11 @@ export const systemRoleApi = {
     if (params?.isSystem !== undefined) searchParams.set('isSystem', String(params.isSystem));
     if (params?.search) searchParams.set('search', params.search);
     const query = searchParams.toString();
-    return apiClient.get<any[]>(`/api/v1/system-roles${query ? `?${query}` : ''}`);
+    return apiClient.get<SystemRoleRecord[]>(`/api/v1/system-roles${query ? `?${query}` : ''}`);
   },
 
   get: (id: string) =>
-    apiClient.get<any>(`/api/v1/system-roles/${id}`),
+    apiClient.get<SystemRoleRecord>(`/api/v1/system-roles/${id}`),
 
   create: (data: { 
     code: string; 
@@ -1774,7 +1774,7 @@ export const systemRoleApi = {
     isActive?: boolean;
     permissions?: RolePermissionInput[];
   }) =>
-    apiClient.post<any>('/api/v1/system-roles', data),
+    apiClient.post<SystemRoleRecord>('/api/v1/system-roles', data),
 
   update: (id: string, data: { 
     nameEn?: string; 
@@ -1784,7 +1784,7 @@ export const systemRoleApi = {
     isActive?: boolean;
     permissions?: RolePermissionInput[];
   }) =>
-    apiClient.patch<any>(`/api/v1/system-roles/${id}`, data),
+    apiClient.patch<SystemRoleRecord>(`/api/v1/system-roles/${id}`, data),
 
   delete: (id: string) =>
     apiClient.delete<any>(`/api/v1/system-roles/${id}`),

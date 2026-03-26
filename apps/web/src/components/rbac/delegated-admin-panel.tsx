@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { SystemRoleRecord } from '@tcrn/shared';
 import { Building2, Loader2, Plus, ShieldCheck, Trash2, User, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -48,12 +49,6 @@ interface UserOption {
   displayName?: string;
 }
 
-interface Role {
-  id: string;
-  code: string;
-  nameEn: string;
-}
-
 interface Scope {
   id: string;
   name: string;
@@ -77,7 +72,7 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
 
   // Available options for dropdowns
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
@@ -113,13 +108,9 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
       }
 
       // Fetch roles
-      const rolesResponse = await systemRoleApi.list();
+      const rolesResponse = await systemRoleApi.list({ isActive: true });
       if (rolesResponse.success && rolesResponse.data) {
-        setRoles(rolesResponse.data.map((r: any) => ({
-          id: r.id,
-          code: r.code,
-          nameEn: r.nameEn,
-        })));
+        setRoles(rolesResponse.data);
       }
 
       // Fetch organization tree for scopes

@@ -52,6 +52,7 @@ export * from './types/config';
 export * from './types/homepage/presets';
 export * from './types/homepage/schema';
 export * from './types/rbac';
+export type { SystemRolePermission, SystemRoleRecord } from './types/rbac';
 
 // Re-export specific non-conflicting types from feature schemas
 // Note: TechEventType, TechEventScope, IntegrationDirection are exported from constants/event-types.ts

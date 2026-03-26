@@ -3,6 +3,7 @@
 
 'use client';
 
+import type { SystemRoleRecord } from '@tcrn/shared';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -70,14 +71,6 @@ interface UserRole {
   inherit: boolean;
 }
 
-// Available roles (will be loaded from API)
-interface AvailableRole {
-  id?: string;
-  code: string;
-  name: string;
-  description: string;
-}
-
 export default function UserSettingsPage() {
   const params = useParams();
   const router = useRouter();
@@ -112,14 +105,8 @@ export default function UserSettingsPage() {
   const [user, setUser] = useState<SystemUserDetail | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([
-    { code: 'ADMIN', name: 'Administrator', description: 'Full access at assigned scope' },
-    { code: 'TALENT_MANAGER', name: 'Talent Manager', description: 'Manage talent operations' },
-    { code: 'CONTENT_MANAGER', name: 'Content Manager', description: 'Homepage and Marshmallow' },
-    { code: 'CUSTOMER_MANAGER', name: 'Customer Manager', description: 'Customer management' },
-    { code: 'VIEWER', name: 'Viewer', description: 'Read-only access' },
-    { code: 'INTEGRATION_MANAGER', name: 'Integration Manager', description: 'API integration' },
-  ]);
+  const [availableRoles, setAvailableRoles] = useState<SystemRoleRecord[]>([]);
+  const [isLoadingAvailableRoles, setIsLoadingAvailableRoles] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showRemove2FADialog, setShowRemove2FADialog] = useState(false);
@@ -169,25 +156,19 @@ export default function UserSettingsPage() {
 
   // Fetch available roles (only active roles)
   const fetchRoles = useCallback(async () => {
+    setIsLoadingAvailableRoles(true);
     try {
       const response = await systemRoleApi.list({ isActive: true });
       if (response.success && response.data && Array.isArray(response.data)) {
-        const mappedRoles = response.data
-          .filter((role: any) => role.isActive !== false) // Only active roles
-          .map((role: any) => ({
-            id: role.id,
-            code: role.code || '', // Ensure code is never undefined
-            name: role.nameEn || role.name_en || role.name || role.code || '',
-            description: role.description || '',
-          })).filter(r => r.code); // Filter out roles without code
-        if (mappedRoles.length > 0) {
-          setAvailableRoles(mappedRoles);
-        }
+        setAvailableRoles(response.data.filter((role) => role.isActive !== false));
       }
-    } catch (error) {
-      // Keep fallback roles on error
+    } catch (error: any) {
+      setAvailableRoles([]);
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsLoadingAvailableRoles(false);
     }
-  }, []);
+  }, [getErrorMessage]);
 
   // Fetch user scope access
   const fetchScopeAccess = useCallback(async () => {
@@ -241,7 +222,7 @@ export default function UserSettingsPage() {
   }, [fetchUser, fetchRoles, fetchUserRoles, fetchScopeAccess]);
 
   // Handle role assignment toggle
-  const handleRoleToggle = async (role: AvailableRole) => {
+  const handleRoleToggle = async (role: SystemRoleRecord) => {
     if (!selectedScope || isAssigningRole) return;
 
     const existingAssignment = userRoles.find(
@@ -794,7 +775,21 @@ export default function UserSettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {selectedScope ? (
+                  {!selectedScope ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>{t('selectScopeFromTree')}</p>
+                    </div>
+                  ) : isLoadingAvailableRoles ? (
+                    <div className="flex items-center justify-center py-8 text-muted-foreground">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : availableRoles.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>{t('noAvailableRoles')}</p>
+                    </div>
+                  ) : (
                     <div className="space-y-3">
                       {availableRoles.map((role) => {
                         const assignment = userRoles.find(
@@ -816,7 +811,7 @@ export default function UserSettingsPage() {
                                 className={isAssigned ? '' : 'cursor-pointer flex-1'}
                                 onClick={() => isAssigned && handleRoleToggle(role)}
                               >
-                                <p className="font-medium text-sm">{role.name}</p>
+                                <p className="font-medium text-sm">{role.nameEn}</p>
                                 <p className="text-xs text-muted-foreground">{role.description}</p>
                               </div>
                               <button
@@ -857,11 +852,6 @@ export default function UserSettingsPage() {
                           </div>
                         );
                       })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Shield className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                      <p>{t('selectScopeFromTree')}</p>
                     </div>
                   )}
                 </CardContent>

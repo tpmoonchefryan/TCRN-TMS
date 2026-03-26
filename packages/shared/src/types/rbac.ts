@@ -43,6 +43,29 @@ export interface RolePermission {
   name: string;
 }
 
+export interface SystemRolePermission {
+  resource: string;
+  action: PermissionAction;
+  effect?: RbacRolePolicyEffect;
+}
+
+export interface SystemRoleRecord {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  description: string | null;
+  isSystem: boolean;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: number;
+  permissionCount?: number;
+  userCount?: number;
+  permissions?: SystemRolePermission[];
+}
+
 export interface RoleSummary {
   id: string;
   code: string;

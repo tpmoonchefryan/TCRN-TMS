@@ -1993,6 +1993,7 @@
     "assignRolesAtScope": "Assign roles at this scope level",
     "clickToAssignRoles": "Click on an item in the tree to assign roles",
     "selectScopeFromTree": "Select a scope from the organization tree to assign roles",
+    "noAvailableRoles": "No active roles are available for assignment.",
     "inheritToSubLevels": "Inherit to sub-levels",
     "roleAssigned": "Role assigned successfully",
     "roleRemoved": "Role removed",

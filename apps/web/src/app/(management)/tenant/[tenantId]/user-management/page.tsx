@@ -3,7 +3,7 @@
 
 'use client';
 
-import type { RolePermissionInput } from '@tcrn/shared';
+import type { RolePermissionInput, SystemRoleRecord } from '@tcrn/shared';
 import { Edit, Key, Loader2, MoreHorizontal, Plus, Search, Shield, ShieldAlert, ShieldCheck, Trash2, UserCog, Users } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -59,22 +59,6 @@ interface SystemUser {
   createdAt: string;
 }
 
-// Role interface from API
-interface SystemRole {
-  id: string;
-  code: string;
-  name?: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  description?: string;
-  isSystem: boolean;
-  isActive: boolean;
-  permissionCount?: number;
-  userCount?: number;
-  permissions?: RolePermissionInput[];
-}
-
 export default function UserManagementPage() {
   const params = useParams();
   const router = useRouter();
@@ -114,7 +98,7 @@ export default function UserManagementPage() {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [users, setUsers] = useState<SystemUser[]>([]);
-  const [roles, setRoles] = useState<SystemRole[]>([]);
+  const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
 
@@ -125,7 +109,7 @@ export default function UserManagementPage() {
 
   // Role edit dialog state
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [editingRole, setEditingRole] = useState<SystemRole | null>(null);
+  const [editingRole, setEditingRole] = useState<SystemRoleRecord | null>(null);
   const [isCreatingRole, setIsCreatingRole] = useState(false);
   const [rolePermissions, setRolePermissions] = useState<RolePermissionInput[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -155,7 +139,7 @@ export default function UserManagementPage() {
     try {
       const response = await systemRoleApi.list();
       if (response.success && response.data) {
-        setRoles(response.data as SystemRole[]);
+        setRoles(response.data);
       }
     } catch (error: any) {
       toast.error(getErrorMessage(error));
@@ -248,12 +232,12 @@ export default function UserManagementPage() {
     setShowRoleDialog(true);
   };
 
-  const handleEditRole = async (role: SystemRole) => {
+  const handleEditRole = async (role: SystemRoleRecord) => {
     try {
       // Fetch full role details including permissions with effects
       const response = await systemRoleApi.get(role.id);
       if (response.success && response.data) {
-        const fullRole = response.data as SystemRole;
+        const fullRole = response.data;
         setIsCreatingRole(false);
         setEditingRole({ ...fullRole });
         setRolePermissions(fullRole.permissions || []);
@@ -282,9 +266,9 @@ export default function UserManagementPage() {
         await systemRoleApi.create({
           code: editingRole.code,
           nameEn: editingRole.nameEn,
-          nameZh: editingRole.nameZh,
-          nameJa: editingRole.nameJa,
-          description: editingRole.description,
+          nameZh: editingRole.nameZh ?? undefined,
+          nameJa: editingRole.nameJa ?? undefined,
+          description: editingRole.description ?? undefined,
           permissions: rolePermissions,
         });
         toast.success(t('roleCreated'));
@@ -292,9 +276,9 @@ export default function UserManagementPage() {
         // Update existing role
         await systemRoleApi.update(editingRole.id, {
           nameEn: editingRole.nameEn,
-          nameZh: editingRole.nameZh,
-          nameJa: editingRole.nameJa,
-          description: editingRole.description,
+          nameZh: editingRole.nameZh ?? undefined,
+          nameJa: editingRole.nameJa ?? undefined,
+          description: editingRole.description ?? undefined,
           permissions: rolePermissions,
         });
         toast.success(t('roleUpdated'));

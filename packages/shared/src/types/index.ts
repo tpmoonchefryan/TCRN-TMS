@@ -5,3 +5,4 @@ export * from './auth';
 export * from './change-log';
 export * from './entity';
 export * from './log-types';
+export * from './rbac';

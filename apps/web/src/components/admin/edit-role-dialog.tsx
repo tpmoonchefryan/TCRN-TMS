@@ -34,7 +34,7 @@ interface EditRoleDialogProps {
     id: string;
     code: string;
     nameEn: string;
-    description?: string;
+    description?: string | null;
   } | null;
 }
 

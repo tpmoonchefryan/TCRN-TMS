@@ -1981,6 +1981,7 @@
     "assignRolesAtScope": "在此范围级别分配角色",
     "clickToAssignRoles": "点击树中的项目以分配角色",
     "selectScopeFromTree": "从组织树中选择范围以分配角色",
+    "noAvailableRoles": "当前没有可分配的有效角色。",
     "inheritToSubLevels": "继承到下级",
     "roleAssigned": "角色分配成功",
     "roleRemoved": "角色已移除",

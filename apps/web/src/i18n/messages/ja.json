@@ -1970,6 +1970,7 @@
     "assignRolesAtScope": "このスコープレベルでロールを割り当て",
     "clickToAssignRoles": "ツリー内の項目をクリックしてロールを割り当て",
     "selectScopeFromTree": "組織ツリーからスコープを選択してロールを割り当て",
+    "noAvailableRoles": "割り当て可能な有効ロールがありません。",
     "inheritToSubLevels": "サブレベルに継承",
     "roleAssigned": "ロールを割り当てました",
     "roleRemoved": "ロールを削除しました",
