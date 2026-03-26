@@ -439,7 +439,19 @@ docker-compose -f docker-compose.yml up -d
 docker-compose exec api pnpm db:apply-migrations
 docker-compose exec api pnpm db:sync-schemas
 docker-compose exec api pnpm db:seed
+
+# 6. Verify schema rollout for schema-changing releases
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260324000001_add_export_job \
+  --require-table export_job \
+  --require-column export_job.updated_at \
+  --require-index export_job_status_idx \
+  --json
 ```
+
+`db:verify-schema-rollout` is read-only. If `--schema` is omitted, it verifies `tenant_template` plus all active tenant schemas from `public.tenant`.
+
+Use it together with your normal runtime health check whenever a release adds or repairs schema artifacts.
 
 #### Option 2: Kubernetes (Recommended for Production)
 

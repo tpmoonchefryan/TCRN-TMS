@@ -439,7 +439,19 @@ docker-compose -f docker-compose.yml up -d
 docker-compose exec api pnpm db:apply-migrations
 docker-compose exec api pnpm db:sync-schemas
 docker-compose exec api pnpm db:seed
+
+# 6. 对包含 schema 变更的发布执行 rollout 验证
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260324000001_add_export_job \
+  --require-table export_job \
+  --require-column export_job.updated_at \
+  --require-index export_job_status_idx \
+  --json
 ```
+
+`db:verify-schema-rollout` 是只读校验工具。省略 `--schema` 时，会自动校验 `tenant_template` 和 `public.tenant` 中全部 active tenant schema。
+
+凡是新增或修补 schema artifact 的发布，都应将它与常规运行时健康检查一起执行。
 
 #### 方式二：Kubernetes（生产环境推荐）
 

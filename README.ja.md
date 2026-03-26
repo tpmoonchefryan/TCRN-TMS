@@ -439,7 +439,19 @@ docker-compose -f docker-compose.yml up -d
 docker-compose exec api pnpm db:apply-migrations
 docker-compose exec api pnpm db:sync-schemas
 docker-compose exec api pnpm db:seed
+
+# 6. スキーマ変更を含むリリースの rollout を検証
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260324000001_add_export_job \
+  --require-table export_job \
+  --require-column export_job.updated_at \
+  --require-index export_job_status_idx \
+  --json
 ```
+
+`db:verify-schema-rollout` は read-only の検証ツールです。`--schema` を省略すると、`tenant_template` と `public.tenant` に存在するすべての active tenant schema を自動で検証します。
+
+schema artifact を追加または修復するリリースでは、通常のランタイム health check とあわせて実行してください。
 
 #### オプション2：Kubernetes（本番環境推奨）
 
