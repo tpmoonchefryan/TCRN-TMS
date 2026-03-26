@@ -2,6 +2,7 @@
 
 'use client';
 
+import type { RolePermissionInput } from '@tcrn/shared';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -33,6 +34,7 @@ interface CreateRoleDialogProps {
 export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDialogProps) {
   const tRole = useTranslations('adminConsole.roles');
   const tCommon = useTranslations('common');
+  const tPermission = useTranslations('roleManagement');
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -40,7 +42,7 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
     nameEn: '',
     description: '',
   });
-  const [permissions, setPermissions] = useState<Array<{ resource: string; action: string }>>([]);
+  const [permissions, setPermissions] = useState<RolePermissionInput[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,10 +127,16 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
 
           <div className="border-t pt-4">
             <Label className="text-base mb-4 block">Permissions</Label>
+            <p className="text-sm text-muted-foreground mb-4">{tPermission('selectPermissionsThreeState')}</p>
             <ScrollArea className="h-[40vh]">
               <PermissionSelector 
                 value={permissions}
                 onChange={setPermissions}
+                labels={{
+                  grant: tPermission('grant'),
+                  deny: tPermission('deny'),
+                  unset: tPermission('unset'),
+                }}
                 disabled={isLoading}
               />
             </ScrollArea>

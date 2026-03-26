@@ -3,6 +3,7 @@
 
 'use client';
 
+import type { RolePermissionInput } from '@tcrn/shared';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -40,6 +41,7 @@ interface EditRoleDialogProps {
 export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRoleDialogProps) {
   const tRole = useTranslations('adminConsole.roles');
   const tCommon = useTranslations('common');
+  const tPermission = useTranslations('roleManagement');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   
@@ -47,7 +49,7 @@ export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRole
     nameEn: '',
     description: '',
   });
-  const [permissions, setPermissions] = useState<Array<{ resource: string; action: string }>>([]);
+  const [permissions, setPermissions] = useState<RolePermissionInput[]>([]);
 
   useEffect(() => {
     if (role && open) {
@@ -161,10 +163,16 @@ export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRole
 
             <div className="border-t pt-4">
               <Label className="text-base mb-4 block">Permissions</Label>
+              <p className="text-sm text-muted-foreground mb-4">{tPermission('selectPermissionsThreeState')}</p>
               <ScrollArea className="h-[40vh]">
                 <PermissionSelector 
                   value={permissions}
                   onChange={setPermissions}
+                  labels={{
+                    grant: tPermission('grant'),
+                    deny: tPermission('deny'),
+                    unset: tPermission('unset'),
+                  }}
                   disabled={isLoading}
                 />
               </ScrollArea>

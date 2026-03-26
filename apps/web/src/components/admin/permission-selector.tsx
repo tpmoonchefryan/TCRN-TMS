@@ -1,9 +1,9 @@
+import type { PermissionAction, RbacRolePolicyEffect, RolePermissionInput } from '@tcrn/shared';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { permissionApi } from '@/lib/api/client';
 
@@ -13,18 +13,24 @@ interface ResourceDefinition {
   resources: Array<{
     code: string;
     name: string;
-    actions: string[];
+    actions: PermissionAction[];
   }>;
 }
 
+interface PermissionSelectorLabels {
+  grant: string;
+  deny: string;
+  unset: string;
+}
+
 interface PermissionSelectorProps {
-  value: Array<{ resource: string; action: string }>;
-  onChange: (value: Array<{ resource: string; action: string }>) => void;
+  value: RolePermissionInput[];
+  onChange: (value: RolePermissionInput[]) => void;
+  labels: PermissionSelectorLabels;
   disabled?: boolean;
 }
 
-export function PermissionSelector({ value, onChange, disabled }: PermissionSelectorProps) {
-  // const t = useTranslations('adminConsole.roles'); 
+export function PermissionSelector({ value, onChange, labels, disabled }: PermissionSelectorProps) {
   const [resources, setResources] = useState<ResourceDefinition[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,43 +51,44 @@ export function PermissionSelector({ value, onChange, disabled }: PermissionSele
     fetchResources();
   }, []);
 
-  const handleToggle = (resource: string, action: string, checked: boolean) => {
-    if (checked) {
-      if (!value.some(p => p.resource === resource && p.action === action)) {
-        onChange([...value, { resource, action }]);
-      }
-    } else {
-      onChange(value.filter(p => !(p.resource === resource && p.action === action)));
+  const getPermissionEffect = (resource: string, action: PermissionAction): RbacRolePolicyEffect | 'unset' => {
+    const permission = value.find((entry) => entry.resource === resource && entry.action === action);
+
+    if (!permission) {
+      return 'unset';
     }
+
+    return permission.effect === 'deny' ? 'deny' : 'grant';
   };
 
-  const handleToggleResource = (resource: string, actions: string[], checked: boolean) => {
-    let newValue = [...value];
-    
-    actions.forEach(action => {
-      if (checked) {
-        if (!newValue.some(p => p.resource === resource && p.action === action)) {
-          newValue.push({ resource, action });
-        }
-      } else {
-        newValue = newValue.filter(p => !(p.resource === resource && p.action === action));
+  const setPermissionEffect = (
+    resource: string,
+    action: PermissionAction,
+    effect: RbacRolePolicyEffect | 'unset',
+  ) => {
+    const existingIndex = value.findIndex((entry) => entry.resource === resource && entry.action === action);
+
+    if (effect === 'unset') {
+      if (existingIndex === -1) {
+        return;
       }
-    });
 
-    onChange(newValue);
-  };
+      onChange(value.filter((_, index) => index !== existingIndex));
+      return;
+    }
 
-  const isSelected = (resource: string, action: string) => {
-    return value.some(p => p.resource === resource && p.action === action);
-  };
+    if (existingIndex === -1) {
+      onChange([...value, { resource, action, effect }]);
+      return;
+    }
 
-  const isResourceFullySelected = (resource: string, actions: string[]) => {
-    return actions.every(action => isSelected(resource, action));
-  };
-
-  const isResourcePartiallySelected = (resource: string, actions: string[]) => {
-    const selectedCount = actions.filter(action => isSelected(resource, action)).length;
-    return selectedCount > 0 && selectedCount < actions.length;
+    const nextValue = [...value];
+    nextValue[existingIndex] = {
+      resource,
+      action,
+      effect,
+    };
+    onChange(nextValue);
   };
 
   if (loading) {
@@ -101,31 +108,48 @@ export function PermissionSelector({ value, onChange, disabled }: PermissionSele
                 {module.resources.map((resource) => (
                   <Card key={resource.code} className="shadow-none border-dashed">
                     <CardHeader className="p-3 pb-2">
-                        <div className="flex items-center gap-2">
-                            <Checkbox 
-                                id={`res-${resource.code}`}
-                                checked={isResourceFullySelected(resource.code, resource.actions) || (isResourcePartiallySelected(resource.code, resource.actions) ? 'indeterminate' : false)}
-                                onCheckedChange={(checked) => handleToggleResource(resource.code, resource.actions, checked as boolean)}
-                                disabled={disabled}
-                            />
-                            <Label htmlFor={`res-${resource.code}`} className="text-sm font-medium cursor-pointer">
-                                {resource.name}
-                            </Label>
-                        </div>
+                      <div className="flex flex-col">
+                        <Label className="text-sm font-medium">
+                          {resource.name}
+                        </Label>
+                        <span className="text-xs text-muted-foreground font-mono mt-1">{resource.code}</span>
+                      </div>
                     </CardHeader>
                     <CardContent className="p-3 pt-0 pl-9">
-                      <div className="flex flex-wrap gap-4">
+                      <div className="space-y-2">
                         {resource.actions.map((action) => (
-                          <div key={`${resource.code}-${action}`} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`${resource.code}-${action}`}
-                              checked={isSelected(resource.code, action)}
-                              onCheckedChange={(checked) => handleToggle(resource.code, action, checked as boolean)}
-                              disabled={disabled}
-                            />
-                            <Label htmlFor={`${resource.code}-${action}`} className="text-sm cursor-pointer capitalize">
-                              {action}
-                            </Label>
+                          <div key={`${resource.code}-${action}`} className="flex items-center justify-between gap-3">
+                            <span className="text-sm capitalize">{action}</span>
+                            <div className="flex gap-1">
+                              {(['grant', 'deny', 'unset'] as const).map((effect) => {
+                                const activeEffect = getPermissionEffect(resource.code, action);
+                                const isActive = activeEffect === effect;
+                                const label = labels[effect];
+                                const activeClassName = effect === 'grant'
+                                  ? 'bg-green-500 text-white'
+                                  : effect === 'deny'
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-gray-400 text-white';
+
+                                return (
+                                  <button
+                                    key={effect}
+                                    type="button"
+                                    data-testid={`perm-${resource.code}-${action}-${effect}`}
+                                    aria-pressed={isActive}
+                                    onClick={() => setPermissionEffect(resource.code, action, effect)}
+                                    disabled={disabled}
+                                    className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                                      isActive
+                                        ? activeClassName
+                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         ))}
                       </div>
