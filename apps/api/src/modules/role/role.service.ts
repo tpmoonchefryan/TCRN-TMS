@@ -187,7 +187,7 @@ export class RoleService {
         (id, code, name_en, name_zh, name_ja, description, is_system, is_active, 
          created_at, updated_at, created_by, updated_by, version)
       VALUES 
-        (gen_random_uuid(), $1::uuid, $2, $3, $4, $5, false, true, now(), now(), $6, $6, 1)
+        (gen_random_uuid(), $1, $2, $3, $4, $5, false, true, now(), now(), $6, $6, 1)
       RETURNING 
         id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
         description, is_system as "isSystem", is_active as "isActive",

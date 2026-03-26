@@ -228,6 +228,26 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
     });
+
+    it('should insert role code as text instead of uuid-casting it', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([]) // Code not taken
+        .mockResolvedValueOnce([mockRole]); // Insert
+
+      await service.create(
+        testSchema,
+        {
+          code: 'NEW_ROLE',
+          nameEn: 'New Role',
+          permissionIds: [],
+        },
+        'user-123',
+      );
+
+      const insertQuery = mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0];
+      expect(insertQuery).toContain('(gen_random_uuid(), $1, $2, $3, $4, $5, false, true, now(), now(), $6, $6, 1)');
+      expect(insertQuery).not.toContain('$1::uuid');
+    });
   });
 
   describe('update', () => {
