@@ -54,6 +54,7 @@ export interface LegacyTargetAudit {
   legacy: ResourceAudit;
   canonical: ResourceAudit | null;
   legacyOnlyGrants: string[];
+  ignoredLegacyOnlyGrants: string[];
   canonicalOnlyGrants: string[];
   readiness: PruneReadiness;
   reason: string;
@@ -161,6 +162,70 @@ const COMPAT_RESOURCE_TARGETS: readonly CompatResourceTarget[] = [
     note: 'Legacy blocklist config resource from pre-catalog RBAC shape.',
   },
 ] as const;
+
+interface LegacyOvergrantRule {
+  ignoredLegacyOnlyGrants: readonly string[];
+  reason: string;
+}
+
+const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map([
+  [
+    'homepage',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:delete:grant',
+        'CONTENT_MANAGER:delete:grant',
+        'PLATFORM_ADMIN:delete:grant',
+      ],
+      reason:
+        'Legacy homepage delete grants are retired over-grants; current controller-facing surface only requires read/update semantics.',
+    },
+  ],
+  [
+    'marshmallow',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:delete:grant',
+        'CONTENT_MANAGER:delete:grant',
+        'PLATFORM_ADMIN:delete:grant',
+      ],
+      reason:
+        'Legacy marshmallow delete grants are retired over-grants; current controller-facing surface uses read/write/execute semantics.',
+    },
+  ],
+  [
+    'log.change',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:admin:grant',
+        'ADMIN:delete:grant',
+        'ADMIN:write:grant',
+        'PLATFORM_ADMIN:admin:grant',
+        'PLATFORM_ADMIN:delete:grant',
+        'PLATFORM_ADMIN:write:grant',
+        'TALENT_MANAGER:admin:grant',
+        'TALENT_MANAGER:write:grant',
+      ],
+      reason:
+        'Legacy log.change write/admin/delete grants are retired over-grants; current change-log controllers are read-only.',
+    },
+  ],
+  [
+    'log.integration',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:admin:grant',
+        'ADMIN:delete:grant',
+        'ADMIN:write:grant',
+        'PLATFORM_ADMIN:admin:grant',
+        'PLATFORM_ADMIN:delete:grant',
+        'PLATFORM_ADMIN:write:grant',
+      ],
+      reason:
+        'Legacy log.integration write/admin/delete grants are retired over-grants; current integration-log controllers are read-only.',
+    },
+  ],
+]);
 
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
@@ -453,6 +518,34 @@ function formatGrant(grant: ResourceGrantEntry): string {
   return `${grant.roleCode}:${grant.action}:${grant.effect}`;
 }
 
+function splitLegacyOnlyGrants(
+  legacyCode: string,
+  legacyOnlyGrants: string[],
+): {
+  blockingLegacyOnlyGrants: string[];
+  ignoredLegacyOnlyGrants: string[];
+  ignoredReason: string | null;
+} {
+  const overgrantRule = LEGACY_OVERGRANT_RULES.get(legacyCode);
+
+  if (!overgrantRule) {
+    return {
+      blockingLegacyOnlyGrants: legacyOnlyGrants,
+      ignoredLegacyOnlyGrants: [],
+      ignoredReason: null,
+    };
+  }
+
+  const ignoredGrantSet = new Set(overgrantRule.ignoredLegacyOnlyGrants);
+  const ignoredLegacyOnlyGrants = legacyOnlyGrants.filter((grant) => ignoredGrantSet.has(grant));
+
+  return {
+    blockingLegacyOnlyGrants: legacyOnlyGrants.filter((grant) => !ignoredGrantSet.has(grant)),
+    ignoredLegacyOnlyGrants,
+    ignoredReason: ignoredLegacyOnlyGrants.length > 0 ? overgrantRule.reason : null,
+  };
+}
+
 function compareTarget(
   target: LegacyResourceTarget,
   legacy: ResourceAudit,
@@ -466,6 +559,7 @@ function compareTarget(
       legacy,
       canonical,
       legacyOnlyGrants: [],
+      ignoredLegacyOnlyGrants: [],
       canonicalOnlyGrants: canonical?.grants.map(formatGrant) ?? [],
       readiness: 'absent',
       reason: 'Legacy resource is already absent in this schema.',
@@ -480,6 +574,7 @@ function compareTarget(
       legacy,
       canonical,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
+      ignoredLegacyOnlyGrants: [],
       canonicalOnlyGrants: [],
       readiness: 'legacy_unmapped',
       reason: target.note,
@@ -494,6 +589,7 @@ function compareTarget(
       legacy,
       canonical,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
+      ignoredLegacyOnlyGrants: [],
       canonicalOnlyGrants: [],
       readiness: 'blocked_by_canonical_gap',
       reason: `Canonical resource ${target.canonicalCode} is missing in this schema.`,
@@ -504,15 +600,21 @@ function compareTarget(
   const canonicalGrantSet = new Set(canonical.grants.map(formatGrant));
   const legacyOnlyGrants = [...legacyGrantSet].filter((grant) => !canonicalGrantSet.has(grant));
   const canonicalOnlyGrants = [...canonicalGrantSet].filter((grant) => !legacyGrantSet.has(grant));
+  const {
+    blockingLegacyOnlyGrants,
+    ignoredLegacyOnlyGrants,
+    ignoredReason,
+  } = splitLegacyOnlyGrants(target.legacyCode, legacyOnlyGrants);
 
-  if (legacyOnlyGrants.length > 0) {
+  if (blockingLegacyOnlyGrants.length > 0) {
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
       note: target.note,
       legacy,
       canonical,
-      legacyOnlyGrants,
+      legacyOnlyGrants: blockingLegacyOnlyGrants,
+      ignoredLegacyOnlyGrants,
       canonicalOnlyGrants,
       readiness: 'blocked_by_canonical_gap',
       reason: 'Canonical grant set does not yet cover all legacy role/action/effect entries.',
@@ -526,10 +628,13 @@ function compareTarget(
       note: target.note,
       legacy,
       canonical,
-      legacyOnlyGrants,
+      legacyOnlyGrants: blockingLegacyOnlyGrants,
+      ignoredLegacyOnlyGrants,
       canonicalOnlyGrants,
       readiness: 'covered_requires_snapshot_refresh',
-      reason: 'Canonical grant set covers legacy entries, but assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.',
+      reason: ignoredReason
+        ? `${ignoredReason} Assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.`
+        : 'Canonical grant set covers legacy entries, but assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.',
     };
   }
 
@@ -539,10 +644,13 @@ function compareTarget(
     note: target.note,
     legacy,
     canonical,
-    legacyOnlyGrants,
+    legacyOnlyGrants: blockingLegacyOnlyGrants,
+    ignoredLegacyOnlyGrants,
     canonicalOnlyGrants,
     readiness: 'covered_unassigned',
-    reason: 'Canonical grant set covers legacy entries and no assigned roles/users currently depend on this legacy resource.',
+    reason: ignoredReason
+      ? `${ignoredReason} No assigned roles/users currently depend on this legacy resource.`
+      : 'Canonical grant set covers legacy entries and no assigned roles/users currently depend on this legacy resource.',
   };
 }
 
@@ -667,6 +775,10 @@ function printSummary(summary: LegacyRbacAuditSummary): void {
 
       if (target.legacyOnlyGrants.length > 0) {
         console.log(`  legacy-only grants: ${target.legacyOnlyGrants.join(', ')}`);
+      }
+
+      if (target.ignoredLegacyOnlyGrants.length > 0) {
+        console.log(`  ignored legacy-only grants: ${target.ignoredLegacyOnlyGrants.join(', ')}`);
       }
 
       if (target.canonicalOnlyGrants.length > 0) {
