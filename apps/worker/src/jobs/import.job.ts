@@ -27,6 +27,7 @@ export interface ImportJobData {
   userId: string;
   filePath: string; // MinIO path: imports/{uuid}.csv
   jobType: 'customer_create' | 'customer_update' | 'membership_sync';
+  consumerCode?: string;
   totalRows?: number;
   defaultProfileType?: 'individual' | 'company';
   options?: {
@@ -53,8 +54,18 @@ export interface ImportJobResult {
  * CSV row interface for customer import
  */
 interface CustomerCsvRow {
+  external_id?: string;
   nickname: string;
   profile_type?: string;
+  given_name?: string;
+  family_name?: string;
+  gender?: string;
+  birth_date?: string;
+  primary_language?: string;
+  phone_type?: string;
+  phone_number?: string;
+  email_type?: string;
+  email_address?: string;
   status_code?: string;
   platform_code?: string;
   platform_uid?: string;
@@ -103,6 +114,7 @@ interface LookupData {
   membershipLevels: Map<string, string>;
   customerStatuses: Map<string, string>;
   businessSegments: Map<string, string>;
+  consumers: Map<string, string>;
 }
 
 function createMinioClient(): Minio.Client {
@@ -141,6 +153,7 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
     userId,
     filePath,
     jobType,
+    consumerCode,
     totalRows: expectedTotalRows,
     defaultProfileType,
     options,
@@ -181,7 +194,6 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
           columns: true,
           skip_empty_lines: true,
           trim: true,
-          cast: true,
         })
       );
 
@@ -198,6 +210,7 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
           lookupData,
           rowNumber,
           defaultProfileType,
+          consumerCode,
         );
         
         if (validation.warnings.length > 0) {
@@ -240,6 +253,7 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
               profileStoreId,
               userId,
               lookupData,
+              consumerCode,
               defaultProfileType,
               skipDuplicates: options?.skipDuplicates,
             });
@@ -367,6 +381,11 @@ async function loadLookupData(prisma: PrismaClient, _schemaName: string) {
     select: { id: true, code: true },
   });
 
+  const consumers = await prisma.consumer.findMany({
+    where: { isActive: true },
+    select: { id: true, code: true },
+  });
+
   return {
     platforms: new Map(platforms.map(p => [p.code, p.id])),
     membershipClasses: new Map(membershipClasses.map(m => [m.code, m.id])),
@@ -374,6 +393,7 @@ async function loadLookupData(prisma: PrismaClient, _schemaName: string) {
     membershipLevels: new Map(membershipLevels.map(m => [`${m.membershipTypeId}:${m.code}`, m.id])),
     customerStatuses: new Map(customerStatuses.map(s => [s.code, s.id])),
     businessSegments: new Map(businessSegments.map((segment) => [segment.code, segment.id])),
+    consumers: new Map(consumers.map((consumer) => [consumer.code, consumer.id])),
   };
 }
 
@@ -385,6 +405,7 @@ function validateRow(
   lookupData: LookupData,
   _rowNumber: number,
   defaultProfileType?: 'individual' | 'company',
+  consumerCode?: string,
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -431,6 +452,18 @@ function validateRow(
     errors.push(`Invalid business_segment_code: ${row.business_segment_code}`);
   }
 
+  if (row.status_code && !lookupData.customerStatuses.has(row.status_code)) {
+    errors.push(`Invalid status_code: ${row.status_code}`);
+  }
+
+  if (row.external_id && !consumerCode) {
+    errors.push('consumerCode is required when external_id is provided');
+  }
+
+  if (row.external_id && consumerCode && !lookupData.consumers.has(consumerCode)) {
+    errors.push(`Invalid consumerCode: ${consumerCode}`);
+  }
+
   // Email format validation
   if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
     warnings.push(`Invalid email format: ${row.email}`);
@@ -438,6 +471,15 @@ function validateRow(
 
   if (row.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact_email)) {
     warnings.push(`Invalid contact_email format: ${row.contact_email}`);
+  }
+
+  if (row.email_address) {
+    const emailAddresses = row.email_address.split('|').map((part) => part.trim()).filter(Boolean);
+    for (const email of emailAddresses) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        warnings.push(`Invalid email_address format: ${email}`);
+      }
+    }
   }
 
   return {
@@ -469,6 +511,17 @@ function generateSearchHintPhoneLast4(phone?: string): string | null {
   return cleaned.length >= 4 ? cleaned.slice(-4) : null;
 }
 
+function firstDelimitedValue(value?: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return value
+    .split('|')
+    .map((part) => part.trim())
+    .find(Boolean);
+}
+
 /**
  * Process customer create
  */
@@ -481,6 +534,7 @@ async function processCustomerCreate(
     profileStoreId: string;
     userId: string;
     lookupData: LookupData;
+    consumerCode?: string;
     defaultProfileType?: 'individual' | 'company';
     skipDuplicates?: boolean;
   }
@@ -488,10 +542,16 @@ async function processCustomerCreate(
   const customerId = uuidv4();
   const rmProfileId = uuidv4(); // PII token
   const profileType = row.profile_type || options.defaultProfileType || 'individual';
+  const statusId = row.status_code
+    ? (options.lookupData.customerStatuses.get(row.status_code) ?? null)
+    : null;
+  const derivedRealName = row.real_name || [row.family_name, row.given_name].filter(Boolean).join('') || undefined;
+  const derivedEmail = row.email || firstDelimitedValue(row.email_address);
+  const derivedPhone = row.phone || firstDelimitedValue(row.phone_number);
 
   // Generate search hints for individual profiles
-  const searchHintName = profileType === 'individual' ? generateSearchHintName(row.real_name) : null;
-  const searchHintPhoneLast4 = profileType === 'individual' ? generateSearchHintPhoneLast4(row.phone) : null;
+  const searchHintName = profileType === 'individual' ? generateSearchHintName(derivedRealName) : null;
+  const searchHintPhoneLast4 = profileType === 'individual' ? generateSearchHintPhoneLast4(derivedPhone) : null;
 
   // Create customer profile
   await prisma.customerProfile.create({
@@ -503,6 +563,8 @@ async function processCustomerCreate(
       rmProfileId,
       profileType,
       nickname: row.nickname,
+      primaryLanguage: row.primary_language || null,
+      statusId,
       tags: row.tags?.split(',').map(t => t.trim()).filter(Boolean) || [],
       source: row.source || 'import',
       notes: row.notes,
@@ -526,6 +588,21 @@ async function processCustomerCreate(
         website: row.website || null,
       },
     });
+  }
+
+  if (row.external_id && options.consumerCode) {
+    const consumerId = options.lookupData.consumers.get(options.consumerCode);
+    if (consumerId) {
+      await prisma.customerExternalId.create({
+        data: {
+          customerId,
+          profileStoreId: options.profileStoreId,
+          consumerId,
+          externalId: row.external_id,
+          createdBy: options.userId,
+        },
+      });
+    }
   }
 
   // Note: In actual implementation, searchHintName and searchHintPhoneLast4 would be 
@@ -577,12 +654,12 @@ async function processCustomerCreate(
   }
 
   // TODO: Send PII data to PII service
-  if (row.real_name || row.email || row.phone || row.address) {
+  if (derivedRealName || derivedEmail || derivedPhone || row.address) {
     // const piiService = new PiiService();
     // await piiService.storePii(rmProfileId, {
-    //   realName: row.real_name,
-    //   email: row.email,
-    //   phone: row.phone,
+    //   realName: derivedRealName,
+    //   email: derivedEmail,
+    //   phone: derivedPhone,
     //   address: row.address,
     // });
     logger.info(`PII data for ${customerId} would be sent to PII service`);

@@ -3,7 +3,7 @@
 import type { Job } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reportJobProcessor, type ReportJobData, type ReportJobResult } from '../report.job';
+import { type ReportJobData, reportJobProcessor, type ReportJobResult } from '../report.job';
 
 const mockPrisma = {
   membershipRecord: {

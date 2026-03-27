@@ -7,7 +7,7 @@ import * as path from 'path';
 import { Readable } from 'stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { importJobProcessor, type ImportJobData, type ImportJobResult } from '../import.job';
+import { type ImportJobData, importJobProcessor, type ImportJobResult } from '../import.job';
 
 const mockPrisma = {
   socialPlatform: {
@@ -28,10 +28,16 @@ const mockPrisma = {
   businessSegment: {
     findMany: vi.fn(),
   },
+  consumer: {
+    findMany: vi.fn(),
+  },
   customerProfile: {
     create: vi.fn(),
   },
   customerCompanyInfo: {
+    create: vi.fn(),
+  },
+  customerExternalId: {
     create: vi.fn(),
   },
   $executeRawUnsafe: vi.fn(),
@@ -50,8 +56,10 @@ vi.mock('@tcrn/database', () => ({
     membershipLevel = mockPrisma.membershipLevel;
     customerStatus = mockPrisma.customerStatus;
     businessSegment = mockPrisma.businessSegment;
+    consumer = mockPrisma.consumer;
     customerProfile = mockPrisma.customerProfile;
     customerCompanyInfo = mockPrisma.customerCompanyInfo;
+    customerExternalId = mockPrisma.customerExternalId;
     $executeRawUnsafe = mockPrisma.$executeRawUnsafe;
     $disconnect = mockPrisma.$disconnect;
   },
@@ -101,14 +109,16 @@ describe('importJobProcessor', () => {
     mockPrisma.membershipLevel.findMany.mockResolvedValue([]);
     mockPrisma.customerStatus.findMany.mockResolvedValue([]);
     mockPrisma.businessSegment.findMany.mockResolvedValue([]);
+    mockPrisma.consumer.findMany.mockResolvedValue([]);
     mockPrisma.customerProfile.create.mockResolvedValue(undefined);
     mockPrisma.customerCompanyInfo.create.mockResolvedValue(undefined);
+    mockPrisma.customerExternalId.create.mockResolvedValue(undefined);
     mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.getObject.mockResolvedValue(
       Readable.from([
-        'nickname,profile_type,platform_code,platform_uid\n',
-        'Imported User,individual,BILIBILI,12345\n',
+        'nickname,primary_language,status_code,tags,notes\n',
+        'Imported User,en,,vip,created from template\n',
       ]),
     );
   });
@@ -176,6 +186,52 @@ describe('importJobProcessor', () => {
         data: expect.objectContaining({
           companyLegalName: 'ACME Corporation',
           businessSegmentId: 'segment-1',
+        }),
+      }),
+    );
+  });
+
+  it('maps current individual import template fields into persisted non-PII customer data', async () => {
+    mockJob.data.options = {
+      validateOnly: false,
+    };
+    mockJob.data.consumerCode = 'CRM_SYSTEM';
+    mockMinioClient.getObject.mockResolvedValueOnce(
+      Readable.from([
+        'external_id,nickname,primary_language,status_code,tags,notes,given_name,family_name,email_address,phone_number\n',
+        'EXT001,Template User,zh,ACTIVE,tag-a,notes here,明,张,user@example.com,+8613800138001\n',
+      ]),
+    );
+    mockPrisma.customerStatus.findMany.mockResolvedValue([{ id: 'status-1', code: 'ACTIVE' }]);
+    mockPrisma.consumer.findMany.mockResolvedValue([{ id: 'consumer-1', code: 'CRM_SYSTEM' }]);
+
+    const result = await importJobProcessor(mockJob);
+
+    expect(result).toMatchObject({
+      totalRows: 1,
+      successRows: 1,
+      failedRows: 0,
+    });
+    expect(mockPrisma.customerProfile.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          profileType: 'individual',
+          primaryLanguage: 'zh',
+          statusId: 'status-1',
+          nickname: 'Template User',
+          tags: ['tag-a'],
+          notes: 'notes here',
+        }),
+      }),
+    );
+    expect(mockPrisma.customerExternalId.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          customerId: expect.any(String),
+          profileStoreId: 'profile-store-1',
+          consumerId: 'consumer-1',
+          externalId: 'EXT001',
+          createdBy: 'user-1',
         }),
       }),
     );

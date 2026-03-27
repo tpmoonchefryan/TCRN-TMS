@@ -215,14 +215,15 @@ describe('Import/Export Integration Tests', () => {
 
     it('uploads individual import csv into tenant-scoped MinIO object and queues a complete worker payload', async () => {
       const csvContent = [
-        'nickname,profile_type,platform_code,platform_uid',
-        'Queued User,individual,BILIBILI,12345',
+        'external_id,nickname,primary_language,status_code,tags,notes',
+        'EXT001,Queued User,zh,,vip,queued from integration',
       ].join('\n');
 
       const response = await withAuth(
         request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
       )
         .field('talentId', talentId)
+        .field('consumerCode', 'CRM_SYSTEM')
         .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import.csv')
         .expect(201);
 
@@ -245,6 +246,7 @@ describe('Import/Export Integration Tests', () => {
         talentId,
         profileStoreId: expect.any(String),
         userId: testUser.id,
+        consumerCode: 'CRM_SYSTEM',
         filePath: objectName,
         totalRows: 1,
         jobType: 'customer_create',
