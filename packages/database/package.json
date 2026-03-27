@@ -33,6 +33,7 @@
     "db:sync-schemas": "tsx scripts/sync-tenant-schemas.ts",
     "db:sync-rbac": "tsx scripts/sync-rbac-contract.ts",
     "db:audit-legacy-rbac": "tsx scripts/audit-legacy-rbac.ts",
+    "db:audit-permission-snapshots": "tsx scripts/audit-permission-snapshots.ts",
     "db:audit-tenant-scope-assignments": "tsx scripts/audit-tenant-scope-assignments.ts",
     "db:export-historical-role-retirement-rollback": "tsx scripts/export-historical-role-retirement-rollback.ts",
     "db:plan-historical-role-normalization": "tsx scripts/plan-historical-role-normalization.ts",

@@ -77,9 +77,17 @@ interface SnapshotAudit {
   anomalies: SnapshotFieldAnomaly[];
 }
 
+type SnapshotDriftReadiness =
+  | 'clean'
+  | 'legacy_resource_only'
+  | 'unsupported_action_only'
+  | 'mixed_drift'
+  | 'invalid_snapshot_fields';
+
 interface UserSnapshotAudit {
   userId: string;
   username: string | null;
+  readiness: SnapshotDriftReadiness;
   snapshotCount: number;
   totalFields: number;
   anomalyFieldCount: number;
@@ -89,6 +97,7 @@ interface UserSnapshotAudit {
 
 interface SchemaSnapshotAudit {
   schemaName: string;
+  readiness: SnapshotDriftReadiness;
   snapshotCount: number;
   userCount: number;
   totalFields: number;
@@ -147,6 +156,35 @@ function cloneCounts(source: ClassificationCounts): ClassificationCounts {
     malformedKey: source.malformedKey,
     invalidEffect: source.invalidEffect,
   };
+}
+
+function getReadiness(counts: ClassificationCounts): SnapshotDriftReadiness {
+  const hasInvalidFields =
+    counts.invalidAction > 0 ||
+    counts.nonReservedWildcard > 0 ||
+    counts.malformedKey > 0 ||
+    counts.invalidEffect > 0;
+
+  if (hasInvalidFields) {
+    return 'invalid_snapshot_fields';
+  }
+
+  const hasLegacyResources = counts.legacyResource > 0;
+  const hasUnsupportedActions = counts.unsupportedAction > 0;
+
+  if (!hasLegacyResources && !hasUnsupportedActions) {
+    return 'clean';
+  }
+
+  if (hasLegacyResources && !hasUnsupportedActions) {
+    return 'legacy_resource_only';
+  }
+
+  if (!hasLegacyResources && hasUnsupportedActions) {
+    return 'unsupported_action_only';
+  }
+
+  return 'mixed_drift';
 }
 
 function parseCliArgs(argv: string[]): CliOptions {
@@ -534,6 +572,7 @@ async function auditSchemaSnapshots(
       users.set(snapshot.userId, {
         userId: snapshot.userId,
         username,
+        readiness: getReadiness(counts),
         snapshotCount: 1,
         totalFields: snapshotAudit.totalFields,
         anomalyFieldCount: snapshotAudit.anomalyFieldCount,
@@ -545,6 +584,7 @@ async function auditSchemaSnapshots(
 
   return {
     schemaName,
+    readiness: getReadiness(schemaCounts),
     snapshotCount: filteredKeys.length,
     userCount: users.size,
     totalFields,
@@ -621,6 +661,7 @@ function printSummary(summary: SnapshotAuditSummary): void {
     console.log(`- users matched: ${schemaAudit.userCount}`);
     console.log(`- total fields: ${schemaAudit.totalFields}`);
     console.log(`- anomalous fields: ${schemaAudit.anomalyFieldCount}`);
+    console.log(`- readiness: ${schemaAudit.readiness}`);
     printCounts('- ', schemaAudit.counts);
 
     if (schemaAudit.unmatchedUserFilters.length > 0) {
@@ -636,6 +677,7 @@ function printSummary(summary: SnapshotAuditSummary): void {
 
     for (const userAudit of anomalousUsers) {
       console.log(`  User: ${userAudit.username ?? 'unknown'} (${userAudit.userId})`);
+      console.log(`  - readiness: ${userAudit.readiness}`);
       console.log(`  - snapshots: ${userAudit.snapshotCount}`);
       console.log(`  - anomalous fields: ${userAudit.anomalyFieldCount}`);
 
