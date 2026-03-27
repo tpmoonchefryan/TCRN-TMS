@@ -1,6 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { CreateSystemRoleInput, RbacRolePolicyEffect, RolePermissionInput, UpdateSystemRoleInput } from '@tcrn/shared';
+import {
+  type CreateSystemRoleInput,
+  type RbacRolePolicyEffect,
+  resolveRbacPermission,
+  type RolePermissionInput,
+  type UpdateSystemRoleInput,
+} from '@tcrn/shared';
 
 import { DatabaseService } from '../database/database.service';
 
@@ -175,20 +181,47 @@ export class SystemRoleService {
     roleId: string, 
     permissions: RolePermissionInput[]
   ) {
+    const normalizedPermissions = permissions.map((permission) => {
+      const resolved = resolveRbacPermission(permission.resource, permission.action);
+
+      return {
+        ...permission,
+        resource: resolved.resourceCode,
+        action: resolved.checkedAction,
+      };
+    });
+
     // Find all matching policies (policy table no longer has effect field)
     const policies = await tx.policy.findMany({
       where: {
-        OR: permissions.map(p => ({
-          action: p.action,
+        OR: normalizedPermissions.map((permission) => ({
+          action: permission.action,
           resource: {
-            code: p.resource
-          }
-        }))
+            code: permission.resource,
+          },
+        })),
       },
       include: {
         resource: { select: { code: true } }
       }
     });
+
+    if (policies.length !== normalizedPermissions.length) {
+      const availablePolicyKeys = new Set(
+        policies.map((policy: { action: string; resource: { code: string } }) =>
+          `${policy.resource.code}:${policy.action}`),
+      );
+
+      const missingPermission = normalizedPermissions.find(
+        (permission) => !availablePolicyKeys.has(`${permission.resource}:${permission.action}`),
+      );
+
+      if (missingPermission) {
+        throw new BadRequestException(
+          `RBAC policy ${missingPermission.resource}:${missingPermission.action} is missing from the database contract`,
+        );
+      }
+    }
 
     // Create a map for quick lookup of policy by resource:action
     const policyMap = new Map<string, string>();
@@ -199,14 +232,14 @@ export class SystemRoleService {
 
     // Create RolePolicy entries with effect
     const rolePolicyData: Array<{ roleId: string; policyId: string; effect: RbacRolePolicyEffect }> = [];
-    for (const perm of permissions) {
-      const key = `${perm.resource}:${perm.action}`;
+    for (const permission of normalizedPermissions) {
+      const key = `${permission.resource}:${permission.action}`;
       const policyId = policyMap.get(key);
       if (policyId) {
         rolePolicyData.push({
           roleId,
           policyId,
-          effect: perm.effect ?? 'grant',
+          effect: permission.effect ?? 'grant',
         });
       }
     }

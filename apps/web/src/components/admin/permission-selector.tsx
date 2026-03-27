@@ -42,7 +42,10 @@ export function PermissionSelector({ value, onChange, labels, disabled }: Permis
     fetchResources();
   }, []);
 
-  const getPermissionEffect = (resource: string, action: PermissionAction): RbacRolePolicyEffect | 'unset' => {
+  const getPermissionEffect = (
+    resource: RolePermissionInput['resource'],
+    action: PermissionAction,
+  ): RbacRolePolicyEffect | 'unset' => {
     const permission = value.find((entry) => entry.resource === resource && entry.action === action);
 
     if (!permission) {
@@ -53,7 +56,7 @@ export function PermissionSelector({ value, onChange, labels, disabled }: Permis
   };
 
   const setPermissionEffect = (
-    resource: string,
+    resource: RolePermissionInput['resource'],
     action: PermissionAction,
     effect: RbacRolePolicyEffect | 'unset',
   ) => {

@@ -148,12 +148,16 @@ export const RBAC_RESOURCES = [
 ] as const satisfies readonly RbacResourceDefinition[];
 
 export type RbacResourceCode = (typeof RBAC_RESOURCES)[number]['code'];
+export const RBAC_RESOURCE_CODES = RBAC_RESOURCES.map((definition) => definition.code) as [
+  RbacResourceCode,
+  ...RbacResourceCode[],
+];
 
 export const RBAC_RESOURCE_MAP: ReadonlyMap<RbacResourceCode, (typeof RBAC_RESOURCES)[number]> = new Map(
   RBAC_RESOURCES.map((definition) => [definition.code, definition]),
 );
 
-export function getRbacResourceDefinition(resourceCode: string): RbacResourceDefinition | undefined {
+export function getRbacResourceDefinition(resourceCode: string): (typeof RBAC_RESOURCES)[number] | undefined {
   if (!RBAC_RESOURCE_MAP.has(resourceCode as RbacResourceCode)) {
     return undefined;
   }

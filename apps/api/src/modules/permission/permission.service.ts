@@ -3,10 +3,12 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import {
+  getRbacResourceDefinition,
   isCanonicalPermissionAction,
   type LocalizedPermissionData,
   type PermissionAction as RbacPermissionAction,
   RBAC_MODULE_LABELS,
+  type RbacResourceCode,
   type ResourceDefinition,
 } from '@tcrn/shared';
 
@@ -147,14 +149,19 @@ export class PermissionService {
 
     // Group by module
     const moduleMap = new Map<string, Array<{
-      code: string;
+      code: RbacResourceCode;
       name: string;
       actions: PermissionAction[];
     }>>();
     
     for (const res of resources) {
-      if (!moduleMap.has(res.module)) {
-        moduleMap.set(res.module, []);
+      const definition = getRbacResourceDefinition(res.code);
+      if (!definition) {
+        continue;
+      }
+
+      if (!moduleMap.has(definition.module)) {
+        moduleMap.set(definition.module, []);
       }
       
       const name = language === 'zh' ? (res.nameZh || res.nameEn) 
@@ -165,10 +172,10 @@ export class PermissionService {
         ? res.actions.split(',').filter(isCanonicalPermissionAction)
         : [];
       
-      const moduleResources = moduleMap.get(res.module);
+      const moduleResources = moduleMap.get(definition.module);
       if (moduleResources) {
         moduleResources.push({
-          code: res.code,
+          code: definition.code as RbacResourceCode,
           name,
           actions,
         });

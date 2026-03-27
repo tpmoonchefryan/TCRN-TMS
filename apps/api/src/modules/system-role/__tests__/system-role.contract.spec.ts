@@ -31,4 +31,24 @@ describe('SystemRole contract schemas', () => {
       permissions: [{ resource: 'customer.export', action: 'read', effect: 'grant' }],
     });
   });
+
+  it('rejects resource codes outside the shared RBAC catalog', () => {
+    const result = CreateSystemRoleSchema.safeParse({
+      code: 'INVALID_RESOURCE_ROLE',
+      nameEn: 'Invalid Resource Role',
+      permissions: [{ resource: 'config.unknown', action: 'read' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects non-canonical permission actions in role payloads', () => {
+    const result = CreateSystemRoleSchema.safeParse({
+      code: 'INVALID_ACTION_ROLE',
+      nameEn: 'Invalid Action Role',
+      permissions: [{ resource: 'customer.export', action: 'create' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

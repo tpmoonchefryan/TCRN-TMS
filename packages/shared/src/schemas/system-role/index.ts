@@ -1,15 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // System Role Module Zod Schemas
 
-import { RBAC_ROLE_POLICY_EFFECTS } from '../../rbac/catalog';
 import { z } from 'zod';
+
+import {
+  RBAC_CANONICAL_ACTIONS,
+  RBAC_RESOURCE_CODES,
+  RBAC_ROLE_POLICY_EFFECTS,
+} from '../../rbac/catalog';
 
 // ============================================================================
 // Schemas
 // ============================================================================
 export const RolePermissionSchema = z.object({
-  resource: z.string().min(1, 'Resource is required'),
-  action: z.string().min(1, 'Action is required'),
+  resource: z.enum(RBAC_RESOURCE_CODES),
+  action: z.enum(RBAC_CANONICAL_ACTIONS),
   effect: z.enum(RBAC_ROLE_POLICY_EFFECTS).optional(),
 });
 

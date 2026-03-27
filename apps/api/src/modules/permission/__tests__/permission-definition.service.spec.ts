@@ -89,4 +89,41 @@ describe('PermissionService', () => {
       'perm-1',
     );
   });
+
+  it('returns only catalog-backed resource definitions for the UI contract', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        code: 'customer.export',
+        module: 'customer',
+        nameEn: 'Customer Export',
+        nameZh: '客户导出',
+        nameJa: '顧客エクスポート',
+        actions: 'read,write,delete',
+      },
+      {
+        code: 'legacy.unknown',
+        module: 'legacy',
+        nameEn: 'Legacy Unknown',
+        nameZh: null,
+        nameJa: null,
+        actions: 'read',
+      },
+    ]);
+
+    const result = await service.getResourceDefinitions('tenant_test', 'en');
+
+    expect(result).toEqual([
+      {
+        module: 'customer',
+        moduleName: 'Customer',
+        resources: [
+          {
+            code: 'customer.export',
+            name: 'Customer Export',
+            actions: ['read', 'write', 'delete'],
+          },
+        ],
+      },
+    ]);
+  });
 });

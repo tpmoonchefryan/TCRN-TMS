@@ -363,12 +363,12 @@ describe('PermissionMatrix Component', () => {
     it('should handle resource with no matching permissions', () => {
       const resourcesWithNoMatch: ResourceDefinition[] = [
         {
-          module: 'unknown',
-          moduleName: 'Unknown Module',
+          module: 'log',
+          moduleName: 'Log Module',
           resources: [
             {
-              code: 'unknown.resource',
-              name: 'Unknown Resource',
+              code: 'log.search',
+              name: 'Log Search',
               actions: [ActionType.READ],
             },
           ],
@@ -384,8 +384,8 @@ describe('PermissionMatrix Component', () => {
         />
       );
 
-      expect(screen.getByText('Unknown Module')).toBeInTheDocument();
-      expect(screen.getByText('Unknown Resource')).toBeInTheDocument();
+      expect(screen.getByText('Log Module')).toBeInTheDocument();
+      expect(screen.getByText('Log Search')).toBeInTheDocument();
     });
 
     it('should preserve unrelated permissions when selecting/deselecting', async () => {

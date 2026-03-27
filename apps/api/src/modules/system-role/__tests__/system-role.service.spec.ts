@@ -50,7 +50,7 @@ describe('SystemRoleService', () => {
         {
           effect: 'deny',
           policy: {
-            action: 'execute',
+            action: 'delete',
             resource: { code: 'customer.export' },
           },
         },
@@ -60,7 +60,7 @@ describe('SystemRoleService', () => {
     const result = await service.findOne('role-1');
 
     expect(result?.permissions).toEqual([
-      { resource: 'customer.export', action: 'execute', effect: 'deny' },
+      { resource: 'customer.export', action: 'delete', effect: 'deny' },
     ]);
   });
 
@@ -68,7 +68,7 @@ describe('SystemRoleService', () => {
     mockPrisma.role.findUnique.mockResolvedValue(null);
     mockTx.role.create.mockResolvedValue({ id: 'role-1' });
     mockTx.policy.findMany.mockResolvedValue([
-      { id: 'policy-1', action: 'execute', resource: { code: 'customer.export' } },
+      { id: 'policy-1', action: 'delete', resource: { code: 'customer.export' } },
       { id: 'policy-2', action: 'read', resource: { code: 'customer.export' } },
     ]);
 
@@ -76,7 +76,7 @@ describe('SystemRoleService', () => {
       code: 'EXPORT_MANAGER',
       nameEn: 'Export Manager',
       permissions: [
-        { resource: 'customer.export', action: 'execute', effect: 'deny' },
+        { resource: 'customer.export', action: 'delete', effect: 'deny' },
         { resource: 'customer.export', action: 'read' },
       ],
     });
@@ -87,5 +87,26 @@ describe('SystemRoleService', () => {
         { roleId: 'role-1', policyId: 'policy-2', effect: 'grant' },
       ],
     });
+  });
+
+  it('fails closed when a catalog-backed permission is missing from the database policy table', async () => {
+    mockPrisma.role.findUnique.mockResolvedValue(null);
+    mockTx.role.create.mockResolvedValue({ id: 'role-1' });
+    mockTx.policy.findMany.mockResolvedValue([
+      { id: 'policy-1', action: 'read', resource: { code: 'customer.export' } },
+    ]);
+
+    await expect(service.create({
+      code: 'EXPORT_MANAGER',
+      nameEn: 'Export Manager',
+      permissions: [
+        { resource: 'customer.export', action: 'read' },
+        { resource: 'customer.export', action: 'delete' },
+      ],
+    })).rejects.toThrow(
+      'RBAC policy customer.export:delete is missing from the database contract',
+    );
+
+    expect(mockTx.rolePolicy.createMany).not.toHaveBeenCalled();
   });
 });
