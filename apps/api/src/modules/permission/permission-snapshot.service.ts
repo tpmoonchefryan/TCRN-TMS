@@ -324,8 +324,26 @@ export class PermissionSnapshotService {
       JOIN "${tenantSchema}".resource r ON p.resource_id = r.id
       WHERE rp.role_id = CAST($1 AS uuid) AND p.is_active = true
     `, roleId);
-    
-    return permissions;
+
+    return permissions.filter((permission) => this.shouldStoreRuntimePermission(permission));
+  }
+
+  /**
+   * Preserve legacy resource keys until historical schemas are fully pruned,
+   * but stop storing unsupported actions for catalog-backed resources.
+   */
+  private shouldStoreRuntimePermission(permission: Permission): boolean {
+    const resourceDefinition = getRbacResourceDefinition(permission.resourceCode);
+
+    if (!resourceDefinition) {
+      return true;
+    }
+
+    if (!isCanonicalPermissionAction(permission.action)) {
+      return false;
+    }
+
+    return resourceDefinition.supportedActions.includes(permission.action);
   }
 
   /**

@@ -11,6 +11,10 @@ import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 import { fileURLToPath } from 'node:url';
+import {
+  getRbacResourceDefinition,
+  isCanonicalPermissionAction,
+} from '@tcrn/shared';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 
@@ -270,7 +274,7 @@ async function getRolePermissions(
   schemaName: string,
   roleId: string,
 ): Promise<Permission[]> {
-  return prisma.$queryRawUnsafe<Permission[]>(
+  const permissions = await prisma.$queryRawUnsafe<Permission[]>(
     `
       SELECT
         r.code AS "resourceCode",
@@ -284,6 +288,22 @@ async function getRolePermissions(
     `,
     roleId,
   );
+
+  return permissions.filter(shouldStoreRuntimePermission);
+}
+
+function shouldStoreRuntimePermission(permission: Permission): boolean {
+  const resourceDefinition = getRbacResourceDefinition(permission.resourceCode);
+
+  if (!resourceDefinition) {
+    return true;
+  }
+
+  if (!isCanonicalPermissionAction(permission.action)) {
+    return false;
+  }
+
+  return resourceDefinition.supportedActions.includes(permission.action);
 }
 
 export async function getScopeChain(

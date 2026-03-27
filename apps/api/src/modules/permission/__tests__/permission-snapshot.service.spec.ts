@@ -280,6 +280,26 @@ describe('PermissionSnapshotService', () => {
       expect(mockRedisService.del).toHaveBeenCalled();
       expect(mockRedisService.hmset).not.toHaveBeenCalled();
     });
+
+    it('stores legacy resource keys but drops unsupported actions for catalog-backed resources', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([{ roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true }])
+        .mockResolvedValueOnce([
+          { resourceCode: 'customer.profile', action: 'read', effect: 'grant' },
+          { resourceCode: 'customer.pii', action: 'delete', effect: 'grant' },
+          { resourceCode: 'homepage', action: 'read', effect: 'grant' },
+        ]);
+
+      await service.calculateAndStoreSnapshot(testTenantSchema, testUserId, 'tenant', null);
+
+      expect(mockRedisService.hmset).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+        {
+          'customer.profile:read': 'grant',
+          'homepage:read': 'grant',
+        }
+      );
+    });
   });
 
   describe('refreshUserSnapshots', () => {
