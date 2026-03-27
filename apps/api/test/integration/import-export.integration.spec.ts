@@ -99,6 +99,34 @@ describe('Import/Export Integration Tests', () => {
     return marshmallowExportJobId;
   };
 
+  const markExportJobCompleted = async (
+    jobId: string,
+    jobType: 'customer_export' | 'marshmallow_export',
+    fileName: string,
+  ) => {
+    const filePath = `${tenantFixture.schemaName}/${jobId}/${fileName}`;
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE "${tenantFixture.schemaName}".export_job
+       SET status = 'success',
+           file_path = $1,
+           file_name = $2,
+           total_records = 1,
+           processed_records = 1,
+           completed_at = NOW(),
+           expires_at = NOW() + INTERVAL '7 days',
+           updated_at = NOW()
+       WHERE id = $3::uuid
+         AND job_type = $4`,
+      filePath,
+      fileName,
+      jobId,
+      jobType,
+    );
+
+    return filePath;
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -304,6 +332,25 @@ describe('Import/Export Integration Tests', () => {
 
       expect(detailResponse.body.success).toBe(false);
       expect(detailResponse.body.error.code).toBe('RES_NOT_FOUND');
+    });
+
+    it('should return the correct dedicated marshmallow downloadUrl when a marshmallow export job is completed', async () => {
+      const createResponse = await createMarshmallowExportJob();
+      const jobId = createResponse.body.data.jobId as string;
+
+      await markExportJobCompleted(jobId, 'marshmallow_export', 'marshmallow_export_test.csv');
+
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/export/${jobId}`),
+        false,
+      ).expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.id).toBe(jobId);
+      expect(response.body.data.status).toBe('success');
+      expect(response.body.data.downloadUrl).toBe(
+        `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`,
+      );
     });
 
     it('should filter export jobs by status', async () => {

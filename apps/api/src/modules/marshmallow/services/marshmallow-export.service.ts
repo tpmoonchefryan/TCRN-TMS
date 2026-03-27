@@ -164,6 +164,7 @@ export class MarshmallowExportService {
    */
   async getExportJob(
     jobId: string,
+    talentId: string,
     tenantSchema: string,
   ): Promise<MarshmallowExportJobResponse> {
     const prisma = this.databaseService.getPrisma();
@@ -212,7 +213,7 @@ export class MarshmallowExportService {
       totalRecords: job.totalRecords,
       processedRecords: job.processedRecords,
       downloadUrl: job.status === MarshmallowExportStatus.SUCCESS && job.filePath
-        ? `/api/v1/talents/${jobId}/marshmallow/export/${jobId}/download`
+        ? `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
         : null,
       expiresAt: job.expiresAt?.toISOString() ?? null,
       createdAt: job.createdAt.toISOString(),

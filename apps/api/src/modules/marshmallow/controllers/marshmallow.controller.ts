@@ -329,7 +329,7 @@ export class MarshmallowController {
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.exportService.getExportJob(jobId, user.tenantSchema);
+    return this.exportService.getExportJob(jobId, talentId, user.tenantSchema);
   }
 
   @Get('export/:jobId/download')
