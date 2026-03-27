@@ -9,6 +9,7 @@ import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 
 export interface CliOptions {
   schemas: string[];
+  legacyCodes: string[];
   skipTemplate: boolean;
   includeHistoricalRoles: boolean;
   includeCompatResources: boolean;
@@ -303,6 +304,7 @@ export function formatCanonicalLabel(target: CanonicalTargetLike): string {
 
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
+  const legacyCodes: string[] = [];
   let skipTemplate = false;
   let includeHistoricalRoles = false;
   let includeCompatResources = false;
@@ -324,6 +326,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       }
 
       schemas.push(value);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--resource') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --resource');
+      }
+
+      legacyCodes.push(value);
       index += 1;
       continue;
     }
@@ -365,12 +379,21 @@ function parseCliArgs(argv: string[]): CliOptions {
 
   return {
     schemas,
+    legacyCodes: [...new Set(legacyCodes)],
     skipTemplate,
     includeHistoricalRoles,
     includeCompatResources,
     excludeRoles: [...new Set(excludeRoles)],
     json,
   };
+}
+
+function matchesSelectedResources(legacyCode: string, selectedLegacyCodes: string[]): boolean {
+  if (selectedLegacyCodes.length === 0) {
+    return true;
+  }
+
+  return selectedLegacyCodes.includes(legacyCode);
 }
 
 async function getTenantSchemasFromPublic(prisma: PrismaClient): Promise<string[]> {
@@ -825,7 +848,9 @@ export async function auditSchema(
   options: CliOptions,
 ): Promise<SchemaLegacyAudit> {
   const targets = await Promise.all(
-    LEGACY_RESOURCE_TARGETS.map(async (target) => {
+    LEGACY_RESOURCE_TARGETS
+      .filter((target) => matchesSelectedResources(target.legacyCode, options.legacyCodes))
+      .map(async (target) => {
       const legacy = await getResourceAudit(prisma, schemaName, target.legacyCode);
       const canonicalResources = await Promise.all(
         getCanonicalCodes(target).map((canonicalCode) =>
