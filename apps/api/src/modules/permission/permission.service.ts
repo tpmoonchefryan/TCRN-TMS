@@ -6,17 +6,15 @@ import {
   isCanonicalPermissionAction,
   type LocalizedPermissionData,
   type PermissionAction as RbacPermissionAction,
-  type PolicyEffect,
   RBAC_MODULE_LABELS,
   type ResourceDefinition,
 } from '@tcrn/shared';
 
 export type PermissionAction = RbacPermissionAction;
-export type PermissionEffect = PolicyEffect;
 
 /**
  * Permission Service
- * Manages permission entries using Policy + Resource tables
+ * Manages discrete permission definitions using Policy + Resource tables.
  */
 @Injectable()
 export class PermissionService {
@@ -28,7 +26,6 @@ export class PermissionService {
     options: {
       resourceCode?: string;
       action?: PermissionAction;
-      effect?: PermissionEffect;
       isActive?: boolean;
     } = {}
   ): Promise<LocalizedPermissionData[]> {
@@ -44,10 +41,6 @@ export class PermissionService {
       whereClause += ` AND p.action = $${paramIndex++}`;
       params.push(options.action);
     }
-    if (options.effect) {
-      whereClause += ` AND p.effect = $${paramIndex++}`;
-      params.push(options.effect);
-    }
     if (options.isActive !== undefined) {
       whereClause += ` AND p.is_active = $${paramIndex++}`;
       params.push(options.isActive);
@@ -58,7 +51,6 @@ export class PermissionService {
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        p.effect,
         r.name_en as "nameEn", 
         r.name_zh as "nameZh", 
         r.name_ja as "nameJa",
@@ -69,7 +61,7 @@ export class PermissionService {
       FROM "${tenantSchema}".policy p
       JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
       WHERE ${whereClause}
-      ORDER BY r.code, p.action, p.effect
+      ORDER BY r.code, p.action
     `, ...params);
 
     return results;
@@ -84,7 +76,6 @@ export class PermissionService {
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        p.effect,
         r.name_en as "nameEn", 
         r.name_zh as "nameZh", 
         r.name_ja as "nameJa",
@@ -111,7 +102,6 @@ export class PermissionService {
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        p.effect,
         r.name_en as "nameEn", 
         r.name_zh as "nameZh", 
         r.name_ja as "nameJa",

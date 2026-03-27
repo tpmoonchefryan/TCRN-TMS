@@ -27,8 +27,7 @@ import {
     ScopeType,
     SeverityLevel,
     TenantTier,
-    VersionStatus,
-    type PolicyEffect
+    VersionStatus
 } from './enums';
 import type { RbacRolePolicyEffect } from '../rbac/catalog';
 
@@ -145,7 +144,6 @@ export interface Resource extends SoftDeletableEntity, LocalizableEntity {
 export interface Policy extends SoftDeletableEntity {
   resource_id: string;
   action: ActionType;
-  effect: PolicyEffect;
   conditions?: Record<string, unknown>;
   description?: string;
 }

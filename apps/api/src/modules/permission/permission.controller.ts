@@ -12,7 +12,6 @@ import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags 
 import {
   normalizePermissionAction,
   type PermissionActionInput,
-  POLICY_EFFECTS,
   RBAC_ACTION_INPUTS,
   RBAC_CANONICAL_ACTIONS,
 } from '@tcrn/shared';
@@ -22,7 +21,7 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
-import { PermissionAction, PermissionEffect, PermissionService } from './permission.service';
+import { PermissionAction, PermissionService } from './permission.service';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
 // DTOs
@@ -40,15 +39,6 @@ class ListPermissionsQueryDto {
   @IsOptional()
   @IsIn(RBAC_CANONICAL_ACTIONS)
   action?: PermissionAction;
-
-  @ApiPropertyOptional({
-    description: 'Filter by stored policy effect metadata (`allow` or `deny`). Runtime permission snapshots use `grant`/`deny` separately.',
-    example: 'allow',
-    enum: POLICY_EFFECTS,
-  })
-  @IsOptional()
-  @IsIn(POLICY_EFFECTS)
-  effect?: PermissionEffect;
 
   @ApiPropertyOptional({ description: 'Filter by active status', example: true })
   @IsOptional()
@@ -149,7 +139,6 @@ export class PermissionController {
     const permissions = await this.permissionService.list(user.tenantSchema, {
       resourceCode: query.resourceCode,
       action: query.action,
-      effect: query.effect,
       isActive: query.isActive,
     });
 
@@ -157,7 +146,6 @@ export class PermissionController {
       id: perm.id,
       resourceCode: perm.resourceCode,
       action: perm.action,
-      effect: perm.effect,
       name: getLocalizedName(perm, language),
       description: perm.description,
       isSystem: perm.isSystem,

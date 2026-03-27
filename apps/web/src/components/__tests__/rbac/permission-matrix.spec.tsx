@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ActionType, EffectType, Permission, ResourceDefinition } from '@tcrn/shared';
+import { ActionType, Permission, ResourceDefinition } from '@tcrn/shared';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,16 +43,16 @@ function createTestResources(): ResourceDefinition[] {
 function createTestPermissions(): Permission[] {
   return [
     // Customer Profile permissions
-    { id: 'perm-1', resourceCode: 'customer.profile', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-2', resourceCode: 'customer.profile', action: ActionType.WRITE, effect: EffectType.ALLOW },
-    { id: 'perm-3', resourceCode: 'customer.profile', action: ActionType.DELETE, effect: EffectType.ALLOW },
+    { id: 'perm-1', resourceCode: 'customer.profile', action: ActionType.READ },
+    { id: 'perm-2', resourceCode: 'customer.profile', action: ActionType.WRITE },
+    { id: 'perm-3', resourceCode: 'customer.profile', action: ActionType.DELETE },
     // Customer PII permissions
-    { id: 'perm-4', resourceCode: 'customer.pii', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-5', resourceCode: 'customer.pii', action: ActionType.ADMIN, effect: EffectType.ALLOW },
+    { id: 'perm-4', resourceCode: 'customer.pii', action: ActionType.READ },
+    { id: 'perm-5', resourceCode: 'customer.pii', action: ActionType.ADMIN },
     // Report MFR permissions
-    { id: 'perm-6', resourceCode: 'report.mfr', action: ActionType.READ, effect: EffectType.ALLOW },
-    { id: 'perm-7', resourceCode: 'report.mfr', action: ActionType.WRITE, effect: EffectType.ALLOW },
-    { id: 'perm-8', resourceCode: 'report.mfr', action: ActionType.EXECUTE, effect: EffectType.ALLOW },
+    { id: 'perm-6', resourceCode: 'report.mfr', action: ActionType.READ },
+    { id: 'perm-7', resourceCode: 'report.mfr', action: ActionType.WRITE },
+    { id: 'perm-8', resourceCode: 'report.mfr', action: ActionType.EXECUTE },
   ];
 }
 

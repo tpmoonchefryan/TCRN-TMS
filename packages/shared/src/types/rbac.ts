@@ -1,13 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { PermissionAction, RbacRolePolicyEffect } from '../rbac/catalog';
-import type { PolicyEffect } from './enums';
 
 export interface Permission {
   id: string;
   resourceCode: string;
   action: PermissionAction;
-  effect: PolicyEffect;
   name?: string;
   description?: string | null;
   isSystem?: boolean;
