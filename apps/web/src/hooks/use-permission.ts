@@ -57,6 +57,28 @@ export function usePermission() {
         if (effectivePermissions[permKey] === 'grant') {
           return true;
         }
+
+        // Align with backend PermissionSnapshotService semantics
+        if (effectivePermissions[`${resource}:admin`] === 'deny') {
+          return false;
+        }
+        if (effectivePermissions[`${resource}:admin`] === 'grant') {
+          return true;
+        }
+
+        if (effectivePermissions['*:admin'] === 'deny') {
+          return false;
+        }
+        if (effectivePermissions['*:admin'] === 'grant') {
+          return true;
+        }
+
+        if (effectivePermissions['*:*'] === 'deny') {
+          return false;
+        }
+        if (effectivePermissions['*:*'] === 'grant') {
+          return true;
+        }
         
         // Check wildcard grant (e.g., "customer:*" or "*:read")
         if (effectivePermissions[`${resource}:*`] === 'grant') {

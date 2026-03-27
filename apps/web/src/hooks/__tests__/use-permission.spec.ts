@@ -46,6 +46,34 @@ describe('usePermission', () => {
     expect(result.current.hasPermission('customer.profile', ActionType.WRITE)).toBe(false);
   });
 
+  it('grants access from resource-level admin in backend effective permissions', () => {
+    mockUseAuthStore.mockReturnValue({
+      user: { roles: [{ code: 'TENANT_ADMIN' }] },
+      isAuthenticated: true,
+      effectivePermissions: {
+        'customer.profile:admin': 'grant',
+      },
+    });
+
+    const { result } = renderHook(() => usePermission());
+
+    expect(result.current.hasPermission('customer.profile', ActionType.DELETE)).toBe(true);
+  });
+
+  it('grants access from global admin wildcard in backend effective permissions', () => {
+    mockUseAuthStore.mockReturnValue({
+      user: { roles: [{ code: 'TENANT_ADMIN' }] },
+      isAuthenticated: true,
+      effectivePermissions: {
+        '*:admin': 'grant',
+      },
+    });
+
+    const { result } = renderHook(() => usePermission());
+
+    expect(result.current.hasPermission('report.mfr', ActionType.WRITE)).toBe(true);
+  });
+
   it('fails closed when backend permissions are missing instead of trusting hardcoded role fallbacks', () => {
     mockUseAuthStore.mockReturnValue({
       user: { roles: [{ code: 'TENANT_ADMIN' }] },
