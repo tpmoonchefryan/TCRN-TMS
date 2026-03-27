@@ -5,9 +5,6 @@ import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export enum ExportJobType {
   CUSTOMER_EXPORT = 'customer_export',
-  MEMBERSHIP_EXPORT = 'membership_export',
-  REPORT_EXPORT = 'report_export',
-  MARSHMALLOW_EXPORT = 'marshmallow_export',
 }
 
 export enum ExportFormat {
@@ -25,7 +22,10 @@ export enum ExportJobStatus {
 }
 
 export class CreateExportJobDto {
-  @ApiProperty({ enum: ExportJobType })
+  @ApiProperty({
+    enum: ExportJobType,
+    description: 'Generic /exports currently supports customer_export only',
+  })
   @IsEnum(ExportJobType)
   jobType: ExportJobType;
 
@@ -51,36 +51,11 @@ export class CreateExportJobDto {
   @IsString()
   membershipClassCode?: string;
 
-  @ApiPropertyOptional({ description: 'Include PII fields (requires permission)' })
-  @IsOptional()
-  includePii?: boolean = false;
-
   @ApiPropertyOptional({ description: 'Fields to export' })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   fields?: string[];
-
-  // Marshmallow-specific filters
-  @ApiPropertyOptional({ description: 'Filter by message status (for marshmallow)' })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  messageStatus?: string[];
-
-  @ApiPropertyOptional({ description: 'Start date for marshmallow export' })
-  @IsOptional()
-  @IsString()
-  startDate?: string;
-
-  @ApiPropertyOptional({ description: 'End date for marshmallow export' })
-  @IsOptional()
-  @IsString()
-  endDate?: string;
-
-  @ApiPropertyOptional({ description: 'Include rejected messages (for marshmallow)' })
-  @IsOptional()
-  includeRejected?: boolean = false;
 }
 
 export class ExportJobQueryDto {

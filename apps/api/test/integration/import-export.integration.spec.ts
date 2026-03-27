@@ -36,6 +36,7 @@ describe('Import/Export Integration Tests', () => {
   let accessToken: string;
   let talentId: string;
   let exportJobId: string | undefined;
+  let marshmallowExportJobId: string | undefined;
   const createdExportQueueJobIds = new Set<string>();
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
@@ -72,6 +73,30 @@ describe('Import/Export Integration Tests', () => {
     const response = await createExportJob();
     exportJobId = response.body.data.id;
     return exportJobId;
+  };
+
+  const createMarshmallowExportJob = async () => {
+    const response = await withAuth(
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/marshmallow/export`),
+      false,
+    )
+      .send({
+        format: 'csv',
+      })
+      .expect(201);
+
+    createdExportQueueJobIds.add(response.body.data.jobId);
+    return response;
+  };
+
+  const ensureMarshmallowExportJob = async (): Promise<string> => {
+    if (marshmallowExportJobId) {
+      return marshmallowExportJobId;
+    }
+
+    const response = await createMarshmallowExportJob();
+    marshmallowExportJobId = response.body.data.jobId;
+    return marshmallowExportJobId;
   };
 
   beforeAll(async () => {
@@ -211,22 +236,21 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
 
-    it('should reject supported-but-unimplemented generic export job types', async () => {
+    it('should reject unsupported generic export job types at validation boundary', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).post('/api/v1/exports'),
       )
         .send({
-          jobType: ExportJobType.REPORT_EXPORT,
+          jobType: 'report_export',
           format: ExportFormat.CSV,
         })
         .expect(400);
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
-      expect(response.body.error.message).toContain('customer_export only');
     });
 
-    it('should reject includePii for generic customer exports', async () => {
+    it('should reject includePii because generic /exports no longer exposes it', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).post('/api/v1/exports'),
       )
@@ -239,7 +263,6 @@ describe('Import/Export Integration Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
-      expect(response.body.error.message).toContain('includePii');
     });
 
     it('should list export jobs for the current talent profile store', async () => {
@@ -254,6 +277,33 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data.items)).toBe(true);
       expect(response.body.data.items.some((item: { id: string }) => item.id === exportJobId)).toBe(true);
+    });
+
+    it('should keep marshmallow export jobs outside the generic /exports surface', async () => {
+      const customerJobId = await ensureExportJob();
+      const marshmallowJobId = await ensureMarshmallowExportJob();
+
+      const listResponse = await withAuth(
+        request(app.getHttpServer()).get('/api/v1/exports'),
+      )
+        .query({ page: 1, pageSize: 20 })
+        .expect(200);
+
+      expect(listResponse.body.success).toBe(true);
+      expect(
+        listResponse.body.data.items.some((item: { id: string }) => item.id === customerJobId),
+      ).toBe(true);
+      expect(
+        listResponse.body.data.items.some((item: { id: string }) => item.id === marshmallowJobId),
+      ).toBe(false);
+
+      const detailResponse = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/exports/${marshmallowJobId}`),
+        false,
+      ).expect(404);
+
+      expect(detailResponse.body.success).toBe(false);
+      expect(detailResponse.body.error.code).toBe('RES_NOT_FOUND');
     });
 
     it('should filter export jobs by status', async () => {

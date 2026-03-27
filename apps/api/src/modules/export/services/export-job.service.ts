@@ -22,6 +22,8 @@ import {
   ExportJobType,
 } from '../dto/export.dto';
 
+const GENERIC_EXPORT_JOB_TYPE = ExportJobType.CUSTOMER_EXPORT;
+
 @Injectable()
 export class ExportJobService {
   constructor(
@@ -39,17 +41,10 @@ export class ExportJobService {
     dto: CreateExportJobDto,
     context: RequestContext,
   ): Promise<ExportJobResponse> {
-    if (dto.jobType !== ExportJobType.CUSTOMER_EXPORT) {
+    if (dto.jobType !== GENERIC_EXPORT_JOB_TYPE) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
         message: 'Generic /exports currently supports customer_export only',
-      });
-    }
-
-    if (dto.includePii) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Customer export does not support includePii yet',
       });
     }
 
@@ -77,7 +72,6 @@ export class ExportJobService {
       customerIds: dto.customerIds,
       tags: dto.tags,
       membershipClassCode: dto.membershipClassCode,
-      includePii: dto.includePii,
       fields: dto.fields,
     };
 
@@ -163,8 +157,10 @@ export class ExportJobService {
       completed_at: Date | null;
     }>>(`
       SELECT id, job_type, format, status, file_name, file_path, total_records, processed_records, expires_at, created_at, completed_at
-      FROM "${schema}".export_job WHERE id = $1::uuid
-    `, jobId);
+      FROM "${schema}".export_job
+      WHERE id = $1::uuid
+        AND job_type = $2
+    `, jobId, GENERIC_EXPORT_JOB_TYPE);
 
     if (!jobs.length) {
       throw new NotFoundException({
@@ -203,9 +199,9 @@ export class ExportJobService {
     const profileStoreId = talents[0].profile_store_id;
 
     // Build where conditions
-    const conditions: string[] = ['profile_store_id = $1::uuid'];
-    const params: unknown[] = [profileStoreId];
-    let paramIndex = 2;
+    const conditions: string[] = ['profile_store_id = $1::uuid', `job_type = $2`];
+    const params: unknown[] = [profileStoreId, GENERIC_EXPORT_JOB_TYPE];
+    let paramIndex = 3;
 
     if (status) {
       conditions.push(`status = $${paramIndex}`);
@@ -261,7 +257,8 @@ export class ExportJobService {
       file_path: string | null;
     }>>(`
       SELECT id, status, file_path FROM "${schema}".export_job WHERE id = $1::uuid
-    `, jobId);
+        AND job_type = $2
+    `, jobId, GENERIC_EXPORT_JOB_TYPE);
 
     if (!jobs.length) {
       throw new NotFoundException({
@@ -295,7 +292,8 @@ export class ExportJobService {
       status: string;
     }>>(`
       SELECT id, status FROM "${schema}".export_job WHERE id = $1::uuid
-    `, jobId);
+        AND job_type = $2
+    `, jobId, GENERIC_EXPORT_JOB_TYPE);
 
     if (!jobs.length) {
       throw new NotFoundException({
@@ -316,7 +314,8 @@ export class ExportJobService {
       UPDATE "${schema}".export_job
       SET status = $1, completed_at = NOW(), updated_at = NOW()
       WHERE id = $2::uuid
-    `, ExportJobStatus.CANCELLED, jobId);
+        AND job_type = $3
+    `, ExportJobStatus.CANCELLED, jobId, GENERIC_EXPORT_JOB_TYPE);
   }
 
   /**
