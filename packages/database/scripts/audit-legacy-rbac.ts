@@ -96,16 +96,6 @@ export interface LegacyRbacAuditSummary {
 
 const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
   {
-    legacyCode: 'config.customer_status',
-    canonicalCode: null,
-    note: 'No direct canonical replacement found in shared RBAC catalog.',
-  },
-  {
-    legacyCode: 'config.membership',
-    canonicalCode: null,
-    note: 'No direct canonical replacement found in shared RBAC catalog.',
-  },
-  {
     legacyCode: 'config.platform',
     canonicalCode: null,
     note: 'No direct canonical replacement found in shared RBAC catalog.',

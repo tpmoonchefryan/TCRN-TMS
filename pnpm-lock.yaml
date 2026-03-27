@@ -691,6 +691,9 @@ importers:
       argon2:
         specifier: 0.44.0
         version: 0.44.0
+      ioredis:
+        specifier: 5.7.0
+        version: 5.7.0
     devDependencies:
       '@tcrn/eslint-config':
         specifier: workspace:*
