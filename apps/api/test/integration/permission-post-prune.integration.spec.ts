@@ -36,7 +36,7 @@ interface LegacyPruneTargetFixture {
   expectedCanonicalPermissions: string[];
 }
 
-const LEGACY_TARGETS: readonly LegacyPruneTargetFixture[] = [
+const CONTENT_LOG_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'homepage',
     module: 'external',
@@ -80,11 +80,49 @@ const LEGACY_TARGETS: readonly LegacyPruneTargetFixture[] = [
   },
 ];
 
-const EXPECTED_CANONICAL_GRANTS = Object.fromEntries(
-  LEGACY_TARGETS.flatMap((target) =>
-    target.expectedCanonicalPermissions.map((permissionKey) => [permissionKey, 'grant']),
-  ),
-) as Record<string, 'grant'>;
+const CONFIG_SECURITY_TARGETS: readonly LegacyPruneTargetFixture[] = [
+  {
+    legacyCode: 'config.platform',
+    module: 'config',
+    nameEn: 'Platform Config',
+    sortOrder: 170,
+    legacyActions: ['read', 'write', 'delete', 'admin'],
+    expectedCanonicalPermissions: [
+      'config.platform_registry:read',
+      'config.platform_registry:write',
+      'config.platform_registry:admin',
+      'config.platform_settings:read',
+      'config.platform_settings:write',
+      'config.platform_settings:admin',
+    ],
+  },
+  {
+    legacyCode: 'log.security',
+    module: 'log',
+    nameEn: 'Security Log',
+    sortOrder: 300,
+    legacyActions: ['read', 'write', 'delete', 'admin'],
+    expectedCanonicalPermissions: ['log.search:read', 'log.tech_log:read'],
+  },
+];
+
+const ALL_LEGACY_RESOURCE_CODES = [...new Set(
+  [...CONTENT_LOG_TARGETS, ...CONFIG_SECURITY_TARGETS].map((target) => target.legacyCode),
+)];
+
+const ALL_LEGACY_RESOURCE_PATTERN = new RegExp(
+  `^(${ALL_LEGACY_RESOURCE_CODES.map((resourceCode) => resourceCode.replace('.', '\\.')).join('|')})$`,
+);
+
+function buildExpectedCanonicalGrants(
+  targets: readonly LegacyPruneTargetFixture[],
+): Record<string, 'grant'> {
+  return Object.fromEntries(
+    targets.flatMap((target) =>
+      target.expectedCanonicalPermissions.map((permissionKey) => [permissionKey, 'grant']),
+    ),
+  ) as Record<string, 'grant'>;
+}
 
 describe('Permission Post-Prune Integration', () => {
   let app: INestApplication;
@@ -109,17 +147,20 @@ describe('Permission Post-Prune Integration', () => {
       .set('Authorization', `Bearer ${issueToken(testUser)}`)
       .set('X-Tenant-ID', tenantFixture.tenant.id);
 
-  const selectedLegacyCodes = LEGACY_TARGETS.map((target) => target.legacyCode);
-  const expectedCanonicalKeys = Object.keys(EXPECTED_CANONICAL_GRANTS);
-
-  const pickPermissions = (permissions: Record<string, string>): Record<string, string> =>
+  const pickPermissions = (
+    permissions: Record<string, string>,
+    permissionKeys: readonly string[],
+  ): Record<string, string> =>
     Object.fromEntries(
-      expectedCanonicalKeys.map((permissionKey) => [permissionKey, permissions[permissionKey] ?? 'missing']),
+      permissionKeys.map((permissionKey) => [permissionKey, permissions[permissionKey] ?? 'missing']),
     );
 
-  const listLegacyPermissionKeys = (permissions: Record<string, string>): string[] =>
+  const listLegacyPermissionKeys = (
+    permissions: Record<string, string>,
+    targets: readonly LegacyPruneTargetFixture[],
+  ): string[] =>
     Object.keys(permissions).filter((permissionKey) =>
-      LEGACY_TARGETS.some((target) => permissionKey.startsWith(`${target.legacyCode}:`)),
+      targets.some((target) => permissionKey.startsWith(`${target.legacyCode}:`)),
     );
 
   async function seedLegacyResourceGrant(
@@ -234,39 +275,14 @@ describe('Permission Post-Prune Integration', () => {
     }
   }
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+  async function runPostPruneSmoke(
+    targets: readonly LegacyPruneTargetFixture[],
+  ): Promise<void> {
+    const selectedLegacyCodes = targets.map((target) => target.legacyCode);
+    const expectedCanonicalGrants = buildExpectedCanonicalGrants(targets);
+    const expectedCanonicalKeys = Object.keys(expectedCanonicalGrants);
 
-    app = moduleFixture.createNestApplication();
-    await bootstrapTestApp(app);
-
-    tokenService = moduleFixture.get(TokenService);
-    permissionSnapshotService = moduleFixture.get(PermissionSnapshotService);
-    redisService = moduleFixture.get(RedisService);
-    prisma = new PrismaClient();
-    tenantFixture = await createTestTenantFixture(prisma, 'permprune');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `perm_prune_admin_${Date.now()}`,
-      ['ADMIN'],
-    );
-  });
-
-  afterAll(async () => {
-    if (tenantFixture) {
-      await removePermissionSnapshots(tenantFixture.schemaName);
-    }
-
-    await tenantFixture?.cleanup();
-    await prisma?.$disconnect();
-    await app?.close();
-  });
-
-  it('keeps canonical grants on /users/me/permissions after pruning legacy homepage/marshmallow/log resources', async () => {
-    for (const target of LEGACY_TARGETS) {
+    for (const target of targets) {
       await seedLegacyResourceGrant(tenantFixture.schemaName, 'ADMIN', target);
     }
 
@@ -278,8 +294,8 @@ describe('Permission Post-Prune Integration', () => {
     ).expect(200);
     const beforePermissions = beforeResponse.body.data.permissions as Record<string, string>;
 
-    expect(pickPermissions(beforePermissions)).toEqual(EXPECTED_CANONICAL_GRANTS);
-    expect(listLegacyPermissionKeys(beforePermissions)).toEqual([]);
+    expect(pickPermissions(beforePermissions, expectedCanonicalKeys)).toEqual(expectedCanonicalGrants);
+    expect(listLegacyPermissionKeys(beforePermissions, targets)).toEqual([]);
 
     let auditSummary = await auditLegacyRbac(prisma, {
       schemas: [tenantFixture.schemaName],
@@ -291,7 +307,7 @@ describe('Permission Post-Prune Integration', () => {
       json: false,
     });
 
-    for (const target of LEGACY_TARGETS) {
+    for (const target of targets) {
       const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
         schemas: [tenantFixture.schemaName],
         legacyCodes: [target.legacyCode],
@@ -324,11 +340,11 @@ describe('Permission Post-Prune Integration', () => {
     expect(prunePlan.skipped).toEqual([]);
     expect(prunePlan.plans).toHaveLength(1);
     expect(prunePlan.plans[0]?.blocked).toEqual([]);
-    expect(prunePlan.plans[0]?.candidates).toHaveLength(LEGACY_TARGETS.length);
+    expect(prunePlan.plans[0]?.candidates).toHaveLength(targets.length);
 
     const applySummary = await executePrunePlan(prisma, prunePlan);
     expect(applySummary.applied).toHaveLength(1);
-    expect(applySummary.applied[0]?.targets).toHaveLength(LEGACY_TARGETS.length);
+    expect(applySummary.applied[0]?.targets).toHaveLength(targets.length);
 
     await removePermissionSnapshots(tenantFixture.schemaName);
     await permissionSnapshotService.refreshUserSnapshots(tenantFixture.schemaName, testUser.id);
@@ -338,9 +354,11 @@ describe('Permission Post-Prune Integration', () => {
     ).expect(200);
     const afterPermissions = afterResponse.body.data.permissions as Record<string, string>;
 
-    expect(pickPermissions(afterPermissions)).toEqual(EXPECTED_CANONICAL_GRANTS);
-    expect(pickPermissions(afterPermissions)).toEqual(pickPermissions(beforePermissions));
-    expect(listLegacyPermissionKeys(afterPermissions)).toEqual([]);
+    expect(pickPermissions(afterPermissions, expectedCanonicalKeys)).toEqual(expectedCanonicalGrants);
+    expect(pickPermissions(afterPermissions, expectedCanonicalKeys)).toEqual(
+      pickPermissions(beforePermissions, expectedCanonicalKeys),
+    );
+    expect(listLegacyPermissionKeys(afterPermissions, targets)).toEqual([]);
     expect(afterResponse.body.data.roles).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -366,9 +384,48 @@ describe('Permission Post-Prune Integration', () => {
     expect(postApplyAudit.audited).toHaveLength(1);
 
     for (const target of postApplyAudit.audited[0]?.targets ?? []) {
-      expect(target.legacyCode).toMatch(/^(homepage|marshmallow|log\.change|log\.integration)$/);
+      expect(target.legacyCode).toMatch(ALL_LEGACY_RESOURCE_PATTERN);
       expect(target.readiness).toBe('absent');
       expect(target.legacy.present).toBe(false);
     }
+  }
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await bootstrapTestApp(app);
+
+    tokenService = moduleFixture.get(TokenService);
+    permissionSnapshotService = moduleFixture.get(PermissionSnapshotService);
+    redisService = moduleFixture.get(RedisService);
+    prisma = new PrismaClient();
+    tenantFixture = await createTestTenantFixture(prisma, 'permprune');
+    testUser = await createTestUserInTenant(
+      prisma,
+      tenantFixture,
+      `perm_prune_admin_${Date.now()}`,
+      ['ADMIN'],
+    );
+  });
+
+  afterAll(async () => {
+    if (tenantFixture) {
+      await removePermissionSnapshots(tenantFixture.schemaName);
+    }
+
+    await tenantFixture?.cleanup();
+    await prisma?.$disconnect();
+    await app?.close();
+  });
+
+  it('keeps canonical grants on /users/me/permissions after pruning legacy homepage/marshmallow/log resources', async () => {
+    await runPostPruneSmoke(CONTENT_LOG_TARGETS);
+  });
+
+  it('keeps canonical grants on /users/me/permissions after pruning split/retired config-security legacy resources', async () => {
+    await runPostPruneSmoke(CONFIG_SECURITY_TARGETS);
   });
 });
