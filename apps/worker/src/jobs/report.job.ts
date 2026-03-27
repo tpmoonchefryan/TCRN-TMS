@@ -255,6 +255,29 @@ interface MfrRow {
   address?: string;
 }
 
+interface ReportHeader {
+  key: keyof MfrRow;
+  width: number;
+  label: string;
+}
+
+function getContentType(format: ReportFormat): string {
+  return format === 'csv'
+    ? 'text/csv'
+    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+}
+
+function escapeCsvField(field: string): string {
+  if (field.includes(',') || field.includes('"') || field.includes('\n') || field.includes('\r')) {
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+  return field;
+}
+
+function buildCsvRow(headers: ReportHeader[], row: MfrRow): string {
+  return headers.map((header) => escapeCsvField(String(row[header.key] ?? ''))).join(',');
+}
+
 /**
  * Report job processor (PRD §20)
  */
@@ -263,6 +286,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 ) => {
   const { jobId, reportType, tenantId, tenantSchemaName, userId: _userId, talentId, profileStoreId, filters, options } = job.data;
   const startTime = Date.now();
+  const format = job.data.format ?? 'xlsx';
 
   logger.info(`Processing report job ${jobId} type ${reportType} for tenant ${tenantId}`);
   logger.info(`Filters: ${JSON.stringify(filters)}`);
@@ -311,37 +335,42 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
     logger.info(`Total records to process: ${totalCount}`);
 
-    // 4. Create Excel workbook with streaming
-    tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.xlsx`);
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      filename: tempFilePath,
-      useStyles: true,
-      useSharedStrings: true,
-    });
-
-    const worksheet = workbook.addWorksheet('Membership Feedback Report', {
-      properties: { defaultRowHeight: 20 },
-    });
-
-    // 5. Setup headers
     const language = options?.language || 'en';
     const headers = getHeaders(language, options?.includePii || false);
-    worksheet.columns = headers.map(h => ({
-      header: h.label,
-      key: h.key,
-      width: h.width,
-    }));
+    tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.${format}`);
+    let workbook: ExcelJS.stream.xlsx.WorkbookWriter | null = null;
+    let worksheet: ReturnType<ExcelJS.stream.xlsx.WorkbookWriter['addWorksheet']> | null = null;
 
-    // Style header row
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF4472C4' },
-    };
-    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    if (format === 'xlsx') {
+      workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+        filename: tempFilePath,
+        useStyles: true,
+        useSharedStrings: true,
+      });
 
-    // 6. Prepare PII access if needed
+      worksheet = workbook.addWorksheet('Membership Feedback Report', {
+        properties: { defaultRowHeight: 20 },
+      });
+
+      worksheet.columns = headers.map((header) => ({
+        header: header.label,
+        key: header.key,
+        width: header.width,
+      }));
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' },
+      };
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    } else {
+      const csvHeader = headers.map((header) => escapeCsvField(header.label)).join(',');
+      fs.writeFileSync(tempFilePath, `${csvHeader}\n`, 'utf8');
+    }
+
+    // 5. Prepare PII access if needed
     let piiServiceUrl: string | null = null;
     let serviceJwt: string | null = null;
     
@@ -355,7 +384,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       }
     }
 
-    // 7. Stream data in batches
+    // 6. Stream data in batches
     const batchSize = 1000;
     let processedCount = 0;
 
@@ -393,6 +422,8 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
           batchResult.forEach((v, k) => piiMap.set(k, v));
         }
       }
+
+      const csvLines: string[] = [];
 
       for (const record of records) {
         // Get PII data if available (rmProfileId is on CustomerProfile)
@@ -440,8 +471,19 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
           }
         }
 
-        worksheet.addRow(row).commit();
+        if (format === 'xlsx') {
+          if (!worksheet) {
+            throw new Error('XLSX worksheet not initialized');
+          }
+          worksheet.addRow(row).commit();
+        } else {
+          csvLines.push(buildCsvRow(headers, row));
+        }
         processedCount++;
+      }
+
+      if (format === 'csv' && csvLines.length > 0) {
+        fs.appendFileSync(tempFilePath, `${csvLines.join('\n')}\n`, 'utf8');
       }
 
       // Update progress (BullMQ and database)
@@ -452,11 +494,13 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     }
 
     // 7. Finalize workbook
-    await workbook.commit();
+    if (format === 'xlsx') {
+      await workbook?.commit();
+    }
 
     // 8. Get file stats
     const stats = fs.statSync(tempFilePath);
-    const fileName = `MFR_${tenantId}_${new Date().toISOString().replace(/[:-]/g, '').split('.')[0]}.xlsx`;
+    const fileName = `MFR_${tenantId}_${new Date().toISOString().replace(/[:-]/g, '').split('.')[0]}.${format}`;
 
     // 9. Upload to MinIO
     const minioClient = createMinioClient();
@@ -478,7 +522,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       objectPath,
       fileStream,
       stats.size,
-      { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      { 'Content-Type': getContentType(format) }
     );
     
     logger.info(`Successfully uploaded to MinIO: ${objectPath}`);
@@ -552,34 +596,48 @@ function formatAddress(addr: PiiAddress): string {
   return parts.join(' ');
 }
 
+function getHeaderLabel(
+  language: string,
+  labels: { en: string; zh: string; ja: string },
+): string {
+  switch (language) {
+    case 'zh':
+      return labels.zh;
+    case 'ja':
+      return labels.ja;
+    default:
+      return labels.en;
+  }
+}
+
 /**
  * Get headers based on language and PII inclusion
  */
-function getHeaders(language: string, includePii: boolean) {
-  const baseHeaders = [
-    { key: 'customerNickname', width: 20, label: { en: 'Nickname', zh: '昵称', ja: 'ニックネーム' }[language] },
-    { key: 'profileType', width: 12, label: { en: 'Type', zh: '类型', ja: 'タイプ' }[language] },
-    { key: 'platformName', width: 15, label: { en: 'Platform', zh: '平台', ja: 'プラットフォーム' }[language] },
-    { key: 'platformUid', width: 20, label: { en: 'Platform UID', zh: '平台UID', ja: 'プラットフォームUID' }[language] },
-    { key: 'membershipClass', width: 15, label: { en: 'Class', zh: '类别', ja: 'クラス' }[language] },
-    { key: 'membershipType', width: 15, label: { en: 'Type', zh: '类型', ja: 'タイプ' }[language] },
-    { key: 'membershipLevel', width: 15, label: { en: 'Level', zh: '等级', ja: 'レベル' }[language] },
-    { key: 'validFrom', width: 12, label: { en: 'Valid From', zh: '生效日期', ja: '開始日' }[language] },
-    { key: 'validTo', width: 12, label: { en: 'Valid To', zh: '到期日期', ja: '終了日' }[language] },
-    { key: 'autoRenew', width: 10, label: { en: 'Auto Renew', zh: '自动续费', ja: '自動更新' }[language] },
-    { key: 'isExpired', width: 10, label: { en: 'Expired', zh: '已过期', ja: '期限切れ' }[language] },
-    { key: 'customerStatus', width: 12, label: { en: 'Status', zh: '状态', ja: 'ステータス' }[language] },
-    { key: 'tags', width: 25, label: { en: 'Tags', zh: '标签', ja: 'タグ' }[language] },
-    { key: 'source', width: 15, label: { en: 'Source', zh: '来源', ja: '取得元' }[language] },
-    { key: 'createdAt', width: 12, label: { en: 'Created', zh: '创建时间', ja: '作成日' }[language] },
+function getHeaders(language: string, includePii: boolean): ReportHeader[] {
+  const baseHeaders: ReportHeader[] = [
+    { key: 'customerNickname', width: 20, label: getHeaderLabel(language, { en: 'Nickname', zh: '昵称', ja: 'ニックネーム' }) },
+    { key: 'profileType', width: 12, label: getHeaderLabel(language, { en: 'Type', zh: '类型', ja: 'タイプ' }) },
+    { key: 'platformName', width: 15, label: getHeaderLabel(language, { en: 'Platform', zh: '平台', ja: 'プラットフォーム' }) },
+    { key: 'platformUid', width: 20, label: getHeaderLabel(language, { en: 'Platform UID', zh: '平台UID', ja: 'プラットフォームUID' }) },
+    { key: 'membershipClass', width: 15, label: getHeaderLabel(language, { en: 'Class', zh: '类别', ja: 'クラス' }) },
+    { key: 'membershipType', width: 15, label: getHeaderLabel(language, { en: 'Type', zh: '类型', ja: 'タイプ' }) },
+    { key: 'membershipLevel', width: 15, label: getHeaderLabel(language, { en: 'Level', zh: '等级', ja: 'レベル' }) },
+    { key: 'validFrom', width: 12, label: getHeaderLabel(language, { en: 'Valid From', zh: '生效日期', ja: '開始日' }) },
+    { key: 'validTo', width: 12, label: getHeaderLabel(language, { en: 'Valid To', zh: '到期日期', ja: '終了日' }) },
+    { key: 'autoRenew', width: 10, label: getHeaderLabel(language, { en: 'Auto Renew', zh: '自动续费', ja: '自動更新' }) },
+    { key: 'isExpired', width: 10, label: getHeaderLabel(language, { en: 'Expired', zh: '已过期', ja: '期限切れ' }) },
+    { key: 'customerStatus', width: 12, label: getHeaderLabel(language, { en: 'Status', zh: '状态', ja: 'ステータス' }) },
+    { key: 'tags', width: 25, label: getHeaderLabel(language, { en: 'Tags', zh: '标签', ja: 'タグ' }) },
+    { key: 'source', width: 15, label: getHeaderLabel(language, { en: 'Source', zh: '来源', ja: '取得元' }) },
+    { key: 'createdAt', width: 12, label: getHeaderLabel(language, { en: 'Created', zh: '创建时间', ja: '作成日' }) },
   ];
 
   if (includePii) {
     baseHeaders.push(
-      { key: 'realName', width: 15, label: { en: 'Real Name', zh: '真实姓名', ja: '本名' }[language] },
-      { key: 'email', width: 25, label: { en: 'Email', zh: '邮箱', ja: 'メール' }[language] },
-      { key: 'phone', width: 15, label: { en: 'Phone', zh: '电话', ja: '電話' }[language] },
-      { key: 'address', width: 40, label: { en: 'Address', zh: '地址', ja: '住所' }[language] }
+      { key: 'realName', width: 15, label: getHeaderLabel(language, { en: 'Real Name', zh: '真实姓名', ja: '本名' }) },
+      { key: 'email', width: 25, label: getHeaderLabel(language, { en: 'Email', zh: '邮箱', ja: 'メール' }) },
+      { key: 'phone', width: 15, label: getHeaderLabel(language, { en: 'Phone', zh: '电话', ja: '電話' }) },
+      { key: 'address', width: 40, label: getHeaderLabel(language, { en: 'Address', zh: '地址', ja: '住所' }) }
     );
   }
 

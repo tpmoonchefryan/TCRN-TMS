@@ -24,6 +24,8 @@ const mockMinioClient = {
 };
 
 const mockFs = vi.hoisted(() => ({
+  writeFileSync: vi.fn(),
+  appendFileSync: vi.fn(),
   statSync: vi.fn(() => ({ size: 256 })),
   createReadStream: vi.fn(() => ({ stream: true })),
   existsSync: vi.fn(() => true),
@@ -62,6 +64,8 @@ vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
+    writeFileSync: mockFs.writeFileSync,
+    appendFileSync: mockFs.appendFileSync,
     statSync: mockFs.statSync,
     createReadStream: mockFs.createReadStream,
     existsSync: mockFs.existsSync,
@@ -165,6 +169,33 @@ describe('reportJobProcessor', () => {
     expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('updated_at = NOW()');
     expect(mockFs.unlinkSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.xlsx'),
+    );
+  });
+
+  it('honors csv format at runtime instead of always emitting xlsx', async () => {
+    mockJob.data.format = 'csv';
+
+    const result = await reportJobProcessor(mockJob);
+
+    expect(result.filePath).toMatch(/^tenant_test\/report-job-1\/MFR_tenant-1_.+\.csv$/);
+    expect(result.fileName).toMatch(/^MFR_tenant-1_.+\.csv$/);
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('/mfr_report-job-1.csv'),
+      expect.stringContaining('Nickname,Type,Platform'),
+      'utf8',
+    );
+    expect(mockFs.appendFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('/mfr_report-job-1.csv'),
+      expect.stringContaining('Customer A,individual,YouTube'),
+      'utf8',
+    );
+    expect(mockExcel.workbook.addWorksheet).not.toHaveBeenCalled();
+    expect(mockMinioClient.putObject).toHaveBeenCalledWith(
+      'temp-reports',
+      expect.stringMatching(/^tenant_test\/report-job-1\/MFR_tenant-1_.+\.csv$/),
+      { stream: true },
+      256,
+      { 'Content-Type': 'text/csv' },
     );
   });
 
