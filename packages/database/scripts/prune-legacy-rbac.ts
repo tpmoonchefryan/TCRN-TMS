@@ -540,32 +540,39 @@ async function main(): Promise<void> {
 
     let auditSummary = await auditLegacyRbac(prisma, {
       schemas: options.schemas,
+      legacyCodes: options.legacyCodes,
       skipTemplate: options.skipTemplate,
       includeHistoricalRoles: false,
       includeCompatResources: false,
       excludeRoles: options.excludeRoles,
       json: false,
     });
-    
-    if (options.runtimeProof) {
-      const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
-        schemas: options.schemas,
-        legacyCodes: options.legacyCodes,
-        excludeRoles: options.excludeRoles,
-        allowUsers: options.allowUsers,
-        json: false,
-      });
 
-      if (!runtimeProof.target.verified) {
-        throw new Error(`Runtime proof failed: ${runtimeProof.target.reason}`);
+    if (options.runtimeProof) {
+      if (options.schemas.length !== 1) {
+        throw new Error('Prune planning with --runtime-proof currently requires exactly one --schema.');
       }
 
-      auditSummary = promoteRuntimeVerifiedTargetInAudit(
-        auditSummary,
-        options.schemas[0],
-        options.legacyCodes[0],
-        runtimeProof.target.affectedUsers.map((user) => user.username),
-      );
+      for (const legacyCode of options.legacyCodes) {
+        const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
+          schemas: options.schemas,
+          legacyCodes: [legacyCode],
+          excludeRoles: options.excludeRoles,
+          allowUsers: options.allowUsers,
+          json: false,
+        });
+
+        if (!runtimeProof.target.verified) {
+          throw new Error(`Runtime proof failed for ${legacyCode}: ${runtimeProof.target.reason}`);
+        }
+
+        auditSummary = promoteRuntimeVerifiedTargetInAudit(
+          auditSummary,
+          options.schemas[0],
+          legacyCode,
+          runtimeProof.target.affectedUsers.map((user) => user.username),
+        );
+      }
     }
 
     const plan = buildPrunePlan(auditSummary, options);

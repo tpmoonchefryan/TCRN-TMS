@@ -143,6 +143,7 @@ function parseCliArgs(argv: string[]): CliOptions {
 function toAuditOptions(options: CliOptions): LegacyAuditCliOptions {
   return {
     schemas: options.schemas,
+    legacyCodes: [],
     skipTemplate: true,
     includeHistoricalRoles: true,
     includeCompatResources: false,

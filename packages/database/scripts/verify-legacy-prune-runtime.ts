@@ -357,6 +357,7 @@ export async function verifyLegacyPruneRuntime(
 
   const auditSummary = await auditLegacyRbac(prisma, {
     schemas: options.schemas,
+    legacyCodes: options.legacyCodes,
     skipTemplate: false,
     includeHistoricalRoles: false,
     includeCompatResources: false,
