@@ -22,9 +22,10 @@ import { ApiConsumes, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nes
 import type { RequestContext } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
 import { Request, Response } from 'express';
+import { Readable } from 'stream';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
-import { MinioService } from '../../minio';
+import { BUCKETS, MinioService } from '../../minio';
 import { QUEUE_NAMES } from '../../queue';
 import {
     CreateImportJobDto,
@@ -127,16 +128,27 @@ export class ImportController {
       context,
     );
 
-    // Save file to MinIO
-    const objectName = `${job.id}.csv`;
-    await this.minioService.uploadFile('imports', objectName, file.buffer, 'text/csv');
+    const objectName = `${context.tenantSchema}/${job.id}.csv`;
+    await this.minioService.uploadStream(
+      BUCKETS.IMPORTS,
+      objectName,
+      Readable.from(file.buffer),
+      file.size,
+      'text/csv',
+    );
 
     // Queue for processing
     await this.importQueue.add('process-import', {
       jobId: job.id,
+      tenantId: context.tenantId,
+      tenantSchemaName: context.tenantSchema,
       jobType: 'customer_create',
+      totalRows,
       filePath: objectName,
       talentId,
+      profileStoreId: job.profileStoreId,
+      userId: context.userId,
+      defaultProfileType: 'individual',
     });
 
     return {
@@ -187,16 +199,27 @@ export class ImportController {
       context,
     );
 
-    // Save file to MinIO
-    const objectName = `${job.id}.csv`;
-    await this.minioService.uploadFile('imports', objectName, file.buffer, 'text/csv');
+    const objectName = `${context.tenantSchema}/${job.id}.csv`;
+    await this.minioService.uploadStream(
+      BUCKETS.IMPORTS,
+      objectName,
+      Readable.from(file.buffer),
+      file.size,
+      'text/csv',
+    );
 
     // Queue for processing
     await this.importQueue.add('process-import', {
       jobId: job.id,
+      tenantId: context.tenantId,
+      tenantSchemaName: context.tenantSchema,
       jobType: 'customer_create',
+      totalRows,
       filePath: objectName,
       talentId,
+      profileStoreId: job.profileStoreId,
+      userId: context.userId,
+      defaultProfileType: 'company',
     });
 
     return {
@@ -303,6 +326,7 @@ export class ImportController {
     return {
       userId: user.id,
       userName: user.username,
+      tenantId: req.headers['x-tenant-id'] as string | undefined,
       tenantSchema: user.tenantSchema || 'public',
       ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
       userAgent: req.headers['user-agent'],

@@ -87,10 +87,10 @@ export class ImportJobService {
     }>>(`
       INSERT INTO "${schema}".import_job (
         id, talent_id, profile_store_id, job_type, status, file_name, file_size, consumer_id,
-        total_rows, processed_rows, success_rows, failed_rows, warning_rows, created_by, created_at, updated_at
+        total_rows, processed_rows, success_rows, failed_rows, warning_rows, created_by, created_at
       ) VALUES (
         gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid,
-        $8, 0, 0, 0, 0, $9::uuid, NOW(), NOW()
+        $8, 0, 0, 0, 0, $9::uuid, NOW()
       )
       RETURNING id, job_type, status, file_name, total_rows, processed_rows, success_rows, failed_rows, warning_rows, started_at, completed_at, created_at, created_by
     `,
@@ -129,6 +129,7 @@ export class ImportJobService {
       fileName: job.file_name,
       totalRows: job.total_rows,
       createdAt: job.created_at,
+      profileStoreId: talent.profile_store_id,
     };
   }
 
@@ -267,7 +268,7 @@ export class ImportJobService {
     await prisma.$executeRawUnsafe(`
       UPDATE "${tenantSchema}".import_job
       SET processed_rows = $1, success_rows = $2, failed_rows = $3, warning_rows = $4,
-          status = $5, started_at = COALESCE(started_at, NOW()), updated_at = NOW()
+          status = $5, started_at = COALESCE(started_at, NOW())
       WHERE id = $6::uuid
     `, processedRows, successRows, failedRows, warningRows, ImportJobStatus.RUNNING, jobId);
   }
@@ -298,7 +299,7 @@ export class ImportJobService {
     await prisma.$executeRawUnsafe(`
       UPDATE "${tenantSchema}".import_job
       SET status = $1, processed_rows = $2, success_rows = $3, failed_rows = $4, warning_rows = $5,
-          completed_at = NOW(), updated_at = NOW()
+          completed_at = NOW()
       WHERE id = $6::uuid
     `, status, totalProcessed, successRows, failedRows, warningRows, jobId);
 
@@ -349,7 +350,7 @@ export class ImportJobService {
 
     await prisma.$executeRawUnsafe(`
       UPDATE "${schema}".import_job
-      SET status = $1, completed_at = NOW(), updated_at = NOW()
+      SET status = $1, completed_at = NOW()
       WHERE id = $2::uuid
     `, ImportJobStatus.CANCELLED, jobId);
   }

@@ -4,11 +4,17 @@ import type { ConnectionOptions, Job } from 'bullmq';
 import { Queue } from 'bullmq';
 
 const EXPORT_QUEUE_NAME = 'export';
+const IMPORT_QUEUE_NAME = 'import';
 const EXPORT_QUEUE_JOB_STATES = ['waiting', 'active', 'delayed', 'failed', 'completed'] as const;
+const IMPORT_QUEUE_JOB_STATES = ['waiting', 'active', 'delayed', 'failed', 'completed'] as const;
 
 interface ExportQueueJobData {
   jobId?: string;
   tenantSchema?: string;
+}
+
+interface ImportQueueJobData {
+  jobId?: string;
 }
 
 export function createBullMqConnectionFromEnv(): ConnectionOptions {
@@ -40,10 +46,30 @@ async function withExportQueue<T>(
   }
 }
 
+async function withImportQueue<T>(
+  fn: (queue: Queue<ImportQueueJobData>) => Promise<T>,
+): Promise<T> {
+  const queue = new Queue<ImportQueueJobData>(IMPORT_QUEUE_NAME, {
+    connection: createBullMqConnectionFromEnv(),
+  });
+
+  try {
+    return await fn(queue);
+  } finally {
+    await queue.close();
+  }
+}
+
 async function getExportQueueJobs(
   queue: Queue<ExportQueueJobData>,
 ): Promise<Array<Job<ExportQueueJobData>>> {
   return queue.getJobs([...EXPORT_QUEUE_JOB_STATES], 0, -1, true);
+}
+
+async function getImportQueueJobs(
+  queue: Queue<ImportQueueJobData>,
+): Promise<Array<Job<ImportQueueJobData>>> {
+  return queue.getJobs([...IMPORT_QUEUE_JOB_STATES], 0, -1, true);
 }
 
 export async function removeExportQueueJobsByDataJobIds(
@@ -88,5 +114,40 @@ export async function purgeWaitingExportJobsForTenantTestSchemas(): Promise<numb
     }
 
     return removed;
+  });
+}
+
+export async function removeImportQueueJobsByDataJobIds(
+  jobIds: Iterable<string>,
+): Promise<number> {
+  const ids = new Set([...jobIds].filter(Boolean));
+  if (ids.size === 0) {
+    return 0;
+  }
+
+  return withImportQueue(async (queue) => {
+    const jobs = await getImportQueueJobs(queue);
+    let removed = 0;
+
+    for (const job of jobs) {
+      const queueJobId = job.data?.jobId;
+      if (!queueJobId || !ids.has(queueJobId)) {
+        continue;
+      }
+
+      await job.remove();
+      removed++;
+    }
+
+    return removed;
+  });
+}
+
+export async function findImportQueueJobByDataJobId(
+  jobId: string,
+): Promise<Job<ImportQueueJobData> | null> {
+  return withImportQueue(async (queue) => {
+    const jobs = await getImportQueueJobs(queue);
+    return jobs.find((job) => job.data?.jobId === jobId) ?? null;
   });
 }

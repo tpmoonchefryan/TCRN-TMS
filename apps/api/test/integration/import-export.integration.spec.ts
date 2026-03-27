@@ -17,6 +17,7 @@ import {
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
+import { BUCKETS, MinioService } from '../../src/modules/minio';
 import {
   ImportJobStatus,
 } from '../../src/modules/import/dto/import.dto';
@@ -26,11 +27,16 @@ import {
   ExportJobType,
 } from '../../src/modules/export/dto/export.dto';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { removeExportQueueJobsByDataJobIds } from './queue-test-utils';
+import {
+  findImportQueueJobByDataJobId,
+  removeExportQueueJobsByDataJobIds,
+  removeImportQueueJobsByDataJobIds,
+} from './queue-test-utils';
 
 describe('Import/Export Integration Tests', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
+  let minioService: MinioService;
   let tenantFixture: TenantFixture;
   let testUser: TestUser;
   let accessToken: string;
@@ -38,6 +44,8 @@ describe('Import/Export Integration Tests', () => {
   let exportJobId: string | undefined;
   let marshmallowExportJobId: string | undefined;
   const createdExportQueueJobIds = new Set<string>();
+  const createdImportQueueJobIds = new Set<string>();
+  const createdImportObjectNames = new Set<string>();
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
     req
@@ -136,6 +144,7 @@ describe('Import/Export Integration Tests', () => {
     await bootstrapTestApp(app);
 
     prisma = new PrismaClient();
+    minioService = moduleFixture.get(MinioService);
     tenantFixture = await createTestTenantFixture(prisma, 'impexp');
     testUser = await createTestUserInTenant(
       prisma,
@@ -170,7 +179,15 @@ describe('Import/Export Integration Tests', () => {
   });
 
   afterAll(async () => {
+    await removeImportQueueJobsByDataJobIds(createdImportQueueJobIds);
     await removeExportQueueJobsByDataJobIds(createdExportQueueJobIds);
+    for (const objectName of createdImportObjectNames) {
+      try {
+        await minioService.deleteFile(BUCKETS.IMPORTS, objectName);
+      } catch {
+        // Ignore cleanup drift for already-deleted test objects.
+      }
+    }
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
     await app?.close();
@@ -194,6 +211,47 @@ describe('Import/Export Integration Tests', () => {
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
+    });
+
+    it('uploads individual import csv into tenant-scoped MinIO object and queues a complete worker payload', async () => {
+      const csvContent = [
+        'nickname,profile_type,platform_code,platform_uid',
+        'Queued User,individual,BILIBILI,12345',
+      ].join('\n');
+
+      const response = await withAuth(
+        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+      )
+        .field('talentId', talentId)
+        .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import.csv')
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.id).toBeDefined();
+      expect(response.body.data.status).toBe(ImportJobStatus.PENDING);
+
+      const importJobId = response.body.data.id as string;
+      const objectName = `${tenantFixture.schemaName}/${importJobId}.csv`;
+      createdImportQueueJobIds.add(importJobId);
+      createdImportObjectNames.add(objectName);
+
+      const queueJob = await findImportQueueJobByDataJobId(importJobId);
+      expect(queueJob).not.toBeNull();
+      expect(queueJob?.name).toBe('process-import');
+      expect(queueJob?.data).toMatchObject({
+        jobId: importJobId,
+        tenantId: tenantFixture.tenant.id,
+        tenantSchemaName: tenantFixture.schemaName,
+        talentId,
+        profileStoreId: expect.any(String),
+        userId: testUser.id,
+        filePath: objectName,
+        totalRows: 1,
+        jobType: 'customer_create',
+        defaultProfileType: 'individual',
+      });
+
+      await expect(minioService.fileExists(BUCKETS.IMPORTS, objectName)).resolves.toBe(true);
     });
 
     it('should list import jobs for the current talent profile store', async () => {
