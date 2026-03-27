@@ -79,14 +79,6 @@ export function usePermission() {
         if (effectivePermissions['*:*'] === 'grant') {
           return true;
         }
-        
-        // Check wildcard grant (e.g., "customer:*" or "*:read")
-        if (effectivePermissions[`${resource}:*`] === 'grant') {
-          return true;
-        }
-        if (effectivePermissions[`*:${a}`] === 'grant') {
-          return true;
-        }
       }
     }
 

@@ -74,6 +74,21 @@ describe('usePermission', () => {
     expect(result.current.hasPermission('report.mfr', ActionType.WRITE)).toBe(true);
   });
 
+  it('does not treat unsupported wildcard snapshot keys as backend grants', () => {
+    mockUseAuthStore.mockReturnValue({
+      user: { roles: [{ code: 'TENANT_ADMIN' }] },
+      isAuthenticated: true,
+      effectivePermissions: {
+        'customer.profile:*': 'grant',
+        '*:read': 'grant',
+      },
+    });
+
+    const { result } = renderHook(() => usePermission());
+
+    expect(result.current.hasPermission('customer.profile', ActionType.READ)).toBe(false);
+  });
+
   it('fails closed when backend permissions are missing instead of trusting hardcoded role fallbacks', () => {
     mockUseAuthStore.mockReturnValue({
       user: { roles: [{ code: 'TENANT_ADMIN' }] },
