@@ -220,6 +220,7 @@ describe('PermissionSnapshotService', () => {
     it('returns only canonical catalog-backed keys from outward permission snapshots', async () => {
       redisHashes.set(getKey(testUserId), {
         'customer.profile:read': 'grant',
+        'customer.profile:admin': 'grant',
         'customer.profile:create': 'grant',
         'log.search:delete': 'deny',
         'legacy.unknown:read': 'grant',
@@ -231,6 +232,24 @@ describe('PermissionSnapshotService', () => {
 
       expect(result).toEqual({
         'customer.profile:read': 'grant',
+        'customer.profile:admin': 'grant',
+        '*:admin': 'grant',
+        '*:*': 'grant',
+      });
+    });
+
+    it('keeps only reserved wildcard keys in outward permission snapshots', async () => {
+      redisHashes.set(getKey(testUserId), {
+        'customer.profile:*': 'grant',
+        '*:read': 'grant',
+        '*:delete': 'deny',
+        '*:admin': 'grant',
+        '*:*': 'grant',
+      });
+
+      const result = await service.getUserPermissions(testTenantSchema, testUserId);
+
+      expect(result).toEqual({
         '*:admin': 'grant',
         '*:*': 'grant',
       });

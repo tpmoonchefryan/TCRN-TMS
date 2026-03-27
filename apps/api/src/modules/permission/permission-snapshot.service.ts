@@ -154,17 +154,13 @@ export class PermissionSnapshotService {
    * The outward API contract only exposes canonical catalog-backed permissions plus reserved wildcard keys.
    */
   private shouldExposePermissionKey(permissionKey: string): boolean {
-    const [resourceCode, action] = permissionKey.split(':');
-    if (!resourceCode || !action) {
+    const [resourceCode, action, ...rest] = permissionKey.split(':');
+    if (!resourceCode || !action || rest.length > 0) {
       return false;
     }
 
     if (resourceCode === '*') {
       return action === 'admin' || action === '*';
-    }
-
-    if (action === '*') {
-      return getRbacResourceDefinition(resourceCode) !== undefined;
     }
 
     if (!isCanonicalPermissionAction(action)) {
