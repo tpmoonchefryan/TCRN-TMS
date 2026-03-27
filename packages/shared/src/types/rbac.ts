@@ -1,6 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { PermissionAction, RbacResourceCode, RbacRolePolicyEffect } from '../rbac/catalog';
+import type {
+  PermissionAction,
+  PermissionActionInput,
+  RbacResourceCode,
+  RbacRolePolicyEffect,
+} from '../rbac/catalog';
 
 export interface Permission {
   id: string;
@@ -148,6 +153,24 @@ export interface MyPermissionsResponse {
   scope: MyPermissionsScopeInfo;
   permissions: EffectivePermissionMap;
   roles: MyPermissionsRoleInfo[];
+}
+
+export interface PermissionCheckRequest {
+  resource: RbacResourceCode;
+  action: PermissionActionInput;
+  scopeType?: RbacScopeType;
+  scopeId?: string;
+}
+
+export interface PermissionCheckResult {
+  resource: RbacResourceCode;
+  action: PermissionActionInput;
+  checkedAction: PermissionAction;
+  allowed: boolean;
+}
+
+export interface CheckPermissionsResponse {
+  results: PermissionCheckResult[];
 }
 
 export interface RoleSummary {

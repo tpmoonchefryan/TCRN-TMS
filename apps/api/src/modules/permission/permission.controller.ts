@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -10,10 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import {
-  normalizePermissionAction,
   type PermissionActionInput,
   RBAC_ACTION_INPUTS,
   RBAC_CANONICAL_ACTIONS,
+  RBAC_RESOURCE_CODES,
+  type RbacResourceCode,
+  resolveRbacPermission,
 } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
@@ -28,8 +31,8 @@ import { PermissionSnapshotService, ScopeType } from './permission-snapshot.serv
 class ListPermissionsQueryDto {
   @ApiPropertyOptional({ description: 'Filter by resource code', example: 'customer.profile' })
   @IsOptional()
-  @IsString()
-  resourceCode?: string;
+  @IsIn(RBAC_RESOURCE_CODES)
+  resourceCode?: RbacResourceCode;
 
   @ApiPropertyOptional({
     description: 'Filter by stored canonical action type',
@@ -48,9 +51,9 @@ class ListPermissionsQueryDto {
 }
 
 class PermissionCheckDto {
-  @ApiProperty({ description: 'Resource code to check', example: 'customer.profile' })
-  @IsString()
-  resource: string;
+  @ApiProperty({ description: 'Catalog-backed resource code to check', example: 'customer.profile', enum: RBAC_RESOURCE_CODES })
+  @IsIn(RBAC_RESOURCE_CODES)
+  resource: RbacResourceCode;
 
   @ApiProperty({
     description: 'Action to check. Aliases create/update/export are normalized to write/write/execute.',
@@ -184,19 +187,27 @@ export class PermissionController {
   ) {
     const results = await Promise.all(
       dto.checks.map(async (check) => {
-        const checkedAction = normalizePermissionAction(check.action);
+        let resolvedPermission: ReturnType<typeof resolveRbacPermission>;
+        try {
+          resolvedPermission = resolveRbacPermission(check.resource, check.action);
+        } catch (error) {
+          throw new BadRequestException(
+            error instanceof Error ? error.message : 'Invalid permission check request',
+          );
+        }
+
         const allowed = await this.snapshotService.checkPermission(
           user.tenantSchema,
           user.id,
-          check.resource,
-          checkedAction,
+          resolvedPermission.resourceCode,
+          resolvedPermission.checkedAction,
           check.scopeType,
           check.scopeId,
         );
         return {
-          resource: check.resource,
+          resource: resolvedPermission.resourceCode,
           action: check.action,
-          checkedAction,
+          checkedAction: resolvedPermission.checkedAction,
           allowed,
         };
       })

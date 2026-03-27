@@ -4,8 +4,10 @@
 import type {
   AssignUserRoleRequest,
   AssignUserRoleResponse,
+  CheckPermissionsResponse,
   MyPermissionsResponse,
   Permission,
+  PermissionCheckRequest,
   RbacScopeType,
   RemoveUserRoleAssignmentResponse,
   ResourceDefinition,
@@ -1707,8 +1709,8 @@ export const permissionApi = {
   getResources: () =>
     apiClient.get<ResourceDefinition[]>('/api/v1/permissions/resources'),
   
-  check: (checks: Array<{ resource: string; action: string; scopeType?: string; scopeId?: string }>) =>
-    apiClient.post<{ results: Array<{ resource: string; action: string; allowed: boolean }> }>('/api/v1/permissions/check', { checks }),
+  check: (checks: PermissionCheckRequest[]) =>
+    apiClient.post<CheckPermissionsResponse>('/api/v1/permissions/check', { checks }),
 
   // Get current user's effective permissions
   getMyPermissions: (params?: { scopeType?: string; scopeId?: string }) =>
