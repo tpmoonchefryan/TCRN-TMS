@@ -2,7 +2,12 @@
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes, type RolePermission } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  getRbacResourceDefinition,
+  isCanonicalPermissionAction,
+  type RolePermission,
+} from '@tcrn/shared';
 
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
@@ -140,7 +145,13 @@ export class RoleService {
   async getRolePermissions(roleId: string, tenantSchema: string, language: string = 'en'): Promise<RolePermission[]> {
     const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
 
-    const permissions = await prisma.$queryRawUnsafe<RolePermission[]>(`
+    const permissions = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      resourceCode: string;
+      action: string;
+      effect: RolePermission['effect'];
+      name: string;
+    }>>(`
       SELECT 
         p.id,
         r.code as "resourceCode",
@@ -154,7 +165,22 @@ export class RoleService {
       ORDER BY r.code, p.action
     `, roleId);
 
-    return permissions;
+    return permissions.flatMap((permission) => {
+      const resourceDefinition = getRbacResourceDefinition(permission.resourceCode);
+      if (!resourceDefinition || !isCanonicalPermissionAction(permission.action)) {
+        return [];
+      }
+
+      if (!resourceDefinition.supportedActions.includes(permission.action)) {
+        return [];
+      }
+
+      return [{
+        ...permission,
+        resourceCode: resourceDefinition.code,
+        action: permission.action,
+      }];
+    });
   }
 
   /**

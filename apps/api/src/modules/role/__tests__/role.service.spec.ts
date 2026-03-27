@@ -153,17 +153,26 @@ describe('RoleService', () => {
   });
 
   describe('getRolePermissions', () => {
-    it('should return role permissions', async () => {
+    it('returns only catalog-backed canonical role permissions', async () => {
       const mockPermissions = [
-        { id: 'perm-1', resourceCode: 'CUSTOMER', action: 'READ', effect: 'grant', name: 'Customer Read' },
-        { id: 'perm-2', resourceCode: 'CUSTOMER', action: 'WRITE', effect: 'grant', name: 'Customer Write' },
+        { id: 'perm-1', resourceCode: 'customer.profile', action: 'read', effect: 'grant', name: 'Customer Profile' },
+        { id: 'perm-2', resourceCode: 'legacy.unknown', action: 'read', effect: 'grant', name: 'Legacy Unknown' },
+        { id: 'perm-3', resourceCode: 'log.search', action: 'delete', effect: 'grant', name: 'Log Search Delete' },
+        { id: 'perm-4', resourceCode: 'customer.profile', action: 'create', effect: 'grant', name: 'Customer Create' },
       ];
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce(mockPermissions);
 
       const result = await service.getRolePermissions('role-123', testSchema);
 
-      expect(result).toHaveLength(2);
-      expect(result[0].resourceCode).toBe('CUSTOMER');
+      expect(result).toEqual([
+        {
+          id: 'perm-1',
+          resourceCode: 'customer.profile',
+          action: 'read',
+          effect: 'grant',
+          name: 'Customer Profile',
+        },
+      ]);
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('rp.effect as effect'),
         'role-123',
