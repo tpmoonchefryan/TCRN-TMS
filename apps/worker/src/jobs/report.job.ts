@@ -268,6 +268,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
   logger.info(`Filters: ${JSON.stringify(filters)}`);
 
   const prisma = new PrismaClient();
+  let tempFilePath: string | null = null;
 
   try {
     // 1. Update job status to processing
@@ -311,7 +312,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     logger.info(`Total records to process: ${totalCount}`);
 
     // 4. Create Excel workbook with streaming
-    const tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.xlsx`);
+    tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.xlsx`);
     const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
       filename: tempFilePath,
       useStyles: true,
@@ -489,10 +490,6 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       fileSize: stats.size,
       rowCount: processedCount,
     });
-
-    // 11. Cleanup temp file
-    fs.unlinkSync(tempFilePath);
-
     const duration = Date.now() - startTime;
     logger.info(`Report job ${jobId} completed in ${duration}ms`);
 
@@ -514,6 +511,9 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
     throw error;
   } finally {
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
     await prisma.$disconnect();
   }
 };
@@ -601,7 +601,7 @@ async function updateJobProgress(
 ) {
   await prisma.$executeRawUnsafe(`
     UPDATE "${schemaName}".report_job
-    SET processed_rows = $1, progress_percentage = $2
+    SET processed_rows = $1, progress_percentage = $2, updated_at = NOW()
     WHERE id = $3
   `, processedRows, progressPercentage, jobId);
 }
@@ -628,7 +628,7 @@ async function updateJobStatus(
   if (status === 'processing') {
     await prisma.$executeRawUnsafe(`
       UPDATE "${schemaName}".report_job
-      SET status = $1, started_at = $2
+      SET status = $1, started_at = $2, updated_at = NOW()
       WHERE id = $3
     `, 'running', now, jobId);
   } else if (status === 'completed') {
@@ -643,7 +643,8 @@ async function updateJobStatus(
           file_size_bytes = $5, 
           processed_rows = $6,
           progress_percentage = 100,
-          expires_at = $7
+          expires_at = $7,
+          updated_at = NOW()
       WHERE id = $8
     `, 'success', now, data?.fileUrl, data?.fileName, data?.fileSize, data?.rowCount, 
        expiresAt, jobId);
@@ -652,7 +653,8 @@ async function updateJobStatus(
       UPDATE "${schemaName}".report_job
       SET status = $1, 
           completed_at = $2, 
-          error_message = $3
+          error_message = $3,
+          updated_at = NOW()
       WHERE id = $4
     `, 'failed', now, data?.errorMessage, jobId);
   }
