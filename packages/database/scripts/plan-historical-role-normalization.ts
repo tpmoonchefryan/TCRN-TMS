@@ -31,18 +31,36 @@ export interface CliOptions {
 export type HistoricalRoleDecision =
   | 'absent'
   | 'authored_contract_role'
+  | 'blocked_reference_audit_incomplete'
+  | 'blocked_delegated_admin_reference'
   | 'blocked_assigned_users'
   | 'blocked_active_role'
   | 'retire_or_exclude_before_prune'
   | 'retire_residue';
 
+export type HistoricalRoleReferenceAuditStatus =
+  | 'complete'
+  | 'missing_delegated_admin_table';
+
+export interface HistoricalRoleReferenceAudit {
+  roleCode: string;
+  roleId: string | null;
+  rolePolicyCount: number;
+  delegatedAdminCount: number | null;
+  referenceAudit: HistoricalRoleReferenceAuditStatus;
+}
+
 export interface HistoricalRoleNormalizationPlan {
   roleCode: string;
+  roleId: string | null;
   present: boolean;
   authoredContractRole: boolean;
   aliasOf: string | null;
   isActive: boolean | null;
   assignedUsers: number;
+  rolePolicyCount: number;
+  delegatedAdminCount: number | null;
+  referenceAudit: HistoricalRoleReferenceAuditStatus;
   decision: HistoricalRoleDecision;
   reason: string;
   legacyResourceCodes: string[];
@@ -140,6 +158,10 @@ function selectedRoleCodes(options: CliOptions): string[] {
   return [...DEFAULT_ROLE_CODES];
 }
 
+function buildReferenceAuditKey(schemaName: string, roleCode: string): string {
+  return `${schemaName}:${roleCode}`;
+}
+
 function getAuthoredRole(roleCode: string): {
   authoredContractRole: boolean;
   aliasOf: string | null;
@@ -188,9 +210,91 @@ function resourceCodesFromGrants(grants: string[]): string[] {
   return unique(grants.map((grant) => grant.split(':', 1)[0] ?? grant));
 }
 
+async function tableExists(
+  prisma: PrismaClient,
+  schemaName: string,
+  tableName: string,
+): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = $1
+          AND table_name = $2
+      ) AS exists
+    `,
+    schemaName,
+    tableName,
+  );
+
+  return rows[0]?.exists ?? false;
+}
+
+async function getHistoricalRoleReferenceAudit(
+  prisma: PrismaClient,
+  schemaName: string,
+  roleCode: string,
+): Promise<HistoricalRoleReferenceAudit> {
+  const roleRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `
+      SELECT id
+      FROM "${schemaName}".role
+      WHERE code = $1
+      LIMIT 1
+    `,
+    roleCode,
+  );
+
+  const roleId = roleRows[0]?.id ?? null;
+  const hasDelegatedAdminTable = await tableExists(prisma, schemaName, 'delegated_admin');
+
+  if (!roleId) {
+    return {
+      roleCode,
+      roleId: null,
+      rolePolicyCount: 0,
+      delegatedAdminCount: hasDelegatedAdminTable ? 0 : null,
+      referenceAudit: hasDelegatedAdminTable ? 'complete' : 'missing_delegated_admin_table',
+    };
+  }
+
+  const [rolePolicyRows, delegatedAdminRows] = await Promise.all([
+    prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+        SELECT COUNT(*)::bigint AS count
+        FROM "${schemaName}".role_policy
+        WHERE role_id = CAST($1 AS uuid)
+      `,
+      roleId,
+    ),
+    hasDelegatedAdminTable
+      ? prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+          `
+            SELECT COUNT(*)::bigint AS count
+            FROM "${schemaName}".delegated_admin
+            WHERE admin_role_id = CAST($1 AS uuid)
+          `,
+          roleId,
+        )
+      : Promise.resolve([{ count: 0n }]),
+  ]);
+
+  return {
+    roleCode,
+    roleId,
+    rolePolicyCount: Number(rolePolicyRows[0]?.count ?? 0n),
+    delegatedAdminCount: hasDelegatedAdminTable
+      ? Number(delegatedAdminRows[0]?.count ?? 0n)
+      : null,
+    referenceAudit: hasDelegatedAdminTable ? 'complete' : 'missing_delegated_admin_table',
+  };
+}
+
 function buildRolePlan(
   schemaAudit: SchemaLegacyAudit,
   roleCode: string,
+  referenceAudit: HistoricalRoleReferenceAudit,
 ): HistoricalRoleNormalizationPlan {
   const roleAudit = findHistoricalRoleAudit(schemaAudit, roleCode);
   const authoredRole = getAuthoredRole(roleCode);
@@ -236,11 +340,15 @@ function buildRolePlan(
   if (authoredRole.authoredContractRole) {
     return {
       roleCode,
+      roleId: referenceAudit.roleId,
       present: roleAudit.present,
       authoredContractRole: true,
       aliasOf: authoredRole.aliasOf,
       isActive: roleAudit.isActive,
       assignedUsers: roleAudit.assignedUsers,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
       decision: 'authored_contract_role',
       reason: authoredRole.aliasOf
         ? `Role is part of the current shared RBAC contract as a compatibility alias of ${authoredRole.aliasOf}; keep it out of historical-role retirement scope.`
@@ -255,11 +363,15 @@ function buildRolePlan(
   if (!roleAudit.present) {
     return {
       roleCode,
+      roleId: null,
       present: false,
       authoredContractRole: false,
       aliasOf: null,
       isActive: null,
       assignedUsers: 0,
+      rolePolicyCount: 0,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
       decision: 'absent',
       reason: 'Role is absent in the selected schema.',
       legacyResourceCodes: [],
@@ -269,14 +381,61 @@ function buildRolePlan(
     };
   }
 
-  if (roleAudit.assignedUsers > 0) {
+  if (referenceAudit.referenceAudit !== 'complete') {
     return {
       roleCode,
+      roleId: referenceAudit.roleId,
       present: true,
       authoredContractRole: false,
       aliasOf: null,
       isActive: roleAudit.isActive,
       assignedUsers: roleAudit.assignedUsers,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
+      decision: 'blocked_reference_audit_incomplete',
+      reason:
+        'Reference audit is incomplete because delegated_admin is missing in the selected schema; do not retire or exclude this role until reference integrity can be checked.',
+      legacyResourceCodes,
+      coveredLegacyGrants: uniqueCoveredLegacyGrants,
+      blockingLegacyOnlyGrants: uniqueBlockingLegacyOnlyGrants,
+      ignoredLegacyOnlyGrants: uniqueIgnoredLegacyOnlyGrants,
+    };
+  }
+
+  if ((referenceAudit.delegatedAdminCount ?? 0) > 0) {
+    return {
+      roleCode,
+      roleId: referenceAudit.roleId,
+      present: true,
+      authoredContractRole: false,
+      aliasOf: null,
+      isActive: roleAudit.isActive,
+      assignedUsers: roleAudit.assignedUsers,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
+      decision: 'blocked_delegated_admin_reference',
+      reason: `Role is still referenced by ${referenceAudit.delegatedAdminCount} delegated_admin row(s); retiring it would implicitly mutate delegated-admin state.`,
+      legacyResourceCodes,
+      coveredLegacyGrants: uniqueCoveredLegacyGrants,
+      blockingLegacyOnlyGrants: uniqueBlockingLegacyOnlyGrants,
+      ignoredLegacyOnlyGrants: uniqueIgnoredLegacyOnlyGrants,
+    };
+  }
+
+  if (roleAudit.assignedUsers > 0) {
+    return {
+      roleCode,
+      roleId: referenceAudit.roleId,
+      present: true,
+      authoredContractRole: false,
+      aliasOf: null,
+      isActive: roleAudit.isActive,
+      assignedUsers: roleAudit.assignedUsers,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
       decision: 'blocked_assigned_users',
       reason: `Role still has ${roleAudit.assignedUsers} assigned user(s); migrate or remove assignments before considering retirement or exclusion.`,
       legacyResourceCodes,
@@ -289,11 +448,15 @@ function buildRolePlan(
   if (roleAudit.isActive) {
     return {
       roleCode,
+      roleId: referenceAudit.roleId,
       present: true,
       authoredContractRole: false,
       aliasOf: null,
       isActive: true,
       assignedUsers: 0,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
       decision: 'blocked_active_role',
       reason:
         'Role is still active even though it is unassigned; deactivate it before treating it as cleanup or prune-exclusion residue.',
@@ -307,11 +470,15 @@ function buildRolePlan(
   if (uniqueBlockingLegacyOnlyGrants.length > 0) {
     return {
       roleCode,
+      roleId: referenceAudit.roleId,
       present: true,
       authoredContractRole: false,
       aliasOf: null,
       isActive: false,
       assignedUsers: 0,
+      rolePolicyCount: referenceAudit.rolePolicyCount,
+      delegatedAdminCount: referenceAudit.delegatedAdminCount,
+      referenceAudit: referenceAudit.referenceAudit,
       decision: 'retire_or_exclude_before_prune',
       reason: `Role is inactive and unassigned, but still carries ${uniqueBlockingLegacyOnlyGrants.length} prune-blocking legacy grant(s) across ${resourceCodesFromGrants(uniqueBlockingLegacyOnlyGrants).length} resource(s); retire the role or exclude these grants explicitly before prune.`,
       legacyResourceCodes,
@@ -323,11 +490,15 @@ function buildRolePlan(
 
   return {
     roleCode,
+    roleId: referenceAudit.roleId,
     present: true,
     authoredContractRole: false,
     aliasOf: null,
     isActive: false,
     assignedUsers: 0,
+    rolePolicyCount: referenceAudit.rolePolicyCount,
+    delegatedAdminCount: referenceAudit.delegatedAdminCount,
+    referenceAudit: referenceAudit.referenceAudit,
     decision: 'retire_residue',
     reason:
       legacyResourceCodes.length > 0
@@ -343,6 +514,7 @@ function buildRolePlan(
 export function buildHistoricalRoleNormalizationPlan(
   auditSummary: LegacyRbacAuditSummary,
   options: CliOptions,
+  referenceAudits: ReadonlyMap<string, HistoricalRoleReferenceAudit> = new Map(),
 ): HistoricalRoleNormalizationPlanSummary {
   const roleCodes = selectedRoleCodes(options);
 
@@ -353,7 +525,19 @@ export function buildHistoricalRoleNormalizationPlan(
     },
     plans: auditSummary.audited.map((schemaAudit) => ({
       schemaName: schemaAudit.schemaName,
-      roles: roleCodes.map((roleCode) => buildRolePlan(schemaAudit, roleCode)),
+      roles: roleCodes.map((roleCode) =>
+        buildRolePlan(
+          schemaAudit,
+          roleCode,
+          referenceAudits.get(buildReferenceAuditKey(schemaAudit.schemaName, roleCode)) ?? {
+            roleCode,
+            roleId: null,
+            rolePolicyCount: 0,
+            delegatedAdminCount: null,
+            referenceAudit: 'missing_delegated_admin_table',
+          },
+        ),
+      ),
     })),
     skipped: auditSummary.skipped,
   };
@@ -364,8 +548,19 @@ export async function planHistoricalRoleNormalization(
   options: CliOptions,
 ): Promise<HistoricalRoleNormalizationPlanSummary> {
   const auditSummary = await auditLegacyRbac(prisma, toAuditOptions(options));
+  const referenceAudits = new Map<string, HistoricalRoleReferenceAudit>();
+  const roleCodes = selectedRoleCodes(options);
 
-  return buildHistoricalRoleNormalizationPlan(auditSummary, options);
+  for (const schemaAudit of auditSummary.audited) {
+    for (const roleCode of roleCodes) {
+      referenceAudits.set(
+        buildReferenceAuditKey(schemaAudit.schemaName, roleCode),
+        await getHistoricalRoleReferenceAudit(prisma, schemaAudit.schemaName, roleCode),
+      );
+    }
+  }
+
+  return buildHistoricalRoleNormalizationPlan(auditSummary, options, referenceAudits);
 }
 
 function printSummary(summary: HistoricalRoleNormalizationPlanSummary): void {
@@ -375,8 +570,9 @@ function printSummary(summary: HistoricalRoleNormalizationPlanSummary): void {
     for (const rolePlan of schemaPlan.roles) {
       console.log(`- ${rolePlan.roleCode} [${rolePlan.decision}]`);
       console.log(
-        `  present=${String(rolePlan.present)} active=${String(rolePlan.isActive)} assignedUsers=${rolePlan.assignedUsers}`,
+        `  present=${String(rolePlan.present)} active=${String(rolePlan.isActive)} assignedUsers=${rolePlan.assignedUsers} rolePolicies=${rolePlan.rolePolicyCount} delegatedAdmins=${rolePlan.delegatedAdminCount ?? 'n/a'}`,
       );
+      console.log(`  reference audit: ${rolePlan.referenceAudit}`);
 
       if (rolePlan.aliasOf) {
         console.log(`  aliasOf: ${rolePlan.aliasOf}`);
