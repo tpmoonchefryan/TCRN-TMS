@@ -145,7 +145,7 @@ describe('PermissionGuard Component', () => {
       mockHasPermission.mockReturnValue(false);
 
       const { container } = render(
-        <PermissionGuard resource="admin.settings" action={ActionType.ADMIN}>
+        <PermissionGuard resource="system_user" action={ActionType.ADMIN}>
           <div data-testid="admin-only">Admin Content</div>
         </PermissionGuard>
       );
@@ -238,8 +238,8 @@ describe('PermissionRender Component', () => {
     const scopeId = 'subsidiary-456';
 
     render(
-      <PermissionRender 
-        resource="subsidiary" 
+      <PermissionRender
+        resource="tenant.manage"
         action={ActionType.WRITE}
         scopeId={scopeId}
       >
@@ -247,6 +247,6 @@ describe('PermissionRender Component', () => {
       </PermissionRender>
     );
 
-    expect(mockHasPermission).toHaveBeenCalledWith('subsidiary', ActionType.WRITE, scopeId);
+    expect(mockHasPermission).toHaveBeenCalledWith('tenant.manage', ActionType.WRITE, scopeId);
   });
 });

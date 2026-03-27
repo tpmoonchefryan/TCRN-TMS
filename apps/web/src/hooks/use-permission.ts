@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ActionType } from '@tcrn/shared';
+import { ActionType, type RbacResourceCode } from '@tcrn/shared';
 import { useCallback, useMemo } from 'react';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -33,7 +33,7 @@ export function usePermission() {
    * Check if user has permission for a resource and action
    */
   const hasPermission = useCallback((
-    resource: string, 
+    resource: RbacResourceCode,
     action: ActionType | ActionType[],
     _scopeId?: string
   ): boolean => {
@@ -108,7 +108,7 @@ export function usePermission() {
    * Check if user has permission for any of the given resources
    */
   const hasAnyPermission = useCallback((
-    resources: string[],
+    resources: RbacResourceCode[],
     action: ActionType | ActionType[]
   ): boolean => {
     return resources.some(resource => hasPermission(resource, action));
@@ -118,7 +118,7 @@ export function usePermission() {
    * Check if user has permission for all of the given resources
    */
   const hasAllPermissions = useCallback((
-    resources: string[],
+    resources: RbacResourceCode[],
     action: ActionType | ActionType[]
   ): boolean => {
     return resources.every(resource => hasPermission(resource, action));
@@ -127,7 +127,7 @@ export function usePermission() {
   /**
    * Get list of all permitted actions for a resource
    */
-  const getPermittedActions = useCallback((resource: string): ActionType[] => {
+  const getPermittedActions = useCallback((resource: RbacResourceCode): ActionType[] => {
     return Object.values(ActionType).filter((action) => hasPermission(resource, action));
   }, [hasPermission]);
 

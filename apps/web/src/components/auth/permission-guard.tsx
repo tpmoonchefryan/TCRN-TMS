@@ -2,13 +2,13 @@
 
 'use client';
 
-import { ActionType } from '@tcrn/shared';
+import { ActionType, type RbacResourceCode } from '@tcrn/shared';
 import React from 'react';
 
 import { usePermission } from '@/hooks/use-permission';
 
 interface PermissionGuardProps {
-  resource: string;
+  resource: RbacResourceCode;
   action: ActionType | ActionType[];
   children: React.ReactNode;
   fallback?: React.ReactNode;
@@ -53,7 +53,7 @@ export function PermissionGuard({
  * Hook-like component that allows for more complex permission-based rendering
  */
 interface PermissionRenderProps {
-  resource: string;
+  resource: RbacResourceCode;
   action: ActionType | ActionType[];
   scopeId?: string;
   children: (hasPermission: boolean) => React.ReactNode;
