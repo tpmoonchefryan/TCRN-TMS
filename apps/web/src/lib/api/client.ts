@@ -4,8 +4,8 @@
 import type {
   AssignUserRoleRequest,
   AssignUserRoleResponse,
+  MyPermissionsResponse,
   Permission,
-  RbacRolePolicyEffect,
   RbacScopeType,
   RemoveUserRoleAssignmentResponse,
   ResourceDefinition,
@@ -47,8 +47,6 @@ export interface ApiError {
   message: string;
   statusCode: number;
 }
-
-export type EffectivePermissionMap = Record<string, RbacRolePolicyEffect>;
 
 class ApiClient {
   private baseUrl: string;
@@ -1714,18 +1712,7 @@ export const permissionApi = {
 
   // Get current user's effective permissions
   getMyPermissions: (params?: { scopeType?: string; scopeId?: string }) =>
-    apiClient.get<{
-      userId: string;
-      scope: { type: string; id: string | null; name: string | null };
-      permissions: EffectivePermissionMap;
-      roles: Array<{
-        code: string;
-        name: string;
-        source: 'direct' | 'inherited';
-        scopeType: string;
-        scopeId: string | null;
-      }>;
-    }>('/api/v1/users/me/permissions', params),
+    apiClient.get<MyPermissionsResponse>('/api/v1/users/me/permissions', params),
 };
 
 // Delegated Admin API

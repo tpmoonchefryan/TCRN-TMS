@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { RbacRolePolicyEffect, SystemUser } from '@tcrn/shared';
+import type { EffectivePermissionMap, SystemUser } from '@tcrn/shared';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -50,7 +50,7 @@ export interface AuthState {
   isAcTenant: boolean;
   
   // Permission state
-  effectivePermissions: Record<string, RbacRolePolicyEffect> | null;
+  effectivePermissions: EffectivePermissionMap | null;
   currentScope: PermissionScope | null;
   
   // Transient state

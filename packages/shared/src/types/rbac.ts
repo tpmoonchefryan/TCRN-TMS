@@ -77,6 +77,8 @@ export interface UserRoleAssignmentGrantor {
   username: string | null;
 }
 
+export type EffectivePermissionMap = Record<string, RbacRolePolicyEffect>;
+
 export interface UserRoleAssignmentRecord {
   id: string;
   role: UserRoleAssignmentRole;
@@ -125,6 +127,27 @@ export interface UpdateUserRoleAssignmentResponse {
 export interface RemoveUserRoleAssignmentResponse {
   message: string;
   snapshotUpdateQueued: boolean;
+}
+
+export interface MyPermissionsScopeInfo {
+  type: RbacScopeType;
+  id: string | null;
+  name: string | null;
+}
+
+export interface MyPermissionsRoleInfo {
+  code: string;
+  name: string;
+  source: 'direct' | 'inherited';
+  scopeType: RbacScopeType;
+  scopeId: string | null;
+}
+
+export interface MyPermissionsResponse {
+  userId: string;
+  scope: MyPermissionsScopeInfo;
+  permissions: EffectivePermissionMap;
+  roles: MyPermissionsRoleInfo[];
 }
 
 export interface RoleSummary {

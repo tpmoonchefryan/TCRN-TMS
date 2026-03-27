@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
     "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --ignore-pattern '**/__tests__/**' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts' --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run --config ./vitest.config.ts",
     "test:cov": "vitest run --config ./vitest.config.ts --coverage"
   },
