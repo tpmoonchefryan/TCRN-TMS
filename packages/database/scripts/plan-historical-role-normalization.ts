@@ -146,6 +146,7 @@ function toAuditOptions(options: CliOptions): LegacyAuditCliOptions {
     skipTemplate: true,
     includeHistoricalRoles: true,
     includeCompatResources: false,
+    excludeRoles: [],
     json: false,
   };
 }

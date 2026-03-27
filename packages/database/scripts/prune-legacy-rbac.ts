@@ -17,12 +17,17 @@ import {
   type LegacyTargetAudit,
   type PruneReadiness,
 } from './audit-legacy-rbac';
+import {
+  assertHistoricalRoleExclusionsSafe,
+  validateHistoricalRoleExclusions,
+} from './historical-role-exclusions';
 import { verifyLegacyPruneRuntime } from './verify-legacy-prune-runtime';
 
 export interface CliOptions {
   schemas: string[];
   skipTemplate: boolean;
   legacyCodes: string[];
+  excludeRoles: string[];
   allowUsers: string[];
   runtimeProof: boolean;
   apply: boolean;
@@ -80,6 +85,7 @@ export interface PrunePlanSummary {
   filters: {
     schemas: string[];
     legacyCodes: string[];
+    excludeRoles: string[];
     allowUsers: string[];
     runtimeProof: boolean;
     skipTemplate: boolean;
@@ -98,6 +104,7 @@ interface DeleteCountRow {
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   const legacyCodes: string[] = [];
+  const excludeRoles: string[] = [];
   const allowUsers: string[] = [];
   let skipTemplate = false;
   let runtimeProof = false;
@@ -147,6 +154,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--exclude-role') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --exclude-role');
+      }
+
+      excludeRoles.push(value);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--skip-template') {
       skipTemplate = true;
       continue;
@@ -174,6 +193,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     schemas,
     skipTemplate,
     legacyCodes: [...new Set(legacyCodes)],
+    excludeRoles: [...new Set(excludeRoles)],
     allowUsers: [...new Set(allowUsers)],
     runtimeProof,
     apply,
@@ -261,6 +281,7 @@ export function buildPrunePlan(
     filters: {
       schemas: options.schemas,
       legacyCodes: options.legacyCodes,
+      excludeRoles: options.excludeRoles,
       allowUsers: options.allowUsers,
       runtimeProof: options.runtimeProof,
       skipTemplate: options.skipTemplate,
@@ -430,6 +451,10 @@ function printSummary(summary: PrunePlanSummary): void {
     console.log('Legacy resources: all audited legacy targets');
   }
 
+  if (summary.filters.excludeRoles.length > 0) {
+    console.log(`Excluded historical roles: ${summary.filters.excludeRoles.join(', ')}`);
+  }
+
   if (summary.filters.runtimeProof) {
     console.log(`Runtime proof: enabled (${summary.filters.allowUsers.join(', ') || 'no allowlist'})`);
   }
@@ -504,11 +529,21 @@ async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
 
   try {
+    if (options.excludeRoles.length > 0) {
+      const exclusionValidation = await validateHistoricalRoleExclusions(prisma, {
+        schemas: options.schemas,
+        roles: options.excludeRoles,
+      });
+
+      assertHistoricalRoleExclusionsSafe(exclusionValidation);
+    }
+
     let auditSummary = await auditLegacyRbac(prisma, {
       schemas: options.schemas,
       skipTemplate: options.skipTemplate,
       includeHistoricalRoles: false,
       includeCompatResources: false,
+      excludeRoles: options.excludeRoles,
       json: false,
     });
     
@@ -516,6 +551,7 @@ async function main(): Promise<void> {
       const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
         json: false,
       });

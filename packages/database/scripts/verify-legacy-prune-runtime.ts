@@ -20,6 +20,10 @@ import {
   type LegacyTargetAudit,
 } from './audit-legacy-rbac';
 import {
+  assertHistoricalRoleExclusionsSafe,
+  validateHistoricalRoleExclusions,
+} from './historical-role-exclusions';
+import {
   REDIS_URL,
   calculateEffectivePermissions,
   getScopeChain,
@@ -32,6 +36,7 @@ import {
 export interface CliOptions {
   schemas: string[];
   legacyCodes: string[];
+  excludeRoles: string[];
   allowUsers: string[];
   json: boolean;
 }
@@ -89,6 +94,7 @@ export interface RuntimeProofSummary {
   filters: {
     schemas: string[];
     legacyCodes: string[];
+    excludeRoles: string[];
     allowUsers: string[];
   };
   target: RuntimeProofTargetSummary;
@@ -97,6 +103,7 @@ export interface RuntimeProofSummary {
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   const legacyCodes: string[] = [];
+  const excludeRoles: string[] = [];
   const allowUsers: string[] = [];
   let json = false;
 
@@ -143,6 +150,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--exclude-role') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --exclude-role');
+      }
+
+      excludeRoles.push(value);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--json') {
       json = true;
       continue;
@@ -162,6 +181,7 @@ function parseCliArgs(argv: string[]): CliOptions {
   return {
     schemas: [...new Set(schemas)],
     legacyCodes: [...new Set(legacyCodes)],
+    excludeRoles: [...new Set(excludeRoles)],
     allowUsers: [...new Set(allowUsers)],
     json,
   };
@@ -326,11 +346,21 @@ export async function verifyLegacyPruneRuntime(
   prisma: PrismaClient,
   options: CliOptions,
 ): Promise<RuntimeProofSummary> {
+  if (options.excludeRoles.length > 0) {
+    const exclusionValidation = await validateHistoricalRoleExclusions(prisma, {
+      schemas: options.schemas,
+      roles: options.excludeRoles,
+    });
+
+    assertHistoricalRoleExclusionsSafe(exclusionValidation);
+  }
+
   const auditSummary = await auditLegacyRbac(prisma, {
     schemas: options.schemas,
     skipTemplate: false,
     includeHistoricalRoles: false,
     includeCompatResources: false,
+    excludeRoles: options.excludeRoles,
     json: false,
   });
 
@@ -361,6 +391,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -385,6 +416,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -409,6 +441,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -433,6 +466,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -457,6 +491,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -481,6 +516,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {
@@ -522,6 +558,7 @@ export async function verifyLegacyPruneRuntime(
       filters: {
         schemas: options.schemas,
         legacyCodes: options.legacyCodes,
+        excludeRoles: options.excludeRoles,
         allowUsers: options.allowUsers,
       },
       target: {

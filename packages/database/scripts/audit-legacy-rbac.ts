@@ -12,6 +12,7 @@ export interface CliOptions {
   skipTemplate: boolean;
   includeHistoricalRoles: boolean;
   includeCompatResources: boolean;
+  excludeRoles: string[];
   json: boolean;
 }
 
@@ -59,6 +60,7 @@ export interface LegacyTargetAudit {
   missingCanonicalCodes: string[];
   legacyOnlyGrants: string[];
   ignoredLegacyOnlyGrants: string[];
+  excludedLegacyOnlyGrants: string[];
   canonicalOnlyGrants: string[];
   readiness: PruneReadiness;
   reason: string;
@@ -181,9 +183,10 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
       ignoredLegacyOnlyGrants: [
         'ADMIN:delete:grant',
         'PLATFORM_ADMIN:delete:grant',
+        'TENANT_ADMIN:delete:grant',
       ],
       reason:
-        'Legacy config.platform delete grants are retired over-grants; current platform configuration surface uses split read/write/admin resources.',
+        'Legacy config.platform delete grants are retired over-grants; current platform configuration surface uses split read/write/admin resources, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
   [
@@ -193,9 +196,10 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
         'ADMIN:delete:grant',
         'CONTENT_MANAGER:delete:grant',
         'PLATFORM_ADMIN:delete:grant',
+        'TENANT_ADMIN:delete:grant',
       ],
       reason:
-        'Legacy homepage delete grants are retired over-grants; current controller-facing surface only requires read/update semantics.',
+        'Legacy homepage delete grants are retired over-grants; current controller-facing surface only requires read/update semantics, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
   [
@@ -208,9 +212,12 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
         'PLATFORM_ADMIN:admin:grant',
         'PLATFORM_ADMIN:delete:grant',
         'PLATFORM_ADMIN:write:grant',
+        'TENANT_ADMIN:admin:grant',
+        'TENANT_ADMIN:delete:grant',
+        'TENANT_ADMIN:write:grant',
       ],
       reason:
-        'Legacy log.security write/admin/delete grants are retired over-grants; current security-event viewing surface is read-only.',
+        'Legacy log.security write/admin/delete grants are retired over-grants; current security-event viewing surface is read-only, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
   [
@@ -220,9 +227,10 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
         'ADMIN:delete:grant',
         'CONTENT_MANAGER:delete:grant',
         'PLATFORM_ADMIN:delete:grant',
+        'TENANT_ADMIN:delete:grant',
       ],
       reason:
-        'Legacy marshmallow delete grants are retired over-grants; current controller-facing surface uses read/write/execute semantics.',
+        'Legacy marshmallow delete grants are retired over-grants; current controller-facing surface uses read/write/execute semantics, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
   [
@@ -237,9 +245,12 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
         'PLATFORM_ADMIN:write:grant',
         'TALENT_MANAGER:admin:grant',
         'TALENT_MANAGER:write:grant',
+        'TENANT_ADMIN:admin:grant',
+        'TENANT_ADMIN:delete:grant',
+        'TENANT_ADMIN:write:grant',
       ],
       reason:
-        'Legacy log.change write/admin/delete grants are retired over-grants; current change-log controllers are read-only.',
+        'Legacy log.change write/admin/delete grants are retired over-grants; current change-log controllers are read-only, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
   [
@@ -252,9 +263,12 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
         'PLATFORM_ADMIN:admin:grant',
         'PLATFORM_ADMIN:delete:grant',
         'PLATFORM_ADMIN:write:grant',
+        'TENANT_ADMIN:admin:grant',
+        'TENANT_ADMIN:delete:grant',
+        'TENANT_ADMIN:write:grant',
       ],
       reason:
-        'Legacy log.integration write/admin/delete grants are retired over-grants; current integration-log controllers are read-only.',
+        'Legacy log.integration write/admin/delete grants are retired over-grants; current integration-log controllers are read-only, and TENANT_ADMIN is a compatibility alias of ADMIN.',
     },
   ],
 ]);
@@ -292,6 +306,7 @@ function parseCliArgs(argv: string[]): CliOptions {
   let skipTemplate = false;
   let includeHistoricalRoles = false;
   let includeCompatResources = false;
+  const excludeRoles: string[] = [];
   let json = false;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -328,6 +343,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--exclude-role') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --exclude-role');
+      }
+
+      excludeRoles.push(value);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--json') {
       json = true;
       continue;
@@ -341,6 +368,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     skipTemplate,
     includeHistoricalRoles,
     includeCompatResources,
+    excludeRoles: [...new Set(excludeRoles)],
     json,
   };
 }
@@ -578,6 +606,40 @@ function formatGrant(grant: ResourceGrantEntry): string {
   return `${grant.roleCode}:${grant.action}:${grant.effect}`;
 }
 
+function getGrantRoleCode(grant: string): string {
+  return grant.split(':', 1)[0] ?? grant;
+}
+
+function splitExcludedRoleLegacyOnlyGrants(
+  legacyOnlyGrants: string[],
+  excludeRoles: string[],
+): {
+  blockingLegacyOnlyGrants: string[];
+  excludedLegacyOnlyGrants: string[];
+  excludedRoles: string[];
+} {
+  if (excludeRoles.length === 0) {
+    return {
+      blockingLegacyOnlyGrants: legacyOnlyGrants,
+      excludedLegacyOnlyGrants: [],
+      excludedRoles: [],
+    };
+  }
+
+  const excludedRoleSet = new Set(excludeRoles);
+  const excludedLegacyOnlyGrants = legacyOnlyGrants.filter((grant) =>
+    excludedRoleSet.has(getGrantRoleCode(grant)),
+  );
+
+  return {
+    blockingLegacyOnlyGrants: legacyOnlyGrants.filter(
+      (grant) => !excludedRoleSet.has(getGrantRoleCode(grant)),
+    ),
+    excludedLegacyOnlyGrants,
+    excludedRoles: [...new Set(excludedLegacyOnlyGrants.map(getGrantRoleCode))],
+  };
+}
+
 function splitLegacyOnlyGrants(
   legacyCode: string,
   legacyOnlyGrants: string[],
@@ -610,6 +672,7 @@ function compareTarget(
   target: LegacyResourceTarget,
   legacy: ResourceAudit,
   canonicalResources: ResourceAudit[],
+  options: Pick<CliOptions, 'excludeRoles'>,
 ): LegacyTargetAudit {
   const canonicalCodes = getCanonicalCodes(target);
   const primaryCanonical = canonicalResources[0] ?? null;
@@ -632,6 +695,7 @@ function compareTarget(
       missingCanonicalCodes,
       legacyOnlyGrants: [],
       ignoredLegacyOnlyGrants: [],
+      excludedLegacyOnlyGrants: [],
       canonicalOnlyGrants: [...canonicalGrantSet],
       readiness: 'absent',
       reason: 'Legacy resource is already absent in this schema.',
@@ -650,6 +714,7 @@ function compareTarget(
       missingCanonicalCodes,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
       ignoredLegacyOnlyGrants: [],
+      excludedLegacyOnlyGrants: [],
       canonicalOnlyGrants: [],
       readiness: 'legacy_unmapped',
       reason: target.note,
@@ -668,6 +733,7 @@ function compareTarget(
       missingCanonicalCodes,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
       ignoredLegacyOnlyGrants: [],
+      excludedLegacyOnlyGrants: [],
       canonicalOnlyGrants: [...canonicalGrantSet],
       readiness: 'blocked_by_canonical_gap',
       reason: `Canonical resources missing in this schema: ${missingCanonicalCodes.join(', ')}.`,
@@ -676,12 +742,22 @@ function compareTarget(
 
   const legacyGrantSet = new Set(legacy.grants.map(formatGrant));
   const legacyOnlyGrants = [...legacyGrantSet].filter((grant) => !canonicalGrantSet.has(grant));
+  const {
+    blockingLegacyOnlyGrants: exclusionFilteredLegacyOnlyGrants,
+    excludedLegacyOnlyGrants,
+    excludedRoles,
+  } = splitExcludedRoleLegacyOnlyGrants(legacyOnlyGrants, options.excludeRoles);
   const canonicalOnlyGrants = [...canonicalGrantSet].filter((grant) => !legacyGrantSet.has(grant));
   const {
     blockingLegacyOnlyGrants,
     ignoredLegacyOnlyGrants,
     ignoredReason,
-  } = splitLegacyOnlyGrants(target.legacyCode, legacyOnlyGrants);
+  } = splitLegacyOnlyGrants(target.legacyCode, exclusionFilteredLegacyOnlyGrants);
+  const exclusionReason =
+    excludedRoles.length > 0
+      ? `Explicit exclusion ignored legacy-only grants from roles: ${excludedRoles.join(', ')}.`
+      : null;
+  const combinedIgnoredReason = [exclusionReason, ignoredReason].filter(Boolean).join(' ');
 
   if (blockingLegacyOnlyGrants.length > 0) {
     return {
@@ -695,6 +771,7 @@ function compareTarget(
       missingCanonicalCodes,
       legacyOnlyGrants: blockingLegacyOnlyGrants,
       ignoredLegacyOnlyGrants,
+      excludedLegacyOnlyGrants,
       canonicalOnlyGrants,
       readiness: 'blocked_by_canonical_gap',
       reason: 'Canonical grant set does not yet cover all legacy role/action/effect entries.',
@@ -713,10 +790,11 @@ function compareTarget(
       missingCanonicalCodes,
       legacyOnlyGrants: blockingLegacyOnlyGrants,
       ignoredLegacyOnlyGrants,
+      excludedLegacyOnlyGrants,
       canonicalOnlyGrants,
       readiness: 'covered_requires_snapshot_refresh',
-      reason: ignoredReason
-        ? `${ignoredReason} Assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.`
+      reason: combinedIgnoredReason
+        ? `${combinedIgnoredReason} Assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.`
         : 'Canonical grant set covers legacy entries, but assigned roles/users still exist and would require runtime verification plus snapshot refresh after prune.',
     };
   }
@@ -732,10 +810,11 @@ function compareTarget(
     missingCanonicalCodes,
     legacyOnlyGrants: blockingLegacyOnlyGrants,
     ignoredLegacyOnlyGrants,
+    excludedLegacyOnlyGrants,
     canonicalOnlyGrants,
     readiness: 'covered_unassigned',
-    reason: ignoredReason
-      ? `${ignoredReason} No assigned roles/users currently depend on this legacy resource.`
+    reason: combinedIgnoredReason
+      ? `${combinedIgnoredReason} No assigned roles/users currently depend on this legacy resource.`
       : 'Canonical grant set covers legacy entries and no assigned roles/users currently depend on this legacy resource.',
   };
 }
@@ -754,7 +833,7 @@ export async function auditSchema(
         ),
       );
 
-      return compareTarget(target, legacy, canonicalResources);
+      return compareTarget(target, legacy, canonicalResources, options);
     }),
   );
   const historicalRoles = options.includeHistoricalRoles
@@ -875,6 +954,10 @@ function printSummary(summary: LegacyRbacAuditSummary): void {
 
       if (target.ignoredLegacyOnlyGrants.length > 0) {
         console.log(`  ignored legacy-only grants: ${target.ignoredLegacyOnlyGrants.join(', ')}`);
+      }
+
+      if (target.excludedLegacyOnlyGrants.length > 0) {
+        console.log(`  excluded-role legacy-only grants: ${target.excludedLegacyOnlyGrants.join(', ')}`);
       }
 
       if (target.canonicalOnlyGrants.length > 0) {

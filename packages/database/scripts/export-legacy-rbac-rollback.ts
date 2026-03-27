@@ -10,6 +10,10 @@ import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
 
 import { auditLegacyRbac, formatCanonicalLabel } from './audit-legacy-rbac';
+import {
+  assertHistoricalRoleExclusionsSafe,
+  validateHistoricalRoleExclusions,
+} from './historical-role-exclusions';
 import { buildPrunePlan, promoteRuntimeVerifiedTargetInAudit } from './prune-legacy-rbac';
 import { verifyLegacyPruneRuntime } from './verify-legacy-prune-runtime';
 
@@ -17,6 +21,7 @@ export interface CliOptions {
   schemas: string[];
   skipTemplate: boolean;
   legacyCodes: string[];
+  excludeRoles: string[];
   allowUsers: string[];
   runtimeProof: boolean;
   json: boolean;
@@ -74,6 +79,7 @@ interface RollbackExportSummary {
   filters: {
     schemas: string[];
     legacyCodes: string[];
+    excludeRoles: string[];
     allowUsers: string[];
     runtimeProof: boolean;
     skipTemplate: boolean;
@@ -84,6 +90,7 @@ interface RollbackExportSummary {
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   const legacyCodes: string[] = [];
+  const excludeRoles: string[] = [];
   const allowUsers: string[] = [];
   let skipTemplate = false;
   let runtimeProof = false;
@@ -132,6 +139,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--exclude-role') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --exclude-role');
+      }
+
+      excludeRoles.push(value);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--skip-template') {
       skipTemplate = true;
       continue;
@@ -162,6 +181,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     schemas,
     skipTemplate,
     legacyCodes: [...new Set(legacyCodes)],
+    excludeRoles: [...new Set(excludeRoles)],
     allowUsers: [...new Set(allowUsers)],
     runtimeProof,
     json,
@@ -345,6 +365,7 @@ export async function exportRollbackSummary(
     skipTemplate: options.skipTemplate,
     includeHistoricalRoles: false,
     includeCompatResources: false,
+    excludeRoles: options.excludeRoles,
     json: false,
   });
 
@@ -352,6 +373,7 @@ export async function exportRollbackSummary(
     const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
       schemas: options.schemas,
       legacyCodes: options.legacyCodes,
+      excludeRoles: options.excludeRoles,
       allowUsers: options.allowUsers,
       json: false,
     });
@@ -372,6 +394,7 @@ export async function exportRollbackSummary(
     schemas: options.schemas,
     skipTemplate: options.skipTemplate,
     legacyCodes: options.legacyCodes,
+    excludeRoles: options.excludeRoles,
     allowUsers: options.allowUsers,
     runtimeProof: options.runtimeProof,
     apply: false,
@@ -431,6 +454,7 @@ export async function exportRollbackSummary(
     filters: {
       schemas: options.schemas,
       legacyCodes: options.legacyCodes,
+      excludeRoles: options.excludeRoles,
       allowUsers: options.allowUsers,
       runtimeProof: options.runtimeProof,
       skipTemplate: options.skipTemplate,
@@ -461,6 +485,15 @@ async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
 
   try {
+    if (options.excludeRoles.length > 0) {
+      const exclusionValidation = await validateHistoricalRoleExclusions(prisma, {
+        schemas: options.schemas,
+        roles: options.excludeRoles,
+      });
+
+      assertHistoricalRoleExclusionsSafe(exclusionValidation);
+    }
+
     const summary = await exportRollbackSummary(prisma, options);
 
     if (options.json) {
