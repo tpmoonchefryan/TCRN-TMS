@@ -5,10 +5,13 @@ import { PrismaClient } from '@tcrn/database';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
 import * as fs from 'fs';
+import * as Minio from 'minio';
 import * as os from 'os';
 import * as path from 'path';
 
 import { reportLogger as logger } from '../logger';
+
+const TEMP_REPORTS_BUCKET = 'temp-reports';
 
 /**
  * Export format options
@@ -42,6 +45,31 @@ export interface MarshmallowExportJobResult {
   generatedAt: string;
 }
 
+function createMinioClient(): Minio.Client {
+  const endpoint = process.env.MINIO_ENDPOINT || 'localhost:9000';
+  const [endpointHost, endpointPort] = endpoint.split(':');
+  const useSSL = process.env.MINIO_USE_SSL === 'true';
+
+  return new Minio.Client({
+    endPoint: endpointHost,
+    port: parseInt(endpointPort || '9000', 10),
+    useSSL,
+    accessKey: process.env.MINIO_ROOT_USER || 'minioadmin',
+    secretKey: process.env.MINIO_ROOT_PASSWORD || '',
+  });
+}
+
+function getContentType(format: ExportFormat): string {
+  switch (format) {
+    case 'json':
+      return 'application/json';
+    case 'xlsx':
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    default:
+      return 'text/csv';
+  }
+}
+
 /**
  * Marshmallow export job processor
  */
@@ -51,6 +79,7 @@ export const marshmallowExportJobProcessor: Processor<
 > = async (job: Job<MarshmallowExportJobData, MarshmallowExportJobResult>) => {
   const { jobId, talentId, tenantSchema, format, filters } = job.data;
   const startTime = Date.now();
+  let localFilePath: string | null = null;
 
   logger.info(`Processing marshmallow export job ${jobId} for talent ${talentId}`);
   logger.info(`Filters: ${JSON.stringify(filters)}`);
@@ -221,30 +250,38 @@ export const marshmallowExportJobProcessor: Processor<
       await workbook.xlsx.writeFile(filePath);
     }
 
+    localFilePath = filePath;
+
     // 6. Get file stats
     const stats = fs.statSync(filePath);
 
-    // 7. Upload to MinIO (TODO: implement actual upload)
-    const minioPath = `temp-reports/${tenantSchema}/${fileName}`;
+    // 7. Upload to MinIO
+    const objectPath = `${tenantSchema}/${jobId}/${fileName}`;
+    const minioClient = createMinioClient();
     logger.info(`File generated: ${filePath} (${stats.size} bytes)`);
-    logger.info(`MinIO path: ${minioPath}`);
+    logger.info(`MinIO path: ${objectPath}`);
 
-    // TODO: Implement actual MinIO upload
-    // const minioClient = new MinioService();
-    // await minioClient.uploadFile('temp-reports', minioPath, filePath);
+    const bucketExists = await minioClient.bucketExists(TEMP_REPORTS_BUCKET);
+    if (!bucketExists) {
+      await minioClient.makeBucket(TEMP_REPORTS_BUCKET, 'us-east-1');
+    }
+
+    await minioClient.putObject(
+      TEMP_REPORTS_BUCKET,
+      objectPath,
+      fs.createReadStream(filePath),
+      stats.size,
+      { 'Content-Type': getContentType(format) },
+    );
 
     // 8. Update job record with result
-    await updateJobCompleted(prisma, tenantSchema, jobId, minioPath, fileName, totalCount);
-
-    // 9. Cleanup temp file
-    // Note: Keep temp file for now until MinIO upload is implemented
-    // fs.unlinkSync(filePath);
+    await updateJobCompleted(prisma, tenantSchema, jobId, objectPath, fileName, totalCount);
 
     const duration = Date.now() - startTime;
     logger.info(`Marshmallow export job ${jobId} completed in ${duration}ms`);
 
     return {
-      filePath: minioPath,
+      filePath: objectPath,
       fileName,
       fileSize: stats.size,
       rowCount: totalCount,
@@ -259,6 +296,9 @@ export const marshmallowExportJobProcessor: Processor<
 
     throw error;
   } finally {
+    if (localFilePath && fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
     await prisma.$disconnect();
   }
 };
@@ -274,7 +314,7 @@ async function updateJobStatus(
 ): Promise<void> {
   await prisma.$executeRawUnsafe(
     `UPDATE "${schemaName}".export_job
-    SET status = $1, started_at = NOW()
+    SET status = $1, started_at = NOW(), updated_at = NOW()
     WHERE id = $2::uuid`,
     status,
     jobId,
@@ -304,7 +344,8 @@ async function updateJobCompleted(
       total_records = $3,
       processed_records = $3,
       completed_at = NOW(),
-      expires_at = $4::timestamptz
+      expires_at = $4::timestamptz,
+      updated_at = NOW()
     WHERE id = $5::uuid`,
     filePath,
     fileName,
@@ -328,7 +369,8 @@ async function updateJobFailed(
     SET 
       status = 'failed',
       error_message = $1,
-      completed_at = NOW()
+      completed_at = NOW(),
+      updated_at = NOW()
     WHERE id = $2::uuid`,
     errorMessage,
     jobId,
