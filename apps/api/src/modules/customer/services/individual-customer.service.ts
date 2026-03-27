@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService, TechEventLogService } from '../../log';
+import { PiiClientService, PiiJwtService } from '../../pii';
 import {
     CreateIndividualCustomerDto,
     CustomerAction,
@@ -29,6 +30,8 @@ export class IndividualCustomerService {
     private readonly databaseService: DatabaseService,
     private readonly changeLogService: ChangeLogService,
     private readonly techEventLogService: TechEventLogService,
+    private readonly piiClientService: PiiClientService,
+    private readonly piiJwtService: PiiJwtService,
   ) {}
 
   /**
@@ -77,8 +80,10 @@ export class IndividualCustomerService {
     }
 
     // Generate rm_profile_id for PII link
-    // In production, this would be created by the PII service
     const rmProfileId = uuidv4();
+    const piiRuntime = dto.pii
+      ? await this.resolveEnabledPiiRuntime(talent.profileStoreId, context)
+      : null;
 
     // Generate search hints from PII data
     const searchHintName = this.generateSearchHintName(
@@ -89,117 +94,173 @@ export class IndividualCustomerService {
       dto.pii?.phoneNumbers,
     );
 
-    // Create customer profile
-    const customer = await prisma.$transaction(async (tx) => {
-      const insertedCustomers = await tx.$queryRawUnsafe<Array<{
-        id: string;
-        nickname: string;
-        createdAt: Date;
-      }>>(`
-        INSERT INTO "${schema}".customer_profile (
-          id, talent_id, profile_store_id, origin_talent_id, rm_profile_id,
-          profile_type, nickname, primary_language, status_id, tags, source,
-          notes, created_by, updated_by, created_at, updated_at
-        )
-        VALUES (
-          gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, $3::uuid,
-          $4, $5, $6, $7::uuid, $8::text[], $9,
-          $10, $11::uuid, $11::uuid, NOW(), NOW()
-        )
-        RETURNING id, nickname, created_at as "createdAt"
-      `,
-        dto.talentId,
-        talent.profileStoreId,
+    let piiWriteToken: string | null = null;
+    if (dto.pii && piiRuntime) {
+      const issuedToken = await this.piiJwtService.issueAccessToken({
+        userId: context.userId,
+        tenantId: context.tenantId,
+        tenantSchema: context.tenantSchema,
         rmProfileId,
-        ProfileType.INDIVIDUAL,
-        dto.nickname,
-        dto.primaryLanguage ?? null,
-        statusId,
-        dto.tags || [],
-        dto.source ?? null,
-        dto.notes ?? null,
-        context.userId,
+        profileStoreId: talent.profileStoreId,
+        actions: ['write'],
+      });
+      piiWriteToken = issuedToken.token;
+
+      await this.piiClientService.createProfile(
+        piiRuntime.apiUrl,
+        {
+          id: rmProfileId,
+          profileStoreId: talent.profileStoreId,
+          ...dto.pii,
+        },
+        piiWriteToken,
+        context.tenantId,
       );
+    }
 
-      const newCustomer = insertedCustomers[0];
+    let customer: {
+      id: string;
+      nickname: string;
+      createdAt: Date;
+    };
 
-      // TODO: Store PII search hints
-      // In the current PII design, individual PII data is stored in remote encrypted vault.
-      // Search hints (searchHintName, searchHintPhoneLast4) could be:
-      // 1. Added as columns to CustomerProfile table, or
-      // 2. Stored in a separate tenant-scoped table
-      // For now, PII is only linked via rmProfileId
-      void searchHintName;
-      void searchHintPhoneLast4;
+    try {
+      customer = await prisma.$transaction(async (tx) => {
+        const insertedCustomers = await tx.$queryRawUnsafe<Array<{
+          id: string;
+          nickname: string;
+          createdAt: Date;
+        }>>(`
+          INSERT INTO "${schema}".customer_profile (
+            id, talent_id, profile_store_id, origin_talent_id, rm_profile_id,
+            profile_type, nickname, primary_language, status_id, tags, source,
+            notes, created_by, updated_by, created_at, updated_at
+          )
+          VALUES (
+            gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, $3::uuid,
+            $4, $5, $6, $7::uuid, $8::text[], $9,
+            $10, $11::uuid, $11::uuid, NOW(), NOW()
+          )
+          RETURNING id, nickname, created_at as "createdAt"
+        `,
+          dto.talentId,
+          talent.profileStoreId,
+          rmProfileId,
+          ProfileType.INDIVIDUAL,
+          dto.nickname,
+          dto.primaryLanguage ?? null,
+          statusId,
+          dto.tags || [],
+          dto.source ?? null,
+          dto.notes ?? null,
+          context.userId,
+        );
 
-      // Create external ID if provided
-      if (dto.externalId && dto.consumerCode) {
-        const consumers = await tx.$queryRawUnsafe<Array<{ id: string }>>(`
-          SELECT id
-          FROM "${schema}".consumer
-          WHERE code = $1 AND is_active = true
-          LIMIT 1
-        `, dto.consumerCode);
+        const newCustomer = insertedCustomers[0];
 
-        if (consumers[0]) {
-          await tx.$executeRawUnsafe(`
-            INSERT INTO "${schema}".customer_external_id (
-              id, customer_id, profile_store_id, consumer_id, external_id, created_by, created_at
-            )
-            VALUES (
-              gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5::uuid, NOW()
-            )
-          `,
-            newCustomer.id,
-            talent.profileStoreId,
-            consumers[0].id,
-            dto.externalId,
-            context.userId,
-          );
+        // TODO: Store PII search hints
+        // In the current PII design, individual PII data is stored in remote encrypted vault.
+        // Search hints (searchHintName, searchHintPhoneLast4) could be:
+        // 1. Added as columns to CustomerProfile table, or
+        // 2. Stored in a separate tenant-scoped table
+        // For now, PII is only linked via rmProfileId
+        void searchHintName;
+        void searchHintPhoneLast4;
+
+        // Create external ID if provided
+        if (dto.externalId && dto.consumerCode) {
+          const consumers = await tx.$queryRawUnsafe<Array<{ id: string }>>(`
+            SELECT id
+            FROM "${schema}".consumer
+            WHERE code = $1 AND is_active = true
+            LIMIT 1
+          `, dto.consumerCode);
+
+          if (consumers[0]) {
+            await tx.$executeRawUnsafe(`
+              INSERT INTO "${schema}".customer_external_id (
+                id, customer_id, profile_store_id, consumer_id, external_id, created_by, created_at
+              )
+              VALUES (
+                gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5::uuid, NOW()
+              )
+            `,
+              newCustomer.id,
+              talent.profileStoreId,
+              consumers[0].id,
+              dto.externalId,
+              context.userId,
+            );
+          }
         }
+
+        // Record change log
+        await this.changeLogService.create(tx, {
+          action: 'create',
+          objectType: 'customer_profile',
+          objectId: newCustomer.id,
+          objectName: dto.nickname,
+          newValue: {
+            profileType: ProfileType.INDIVIDUAL,
+            nickname: dto.nickname,
+            primaryLanguage: dto.primaryLanguage,
+            statusId,
+            tags: dto.tags,
+            source: dto.source,
+          },
+        }, context);
+
+        // Record access log
+        await tx.$executeRawUnsafe(`
+          INSERT INTO "${schema}".customer_access_log (
+            id, customer_id, profile_store_id, talent_id, action,
+            operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
+            $5::uuid, $6, $7::inet, $8, $9, NOW()
+          )
+        `,
+          newCustomer.id,
+          talent.profileStoreId,
+          dto.talentId,
+          CustomerAction.CREATE,
+          context.userId,
+          context.userName,
+          context.ipAddress || '0.0.0.0',
+          context.userAgent,
+          context.requestId,
+        );
+
+        return newCustomer;
+      });
+    } catch (error) {
+      if (dto.pii && piiRuntime && piiWriteToken) {
+        await this.piiClientService.deleteProfile(
+          piiRuntime.apiUrl,
+          rmProfileId,
+          piiWriteToken,
+          context.tenantId,
+        ).catch(async (compensationError) => {
+          await this.techEventLogService.warn(
+            'PII_PROFILE_COMPENSATION_FAILED',
+            'Failed to delete remote PII profile after customer creation transaction failure',
+            {
+              rmProfileId,
+              profileStoreId: talent.profileStoreId,
+              operatorId: context.userId,
+              originalError: error instanceof Error ? error.message : String(error),
+              compensationError: compensationError instanceof Error
+                ? compensationError.message
+                : String(compensationError),
+            },
+            context,
+          );
+        });
       }
 
-      // Record change log
-      await this.changeLogService.create(tx, {
-        action: 'create',
-        objectType: 'customer_profile',
-        objectId: newCustomer.id,
-        objectName: dto.nickname,
-        newValue: {
-          profileType: ProfileType.INDIVIDUAL,
-          nickname: dto.nickname,
-          primaryLanguage: dto.primaryLanguage,
-          statusId,
-          tags: dto.tags,
-          source: dto.source,
-        },
-      }, context);
+      throw error;
+    }
 
-      // Record access log
-      await tx.$executeRawUnsafe(`
-        INSERT INTO "${schema}".customer_access_log (
-          id, customer_id, profile_store_id, talent_id, action,
-          operator_id, operator_name, ip_address, user_agent, request_id, occurred_at
-        ) VALUES (
-          gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4,
-          $5::uuid, $6, $7::inet, $8, $9, NOW()
-        )
-      `,
-        newCustomer.id,
-        talent.profileStoreId,
-        dto.talentId,
-        CustomerAction.CREATE,
-        context.userId,
-        context.userName,
-        context.ipAddress || '0.0.0.0',
-        context.userAgent,
-        context.requestId,
-      );
-
-      return newCustomer;
-    });
-
-    // Log PII creation (would be handled by PII service in production)
     if (dto.pii) {
       await this.techEventLogService.piiAccess(
         TechEventType.PII_ACCESS_REQUESTED,
@@ -375,6 +436,15 @@ export class IndividualCustomerService {
 
     // Verify access using tenant schema
     const customer = await this.verifyAccess(id, talentId, ProfileType.INDIVIDUAL, context);
+    const piiRuntime = await this.resolveEnabledPiiRuntime(customer.profileStoreId, context);
+    const accessToken = await this.piiJwtService.issueAccessToken({
+      userId: context.userId,
+      tenantId: context.tenantId,
+      tenantSchema: context.tenantSchema,
+      rmProfileId: customer.rmProfileId,
+      profileStoreId: customer.profileStoreId,
+      actions: ['read'],
+    });
 
     // Log the PII access request (pass context for tenant schema)
     await this.techEventLogService.piiAccess(
@@ -414,13 +484,11 @@ export class IndividualCustomerService {
       context.requestId,
     );
 
-    // In production, this would sign a JWT for PII service access
-    // For now, return a mock response
     return {
-      accessToken: `mock_pii_token_${uuidv4()}`,
+      accessToken: accessToken.token,
       piiProfileId: customer.rmProfileId,
-      expiresIn: 300, // 5 minutes
-      piiServiceUrl: process.env.PII_SERVICE_URL || 'http://localhost:4000/api/v1',
+      expiresIn: accessToken.expiresIn,
+      piiServiceUrl: piiRuntime.piiServiceUrl,
     };
   }
 
@@ -438,6 +506,7 @@ export class IndividualCustomerService {
 
     // Verify access using tenant schema
     const customer = await this.verifyAccess(id, talentId, ProfileType.INDIVIDUAL, context);
+    const piiRuntime = await this.resolveEnabledPiiRuntime(customer.profileStoreId, context);
 
     // Check version
     if (customer.version !== dto.version) {
@@ -447,10 +516,22 @@ export class IndividualCustomerService {
       });
     }
 
-    // In production, this would:
-    // 1. Get PII access token
-    // 2. Call PII service to update data
-    // 3. Update search hints in main DB
+    const accessToken = await this.piiJwtService.issueAccessToken({
+      userId: context.userId,
+      tenantId: context.tenantId,
+      tenantSchema: context.tenantSchema,
+      rmProfileId: customer.rmProfileId,
+      profileStoreId: customer.profileStoreId,
+      actions: ['write'],
+    });
+
+    await this.piiClientService.updateProfile(
+      piiRuntime.apiUrl,
+      customer.rmProfileId,
+      dto.pii,
+      accessToken.token,
+      context.tenantId,
+    );
 
     // Generate new search hints
     const searchHintName = this.generateSearchHintName(
@@ -521,7 +602,49 @@ export class IndividualCustomerService {
       id,
       searchHintName,
       searchHintPhoneLast4,
-      message: 'PII data update submitted',
+      message: 'PII data updated',
+    };
+  }
+
+  private async resolveEnabledPiiRuntime(
+    profileStoreId: string,
+    context: RequestContext,
+  ): Promise<{
+    apiUrl: string;
+    piiServiceUrl: string;
+  }> {
+    const prisma = this.databaseService.getPrisma();
+    const schema = context.tenantSchema;
+    const stores = await prisma.$queryRawUnsafe<Array<{
+      piiProxyUrl: string | null;
+      piiApiUrl: string | null;
+      piiConfigIsActive: boolean | null;
+    }>>(`
+      SELECT
+        ps.pii_proxy_url as "piiProxyUrl",
+        psc.api_url as "piiApiUrl",
+        psc.is_active as "piiConfigIsActive"
+      FROM "${schema}".profile_store ps
+      LEFT JOIN "${schema}".pii_service_config psc ON psc.id = ps.pii_service_config_id
+      WHERE ps.id = $1::uuid
+        AND ps.is_active = true
+      LIMIT 1
+    `, profileStoreId);
+
+    const store = stores[0];
+    const apiUrl = this.normalizeUrl(store?.piiApiUrl);
+    const piiServiceUrl = this.normalizeUrl(store?.piiProxyUrl) ?? apiUrl;
+
+    if (!store?.piiConfigIsActive || !apiUrl || !piiServiceUrl) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'PII is not enabled for this profile store',
+      });
+    }
+
+    return {
+      apiUrl,
+      piiServiceUrl,
     };
   }
 
@@ -643,5 +766,14 @@ export class IndividualCustomerService {
 
     const cleaned = primary.number.replace(/\D/g, '');
     return cleaned.length >= 4 ? cleaned.slice(-4) : null;
+  }
+
+  private normalizeUrl(value?: string | null): string | null {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    return trimmed.replace(/\/+$/, '');
   }
 }

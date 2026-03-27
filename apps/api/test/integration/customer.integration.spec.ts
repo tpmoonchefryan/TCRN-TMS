@@ -26,7 +26,9 @@ describe('Customer Integration Tests', () => {
   let testUser: TestUser;
   let accessToken: string;
   let talentId: string;
+  let localOnlyTalentId: string;
   let customerId: string | undefined;
+  let localOnlyCustomerId: string | undefined;
 
   const withAuth = (req: request.Test, includeTalentHeader = false) => {
     req
@@ -39,6 +41,9 @@ describe('Customer Integration Tests', () => {
 
     return req;
   };
+
+  const withTalentHeader = (req: request.Test, currentTalentId: string) =>
+    withAuth(req).set('X-Talent-Id', currentTalentId);
 
   const createCustomer = (overrides: Record<string, unknown> = {}) =>
     withAuth(
@@ -57,6 +62,12 @@ describe('Customer Integration Tests', () => {
       true,
     );
 
+  const getCustomerForTalent = (id: string, currentTalentId: string) =>
+    withTalentHeader(
+      request(app.getHttpServer()).get(`/api/v1/customers/${id}`),
+      currentTalentId,
+    );
+
   const ensureCustomer = async (): Promise<string> => {
     if (customerId) {
       return customerId;
@@ -67,9 +78,30 @@ describe('Customer Integration Tests', () => {
     return customerId;
   };
 
+  const ensureLocalOnlyCustomer = async (): Promise<string> => {
+    if (localOnlyCustomerId) {
+      return localOnlyCustomerId;
+    }
+
+    const response = await createCustomer({
+      talentId: localOnlyTalentId,
+      nickname: 'Local Only Customer',
+    }).expect(201);
+    localOnlyCustomerId = response.body.data.id;
+    return localOnlyCustomerId;
+  };
+
   const getCustomerVersion = async (): Promise<number> => {
     const id = await ensureCustomer();
     const response = await getCustomer(id).expect(200);
+    return response.body.data.version;
+  };
+
+  const getCustomerVersionForTalent = async (
+    id: string,
+    currentTalentId: string,
+  ): Promise<number> => {
+    const response = await getCustomerForTalent(id, currentTalentId).expect(200);
     return response.body.data.version;
   };
 
@@ -104,6 +136,24 @@ describe('Customer Integration Tests', () => {
     });
 
     talentId = talent.id;
+
+    const localOnlyStoreRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".profile_store
+      WHERE code = 'LOCAL_ONLY'
+      LIMIT 1
+    `);
+
+    const localOnlyTalent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
+      code: `TALENT_LOCAL_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Customer Local Only Talent',
+      displayName: 'Customer Local Only Talent',
+      homepagePath: `customer-local-only-${Date.now()}`,
+      profileStoreId: localOnlyStoreRows[0].id,
+      createdBy: testUser.id,
+    });
+
+    localOnlyTalentId = localOnlyTalent.id;
 
     const tokenService = moduleFixture.get(TokenService);
     accessToken = tokenService.generateAccessToken({
@@ -181,6 +231,21 @@ describe('Customer Integration Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
+
+    it('should reject pii payload when profile store has no active pii backend', async () => {
+      const response = await createCustomer({
+        talentId: localOnlyTalentId,
+        nickname: 'Local Only With PII',
+        pii: {
+          givenName: 'No',
+          familyName: 'Backend',
+        },
+      }).expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe('PII is not enabled for this profile store');
+    });
   });
 
   describe('GET /api/v1/customers/:id', () => {
@@ -240,6 +305,42 @@ describe('Customer Integration Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('RES_VERSION_MISMATCH');
+    });
+
+    it('should reject pii updates when profile store has no active pii backend', async () => {
+      const id = await ensureLocalOnlyCustomer();
+      const version = await getCustomerVersionForTalent(id, localOnlyTalentId);
+
+      const response = await withTalentHeader(
+        request(app.getHttpServer()).patch(`/api/v1/customers/individuals/${id}/pii`),
+        localOnlyTalentId,
+      )
+        .send({
+          version,
+          pii: {
+            givenName: 'Denied',
+          },
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe('PII is not enabled for this profile store');
+    });
+  });
+
+  describe('POST /api/v1/customers/individuals/:id/request-pii-access', () => {
+    it('should reject pii access requests when profile store has no active pii backend', async () => {
+      const id = await ensureLocalOnlyCustomer();
+
+      const response = await withTalentHeader(
+        request(app.getHttpServer()).post(`/api/v1/customers/individuals/${id}/request-pii-access`),
+        localOnlyTalentId,
+      ).expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe('PII is not enabled for this profile store');
     });
   });
 
