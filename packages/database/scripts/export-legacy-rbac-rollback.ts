@@ -9,7 +9,7 @@ import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
 
-import { auditLegacyRbac } from './audit-legacy-rbac';
+import { auditLegacyRbac, formatCanonicalLabel } from './audit-legacy-rbac';
 import { buildPrunePlan, promoteRuntimeVerifiedTargetInAudit } from './prune-legacy-rbac';
 import { verifyLegacyPruneRuntime } from './verify-legacy-prune-runtime';
 
@@ -58,6 +58,7 @@ interface RolePolicyRow {
 interface RollbackTargetExport {
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes: string[];
   resource: ResourceRow;
   policies: PolicyRow[];
   rolePolicies: RolePolicyRow[];
@@ -261,6 +262,7 @@ async function exportTarget(
   schemaName: string,
   legacyCode: string,
   canonicalCode: string | null,
+  canonicalCodes: string[],
 ): Promise<RollbackTargetExport> {
   const resourceRows = await prisma.$queryRawUnsafe<ResourceRow[]>(
     `
@@ -326,6 +328,7 @@ async function exportTarget(
   return {
     legacyCode,
     canonicalCode,
+    canonicalCodes,
     resource,
     policies,
     rolePolicies,
@@ -408,7 +411,13 @@ export async function exportRollbackSummary(
 
     for (const candidate of plan.candidates) {
       targets.push(
-        await exportTarget(prisma, plan.schemaName, candidate.legacyCode, candidate.canonicalCode),
+        await exportTarget(
+          prisma,
+          plan.schemaName,
+          candidate.legacyCode,
+          candidate.canonicalCode,
+          candidate.canonicalCodes,
+        ),
       );
     }
 
@@ -436,7 +445,7 @@ function printSummary(summary: RollbackExportSummary): void {
 
     for (const target of schemaExport.targets) {
       console.log(
-        `-- Legacy resource ${target.legacyCode} -> ${target.canonicalCode ?? 'no canonical replacement'}`,
+        `-- Legacy resource ${target.legacyCode} -> ${formatCanonicalLabel(target)}`,
       );
       console.log(
         `-- Exported resource=1 policies=${target.policies.length} rolePolicies=${target.rolePolicies.length}`,
@@ -464,6 +473,7 @@ async function main(): Promise<void> {
               targets: schemaExport.targets.map((target) => ({
                 legacyCode: target.legacyCode,
                 canonicalCode: target.canonicalCode,
+                canonicalCodes: target.canonicalCodes,
                 resourceCount: 1,
                 policyCount: target.policies.length,
                 rolePolicyCount: target.rolePolicies.length,

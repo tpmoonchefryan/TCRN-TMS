@@ -13,7 +13,12 @@ import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 import { fileURLToPath } from 'node:url';
 
-import { auditLegacyRbac, type LegacyTargetAudit } from './audit-legacy-rbac';
+import {
+  auditLegacyRbac,
+  formatCanonicalLabel,
+  getCanonicalCodes,
+  type LegacyTargetAudit,
+} from './audit-legacy-rbac';
 import {
   REDIS_URL,
   calculateEffectivePermissions,
@@ -69,6 +74,7 @@ export interface RuntimeProofTargetSummary {
   schemaName: string;
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes: string[];
   readinessBefore: LegacyTargetAudit['readiness'];
   verificationStatus: RuntimeVerificationStatus;
   verified: boolean;
@@ -211,7 +217,7 @@ async function verifyUserRuntimeProof(
   prisma: PrismaClient,
   redis: Redis,
   schemaName: string,
-  canonicalCode: string,
+  canonicalCodes: string[],
   user: AffectedUser,
   allowlisted: boolean,
 ): Promise<UserRuntimeProof> {
@@ -244,7 +250,7 @@ async function verifyUserRuntimeProof(
     );
 
     const expectedEntries = Object.entries(permissions).filter(([key]) =>
-      key.startsWith(`${canonicalCode}:`),
+      canonicalCodes.some((canonicalCode) => key.startsWith(`${canonicalCode}:`)),
     );
 
     if (expectedEntries.length === 0) {
@@ -282,7 +288,8 @@ async function verifyUserRuntimeProof(
       expectedFieldCount: 0,
       verified: false,
       scopes: [],
-      reason: `No canonical ${canonicalCode} snapshot fields were expected for this user.`,
+      reason:
+        `No canonical ${canonicalCodes.join(', ')} snapshot fields were expected for this user.`,
     };
   }
 
@@ -335,6 +342,8 @@ export async function verifyLegacyPruneRuntime(
 
   const schemaAudit = auditSummary.audited[0];
   const target = findTargetOrThrow(schemaAudit.targets, options.legacyCodes[0]);
+  const canonicalCodes = getCanonicalCodes(target);
+  const canonicalLabel = formatCanonicalLabel(target);
   const affectedUsers = await getAffectedUsersForResource(
     prisma,
     options.schemas[0],
@@ -347,7 +356,7 @@ export async function verifyLegacyPruneRuntime(
     (value) => !affectedUsers.some((user) => matchesUserFilter(user, [value])),
   );
 
-  if (!target.canonicalCode) {
+  if (canonicalCodes.length === 0) {
     return {
       filters: {
         schemas: options.schemas,
@@ -358,6 +367,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'blocked_target_not_covered',
         verified: false,
@@ -381,6 +391,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'blocked_target_not_covered',
         verified: false,
@@ -404,6 +415,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'not_required',
         verified: true,
@@ -427,6 +439,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'blocked_missing_allowlist',
         verified: false,
@@ -450,6 +463,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'blocked_unlisted_affected_users',
         verified: false,
@@ -473,6 +487,7 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: 'blocked_unmatched_allowlist',
         verified: false,
@@ -494,7 +509,7 @@ export async function verifyLegacyPruneRuntime(
           prisma,
           redis,
           options.schemas[0],
-          target.canonicalCode!,
+          canonicalCodes,
           user,
           true,
         ),
@@ -513,12 +528,13 @@ export async function verifyLegacyPruneRuntime(
         schemaName: options.schemas[0],
         legacyCode: target.legacyCode,
         canonicalCode: target.canonicalCode,
+        canonicalCodes,
         readinessBefore: target.readiness,
         verificationStatus: verified ? 'verified' : 'blocked_runtime_mismatch',
         verified,
         reason: verified
-          ? 'All allowlisted affected users already have matching canonical Redis snapshot fields.'
-          : 'Some allowlisted affected users still have canonical Redis snapshot mismatches.',
+          ? `All allowlisted affected users already have matching canonical Redis snapshot fields for ${canonicalLabel}.`
+          : `Some allowlisted affected users still have canonical Redis snapshot mismatches for ${canonicalLabel}.`,
         affectedUsers,
         unallowlistedAffectedUsers,
         unmatchedAllowlistEntries,
@@ -535,7 +551,7 @@ function printSummary(summary: RuntimeProofSummary): void {
 
   console.log(`Schema: ${target.schemaName}`);
   console.log(`Legacy resource: ${target.legacyCode}`);
-  console.log(`Canonical resource: ${target.canonicalCode ?? 'none'}`);
+  console.log(`Canonical resources: ${formatCanonicalLabel(target)}`);
   console.log(`Readiness before proof: ${target.readinessBefore}`);
   console.log(`Verification status: ${target.verificationStatus}`);
   console.log(`Verified: ${String(target.verified)}`);

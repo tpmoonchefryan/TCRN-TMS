@@ -18,6 +18,7 @@ export interface CliOptions {
 export interface LegacyResourceTarget {
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes?: readonly string[];
   note: string;
 }
 
@@ -50,9 +51,12 @@ export type PruneReadiness =
 export interface LegacyTargetAudit {
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes: string[];
   note: string;
   legacy: ResourceAudit;
   canonical: ResourceAudit | null;
+  canonicalResources: ResourceAudit[];
+  missingCanonicalCodes: string[];
   legacyOnlyGrants: string[];
   ignoredLegacyOnlyGrants: string[];
   canonicalOnlyGrants: string[];
@@ -99,6 +103,7 @@ const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
   {
     legacyCode: 'config.platform',
     canonicalCode: 'config.platform_settings',
+    canonicalCodes: ['config.platform_settings', 'config.platform_registry'],
     note: 'Legacy platform config resource; current runtime surface is primarily guarded by split platform settings and registry resources.',
   },
   {
@@ -119,7 +124,8 @@ const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
   {
     legacyCode: 'log.security',
     canonicalCode: 'log.tech_log',
-    note: 'Legacy security-log resource; current security event viewing surface is guarded by tech-event log read access.',
+    canonicalCodes: ['log.tech_log', 'log.search'],
+    note: 'Legacy security-log resource; current security event viewing surface is guarded by tech-event log and log-search read access.',
   },
   {
     legacyCode: 'marshmallow',
@@ -252,6 +258,34 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
     },
   ],
 ]);
+
+interface CanonicalTargetLike {
+  canonicalCode: string | null;
+  canonicalCodes?: readonly string[];
+}
+
+export function getCanonicalCodes(target: CanonicalTargetLike): string[] {
+  const codes = target.canonicalCodes ?? (target.canonicalCode ? [target.canonicalCode] : []);
+
+  return [...new Set(codes.filter((code): code is string => Boolean(code)))];
+}
+
+export function formatCanonicalLabel(target: CanonicalTargetLike): string {
+  const canonicalCodes = getCanonicalCodes(target);
+
+  if (canonicalCodes.length === 0) {
+    return 'no canonical replacement';
+  }
+
+  const primaryCode = target.canonicalCode ?? canonicalCodes[0]!;
+  const secondaryCodes = canonicalCodes.filter((code) => code !== primaryCode);
+
+  if (secondaryCodes.length === 0) {
+    return primaryCode;
+  }
+
+  return `${primaryCode} (+ ${secondaryCodes.join(', ')})`;
+}
 
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
@@ -575,30 +609,45 @@ function splitLegacyOnlyGrants(
 function compareTarget(
   target: LegacyResourceTarget,
   legacy: ResourceAudit,
-  canonical: ResourceAudit | null,
+  canonicalResources: ResourceAudit[],
 ): LegacyTargetAudit {
+  const canonicalCodes = getCanonicalCodes(target);
+  const primaryCanonical = canonicalResources[0] ?? null;
+  const missingCanonicalCodes = canonicalResources
+    .filter((resource) => !resource.present)
+    .map((resource) => resource.code);
+  const canonicalGrantSet = new Set(
+    canonicalResources.flatMap((resource) => resource.grants.map(formatGrant)),
+  );
+
   if (!legacy.present) {
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
+      canonicalCodes,
       note: target.note,
       legacy,
-      canonical,
+      canonical: primaryCanonical,
+      canonicalResources,
+      missingCanonicalCodes,
       legacyOnlyGrants: [],
       ignoredLegacyOnlyGrants: [],
-      canonicalOnlyGrants: canonical?.grants.map(formatGrant) ?? [],
+      canonicalOnlyGrants: [...canonicalGrantSet],
       readiness: 'absent',
       reason: 'Legacy resource is already absent in this schema.',
     };
   }
 
-  if (!target.canonicalCode) {
+  if (canonicalCodes.length === 0) {
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
+      canonicalCodes,
       note: target.note,
       legacy,
-      canonical,
+      canonical: primaryCanonical,
+      canonicalResources,
+      missingCanonicalCodes,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
       ignoredLegacyOnlyGrants: [],
       canonicalOnlyGrants: [],
@@ -607,23 +656,25 @@ function compareTarget(
     };
   }
 
-  if (!canonical?.present) {
+  if (missingCanonicalCodes.length > 0) {
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
+      canonicalCodes,
       note: target.note,
       legacy,
-      canonical,
+      canonical: primaryCanonical,
+      canonicalResources,
+      missingCanonicalCodes,
       legacyOnlyGrants: legacy.grants.map(formatGrant),
       ignoredLegacyOnlyGrants: [],
-      canonicalOnlyGrants: [],
+      canonicalOnlyGrants: [...canonicalGrantSet],
       readiness: 'blocked_by_canonical_gap',
-      reason: `Canonical resource ${target.canonicalCode} is missing in this schema.`,
+      reason: `Canonical resources missing in this schema: ${missingCanonicalCodes.join(', ')}.`,
     };
   }
 
   const legacyGrantSet = new Set(legacy.grants.map(formatGrant));
-  const canonicalGrantSet = new Set(canonical.grants.map(formatGrant));
   const legacyOnlyGrants = [...legacyGrantSet].filter((grant) => !canonicalGrantSet.has(grant));
   const canonicalOnlyGrants = [...canonicalGrantSet].filter((grant) => !legacyGrantSet.has(grant));
   const {
@@ -636,9 +687,12 @@ function compareTarget(
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
+      canonicalCodes,
       note: target.note,
       legacy,
-      canonical,
+      canonical: primaryCanonical,
+      canonicalResources,
+      missingCanonicalCodes,
       legacyOnlyGrants: blockingLegacyOnlyGrants,
       ignoredLegacyOnlyGrants,
       canonicalOnlyGrants,
@@ -651,9 +705,12 @@ function compareTarget(
     return {
       legacyCode: target.legacyCode,
       canonicalCode: target.canonicalCode,
+      canonicalCodes,
       note: target.note,
       legacy,
-      canonical,
+      canonical: primaryCanonical,
+      canonicalResources,
+      missingCanonicalCodes,
       legacyOnlyGrants: blockingLegacyOnlyGrants,
       ignoredLegacyOnlyGrants,
       canonicalOnlyGrants,
@@ -667,9 +724,12 @@ function compareTarget(
   return {
     legacyCode: target.legacyCode,
     canonicalCode: target.canonicalCode,
+    canonicalCodes,
     note: target.note,
     legacy,
-    canonical,
+    canonical: primaryCanonical,
+    canonicalResources,
+    missingCanonicalCodes,
     legacyOnlyGrants: blockingLegacyOnlyGrants,
     ignoredLegacyOnlyGrants,
     canonicalOnlyGrants,
@@ -688,11 +748,13 @@ export async function auditSchema(
   const targets = await Promise.all(
     LEGACY_RESOURCE_TARGETS.map(async (target) => {
       const legacy = await getResourceAudit(prisma, schemaName, target.legacyCode);
-      const canonical = target.canonicalCode
-        ? await getResourceAudit(prisma, schemaName, target.canonicalCode)
-        : null;
+      const canonicalResources = await Promise.all(
+        getCanonicalCodes(target).map((canonicalCode) =>
+          getResourceAudit(prisma, schemaName, canonicalCode),
+        ),
+      );
 
-      return compareTarget(target, legacy, canonical);
+      return compareTarget(target, legacy, canonicalResources);
     }),
   );
   const historicalRoles = options.includeHistoricalRoles
@@ -778,7 +840,7 @@ function printSummary(summary: LegacyRbacAuditSummary): void {
     }
 
     for (const target of schemaAudit.targets) {
-      const canonicalLabel = target.canonicalCode ?? 'no canonical replacement';
+      const canonicalLabel = formatCanonicalLabel(target);
       console.log(`- ${target.legacyCode} -> ${canonicalLabel} [${target.readiness}]`);
 
       if (target.legacy.present) {
@@ -793,10 +855,18 @@ function printSummary(summary: LegacyRbacAuditSummary): void {
         console.log(`  legacy roles: ${target.legacy.roleCodes.join(', ')}`);
       }
 
-      if (target.canonical?.present) {
+      for (const canonical of target.canonicalResources) {
+        if (!canonical.present) {
+          continue;
+        }
+
         console.log(
-          `  canonical active=${String(target.canonical.isActive)} policies=${target.canonical.policyCount} rolePolicies=${target.canonical.rolePolicyCount} assignedRoles=${target.canonical.assignedRoleCount} affectedUsers=${target.canonical.affectedUserCount}`,
+          `  canonical ${canonical.code} active=${String(canonical.isActive)} policies=${canonical.policyCount} rolePolicies=${canonical.rolePolicyCount} assignedRoles=${canonical.assignedRoleCount} affectedUsers=${canonical.affectedUserCount}`,
         );
+      }
+
+      if (target.missingCanonicalCodes.length > 0) {
+        console.log(`  missing canonical resources: ${target.missingCanonicalCodes.join(', ')}`);
       }
 
       if (target.legacyOnlyGrants.length > 0) {

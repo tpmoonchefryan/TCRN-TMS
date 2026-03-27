@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   auditLegacyRbac,
+  formatCanonicalLabel,
   type LegacyRbacAuditSummary,
   type LegacyTargetAudit,
   type PruneReadiness,
@@ -37,6 +38,7 @@ export interface PlannedDeleteCounts {
 export interface PlannedPruneTarget {
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes: string[];
   readiness: PruneReadiness;
   reason: string;
   assignedRoleCount: number;
@@ -47,6 +49,7 @@ export interface PlannedPruneTarget {
 export interface BlockedPruneTarget {
   legacyCode: string;
   canonicalCode: string | null;
+  canonicalCodes: string[];
   readiness: PruneReadiness;
   reason: string;
   assignedRoleCount: number;
@@ -190,6 +193,7 @@ function toCandidate(target: LegacyTargetAudit): PlannedPruneTarget {
   return {
     legacyCode: target.legacyCode,
     canonicalCode: target.canonicalCode,
+    canonicalCodes: target.canonicalCodes,
     readiness: target.readiness,
     reason: target.reason,
     assignedRoleCount: target.legacy.assignedRoleCount,
@@ -206,6 +210,7 @@ function toBlocked(target: LegacyTargetAudit): BlockedPruneTarget {
   return {
     legacyCode: target.legacyCode,
     canonicalCode: target.canonicalCode,
+    canonicalCodes: target.canonicalCodes,
     readiness: target.readiness,
     reason: target.reason,
     assignedRoleCount: target.legacy.assignedRoleCount,
@@ -439,7 +444,7 @@ function printSummary(summary: PrunePlanSummary): void {
 
     for (const candidate of plan.candidates) {
       console.log(
-        `- candidate ${candidate.legacyCode} -> ${candidate.canonicalCode ?? 'no canonical replacement'} [${candidate.readiness}]`,
+        `- candidate ${candidate.legacyCode} -> ${formatCanonicalLabel(candidate)} [${candidate.readiness}]`,
       );
       console.log(
         `  would delete resource=${candidate.plannedDeletes.resources} policies=${candidate.plannedDeletes.policies} rolePolicies=${candidate.plannedDeletes.rolePolicies}`,
@@ -449,7 +454,7 @@ function printSummary(summary: PrunePlanSummary): void {
 
     for (const blocked of plan.blocked) {
       console.log(
-        `- blocked ${blocked.legacyCode} -> ${blocked.canonicalCode ?? 'no canonical replacement'} [${blocked.readiness}]`,
+        `- blocked ${blocked.legacyCode} -> ${formatCanonicalLabel(blocked)} [${blocked.readiness}]`,
       );
       console.log(
         `  assignedRoles=${blocked.assignedRoleCount} affectedUsers=${blocked.affectedUserCount}`,
