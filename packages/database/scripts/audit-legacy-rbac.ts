@@ -98,8 +98,8 @@ export interface LegacyRbacAuditSummary {
 const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
   {
     legacyCode: 'config.platform',
-    canonicalCode: null,
-    note: 'No direct canonical replacement found in shared RBAC catalog.',
+    canonicalCode: 'config.platform_settings',
+    note: 'Legacy platform config resource; current runtime surface is primarily guarded by split platform settings and registry resources.',
   },
   {
     legacyCode: 'homepage',
@@ -118,8 +118,8 @@ const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
   },
   {
     legacyCode: 'log.security',
-    canonicalCode: null,
-    note: 'No direct canonical replacement found in shared RBAC catalog.',
+    canonicalCode: 'log.tech_log',
+    note: 'Legacy security-log resource; current security event viewing surface is guarded by tech-event log read access.',
   },
   {
     legacyCode: 'marshmallow',
@@ -170,6 +170,17 @@ interface LegacyOvergrantRule {
 
 const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map([
   [
+    'config.platform',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:delete:grant',
+        'PLATFORM_ADMIN:delete:grant',
+      ],
+      reason:
+        'Legacy config.platform delete grants are retired over-grants; current platform configuration surface uses split read/write/admin resources.',
+    },
+  ],
+  [
     'homepage',
     {
       ignoredLegacyOnlyGrants: [
@@ -179,6 +190,21 @@ const LEGACY_OVERGRANT_RULES: ReadonlyMap<string, LegacyOvergrantRule> = new Map
       ],
       reason:
         'Legacy homepage delete grants are retired over-grants; current controller-facing surface only requires read/update semantics.',
+    },
+  ],
+  [
+    'log.security',
+    {
+      ignoredLegacyOnlyGrants: [
+        'ADMIN:admin:grant',
+        'ADMIN:delete:grant',
+        'ADMIN:write:grant',
+        'PLATFORM_ADMIN:admin:grant',
+        'PLATFORM_ADMIN:delete:grant',
+        'PLATFORM_ADMIN:write:grant',
+      ],
+      reason:
+        'Legacy log.security write/admin/delete grants are retired over-grants; current security-event viewing surface is read-only.',
     },
   ],
   [
