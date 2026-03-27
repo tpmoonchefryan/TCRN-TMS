@@ -211,6 +211,22 @@ describe('Import/Export Integration Tests', () => {
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
+      const headerLine = response.text.replace(/^\ufeff/, '').split('\n')[0]?.trim();
+      expect(headerLine).toBe(
+        'external_id,nickname,primary_language,status_code,tags,notes',
+      );
+    });
+
+    it('should return the company import template with only currently supported columns', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).get('/api/v1/imports/customers/companies/template'),
+      ).expect(200);
+
+      expect(response.headers['content-type']).toMatch(/text\/csv/);
+      const headerLine = response.text.replace(/^\ufeff/, '').split('\n')[0]?.trim();
+      expect(headerLine).toBe(
+        'external_id,nickname,company_legal_name,company_short_name,registration_number,vat_id,establishment_date,business_segment_code,website,status_code,tags,notes',
+      );
     });
 
     it('uploads individual import csv into tenant-scoped MinIO object and queues a complete worker payload', async () => {

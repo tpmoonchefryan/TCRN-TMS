@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ImportParserService } from '../import-parser.service';
 
-// Skip tests - actual service API needs investigation
-describe.skip('ImportParserService', () => {
+describe('ImportParserService', () => {
   let service: ImportParserService;
 
   beforeEach(() => {
@@ -16,10 +15,9 @@ describe.skip('ImportParserService', () => {
     it('should parse valid individual row', () => {
       const row = {
         nickname: 'Test User',
-        given_name: 'John',
-        family_name: 'Doe',
-        phone_number: '+1234567890',
-        email_address: 'john@example.com',
+        primary_language: 'en',
+        status_code: 'ACTIVE',
+        tags: 'vip,new',
       };
 
       const result = service.parseIndividualRow(row, 1);
@@ -27,50 +25,22 @@ describe.skip('ImportParserService', () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const data = result.data!;
       expect(data.nickname).toBe('Test User');
-      expect(data.givenName).toBe('John');
-      expect(data.familyName).toBe('Doe');
+      expect(data.primaryLanguage).toBe('en');
+      expect(data.statusCode).toBe('ACTIVE');
+      expect(data.tags).toEqual(['vip', 'new']);
       expect(result.warnings).toBeInstanceOf(Array);
     });
 
-    it('should collect warnings for invalid data', () => {
+    it('should fail validation for invalid primary language length', () => {
       const row = {
         nickname: 'Test',
-        birth_date: 'invalid-date',
+        primary_language: 'english',
       };
 
       const result = service.parseIndividualRow(row, 1);
 
-      expect(result.warnings.length).toBeGreaterThan(0);
-    });
-
-    it('should parse phone numbers correctly', () => {
-      const row = {
-        nickname: 'Test',
-        phone_type: 'mobile',
-        phone_number: '+81901234567',
-      };
-
-      const result = service.parseIndividualRow(row, 1);
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const data = result.data!;
-      expect(data.phoneNumbers.length).toBe(1);
-      expect(data.phoneNumbers[0].number).toBe('+81901234567');
-    });
-
-    it('should parse emails correctly', () => {
-      const row = {
-        nickname: 'Test',
-        email_type: 'personal',
-        email_address: 'test@example.com',
-      };
-
-      const result = service.parseIndividualRow(row, 1);
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const data = result.data!;
-      expect(data.emails.length).toBe(1);
-      expect(data.emails[0].address).toBe('test@example.com');
+      expect(result.success).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
     it('should parse tags from comma-separated string', () => {
@@ -94,8 +64,6 @@ describe.skip('ImportParserService', () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const data = result.data!;
       expect(data.nickname).toBe('Minimal');
-      expect(data.phoneNumbers).toEqual([]);
-      expect(data.emails).toEqual([]);
       expect(data.tags).toEqual([]);
     });
   });
@@ -106,7 +74,7 @@ describe.skip('ImportParserService', () => {
         nickname: 'ACME',
         company_legal_name: 'ACME Corporation',
         registration_number: '12345678',
-        contact_email: 'contact@acme.com',
+        website: 'https://acme.example',
       };
 
       const result = service.parseCompanyRow(row, 1);
@@ -116,6 +84,7 @@ describe.skip('ImportParserService', () => {
       expect(data.nickname).toBe('ACME');
       expect(data.companyLegalName).toBe('ACME Corporation');
       expect(data.registrationNumber).toBe('12345678');
+      expect(data.website).toBe('https://acme.example');
     });
 
     it('should handle optional company fields', () => {

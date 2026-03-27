@@ -87,15 +87,7 @@ export interface ImportError {
 export interface IndividualImportRow {
   external_id?: string;
   nickname: string;
-  given_name?: string;
-  family_name?: string;
-  gender?: string;
-  birth_date?: string;
   primary_language?: string;
-  phone_type?: string;
-  phone_number?: string;
-  email_type?: string;
-  email_address?: string;
   status_code?: string;
   tags?: string;
   notes?: string;
@@ -111,23 +103,7 @@ export interface CompanyImportRow {
   establishment_date?: string;
   business_segment_code?: string;
   website?: string;
-  contact_name?: string;
-  contact_phone?: string;
-  contact_email?: string;
-  contact_department?: string;
   status_code?: string;
   tags?: string;
   notes?: string;
-}
-
-export interface ParsedPhoneNumber {
-  typeCode: string;
-  number: string;
-  isPrimary: boolean;
-}
-
-export interface ParsedEmail {
-  typeCode: string;
-  address: string;
-  isPrimary: boolean;
 }
