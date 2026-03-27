@@ -204,16 +204,35 @@ describe('PermissionSnapshotService', () => {
 
     it('should filter out invalid permission values', async () => {
       redisHashes.set(getKey(testUserId), {
-        'valid.resource:read': 'grant',
-        'invalid.resource:read': 'invalid_value',
-        'another.resource:write': 'deny',
+        'customer.profile:read': 'grant',
+        'customer.profile:write': 'invalid_value',
+        'customer.pii:read': 'deny',
       });
 
       const result = await service.getUserPermissions(testTenantSchema, testUserId);
 
       expect(result).toEqual({
-        'valid.resource:read': 'grant',
-        'another.resource:write': 'deny',
+        'customer.profile:read': 'grant',
+        'customer.pii:read': 'deny',
+      });
+    });
+
+    it('returns only canonical catalog-backed keys from outward permission snapshots', async () => {
+      redisHashes.set(getKey(testUserId), {
+        'customer.profile:read': 'grant',
+        'customer.profile:create': 'grant',
+        'log.search:delete': 'deny',
+        'legacy.unknown:read': 'grant',
+        '*:admin': 'grant',
+        '*:*': 'grant',
+      });
+
+      const result = await service.getUserPermissions(testTenantSchema, testUserId);
+
+      expect(result).toEqual({
+        'customer.profile:read': 'grant',
+        '*:admin': 'grant',
+        '*:*': 'grant',
       });
     });
   });

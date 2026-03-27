@@ -2,7 +2,11 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import type { RbacRolePolicyEffect } from '@tcrn/shared';
+import {
+  getRbacResourceDefinition,
+  isCanonicalPermissionAction,
+  type RbacRolePolicyEffect,
+} from '@tcrn/shared';
 
 import { RedisService } from '../redis/redis.service';
 
@@ -137,12 +141,42 @@ export class PermissionSnapshotService {
     
     const result: Record<string, RbacRolePolicyEffect> = {};
     for (const [k, v] of Object.entries(data)) {
-      if (v === 'grant' || v === 'deny') {
+      if ((v === 'grant' || v === 'deny') && this.shouldExposePermissionKey(k)) {
         result[k] = v;
       }
     }
     
     return result;
+  }
+
+  /**
+   * Snapshot storage may still contain legacy rows while historical schemas are being pruned.
+   * The outward API contract only exposes canonical catalog-backed permissions plus reserved wildcard keys.
+   */
+  private shouldExposePermissionKey(permissionKey: string): boolean {
+    const [resourceCode, action] = permissionKey.split(':');
+    if (!resourceCode || !action) {
+      return false;
+    }
+
+    if (resourceCode === '*') {
+      return action === 'admin' || action === '*';
+    }
+
+    if (action === '*') {
+      return getRbacResourceDefinition(resourceCode) !== undefined;
+    }
+
+    if (!isCanonicalPermissionAction(action)) {
+      return false;
+    }
+
+    const resourceDefinition = getRbacResourceDefinition(resourceCode);
+    if (!resourceDefinition) {
+      return false;
+    }
+
+    return resourceDefinition.supportedActions.includes(action);
   }
 
   /**
