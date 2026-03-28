@@ -21,15 +21,38 @@ interface LiveTenantUser {
 
 const LIVE_SCHEMA = process.env.LIVE_PERMISSION_SMOKE_SCHEMA;
 const LIVE_USER = process.env.LIVE_PERMISSION_SMOKE_USER;
+const LIVE_SCOPE_TYPE = process.env.LIVE_PERMISSION_SMOKE_SCOPE_TYPE ?? 'tenant';
+const LIVE_SCOPE_ID = process.env.LIVE_PERMISSION_SMOKE_SCOPE_ID ?? null;
+const LIVE_EXPECT_GRANTED = process.env.LIVE_PERMISSION_SMOKE_EXPECT_GRANTED;
+const LIVE_FORBID_PREFIXES = process.env.LIVE_PERMISSION_SMOKE_FORBID_PREFIXES;
+const LIVE_EXPECT_ROLE_CODES = process.env.LIVE_PERMISSION_SMOKE_EXPECT_ROLE_CODES;
 
-const LEGACY_PREFIXES = ['homepage:', 'marshmallow:', 'log.change:', 'log.integration:'] as const;
-const EXPECTED_CANONICAL_GRANTS = {
+function parseCsvEnv(value: string | undefined): string[] {
+  return value
+    ?.split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0) ?? [];
+}
+
+const DEFAULT_FORBIDDEN_PREFIXES = ['homepage:', 'marshmallow:', 'log.change:', 'log.integration:'] as const;
+const DEFAULT_EXPECTED_CANONICAL_GRANTS = {
   'talent.homepage:read': 'grant',
   'talent.marshmallow:read': 'grant',
   'talent.marshmallow:execute': 'grant',
   'log.change_log:read': 'grant',
   'log.integration_log:read': 'grant',
 } as const satisfies Record<string, 'grant'>;
+const FORBIDDEN_PREFIXES = parseCsvEnv(LIVE_FORBID_PREFIXES);
+const EXPECTED_ROLE_CODES = parseCsvEnv(LIVE_EXPECT_ROLE_CODES);
+const EXPECTED_GRANTED_KEYS = parseCsvEnv(LIVE_EXPECT_GRANTED);
+const EXPECTED_CANONICAL_GRANTS = Object.fromEntries(
+  (EXPECTED_GRANTED_KEYS.length > 0
+    ? EXPECTED_GRANTED_KEYS
+    : Object.keys(DEFAULT_EXPECTED_CANONICAL_GRANTS)
+  ).map((permissionKey) => [permissionKey, 'grant']),
+) as Record<string, 'grant'>;
+const LEGACY_PREFIXES =
+  FORBIDDEN_PREFIXES.length > 0 ? FORBIDDEN_PREFIXES : [...DEFAULT_FORBIDDEN_PREFIXES];
 
 const describeLive = LIVE_SCHEMA && LIVE_USER ? describe : describe.skip;
 
@@ -124,15 +147,19 @@ describeLive('Live Permission HTTP Smoke', () => {
 
   it('returns canonical content/log grants with legacy keys removed', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/users/me/permissions'),
+      request(app.getHttpServer()).get('/api/v1/users/me/permissions').query({
+        scopeType: LIVE_SCOPE_TYPE,
+        ...(LIVE_SCOPE_ID ? { scopeId: LIVE_SCOPE_ID } : {}),
+      }),
     ).expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data.scope).toEqual({
-      type: 'tenant',
-      id: null,
-      name: null,
-    });
+    expect(response.body.data.scope).toEqual(
+      expect.objectContaining({
+        type: LIVE_SCOPE_TYPE,
+        id: LIVE_SCOPE_ID,
+      }),
+    );
 
     const permissions = response.body.data.permissions as Record<string, string>;
     const legacyKeys = Object.keys(permissions).filter((permissionKey) =>
@@ -151,5 +178,17 @@ describeLive('Live Permission HTTP Smoke', () => {
         }),
       ]),
     );
+
+    if (EXPECTED_ROLE_CODES.length > 0) {
+      expect(response.body.data.roles).toEqual(
+        expect.arrayContaining(
+          EXPECTED_ROLE_CODES.map((roleCode) =>
+            expect.objectContaining({
+              code: roleCode,
+            }),
+          ),
+        ),
+      );
+    }
   });
 });
