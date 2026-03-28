@@ -7,9 +7,8 @@
 //
 // This planner identifies which tenant-scope assignment groups can be safely
 // collapsed into that canonical shape without deleting live access outright.
-
-import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
@@ -151,7 +150,7 @@ function parseCliArgs(argv: string[]): CliOptions {
 async function tableExists(
   prisma: PrismaClient,
   schemaName: string,
-  tableName: string,
+  tableName: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -163,7 +162,7 @@ async function tableExists(
       ) AS exists
     `,
     schemaName,
-    tableName,
+    tableName
   );
 
   return rows[0]?.exists ?? false;
@@ -171,7 +170,7 @@ async function tableExists(
 
 async function getSchemaPlanFailureReason(
   prisma: PrismaClient,
-  schemaName: string,
+  schemaName: string
 ): Promise<string | null> {
   const syncFailureReason = await getSchemaSyncFailureReason(prisma, schemaName);
 
@@ -188,10 +187,7 @@ async function getSchemaPlanFailureReason(
   return null;
 }
 
-async function getTargetSchemas(
-  prisma: PrismaClient,
-  options: CliOptions,
-): Promise<string[]> {
+async function getTargetSchemas(prisma: PrismaClient, options: CliOptions): Promise<string[]> {
   if (options.schemas.length > 0) {
     return options.schemas;
   }
@@ -225,7 +221,7 @@ function buildUserFilterClause(options: CliOptions): string {
 
 async function getCurrentTenant(
   prisma: PrismaClient,
-  schemaName: string,
+  schemaName: string
 ): Promise<{ id: string; code: string } | null> {
   const rows = await prisma.$queryRaw<Array<{ id: string; code: string }>>`
     SELECT id, code
@@ -241,7 +237,7 @@ async function getTenantScopeAssignments(
   prisma: PrismaClient,
   schemaName: string,
   currentTenantId: string | null,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<AssignmentRow[]> {
   const userFilterClause = buildUserFilterClause(options);
   const fallbackTenantId = currentTenantId ?? '00000000-0000-0000-0000-000000000000';
@@ -277,7 +273,7 @@ async function getTenantScopeAssignments(
         ORDER BY su.username, r.code, ur.granted_at DESC, ur.id
       `,
       fallbackTenantId,
-      options.users,
+      options.users
     );
   }
 
@@ -309,7 +305,7 @@ async function getTenantScopeAssignments(
       WHERE ur.scope_type = 'tenant'
       ORDER BY su.username, r.code, ur.granted_at DESC, ur.id
     `,
-    fallbackTenantId,
+    fallbackTenantId
   );
 }
 
@@ -354,17 +350,20 @@ function sortByPreference(rows: AssignmentRow[]): AssignmentRow[] {
   });
 }
 
-function buildGroupPlan(
+export function buildGroupPlan(
   rows: AssignmentRow[],
-  currentTenantId: string | null,
+  currentTenantId: string | null
 ): PlannedNormalizationGroup {
   const sortedRows = sortByPreference(rows);
   const sample = sortedRows[0];
   const counts = {
     nullScope: rows.filter((row) => row.scopeIdStatus === 'null_scope').length,
     currentTenantScope: rows.filter((row) => row.scopeIdStatus === 'matches_current_tenant').length,
-    otherActiveTenantScope: rows.filter((row) => row.scopeIdStatus === 'matches_other_active_tenant').length,
-    missingPublicTenantScope: rows.filter((row) => row.scopeIdStatus === 'missing_public_tenant').length,
+    otherActiveTenantScope: rows.filter(
+      (row) => row.scopeIdStatus === 'matches_other_active_tenant'
+    ).length,
+    missingPublicTenantScope: rows.filter((row) => row.scopeIdStatus === 'missing_public_tenant')
+      .length,
   };
 
   const distinctInherit = new Set(rows.map((row) => String(row.inherit))).size;
@@ -435,7 +434,8 @@ function buildGroupPlan(
       roleId: sample.roleId,
       roleCode: sample.roleCode,
       status: 'blocked_metadata_mismatch',
-      reason: 'Tenant-scope duplicate rows do not share the same inherit / expiresAt / grantedBy metadata.',
+      reason:
+        'Tenant-scope duplicate rows do not share the same inherit / expiresAt / grantedBy metadata.',
       rowCount: rows.length,
       counts,
       plannedActions: {
@@ -477,9 +477,10 @@ function buildGroupPlan(
     roleId: sample.roleId,
     roleCode: sample.roleCode,
     status: 'safe_to_normalize',
-    reason: keeper.scopeIdStatus === 'null_scope'
-      ? 'Canonical NULL row already exists; duplicate tenant-scope residue can be deleted.'
-      : 'A single keeper row can be normalized to scope_id = NULL and duplicate tenant-scope residue can be deleted.',
+    reason:
+      keeper.scopeIdStatus === 'null_scope'
+        ? 'Canonical NULL row already exists; duplicate tenant-scope residue can be deleted.'
+        : 'A single keeper row can be normalized to scope_id = NULL and duplicate tenant-scope residue can be deleted.',
     rowCount: rows.length,
     counts,
     plannedActions: {
@@ -494,10 +495,15 @@ function buildGroupPlan(
 async function buildSchemaPlan(
   prisma: PrismaClient,
   schemaName: string,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<SchemaNormalizationPlan> {
   const currentTenant = await getCurrentTenant(prisma, schemaName);
-  const assignments = await getTenantScopeAssignments(prisma, schemaName, currentTenant?.id ?? null, options);
+  const assignments = await getTenantScopeAssignments(
+    prisma,
+    schemaName,
+    currentTenant?.id ?? null,
+    options
+  );
   const grouped = groupAssignments(assignments);
 
   const safe: PlannedNormalizationGroup[] = [];
@@ -532,7 +538,7 @@ async function buildSchemaPlan(
 
 export async function planTenantScopeNormalization(
   prisma: PrismaClient,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<NormalizationPlanSummary> {
   const schemaNames = await getTargetSchemas(prisma, options);
   const plans: SchemaNormalizationPlan[] = [];
@@ -562,7 +568,7 @@ export async function planTenantScopeNormalization(
 function printGroup(prefix: string, group: PlannedNormalizationGroup): void {
   console.log(`${prefix}${group.username} / ${group.roleCode} [${group.status}]`);
   console.log(
-    `  rows=${group.rowCount} null=${group.counts.nullScope} current=${group.counts.currentTenantScope} otherActive=${group.counts.otherActiveTenantScope} missing=${group.counts.missingPublicTenantScope}`,
+    `  rows=${group.rowCount} null=${group.counts.nullScope} current=${group.counts.currentTenantScope} otherActive=${group.counts.otherActiveTenantScope} missing=${group.counts.missingPublicTenantScope}`
   );
   console.log(`  reason: ${group.reason}`);
 
@@ -582,7 +588,9 @@ function printGroup(prefix: string, group: PlannedNormalizationGroup): void {
 function printSummary(summary: NormalizationPlanSummary): void {
   for (const plan of summary.plans) {
     console.log(`\nSchema: ${plan.schemaName}`);
-    console.log(`- current tenant: ${plan.currentTenantCode ?? 'missing'} (${plan.currentTenantId ?? 'n/a'})`);
+    console.log(
+      `- current tenant: ${plan.currentTenantCode ?? 'missing'} (${plan.currentTenantId ?? 'n/a'})`
+    );
     console.log(`- safe groups: ${plan.safe.length}`);
     console.log(`- blocked groups: ${plan.blocked.length}`);
     console.log(`- already normalized groups: ${plan.alreadyNormalized.length}`);
