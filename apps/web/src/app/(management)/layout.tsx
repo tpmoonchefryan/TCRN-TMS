@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -9,59 +8,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { ManagementSidebar } from '@/components/layout/management-sidebar';
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
-import { organizationApi } from '@/lib/api/modules/organization';
 import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
-import { SubsidiaryInfo, TalentInfo, useTalentStore } from '@/stores/talent-store';
-
-// Helper to convert API response to store format
-function convertApiTreeToStoreFormat(apiTree: any): SubsidiaryInfo[] {
-  if (!apiTree || !apiTree.subsidiaries) return [];
-  
-  return apiTree.subsidiaries.map((sub: any) => ({
-    id: sub.id,
-    code: sub.code,
-    displayName: sub.displayName,
-    path: sub.path,
-    children: sub.children ? convertApiTreeToStoreFormat({ subsidiaries: sub.children }) : [],
-    talents: (sub.talents || []).map((tal: any) => ({
-      id: tal.id,
-      code: tal.code,
-      displayName: tal.displayName,
-      path: tal.path,
-      avatarUrl: tal.avatarUrl,
-      subsidiaryId: sub.id,
-      subsidiaryName: sub.displayName,
-    })),
-  }));
-}
-
-// Helper to extract direct talents (not in subsidiaries)
-function convertDirectTalents(apiTree: any): TalentInfo[] {
-  if (!apiTree || !apiTree.directTalents) return [];
-  
-  return apiTree.directTalents.map((tal: any) => ({
-    id: tal.id,
-    code: tal.code,
-    displayName: tal.displayName,
-    path: tal.path,
-    avatarUrl: tal.avatarUrl,
-    subsidiaryId: null,
-    subsidiaryName: undefined,
-  }));
-}
-
-// Helper to extract all talents from subsidiaries
-function extractTalentsFromTree(subs: SubsidiaryInfo[]): TalentInfo[] {
-  const talents: TalentInfo[] = [];
-  for (const sub of subs) {
-    talents.push(...sub.talents);
-    if (sub.children.length > 0) {
-      talents.push(...extractTalentsFromTree(sub.children));
-    }
-  }
-  return talents;
-}
+import { useTalentStore } from '@/stores/talent-store';
 
 export default function ManagementLayout({
   children,
@@ -69,17 +18,16 @@ export default function ManagementLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, _hasHydrated: authHydrated, isAcTenant, checkAuth } = useAuthStore();
+  const { isAuthenticated, _hasHydrated: authHydrated, isAcTenant, checkAuth, fetchAccessibleTalents } = useAuthStore();
   const { 
     _hasHydrated: talentHydrated, 
     setUIMode, 
-    setOrganizationTree,
-    setAccessibleTalents,
-    setCurrentTalent,
     organizationTree,
+    hasFetched,
+    isLoading: isLoadingTree,
+    fetchError,
   } = useTalentStore();
   
-  const [isLoadingTree, setIsLoadingTree] = useState(false);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   
@@ -127,43 +75,28 @@ export default function ManagementLayout({
   // Fetch organization tree from API (only once, after verification)
   useEffect(() => {
     if (!authHydrated || !isAuthenticated || isAcTenant || !isVerified) return;
+    if (isLoadingTree || hasFetched) return;
     if (hasFetchedRef.current) return;
-    if (organizationTree.length > 0) return;
     
     hasFetchedRef.current = true;
     
     const fetchOrganizationTree = async () => {
-      setIsLoadingTree(true);
       setTreeError(null);
-      
-      try {
-        const response = await organizationApi.getTree();
-        if (response.success && response.data) {
-          const subs = convertApiTreeToStoreFormat(response.data);
-          const directTalents = convertDirectTalents(response.data);
-          
-          setOrganizationTree(subs);
-          
-          // Combine all talents
-          const allTalents = [...extractTalentsFromTree(subs), ...directTalents];
-          setAccessibleTalents(allTalents);
-          
-          // Set first talent as current if not set
-          if (allTalents.length > 0) {
-            setCurrentTalent(allTalents[0]);
-          }
-        } else {
-          setTreeError(response.error?.message || 'Failed to load organization');
-        }
-      } catch (err: any) {
-        setTreeError(err.message || 'Failed to load organization');
-      } finally {
-        setIsLoadingTree(false);
+
+      const result = await fetchAccessibleTalents();
+
+      if (!result.success) {
+        setTreeError(result.error || 'Failed to load organization');
+        hasFetchedRef.current = false;
       }
     };
     
-    fetchOrganizationTree();
-  }, [authHydrated, isAuthenticated, isAcTenant, isVerified, organizationTree.length, setOrganizationTree, setAccessibleTalents, setCurrentTalent]);
+    void fetchOrganizationTree();
+  }, [authHydrated, isAuthenticated, isAcTenant, isVerified, isLoadingTree, hasFetched, fetchAccessibleTalents]);
+
+  useEffect(() => {
+    setTreeError(fetchError);
+  }, [fetchError]);
 
   // Auth check
   useEffect(() => {
@@ -199,7 +132,7 @@ export default function ManagementLayout({
   }
 
   // Show loading state for organization tree
-  if (isLoadingTree) {
+  if (isLoadingTree && !hasFetched && organizationTree.length === 0) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">

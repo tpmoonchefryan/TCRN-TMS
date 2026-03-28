@@ -11,7 +11,13 @@ import { useTalentStore } from '@/stores/talent-store';
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, isAcTenant, tenantId, _hasHydrated } = useAuthStore();
-  const { accessibleTalents, isLoading: talentLoading, _hasHydrated: talentHydrated, currentTenantId } = useTalentStore();
+  const {
+    accessibleTalents,
+    isLoading: talentLoading,
+    _hasHydrated: talentHydrated,
+    currentTenantId,
+    fetchError,
+  } = useTalentStore();
   const [redirected, setRedirected] = useState(false);
 
   // Use tenantId from auth store or talent store
@@ -43,6 +49,12 @@ export default function HomePage() {
       setRedirected(true);
       return;
     }
+
+    if (fetchError && effectiveTenantId) {
+      router.replace(`/tenant/${effectiveTenantId}/organization-structure`);
+      setRedirected(true);
+      return;
+    }
     
     // Non-AC tenant users
     if (accessibleTalents.length > 0) {
@@ -58,7 +70,18 @@ export default function HomePage() {
       router.replace('/customers');
       setRedirected(true);
     }
-  }, [_hasHydrated, talentHydrated, talentLoading, isAuthenticated, isAcTenant, effectiveTenantId, accessibleTalents, router, redirected]);
+  }, [
+    _hasHydrated,
+    talentHydrated,
+    talentLoading,
+    isAuthenticated,
+    isAcTenant,
+    effectiveTenantId,
+    accessibleTalents,
+    fetchError,
+    router,
+    redirected,
+  ]);
 
   // Add timeout to prevent infinite loading
   useEffect(() => {

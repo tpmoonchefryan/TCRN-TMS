@@ -1,6 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import type { EffectivePermissionMap, SystemUser } from '@tcrn/shared';
 
+import type {
+  SessionBootstrapErrors,
+  SessionBootstrapTaskResult,
+} from './auth-session-bootstrap';
+
 export interface PermissionScope {
   scopeType?: 'GLOBAL' | 'TENANT' | 'SUBSIDIARY' | 'TALENT';
   scopeId?: string;
@@ -30,10 +35,13 @@ export interface AuthState {
   tenantId: string | null;
   isAuthenticated: boolean;
   isAcTenant: boolean;
+  sessionBootstrapStatus: 'idle' | 'loading' | 'ready' | 'degraded';
+  sessionBootstrapErrors: SessionBootstrapErrors | null;
   effectivePermissions: EffectivePermissionMap | null;
   currentScope: PermissionScope | null;
   isLoading: boolean;
   isRefreshing: boolean;
+  sessionBootstrapPromise: Promise<void> | null;
   refreshPromise: Promise<boolean> | null;
   error: string | null;
   _hasHydrated: boolean;
@@ -57,7 +65,8 @@ export interface AuthState {
   setTenantCode: (code: string) => void;
   setHasHydrated: (state: boolean) => void;
   setUser: (user: AuthUser) => void;
-  fetchAccessibleTalents: () => Promise<void>;
-  fetchMyPermissions: (scope?: PermissionScope) => Promise<void>;
+  fetchAccessibleTalents: () => Promise<SessionBootstrapTaskResult>;
+  fetchMyPermissions: (scope?: PermissionScope) => Promise<SessionBootstrapTaskResult>;
+  bootstrapAuthenticatedSession: () => Promise<void>;
   clearPermissions: () => void;
 }

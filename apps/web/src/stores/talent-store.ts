@@ -56,6 +56,7 @@ export interface TalentState {
   
   // Data fetch state - distinguishes "not yet fetched" from "fetched but empty"
   hasFetched: boolean;
+  fetchError: string | null;
   
   // Actions
   setCurrentTalent: (talent: TalentInfo | null) => void;
@@ -67,6 +68,7 @@ export interface TalentState {
   setIsLoading: (loading: boolean) => void;
   setHasHydrated: (state: boolean) => void;
   setHasFetched: (state: boolean) => void;
+  setFetchError: (error: string | null) => void;
   
   // Computed helpers
   hasTalentAccess: () => boolean;
@@ -88,6 +90,7 @@ const initialState = {
   isLoading: false,
   _hasHydrated: false,
   hasFetched: false,
+  fetchError: null,
 };
 
 export const useTalentStore = create<TalentState>()(
@@ -129,6 +132,10 @@ export const useTalentStore = create<TalentState>()(
 
       setHasFetched: (state: boolean) => {
         set({ hasFetched: state });
+      },
+
+      setFetchError: (error: string | null) => {
+        set({ fetchError: error });
       },
 
       hasTalentAccess: () => {

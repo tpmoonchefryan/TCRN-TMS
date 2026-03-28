@@ -7,6 +7,7 @@ import { authApi } from '@/lib/api/modules/auth';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
 
+import { runSessionBootstrap } from './auth-session-bootstrap';
 import type { AuthState, AuthUser, LoginResponseData, PermissionScope } from './auth-store.types';
 import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
 
@@ -16,17 +17,14 @@ const isAcTenantCode = (tenantCode: string | null | undefined) =>
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      const hydrateAuthenticatedSession = async () => {
-        await get().fetchAccessibleTalents();
-        await get().fetchMyPermissions();
-      };
-
       return {
         user: null,
         tenantCode: null,
         tenantId: null,
         isAuthenticated: false,
         isAcTenant: false,
+        sessionBootstrapStatus: 'idle',
+        sessionBootstrapErrors: null,
 
         // Permission state
         effectivePermissions: null,
@@ -34,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
 
         isLoading: false,
         isRefreshing: false,
+        sessionBootstrapPromise: null,
         refreshPromise: null,
         error: null,
         _hasHydrated: false,
@@ -52,11 +51,12 @@ export const useAuthStore = create<AuthState>()(
 
           // Prevent duplicate concurrent calls
           if (talentStore.isLoading) {
-            return;
+            return { success: true };
           }
 
           try {
             talentStore.setIsLoading(true);
+            talentStore.setFetchError(null);
 
             // Fetch organization structure
             const orgResponse = await organizationApi.getTree();
@@ -95,9 +95,18 @@ export const useAuthStore = create<AuthState>()(
               if (allTalents.length === 1 && !talentStore.currentTalent) {
                 talentStore.setCurrentTalent(allTalents[0]);
               }
+
+              return { success: true };
             }
-          } catch {
-            // Silently fail - organization tree will remain empty
+
+            const error = orgResponse.error?.message || 'Failed to load organization';
+            talentStore.setFetchError(error);
+            return { success: false, error };
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : 'Failed to load organization';
+            talentStore.setFetchError(message);
+            return { success: false, error: message };
           } finally {
             const store = useTalentStore.getState();
             store.setIsLoading(false);
@@ -117,16 +126,53 @@ export const useAuthStore = create<AuthState>()(
                 effectivePermissions: response.data.permissions,
                 currentScope: scope || { scopeType: 'GLOBAL' },
               });
-              return;
+              return { success: true };
             }
 
             set({ effectivePermissions: null, currentScope: null });
+            return {
+              success: false,
+              error: response.error?.message || 'Failed to fetch permission snapshot',
+            };
           } catch {
             set({ effectivePermissions: null, currentScope: null });
             console.warn(
               'Failed to fetch permissions from backend; permission checks will fail closed'
             );
+            return {
+              success: false,
+              error: 'Failed to fetch permission snapshot',
+            };
           }
+        },
+
+        bootstrapAuthenticatedSession: async () => {
+          const { sessionBootstrapPromise } = get();
+
+          if (sessionBootstrapPromise) {
+            return sessionBootstrapPromise;
+          }
+
+          set({
+            sessionBootstrapStatus: 'loading',
+            sessionBootstrapErrors: null,
+          });
+
+          const promise = (async () => {
+            const result = await runSessionBootstrap({
+              talents: () => get().fetchAccessibleTalents(),
+              permissions: () => get().fetchMyPermissions(),
+            });
+
+            set({
+              sessionBootstrapStatus: result.status,
+              sessionBootstrapErrors: result.errors,
+              sessionBootstrapPromise: null,
+            });
+          })();
+
+          set({ sessionBootstrapPromise: promise });
+          return promise;
         },
 
         clearPermissions: () => {
@@ -175,10 +221,12 @@ export const useAuthStore = create<AuthState>()(
                   tenantId,
                   isAuthenticated: true,
                   isAcTenant: isAcTenantCode(tenantCode),
+                  sessionBootstrapStatus: 'idle',
+                  sessionBootstrapErrors: null,
                   isLoading: false,
                 });
 
-                await hydrateAuthenticatedSession();
+                void get().bootstrapAuthenticatedSession();
 
                 return { success: true };
               }
@@ -213,10 +261,12 @@ export const useAuthStore = create<AuthState>()(
                 tenantId,
                 isAcTenant: isAcTenantCode(get().tenantCode),
                 isAuthenticated: true,
+                sessionBootstrapStatus: 'idle',
+                sessionBootstrapErrors: null,
                 isLoading: false,
               });
 
-              await hydrateAuthenticatedSession();
+              void get().bootstrapAuthenticatedSession();
 
               return true;
             }
@@ -249,10 +299,12 @@ export const useAuthStore = create<AuthState>()(
                   tenantId,
                   isAcTenant: isAcTenantCode(get().tenantCode),
                   isAuthenticated: true,
+                  sessionBootstrapStatus: 'idle',
+                  sessionBootstrapErrors: null,
                   isLoading: false,
                 });
 
-                await hydrateAuthenticatedSession();
+                void get().bootstrapAuthenticatedSession();
 
                 return true;
               }
@@ -288,6 +340,9 @@ export const useAuthStore = create<AuthState>()(
             tenantId: null,
             isAuthenticated: false,
             isAcTenant: false,
+            sessionBootstrapStatus: 'idle',
+            sessionBootstrapErrors: null,
+            sessionBootstrapPromise: null,
             effectivePermissions: null,
             currentScope: null,
           });
@@ -313,7 +368,15 @@ export const useAuthStore = create<AuthState>()(
             } catch {
               // Refresh failed silently
             }
-            set({ isRefreshing: false, isAuthenticated: false, user: null, refreshPromise: null });
+            set({
+              isRefreshing: false,
+              isAuthenticated: false,
+              user: null,
+              refreshPromise: null,
+              sessionBootstrapStatus: 'idle',
+              sessionBootstrapErrors: null,
+              sessionBootstrapPromise: null,
+            });
             apiClient.setAccessToken(null);
             return false;
           })();
@@ -325,7 +388,7 @@ export const useAuthStore = create<AuthState>()(
         checkAuth: async () => {
           // First try to use existing access token in memory
           if (apiClient.getAccessToken()) {
-            await hydrateAuthenticatedSession();
+            void get().bootstrapAuthenticatedSession();
             return true;
           }
 
@@ -338,7 +401,7 @@ export const useAuthStore = create<AuthState>()(
               const meRes = await authApi.me();
               if (meRes.success && meRes.data) {
                 set({ user: meRes.data });
-                await hydrateAuthenticatedSession();
+                void get().bootstrapAuthenticatedSession();
                 return true;
               }
             } catch {

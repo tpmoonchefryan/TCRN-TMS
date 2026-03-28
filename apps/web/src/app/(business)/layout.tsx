@@ -31,6 +31,7 @@ export default function BusinessLayout({
     hasTalentAccess,
     isLoading: talentLoading,
     hasFetched,
+    fetchError,
   } = useTalentStore();
 
   const [showTalentModal, setShowTalentModal] = useState(false);
@@ -64,6 +65,13 @@ export default function BusinessLayout({
     }
     setHasCheckedAccess(true);
 
+    if (fetchError) {
+      if (tenantId) {
+        router.push(`/tenant/${tenantId}/organization-structure`);
+      }
+      return;
+    }
+
     // No talents - redirect to management
     if (!hasTalentAccess()) {
       if (tenantId) {
@@ -86,6 +94,7 @@ export default function BusinessLayout({
     authHydrated,
     isAuthenticated,
     hasFetched,
+    fetchError,
     hasCheckedAccess,
     accessibleTalents,
     currentTalent,
