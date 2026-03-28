@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { apiClient } from '../core';
@@ -50,6 +49,18 @@ export interface ConfigurationEntityRecord extends LocalizedOptionRecord {
   externalControl?: boolean;
   defaultRenewalDays?: number;
   [key: string]: unknown;
+}
+
+export interface ConfigurationBlocklistEntryRecord extends ConfigurationEntityRecord {
+  pattern: string;
+  patternType: 'keyword' | 'regex' | 'wildcard';
+  action: 'reject' | 'flag' | 'replace';
+  replacement?: string | null;
+  scope?: string[] | null;
+  severity: 'low' | 'medium' | 'high';
+  category?: string | null;
+  matchCount?: number;
+  lastMatchedAt?: string | null;
 }
 
 export interface MembershipTreeLevel extends LocalizedOptionRecord {
@@ -356,6 +367,85 @@ export interface ProfileStoreUpdateResponse {
   updatedAt: string;
 }
 
+export interface PiiServiceConfigSummaryRecord {
+  id: string;
+  code: string;
+  name: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  apiUrl: string;
+  authType: 'mtls' | 'api_key';
+  isHealthy: boolean;
+  lastHealthCheckAt: string | null;
+  isActive: boolean;
+  profileStoreCount: number;
+  createdAt: string;
+  version: number;
+}
+
+export interface PiiServiceConfigDetailRecord extends PiiServiceConfigSummaryRecord {
+  description: string | null;
+  descriptionZh: string | null;
+  descriptionJa: string | null;
+  healthCheckUrl: string | null;
+  healthCheckIntervalSec: number;
+  updatedAt: string;
+}
+
+export interface PiiServiceConfigCreatePayload {
+  code: string;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  apiUrl: string;
+  authType: 'mtls' | 'api_key';
+  apiKey?: string;
+  mtlsClientCert?: string;
+  mtlsClientKey?: string;
+  mtlsCaCert?: string;
+  healthCheckUrl?: string;
+  healthCheckIntervalSec?: number;
+}
+
+export interface PiiServiceConfigCreateResponse {
+  id: string;
+  code: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface PiiServiceConfigUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  apiUrl?: string;
+  authType?: 'mtls' | 'api_key';
+  apiKey?: string;
+  healthCheckUrl?: string;
+  healthCheckIntervalSec?: number;
+  isActive?: boolean;
+  version: number;
+}
+
+export interface PiiServiceConfigUpdateResponse {
+  id: string;
+  code: string;
+  version: number;
+  updatedAt: string;
+}
+
+export interface PiiServiceConfigConnectionTestResponse {
+  status: string;
+  latencyMs: number;
+  testedAt: string;
+}
+
 export const configEntityApi = {
   list: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     entityType: string,
@@ -407,44 +497,18 @@ export const profileStoreApi = {
 
 export const piiServiceConfigApi = {
   list: (params?: { page?: number; pageSize?: number; includeInactive?: boolean }) =>
-    apiClient.get<{ items: any[]; meta: any }>('/api/v1/pii-service-configs', params),
+    apiClient.get<PagedItemsPayload<PiiServiceConfigSummaryRecord>>('/api/v1/pii-service-configs', params),
 
-  get: (id: string) => apiClient.get<any>(`/api/v1/pii-service-configs/${id}`),
+  get: (id: string) => apiClient.get<PiiServiceConfigDetailRecord>(`/api/v1/pii-service-configs/${id}`),
 
-  create: (data: {
-    code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    apiUrl: string;
-    authType: 'mtls' | 'api_key';
-    apiKey?: string;
-    mtlsClientCert?: string;
-    mtlsClientKey?: string;
-    mtlsCaCert?: string;
-    healthCheckUrl?: string;
-    healthCheckIntervalSec?: number;
-  }) => apiClient.post<any>('/api/v1/pii-service-configs', data),
+  create: (data: PiiServiceConfigCreatePayload) =>
+    apiClient.post<PiiServiceConfigCreateResponse>('/api/v1/pii-service-configs', data),
 
-  update: (
-    id: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      apiUrl?: string;
-      authType?: 'mtls' | 'api_key';
-      apiKey?: string;
-      healthCheckUrl?: string;
-      healthCheckIntervalSec?: number;
-      isActive?: boolean;
-      version: number;
-    },
-  ) => apiClient.patch<any>(`/api/v1/pii-service-configs/${id}`, data),
+  update: (id: string, data: PiiServiceConfigUpdatePayload) =>
+    apiClient.patch<PiiServiceConfigUpdateResponse>(`/api/v1/pii-service-configs/${id}`, data),
 
-  testConnection: (id: string) => apiClient.post<any>(`/api/v1/pii-service-configs/${id}/test`, {}),
+  testConnection: (id: string) =>
+    apiClient.post<PiiServiceConfigConnectionTestResponse>(`/api/v1/pii-service-configs/${id}/test`, {}),
 };
 
 export const dictionaryApi = {

@@ -45,8 +45,17 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { configEntityApi, externalBlocklistApi } from '@/lib/api/modules/configuration';
-import { securityApi } from '@/lib/api/modules/security';
+import {
+  configEntityApi,
+  type ConfigurationBlocklistEntryRecord,
+  externalBlocklistApi,
+  type ExternalBlocklistPattern,
+} from '@/lib/api/modules/configuration';
+import {
+  type IpAccessRuleRecord,
+  type IpRuleType,
+  securityApi,
+} from '@/lib/api/modules/security';
 
 import type { ScopeType } from './constants';
 
@@ -85,28 +94,58 @@ interface BlocklistEntry {
   id: string;
   pattern: string;
   patternType: 'keyword' | 'regex' | 'wildcard';
-  action: 'block' | 'warn' | 'flag';
-  severity: string;
+  action: 'reject' | 'flag' | 'replace';
+  severity: 'low' | 'medium' | 'high';
   isActive: boolean;
   inheritedFrom?: string;
+  version: number;
 }
 
 interface ExternalBlocklistEntry {
   id: string;
   pattern: string;
   patternType: 'domain' | 'url_regex' | 'keyword';
-  action: 'block' | 'warn';
+  action: 'reject' | 'flag' | 'replace';
   isActive: boolean;
   inheritedFrom?: string;
 }
 
-interface IpRule {
-  id: string;
-  ipPattern: string;
-  ruleType: 'allow' | 'deny';
-  scope: string;
+interface SecurityPanelIpRule extends IpAccessRuleRecord {
   reason: string;
-  isActive: boolean;
+}
+
+function formatInheritedFrom(ownerType?: ScopeType | null): string | undefined {
+  switch (ownerType) {
+    case 'tenant':
+      return 'Tenant';
+    case 'subsidiary':
+      return 'Subsidiary';
+    case 'talent':
+      return 'Talent';
+    default:
+      return undefined;
+  }
+}
+
+function buildSyntheticCode(prefix: string, value: string): string {
+  const normalized = value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const base = normalized.slice(0, 20) || prefix;
+  const suffix = Date.now().toString().slice(-6);
+  return `${prefix}_${base}_${suffix}`.slice(0, 32);
+}
+
+function getActionBadgeVariant(action: 'reject' | 'flag' | 'replace'): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (action) {
+    case 'reject':
+      return 'destructive';
+    case 'replace':
+      return 'outline';
+    default:
+      return 'secondary';
+  }
 }
 
 interface SecurityPanelProps {
@@ -131,7 +170,7 @@ export function SecurityPanel({
   // Data state
   const [blocklistEntries, setBlocklistEntries] = useState<BlocklistEntry[]>([]);
   const [externalEntries, setExternalEntries] = useState<ExternalBlocklistEntry[]>([]);
-  const [ipRules, setIpRules] = useState<IpRule[]>([]);
+  const [ipRules, setIpRules] = useState<SecurityPanelIpRule[]>([]);
 
   // Dialog state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -141,20 +180,21 @@ export function SecurityPanel({
   const fetchBlocklist = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await configEntityApi.list('blocklist-entry', {
+      const response = await configEntityApi.list<ConfigurationBlocklistEntryRecord>('blocklist-entry', {
         scopeType,
         scopeId,
         includeInherited: true,
       });
       if (response.success && response.data) {
-        setBlocklistEntries(response.data.map((item: Record<string, unknown>) => ({
-          id: item.id as string,
-          pattern: (item.code as string) || '',
-          patternType: (item.patternType as 'keyword') || 'keyword',
-          action: (item.action as 'block') || 'block',
-          severity: (item.severity as string) || 'medium',
-          isActive: (item.isActive as boolean) ?? true,
-          inheritedFrom: item.inheritedFrom as string | undefined,
+        setBlocklistEntries(response.data.map((item: ConfigurationBlocklistEntryRecord) => ({
+          id: item.id,
+          pattern: item.pattern,
+          patternType: item.patternType,
+          action: item.action,
+          severity: item.severity,
+          isActive: item.isActive,
+          inheritedFrom: item.isInherited ? formatInheritedFrom(item.ownerType) : undefined,
+          version: item.version,
         })));
       }
     } catch {
@@ -176,11 +216,11 @@ export function SecurityPanel({
       if (response.success && response.data) {
         setExternalEntries(response.data.map((item) => ({
           id: item.id,
-          pattern: item.pattern || '',
-          patternType: item.patternType || 'domain',
-          action: (item.action as 'block' | 'warn') || 'block',
-          isActive: item.isActive ?? true,
-          inheritedFrom: item.isInherited ? 'Inherited' : undefined,
+          pattern: item.pattern,
+          patternType: item.patternType,
+          action: item.action,
+          isActive: item.isActive,
+          inheritedFrom: item.isInherited ? formatInheritedFrom(item.ownerType) : undefined,
         })));
       }
     } catch {
@@ -197,14 +237,12 @@ export function SecurityPanel({
     try {
       const response = await securityApi.getIpRules();
       if (response.success && response.data) {
-        setIpRules(response.data.map((item: Record<string, unknown>) => ({
-          id: item.id as string,
-          ipPattern: (item.ipPattern as string) || '',
-          ruleType: (item.ruleType as 'allow' | 'deny') || 'allow',
-          scope: (item.scope as string) || 'global',
-          reason: (item.reason as string) || '',
-          isActive: (item.isActive as boolean) ?? true,
-        })));
+        setIpRules(
+          response.data.items.map((item) => ({
+            ...item,
+            reason: item.reason ?? '',
+          })),
+        );
       }
     } catch {
       // Keep empty
@@ -226,30 +264,50 @@ export function SecurityPanel({
 
   // Add entry handler
   const handleAddEntry = async () => {
+    const pattern = newEntry.pattern?.trim();
     try {
       if (activeSecurityType === 'blocklist') {
-        await configEntityApi.create('blocklist-entry', {
-          code: newEntry.pattern,
-          nameEn: newEntry.pattern,
-          nameZh: newEntry.pattern,
+        if (!pattern) {
+          toast.error('Pattern is required');
+          return;
+        }
+
+        await configEntityApi.create<ConfigurationBlocklistEntryRecord>('blocklist-entry', {
+          code: buildSyntheticCode('BLK', pattern),
+          nameEn: pattern,
+          nameZh: pattern,
           ownerType: scopeType,
           ownerId: scopeId,
+          pattern,
+          patternType: (newEntry.patternType as BlocklistEntry['patternType']) || 'keyword',
+          action: (newEntry.action as BlocklistEntry['action']) || 'reject',
+          severity: (newEntry.severity as BlocklistEntry['severity']) || 'medium',
         });
         fetchBlocklist();
       } else if (activeSecurityType === 'external-blocklist') {
+        if (!pattern) {
+          toast.error('Pattern is required');
+          return;
+        }
+
         await externalBlocklistApi.create({
-          ownerType: scopeType as 'tenant' | 'subsidiary' | 'talent',
+          ownerType: scopeType,
           ownerId: scopeId,
-          pattern: newEntry.pattern,
+          pattern,
           patternType: (newEntry.patternType as 'domain' | 'url_regex' | 'keyword') || 'domain',
-          nameEn: newEntry.pattern,
-          action: (newEntry.action as 'reject' | 'flag') || 'reject',
+          nameEn: pattern,
+          action: (newEntry.action as ExternalBlocklistPattern['action']) || 'reject',
         });
         fetchExternalBlocklist();
       } else if (activeSecurityType === 'ip-rules') {
+        if (!newEntry.ip?.trim()) {
+          toast.error('IP address is required');
+          return;
+        }
+
         await securityApi.createIpRule({
           ipPattern: newEntry.ip,
-          ruleType: newEntry.type || 'allow',
+          ruleType: (newEntry.type as IpRuleType) || 'blacklist',
           scope: 'global',
           reason: newEntry.description,
         });
@@ -264,16 +322,16 @@ export function SecurityPanel({
   };
 
   // Delete entry handler
-  const handleDeleteEntry = async (id: string) => {
+  const handleDeleteEntry = async (entry: { id: string; version?: number }) => {
     try {
       if (activeSecurityType === 'blocklist') {
-        await configEntityApi.deactivate('blocklist-entry', id, 1);
+        await configEntityApi.deactivate('blocklist-entry', entry.id, entry.version ?? 1);
         fetchBlocklist();
       } else if (activeSecurityType === 'external-blocklist') {
-        await externalBlocklistApi.delete(id);
+        await externalBlocklistApi.delete(entry.id);
         fetchExternalBlocklist();
       } else if (activeSecurityType === 'ip-rules') {
-        await securityApi.deleteIpRule(id);
+        await securityApi.deleteIpRule(entry.id);
         fetchIpRules();
       }
       toast.success(tc('deleted'));
@@ -386,7 +444,7 @@ export function SecurityPanel({
                         </TableCell>
                         <TableCell>
                           <Badge 
-                            variant={entry.action === 'block' ? 'destructive' : 'secondary'}
+                            variant={getActionBadgeVariant(entry.action)}
                           >
                             {entry.action}
                           </Badge>
@@ -404,7 +462,7 @@ export function SecurityPanel({
                               variant="ghost" 
                               size="icon"
                               className="text-red-500 hover:text-red-600"
-                              onClick={() => handleDeleteEntry(entry.id)}
+                              onClick={() => handleDeleteEntry(entry)}
                             >
                               <Trash2 size={16} />
                             </Button>
@@ -450,7 +508,7 @@ export function SecurityPanel({
                         </TableCell>
                         <TableCell>
                           <Badge 
-                            variant={entry.action === 'block' ? 'destructive' : 'secondary'}
+                            variant={getActionBadgeVariant(entry.action)}
                           >
                             {entry.action}
                           </Badge>
@@ -468,7 +526,7 @@ export function SecurityPanel({
                               variant="ghost" 
                               size="icon"
                               className="text-red-500 hover:text-red-600"
-                              onClick={() => handleDeleteEntry(entry.id)}
+                              onClick={() => handleDeleteEntry(entry)}
                             >
                               <Trash2 size={16} />
                             </Button>
@@ -510,7 +568,7 @@ export function SecurityPanel({
                         <TableCell className="font-mono">{rule.ipPattern}</TableCell>
                         <TableCell>
                           <Badge 
-                            variant={rule.ruleType === 'deny' ? 'destructive' : 'default'}
+                            variant={rule.ruleType === 'blacklist' ? 'destructive' : 'default'}
                           >
                             {rule.ruleType}
                           </Badge>
@@ -522,7 +580,7 @@ export function SecurityPanel({
                               variant="ghost" 
                               size="icon"
                               className="text-red-500 hover:text-red-600"
-                              onClick={() => handleDeleteEntry(rule.id)}
+                              onClick={() => handleDeleteEntry(rule)}
                             >
                               <Trash2 size={16} />
                             </Button>
@@ -560,15 +618,15 @@ export function SecurityPanel({
                   <div className="space-y-2">
                     <Label>{t('ruleType')}</Label>
                     <Select
-                      value={newEntry.type || 'allow'}
+                      value={newEntry.type || 'blacklist'}
                       onValueChange={(v) => setNewEntry({ ...newEntry, type: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="allow">{t('whitelist')}</SelectItem>
-                        <SelectItem value="deny">{t('blacklist')}</SelectItem>
+                        <SelectItem value="whitelist">{t('whitelist')}</SelectItem>
+                        <SelectItem value="blacklist">{t('blacklist')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -619,21 +677,37 @@ export function SecurityPanel({
                   <div className="space-y-2">
                     <Label>{t('action')}</Label>
                     <Select
-                      value={newEntry.action || 'block'}
+                      value={newEntry.action || 'reject'}
                       onValueChange={(v) => setNewEntry({ ...newEntry, action: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="block">{t('block')}</SelectItem>
-                        <SelectItem value="warn">{t('warn')}</SelectItem>
-                        {activeSecurityType === 'blocklist' && (
-                          <SelectItem value="flag">{t('flag')}</SelectItem>
-                        )}
+                        <SelectItem value="reject">{t('reject')}</SelectItem>
+                        <SelectItem value="flag">{t('flag')}</SelectItem>
+                        <SelectItem value="replace">{t('replace')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {activeSecurityType === 'blocklist' && (
+                    <div className="space-y-2">
+                      <Label>{t('severity')}</Label>
+                      <Select
+                        value={newEntry.severity || 'medium'}
+                        onValueChange={(v) => setNewEntry({ ...newEntry, severity: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
               )}
             </div>

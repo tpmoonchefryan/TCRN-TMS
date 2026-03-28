@@ -36,67 +36,6 @@ import {
 } from '@/lib/api/modules/configuration';
 import { useAuthStore } from '@/stores/auth-store';
 
-// Configuration Entity Types (using singular kebab-case format to match backend API)
-// Config entity base interface
-interface ConfigEntityBase {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
-  ownerType: 'tenant' | 'subsidiary' | 'talent';
-  ownerLevel: string;
-  isActive: boolean;
-  isForceUse: boolean;
-  isSystem: boolean;
-  sortOrder: number;
-  inheritedFrom?: string;
-}
-
-// Extended interface for membership type (has classId)
-interface MembershipTypeEntity extends ConfigEntityBase {
-  classId: string;
-  className?: string;
-}
-
-// Extended interface for membership level (has classId and typeId)
-interface MembershipLevelEntity extends ConfigEntityBase {
-  classId: string;
-  className?: string;
-  typeId: string;
-  typeName?: string;
-  rank: number;
-  color?: string;
-}
-
-// Extended interface for Profile Store
-interface ProfileStoreEntity extends ConfigEntityBase {
-  piiServiceConfig: {
-    id: string;
-    code: string;
-    name: string;
-    isHealthy: boolean;
-  } | null;
-  talentCount: number;
-  customerCount: number;
-  isDefault: boolean;
-  version: number;
-}
-
-// Extended interface for PII Service Config
-interface PiiServiceConfigEntity extends ConfigEntityBase {
-  apiUrl: string;
-  authType: 'mtls' | 'api_key';
-  isHealthy: boolean;
-  lastHealthCheckAt: string | null;
-  profileStoreCount: number;
-  version: number;
-}
-
-// Initial empty config entities (loaded from API)
-
-// Dictionary records are loaded from API - no mock data needed
-
 interface TenantState {
   id: TenantRecord['id'];
   code: TenantRecord['code'];

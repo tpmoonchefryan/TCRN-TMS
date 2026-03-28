@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -8,56 +7,33 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { securityApi } from '@/lib/api/modules/security';
+import {
+  type CreateIpRulePayload,
+  type IpAccessRuleRecord,
+  type IpRuleType,
+  securityApi,
+} from '@/lib/api/modules/security';
 
 import { IpChecker } from './IpChecker';
 import { IpRuleForm } from './IpRuleForm';
 import { IpRuleTable } from './IpRuleTable';
 
-export interface IpRule {
-  id: string;
-  ruleType: 'whitelist' | 'blacklist';
-  ipPattern: string;
-  scope: string;
-  reason: string | null;
-  source: 'manual' | 'auto';
-  expiresAt: string | null;
-  hitCount: number;
-  lastHitAt: string | null;
-  isActive: boolean;
-  createdAt: string;
-  createdBy: string | null;
-}
+export type IpRule = IpAccessRuleRecord;
+type IpRuleTab = 'all' | IpRuleType;
 
 export function IpRuleManager() {
   const t = useTranslations('security');
   const [rules, setRules] = useState<IpRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'whitelist' | 'blacklist'>('all');
+  const [activeTab, setActiveTab] = useState<IpRuleTab>('all');
 
   const fetchRules = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await securityApi.getIpRules();
       if (response.success && response.data) {
-        const items = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as any).items || [];
-        setRules(items.map((item: any) => ({
-          id: item.id,
-          ruleType: item.rule_type || item.ruleType || 'blacklist',
-          ipPattern: item.ip_pattern || item.ipPattern || '',
-          scope: item.scope || 'global',
-          reason: item.reason || null,
-          source: item.source || 'manual',
-          expiresAt: item.expires_at || item.expiresAt || null,
-          hitCount: item.hit_count || item.hitCount || 0,
-          lastHitAt: item.last_hit_at || item.lastHitAt || null,
-          isActive: item.is_active ?? item.isActive ?? true,
-          createdAt: item.created_at || item.createdAt || '',
-          createdBy: item.created_by || item.createdBy || null,
-        })));
+        setRules(response.data.items);
       }
     } catch (error) {
       console.error('Failed to fetch IP rules:', error);
@@ -70,7 +46,7 @@ export function IpRuleManager() {
     fetchRules();
   }, [fetchRules]);
 
-  const handleCreate = async (data: { ruleType: string; ipPattern: string; scope: string; reason?: string }) => {
+  const handleCreate = async (data: CreateIpRulePayload) => {
     try {
       await securityApi.createIpRule(data);
       setShowForm(false);
@@ -126,7 +102,7 @@ export function IpRuleManager() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as IpRuleTab)}>
             <TabsList className="mb-4">
               <TabsTrigger value="all">
                 {t('all')} ({rules.length})

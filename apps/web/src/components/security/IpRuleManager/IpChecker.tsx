@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -8,16 +7,20 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { securityApi } from '@/lib/api/modules/security';
+import {
+  type IpAccessCheckMatchedRule,
+  type IpAccessScope,
+  securityApi,
+} from '@/lib/api/modules/security';
 
 export function IpChecker() {
   const t = useTranslations('security');
   const [ip, setIp] = useState('');
-  const [scope, setScope] = useState<'global' | 'admin' | 'public' | 'api'>('global');
+  const [scope, setScope] = useState<IpAccessScope>('global');
   const [result, setResult] = useState<{
     allowed: boolean;
     reason?: string;
-    matchedRule?: any;
+    matchedRule?: IpAccessCheckMatchedRule;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +41,8 @@ export function IpChecker() {
       } else {
         setError(t('checkFailed'));
       }
-    } catch (err: any) {
-      setError(err.message || t('checkFailed'));
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : t('checkFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +65,7 @@ export function IpChecker() {
                 />
                 <select
                     value={scope}
-                    onChange={(e) => setScope(e.target.value as any)}
+                    onChange={(e) => setScope(e.target.value as IpAccessScope)}
                     className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                     <option value="global">{t('scopeGlobal')}</option>
@@ -92,7 +95,7 @@ export function IpChecker() {
                         )}
                         {result.matchedRule && (
                             <div className="text-xs mt-2 bg-white/50 dark:bg-black/20 p-1.5 rounded font-mono">
-                                {t('ruleMatch')}: {result.matchedRule.ip_pattern || result.matchedRule.ipPattern}
+                                {t('ruleMatch')}: {result.matchedRule.ipPattern}
                             </div>
                         )}
                     </div>

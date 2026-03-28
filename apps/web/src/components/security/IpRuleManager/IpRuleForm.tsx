@@ -18,10 +18,11 @@ import {
     Label,
     Textarea,
 } from '@/components/ui';
+import type { CreateIpRulePayload } from '@/lib/api/modules/security';
 import { useZodForm } from '@/lib/form';
 
 interface IpRuleFormProps {
-  onSubmit: (data: { ruleType: string; ipPattern: string; scope: string; reason?: string }) => void;
+  onSubmit: (data: CreateIpRulePayload) => void;
   onCancel: () => void;
 }
 

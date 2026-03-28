@@ -1,17 +1,18 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logApi } from '@/lib/api/modules/security';
+import { logApi, securityApi } from '@/lib/api/modules/security';
 
 const mockGet = vi.fn();
 const mockPost = vi.fn();
+const mockDelete = vi.fn();
 
 vi.mock('@/lib/api/core', () => ({
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
     patch: vi.fn(),
-    delete: vi.fn(),
+    delete: (...args: unknown[]) => mockDelete(...args),
   },
 }));
 
@@ -73,5 +74,56 @@ describe('logApi', () => {
       stream: 'technical_event_log',
     });
     expect(mockPost).not.toHaveBeenCalled();
+  });
+});
+
+describe('securityApi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('requests IP rules from the management endpoint', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { items: [], meta: { total: 0 } } });
+
+    await securityApi.getIpRules();
+
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/ip-access-rules');
+  });
+
+  it('posts typed IP rule payloads unchanged', async () => {
+    mockPost.mockResolvedValue({ success: true, data: { id: 'rule-1' } });
+
+    await securityApi.createIpRule({
+      ruleType: 'blacklist',
+      ipPattern: '10.0.0.0/8',
+      scope: 'global',
+      reason: 'internal only',
+    });
+
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/ip-access-rules', {
+      ruleType: 'blacklist',
+      ipPattern: '10.0.0.0/8',
+      scope: 'global',
+      reason: 'internal only',
+    });
+  });
+
+  it('posts IP access checks with explicit scope', async () => {
+    mockPost.mockResolvedValue({ success: true, data: { allowed: true } });
+
+    await securityApi.checkIpAccess('127.0.0.1', 'admin');
+
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/ip-access-rules/check', {
+      ip: '127.0.0.1',
+      scope: 'admin',
+    });
+  });
+
+  it('deletes IP rules by id', async () => {
+    mockDelete.mockResolvedValue({ success: true });
+
+    await securityApi.deleteIpRule('rule-1');
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/v1/ip-access-rules/rule-1');
   });
 });

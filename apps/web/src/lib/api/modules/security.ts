@@ -17,6 +17,67 @@ export interface LokiSearchResponse {
   stats?: Record<string, unknown>;
 }
 
+export type IpRuleType = 'whitelist' | 'blacklist';
+export type IpAccessScope = 'global' | 'admin' | 'public' | 'api';
+export type IpRuleSource = 'manual' | 'auto';
+
+export interface IpAccessRuleRecord {
+  id: string;
+  ruleType: IpRuleType;
+  ipPattern: string;
+  scope: IpAccessScope;
+  reason: string | null;
+  source: IpRuleSource;
+  expiresAt: string | null;
+  hitCount: number;
+  lastHitAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+export interface IpAccessRuleListPayload {
+  items: IpAccessRuleRecord[];
+  meta: {
+    total: number;
+  };
+}
+
+export interface CreateIpRulePayload {
+  ruleType: IpRuleType;
+  ipPattern: string;
+  scope: IpAccessScope;
+  reason?: string;
+}
+
+export interface CreateIpRuleResponse {
+  id: string;
+  ruleType: IpRuleType;
+  ipPattern: string;
+  scope: IpAccessScope;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface DeleteIpRuleResponse {
+  success: boolean;
+}
+
+export interface IpAccessCheckMatchedRule {
+  id: string;
+  ruleType: IpRuleType;
+  ipPattern: string;
+  scope: IpAccessScope;
+  reason?: string;
+}
+
+export interface IpAccessCheckResponse {
+  allowed: boolean;
+  reason?: string;
+  matchedRule?: IpAccessCheckMatchedRule;
+  matched_rule?: IpAccessCheckMatchedRule;
+}
+
 export const securityApi = {
   generateFingerprint: () => apiClient.post<any>('/api/v1/security/fingerprint', {}),
 
@@ -86,20 +147,20 @@ export const securityApi = {
       patternType,
     }),
 
-  getIpRules: () => apiClient.get<any[]>('/api/v1/ip-access-rules'),
+  getIpRules: () => apiClient.get<IpAccessRuleListPayload>('/api/v1/ip-access-rules'),
 
-  createIpRule: (rule: { ruleType: string; ipPattern: string; scope: string; reason?: string }) =>
-    apiClient.post<any>('/api/v1/ip-access-rules', {
+  createIpRule: (rule: CreateIpRulePayload) =>
+    apiClient.post<CreateIpRuleResponse>('/api/v1/ip-access-rules', {
       ruleType: rule.ruleType,
       ipPattern: rule.ipPattern,
       scope: rule.scope,
       reason: rule.reason,
     }),
 
-  deleteIpRule: (id: string) => apiClient.delete<any>(`/api/v1/ip-access-rules/${id}`),
+  deleteIpRule: (id: string) => apiClient.delete<DeleteIpRuleResponse>(`/api/v1/ip-access-rules/${id}`),
 
-  checkIpAccess: (ip: string, scope: 'global' | 'admin' | 'public' | 'api' = 'global') =>
-    apiClient.post<{ allowed: boolean; reason?: string; matched_rule?: any; matchedRule?: any }>(
+  checkIpAccess: (ip: string, scope: IpAccessScope = 'global') =>
+    apiClient.post<IpAccessCheckResponse>(
       '/api/v1/ip-access-rules/check',
       { ip, scope }
     ),
