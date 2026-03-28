@@ -5,6 +5,11 @@ import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import {
+  isIgnorableTenantMigrationError,
+  splitSqlStatements,
+} from './apply-migrations-helpers';
+
 const prisma = new PrismaClient();
 
 /**
@@ -20,50 +25,6 @@ async function getAllTenantSchemas(): Promise<string[]> {
       schema_name
   `;
   return schemas.map(s => s.schema_name);
-}
-
-/**
- * Split SQL into statements, handling $$ delimited blocks (stored procedures)
- */
-function splitSqlStatements(sql: string): string[] {
-  const statements: string[] = [];
-  let current = '';
-  let inDollarBlock = false;
-  let i = 0;
-
-  while (i < sql.length) {
-    // Check for $$ delimiter
-    if (sql[i] === '$' && sql[i + 1] === '$') {
-      current += '$$';
-      i += 2;
-      inDollarBlock = !inDollarBlock;
-      continue;
-    }
-
-    // Check for semicolon (statement end) when not in $$ block
-    if (sql[i] === ';' && !inDollarBlock) {
-      current += ';';
-      const trimmed = current.trim();
-      // Filter out empty statements and pure comments
-      if (trimmed.length > 0 && !trimmed.match(/^--.*$/)) {
-        statements.push(trimmed);
-      }
-      current = '';
-      i++;
-      continue;
-    }
-
-    current += sql[i];
-    i++;
-  }
-
-  // Add any remaining content
-  const trimmed = current.trim();
-  if (trimmed.length > 0 && !trimmed.match(/^--.*$/)) {
-    statements.push(trimmed);
-  }
-
-  return statements;
 }
 
 /**
@@ -96,13 +57,7 @@ async function applyMigrationToSchema(
       success++;
     } catch (error: any) {
       const msg = error.message || '';
-      // Ignore common idempotency conflicts when replaying tenant SQL across existing schemas.
-      if (
-        msg.includes('already exists') ||
-        msg.includes('does not exist') ||
-        msg.includes('duplicate key') ||
-        msg.includes('relation') && msg.includes('does not exist')
-      ) {
+      if (isIgnorableTenantMigrationError(statement, msg)) {
         skipped++;
       } else {
         errors++;
