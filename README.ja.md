@@ -13,7 +13,7 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.8-blue">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -93,11 +93,11 @@
 
 従来の付与/拒否システムとは異なり、TCRN TMSは三状態モデルを実装しています：
 
-| 状態 | 説明 | 優先度 |
-|------|------|--------|
-| **Deny（拒否）** | 明示的に禁止 | 最高 |
-| **Grant（付与）** | 明示的に許可 | 中 |
-| **Unset（未設定）** | 未構成 | 最低 |
+| 状態                | 説明         | 優先度 |
+| ------------------- | ------------ | ------ |
+| **Deny（拒否）**    | 明示的に禁止 | 最高   |
+| **Grant（付与）**   | 明示的に許可 | 中     |
+| **Unset（未設定）** | 未構成       | 最低   |
 
 **機能型ロール**：`ADMIN`、`TALENT_MANAGER`、`VIEWER`、`TALENT_SELF`、`MODERATOR`、`SUPPORT`、`ANALYST`
 
@@ -131,11 +131,11 @@
 
 自動PIIマスキング付き3種類のログ：
 
-| ログタイプ | 目的 | 保持期間 |
-|------------|------|----------|
-| **変更ログ** | UIトリガーのビジネス変更 | 60日（本番） |
+| ログタイプ           | 目的                     | 保持期間     |
+| -------------------- | ------------------------ | ------------ |
+| **変更ログ**         | UIトリガーのビジネス変更 | 60日（本番） |
 | **技術イベントログ** | システムイベントとエラー | 60日（本番） |
-| **統合ログ** | 外部API呼び出しとWebhook | 60日（本番） |
+| **統合ログ**         | 外部API呼び出しとWebhook | 60日（本番） |
 
 Loki統合により、すべてのログで全文検索が可能です。
 
@@ -145,15 +145,15 @@ Loki統合により、すべてのログで全文検索が可能です。
 
 ### 顧客管理
 
-| 機能 | 説明 |
-|------|------|
-| **個人プロファイル** | 本名、ニックネーム、連絡先、生年月日 |
-| **企業プロファイル** | 法人名、登記番号、税番号 |
-| **プラットフォームアイデンティティ** | YouTube、Bilibili、Twitch、Twitter UID（履歴追跡付き） |
-| **メンバーシップ記録** | クラス、タイプ、レベル（自動更新対応） |
-| **外部ID** | 顧客を外部システム（CRM、チケットシステム）にマッピング |
-| **一括インポート** | バリデーションとエラーレポート付きCSVインポート |
-| **バッチ操作** | タグ/ステータス/メンバーシップの一括更新 |
+| 機能                                 | 説明                                                    |
+| ------------------------------------ | ------------------------------------------------------- |
+| **個人プロファイル**                 | 本名、ニックネーム、連絡先、生年月日                    |
+| **企業プロファイル**                 | 法人名、登記番号、税番号                                |
+| **プラットフォームアイデンティティ** | YouTube、Bilibili、Twitch、Twitter UID（履歴追跡付き）  |
+| **メンバーシップ記録**               | クラス、タイプ、レベル（自動更新対応）                  |
+| **外部ID**                           | 顧客を外部システム（CRM、チケットシステム）にマッピング |
+| **一括インポート**                   | バリデーションとエラーレポート付きCSVインポート         |
+| **バッチ操作**                       | タグ/ステータス/メンバーシップの一括更新                |
 
 ### ホームページ管理
 
@@ -173,13 +173,13 @@ Loki統合により、すべてのログで全文検索が可能です。
 
 ### セキュリティ管理
 
-| 機能 | 説明 |
-|------|------|
-| **ブロックリスト** | コンテンツフィルタリング用キーワードと正規表現パターン |
-| **IPルール** | CIDR対応のホワイトリスト/ブラックリスト |
-| **レート制限** | Redisバックのエンドポイント単位レート制限 |
-| **UA検出** | 既知のボット/スクレイパーUser-Agentをブロック |
-| **技術フィンガープリント** | データ漏洩追跡用の隠しウォーターマーク |
+| 機能                       | 説明                                                   |
+| -------------------------- | ------------------------------------------------------ |
+| **ブロックリスト**         | コンテンツフィルタリング用キーワードと正規表現パターン |
+| **IPルール**               | CIDR対応のホワイトリスト/ブラックリスト                |
+| **レート制限**             | Redisバックのエンドポイント単位レート制限              |
+| **UA検出**                 | 既知のボット/スクレイパーUser-Agentをブロック          |
+| **技術フィンガープリント** | データ漏洩追跡用の隠しウォーターマーク                 |
 
 ### メールサービス
 
@@ -193,12 +193,12 @@ Tencent Cloud SESと統合：
 
 プロダクショングレードのパフォーマンス機能：
 
-| 機能 | 実装方法 |
-|------|---------|
+| 機能               | 実装方法                                           |
+| ------------------ | -------------------------------------------------- |
 | **動的インポート** | 7+ 大型コンポーネントを `dynamic.tsx` で遅延ロード |
-| **リスト仮想化** | `@tanstack/react-virtual` で長いリストを処理 |
-| **画像最適化** | `next/image` でリモートパターンを設定 |
-| **メモ化** | 高頻度コンポーネントに `React.memo` を使用 |
+| **リスト仮想化**   | `@tanstack/react-virtual` で長いリストを処理       |
+| **画像最適化**     | `next/image` でリモートパターンを設定              |
+| **メモ化**         | 高頻度コンポーネントに `React.memo` を使用         |
 
 ### アクセシビリティ
 
@@ -281,34 +281,35 @@ Zodによるエンドツーエンドの型安全バリデーション：
 
 ## 🛠️ 技術スタック
 
-| レイヤー | 技術 | バージョン |
-|----------|------|-----------|
-| **フロントエンド** | Next.js | 16.1.1 |
-| | React | 19.1.1 |
-| | TypeScript | 5.8.3 |
-| | Tailwind CSS | 3.4.17 |
-| | Zustand | 5.0.5 |
-| | TanStack React Virtual | 3.13.18 |
-| **バックエンド** | NestJS | 11.1.6 |
-| | Prisma ORM | 6.14.0 |
-| | BullMQ | 5.66.5 |
-| **データベース** | PostgreSQL | 16 |
-| | Redis | 7 |
-| **ストレージ** | MinIO | Latest |
-| **メッセージング** | NATS JetStream | 2 |
-| **オブザーバビリティ** | OpenTelemetry | - |
-| | Prometheus | - |
-| | Grafana Loki | 2.9.0 |
-| | Grafana Tempo | - |
-| **デプロイ** | Docker | - |
-| | Kubernetes | - |
+| レイヤー               | 技術                   | バージョン |
+| ---------------------- | ---------------------- | ---------- |
+| **フロントエンド**     | Next.js                | 16.1.1     |
+|                        | React                  | 19.1.1     |
+|                        | TypeScript             | 5.9.3      |
+|                        | Tailwind CSS           | 3.4.17     |
+|                        | Zustand                | 5.0.5      |
+|                        | TanStack React Virtual | 3.13.18    |
+| **バックエンド**       | NestJS                 | 11.1.6     |
+|                        | Prisma ORM             | 6.14.0     |
+|                        | BullMQ                 | 5.66.5     |
+| **データベース**       | PostgreSQL             | 16         |
+|                        | Redis                  | 7          |
+| **ストレージ**         | MinIO                  | Latest     |
+| **メッセージング**     | NATS JetStream         | 2          |
+| **オブザーバビリティ** | OpenTelemetry          | -          |
+|                        | Prometheus             | -          |
+|                        | Grafana Loki           | 2.9.0      |
+|                        | Grafana Tempo          | -          |
+| **デプロイ**           | Docker                 | -          |
+|                        | Kubernetes             | -          |
 
 上記インフラの現在のランタイム状態は次のとおりです。
 
 - `NATS JetStream` は現在のローカル/本番 Compose スタックで実際に使われている依存です。
-- `Grafana Loki` には実際の push/query 経路があり Compose サービスも起動しますが、ログ送信と検索は `LOKI_ENABLED=true` の明示設定が必要です。
+- `Grafana Loki` には Compose サービスと query/push helper がありますが、現在の既定の正本は依然としてテナント PostgreSQL のログテーブルです。`/api/v1/logs/search*` は Loki を参照し、`LOKI_ENABLED=false` の場合は空結果を返します。API / worker 側の Loki push helper は、まだ既定の本番 producer path ではありません。
 - `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。
 - `Prometheus` は現時点ではロードマップ上の予約項目で、現在の Compose デプロイには含まれません。
+- `PII health check` は Worker の定期的な依存先プローブです。`ENABLE_SCHEDULED_JOBS=false` を明示しない限り、worker は設定済み PII endpoint に対して 60 秒ごとに `pii-health-check` を投入します。これはメインアプリの liveness ではなく、依存先テレメトリとして扱ってください。
 
 ---
 
@@ -353,13 +354,13 @@ pnpm dev
 
 ### アクセスポイント
 
-| サービス | URL |
-|----------|-----|
-| Web UI | http://localhost:3000 |
-| API | http://localhost:4000 |
+| サービス        | URL                            |
+| --------------- | ------------------------------ |
+| Web UI          | http://localhost:3000          |
+| API             | http://localhost:4000          |
 | APIドキュメント | http://localhost:4000/api/docs |
-| MinIOコンソール | http://localhost:9001 |
-| NATSモニター | http://localhost:8222 |
+| MinIOコンソール | http://localhost:9001          |
+| NATSモニター    | http://localhost:8222          |
 
 ### デフォルト認証情報
 
@@ -370,6 +371,13 @@ pnpm dev
 | ユーザー名 | ac_admin |
 | パスワード | (シードファイルで設定、`00-ac-tenant.ts` 参照) |
 
+### テストと検証の境界
+
+- リポジトリルートの `pnpm test:e2e` は Playwright のブラウザースイートであり、API の Vitest integration runner ではありません。
+- ルートの `pnpm test:integration` は実際には `pnpm --filter @tcrn/api test:integration` のエイリアスで、`vitest.integration.config.ts` を使って API integration suite を実行します。
+- ルートの `pnpm test:isolation` は実際には `pnpm --filter @tcrn/api test:isolation` のエイリアスで、同じ Vitest integration 設定で API isolation suite を実行します。
+- schema 変更を含むリリースでは、`db:verify-schema-rollout` を通常のランタイム health check と組み合わせて実行してください。Playwright E2E を direct schema rollout verification の代替にしないでください。
+
 ---
 
 ## 🌐 本番環境デプロイ
@@ -378,12 +386,12 @@ pnpm dev
 
 ### インフラ要件
 
-| コンポーネント | 最小構成 | 推奨構成 |
-|----------------|----------|----------|
-| **アプリケーションサーバー** | 2 vCPU, 4GB RAM | 4 vCPU, 8GB RAM |
-| **PostgreSQL** | 2 vCPU, 4GB RAM, 50GB SSD | 4 vCPU, 8GB RAM, 100GB SSD |
-| **Redis** | 1 vCPU, 1GB RAM | 2 vCPU, 2GB RAM |
-| **MinIO** | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
+| コンポーネント               | 最小構成                   | 推奨構成                   |
+| ---------------------------- | -------------------------- | -------------------------- |
+| **アプリケーションサーバー** | 2 vCPU, 4GB RAM            | 4 vCPU, 8GB RAM            |
+| **PostgreSQL**               | 2 vCPU, 4GB RAM, 50GB SSD  | 4 vCPU, 8GB RAM, 100GB SSD |
+| **Redis**                    | 1 vCPU, 1GB RAM            | 2 vCPU, 2GB RAM            |
+| **MinIO**                    | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
 
 ### デプロイオプション
 
@@ -711,12 +719,12 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 ### サーバー要件
 
-| コンポーネント | スペック |
-|----------------|----------|
-| **OS** | Ubuntu 22.04 LTS以降 |
-| **CPU** | 2+ vCPU |
-| **RAM** | 4GB+ |
-| **ストレージ** | 50GB+ SSD（暗号化） |
+| コンポーネント   | スペック                                            |
+| ---------------- | --------------------------------------------------- |
+| **OS**           | Ubuntu 22.04 LTS以降                                |
+| **CPU**          | 2+ vCPU                                             |
+| **RAM**          | 4GB+                                                |
+| **ストレージ**   | 50GB+ SSD（暗号化）                                 |
 | **ネットワーク** | メインサーバーとのプライベートネットワークまたはVPN |
 
 ### ステップ1：PIIサーバーを準備
@@ -959,32 +967,33 @@ curl -X POST /api/v1/auth/login \
 
 ### 主要エンドポイント
 
-| カテゴリ | エンドポイント | 説明 |
-|----------|---------------|------|
-| **認証** | `POST /auth/login` | 認証情報でログイン |
-| | `POST /auth/refresh` | アクセストークンを更新 |
-| | `POST /auth/logout` | ログアウトしてトークンを無効化 |
-| **顧客** | `GET /customers` | 顧客リストを取得（ページネーション） |
-| | `POST /customers` | 顧客プロファイルを作成 |
-| | `POST /customers/{id}/request-pii-access` | PIIアクセストークンを取得 |
-| **組織** | `GET /organization/tree` | 組織構造を取得 |
-| | `POST /subsidiaries` | サブシディアリを作成 |
-| | `POST /talents` | タレントを作成 |
-| **マシュマロ** | `GET /public/marshmallow/{path}/messages` | 公開メッセージを取得 |
-| | `POST /public/marshmallow/{path}/submit` | 匿名質問を送信 |
-| | `POST /marshmallow/messages/{id}/approve` | メッセージを承認 |
-| **レポート** | `POST /reports/mfr/jobs` | MFR生成を開始 |
-| | `GET /reports/mfr/jobs/{id}` | ジョブステータスを取得 |
-| | `GET /reports/mfr/jobs/{id}/download` | ダウンロードURLを取得 |
-| **ログ** | `GET /logs/changes` | 変更ログを照会 |
-| | `GET /logs/events` | システムイベントを照会 |
-| | `GET /logs/search` | Loki全文検索 |
-| **コンプライアンス** | `GET /compliance/data-map` | データマッピングレポート |
-| | `GET /compliance/privacy-impact` | プライバシー影響評価 |
+| カテゴリ             | エンドポイント                            | 説明                                 |
+| -------------------- | ----------------------------------------- | ------------------------------------ |
+| **認証**             | `POST /auth/login`                        | 認証情報でログイン                   |
+|                      | `POST /auth/refresh`                      | アクセストークンを更新               |
+|                      | `POST /auth/logout`                       | ログアウトしてトークンを無効化       |
+| **顧客**             | `GET /customers`                          | 顧客リストを取得（ページネーション） |
+|                      | `POST /customers`                         | 顧客プロファイルを作成               |
+|                      | `POST /customers/{id}/request-pii-access` | PIIアクセストークンを取得            |
+| **組織**             | `GET /organization/tree`                  | 組織構造を取得                       |
+|                      | `POST /subsidiaries`                      | サブシディアリを作成                 |
+|                      | `POST /talents`                           | タレントを作成                       |
+| **マシュマロ**       | `GET /public/marshmallow/{path}/messages` | 公開メッセージを取得                 |
+|                      | `POST /public/marshmallow/{path}/submit`  | 匿名質問を送信                       |
+|                      | `POST /marshmallow/messages/{id}/approve` | メッセージを承認                     |
+| **レポート**         | `POST /reports/mfr/jobs`                  | MFR生成を開始                        |
+|                      | `GET /reports/mfr/jobs/{id}`              | ジョブステータスを取得               |
+|                      | `GET /reports/mfr/jobs/{id}/download`     | ダウンロードURLを取得                |
+| **ログ**             | `GET /logs/changes`                       | 変更ログを照会                       |
+|                      | `GET /logs/events`                        | システムイベントを照会               |
+|                      | `GET /logs/search`                        | Loki全文検索                         |
+| **コンプライアンス** | `GET /compliance/data-map`                | データマッピングレポート             |
+|                      | `GET /compliance/privacy-impact`          | プライバシー影響評価                 |
 
 ### レスポンスフォーマット
 
 **成功：**
+
 ```json
 {
   "success": true,
@@ -998,6 +1007,7 @@ curl -X POST /api/v1/auth/login \
 ```
 
 **エラー：**
+
 ```json
 {
   "success": false,
@@ -1023,23 +1033,25 @@ curl -X POST /api/v1/auth/login \
 ### 二要素認証
 
 リカバリーコード付きTOTPベースの2FA：
+
 - セットアップ時に10個のワンタイムリカバリーコードを生成
 - リカバリーコードはSHA256ハッシュとして保存
 - テナント管理者はすべてのユーザーに2FAを強制可能
 
 ### データ保護
 
-| データタイプ | 保護方法 |
-|--------------|----------|
-| パスワード | bcryptハッシュ（コストファクター12） |
-| PII | AES-256-GCM暗号化 |
-| セッション | 短い有効期限のJWT |
-| API通信 | TLS 1.2+必須 |
-| サービス間通信 | mTLS認証 |
+| データタイプ   | 保護方法                             |
+| -------------- | ------------------------------------ |
+| パスワード     | bcryptハッシュ（コストファクター12） |
+| PII            | AES-256-GCM暗号化                    |
+| セッション     | 短い有効期限のJWT                    |
+| API通信        | TLS 1.2+必須                         |
+| サービス間通信 | mTLS認証                             |
 
 ### セキュリティヘッダー
 
 すべてのレスポンスに含まれる：
+
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`

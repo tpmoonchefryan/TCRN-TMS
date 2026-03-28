@@ -13,7 +13,7 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.8-blue">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -93,11 +93,11 @@
 
 与传统的授权/拒绝系统不同，TCRN TMS 实现了三态模型：
 
-| 状态 | 描述 | 优先级 |
-|------|------|--------|
-| **Deny（拒绝）** | 明确禁止 | 最高 |
-| **Grant（授予）** | 明确允许 | 中等 |
-| **Unset（未设定）** | 未配置 | 最低 |
+| 状态                | 描述     | 优先级 |
+| ------------------- | -------- | ------ |
+| **Deny（拒绝）**    | 明确禁止 | 最高   |
+| **Grant（授予）**   | 明确允许 | 中等   |
+| **Unset（未设定）** | 未配置   | 最低   |
 
 **功能型角色**：`ADMIN`、`TALENT_MANAGER`、`VIEWER`、`TALENT_SELF`、`MODERATOR`、`SUPPORT`、`ANALYST`
 
@@ -131,11 +131,11 @@
 
 三种类型的日志，自动 PII 脱敏：
 
-| 日志类型 | 用途 | 保留期 |
-|----------|------|--------|
-| **变更日志** | UI 触发的业务变更 | 60 天（生产） |
-| **技术事件日志** | 系统事件和错误 | 60 天（生产） |
-| **集成日志** | 外部 API 调用和 Webhook | 60 天（生产） |
+| 日志类型         | 用途                    | 保留期        |
+| ---------------- | ----------------------- | ------------- |
+| **变更日志**     | UI 触发的业务变更       | 60 天（生产） |
+| **技术事件日志** | 系统事件和错误          | 60 天（生产） |
+| **集成日志**     | 外部 API 调用和 Webhook | 60 天（生产） |
 
 Loki 集成支持跨所有日志的全文搜索。
 
@@ -145,15 +145,15 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ### 客户管理
 
-| 功能 | 描述 |
-|------|------|
-| **个人档案** | 真实姓名、昵称、联系方式、出生日期 |
-| **企业档案** | 公司名称、注册号、税号 |
+| 功能         | 描述                                               |
+| ------------ | -------------------------------------------------- |
+| **个人档案** | 真实姓名、昵称、联系方式、出生日期                 |
+| **企业档案** | 公司名称、注册号、税号                             |
 | **平台身份** | YouTube、Bilibili、Twitch、Twitter UID，带历史追踪 |
-| **会员记录** | 类别、类型、等级，支持自动续费 |
-| **外部 ID** | 将客户映射到外部系统（CRM、工单系统） |
-| **批量导入** | CSV 导入，带验证和错误报告 |
-| **批量操作** | 批量更新标签/状态/会员 |
+| **会员记录** | 类别、类型、等级，支持自动续费                     |
+| **外部 ID**  | 将客户映射到外部系统（CRM、工单系统）              |
+| **批量导入** | CSV 导入，带验证和错误报告                         |
+| **批量操作** | 批量更新标签/状态/会员                             |
 
 ### 主页管理
 
@@ -173,13 +173,13 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ### 安全管理
 
-| 功能 | 描述 |
-|------|------|
-| **屏蔽词** | 关键词和正则表达式模式，用于内容过滤 |
-| **IP 规则** | 白名单/黑名单，支持 CIDR |
-| **请求限流** | 基于 Redis 的端点级限流 |
-| **UA 检测** | 屏蔽已知机器人/爬虫 User-Agent |
-| **技术指纹** | 隐性水印，用于数据泄露追踪 |
+| 功能         | 描述                                 |
+| ------------ | ------------------------------------ |
+| **屏蔽词**   | 关键词和正则表达式模式，用于内容过滤 |
+| **IP 规则**  | 白名单/黑名单，支持 CIDR             |
+| **请求限流** | 基于 Redis 的端点级限流              |
+| **UA 检测**  | 屏蔽已知机器人/爬虫 User-Agent       |
+| **技术指纹** | 隐性水印，用于数据泄露追踪           |
 
 ### 邮件服务
 
@@ -193,12 +193,12 @@ Loki 集成支持跨所有日志的全文搜索。
 
 生产级性能特性：
 
-| 特性 | 实现方式 |
-|-----|---------|
-| **动态导入** | 7+ 大型组件通过 `dynamic.tsx` 懒加载 |
+| 特性           | 实现方式                             |
+| -------------- | ------------------------------------ |
+| **动态导入**   | 7+ 大型组件通过 `dynamic.tsx` 懒加载 |
 | **列表虚拟化** | `@tanstack/react-virtual` 处理长列表 |
-| **图片优化** | `next/image` 配置远程模式 |
-| **记忆化** | 高频组件使用 `React.memo` |
+| **图片优化**   | `next/image` 配置远程模式            |
+| **记忆化**     | 高频组件使用 `React.memo`            |
 
 ### 可访问性
 
@@ -281,34 +281,35 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 
 ## 🛠️ 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| **前端** | Next.js | 16.1.1 |
-| | React | 19.1.1 |
-| | TypeScript | 5.8.3 |
-| | Tailwind CSS | 3.4.17 |
-| | Zustand | 5.0.5 |
-| | TanStack React Virtual | 3.13.18 |
-| **后端** | NestJS | 11.1.6 |
-| | Prisma ORM | 6.14.0 |
-| | BullMQ | 5.66.5 |
-| **数据库** | PostgreSQL | 16 |
-| | Redis | 7 |
-| **存储** | MinIO | Latest |
-| **消息** | NATS JetStream | 2 |
-| **可观测性** | OpenTelemetry | - |
-| | Prometheus | - |
-| | Grafana Loki | 2.9.0 |
-| | Grafana Tempo | - |
-| **部署** | Docker | - |
-| | Kubernetes | - |
+| 层级         | 技术                   | 版本    |
+| ------------ | ---------------------- | ------- |
+| **前端**     | Next.js                | 16.1.1  |
+|              | React                  | 19.1.1  |
+|              | TypeScript             | 5.9.3   |
+|              | Tailwind CSS           | 3.4.17  |
+|              | Zustand                | 5.0.5   |
+|              | TanStack React Virtual | 3.13.18 |
+| **后端**     | NestJS                 | 11.1.6  |
+|              | Prisma ORM             | 6.14.0  |
+|              | BullMQ                 | 5.66.5  |
+| **数据库**   | PostgreSQL             | 16      |
+|              | Redis                  | 7       |
+| **存储**     | MinIO                  | Latest  |
+| **消息**     | NATS JetStream         | 2       |
+| **可观测性** | OpenTelemetry          | -       |
+|              | Prometheus             | -       |
+|              | Grafana Loki           | 2.9.0   |
+|              | Grafana Tempo          | -       |
+| **部署**     | Docker                 | -       |
+|              | Kubernetes             | -       |
 
 以上基础设施的当前运行状态如下：
 
 - `NATS JetStream` 是当前本地与生产 Compose 栈中的真实运行依赖。
-- `Grafana Loki` 已有真实写入/查询代码路径，Compose 中也会启动对应服务，但日志推送与搜索仍需通过 `LOKI_ENABLED=true` 显式启用。
+- `Grafana Loki` 的 Compose 服务与 query/push helper 已存在，但当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
 - `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。
 - `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
+- `PII health check` 属于 Worker 的周期性依赖探测。除非显式设置 `ENABLE_SCHEDULED_JOBS=false`，worker 会每 60 秒为已配置的 PII endpoint 入队一次 `pii-health-check`。它应被视为依赖健康遥测，而不是主应用存活探针。
 
 ---
 
@@ -353,13 +354,13 @@ pnpm dev
 
 ### 访问地址
 
-| 服务 | URL |
-|------|-----|
-| Web 界面 | http://localhost:3000 |
-| API 接口 | http://localhost:4000 |
-| API 文档 | http://localhost:4000/api/docs |
-| MinIO 控制台 | http://localhost:9001 |
-| NATS 监控 | http://localhost:8222 |
+| 服务         | URL                            |
+| ------------ | ------------------------------ |
+| Web 界面     | http://localhost:3000          |
+| API 接口     | http://localhost:4000          |
+| API 文档     | http://localhost:4000/api/docs |
+| MinIO 控制台 | http://localhost:9001          |
+| NATS 监控    | http://localhost:8222          |
 
 ### 默认凭证
 
@@ -370,6 +371,13 @@ pnpm dev
 | 用户名 | ac_admin |
 | 密码 | (在种子文件中设置，见 `00-ac-tenant.ts`) |
 
+### 测试与验证边界
+
+- 仓库根目录的 `pnpm test:e2e` 运行的是 Playwright 浏览器套件，不是 API 的 Vitest integration runner。
+- 根目录的 `pnpm test:integration` 实际等价于 `pnpm --filter @tcrn/api test:integration`，使用 `vitest.integration.config.ts` 运行 API integration suite。
+- 根目录的 `pnpm test:isolation` 实际等价于 `pnpm --filter @tcrn/api test:isolation`，使用同一套 Vitest integration 配置运行 API isolation suite。
+- 对包含 schema 变更的发布，应把 `db:verify-schema-rollout` 与常规运行时健康检查一起执行，不要把 Playwright E2E 当作 direct schema rollout verification 的替代品。
+
 ---
 
 ## 🌐 生产环境部署
@@ -378,12 +386,12 @@ pnpm dev
 
 ### 基础设施要求
 
-| 组件 | 最低配置 | 推荐配置 |
-|------|----------|----------|
-| **应用服务器** | 2 vCPU, 4GB RAM | 4 vCPU, 8GB RAM |
-| **PostgreSQL** | 2 vCPU, 4GB RAM, 50GB SSD | 4 vCPU, 8GB RAM, 100GB SSD |
-| **Redis** | 1 vCPU, 1GB RAM | 2 vCPU, 2GB RAM |
-| **MinIO** | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
+| 组件           | 最低配置                   | 推荐配置                   |
+| -------------- | -------------------------- | -------------------------- |
+| **应用服务器** | 2 vCPU, 4GB RAM            | 4 vCPU, 8GB RAM            |
+| **PostgreSQL** | 2 vCPU, 4GB RAM, 50GB SSD  | 4 vCPU, 8GB RAM, 100GB SSD |
+| **Redis**      | 1 vCPU, 1GB RAM            | 2 vCPU, 2GB RAM            |
+| **MinIO**      | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
 
 ### 部署方式
 
@@ -711,13 +719,13 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 ### 服务器要求
 
-| 组件 | 规格 |
-|------|------|
+| 组件         | 规格                        |
+| ------------ | --------------------------- |
 | **操作系统** | Ubuntu 22.04 LTS 或更高版本 |
-| **CPU** | 2+ vCPU |
-| **内存** | 4GB+ |
-| **存储** | 50GB+ SSD（加密） |
-| **网络** | 与主服务器的私有网络或 VPN |
+| **CPU**      | 2+ vCPU                     |
+| **内存**     | 4GB+                        |
+| **存储**     | 50GB+ SSD（加密）           |
+| **网络**     | 与主服务器的私有网络或 VPN  |
 
 ### 步骤 1：准备 PII 服务器
 
@@ -959,32 +967,33 @@ curl -X POST /api/v1/auth/login \
 
 ### 主要端点
 
-| 类别 | 端点 | 描述 |
-|------|------|------|
-| **认证** | `POST /auth/login` | 使用凭证登录 |
-| | `POST /auth/refresh` | 刷新访问令牌 |
-| | `POST /auth/logout` | 登出并使令牌失效 |
-| **客户** | `GET /customers` | 获取客户列表（分页） |
-| | `POST /customers` | 创建客户档案 |
-| | `POST /customers/{id}/request-pii-access` | 获取 PII 访问令牌 |
-| **组织** | `GET /organization/tree` | 获取组织结构 |
-| | `POST /subsidiaries` | 创建分级目录 |
-| | `POST /talents` | 创建艺人 |
-| **棉花糖** | `GET /public/marshmallow/{path}/messages` | 获取公开消息 |
-| | `POST /public/marshmallow/{path}/submit` | 提交匿名问题 |
-| | `POST /marshmallow/messages/{id}/approve` | 审核通过消息 |
-| **报表** | `POST /reports/mfr/jobs` | 启动 MFR 生成 |
-| | `GET /reports/mfr/jobs/{id}` | 获取任务状态 |
-| | `GET /reports/mfr/jobs/{id}/download` | 获取下载 URL |
-| **日志** | `GET /logs/changes` | 查询变更日志 |
-| | `GET /logs/events` | 查询系统事件 |
-| | `GET /logs/search` | Loki 全文搜索 |
-| **合规** | `GET /compliance/data-map` | 数据映射报告 |
-| | `GET /compliance/privacy-impact` | 隐私影响评估 |
+| 类别       | 端点                                      | 描述                 |
+| ---------- | ----------------------------------------- | -------------------- |
+| **认证**   | `POST /auth/login`                        | 使用凭证登录         |
+|            | `POST /auth/refresh`                      | 刷新访问令牌         |
+|            | `POST /auth/logout`                       | 登出并使令牌失效     |
+| **客户**   | `GET /customers`                          | 获取客户列表（分页） |
+|            | `POST /customers`                         | 创建客户档案         |
+|            | `POST /customers/{id}/request-pii-access` | 获取 PII 访问令牌    |
+| **组织**   | `GET /organization/tree`                  | 获取组织结构         |
+|            | `POST /subsidiaries`                      | 创建分级目录         |
+|            | `POST /talents`                           | 创建艺人             |
+| **棉花糖** | `GET /public/marshmallow/{path}/messages` | 获取公开消息         |
+|            | `POST /public/marshmallow/{path}/submit`  | 提交匿名问题         |
+|            | `POST /marshmallow/messages/{id}/approve` | 审核通过消息         |
+| **报表**   | `POST /reports/mfr/jobs`                  | 启动 MFR 生成        |
+|            | `GET /reports/mfr/jobs/{id}`              | 获取任务状态         |
+|            | `GET /reports/mfr/jobs/{id}/download`     | 获取下载 URL         |
+| **日志**   | `GET /logs/changes`                       | 查询变更日志         |
+|            | `GET /logs/events`                        | 查询系统事件         |
+|            | `GET /logs/search`                        | Loki 全文搜索        |
+| **合规**   | `GET /compliance/data-map`                | 数据映射报告         |
+|            | `GET /compliance/privacy-impact`          | 隐私影响评估         |
 
 ### 响应格式
 
 **成功：**
+
 ```json
 {
   "success": true,
@@ -998,6 +1007,7 @@ curl -X POST /api/v1/auth/login \
 ```
 
 **错误：**
+
 ```json
 {
   "success": false,
@@ -1023,23 +1033,25 @@ curl -X POST /api/v1/auth/login \
 ### 双因素认证
 
 基于 TOTP 的 2FA，带恢复码：
+
 - 设置时生成 10 个一次性恢复码
 - 恢复码以 SHA256 哈希存储
 - 租户管理员可强制所有用户启用 2FA
 
 ### 数据保护
 
-| 数据类型 | 保护方式 |
-|----------|----------|
-| 密码 | bcrypt 哈希（cost factor 12） |
-| PII | AES-256-GCM 加密 |
-| 会话 | 短有效期 JWT |
-| API 通信 | 要求 TLS 1.2+ |
-| 服务间通信 | mTLS 认证 |
+| 数据类型   | 保护方式                      |
+| ---------- | ----------------------------- |
+| 密码       | bcrypt 哈希（cost factor 12） |
+| PII        | AES-256-GCM 加密              |
+| 会话       | 短有效期 JWT                  |
+| API 通信   | 要求 TLS 1.2+                 |
+| 服务间通信 | mTLS 认证                     |
 
 ### 安全响应头
 
 所有响应包含：
+
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`

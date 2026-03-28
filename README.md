@@ -13,7 +13,7 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.8-blue">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -93,11 +93,11 @@ Platform (AC Tenant)
 
 Unlike traditional Grant/Deny systems, TCRN TMS implements a three-state model:
 
-| State | Description | Priority |
-|-------|-------------|----------|
-| **Deny** | Explicitly forbidden | Highest |
-| **Grant** | Explicitly allowed | Medium |
-| **Unset** | Not configured | Lowest |
+| State     | Description          | Priority |
+| --------- | -------------------- | -------- |
+| **Deny**  | Explicitly forbidden | Highest  |
+| **Grant** | Explicitly allowed   | Medium   |
+| **Unset** | Not configured       | Lowest   |
 
 **Functional Roles**: `ADMIN`, `TALENT_MANAGER`, `VIEWER`, `TALENT_SELF`, `MODERATOR`, `SUPPORT`, `ANALYST`
 
@@ -131,11 +131,11 @@ Generate comprehensive **Membership Feedback Reports** with:
 
 Three types of logs with automatic PII masking:
 
-| Log Type | Purpose | Retention |
-|----------|---------|-----------|
-| **Change Log** | UI-triggered business changes | 60 days (prod) |
-| **Technical Event Log** | System events and errors | 60 days (prod) |
-| **Integration Log** | External API calls and webhooks | 60 days (prod) |
+| Log Type                | Purpose                         | Retention      |
+| ----------------------- | ------------------------------- | -------------- |
+| **Change Log**          | UI-triggered business changes   | 60 days (prod) |
+| **Technical Event Log** | System events and errors        | 60 days (prod) |
+| **Integration Log**     | External API calls and webhooks | 60 days (prod) |
 
 Loki integration enables full-text search across all logs.
 
@@ -145,15 +145,15 @@ Loki integration enables full-text search across all logs.
 
 ### Customer Management
 
-| Feature | Description |
-|---------|-------------|
-| **Individual Profiles** | Real name, nickname, contact info, birth date |
-| **Company Profiles** | Legal name, registration number, VAT ID |
+| Feature                 | Description                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| **Individual Profiles** | Real name, nickname, contact info, birth date                 |
+| **Company Profiles**    | Legal name, registration number, VAT ID                       |
 | **Platform Identities** | YouTube, Bilibili, Twitch, Twitter UIDs with history tracking |
-| **Membership Records** | Class, type, level with auto-renewal support |
-| **External IDs** | Map customers to external systems (CRM, ticketing) |
-| **Bulk Import** | CSV import with validation and error reporting |
-| **Batch Operations** | Bulk tag/status/membership updates |
+| **Membership Records**  | Class, type, level with auto-renewal support                  |
+| **External IDs**        | Map customers to external systems (CRM, ticketing)            |
+| **Bulk Import**         | CSV import with validation and error reporting                |
+| **Batch Operations**    | Bulk tag/status/membership updates                            |
 
 ### Homepage Management
 
@@ -173,13 +173,13 @@ Drag-and-drop homepage builder for talents:
 
 ### Security Management
 
-| Feature | Description |
-|---------|-------------|
-| **Blocklist** | Keyword and regex patterns for content filtering |
-| **IP Rules** | Whitelist/blacklist with CIDR support |
-| **Rate Limiting** | Redis-backed per-endpoint rate limits |
-| **UA Detection** | Block known bot/scraper user agents |
-| **Technical Fingerprint** | Hidden watermarks for data leak tracking |
+| Feature                   | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| **Blocklist**             | Keyword and regex patterns for content filtering |
+| **IP Rules**              | Whitelist/blacklist with CIDR support            |
+| **Rate Limiting**         | Redis-backed per-endpoint rate limits            |
+| **UA Detection**          | Block known bot/scraper user agents              |
+| **Technical Fingerprint** | Hidden watermarks for data leak tracking         |
 
 ### Email Service
 
@@ -193,12 +193,12 @@ Integrated with Tencent Cloud SES:
 
 Production-grade performance features:
 
-| Feature | Implementation |
-|---------|----------------|
-| **Dynamic Imports** | 7+ large components lazy-loaded via `dynamic.tsx` |
-| **List Virtualization** | `@tanstack/react-virtual` for long lists |
-| **Image Optimization** | `next/image` with remote patterns configured |
-| **Memoization** | `React.memo` on high-frequency components |
+| Feature                 | Implementation                                    |
+| ----------------------- | ------------------------------------------------- |
+| **Dynamic Imports**     | 7+ large components lazy-loaded via `dynamic.tsx` |
+| **List Virtualization** | `@tanstack/react-virtual` for long lists          |
+| **Image Optimization**  | `next/image` with remote patterns configured      |
+| **Memoization**         | `React.memo` on high-frequency components         |
 
 ### Accessibility
 
@@ -281,34 +281,35 @@ End-to-end type-safe validation with Zod:
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology | Version |
-|-------|------------|---------|
-| **Frontend** | Next.js | 16.1.1 |
-| | React | 19.1.1 |
-| | TypeScript | 5.8.3 |
-| | Tailwind CSS | 3.4.17 |
-| | Zustand | 5.0.5 |
-| | TanStack React Virtual | 3.13.18 |
-| **Backend** | NestJS | 11.1.6 |
-| | Prisma ORM | 6.14.0 |
-| | BullMQ | 5.66.5 |
-| **Database** | PostgreSQL | 16 |
-| | Redis | 7 |
-| **Storage** | MinIO | Latest |
-| **Messaging** | NATS JetStream | 2 |
-| **Observability** | OpenTelemetry | - |
-| | Prometheus | - |
-| | Grafana Loki | 2.9.0 |
-| | Grafana Tempo | - |
-| **Deployment** | Docker | - |
-| | Kubernetes | - |
+| Layer             | Technology             | Version |
+| ----------------- | ---------------------- | ------- |
+| **Frontend**      | Next.js                | 16.1.1  |
+|                   | React                  | 19.1.1  |
+|                   | TypeScript             | 5.9.3   |
+|                   | Tailwind CSS           | 3.4.17  |
+|                   | Zustand                | 5.0.5   |
+|                   | TanStack React Virtual | 3.13.18 |
+| **Backend**       | NestJS                 | 11.1.6  |
+|                   | Prisma ORM             | 6.14.0  |
+|                   | BullMQ                 | 5.66.5  |
+| **Database**      | PostgreSQL             | 16      |
+|                   | Redis                  | 7       |
+| **Storage**       | MinIO                  | Latest  |
+| **Messaging**     | NATS JetStream         | 2       |
+| **Observability** | OpenTelemetry          | -       |
+|                   | Prometheus             | -       |
+|                   | Grafana Loki           | 2.9.0   |
+|                   | Grafana Tempo          | -       |
+| **Deployment**    | Docker                 | -       |
+|                   | Kubernetes             | -       |
 
 Current runtime status for the infrastructure above:
 
 - `NATS JetStream` is an active dependency in the current local and production Compose stack.
-- `Grafana Loki` has real push/query paths and a running Compose service, but log shipping and search are still opt-in through `LOKI_ENABLED=true`.
+- `Grafana Loki` has a running Compose service and real query/push helpers, but the default source of truth is still the tenant PostgreSQL log tables. `/api/v1/logs/search*` reads Loki and returns empty results when `LOKI_ENABLED=false`; the API/worker-side Loki push helpers are not the default producer path today.
 - `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned for future rollout; distributed tracing is not enabled by default in the current runtime.
 - `Prometheus` is a reserved roadmap item and is not part of the current Compose deployment.
+- `PII health check` is a scheduled worker dependency probe. Unless `ENABLE_SCHEDULED_JOBS=false`, the worker enqueues `pii-health-check` every 60 seconds for configured PII endpoints. Treat it as dependency telemetry, not the primary app liveness signal.
 
 ---
 
@@ -353,13 +354,13 @@ pnpm dev
 
 ### Access Points
 
-| Service | URL |
-|---------|-----|
-| Web UI | http://localhost:3000 |
-| API | http://localhost:4000 |
-| API Docs | http://localhost:4000/api/docs |
-| MinIO Console | http://localhost:9001 |
-| NATS Monitor | http://localhost:8222 |
+| Service       | URL                            |
+| ------------- | ------------------------------ |
+| Web UI        | http://localhost:3000          |
+| API           | http://localhost:4000          |
+| API Docs      | http://localhost:4000/api/docs |
+| MinIO Console | http://localhost:9001          |
+| NATS Monitor  | http://localhost:8222          |
 
 ### Default Credentials
 
@@ -370,6 +371,13 @@ pnpm dev
 | Username | ac_admin |
 | Password | (set during seed, see `00-ac-tenant.ts`) |
 
+### Testing And Verification Boundary
+
+- `pnpm test:e2e` at the repo root runs the Playwright browser suite. It is not the API Vitest integration runner.
+- `pnpm test:integration` at the repo root is an alias for `pnpm --filter @tcrn/api test:integration` and runs the API integration suite with `vitest.integration.config.ts`.
+- `pnpm test:isolation` at the repo root is an alias for `pnpm --filter @tcrn/api test:isolation` and runs the API isolation suite with the same Vitest integration config.
+- For schema-changing releases, run `db:verify-schema-rollout` together with the normal runtime health check; do not treat Playwright E2E as a substitute for direct schema rollout verification.
+
 ---
 
 ## 🌐 Production Deployment
@@ -378,12 +386,12 @@ This section covers deploying the main TCRN TMS application to a cloud server.
 
 ### Infrastructure Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **Application Server** | 2 vCPU, 4GB RAM | 4 vCPU, 8GB RAM |
-| **PostgreSQL** | 2 vCPU, 4GB RAM, 50GB SSD | 4 vCPU, 8GB RAM, 100GB SSD |
-| **Redis** | 1 vCPU, 1GB RAM | 2 vCPU, 2GB RAM |
-| **MinIO** | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
+| Component              | Minimum                    | Recommended                |
+| ---------------------- | -------------------------- | -------------------------- |
+| **Application Server** | 2 vCPU, 4GB RAM            | 4 vCPU, 8GB RAM            |
+| **PostgreSQL**         | 2 vCPU, 4GB RAM, 50GB SSD  | 4 vCPU, 8GB RAM, 100GB SSD |
+| **Redis**              | 1 vCPU, 1GB RAM            | 2 vCPU, 2GB RAM            |
+| **MinIO**              | 2 vCPU, 2GB RAM, 100GB SSD | 4 vCPU, 4GB RAM, 500GB SSD |
 
 ### Deployment Options
 
@@ -711,12 +719,12 @@ The PII Proxy Service must be deployed on a **separate server** from the main ap
 
 ### Server Requirements
 
-| Component | Specification |
-|-----------|---------------|
-| **OS** | Ubuntu 22.04 LTS or later |
-| **CPU** | 2+ vCPU |
-| **RAM** | 4GB+ |
-| **Storage** | 50GB+ SSD (encrypted) |
+| Component   | Specification                         |
+| ----------- | ------------------------------------- |
+| **OS**      | Ubuntu 22.04 LTS or later             |
+| **CPU**     | 2+ vCPU                               |
+| **RAM**     | 4GB+                                  |
+| **Storage** | 50GB+ SSD (encrypted)                 |
 | **Network** | Private network or VPN to main server |
 
 ### Step 1: Prepare the PII Server
@@ -959,32 +967,33 @@ curl -X POST /api/v1/auth/login \
 
 ### Key Endpoints
 
-| Category | Endpoint | Description |
-|----------|----------|-------------|
-| **Auth** | `POST /auth/login` | Login with credentials |
-| | `POST /auth/refresh` | Refresh access token |
-| | `POST /auth/logout` | Logout and invalidate tokens |
-| **Customers** | `GET /customers` | List customers with pagination |
-| | `POST /customers` | Create customer profile |
-| | `POST /customers/{id}/request-pii-access` | Get PII access token |
-| **Organization** | `GET /organization/tree` | Get organization structure |
-| | `POST /subsidiaries` | Create subsidiary |
-| | `POST /talents` | Create talent |
-| **Marshmallow** | `GET /public/marshmallow/{path}/messages` | Get public messages |
-| | `POST /public/marshmallow/{path}/submit` | Submit anonymous question |
-| | `POST /marshmallow/messages/{id}/approve` | Approve message |
-| **Reports** | `POST /reports/mfr/jobs` | Start MFR generation |
-| | `GET /reports/mfr/jobs/{id}` | Get job status |
-| | `GET /reports/mfr/jobs/{id}/download` | Get download URL |
-| **Logs** | `GET /logs/changes` | Query change logs |
-| | `GET /logs/events` | Query system events |
-| | `GET /logs/search` | Loki full-text search |
-| **Compliance** | `GET /compliance/data-map` | Data mapping report |
-| | `GET /compliance/privacy-impact` | Privacy impact assessment |
+| Category         | Endpoint                                  | Description                    |
+| ---------------- | ----------------------------------------- | ------------------------------ |
+| **Auth**         | `POST /auth/login`                        | Login with credentials         |
+|                  | `POST /auth/refresh`                      | Refresh access token           |
+|                  | `POST /auth/logout`                       | Logout and invalidate tokens   |
+| **Customers**    | `GET /customers`                          | List customers with pagination |
+|                  | `POST /customers`                         | Create customer profile        |
+|                  | `POST /customers/{id}/request-pii-access` | Get PII access token           |
+| **Organization** | `GET /organization/tree`                  | Get organization structure     |
+|                  | `POST /subsidiaries`                      | Create subsidiary              |
+|                  | `POST /talents`                           | Create talent                  |
+| **Marshmallow**  | `GET /public/marshmallow/{path}/messages` | Get public messages            |
+|                  | `POST /public/marshmallow/{path}/submit`  | Submit anonymous question      |
+|                  | `POST /marshmallow/messages/{id}/approve` | Approve message                |
+| **Reports**      | `POST /reports/mfr/jobs`                  | Start MFR generation           |
+|                  | `GET /reports/mfr/jobs/{id}`              | Get job status                 |
+|                  | `GET /reports/mfr/jobs/{id}/download`     | Get download URL               |
+| **Logs**         | `GET /logs/changes`                       | Query change logs              |
+|                  | `GET /logs/events`                        | Query system events            |
+|                  | `GET /logs/search`                        | Loki full-text search          |
+| **Compliance**   | `GET /compliance/data-map`                | Data mapping report            |
+|                  | `GET /compliance/privacy-impact`          | Privacy impact assessment      |
 
 ### Response Format
 
 **Success:**
+
 ```json
 {
   "success": true,
@@ -998,6 +1007,7 @@ curl -X POST /api/v1/auth/login \
 ```
 
 **Error:**
+
 ```json
 {
   "success": false,
@@ -1023,23 +1033,25 @@ curl -X POST /api/v1/auth/login \
 ### Two-Factor Authentication
 
 TOTP-based 2FA with recovery codes:
+
 - 10 one-time recovery codes generated on setup
 - Recovery codes stored as SHA256 hashes
 - Tenant admins can enforce 2FA for all users
 
 ### Data Protection
 
-| Data Type | Protection Method |
-|-----------|-------------------|
-| Passwords | bcrypt hash (cost factor 12) |
-| PII | AES-256-GCM encryption |
-| Sessions | JWT with short expiry |
-| API Communication | TLS 1.2+ required |
-| Service-to-Service | mTLS authentication |
+| Data Type          | Protection Method            |
+| ------------------ | ---------------------------- |
+| Passwords          | bcrypt hash (cost factor 12) |
+| PII                | AES-256-GCM encryption       |
+| Sessions           | JWT with short expiry        |
+| API Communication  | TLS 1.2+ required            |
+| Service-to-Service | mTLS authentication          |
 
 ### Security Headers
 
 All responses include:
+
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`
