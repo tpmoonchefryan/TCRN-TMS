@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -17,45 +16,23 @@ import {
     Label,
     Switch,
 } from '@/components/ui';
-import { securityApi } from '@/lib/api/modules/security';
+import {
+  type BlocklistEntryRecord,
+  type BlocklistScopePayload,
+  type CreateBlocklistPayload,
+  securityApi,
+  type SecurityScopeType,
+  type UpdateBlocklistPayload,
+} from '@/lib/api/modules/security';
 
-import { BlocklistForm } from './BlocklistForm';
+import { BlocklistForm, type BlocklistFormValues } from './BlocklistForm';
 import { BlocklistTable } from './BlocklistTable';
 import { PatternTester } from './PatternTester';
 
-export interface BlocklistEntry {
-  id: string;
-  ownerType: string;
-  ownerId: string | null;
-  pattern: string;
-  patternType: 'keyword' | 'regex' | 'wildcard';
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  description: string | null;
-  category: string | null;
-  severity: 'low' | 'medium' | 'high';
-  action: 'reject' | 'flag' | 'replace';
-  replacement: string;
-  scope: string[];
-  inherit: boolean;
-  sortOrder: number;
-  isActive: boolean;
-  isForceUse: boolean;
-  isSystem: boolean;
-  matchCount: number;
-  lastMatchedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  version: number;
-  // Inheritance metadata
-  isInherited: boolean;
-  isDisabledHere: boolean;
-  canDisable: boolean;
-}
+export type BlocklistEntry = BlocklistEntryRecord;
 
 interface BlocklistManagerProps {
-  scopeType?: 'tenant' | 'subsidiary' | 'talent';
+  scopeType?: SecurityScopeType;
   scopeId?: string;
 }
 
@@ -78,39 +55,7 @@ export function BlocklistManager({ scopeType = 'tenant', scopeId }: BlocklistMan
         includeDisabled: showDisabled,
       });
       if (response.success && response.data) {
-        // Transform API response to component format
-        const items = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as any).items || [];
-        setEntries(items.map((item: any) => ({
-          id: item.id,
-          ownerType: item.owner_type || item.ownerType || 'tenant',
-          ownerId: item.owner_id || item.ownerId || null,
-          pattern: item.pattern,
-          patternType: item.pattern_type || item.patternType || 'keyword',
-          nameEn: item.name_en || item.nameEn || item.name || '',
-          nameZh: item.name_zh || item.nameZh || null,
-          nameJa: item.name_ja || item.nameJa || null,
-          description: item.description || null,
-          category: item.category || null,
-          severity: item.severity || 'medium',
-          action: item.action || 'reject',
-          replacement: item.replacement || '***',
-          scope: item.scope || ['marshmallow'],
-          inherit: item.inherit ?? true,
-          sortOrder: item.sort_order ?? item.sortOrder ?? 0,
-          isActive: item.is_active ?? item.isActive ?? true,
-          isForceUse: item.is_force_use ?? item.isForceUse ?? false,
-          isSystem: item.is_system ?? item.isSystem ?? false,
-          matchCount: item.match_count || item.matchCount || 0,
-          lastMatchedAt: item.last_matched_at || item.lastMatchedAt || null,
-          createdAt: item.created_at || item.createdAt || '',
-          updatedAt: item.updated_at || item.updatedAt || '',
-          version: item.version || 1,
-          isInherited: item.isInherited ?? false,
-          isDisabledHere: item.isDisabledHere ?? false,
-          canDisable: item.canDisable ?? false,
-        })));
+        setEntries(response.data.items);
       }
     } catch (error) {
       console.error('Failed to fetch blocklist entries:', error);
@@ -123,43 +68,59 @@ export function BlocklistManager({ scopeType = 'tenant', scopeId }: BlocklistMan
     fetchEntries();
   }, [fetchEntries]);
 
-  const handleCreate = async (data: Partial<BlocklistEntry>) => {
+  const handleCreate = async (data: BlocklistFormValues) => {
     try {
-      await securityApi.createBlocklistEntry({
+      const payload: CreateBlocklistPayload = {
         ownerType: scopeType,
         ownerId: scopeId,
-        pattern: data.pattern!,
-        patternType: data.patternType || 'keyword',
-        nameEn: data.nameEn!,
-        action: data.action || 'reject',
-        severity: data.severity || 'medium',
-        scope: data.scope || ['marshmallow'],
-        sortOrder: data.sortOrder ?? 0,
-        isForceUse: data.isForceUse ?? false,
-      });
+        pattern: data.pattern,
+        patternType: data.patternType,
+        nameEn: data.nameEn,
+        nameZh: data.nameZh,
+        nameJa: data.nameJa,
+        description: data.description,
+        category: data.category,
+        action: data.action,
+        severity: data.severity,
+        replacement: data.replacement,
+        scope: data.scope,
+        inherit: data.inherit,
+      };
+
+      await securityApi.createBlocklistEntry(payload);
       setShowForm(false);
-      fetchEntries();
+      await fetchEntries();
     } catch (error) {
       console.error('Failed to create blocklist entry:', error);
     }
   };
 
-  const handleUpdate = async (id: string, data: Partial<BlocklistEntry>) => {
+  const handleUpdate = async (id: string, data: BlocklistFormValues) => {
     try {
-      await securityApi.updateBlocklistEntry(id, {
+      if (data.version === undefined) {
+        console.error('Missing blocklist entry version for update');
+        return;
+      }
+
+      const payload: UpdateBlocklistPayload = {
         pattern: data.pattern,
-        pattern_type: data.patternType,
-        name_en: data.nameEn,
+        patternType: data.patternType,
+        nameEn: data.nameEn,
+        nameZh: data.nameZh,
+        nameJa: data.nameJa,
+        description: data.description,
+        category: data.category,
         action: data.action,
         severity: data.severity,
+        replacement: data.replacement,
         scope: data.scope,
-        is_active: data.isActive,
-        sort_order: data.sortOrder,
-        is_force_use: data.isForceUse,
+        inherit: data.inherit,
         version: data.version,
-      });
+      };
+
+      await securityApi.updateBlocklistEntry(id, payload);
       setEditingEntry(null);
-      fetchEntries();
+      await fetchEntries();
     } catch (error) {
       console.error('Failed to update blocklist entry:', error);
     }
@@ -170,26 +131,21 @@ export function BlocklistManager({ scopeType = 'tenant', scopeId }: BlocklistMan
     
     try {
       await securityApi.deleteBlocklistEntry(id);
-      fetchEntries();
+      await fetchEntries();
     } catch (error) {
       console.error('Failed to delete blocklist entry:', error);
     }
   };
 
-  const handleToggleActive = async (entry: BlocklistEntry) => {
-    await handleUpdate(entry.id, {
-      ...entry,
-      isActive: !entry.isActive,
-    });
-  };
-
   const handleDisable = async (entry: BlocklistEntry) => {
     try {
-      await securityApi.disableBlocklistEntry(entry.id, {
+      const payload: BlocklistScopePayload = {
         scopeType,
         scopeId,
-      });
-      fetchEntries();
+      };
+
+      await securityApi.disableBlocklistEntry(entry.id, payload);
+      await fetchEntries();
     } catch (error) {
       console.error('Failed to disable blocklist entry:', error);
     }
@@ -197,11 +153,13 @@ export function BlocklistManager({ scopeType = 'tenant', scopeId }: BlocklistMan
 
   const handleEnable = async (entry: BlocklistEntry) => {
     try {
-      await securityApi.enableBlocklistEntry(entry.id, {
+      const payload: BlocklistScopePayload = {
         scopeType,
         scopeId,
-      });
-      fetchEntries();
+      };
+
+      await securityApi.enableBlocklistEntry(entry.id, payload);
+      await fetchEntries();
     } catch (error) {
       console.error('Failed to enable blocklist entry:', error);
     }
@@ -266,7 +224,6 @@ export function BlocklistManager({ scopeType = 'tenant', scopeId }: BlocklistMan
             scopeId={scopeId}
             onEdit={setEditingEntry}
             onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
             onDisable={handleDisable}
             onEnable={handleEnable}
           />

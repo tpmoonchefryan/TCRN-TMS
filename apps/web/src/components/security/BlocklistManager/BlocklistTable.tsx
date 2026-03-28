@@ -43,7 +43,6 @@ interface BlocklistTableProps {
   scopeId?: string;
   onEdit: (entry: BlocklistEntry) => void;
   onDelete: (id: string) => void;
-  onToggleActive: (entry: BlocklistEntry) => void;
   onDisable?: (entry: BlocklistEntry) => void;
   onEnable?: (entry: BlocklistEntry) => void;
 }
@@ -55,7 +54,6 @@ export function BlocklistTable({
   scopeId: _scopeId,
   onEdit,
   onDelete,
-  onToggleActive,
   onDisable,
   onEnable,
 }: BlocklistTableProps) {
@@ -187,36 +185,19 @@ export function BlocklistTable({
               className={`${!entry.isActive || entry.isDisabledHere ? 'opacity-50' : ''}`}
             >
               <TableCell>
-                {/* Status: only show toggle for non-inherited entries */}
-                {!entry.isInherited ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => onToggleActive(entry)}
-                      >
-                        {entry.isActive ? (
-                          <Power className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <PowerOff className="h-4 w-4 text-gray-400" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {entry.isActive ? t('clickToDeactivate') : t('clickToActivate')}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <div className="h-8 w-8 flex items-center justify-center">
-                    {entry.isDisabledHere ? (
+                <div className="h-8 w-8 flex items-center justify-center">
+                  {entry.isInherited ? (
+                    entry.isDisabledHere ? (
                       <Ban className="h-4 w-4 text-gray-400" />
                     ) : (
                       <Power className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
-                )}
+                    )
+                  ) : entry.isActive ? (
+                    <Power className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <PowerOff className="h-4 w-4 text-gray-400" />
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">

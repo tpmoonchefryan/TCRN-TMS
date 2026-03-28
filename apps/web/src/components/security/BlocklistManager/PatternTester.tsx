@@ -7,32 +7,27 @@ import { AlertTriangle, CheckCircle2, Play, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-// Local enum to avoid import issues with @tcrn/shared in client components
-const BlocklistPatternType = {
-  KEYWORD: 'keyword',
-  REGEX: 'regex',
-  WILDCARD: 'wildcard',
-} as const;
-
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea } from '@/components/ui';
-import { securityApi } from '@/lib/api/modules/security';
+import {
+  type BlocklistPatternType,
+  securityApi,
+  type TestBlocklistPatternResponse,
+} from '@/lib/api/modules/security';
 import { useZodForm } from '@/lib/form';
 
 interface PatternTesterProps {
   defaultPattern?: string;
-  defaultPatternType?: string;
+  defaultPatternType?: BlocklistPatternType;
 }
+
+const DEFAULT_PATTERN_TYPE: BlocklistPatternType = 'keyword';
 
 export function PatternTester({
   defaultPattern = '',
-  defaultPatternType = BlocklistPatternType.KEYWORD,
+  defaultPatternType = DEFAULT_PATTERN_TYPE,
 }: PatternTesterProps) {
   const t = useTranslations('security');
-  const [result, setResult] = useState<{
-    matched: boolean;
-    positions: number[];
-    highlightedContent: string;
-  } | null>(null);
+  const [result, setResult] = useState<TestBlocklistPatternResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,9 +41,11 @@ export function PatternTester({
 
   const { register, handleSubmit } = form;
 
-  // Keep form synced with props if needed, but for now simple state
-  
-  const onTest = async (data: { pattern: string; patternType: string; testContent: string }) => {
+  const onTest = async (data: {
+    pattern: string;
+    patternType: BlocklistPatternType;
+    testContent: string;
+  }) => {
     setIsLoading(true);
     setError(null);
 
@@ -64,39 +61,7 @@ export function PatternTester({
       const response = await securityApi.testBlocklistPattern(testContent, pattern, patternType);
       
       if (response.success && response.data) {
-        const apiResult = response.data;
-        
-        // If API returns highlighted_content, use it; otherwise build client-side
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let highlightedContent = (apiResult as any).highlighted_content || (apiResult as any).highlightedContent;
-        
-        if (!highlightedContent && apiResult.matched) {
-          // Fallback: build highlighting client-side
-          try {
-            let regex: RegExp | null = null;
-            if (patternType === 'keyword') {
-              regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            } else if (patternType === 'regex') {
-              regex = new RegExp(pattern, 'gi');
-            } else if (patternType === 'wildcard') {
-              const regexStr = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
-              regex = new RegExp(regexStr, 'gi');
-            }
-            if (regex) {
-              highlightedContent = testContent.replace(regex, (match: string) => 
-                `<span class="bg-red-200 text-red-900 px-0.5 rounded border border-red-300">${match}</span>`
-              );
-            }
-          } catch {
-            highlightedContent = testContent;
-          }
-        }
-        
-        setResult({
-          matched: apiResult.matched,
-          positions: apiResult.positions || [],
-          highlightedContent: highlightedContent || testContent,
-        });
+        setResult(response.data);
       } else {
         setError(t('testFailed'));
       }
@@ -130,9 +95,9 @@ export function PatternTester({
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             {...register('patternType')}
             >
-                <option value={BlocklistPatternType.KEYWORD}>{t('keyword')}</option>
-                <option value={BlocklistPatternType.REGEX}>{t('regex')}</option>
-                <option value={BlocklistPatternType.WILDCARD}>{t('wildcard')}</option>
+                <option value="keyword">{t('keyword')}</option>
+                <option value="regex">{t('regex')}</option>
+                <option value="wildcard">{t('wildcard')}</option>
             </select>
           </div>
         </div>

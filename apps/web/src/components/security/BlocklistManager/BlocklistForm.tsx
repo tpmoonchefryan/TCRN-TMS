@@ -19,14 +19,19 @@ import {
     Label,
     Textarea,
 } from '@/components/ui';
+import type {
+  BlocklistAction,
+  BlocklistPatternType,
+  BlocklistSeverity,
+} from '@/lib/api/modules/security';
 import { useZodForm } from '@/lib/form';
 
-import { BlocklistEntry } from './index';
+import type { BlocklistEntry } from './index';
 
 
 interface BlocklistFormProps {
   entry: BlocklistEntry | null;
-  onSubmit: (data: Partial<BlocklistEntry>) => void;
+  onSubmit: (data: BlocklistFormValues) => void;
   onCancel: () => void;
 }
 
@@ -47,6 +52,13 @@ const BlocklistFormSchema = CreateBlocklistSchema.pick({
 });
 
 type FormData = z.infer<typeof BlocklistFormSchema>;
+
+export interface BlocklistFormValues extends FormData {
+  patternType: BlocklistPatternType;
+  severity: BlocklistSeverity;
+  action: BlocklistAction;
+  version?: number;
+}
 
 const SCOPE_OPTIONS = [
   'marshmallow',
@@ -95,7 +107,6 @@ export function BlocklistForm({ entry, onSubmit, onCancel }: BlocklistFormProps)
     onSubmit({
       ...data,
       version: entry?.version,
-      isActive: entry?.isActive ?? true,
     });
   };
 

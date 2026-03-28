@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { apiClient } from '../core';
 
@@ -15,6 +14,132 @@ export interface LokiSearchEntry {
 export interface LokiSearchResponse {
   entries: LokiSearchEntry[];
   stats?: Record<string, unknown>;
+}
+
+export interface FingerprintRecord {
+  fingerprint: string;
+  shortFingerprint: string;
+  version: string;
+  generatedAt: string;
+}
+
+export type SecurityScopeType = 'tenant' | 'subsidiary' | 'talent';
+export type BlocklistPatternType = 'keyword' | 'regex' | 'wildcard';
+export type BlocklistSeverity = 'low' | 'medium' | 'high';
+export type BlocklistAction = 'reject' | 'flag' | 'replace';
+
+export interface BlocklistEntryRecord {
+  id: string;
+  ownerType: SecurityScopeType;
+  ownerId: string | null;
+  pattern: string;
+  patternType: BlocklistPatternType;
+  nameEn: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
+  description?: string | null;
+  category?: string | null;
+  severity: BlocklistSeverity;
+  action: BlocklistAction;
+  replacement: string;
+  scope: string[];
+  inherit: boolean;
+  sortOrder: number;
+  isActive: boolean;
+  isForceUse: boolean;
+  isSystem: boolean;
+  matchCount: number;
+  lastMatchedAt: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy: string | null;
+  version: number;
+  isInherited?: boolean;
+  isDisabledHere?: boolean;
+  canDisable?: boolean;
+}
+
+export interface BlocklistEntryListPayload {
+  items: BlocklistEntryRecord[];
+  meta: {
+    total: number;
+  };
+}
+
+export interface BlocklistListQuery {
+  scopeType?: SecurityScopeType;
+  scopeId?: string;
+  category?: string;
+  patternType?: BlocklistPatternType;
+  scope?: string;
+  includeInherited?: boolean;
+  includeDisabled?: boolean;
+  includeInactive?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateBlocklistPayload {
+  ownerType: SecurityScopeType;
+  ownerId?: string;
+  pattern: string;
+  patternType: BlocklistPatternType;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  description?: string;
+  category?: string;
+  severity?: BlocklistSeverity;
+  action?: BlocklistAction;
+  replacement?: string;
+  scope?: string[];
+  inherit?: boolean;
+  sortOrder?: number;
+  isForceUse?: boolean;
+}
+
+export interface UpdateBlocklistPayload {
+  pattern?: string;
+  patternType?: BlocklistPatternType;
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  description?: string;
+  category?: string;
+  severity?: BlocklistSeverity;
+  action?: BlocklistAction;
+  replacement?: string;
+  scope?: string[];
+  inherit?: boolean;
+  sortOrder?: number;
+  isForceUse?: boolean;
+  version: number;
+}
+
+export interface BlocklistDeleteResponse {
+  id: string;
+  deleted: boolean;
+}
+
+export interface BlocklistScopePayload {
+  scopeType: SecurityScopeType;
+  scopeId?: string;
+}
+
+export interface DisableBlocklistResponse {
+  id: string;
+  disabled: boolean;
+}
+
+export interface EnableBlocklistResponse {
+  id: string;
+  enabled: boolean;
+}
+
+export interface TestBlocklistPatternResponse {
+  matched: boolean;
+  positions: number[];
+  highlightedContent: string;
 }
 
 export type IpRuleType = 'whitelist' | 'blacklist';
@@ -79,69 +204,32 @@ export interface IpAccessCheckResponse {
 }
 
 export const securityApi = {
-  generateFingerprint: () => apiClient.post<any>('/api/v1/security/fingerprint', {}),
+  generateFingerprint: () => apiClient.post<FingerprintRecord>('/api/v1/security/fingerprint', {}),
 
-  getBlocklistEntries: (query?: {
-    scopeType?: string;
-    scopeId?: string;
-    includeInherited?: boolean;
-    includeDisabled?: boolean;
-    includeInactive?: boolean;
-  }) => {
-    const params = new URLSearchParams();
-    if (query?.scopeType) params.append('scopeType', query.scopeType);
-    if (query?.scopeId) params.append('scopeId', query.scopeId);
-    if (query?.includeInherited !== undefined) {
-      params.append('includeInherited', String(query.includeInherited));
-    }
-    if (query?.includeDisabled !== undefined) {
-      params.append('includeDisabled', String(query.includeDisabled));
-    }
-    if (query?.includeInactive !== undefined) {
-      params.append('includeInactive', String(query.includeInactive));
-    }
-    const queryStr = params.toString();
-    return apiClient.get<any[]>(`/api/v1/blocklist-entries${queryStr ? `?${queryStr}` : ''}`);
-  },
+  getBlocklistEntries: (query?: BlocklistListQuery) =>
+    apiClient.get<BlocklistEntryListPayload>('/api/v1/blocklist-entries', query),
 
-  createBlocklistEntry: (entry: {
-    ownerType?: string;
-    ownerId?: string;
-    pattern: string;
-    patternType: string;
-    nameEn: string;
-    action: string;
-    severity: string;
-    scope: string[];
-    sortOrder?: number;
-    isForceUse?: boolean;
-  }) =>
-    apiClient.post<any>('/api/v1/blocklist-entries', {
-      ownerType: entry.ownerType ?? 'tenant',
-      ownerId: entry.ownerId,
-      pattern: entry.pattern,
-      patternType: entry.patternType,
-      nameEn: entry.nameEn,
-      action: entry.action,
-      severity: entry.severity,
-      scope: entry.scope,
-      sortOrder: entry.sortOrder ?? 0,
-      isForceUse: entry.isForceUse ?? false,
-    }),
+  createBlocklistEntry: (entry: CreateBlocklistPayload) =>
+    apiClient.post<BlocklistEntryRecord>('/api/v1/blocklist-entries', entry),
 
-  updateBlocklistEntry: (id: string, entry: any) =>
-    apiClient.patch<any>(`/api/v1/blocklist-entries/${id}`, entry),
+  updateBlocklistEntry: (id: string, entry: UpdateBlocklistPayload) =>
+    apiClient.patch<BlocklistEntryRecord>(`/api/v1/blocklist-entries/${id}`, entry),
 
-  deleteBlocklistEntry: (id: string) => apiClient.delete<any>(`/api/v1/blocklist-entries/${id}`),
+  deleteBlocklistEntry: (id: string) =>
+    apiClient.delete<BlocklistDeleteResponse>(`/api/v1/blocklist-entries/${id}`),
 
-  disableBlocklistEntry: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<any>(`/api/v1/blocklist-entries/${id}/disable`, scope),
+  disableBlocklistEntry: (id: string, scope: BlocklistScopePayload) =>
+    apiClient.post<DisableBlocklistResponse>(`/api/v1/blocklist-entries/${id}/disable`, scope),
 
-  enableBlocklistEntry: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<any>(`/api/v1/blocklist-entries/${id}/enable`, scope),
+  enableBlocklistEntry: (id: string, scope: BlocklistScopePayload) =>
+    apiClient.post<EnableBlocklistResponse>(`/api/v1/blocklist-entries/${id}/enable`, scope),
 
-  testBlocklistPattern: (testContent: string, pattern: string, patternType: string) =>
-    apiClient.post<{ matched: boolean; positions: number[] }>('/api/v1/blocklist-entries/test', {
+  testBlocklistPattern: (
+    testContent: string,
+    pattern: string,
+    patternType: BlocklistPatternType
+  ) =>
+    apiClient.post<TestBlocklistPatternResponse>('/api/v1/blocklist-entries/test', {
       testContent,
       pattern,
       patternType,
@@ -197,7 +285,9 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/changes', params),
+  }) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    apiClient.get<any>('/api/v1/logs/changes', params),
 
   getTechEvents: (params?: {
     scope?: string;
@@ -205,7 +295,9 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/events', params),
+  }) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    apiClient.get<any>('/api/v1/logs/events', params),
 
   getIntegrationLogs: (params?: {
     direction?: string;
@@ -214,12 +306,16 @@ export const logApi = {
     consumerId?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/integrations', params),
+  }) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    apiClient.get<any>('/api/v1/logs/integrations', params),
 
   getIntegrationLogByTrace: (traceId: string) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     apiClient.get<any>(`/api/v1/logs/integrations/trace/${traceId}`),
 
   getFailedIntegrations: (params?: { page?: number; pageSize?: number }) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     apiClient.get<any>('/api/v1/logs/integrations/failed', params),
 
   searchLoki: (params: {
