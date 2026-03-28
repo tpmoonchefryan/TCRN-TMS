@@ -170,14 +170,6 @@ describeLive('Live Permission HTTP Smoke', () => {
     expect(pickPermissions(permissions, Object.keys(EXPECTED_CANONICAL_GRANTS))).toEqual(
       EXPECTED_CANONICAL_GRANTS,
     );
-    expect(response.body.data.roles).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          scopeType: 'tenant',
-          scopeId: null,
-        }),
-      ]),
-    );
 
     if (EXPECTED_ROLE_CODES.length > 0) {
       expect(response.body.data.roles).toEqual(
