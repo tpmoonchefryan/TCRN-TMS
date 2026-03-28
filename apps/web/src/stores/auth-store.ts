@@ -6,6 +6,7 @@ import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
+import { userApi } from '@/lib/api/modules/user';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
 import type { AuthState, AuthUser, LoginResponseData, PermissionScope } from './auth-store.types';
@@ -405,7 +406,7 @@ export const useAuthStore = create<AuthState>()(
         checkAuth: async () => {
           if (apiClient.getAccessToken()) {
             try {
-              const meRes = await authApi.me();
+              const meRes = await userApi.me();
 
               if (meRes.success && meRes.data) {
                 const tenantId = meRes.data.tenant?.id || get().tenantId;
@@ -432,7 +433,7 @@ export const useAuthStore = create<AuthState>()(
           const refreshed = await get().refreshSession();
           if (refreshed) {
             try {
-              const meRes = await authApi.me();
+              const meRes = await userApi.me();
               if (meRes.success && meRes.data) {
                 const tenantId = meRes.data.tenant?.id || get().tenantId;
                 set({

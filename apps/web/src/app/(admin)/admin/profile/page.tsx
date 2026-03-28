@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { userApi } from '@/lib/api/modules/auth';
+import { userApi } from '@/lib/api/modules/user';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function AdminProfilePage() {

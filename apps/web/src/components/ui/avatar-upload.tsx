@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { userApi } from '@/lib/api/modules/auth';
+import { userApi } from '@/lib/api/modules/user';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/utils/gravatar';
 
