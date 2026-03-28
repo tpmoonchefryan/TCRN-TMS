@@ -1,309 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type {
   AssignUserRoleRequest,
   AssignUserRoleResponse,
-  CheckPermissionsResponse,
-  MyPermissionsResponse,
-  Permission,
-  PermissionCheckRequest,
   RbacScopeType,
   RemoveUserRoleAssignmentResponse,
-  ResourceDefinition,
   RolePermissionInput,
   SystemRoleRecord,
   UpdateUserRoleAssignmentResponse,
   UserRoleAssignmentRecord,
 } from '@tcrn/shared';
 
-import { useAuthStore } from '@/stores/auth-store';
+import { apiClient } from './core';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-    requestId?: string;
-  };
-  message?: string;  // Add message for error responses
-  meta?: {
-    pagination?: {
-      page: number;
-      pageSize: number;
-      totalCount: number;
-      totalPages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-    };
-    [key: string]: any;
-  };
-}
-
-export interface ApiError {
-  code: string;
-  message: string;
-  statusCode: number;
-}
-
-class ApiClient {
-  private baseUrl: string;
-  private accessToken: string | null = null;
-  private refreshPromise: Promise<boolean> | null = null;
-
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
-
-  setAccessToken(token: string | null) {
-    this.accessToken = token;
-  }
-
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${endpoint}`;
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (this.accessToken) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
-    }
-
-    try {
-
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include', // Important for Refresh Token Cookie
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle 401 Unauthorized (Token Expired)
-        if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
-          const refreshed = await this.refreshToken();
-          if (refreshed) {
-            // Retry original request with new token
-            if (this.accessToken) {
-              (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
-            }
-            const retryResponse = await fetch(url, {
-              ...options,
-              headers,
-              credentials: 'include',
-            });
-            return await retryResponse.json();
-          } else {
-            // Refresh failed, logout
-            useAuthStore.getState().logout();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
-          }
-        }
-
-        // Try to handle standard NestJS error format { statusCode, message, error }
-        const errorMessage = data.error?.message 
-          || (Array.isArray(data.message) ? data.message.join(', ') : data.message)
-          || 'An error occurred';
-
-        const errorCode = data.error?.code || data.error || 'UNKNOWN_ERROR';
-
-        const error: ApiError = {
-          code: errorCode,
-          message: errorMessage,
-          statusCode: response.status,
-        };
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      if ((error as ApiError).statusCode) {
-        throw error;
-      }
-      throw {
-        code: 'NETWORK_ERROR',
-        message: 'Network error occurred',
-        statusCode: 0,
-      } as ApiError;
-    }
-  }
-
-  private async refreshToken(): Promise<boolean> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = (async () => {
-      try {
-        const tenantCode = useAuthStore.getState().tenantCode;
-        const headers = tenantCode ? { 'X-Tenant-ID': tenantCode } : undefined;
-        const response = await this.post<{ accessToken?: string }>('/api/v1/auth/refresh', {}, headers);
-        if (response.success && response.data?.accessToken) {
-          this.setAccessToken(response.data.accessToken);
-          return true;
-        }
-      } catch {
-        // Refresh failed
-      } finally {
-        this.refreshPromise = null;
-      }
-      return false;
-    })();
-
-    return this.refreshPromise;
-  }
-
-  async get<T>(endpoint: string, params?: Record<string, any>, headers?: Record<string, string>): Promise<ApiResponse<T>> {
-    const filteredParams = params 
-      ? Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
-      : undefined;
-    const searchParams = filteredParams && Object.keys(filteredParams).length > 0
-      ? `?${new URLSearchParams(filteredParams as Record<string, string>).toString()}`
-      : '';
-    return this.request<T>(`${endpoint}${searchParams}`, { method: 'GET', headers });
-  }
-
-  async post<T>(endpoint: string, body: unknown, headers?: Record<string, string>): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers,
-    });
-  }
-
-  async patch<T>(endpoint: string, body: unknown, headers?: Record<string, string>): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-      headers,
-    });
-  }
-
-  async put<T>(endpoint: string, body: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-  }
-
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
-  }
-}
-
-export const apiClient = new ApiClient(API_BASE_URL);
-
-// --- API Definitions ---
-
-// Auth API
-export const authApi = {
-  login: (login: string, password: string, tenantCode: string) =>
-    apiClient.post<{
-      accessToken?: string;
-      expiresIn?: number;
-      totpRequired?: boolean;
-      passwordResetRequired?: boolean;
-      reason?: string;
-      sessionToken?: string;
-      tenantId?: string;
-      user?: any;
-    }>('/api/v1/auth/login', { login, password, tenantCode }, { 'X-Tenant-ID': tenantCode }),
-
-  verifyTotp: (sessionToken: string, code: string) =>
-    apiClient.post<{
-      accessToken?: string;
-      expiresIn?: number;
-      tenantId?: string;
-      user?: any;
-    }>('/api/v1/auth/totp/verify', { sessionToken, code }),
-
-  resetPassword: (sessionToken: string, newPassword: string, newPasswordConfirm: string) =>
-    apiClient.post<{
-      accessToken?: string;
-      expiresIn?: number;
-      tenantId?: string;
-      user?: any;
-      message?: string;
-    }>('/api/v1/auth/password/reset', { sessionToken, newPassword, newPasswordConfirm }),
-
-  logout: () => apiClient.post('/api/v1/auth/logout', {}),
-
-  refresh: (tenantCode?: string) => apiClient.post<{ accessToken?: string; expiresIn?: number }>('/api/v1/auth/refresh', {}, tenantCode ? { 'X-Tenant-ID': tenantCode } : undefined),
-
-  me: () => apiClient.get<any>('/api/v1/users/me'),
-
-  // Forgot password - request reset email
-  forgotPassword: (email: string, tenantCode: string) =>
-    apiClient.post<{ message?: string }>('/api/v1/auth/forgot-password', { email, tenantCode }),
-
-  // Reset password using email token
-  resetPasswordByToken: (token: string, tenantCode: string, newPassword: string, newPasswordConfirm: string) =>
-    apiClient.post<{ message?: string }>('/api/v1/auth/reset-password-by-token', { token, tenantCode, newPassword, newPasswordConfirm }),
-};
-
-// User Profile API
-export const userApi = {
-  // Get current user
-  me: () => apiClient.get<any>('/api/v1/users/me'),
-
-  // Update profile
-  update: (data: { displayName?: string; phone?: string; preferredLanguage?: string; avatarUrl?: string }) =>
-    apiClient.patch<any>('/api/v1/users/me', data),
-
-  // Alias for updateProfile
-  updateProfile: (data: { displayName?: string }) =>
-    apiClient.patch<any>('/api/v1/users/me', data),
-
-  // Upload avatar
-  uploadAvatar: async (file: File): Promise<{ success: boolean; data?: { avatarUrl: string }; error?: any }> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch('/api/v1/users/me/avatar', {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    });
-    
-    const result = await response.json();
-    return {
-      success: response.ok,
-      data: result.data,
-      error: result.error,
-    };
-  },
-
-  // Delete avatar
-  deleteAvatar: () => apiClient.delete<any>('/api/v1/users/me/avatar'),
-
-  // Change password
-  changePassword: (data: { currentPassword: string; newPassword: string; newPasswordConfirm: string }) =>
-    apiClient.post<any>('/api/v1/users/me/password', data),
-
-  // Request email change (sends verification email to new address)
-  requestEmailChange: (newEmail: string) =>
-    apiClient.post<any>('/api/v1/users/me/email/request-change', { newEmail }),
-
-  // Confirm email change (verify token from email)
-  confirmEmailChange: (token: string) =>
-    apiClient.post<any>('/api/v1/users/me/email/confirm', { token }),
-};
+export type { ApiError, ApiResponse } from './core';
+export { apiClient, registerAuthClientHooks } from './core';
+export { authApi, userApi } from './modules/auth';
+export type { OrganizationTreeResponse } from './modules/organization';
+export { organizationApi } from './modules/organization';
+export { permissionApi } from './modules/permission';
 
 // Customer API
 export interface CustomerListParams {
@@ -403,11 +119,7 @@ export const customerApi = {
     ),
 
   reactivate: (id: string, talentId: string) =>
-    apiClient.post<any>(
-      `/api/v1/customers/${id}/reactivate`,
-      {},
-      { 'X-Talent-Id': talentId }
-    ),
+    apiClient.post<any>(`/api/v1/customers/${id}/reactivate`, {}, { 'X-Talent-Id': talentId }),
 
   // Update PII data for individual customer
   updatePii: (id: string, pii: PiiUpdateData, version: number, talentId: string) =>
@@ -440,7 +152,11 @@ export interface PiiUpdateData {
 
 // Request PII access token first, then use it to fetch PII from PII service
 // This follows the PRD §11.6 data flow: request token -> use token with PII service
-export const requestPiiAccessToken = async (customerId: string, talentId: string, accessReason: string) => {
+export const requestPiiAccessToken = async (
+  customerId: string,
+  talentId: string,
+  accessReason: string
+) => {
   const response = await apiClient.post<{ accessToken: string; piiProfileId: string }>(
     `/api/v1/customers/individuals/${customerId}/request-pii-access`,
     {},
@@ -452,13 +168,12 @@ export const requestPiiAccessToken = async (customerId: string, talentId: string
 export const getPiiWithReason = async (customerId: string, reason: string) => {
   // This is a simplified wrapper. In a real implementation this might chain the token request
   // and the PII service fetch. For now we point to the access request endpoint.
-  // Note: The UI expects response.data.pii, which requires the backend to return PII directly 
-  // or this function to handle the fetch. 
+  // Note: The UI expects response.data.pii, which requires the backend to return PII directly
+  // or this function to handle the fetch.
   // Assuming a 'retrieve' endpoint exists or using access request as placeholder.
-  return apiClient.post<{ pii: any }>(
-    `/api/v1/customers/individuals/${customerId}/retrieve-pii`, 
-    { reason }
-  );
+  return apiClient.post<{ pii: any }>(`/api/v1/customers/individuals/${customerId}/retrieve-pii`, {
+    reason,
+  });
 };
 
 // Company Customer API
@@ -506,7 +221,7 @@ export interface CompanyUpdateData {
 export const companyCustomerApi = {
   create: (data: CompanyCreateData, talentId: string) =>
     apiClient.post<any>('/api/v1/customers/companies', data, { 'X-Talent-Id': talentId }),
-  
+
   update: (id: string, data: CompanyUpdateData, talentId: string) =>
     apiClient.patch<any>(`/api/v1/customers/companies/${id}`, data, { 'X-Talent-Id': talentId }),
 };
@@ -530,16 +245,35 @@ export interface UpdatePlatformIdentityData {
 
 export const platformIdentityApi = {
   list: (customerId: string, talentId: string) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities`, undefined, { 'X-Talent-Id': talentId }),
-  
+    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities`, undefined, {
+      'X-Talent-Id': talentId,
+    }),
+
   create: (customerId: string, data: CreatePlatformIdentityData, talentId: string) =>
-    apiClient.post<any>(`/api/v1/customers/${customerId}/platform-identities`, data, { 'X-Talent-Id': talentId }),
-  
-  update: (customerId: string, identityId: string, data: UpdatePlatformIdentityData, talentId: string) =>
-    apiClient.patch<any>(`/api/v1/customers/${customerId}/platform-identities/${identityId}`, data, { 'X-Talent-Id': talentId }),
-  
-  history: (customerId: string, talentId: string, query?: { platformCode?: string; changeType?: string; page?: number; pageSize?: number }) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities/history`, query, { 'X-Talent-Id': talentId }),
+    apiClient.post<any>(`/api/v1/customers/${customerId}/platform-identities`, data, {
+      'X-Talent-Id': talentId,
+    }),
+
+  update: (
+    customerId: string,
+    identityId: string,
+    data: UpdatePlatformIdentityData,
+    talentId: string
+  ) =>
+    apiClient.patch<any>(
+      `/api/v1/customers/${customerId}/platform-identities/${identityId}`,
+      data,
+      { 'X-Talent-Id': talentId }
+    ),
+
+  history: (
+    customerId: string,
+    talentId: string,
+    query?: { platformCode?: string; changeType?: string; page?: number; pageSize?: number }
+  ) =>
+    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities/history`, query, {
+      'X-Talent-Id': talentId,
+    }),
 };
 
 // Membership API
@@ -559,22 +293,41 @@ export interface UpdateMembershipData {
 }
 
 export const membershipApi = {
-  list: (customerId: string, talentId: string, query?: { platformCode?: string; isActive?: boolean; includeExpired?: boolean; page?: number; pageSize?: number }) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/memberships`, query, { 'X-Talent-Id': talentId }),
-  
+  list: (
+    customerId: string,
+    talentId: string,
+    query?: {
+      platformCode?: string;
+      isActive?: boolean;
+      includeExpired?: boolean;
+      page?: number;
+      pageSize?: number;
+    }
+  ) =>
+    apiClient.get<any[]>(`/api/v1/customers/${customerId}/memberships`, query, {
+      'X-Talent-Id': talentId,
+    }),
+
   create: (customerId: string, data: CreateMembershipData, talentId: string) =>
-    apiClient.post<any>(`/api/v1/customers/${customerId}/memberships`, data, { 'X-Talent-Id': talentId }),
-  
+    apiClient.post<any>(`/api/v1/customers/${customerId}/memberships`, data, {
+      'X-Talent-Id': talentId,
+    }),
+
   update: (customerId: string, recordId: string, data: UpdateMembershipData, talentId: string) =>
-    apiClient.patch<any>(`/api/v1/customers/${customerId}/memberships/${recordId}`, data, { 'X-Talent-Id': talentId }),
+    apiClient.patch<any>(`/api/v1/customers/${customerId}/memberships/${recordId}`, data, {
+      'X-Talent-Id': talentId,
+    }),
 };
 
 // Customer Import API
 export const customerImportApi = {
   downloadIndividualTemplate: async () => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals/template`, {
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals/template`,
+      {
+        credentials: 'include',
+      }
+    );
     if (!response.ok) throw new Error('Failed to download template');
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -584,11 +337,14 @@ export const customerImportApi = {
     a.click();
     window.URL.revokeObjectURL(url);
   },
-  
+
   downloadCompanyTemplate: async () => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies/template`, {
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies/template`,
+      {
+        credentials: 'include',
+      }
+    );
     if (!response.ok) throw new Error('Failed to download template');
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -598,41 +354,50 @@ export const customerImportApi = {
     a.click();
     window.URL.revokeObjectURL(url);
   },
-  
+
   uploadIndividual: async (file: File, talentId: string) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals`, {
-      method: 'POST',
-      body: formData,
-      headers: { 'X-Talent-Id': talentId },
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Talent-Id': talentId },
+        credentials: 'include',
+      }
+    );
     return response.json();
   },
-  
+
   uploadCompany: async (file: File, talentId: string) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies`, {
-      method: 'POST',
-      body: formData,
-      headers: { 'X-Talent-Id': talentId },
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Talent-Id': talentId },
+        credentials: 'include',
+      }
+    );
     return response.json();
   },
-  
+
   getJob: (type: 'individuals' | 'companies', jobId: string) =>
     apiClient.get<any>(`/api/v1/imports/customers/${type}/${jobId}`),
-  
+
   listJobs: (talentId: string, query?: { status?: string; page?: number; pageSize?: number }) =>
     apiClient.get<any[]>('/api/v1/imports/customers', query, { 'X-Talent-Id': talentId }),
-  
+
   downloadErrors: async (type: 'individuals' | 'companies', jobId: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/${type}/${jobId}/errors`, {
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/${type}/${jobId}/errors`,
+      {
+        credentials: 'include',
+      }
+    );
     if (!response.ok) throw new Error('Failed to download errors');
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -642,7 +407,7 @@ export const customerImportApi = {
     a.click();
     window.URL.revokeObjectURL(url);
   },
-  
+
   cancel: (type: 'individuals' | 'companies', jobId: string) =>
     apiClient.delete<any>(`/api/v1/imports/customers/${type}/${jobId}`),
 };
@@ -667,13 +432,19 @@ export interface ExternalIdRecord {
 
 export const externalIdApi = {
   list: (customerId: string, talentId: string) =>
-    apiClient.get<ExternalIdRecord[]>(`/api/v1/customers/${customerId}/external-ids`, undefined, { 'X-Talent-Id': talentId }),
-  
+    apiClient.get<ExternalIdRecord[]>(`/api/v1/customers/${customerId}/external-ids`, undefined, {
+      'X-Talent-Id': talentId,
+    }),
+
   create: (customerId: string, data: CreateExternalIdData, talentId: string) =>
-    apiClient.post<ExternalIdRecord>(`/api/v1/customers/${customerId}/external-ids`, data, { 'X-Talent-Id': talentId }),
-  
+    apiClient.post<ExternalIdRecord>(`/api/v1/customers/${customerId}/external-ids`, data, {
+      'X-Talent-Id': talentId,
+    }),
+
   delete: (customerId: string, externalIdId: string, _talentId: string) =>
-    apiClient.delete<{ message: string }>(`/api/v1/customers/${customerId}/external-ids/${externalIdId}`),
+    apiClient.delete<{ message: string }>(
+      `/api/v1/customers/${customerId}/external-ids/${externalIdId}`
+    ),
 };
 
 // Talent API
@@ -681,8 +452,7 @@ export const talentApi = {
   list: (subsidiaryId?: string) =>
     apiClient.get<any[]>('/api/v1/talents', subsidiaryId ? { subsidiaryId } : undefined),
 
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/talents/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/talents/${id}`),
 
   create: (data: {
     code: string;
@@ -696,22 +466,23 @@ export const talentApi = {
     avatarUrl?: string;
     homepagePath?: string;
     timezone?: string;
-  }) =>
-    apiClient.post<any>('/api/v1/talents', data),
+  }) => apiClient.post<any>('/api/v1/talents', data),
 
-  update: (id: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    displayName?: string;
-    descriptionEn?: string;
-    avatarUrl?: string;
-    homepagePath?: string;
-    timezone?: string;
-    socialLinks?: Array<{ platform: string; url: string }>;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/talents/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      displayName?: string;
+      descriptionEn?: string;
+      avatarUrl?: string;
+      homepagePath?: string;
+      timezone?: string;
+      socialLinks?: Array<{ platform: string; url: string }>;
+      version: number;
+    }
+  ) => apiClient.patch<any>(`/api/v1/talents/${id}`, data),
 
   move: (id: string, data: { newSubsidiaryId?: string | null; version: number }) =>
     apiClient.post<any>(`/api/v1/talents/${id}/move`, data),
@@ -724,92 +495,6 @@ export const talentApi = {
 };
 
 // Organization API
-export interface OrganizationTreeResponse {
-  tenantId: string;
-  subsidiaries: Array<{
-    id: string;
-    code: string;
-    displayName: string;
-    parentId?: string | null;
-    path: string;
-    talents: Array<{
-      id: string;
-      code: string;
-      displayName: string;
-      avatarUrl?: string;
-      subsidiaryId?: string | null;
-      subsidiaryName?: string;
-      path: string;
-    }>;
-    children: any[]; // Recursive type
-  }>;
-  directTalents: Array<{
-    id: string;
-    code: string;
-    displayName: string;
-    avatarUrl?: string;
-    subsidiaryId?: string | null;
-    path: string;
-  }>;
-}
-
-export const organizationApi = {
-  getTree: (params?: { search?: string; includeInactive?: boolean }) =>
-    apiClient.get<OrganizationTreeResponse>('/api/v1/organization/tree', params),
-  
-  getSubsidiaries: () =>
-    apiClient.get<any[]>('/api/v1/organization/subsidiaries'),
-  
-  getSubsidiary: (id: string) =>
-    apiClient.get<any>(`/api/v1/organization/subsidiaries/${id}`),
-  
-  createSubsidiary: (data: { code: string; displayName: string; parentId?: string }) =>
-    apiClient.post<any>('/api/v1/organization/subsidiaries', data),
-  
-  updateSubsidiary: (id: string, data: { displayName?: string }) =>
-    apiClient.patch<any>(`/api/v1/organization/subsidiaries/${id}`, data),
-  
-  getTalents: (subsidiaryId?: string) =>
-    apiClient.get<any[]>('/api/v1/talents', subsidiaryId ? { subsidiaryId } : undefined),
-  
-  getTalent: (id: string) =>
-    apiClient.get<any>(`/api/v1/talents/${id}`),
-  
-  createTalent: (data: { 
-    code: string; 
-    displayName: string; 
-    nameEn: string;
-    profileStoreId: string; 
-    subsidiaryId?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    avatarUrl?: string;
-    homepagePath?: string;
-    timezone?: string;
-    settings?: Record<string, unknown>;
-  }) =>
-    apiClient.post<any>('/api/v1/talents', data),
-  
-  updateTalent: (id: string, data: { 
-    displayName?: string; 
-    avatarUrl?: string;
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    homepagePath?: string;
-    timezone?: string;
-    settings?: Record<string, unknown>;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/talents/${id}`, data),
-};
-
 // Report API
 export type ReportFormat = 'xlsx' | 'csv';
 
@@ -847,23 +532,26 @@ export const reportApi = {
 
   // MFR Report: Create job (backend path: /reports/mfr/jobs)
   create: (data: ReportCreateData) =>
-    apiClient.post<{ jobId: string; status: string; createdAt: string }>('/api/v1/reports/mfr/jobs', {
-      talentId: data.talentId,
-      filters: {
-        platformCodes: data.filters.platformCodes,
-        membershipClassCodes: data.filters.membershipClassCodes,
-        membershipTypeCodes: data.filters.membershipTypeCodes,
-        membershipLevelCodes: data.filters.membershipLevelCodes,
-        statusCodes: data.filters.statusCodes,
-        validFromStart: data.filters.validFromStart,
-        validFromEnd: data.filters.validFromEnd,
-        validToStart: data.filters.validToStart,
-        validToEnd: data.filters.validToEnd,
-        includeExpired: data.filters.includeExpired,
-        includeInactive: data.filters.includeInactive,
-      },
-      format: data.format || 'xlsx',
-    }),
+    apiClient.post<{ jobId: string; status: string; createdAt: string }>(
+      '/api/v1/reports/mfr/jobs',
+      {
+        talentId: data.talentId,
+        filters: {
+          platformCodes: data.filters.platformCodes,
+          membershipClassCodes: data.filters.membershipClassCodes,
+          membershipTypeCodes: data.filters.membershipTypeCodes,
+          membershipLevelCodes: data.filters.membershipLevelCodes,
+          statusCodes: data.filters.statusCodes,
+          validFromStart: data.filters.validFromStart,
+          validFromEnd: data.filters.validFromEnd,
+          validToStart: data.filters.validToStart,
+          validToEnd: data.filters.validToEnd,
+          includeExpired: data.filters.includeExpired,
+          includeInactive: data.filters.includeInactive,
+        },
+        format: data.format || 'xlsx',
+      }
+    ),
 
   // Search/preview MFR data
   search: (talentId: string, filters: ReportCreateData['filters'], previewLimit?: number) =>
@@ -879,7 +567,9 @@ export const reportApi = {
 
   // Get download URL (backend path: /reports/mfr/jobs/:jobId/download)
   getDownloadUrl: (jobId: string, talentId: string) =>
-    apiClient.get<{ downloadUrl: string }>(`/api/v1/reports/mfr/jobs/${jobId}/download`, { talent_id: talentId }),
+    apiClient.get<{ downloadUrl: string }>(`/api/v1/reports/mfr/jobs/${jobId}/download`, {
+      talent_id: talentId,
+    }),
 
   // Cancel job
   cancel: (jobId: string, talentId: string) =>
@@ -893,7 +583,7 @@ export const marshmallowApi = {
 
   updateConfig: (talentId: string, config: any) =>
     apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/config`, config),
-    
+
   uploadAvatar: async (talentId: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -905,50 +595,72 @@ export const marshmallowApi = {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     // Note: Do NOT set Content-Type header manually for FormData, let browser set it with boundary
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/talents/${talentId}/marshmallow/avatar`, {
-      method: 'POST',
-      body: formData,
-      headers,
-    });
-    
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/talents/${talentId}/marshmallow/avatar`,
+      {
+        method: 'POST',
+        body: formData,
+        headers,
+      }
+    );
+
     if (!response.ok) {
       throw new Error('Upload failed');
     }
-    
+
     const result = await response.json();
     return result.data;
   },
 
   getMessages: (talentId: string, status?: string, pageSize: number = 100) =>
-    apiClient.get<any[]>(`/api/v1/talents/${talentId}/marshmallow/messages`, { 
+    apiClient.get<any[]>(`/api/v1/talents/${talentId}/marshmallow/messages`, {
       ...(status ? { status } : {}),
-      pageSize 
+      pageSize,
     }),
 
   // Approve message (backend uses separate endpoints for approve/reject)
   approveMessage: (talentId: string, messageId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/approve`, {}),
+    apiClient.post<any>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/approve`,
+      {}
+    ),
 
   // Reject message (reason must be one of: profanity, spam, harassment, off_topic, duplicate, external_link, other)
   rejectMessage: (talentId: string, messageId: string, reason: string, note?: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reject`, { reason, note }),
+    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reject`, {
+      reason,
+      note,
+    }),
 
   // Unreject message - restore rejected message to pending status
   unrejectMessage: (talentId: string, messageId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/unreject`, {}),
+    apiClient.post<any>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/unreject`,
+      {}
+    ),
 
   // Update message (read, starred, pinned status)
-  updateMessage: (talentId: string, messageId: string, data: { isRead?: boolean; isStarred?: boolean; isPinned?: boolean }) =>
-    apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}`, data),
+  updateMessage: (
+    talentId: string,
+    messageId: string,
+    data: { isRead?: boolean; isStarred?: boolean; isPinned?: boolean }
+  ) => apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}`, data),
 
   // Reply to message
   replyMessage: (talentId: string, messageId: string, content: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reply`, { content }),
+    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reply`, {
+      content,
+    }),
 
   // Batch action on messages
-  batchAction: (talentId: string, action: 'approve' | 'reject' | 'delete', messageIds: string[], reason?: string) =>
+  batchAction: (
+    talentId: string,
+    action: 'approve' | 'reject' | 'delete',
+    messageIds: string[],
+    reason?: string
+  ) =>
     apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/batch`, {
       action,
       messageIds,
@@ -1000,36 +712,40 @@ export const homepageApi = {
 
 // Public API (No Auth Required)
 export const publicApi = {
-  getHomepage: (talentPath: string) =>
-    apiClient.get<any>(`/api/v1/public/homepage/${talentPath}`),
+  getHomepage: (talentPath: string) => apiClient.get<any>(`/api/v1/public/homepage/${talentPath}`),
 
   getMarshmallowConfig: (talentPath: string) =>
     apiClient.get<any>(`/api/v1/public/marshmallow/${talentPath}/config`),
 
   // Submit marshmallow message (backend path: /public/marshmallow/:path/submit)
   submitMarshmallow: (
-    talentPath: string, 
-    data: { 
-      content: string; 
+    talentPath: string,
+    data: {
+      content: string;
       senderName?: string;
-      isAnonymous: boolean; 
+      isAnonymous: boolean;
       turnstileToken?: string;
       fingerprint: string;
-      honeypot?: string;  // Hidden field for bot detection
+      honeypot?: string; // Hidden field for bot detection
       socialLink?: string;
       selectedImageUrls?: string[];
     }
-  ) =>
-    apiClient.post<any>(`/api/v1/public/marshmallow/${talentPath}/submit`, data),
+  ) => apiClient.post<any>(`/api/v1/public/marshmallow/${talentPath}/submit`, data),
 
   // Get public messages (approved ones)
   // Note: _t parameter is used for cache-busting to ensure fresh data
-  getPublicMessages: (talentPath: string, cursor?: string, limit?: number, fingerprint?: string, bustCache?: boolean) =>
-    apiClient.get<any>(`/api/v1/public/marshmallow/${talentPath}/messages`, { 
-      cursor, 
-      limit: limit?.toString(), 
+  getPublicMessages: (
+    talentPath: string,
+    cursor?: string,
+    limit?: number,
+    fingerprint?: string,
+    bustCache?: boolean
+  ) =>
+    apiClient.get<any>(`/api/v1/public/marshmallow/${talentPath}/messages`, {
+      cursor,
+      limit: limit?.toString(),
       fingerprint,
-      ...(bustCache ? { _t: Date.now().toString() } : {})
+      ...(bustCache ? { _t: Date.now().toString() } : {}),
     }),
 
   // Mark message as read (for streamers during broadcasts)
@@ -1052,16 +768,21 @@ export const publicApi = {
       { ssoToken }
     ),
 
-  replyMarshmallowAuth: (talentPath: string, messageId: string, content: string, ssoToken: string) =>
+  replyMarshmallowAuth: (
+    talentPath: string,
+    messageId: string,
+    content: string,
+    ssoToken: string
+  ) =>
     apiClient.post<{
       success: boolean;
       replyContent: string;
       repliedAt: string;
       repliedBy: { id: string; displayName: string };
-    }>(
-      `/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/reply-auth`,
-      { ssoToken, content }
-    ),
+    }>(`/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/reply-auth`, {
+      ssoToken,
+      content,
+    }),
 
   previewMarshmallowImage: (url: string) =>
     apiClient.post<{ success: boolean; imageUrl?: string; images?: string[]; error?: string }>(
@@ -1072,8 +793,7 @@ export const publicApi = {
 
 // Security API
 export const securityApi = {
-  generateFingerprint: () =>
-    apiClient.post<any>('/api/v1/security/fingerprint', {}),
+  generateFingerprint: () => apiClient.post<any>('/api/v1/security/fingerprint', {}),
 
   // Blocklist
   getBlocklistEntries: (query?: {
@@ -1086,9 +806,12 @@ export const securityApi = {
     const params = new URLSearchParams();
     if (query?.scopeType) params.append('scopeType', query.scopeType);
     if (query?.scopeId) params.append('scopeId', query.scopeId);
-    if (query?.includeInherited !== undefined) params.append('includeInherited', String(query.includeInherited));
-    if (query?.includeDisabled !== undefined) params.append('includeDisabled', String(query.includeDisabled));
-    if (query?.includeInactive !== undefined) params.append('includeInactive', String(query.includeInactive));
+    if (query?.includeInherited !== undefined)
+      params.append('includeInherited', String(query.includeInherited));
+    if (query?.includeDisabled !== undefined)
+      params.append('includeDisabled', String(query.includeDisabled));
+    if (query?.includeInactive !== undefined)
+      params.append('includeInactive', String(query.includeInactive));
     const queryStr = params.toString();
     return apiClient.get<any[]>(`/api/v1/blocklist-entries${queryStr ? `?${queryStr}` : ''}`);
   },
@@ -1121,8 +844,7 @@ export const securityApi = {
   updateBlocklistEntry: (id: string, entry: any) =>
     apiClient.patch<any>(`/api/v1/blocklist-entries/${id}`, entry),
 
-  deleteBlocklistEntry: (id: string) =>
-    apiClient.delete<any>(`/api/v1/blocklist-entries/${id}`),
+  deleteBlocklistEntry: (id: string) => apiClient.delete<any>(`/api/v1/blocklist-entries/${id}`),
 
   disableBlocklistEntry: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
     apiClient.post<any>(`/api/v1/blocklist-entries/${id}/disable`, scope),
@@ -1138,15 +860,9 @@ export const securityApi = {
     }),
 
   // IP Rules
-  getIpRules: () =>
-    apiClient.get<any[]>('/api/v1/ip-access-rules'),
+  getIpRules: () => apiClient.get<any[]>('/api/v1/ip-access-rules'),
 
-  createIpRule: (rule: {
-    ruleType: string;
-    ipPattern: string;
-    scope: string;
-    reason?: string;
-  }) =>
+  createIpRule: (rule: { ruleType: string; ipPattern: string; scope: string; reason?: string }) =>
     apiClient.post<any>('/api/v1/ip-access-rules', {
       ruleType: rule.ruleType,
       ipPattern: rule.ipPattern,
@@ -1154,8 +870,7 @@ export const securityApi = {
       reason: rule.reason,
     }),
 
-  deleteIpRule: (id: string) =>
-    apiClient.delete<any>(`/api/v1/ip-access-rules/${id}`),
+  deleteIpRule: (id: string) => apiClient.delete<any>(`/api/v1/ip-access-rules/${id}`),
 
   checkIpAccess: (ip: string, scope: 'global' | 'admin' | 'public' | 'api' = 'global') =>
     apiClient.post<{ allowed: boolean; reason?: string; matched_rule?: any; matchedRule?: any }>(
@@ -1191,20 +906,15 @@ export const securityApi = {
 
 // Tenant API (Platform Admin)
 export const tenantApi = {
-  list: () =>
-    apiClient.get<any[]>('/api/v1/tenants'),
+  list: () => apiClient.get<any[]>('/api/v1/tenants'),
 
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/tenants/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/tenants/${id}`),
 
-  create: (data: any) =>
-    apiClient.post<any>('/api/v1/tenants', data),
+  create: (data: any) => apiClient.post<any>('/api/v1/tenants', data),
 
-  update: (id: string, data: any) =>
-    apiClient.patch<any>(`/api/v1/tenants/${id}`, data),
+  update: (id: string, data: any) => apiClient.patch<any>(`/api/v1/tenants/${id}`, data),
 
-  activate: (id: string) =>
-    apiClient.post<any>(`/api/v1/tenants/${id}/activate`, {}),
+  activate: (id: string) => apiClient.post<any>(`/api/v1/tenants/${id}/activate`, {}),
 
   deactivate: (id: string, reason?: string) =>
     apiClient.post<any>(`/api/v1/tenants/${id}/deactivate`, { reason }),
@@ -1213,32 +923,36 @@ export const tenantApi = {
 // Configuration Entity API (Generic CRUD for config entities)
 export const configEntityApi = {
   // List entities by type
-  list: (entityType: string, params?: { 
-    scopeType?: string; 
-    scopeId?: string; 
-    includeInherited?: boolean;
-    includeInactive?: boolean;
-    search?: string;
-    parentId?: string;
-    page?: number;
-    pageSize?: number;
-  }) =>
-    apiClient.get<any[]>(`/api/v1/configuration-entity/${entityType}`, params),
+  list: (
+    entityType: string,
+    params?: {
+      scopeType?: string;
+      scopeId?: string;
+      includeInherited?: boolean;
+      includeInactive?: boolean;
+      search?: string;
+      parentId?: string;
+      page?: number;
+      pageSize?: number;
+    }
+  ) => apiClient.get<any[]>(`/api/v1/configuration-entity/${entityType}`, params),
 
   // Create entity
-  create: (entityType: string, data: {
-    code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    sortOrder?: number;
-    isForceUse?: boolean;
-    ownerType?: string;
-    ownerId?: string;
-    [key: string]: unknown;
-  }) =>
-    apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
+  create: (
+    entityType: string,
+    data: {
+      code: string;
+      nameEn: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      sortOrder?: number;
+      isForceUse?: boolean;
+      ownerType?: string;
+      ownerId?: string;
+      [key: string]: unknown;
+    }
+  ) => apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
 
   // Get entity by ID
   get: (entityType: string, id: string) =>
@@ -1264,8 +978,7 @@ export const profileStoreApi = {
     apiClient.get<{ items: any[]; meta: any }>('/api/v1/profile-stores', params),
 
   // Get profile store by ID
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/profile-stores/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/profile-stores/${id}`),
 
   // Create profile store
   create: (data: {
@@ -1278,23 +991,24 @@ export const profileStoreApi = {
     descriptionJa?: string;
     piiServiceConfigCode: string;
     isDefault?: boolean;
-  }) =>
-    apiClient.post<any>('/api/v1/profile-stores', data),
+  }) => apiClient.post<any>('/api/v1/profile-stores', data),
 
   // Update profile store
-  update: (id: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    piiServiceConfigCode?: string;
-    isDefault?: boolean;
-    isActive?: boolean;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/profile-stores/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      descriptionZh?: string;
+      descriptionJa?: string;
+      piiServiceConfigCode?: string;
+      isDefault?: boolean;
+      isActive?: boolean;
+      version: number;
+    }
+  ) => apiClient.patch<any>(`/api/v1/profile-stores/${id}`, data),
 };
 
 // PII Service Config API (PII proxy service configuration)
@@ -1304,8 +1018,7 @@ export const piiServiceConfigApi = {
     apiClient.get<{ items: any[]; meta: any }>('/api/v1/pii-service-configs', params),
 
   // Get PII service config by ID
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/pii-service-configs/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/pii-service-configs/${id}`),
 
   // Create PII service config
   create: (data: {
@@ -1322,39 +1035,40 @@ export const piiServiceConfigApi = {
     mtlsCaCert?: string;
     healthCheckUrl?: string;
     healthCheckIntervalSec?: number;
-  }) =>
-    apiClient.post<any>('/api/v1/pii-service-configs', data),
+  }) => apiClient.post<any>('/api/v1/pii-service-configs', data),
 
   // Update PII service config
-  update: (id: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    apiUrl?: string;
-    authType?: 'mtls' | 'api_key';
-    apiKey?: string;
-    healthCheckUrl?: string;
-    healthCheckIntervalSec?: number;
-    isActive?: boolean;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/pii-service-configs/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      apiUrl?: string;
+      authType?: 'mtls' | 'api_key';
+      apiKey?: string;
+      healthCheckUrl?: string;
+      healthCheckIntervalSec?: number;
+      isActive?: boolean;
+      version: number;
+    }
+  ) => apiClient.patch<any>(`/api/v1/pii-service-configs/${id}`, data),
 
   // Test PII service connection
-  testConnection: (id: string) =>
-    apiClient.post<any>(`/api/v1/pii-service-configs/${id}/test`, {}),
+  testConnection: (id: string) => apiClient.post<any>(`/api/v1/pii-service-configs/${id}/test`, {}),
 };
 
 // System Dictionary API (Read for all tenants, Write for AC only)
 export const dictionaryApi = {
   // List dictionary types
-  listTypes: () =>
-    apiClient.get<any[]>('/api/v1/system-dictionary'),
+  listTypes: () => apiClient.get<any[]>('/api/v1/system-dictionary'),
 
   // Get dictionary items by type
-  getByType: (type: string, params?: { search?: string; includeInactive?: boolean; page?: number; pageSize?: number }) =>
-    apiClient.get<any[]>(`/api/v1/system-dictionary/${type}`, params),
+  getByType: (
+    type: string,
+    params?: { search?: string; includeInactive?: boolean; page?: number; pageSize?: number }
+  ) => apiClient.get<any[]>(`/api/v1/system-dictionary/${type}`, params),
 
   // Get single dictionary item
   getItem: (type: string, code: string) =>
@@ -1374,49 +1088,55 @@ export const dictionaryApi = {
     descriptionZh?: string;
     descriptionJa?: string;
     sortOrder?: number;
-  }) =>
-    apiClient.post<any>('/api/v1/system-dictionary', data),
+  }) => apiClient.post<any>('/api/v1/system-dictionary', data),
 
   // Update dictionary type (AC only)
-  updateType: (typeCode: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    sortOrder?: number;
-    version: number;
-  }) =>
-    apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}`, data),
+  updateType: (
+    typeCode: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      descriptionZh?: string;
+      descriptionJa?: string;
+      sortOrder?: number;
+      version: number;
+    }
+  ) => apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}`, data),
 
   // Create dictionary item (AC only)
-  createItem: (typeCode: string, data: {
-    code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    sortOrder?: number;
-    extraData?: Record<string, unknown>;
-  }) =>
-    apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items`, data),
+  createItem: (
+    typeCode: string,
+    data: {
+      code: string;
+      nameEn: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      descriptionZh?: string;
+      descriptionJa?: string;
+      sortOrder?: number;
+      extraData?: Record<string, unknown>;
+    }
+  ) => apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items`, data),
 
   // Update dictionary item (AC only)
-  updateItem: (typeCode: string, itemId: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    sortOrder?: number;
-    extraData?: Record<string, unknown>;
-    version: number;
-  }) =>
-    apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
+  updateItem: (
+    typeCode: string,
+    itemId: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      descriptionZh?: string;
+      descriptionJa?: string;
+      sortOrder?: number;
+      extraData?: Record<string, unknown>;
+      version: number;
+    }
+  ) => apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
 
   // Deactivate dictionary item (AC only)
   deactivateItem: (typeCode: string, itemId: string, _version: number) =>
@@ -1424,15 +1144,16 @@ export const dictionaryApi = {
 
   // Reactivate dictionary item (AC only)
   reactivateItem: (typeCode: string, itemId: string, version: number) =>
-    apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}/reactivate`, { version }),
+    apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}/reactivate`, {
+      version,
+    }),
 };
 
 // Integration API (API Consumers / Adapters)
 export const integrationApi = {
   // Social Platforms (via Configuration Entity API)
   // Endpoint: /api/v1/configuration-entity/social-platform
-  listPlatforms: () =>
-    apiClient.get<any[]>('/api/v1/configuration-entity/social-platform'),
+  listPlatforms: () => apiClient.get<any[]>('/api/v1/configuration-entity/social-platform'),
 
   createPlatform: (data: {
     code: string;
@@ -1446,49 +1167,49 @@ export const integrationApi = {
     color?: string;
     sortOrder?: number;
     isActive?: boolean;
-  }) =>
-    apiClient.post<any>('/api/v1/configuration-entity/social-platform', data),
+  }) => apiClient.post<any>('/api/v1/configuration-entity/social-platform', data),
 
-  updatePlatform: (id: string, data: {
-    displayName?: string;
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    iconUrl?: string;
-    baseUrl?: string;
-    profileUrlTemplate?: string;
-    color?: string;
-    sortOrder?: number;
-    isActive?: boolean;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/configuration-entity/social-platform/${id}`, data),
+  updatePlatform: (
+    id: string,
+    data: {
+      displayName?: string;
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      iconUrl?: string;
+      baseUrl?: string;
+      profileUrlTemplate?: string;
+      color?: string;
+      sortOrder?: number;
+      isActive?: boolean;
+      version: number;
+    }
+  ) => apiClient.patch<any>(`/api/v1/configuration-entity/social-platform/${id}`, data),
 
   deletePlatform: (id: string) =>
     apiClient.delete<any>(`/api/v1/configuration-entity/social-platform/${id}`),
 
   // Adapters (Consumers)
-  listAdapters: () =>
-    apiClient.get<any[]>('/api/v1/integration/adapters'),
+  listAdapters: () => apiClient.get<any[]>('/api/v1/integration/adapters'),
 
-  getAdapter: (id: string) =>
-    apiClient.get<any>(`/api/v1/integration/adapters/${id}`),
+  getAdapter: (id: string) => apiClient.get<any>(`/api/v1/integration/adapters/${id}`),
 
-  createAdapter: (data: { 
+  createAdapter: (data: {
     platformId: string;
-    code: string; 
-    nameEn: string; 
+    code: string;
+    nameEn: string;
     nameZh?: string;
-    nameJa?: string; 
+    nameJa?: string;
     adapterType: 'oauth' | 'api_key' | 'webhook';
     inherit?: boolean;
     ownerType?: 'tenant' | 'subsidiary' | 'talent';
     ownerId?: string;
-  }) =>
-    apiClient.post<any>('/api/v1/integration/adapters', data),
+  }) => apiClient.post<any>('/api/v1/integration/adapters', data),
 
-  updateAdapter: (id: string, data: { nameEn?: string; nameJa?: string; description?: string; version: number }) =>
-    apiClient.patch<any>(`/api/v1/integration/adapters/${id}`, data),
+  updateAdapter: (
+    id: string,
+    data: { nameEn?: string; nameJa?: string; description?: string; version: number }
+  ) => apiClient.patch<any>(`/api/v1/integration/adapters/${id}`, data),
 
   deactivateAdapter: (id: string) =>
     apiClient.post<any>(`/api/v1/integration/adapters/${id}/deactivate`, {}),
@@ -1503,21 +1224,23 @@ export const integrationApi = {
     apiClient.post<any>(`/api/v1/integration/adapters/${id}/enable`, { scopeType, scopeId }),
 
   // Adapter Configs
-  updateAdapterConfigs: (id: string, data: { configs: Array<{ configKey: string; configValue: string }>; adapterVersion: number }) =>
-    apiClient.put<any>(`/api/v1/integration/adapters/${id}/configs`, data),
+  updateAdapterConfigs: (
+    id: string,
+    data: { configs: Array<{ configKey: string; configValue: string }>; adapterVersion: number }
+  ) => apiClient.put<any>(`/api/v1/integration/adapters/${id}/configs`, data),
 
   revealConfig: (adapterId: string, configKey: string) =>
-    apiClient.post<any>(`/api/v1/integration/adapters/${adapterId}/configs/${configKey}/reveal`, {}),
+    apiClient.post<any>(
+      `/api/v1/integration/adapters/${adapterId}/configs/${configKey}/reveal`,
+      {}
+    ),
 
   // Webhooks
-  listWebhooks: () =>
-    apiClient.get<any[]>('/api/v1/integration/webhooks'),
+  listWebhooks: () => apiClient.get<any[]>('/api/v1/integration/webhooks'),
 
-  getWebhook: (id: string) =>
-    apiClient.get<any>(`/api/v1/integration/webhooks/${id}`),
+  getWebhook: (id: string) => apiClient.get<any>(`/api/v1/integration/webhooks/${id}`),
 
-  getWebhookEvents: () =>
-    apiClient.get<any[]>('/api/v1/integration/webhooks/events'),
+  getWebhookEvents: () => apiClient.get<any[]>('/api/v1/integration/webhooks/events'),
 
   createWebhook: (data: { name: string; targetUrl: string; events: string[]; secret?: string }) =>
     apiClient.post<any>('/api/v1/integration/webhooks', {
@@ -1528,7 +1251,10 @@ export const integrationApi = {
       secret: data.secret,
     }),
 
-  updateWebhook: (id: string, data: { name?: string; targetUrl?: string; events?: string[]; version: number }) =>
+  updateWebhook: (
+    id: string,
+    data: { name?: string; targetUrl?: string; events?: string[]; version: number }
+  ) =>
     apiClient.patch<any>(`/api/v1/integration/webhooks/${id}`, {
       nameEn: data.name,
       url: data.targetUrl,
@@ -1536,8 +1262,7 @@ export const integrationApi = {
       version: data.version,
     }),
 
-  deleteWebhook: (id: string) =>
-    apiClient.delete<any>(`/api/v1/integration/webhooks/${id}`),
+  deleteWebhook: (id: string) => apiClient.delete<any>(`/api/v1/integration/webhooks/${id}`),
 
   deactivateWebhook: (id: string) =>
     apiClient.post<any>(`/api/v1/integration/webhooks/${id}/deactivate`, {}),
@@ -1559,8 +1284,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    apiClient.get<any>('/api/v1/logs/changes', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/changes', { params }),
 
   // Technical Events
   getTechEvents: (params?: {
@@ -1569,8 +1293,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    apiClient.get<any>('/api/v1/logs/events', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/events', { params }),
 
   // Integration Logs
   getIntegrationLogs: (params?: {
@@ -1580,8 +1303,7 @@ export const logApi = {
     consumerId?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    apiClient.get<any>('/api/v1/logs/integrations', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/integrations', { params }),
 
   getIntegrationLogByTrace: (traceId: string) =>
     apiClient.get<any>(`/api/v1/logs/integrations/trace/${traceId}`),
@@ -1590,12 +1312,7 @@ export const logApi = {
     apiClient.get<any>('/api/v1/logs/integrations/failed', { params }),
 
   // Loki Search
-  searchLoki: (params: {
-    query: string;
-    timeRange: string;
-    limit?: number;
-    app?: string;
-  }) =>
+  searchLoki: (params: { query: string; timeRange: string; limit?: number; app?: string }) =>
     apiClient.post<any>('/api/v1/logs/search', params),
 
   // Unified log search (for LogViewer component)
@@ -1615,24 +1332,23 @@ export const logApi = {
     if (params?.end) queryParams.append('end', params.end);
     if (params?.limit) queryParams.append('limit', String(params.limit));
     const queryStr = queryParams.toString();
-    return apiClient.get<Array<{
-      timestamp: string;
-      level: string;
-      message: string;
-      source: string;
-      metadata?: Record<string, unknown>;
-    }>>(`/api/v1/logs/search${queryStr ? `?${queryStr}` : ''}`);
+    return apiClient.get<
+      Array<{
+        timestamp: string;
+        level: string;
+        message: string;
+        source: string;
+        metadata?: Record<string, unknown>;
+      }>
+    >(`/api/v1/logs/search${queryStr ? `?${queryStr}` : ''}`);
   },
 };
 
-
 // Subsidiary API
 export const subsidiaryApi = {
-  list: () =>
-    apiClient.get<any[]>('/api/v1/subsidiaries'),
+  list: () => apiClient.get<any[]>('/api/v1/subsidiaries'),
 
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/subsidiaries/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/subsidiaries/${id}`),
 
   create: (data: {
     code: string;
@@ -1642,18 +1358,19 @@ export const subsidiaryApi = {
     nameJa?: string;
     descriptionEn?: string;
     sortOrder?: number;
-  }) =>
-    apiClient.post<any>('/api/v1/subsidiaries', data),
+  }) => apiClient.post<any>('/api/v1/subsidiaries', data),
 
-  update: (id: string, data: {
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    sortOrder?: number;
-    version: number;
-  }) =>
-    apiClient.patch<any>(`/api/v1/subsidiaries/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      descriptionEn?: string;
+      sortOrder?: number;
+      version: number;
+    }
+  ) => apiClient.patch<any>(`/api/v1/subsidiaries/${id}`, data),
 
   move: (id: string, data: { newParentId?: string | null; version: number }) =>
     apiClient.post<any>(`/api/v1/subsidiaries/${id}/move`, data),
@@ -1667,56 +1384,53 @@ export const subsidiaryApi = {
 
 // System User API (backend path: /system-users)
 export const systemUserApi = {
-  list: (params?: { search?: string; roleId?: string; isActive?: boolean; page?: number; pageSize?: number }) =>
-    apiClient.get<any[]>('/api/v1/system-users', params),
+  list: (params?: {
+    search?: string;
+    roleId?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => apiClient.get<any[]>('/api/v1/system-users', params),
 
-  get: (id: string) =>
-    apiClient.get<any>(`/api/v1/system-users/${id}`),
+  get: (id: string) => apiClient.get<any>(`/api/v1/system-users/${id}`),
 
-  create: (data: { username: string; email: string; password: string; displayName?: string; forceReset?: boolean }) =>
-    apiClient.post<any>('/api/v1/system-users', data),
+  create: (data: {
+    username: string;
+    email: string;
+    password: string;
+    displayName?: string;
+    forceReset?: boolean;
+  }) => apiClient.post<any>('/api/v1/system-users', data),
 
-  update: (id: string, data: { displayName?: string; phone?: string; preferredLanguage?: string }) =>
-    apiClient.patch<any>(`/api/v1/system-users/${id}`, data),
+  update: (
+    id: string,
+    data: { displayName?: string; phone?: string; preferredLanguage?: string }
+  ) => apiClient.patch<any>(`/api/v1/system-users/${id}`, data),
 
   resetPassword: (id: string, options?: { newPassword?: string; forceReset?: boolean }) =>
     apiClient.post<any>(`/api/v1/system-users/${id}/reset-password`, options || {}),
 
-  deactivate: (id: string) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/deactivate`, {}),
+  deactivate: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/deactivate`, {}),
 
-  reactivate: (id: string) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/reactivate`, {}),
+  reactivate: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/reactivate`, {}),
 
   getScopeAccess: (id: string) =>
-    apiClient.get<Array<{ id: string; scopeType: string; scopeId: string | null; includeSubunits: boolean }>>(`/api/v1/system-users/${id}/scope-access`),
+    apiClient.get<
+      Array<{ id: string; scopeType: string; scopeId: string | null; includeSubunits: boolean }>
+    >(`/api/v1/system-users/${id}/scope-access`),
 
-  setScopeAccess: (id: string, accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }>) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/scope-access`, { accesses }),
+  setScopeAccess: (
+    id: string,
+    accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }>
+  ) => apiClient.post<any>(`/api/v1/system-users/${id}/scope-access`, { accesses }),
 
-  disableTotp: (id: string) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/disable-totp`, {}),
+  disableTotp: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/disable-totp`, {}),
 
   setPasswordExpiry: (id: string, options: { enabled: boolean; expiresInDays?: number }) =>
     apiClient.post<any>(`/api/v1/system-users/${id}/password-expiry`, options),
 };
 
 // Permission API
-export const permissionApi = {
-  list: (params?: { resourceCode?: string; action?: string; isActive?: boolean }) =>
-    apiClient.get<Permission[]>('/api/v1/permissions', params),
-
-  getResources: () =>
-    apiClient.get<ResourceDefinition[]>('/api/v1/permissions/resources'),
-  
-  check: (checks: PermissionCheckRequest[]) =>
-    apiClient.post<CheckPermissionsResponse>('/api/v1/permissions/check', { checks }),
-
-  // Get current user's effective permissions
-  getMyPermissions: (params?: { scopeType?: string; scopeId?: string }) =>
-    apiClient.get<MyPermissionsResponse>('/api/v1/users/me/permissions', params),
-};
-
 // Delegated Admin API
 export interface DelegatedAdmin {
   id: string;
@@ -1742,14 +1456,14 @@ export const delegatedAdminApi = {
     scopeId: string;
     delegateType: 'user' | 'role';
     delegateId: string;
-  }) =>
-    apiClient.post<DelegatedAdmin>('/api/v1/delegated-admins', data),
+  }) => apiClient.post<DelegatedAdmin>('/api/v1/delegated-admins', data),
 
-  delete: (id: string) =>
-    apiClient.delete<{ message: string }>(`/api/v1/delegated-admins/${id}`),
+  delete: (id: string) => apiClient.delete<{ message: string }>(`/api/v1/delegated-admins/${id}`),
 
   getMyScopes: () =>
-    apiClient.get<Array<{ scopeType: 'subsidiary' | 'talent'; scopeId: string }>>('/api/v1/delegated-admins/my-scopes'),
+    apiClient.get<Array<{ scopeType: 'subsidiary' | 'talent'; scopeId: string }>>(
+      '/api/v1/delegated-admins/my-scopes'
+    ),
 };
 
 // System Role API
@@ -1763,32 +1477,31 @@ export const systemRoleApi = {
     return apiClient.get<SystemRoleRecord[]>(`/api/v1/system-roles${query ? `?${query}` : ''}`);
   },
 
-  get: (id: string) =>
-    apiClient.get<SystemRoleRecord>(`/api/v1/system-roles/${id}`),
+  get: (id: string) => apiClient.get<SystemRoleRecord>(`/api/v1/system-roles/${id}`),
 
-  create: (data: { 
-    code: string; 
-    nameEn: string; 
-    nameZh?: string; 
-    nameJa?: string; 
-    description?: string; 
+  create: (data: {
+    code: string;
+    nameEn: string;
+    nameZh?: string;
+    nameJa?: string;
+    description?: string;
     isActive?: boolean;
     permissions?: RolePermissionInput[];
-  }) =>
-    apiClient.post<SystemRoleRecord>('/api/v1/system-roles', data),
+  }) => apiClient.post<SystemRoleRecord>('/api/v1/system-roles', data),
 
-  update: (id: string, data: { 
-    nameEn?: string; 
-    nameZh?: string; 
-    nameJa?: string; 
-    description?: string; 
-    isActive?: boolean;
-    permissions?: RolePermissionInput[];
-  }) =>
-    apiClient.patch<SystemRoleRecord>(`/api/v1/system-roles/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      description?: string;
+      isActive?: boolean;
+      permissions?: RolePermissionInput[];
+    }
+  ) => apiClient.patch<SystemRoleRecord>(`/api/v1/system-roles/${id}`, data),
 
-  delete: (id: string) =>
-    apiClient.delete<any>(`/api/v1/system-roles/${id}`),
+  delete: (id: string) => apiClient.delete<any>(`/api/v1/system-roles/${id}`),
 };
 
 // Auth extension API (missing endpoints)
@@ -1798,19 +1511,23 @@ export const authExtApi = {
     apiClient.post<any>('/api/v1/auth/recovery-code/verify', { sessionToken, recoveryCode }),
 
   // Logout from all devices
-  logoutAll: () =>
-    apiClient.post<any>('/api/v1/auth/logout-all', {}),
+  logoutAll: () => apiClient.post<any>('/api/v1/auth/logout-all', {}),
 };
 
 // User Profile TOTP API
 export const totpApi = {
   // Initialize TOTP setup
   setup: () =>
-    apiClient.post<{ secret: string; qrCode: string; otpauthUrl: string }>('/api/v1/users/me/totp/setup', {}),
+    apiClient.post<{ secret: string; qrCode: string; otpauthUrl: string }>(
+      '/api/v1/users/me/totp/setup',
+      {}
+    ),
 
   // Enable TOTP (requires verification code)
   enable: (code: string) =>
-    apiClient.post<{ enabled: boolean; recoveryCodes: string[] }>('/api/v1/users/me/totp/enable', { code }),
+    apiClient.post<{ enabled: boolean; recoveryCodes: string[] }>('/api/v1/users/me/totp/enable', {
+      code,
+    }),
 
   // Disable TOTP
   disable: (password: string) =>
@@ -1818,7 +1535,9 @@ export const totpApi = {
 
   // Regenerate recovery codes
   regenerateRecoveryCodes: (password: string) =>
-    apiClient.post<{ recoveryCodes: string[] }>('/api/v1/users/me/recovery-codes/regenerate', { password }),
+    apiClient.post<{ recoveryCodes: string[] }>('/api/v1/users/me/recovery-codes/regenerate', {
+      password,
+    }),
 };
 
 // Scope Settings API (Hierarchical settings with inheritance)
@@ -1833,8 +1552,7 @@ export interface ScopeSettingsResponse {
 
 export const settingsApi = {
   // Get tenant settings
-  getTenantSettings: () =>
-    apiClient.get<ScopeSettingsResponse>('/api/v1/organization/settings'),
+  getTenantSettings: () => apiClient.get<ScopeSettingsResponse>('/api/v1/organization/settings'),
 
   // Update tenant settings
   updateTenantSettings: (settings: Record<string, unknown>, version: number) =>
@@ -1846,7 +1564,10 @@ export const settingsApi = {
 
   // Update subsidiary settings
   updateSubsidiarySettings: (id: string, settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, { settings, version }),
+    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, {
+      settings,
+      version,
+    }),
 
   // Reset subsidiary setting field to inherited value
   resetSubsidiarySetting: (id: string, field: string) =>
@@ -1870,7 +1591,7 @@ export const systemDictionaryApi = {
   // Get dictionary by type
   get: (dictionaryType: string) =>
     apiClient.get<any>(`/api/v1/system-dictionary/${dictionaryType}`),
-  
+
   // Get items for a dictionary type
   getItems: (dictionaryType: string, query?: { isActive?: boolean }) =>
     apiClient.get<any[]>(`/api/v1/system-dictionary/${dictionaryType}/items`, query),
@@ -1881,19 +1602,19 @@ export const configurationEntityApi = {
   // List configuration entities by type
   list: (entityType: string, query?: Record<string, any>) =>
     apiClient.get<any[]>(`/api/v1/configuration-entity/${entityType}`, query),
-  
+
   // Get single configuration entity
   get: (entityType: string, id: string) =>
     apiClient.get<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
-  
+
   // Create configuration entity
   create: (entityType: string, data: Record<string, any>) =>
     apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
-  
+
   // Update configuration entity
   update: (entityType: string, id: string, data: Record<string, any>) =>
     apiClient.patch<any>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
-  
+
   // Delete/deactivate configuration entity
   delete: (entityType: string, id: string) =>
     apiClient.delete<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
@@ -1959,9 +1680,12 @@ export const externalBlocklistApi = {
     if (query?.scopeId) params.scopeId = query.scopeId;
     else if (query?.ownerId) params.scopeId = query.ownerId;
     if (query?.category) params.category = query.category;
-    if (query?.includeInherited !== undefined) params.includeInherited = String(query.includeInherited);
-    if (query?.includeDisabled !== undefined) params.includeDisabled = String(query.includeDisabled);
-    if (query?.includeInactive !== undefined) params.includeInactive = String(query.includeInactive);
+    if (query?.includeInherited !== undefined)
+      params.includeInherited = String(query.includeInherited);
+    if (query?.includeDisabled !== undefined)
+      params.includeDisabled = String(query.includeDisabled);
+    if (query?.includeInactive !== undefined)
+      params.includeInactive = String(query.includeInactive);
     if (query?.page) params.page = String(query.page);
     if (query?.pageSize) params.pageSize = String(query.pageSize);
     return apiClient.get<ExternalBlocklistPattern[]>('/api/v1/external-blocklist', params);
@@ -1969,15 +1693,16 @@ export const externalBlocklistApi = {
 
   // Get patterns with inheritance for a specific scope
   getForScope: (scopeType: 'tenant' | 'subsidiary' | 'talent', scopeId: string) =>
-    apiClient.get<ExternalBlocklistPattern[]>(`/api/v1/external-blocklist/scope/${scopeType}/${scopeId}`),
+    apiClient.get<ExternalBlocklistPattern[]>(
+      `/api/v1/external-blocklist/scope/${scopeType}/${scopeId}`
+    ),
 
   // Get patterns with inheritance for a talent (legacy)
   getForTalent: (talentId: string) =>
     apiClient.get<ExternalBlocklistPattern[]>(`/api/v1/external-blocklist/talent/${talentId}`),
 
   // Get single pattern
-  get: (id: string) =>
-    apiClient.get<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`),
+  get: (id: string) => apiClient.get<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`),
 
   // Create pattern
   create: (data: {
@@ -1996,44 +1721,53 @@ export const externalBlocklistApi = {
     inherit?: boolean;
     sortOrder?: number;
     isForceUse?: boolean;
-  }) =>
-    apiClient.post<ExternalBlocklistPattern>('/api/v1/external-blocklist', data),
+  }) => apiClient.post<ExternalBlocklistPattern>('/api/v1/external-blocklist', data),
 
   // Update pattern
-  update: (id: string, data: {
-    pattern?: string;
-    patternType?: 'domain' | 'url_regex' | 'keyword';
-    nameEn?: string;
-    nameZh?: string;
-    nameJa?: string;
-    description?: string;
-    category?: string;
-    severity?: 'low' | 'medium' | 'high';
-    action?: 'reject' | 'flag' | 'replace';
-    replacement?: string;
-    inherit?: boolean;
-    sortOrder?: number;
-    isActive?: boolean;
-    isForceUse?: boolean;
-    version: number;
-  }) =>
-    apiClient.patch<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      pattern?: string;
+      patternType?: 'domain' | 'url_regex' | 'keyword';
+      nameEn?: string;
+      nameZh?: string;
+      nameJa?: string;
+      description?: string;
+      category?: string;
+      severity?: 'low' | 'medium' | 'high';
+      action?: 'reject' | 'flag' | 'replace';
+      replacement?: string;
+      inherit?: boolean;
+      sortOrder?: number;
+      isActive?: boolean;
+      isForceUse?: boolean;
+      version: number;
+    }
+  ) => apiClient.patch<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`, data),
 
   // Delete pattern
-  delete: (id: string) =>
-    apiClient.delete<{ message: string }>(`/api/v1/external-blocklist/${id}`),
+  delete: (id: string) => apiClient.delete<{ message: string }>(`/api/v1/external-blocklist/${id}`),
 
   // Disable inherited pattern in current scope
   disable: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<{ id: string; disabled: boolean }>(`/api/v1/external-blocklist/${id}/disable`, scope),
+    apiClient.post<{ id: string; disabled: boolean }>(
+      `/api/v1/external-blocklist/${id}/disable`,
+      scope
+    ),
 
   // Enable previously disabled pattern in current scope
   enable: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<{ id: string; enabled: boolean }>(`/api/v1/external-blocklist/${id}/enable`, scope),
+    apiClient.post<{ id: string; enabled: boolean }>(
+      `/api/v1/external-blocklist/${id}/enable`,
+      scope
+    ),
 
   // Batch toggle active status
   batchToggle: (ids: string[], isActive: boolean) =>
-    apiClient.post<{ updated: number }>('/api/v1/external-blocklist/batch-toggle', { ids, isActive }),
+    apiClient.post<{ updated: number }>('/api/v1/external-blocklist/batch-toggle', {
+      ids,
+      isActive,
+    }),
 };
 
 // Talent Domain API (for custom domain configuration)
@@ -2086,7 +1820,10 @@ export const talentDomainApi = {
       {}
     ),
 
-  updatePaths: (talentId: string, paths: { homepageCustomPath?: string; marshmallowCustomPath?: string }) =>
+  updatePaths: (
+    talentId: string,
+    paths: { homepageCustomPath?: string; marshmallowCustomPath?: string }
+  ) =>
     apiClient.patch<{
       homepageCustomPath: string | null;
       marshmallowCustomPath: string | null;
@@ -2125,14 +1862,20 @@ export interface MarshmallowExportJob {
 
 export const marshmallowExportApi = {
   // Create export job
-  create: (talentId: string, data: {
-    format: 'csv' | 'json' | 'xlsx';
-    status?: string[];
-    startDate?: string;
-    endDate?: string;
-    includeRejected?: boolean;
-  }) =>
-    apiClient.post<{ jobId: string; status: string }>(`/api/v1/talents/${talentId}/marshmallow/export`, data),
+  create: (
+    talentId: string,
+    data: {
+      format: 'csv' | 'json' | 'xlsx';
+      status?: string[];
+      startDate?: string;
+      endDate?: string;
+      includeRejected?: boolean;
+    }
+  ) =>
+    apiClient.post<{ jobId: string; status: string }>(
+      `/api/v1/talents/${talentId}/marshmallow/export`,
+      data
+    ),
 
   // Get job status
   get: (talentId: string, jobId: string) =>
@@ -2140,14 +1883,19 @@ export const marshmallowExportApi = {
 
   // Get download URL
   getDownloadUrl: (talentId: string, jobId: string) =>
-    apiClient.get<{ url: string }>(`/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`),
+    apiClient.get<{ url: string }>(
+      `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
+    ),
 };
 
 // User Role API - for managing user role assignments
 export const userRoleApi = {
   // Get user roles (optionally filtered by scope)
   getUserRoles: (userId: string, scopeType?: RbacScopeType, scopeId?: string) =>
-    apiClient.get<UserRoleAssignmentRecord[]>(`/api/v1/users/${userId}/roles`, { scopeType, scopeId }),
+    apiClient.get<UserRoleAssignmentRecord[]>(`/api/v1/users/${userId}/roles`, {
+      scopeType,
+      scopeId,
+    }),
 
   // Assign role to user
   assignRole: (userId: string, data: AssignUserRoleRequest) => {
@@ -2171,11 +1919,16 @@ export const userRoleApi = {
 
   // Remove role assignment
   removeRole: (userId: string, assignmentId: string) =>
-    apiClient.delete<RemoveUserRoleAssignmentResponse>(`/api/v1/users/${userId}/roles/${assignmentId}`),
+    apiClient.delete<RemoveUserRoleAssignmentResponse>(
+      `/api/v1/users/${userId}/roles/${assignmentId}`
+    ),
 
   // Update role inheritance
   updateRoleInherit: (userId: string, assignmentId: string, inherit: boolean) =>
-    apiClient.patch<UpdateUserRoleAssignmentResponse>(`/api/v1/users/${userId}/roles/${assignmentId}`, { inherit }),
+    apiClient.patch<UpdateUserRoleAssignmentResponse>(
+      `/api/v1/users/${userId}/roles/${assignmentId}`,
+      { inherit }
+    ),
 };
 
 // Email Configuration API - for AC tenant to manage email settings
@@ -2231,16 +1984,14 @@ export interface EmailTestResult {
 
 export const emailConfigApi = {
   // Get email configuration (masked)
-  get: () =>
-    apiClient.get<EmailConfigResponse>('/api/v1/email/config'),
+  get: () => apiClient.get<EmailConfigResponse>('/api/v1/email/config'),
 
   // Save email configuration
   save: (config: SaveEmailConfigPayload) =>
     apiClient.put<EmailConfigResponse>('/api/v1/email/config', config),
 
   // Test connection
-  testConnection: () =>
-    apiClient.post<EmailTestResult>('/api/v1/email/config/test-connection', {}),
+  testConnection: () => apiClient.post<EmailTestResult>('/api/v1/email/config/test-connection', {}),
 
   // Send test email
   test: (testEmail: string) =>
