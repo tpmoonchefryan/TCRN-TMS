@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
-  RBAC_POLICY_DEFINITIONS,
   type PermissionActionInput,
+  RBAC_POLICY_DEFINITIONS,
   resolveRbacPermission,
 } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';

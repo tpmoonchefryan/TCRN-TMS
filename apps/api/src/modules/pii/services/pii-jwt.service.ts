@@ -3,7 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { LogSeverity, TechEventType, type RequestContext } from '@tcrn/shared';
+import { LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 import { TechEventLogService } from '../../log';
