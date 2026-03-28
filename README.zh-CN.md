@@ -310,6 +310,8 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 - `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。
 - `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
 - `PII health check` 属于 Worker 的周期性依赖探测。除非显式设置 `ENABLE_SCHEDULED_JOBS=false`，worker 会每 60 秒为已配置的 PII endpoint 入队一次 `pii-health-check`。它应被视为依赖健康遥测，而不是主应用存活探针。
+- 如果真实外部 PII 服务尚未部署，或 Prometheus 还未开始抓取该服务，就不要把 `pii-health-check` 噪音或 localhost 占位地址失败升级为值班告警；这类状态只应视为面向运维的依赖遥测。
+- 一旦真实 PII 服务已部署且被 Prometheus 抓取，应把 `HighPiiServiceLatency` / `HighPiiErrorRate` 视为 warning 级退化，把 `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` 视为 critical 级依赖告警。
 
 ---
 

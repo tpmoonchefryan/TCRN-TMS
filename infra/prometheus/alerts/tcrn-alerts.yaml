@@ -296,6 +296,9 @@ groups:
 
   - name: tcrn-pii
     rules:
+      # These rules are intended for a real pii-service deployment that is scraped by Prometheus.
+      # Do not page from worker-side pii-health-check noise or localhost placeholder endpoints.
+      # Warning alerts represent dependency degradation; critical alerts represent outage or crypto failure.
       # PII service latency P95
       - alert: HighPiiServiceLatency
         expr: |

@@ -310,6 +310,8 @@ Current runtime status for the infrastructure above:
 - `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned for future rollout; distributed tracing is not enabled by default in the current runtime.
 - `Prometheus` is a reserved roadmap item and is not part of the current Compose deployment.
 - `PII health check` is a scheduled worker dependency probe. Unless `ENABLE_SCHEDULED_JOBS=false`, the worker enqueues `pii-health-check` every 60 seconds for configured PII endpoints. Treat it as dependency telemetry, not the primary app liveness signal.
+- If no real external PII service is deployed, or Prometheus is not scraping that service yet, do not page on `pii-health-check` noise or localhost placeholder failures. That state is operator-facing telemetry only.
+- Once a real PII service is deployed and scraped, treat `HighPiiServiceLatency` / `HighPiiErrorRate` as warning-level degradation, and `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` as critical dependency alerts.
 
 ---
 

@@ -310,6 +310,8 @@ Zodによるエンドツーエンドの型安全バリデーション：
 - `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。
 - `Prometheus` は現時点ではロードマップ上の予約項目で、現在の Compose デプロイには含まれません。
 - `PII health check` は Worker の定期的な依存先プローブです。`ENABLE_SCHEDULED_JOBS=false` を明示しない限り、worker は設定済み PII endpoint に対して 60 秒ごとに `pii-health-check` を投入します。これはメインアプリの liveness ではなく、依存先テレメトリとして扱ってください。
+- 実際の外部 PII service がまだ未配備、または Prometheus がその service をまだ scrape していない段階では、`pii-health-check` のノイズや localhost placeholder の失敗を当番アラートに昇格させないでください。この状態は operator 向けの依存先テレメトリに留めます。
+- 実際の PII service が配備され Prometheus に scrape された後は、`HighPiiServiceLatency` / `HighPiiErrorRate` を warning レベルの劣化、`CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` を critical レベルの依存先アラートとして扱ってください。
 
 ---
 
