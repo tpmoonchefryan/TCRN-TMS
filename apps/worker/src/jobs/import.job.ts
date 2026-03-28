@@ -117,6 +117,14 @@ interface LookupData {
   consumers: Map<string, string>;
 }
 
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
+function tenantTable(schemaName: string, tableName: string): string {
+  return `${quoteIdentifier(schemaName)}.${quoteIdentifier(tableName)}`;
+}
+
 function createMinioClient(): Minio.Client {
   const endpoint = process.env.MINIO_ENDPOINT || 'localhost:9000';
   const [endpointHost, endpointPort] = endpoint.split(':');
@@ -347,44 +355,46 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
 /**
  * Load lookup data for validation
  */
-async function loadLookupData(prisma: PrismaClient, _schemaName: string) {
-  // Load platforms
-  const platforms = await prisma.socialPlatform.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true },
-  });
-
-  // Load membership classes, types, levels
-  const membershipClasses = await prisma.membershipClass.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true },
-  });
-
-  const membershipTypes = await prisma.membershipType.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true, membershipClassId: true },
-  });
-
-  const membershipLevels = await prisma.membershipLevel.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true, membershipTypeId: true },
-  });
-
-  // Load customer statuses
-  const customerStatuses = await prisma.customerStatus.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true },
-  });
-
-  const businessSegments = await prisma.businessSegment.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true },
-  });
-
-  const consumers = await prisma.consumer.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true },
-  });
+async function loadLookupData(prisma: PrismaClient, schemaName: string) {
+  const [
+    platforms,
+    membershipClasses,
+    membershipTypes,
+    membershipLevels,
+    customerStatuses,
+    businessSegments,
+    consumers,
+  ] = await Promise.all([
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+      `SELECT id, code FROM ${tenantTable(schemaName, 'social_platform')} WHERE is_active = true`,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+      `SELECT id, code FROM ${tenantTable(schemaName, 'membership_class')} WHERE is_active = true`,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string; membershipClassId: string }>>(
+      `
+        SELECT id, code, membership_class_id as "membershipClassId"
+        FROM ${tenantTable(schemaName, 'membership_type')}
+        WHERE is_active = true
+      `,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string; membershipTypeId: string }>>(
+      `
+        SELECT id, code, membership_type_id as "membershipTypeId"
+        FROM ${tenantTable(schemaName, 'membership_level')}
+        WHERE is_active = true
+      `,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+      `SELECT id, code FROM ${tenantTable(schemaName, 'customer_status')} WHERE is_active = true`,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+      `SELECT id, code FROM ${tenantTable(schemaName, 'business_segment')} WHERE is_active = true`,
+    ),
+    prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+      `SELECT id, code FROM ${tenantTable(schemaName, 'consumer')} WHERE is_active = true`,
+    ),
+  ]);
 
   return {
     platforms: new Map(platforms.map(p => [p.code, p.id])),
@@ -527,7 +537,7 @@ function firstDelimitedValue(value?: string): string | undefined {
  */
 async function processCustomerCreate(
   prisma: PrismaClient,
-  _schemaName: string,
+  schemaName: string,
   row: CustomerCsvRow,
   options: {
     talentId: string;
@@ -554,54 +564,125 @@ async function processCustomerCreate(
   const searchHintPhoneLast4 = profileType === 'individual' ? generateSearchHintPhoneLast4(derivedPhone) : null;
 
   // Create customer profile
-  await prisma.customerProfile.create({
-    data: {
-      id: customerId,
-      talentId: options.talentId,
-      profileStoreId: options.profileStoreId,
-      originTalentId: options.talentId,
-      rmProfileId,
-      profileType,
-      nickname: row.nickname,
-      primaryLanguage: row.primary_language || null,
-      statusId,
-      tags: row.tags?.split(',').map(t => t.trim()).filter(Boolean) || [],
-      source: row.source || 'import',
-      notes: row.notes,
-      createdBy: options.userId,
-      updatedBy: options.userId,
-    },
-  });
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO ${tenantTable(schemaName, 'customer_profile')} (
+        id,
+        talent_id,
+        profile_store_id,
+        origin_talent_id,
+        rm_profile_id,
+        profile_type,
+        nickname,
+        primary_language,
+        status_id,
+        tags,
+        source,
+        notes,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by
+      ) VALUES (
+        $1::uuid,
+        $2::uuid,
+        $3::uuid,
+        $4::uuid,
+        $5::uuid,
+        $6,
+        $7,
+        $8,
+        $9::uuid,
+        $10::text[],
+        $11,
+        $12,
+        NOW(),
+        NOW(),
+        $13::uuid,
+        $14::uuid
+      )
+    `,
+    customerId,
+    options.talentId,
+    options.profileStoreId,
+    options.talentId,
+    rmProfileId,
+    profileType,
+    row.nickname,
+    row.primary_language || null,
+    statusId,
+    row.tags?.split(',').map((tag) => tag.trim()).filter(Boolean) || [],
+    row.source || 'import',
+    row.notes ?? null,
+    options.userId,
+    options.userId,
+  );
 
   if (profileType === 'company') {
-    await prisma.customerCompanyInfo.create({
-      data: {
-        customerId,
-        companyLegalName: row.company_legal_name || row.nickname,
-        companyShortName: row.company_short_name || null,
-        registrationNumber: row.registration_number || null,
-        vatId: row.vat_id || null,
-        establishmentDate: row.establishment_date ? new Date(row.establishment_date) : null,
-        businessSegmentId: row.business_segment_code
-          ? (options.lookupData.businessSegments.get(row.business_segment_code) ?? null)
-          : null,
-        website: row.website || null,
-      },
-    });
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO ${tenantTable(schemaName, 'customer_company_info')} (
+          customer_id,
+          company_legal_name,
+          company_short_name,
+          registration_number,
+          vat_id,
+          establishment_date,
+          business_segment_id,
+          website,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1::uuid,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6::date,
+          $7::uuid,
+          $8,
+          NOW(),
+          NOW()
+        )
+      `,
+      customerId,
+      row.company_legal_name || row.nickname,
+      row.company_short_name || null,
+      row.registration_number || null,
+      row.vat_id || null,
+      row.establishment_date ? new Date(row.establishment_date) : null,
+      row.business_segment_code
+        ? (options.lookupData.businessSegments.get(row.business_segment_code) ?? null)
+        : null,
+      row.website || null,
+    );
   }
 
   if (row.external_id && options.consumerCode) {
     const consumerId = options.lookupData.consumers.get(options.consumerCode);
     if (consumerId) {
-      await prisma.customerExternalId.create({
-        data: {
-          customerId,
-          profileStoreId: options.profileStoreId,
-          consumerId,
-          externalId: row.external_id,
-          createdBy: options.userId,
-        },
-      });
+      await prisma.$executeRawUnsafe(
+        `
+          INSERT INTO ${tenantTable(schemaName, 'customer_external_id')} (
+            customer_id,
+            profile_store_id,
+            consumer_id,
+            external_id,
+            created_by
+          ) VALUES (
+            $1::uuid,
+            $2::uuid,
+            $3::uuid,
+            $4,
+            $5::uuid
+          )
+        `,
+        customerId,
+        options.profileStoreId,
+        consumerId,
+        row.external_id,
+        options.userId,
+      );
     }
   }
 
@@ -616,15 +697,30 @@ async function processCustomerCreate(
   if (row.platform_code && row.platform_uid) {
     const platformId = options.lookupData.platforms.get(row.platform_code);
     if (platformId) {
-      await prisma.platformIdentity.create({
-        data: {
-          customerId,
-          platformId,
-          platformUid: row.platform_uid,
-          isCurrent: true,
-          isVerified: false,
-        },
-      });
+      await prisma.$executeRawUnsafe(
+        `
+          INSERT INTO ${tenantTable(schemaName, 'platform_identity')} (
+            customer_id,
+            platform_id,
+            platform_uid,
+            is_current,
+            is_verified,
+            captured_at,
+            updated_at
+          ) VALUES (
+            $1::uuid,
+            $2::uuid,
+            $3,
+            true,
+            false,
+            NOW(),
+            NOW()
+          )
+        `,
+        customerId,
+        platformId,
+        row.platform_uid,
+      );
     }
   }
 
@@ -636,20 +732,46 @@ async function processCustomerCreate(
     const platformId = row.platform_code ? options.lookupData.platforms.get(row.platform_code) : null;
 
     if (classId && typeId && levelId && platformId) {
-      await prisma.membershipRecord.create({
-        data: {
-          customerId,
-          platformId,
-          membershipClassId: classId,
-          membershipTypeId: typeId,
-          membershipLevelId: levelId,
-          validFrom: row.valid_from ? new Date(row.valid_from) : new Date(),
-          validTo: row.valid_to ? new Date(row.valid_to) : null,
-          autoRenew: false,
-          createdBy: options.userId,
-          updatedBy: options.userId,
-        },
-      });
+      await prisma.$executeRawUnsafe(
+        `
+          INSERT INTO ${tenantTable(schemaName, 'membership_record')} (
+            customer_id,
+            platform_id,
+            membership_class_id,
+            membership_type_id,
+            membership_level_id,
+            valid_from,
+            valid_to,
+            auto_renew,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (
+            $1::uuid,
+            $2::uuid,
+            $3::uuid,
+            $4::uuid,
+            $5::uuid,
+            $6::timestamptz,
+            $7::timestamptz,
+            false,
+            NOW(),
+            NOW(),
+            $8::uuid,
+            $9::uuid
+          )
+        `,
+        customerId,
+        platformId,
+        classId,
+        typeId,
+        levelId,
+        row.valid_from ? new Date(row.valid_from) : new Date(),
+        row.valid_to ? new Date(row.valid_to) : null,
+        options.userId,
+        options.userId,
+      );
     }
   }
 
@@ -671,7 +793,7 @@ async function processCustomerCreate(
  */
 async function processCustomerUpdate(
   prisma: PrismaClient,
-  _schemaName: string,
+  schemaName: string,
   row: CustomerCsvRow,
   options: {
     talentId: string;
@@ -690,34 +812,56 @@ async function processCustomerUpdate(
     return false;
   }
 
-  const identity = await prisma.platformIdentity.findFirst({
-    where: {
-      platformId,
-      platformUid: row.platform_uid,
-      customer: {
-        talentId: options.talentId,
-      },
-    },
-    include: { customer: true },
-  });
+  const identities = await prisma.$queryRawUnsafe<Array<{
+    customerId: string;
+    nickname: string;
+    tags: string[];
+    notes: string | null;
+  }>>(
+    `
+      SELECT
+        pi.customer_id as "customerId",
+        cp.nickname,
+        cp.tags,
+        cp.notes
+      FROM ${tenantTable(schemaName, 'platform_identity')} pi
+      JOIN ${tenantTable(schemaName, 'customer_profile')} cp
+        ON cp.id = pi.customer_id
+      WHERE pi.platform_id = $1::uuid
+        AND pi.platform_uid = $2
+        AND cp.talent_id = $3::uuid
+      LIMIT 1
+    `,
+    platformId,
+    row.platform_uid,
+    options.talentId,
+  );
+  const identity = identities[0];
 
   if (!identity) {
     return false;
   }
 
   // Update customer profile
-  await prisma.customerProfile.update({
-    where: { id: identity.customerId },
-    data: {
-      nickname: row.nickname || identity.customer.nickname,
-      tags: row.tags
-        ? row.tags.split(',').map(t => t.trim()).filter(Boolean)
-        : identity.customer.tags,
-      notes: row.notes || identity.customer.notes,
-      updatedBy: options.userId,
-      version: { increment: 1 },
-    },
-  });
+  await prisma.$executeRawUnsafe(
+    `
+      UPDATE ${tenantTable(schemaName, 'customer_profile')}
+      SET nickname = $1,
+          tags = $2::text[],
+          notes = $3,
+          updated_by = $4::uuid,
+          version = version + 1,
+          updated_at = NOW()
+      WHERE id = $5::uuid
+    `,
+    row.nickname || identity.nickname,
+    row.tags
+      ? row.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+      : identity.tags,
+    row.notes || identity.notes,
+    options.userId,
+    identity.customerId,
+  );
 
   return true;
 }
@@ -727,7 +871,7 @@ async function processCustomerUpdate(
  */
 async function processMembershipSync(
   prisma: PrismaClient,
-  _schemaName: string,
+  schemaName: string,
   row: CustomerCsvRow,
   options: {
     talentId: string;
@@ -748,15 +892,22 @@ async function processMembershipSync(
   }
 
   // Find or create customer
-  const identity = await prisma.platformIdentity.findFirst({
-    where: {
-      platformId,
-      platformUid: row.platform_uid,
-      customer: {
-        talentId: options.talentId,
-      },
-    },
-  });
+  const identities = await prisma.$queryRawUnsafe<Array<{ customerId: string }>>(
+    `
+      SELECT pi.customer_id as "customerId"
+      FROM ${tenantTable(schemaName, 'platform_identity')} pi
+      JOIN ${tenantTable(schemaName, 'customer_profile')} cp
+        ON cp.id = pi.customer_id
+      WHERE pi.platform_id = $1::uuid
+        AND pi.platform_uid = $2
+        AND cp.talent_id = $3::uuid
+      LIMIT 1
+    `,
+    platformId,
+    row.platform_uid,
+    options.talentId,
+  );
+  const identity = identities[0];
 
   if (!identity) {
     // For membership sync, we might want to create the customer
@@ -770,38 +921,74 @@ async function processMembershipSync(
 
   if (classId && typeId && levelId) {
     // Find existing membership record
-    const existingRecord = await prisma.membershipRecord.findFirst({
-      where: {
-        customerId: identity.customerId,
-        platformId,
-        membershipTypeId: typeId,
-      },
-    });
+    const existingRecords = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
+        SELECT id
+        FROM ${tenantTable(schemaName, 'membership_record')}
+        WHERE customer_id = $1::uuid
+          AND platform_id = $2::uuid
+          AND membership_type_id = $3::uuid
+        LIMIT 1
+      `,
+      identity.customerId,
+      platformId,
+      typeId,
+    );
+    const existingRecord = existingRecords[0];
 
     if (existingRecord) {
       // Update existing
-      await prisma.membershipRecord.update({
-        where: { id: existingRecord.id },
-        data: {
-          membershipLevelId: levelId,
-          validTo: row.valid_to ? new Date(row.valid_to) : null,
-          externalSyncedAt: new Date(),
-        },
-      });
+      await prisma.$executeRawUnsafe(
+        `
+          UPDATE ${tenantTable(schemaName, 'membership_record')}
+          SET membership_level_id = $1::uuid,
+              valid_to = $2::timestamptz,
+              external_synced_at = $3::timestamptz,
+              updated_at = NOW()
+          WHERE id = $4::uuid
+        `,
+        levelId,
+        row.valid_to ? new Date(row.valid_to) : null,
+        new Date(),
+        existingRecord.id,
+      );
     } else {
       // Create new
-      await prisma.membershipRecord.create({
-        data: {
-          customerId: identity.customerId,
-          platformId,
-          membershipClassId: classId,
-          membershipTypeId: typeId,
-          membershipLevelId: levelId,
-          validFrom: row.valid_from ? new Date(row.valid_from) : new Date(),
-          validTo: row.valid_to ? new Date(row.valid_to) : null,
-          externalSyncedAt: new Date(),
-        },
-      });
+      await prisma.$executeRawUnsafe(
+        `
+          INSERT INTO ${tenantTable(schemaName, 'membership_record')} (
+            customer_id,
+            platform_id,
+            membership_class_id,
+            membership_type_id,
+            membership_level_id,
+            valid_from,
+            valid_to,
+            external_synced_at,
+            created_at,
+            updated_at
+          ) VALUES (
+            $1::uuid,
+            $2::uuid,
+            $3::uuid,
+            $4::uuid,
+            $5::uuid,
+            $6::timestamptz,
+            $7::timestamptz,
+            $8::timestamptz,
+            NOW(),
+            NOW()
+          )
+        `,
+        identity.customerId,
+        platformId,
+        classId,
+        typeId,
+        levelId,
+        row.valid_from ? new Date(row.valid_from) : new Date(),
+        row.valid_to ? new Date(row.valid_to) : null,
+        new Date(),
+      );
     }
   }
 }
@@ -823,7 +1010,7 @@ async function updateJobStatus(
     await prisma.$executeRawUnsafe(`
       UPDATE "${schemaName}".import_job
       SET status = $1, started_at = $2
-      WHERE id = $3
+      WHERE id = $3::uuid
     `, 'running', now, jobId);
   } else if (status === 'completed') {
     const processedRows = (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0);
@@ -843,7 +1030,7 @@ async function updateJobStatus(
           success_rows = $5,
           failed_rows = $6,
           warning_rows = $7
-      WHERE id = $8
+      WHERE id = $8::uuid
     `, finalStatus, now, result?.totalRows || 0, processedRows,
        result?.successRows || 0, result?.failedRows || 0, result?.warningRows || 0,
        jobId);
@@ -856,7 +1043,7 @@ async function updateJobStatus(
           success_rows = $4,
           failed_rows = $5,
           warning_rows = $6
-      WHERE id = $7
+      WHERE id = $7::uuid
     `, 'failed', now,
        (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0),
        result?.successRows || 0,
@@ -893,7 +1080,7 @@ async function updateJobProgress(
           warning_rows = $4,
           status = 'running',
           started_at = COALESCE(started_at, NOW())
-      WHERE id = $5
+      WHERE id = $5::uuid
     `, processedRows, successRows, failedRows, warningRows, jobId);
 }
 

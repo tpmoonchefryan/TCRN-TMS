@@ -15,6 +15,7 @@ interface ExportQueueJobData {
 
 interface ImportQueueJobData {
   jobId?: string;
+  tenantSchemaName?: string;
 }
 
 export function createBullMqConnectionFromEnv(): ConnectionOptions {
@@ -132,6 +133,25 @@ export async function removeImportQueueJobsByDataJobIds(
     for (const job of jobs) {
       const queueJobId = job.data?.jobId;
       if (!queueJobId || !ids.has(queueJobId)) {
+        continue;
+      }
+
+      await job.remove();
+      removed++;
+    }
+
+    return removed;
+  });
+}
+
+export async function purgeWaitingImportJobsForTenantTestSchemas(): Promise<number> {
+  return withImportQueue(async (queue) => {
+    const jobs = await queue.getJobs(['waiting'], 0, -1, true);
+    let removed = 0;
+
+    for (const job of jobs) {
+      const tenantSchema = job.data?.tenantSchemaName;
+      if (!tenantSchema?.startsWith('tenant_test_')) {
         continue;
       }
 
