@@ -5,6 +5,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { SessionBootstrapAlert } from '@/components/auth/session-bootstrap-alert';
 import { Header } from '@/components/layout/header';
 import { ManagementSidebar } from '@/components/layout/management-sidebar';
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
@@ -164,6 +165,7 @@ export default function ManagementLayout({
           className="p-6"
           style={{ marginTop: topOffset + headerHeight }}
         >
+          <SessionBootstrapAlert />
           {children}
         </main>
       </div>

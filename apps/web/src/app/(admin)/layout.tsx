@@ -5,6 +5,7 @@
 import { ReactNode } from 'react';
 
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { SessionBootstrapAlert } from '@/components/auth/session-bootstrap-alert';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { STAGING_BANNER_HEIGHT, StagingBanner } from '@/components/staging-banner';
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           style={{ paddingTop: topOffset + headerHeight }}
         >
           <div className="p-6">
+            <SessionBootstrapAlert />
             {children}
           </div>
         </main>

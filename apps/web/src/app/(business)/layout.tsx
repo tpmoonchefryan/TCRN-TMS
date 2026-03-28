@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { SessionBootstrapAlert } from '@/components/auth/session-bootstrap-alert';
 import { BusinessSidebar } from '@/components/layout/business-sidebar';
 import { Header } from '@/components/layout/header';
 import { Watermark } from '@/components/security/Watermark';
@@ -124,6 +125,7 @@ export default function BusinessLayout({
             className="p-6"
             style={{ marginTop: topOffset + headerHeight }}
           >
+            <SessionBootstrapAlert />
             {children}
           </main>
         </div>
