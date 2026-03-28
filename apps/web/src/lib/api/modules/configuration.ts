@@ -3,6 +3,78 @@
 
 import { apiClient } from '../core';
 
+export interface LocalizedOptionRecord {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
+}
+
+export interface SystemDictionaryItemRecord extends LocalizedOptionRecord {
+  dictionaryCode: string;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
+  descriptionJa?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  extraData: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface ConfigurationEntityRecord extends LocalizedOptionRecord {
+  ownerType?: string | null;
+  ownerId?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
+  descriptionJa?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isForceUse?: boolean;
+  isSystem?: boolean;
+  isInherited?: boolean;
+  isDisabledHere?: boolean;
+  canDisable?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  version: number;
+  membershipClassId?: string;
+  membershipTypeId?: string;
+  rank?: number;
+  color?: string | null;
+  badgeUrl?: string | null;
+  externalControl?: boolean;
+  defaultRenewalDays?: number;
+}
+
+export interface MembershipTreeLevel extends LocalizedOptionRecord {
+  typeId: string;
+  rank: number;
+  color: string | null;
+  badgeUrl: string | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface MembershipTreeType extends LocalizedOptionRecord {
+  classId: string;
+  externalControl: boolean;
+  defaultRenewalDays: number;
+  sortOrder: number;
+  isActive: boolean;
+  levels: MembershipTreeLevel[];
+}
+
+export interface MembershipTreeClass extends LocalizedOptionRecord {
+  sortOrder: number;
+  isActive: boolean;
+  types: MembershipTreeType[];
+}
+
 export const tenantApi = {
   list: () => apiClient.get<any[]>('/api/v1/tenants'),
 
@@ -294,18 +366,23 @@ export const settingsApi = {
 };
 
 export const systemDictionaryApi = {
-  get: (dictionaryType: string) => apiClient.get<any>(`/api/v1/system-dictionary/${dictionaryType}`),
+  get: <T extends SystemDictionaryItemRecord = SystemDictionaryItemRecord>(
+    dictionaryType: string,
+    query?: { search?: string; includeInactive?: boolean; page?: number; pageSize?: number },
+  ) => apiClient.get<T[]>(`/api/v1/system-dictionary/${dictionaryType}`, query),
 
   getItems: (dictionaryType: string, query?: { isActive?: boolean }) =>
     apiClient.get<any[]>(`/api/v1/system-dictionary/${dictionaryType}/items`, query),
 };
 
 export const configurationEntityApi = {
-  list: (entityType: string, query?: Record<string, any>) =>
-    apiClient.get<any[]>(`/api/v1/configuration-entity/${entityType}`, query),
+  list: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    entityType: string,
+    query?: Record<string, string | number | boolean | undefined>,
+  ) => apiClient.get<T[]>(`/api/v1/configuration-entity/${entityType}`, query),
 
-  get: (entityType: string, id: string) =>
-    apiClient.get<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
+  get: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(entityType: string, id: string) =>
+    apiClient.get<T>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
   create: (entityType: string, data: Record<string, any>) =>
     apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
@@ -316,11 +393,21 @@ export const configurationEntityApi = {
   delete: (entityType: string, id: string) =>
     apiClient.delete<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
-  getMembershipTypesByClass: (classId: string) =>
-    apiClient.get<any[]>(`/api/v1/configuration-entity/membership-classes/${classId}/types`),
+  getMembershipTypesByClass: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    classId: string,
+    query?: Record<string, string | number | boolean | undefined>,
+  ) => apiClient.get<T[]>(`/api/v1/configuration-entity/membership-classes/${classId}/types`, query),
 
-  getMembershipLevelsByType: (typeId: string) =>
-    apiClient.get<any[]>(`/api/v1/configuration-entity/membership-types/${typeId}/levels`),
+  getMembershipLevelsByType: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    typeId: string,
+    query?: Record<string, string | number | boolean | undefined>,
+  ) => apiClient.get<T[]>(`/api/v1/configuration-entity/membership-types/${typeId}/levels`, query),
+
+  getMembershipTree: (query?: {
+    scopeType?: 'tenant' | 'subsidiary' | 'talent';
+    scopeId?: string;
+    includeInactive?: boolean;
+  }) => apiClient.get<MembershipTreeClass[]>('/api/v1/configuration-entity/membership-tree', query),
 };
 
 export interface ExternalBlocklistPattern {

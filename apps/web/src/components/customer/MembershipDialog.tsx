@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -9,55 +8,39 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-    Button,
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-    Switch,
-    Textarea,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Textarea,
 } from '@/components/ui';
-import { configurationEntityApi, systemDictionaryApi } from '@/lib/api/modules/configuration';
-import { type CustomerMembershipRecord,membershipApi } from '@/lib/api/modules/customer';
+import type { SystemDictionaryItemRecord } from '@/lib/api/modules/configuration';
+import {
+  configurationEntityApi,
+  systemDictionaryApi,
+} from '@/lib/api/modules/configuration';
+import type { CustomerMembershipRecord } from '@/lib/api/modules/customer';
+import { membershipApi } from '@/lib/api/modules/customer';
 
-interface Platform {
-  id?: string;
-  code: string;
-  displayName: string;
-}
-
-interface MembershipLevel {
-  id: string;
-  code: string;
-  name: string;
-  rank: number;
-  color?: string;
-  typeId: string;
-}
-
-interface MembershipType {
-  id: string;
-  code: string;
-  name: string;
-  classId: string;
-  levels: MembershipLevel[];
-}
-
-interface MembershipClass {
-  id: string;
-  code: string;
-  name: string;
-  types: MembershipType[];
-}
+import {
+  DEFAULT_MEMBERSHIP_CLASSES,
+  DEFAULT_PLATFORM_OPTIONS,
+  type DialogMembershipClass,
+  type DialogPlatformOption,
+  mapMembershipTree,
+  mapPlatformOptions,
+} from './dialog-option-mappers';
 
 interface MembershipDialogProps {
   customerId: string;
@@ -80,12 +63,12 @@ export function MembershipDialog({
   const tCommon = useTranslations('common');
   const tForms = useTranslations('forms');
   const tToast = useTranslations('toast');
-  
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [membershipClasses, setMembershipClasses] = useState<MembershipClass[]>([]);
+
+  const [platforms, setPlatforms] = useState<DialogPlatformOption[]>([]);
+  const [membershipClasses, setMembershipClasses] = useState<DialogMembershipClass[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Form state
   const [platformCode, setPlatformCode] = useState('');
   const [selectedClassCode, setSelectedClassCode] = useState('');
@@ -99,11 +82,11 @@ export function MembershipDialog({
   const isEdit = !!membership;
 
   // Get types for selected class
-  const selectedClass = membershipClasses.find(c => c.code === selectedClassCode);
+  const selectedClass = membershipClasses.find((c) => c.code === selectedClassCode);
   const availableTypes = selectedClass?.types || [];
-  
+
   // Get levels for selected type
-  const selectedType = availableTypes.find(t => t.code === selectedTypeCode);
+  const selectedType = availableTypes.find((t) => t.code === selectedTypeCode);
   const availableLevels = selectedType?.levels || [];
 
   // Load data
@@ -111,140 +94,30 @@ export function MembershipDialog({
     const loadData = async () => {
       setIsLoading(true);
       
-      // Load platforms from system dictionary API (social_platforms)
       try {
-        const platformsResponse = await systemDictionaryApi.get('social_platforms');
-        if (platformsResponse.success && platformsResponse.data) {
-          // System dictionary API returns paginated data, extract items array
-          const items = Array.isArray(platformsResponse.data) 
-            ? platformsResponse.data 
-            : (platformsResponse.data.items || platformsResponse.data);
-          if (items.length > 0) {
-            setPlatforms(items.map((item: any) => ({
-              id: item.id,
-              code: item.code,
-              displayName: item.extraData?.displayName || item.nameEn || item.name_en || item.code,
-            })));
-          } else {
-            // Empty response, use fallback
-            setPlatforms([
-              { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },
-              { id: '2', code: 'TWITCH', displayName: 'Twitch' },
-            ]);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load platforms from system dictionary:', error);
-        // Use default platforms if API fails
-        setPlatforms([
-          { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },
-          { id: '2', code: 'TWITCH', displayName: 'Twitch' },
+        const [platformsResponse, membershipTreeResponse] = await Promise.all([
+          systemDictionaryApi.get<SystemDictionaryItemRecord>('social_platforms'),
+          configurationEntityApi.getMembershipTree({ includeInactive: false }),
         ]);
+
+        if (platformsResponse.success && platformsResponse.data?.length) {
+          setPlatforms(mapPlatformOptions(platformsResponse.data));
+        } else {
+          setPlatforms(DEFAULT_PLATFORM_OPTIONS);
+        }
+        if (membershipTreeResponse.success && membershipTreeResponse.data?.length) {
+          setMembershipClasses(mapMembershipTree(membershipTreeResponse.data));
+        } else {
+          setMembershipClasses(DEFAULT_MEMBERSHIP_CLASSES);
+        }
+      } catch {
+        setPlatforms(DEFAULT_PLATFORM_OPTIONS);
+        setMembershipClasses(DEFAULT_MEMBERSHIP_CLASSES);
       }
 
-      // Load membership hierarchy from configuration entity API (separate try-catch)
-      try {
-        const classesResponse = await configurationEntityApi.list('membership-class', {
-          includeInherited: true,
-          includeInactive: false,
-        });
-        if (classesResponse.success && classesResponse.data && classesResponse.data.length > 0) {
-          // Build hierarchy
-          const classes: MembershipClass[] = [];
-          for (const cls of classesResponse.data) {
-            const typesResponse = await configurationEntityApi.list('membership-type', { 
-              parentId: cls.id,
-              includeInherited: true,
-              includeInactive: false,
-            });
-            const types: MembershipType[] = [];
-            
-            if (typesResponse.success && typesResponse.data) {
-              for (const type of typesResponse.data) {
-                const levelsResponse = await configurationEntityApi.list('membership-level', { 
-                  parentId: type.id,
-                  includeInherited: true,
-                  includeInactive: false,
-                });
-                
-                types.push({
-                  id: type.id,
-                  code: type.code,
-                  name: type.nameEn || type.name_en || type.code,
-                  classId: cls.id,
-                  levels: (levelsResponse.success && levelsResponse.data) 
-                    ? levelsResponse.data.map((l: any) => ({
-                        id: l.id,
-                        code: l.code,
-                        name: l.nameEn || l.name_en || l.code,
-                        rank: l.rank || 1,
-                        color: l.color,
-                        typeId: type.id,
-                      }))
-                    : [],
-                });
-              }
-            }
-            
-            classes.push({
-              id: cls.id,
-              code: cls.code,
-              name: cls.nameEn || cls.name_en || cls.code,
-              types,
-            });
-          }
-          setMembershipClasses(classes);
-        } else {
-          // Empty response, use fallback
-          setMembershipClasses([
-            {
-              id: '1',
-              code: 'SUBSCRIPTION',
-              name: 'Subscription',
-              types: [
-                {
-                  id: '1',
-                  code: 'CHANNEL_MEMBERSHIP',
-                  name: 'Channel Membership',
-                  classId: '1',
-                  levels: [
-                    { id: '1', code: 'TIER1', name: 'Tier 1', rank: 1, color: '#10b981', typeId: '1' },
-                    { id: '2', code: 'TIER2', name: 'Tier 2', rank: 2, color: '#3b82f6', typeId: '1' },
-                    { id: '3', code: 'TIER3', name: 'Tier 3', rank: 3, color: '#8b5cf6', typeId: '1' },
-                  ],
-                },
-              ],
-            },
-          ]);
-        }
-      } catch (error) {
-        console.error('Failed to load membership hierarchy:', error);
-        // Use default membership classes if API fails
-        setMembershipClasses([
-          {
-            id: '1',
-            code: 'SUBSCRIPTION',
-            name: 'Subscription',
-            types: [
-              {
-                id: '1',
-                code: 'CHANNEL_MEMBERSHIP',
-                name: 'Channel Membership',
-                classId: '1',
-                levels: [
-                  { id: '1', code: 'TIER1', name: 'Tier 1', rank: 1, color: '#10b981', typeId: '1' },
-                  { id: '2', code: 'TIER2', name: 'Tier 2', rank: 2, color: '#3b82f6', typeId: '1' },
-                  { id: '3', code: 'TIER3', name: 'Tier 3', rank: 3, color: '#8b5cf6', typeId: '1' },
-                ],
-              },
-            ],
-          },
-        ]);
-      }
-      
       setIsLoading(false);
     };
-    
+
     if (open) {
       loadData();
     }
@@ -332,11 +205,11 @@ export function MembershipDialog({
         );
         toast.success(tToast('success.created'));
       }
-      
+
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
-      toast.error(error.message || tToast('error.save'));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : tToast('error.save'));
     } finally {
       setIsSaving(false);
     }
@@ -434,9 +307,9 @@ export function MembershipDialog({
                       <SelectItem key={level.id} value={level.code}>
                         <div className="flex items-center gap-2">
                           {level.color && (
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: level.color }} 
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: level.color }}
                             />
                           )}
                           {level.name}

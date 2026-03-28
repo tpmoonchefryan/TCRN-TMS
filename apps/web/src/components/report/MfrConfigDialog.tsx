@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -14,31 +13,36 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import { configurationEntityApi, dictionaryApi } from '@/lib/api/modules/configuration';
+import {
+  configurationEntityApi,
+  type LocalizedOptionRecord,
+  systemDictionaryApi,
+  type SystemDictionaryItemRecord,
+} from '@/lib/api/modules/configuration';
 import { reportApi, ReportFormat } from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
@@ -81,14 +85,6 @@ interface PreviewData {
   };
 }
 
-interface DictionaryItem {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-}
-
 const MAX_ROWS = 50000;
 
 export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogProps) {
@@ -118,11 +114,11 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
   });
   
   // Options from API
-  const [platforms, setPlatforms] = useState<DictionaryItem[]>([]);
-  const [membershipClasses, setMembershipClasses] = useState<DictionaryItem[]>([]);
-  const [membershipTypes, setMembershipTypes] = useState<DictionaryItem[]>([]);
-  const [membershipLevels, setMembershipLevels] = useState<DictionaryItem[]>([]);
-  const [customerStatuses, setCustomerStatuses] = useState<DictionaryItem[]>([]);
+  const [platforms, setPlatforms] = useState<LocalizedOptionRecord[]>([]);
+  const [membershipClasses, setMembershipClasses] = useState<LocalizedOptionRecord[]>([]);
+  const [membershipTypes, setMembershipTypes] = useState<LocalizedOptionRecord[]>([]);
+  const [membershipLevels, setMembershipLevels] = useState<LocalizedOptionRecord[]>([]);
+  const [customerStatuses, setCustomerStatuses] = useState<LocalizedOptionRecord[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(false);
   const [isLoadingLevels, setIsLoadingLevels] = useState(false);
   
@@ -138,32 +134,19 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
       setIsLoadingOptions(true);
       try {
         const [platformsRes, classesRes, statusesRes] = await Promise.all([
-          // Platform from system dictionary (social_platforms)
-          dictionaryApi.getByType('social_platforms'),
-          // Membership class from configuration entity
+          systemDictionaryApi.get<SystemDictionaryItemRecord>('social_platforms'),
           configurationEntityApi.list('membership-class'),
-          // Customer status from configuration entity
           configurationEntityApi.list('customer-status'),
         ]);
         
         if (platformsRes.success && platformsRes.data) {
-          // Handle both { items: [...] } and [...] response formats
-          const items = Array.isArray(platformsRes.data) 
-            ? platformsRes.data 
-            : (platformsRes.data as { items?: DictionaryItem[] }).items || [];
-          setPlatforms(items);
+          setPlatforms(platformsRes.data);
         }
         if (classesRes.success && classesRes.data) {
-          const items = Array.isArray(classesRes.data) 
-            ? classesRes.data 
-            : (classesRes.data as { items?: DictionaryItem[] }).items || [];
-          setMembershipClasses(items);
+          setMembershipClasses(classesRes.data);
         }
         if (statusesRes.success && statusesRes.data) {
-          const items = Array.isArray(statusesRes.data) 
-            ? statusesRes.data 
-            : (statusesRes.data as { items?: DictionaryItem[] }).items || [];
-          setCustomerStatuses(items);
+          setCustomerStatuses(statusesRes.data);
         }
       } catch {
         toast.error(t('loadOptionsFailed'));
@@ -215,10 +198,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
       try {
         const res = await configurationEntityApi.getMembershipTypesByClass(selectedClassId);
         if (res.success && res.data) {
-          const items = Array.isArray(res.data) 
-            ? res.data 
-            : (res.data as { items?: DictionaryItem[] }).items || [];
-          setMembershipTypes(items);
+          setMembershipTypes(res.data);
         }
       } catch {
         setMembershipTypes([]);
@@ -242,10 +222,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
       try {
         const res = await configurationEntityApi.getMembershipLevelsByType(selectedTypeId);
         if (res.success && res.data) {
-          const items = Array.isArray(res.data) 
-            ? res.data 
-            : (res.data as { items?: DictionaryItem[] }).items || [];
-          setMembershipLevels(items);
+          setMembershipLevels(res.data);
         }
       } catch {
         setMembershipLevels([]);
@@ -268,8 +245,8 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
         setPreviewData(response.data as PreviewData);
         setStep(2);
       }
-    } catch (error: any) {
-      toast.error(error.message || t('previewFailed'));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t('previewFailed'));
     } finally {
       setIsLoading(false);
     }

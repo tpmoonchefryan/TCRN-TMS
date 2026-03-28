@@ -8,33 +8,32 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-    Button,
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-    Switch,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
 } from '@/components/ui';
+import type { SystemDictionaryItemRecord } from '@/lib/api/modules/configuration';
 import { systemDictionaryApi } from '@/lib/api/modules/configuration';
-import {
-  type CustomerPlatformIdentity,
-  platformIdentityApi,
-} from '@/lib/api/modules/customer';
+import type { CustomerPlatformIdentity } from '@/lib/api/modules/customer';
+import { platformIdentityApi } from '@/lib/api/modules/customer';
 
-interface Platform {
-  id: string;
-  code: string;
-  displayName: string;
-}
+import {
+  DEFAULT_PLATFORM_OPTIONS,
+  type DialogPlatformOption,
+  mapPlatformOptions,
+} from './dialog-option-mappers';
 
 interface PlatformIdentityDialogProps {
   customerId: string;
@@ -57,11 +56,11 @@ export function PlatformIdentityDialog({
   const tCommon = useTranslations('common');
   const tForms = useTranslations('forms');
   const tToast = useTranslations('toast');
-  
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
+
+  const [platforms, setPlatforms] = useState<DialogPlatformOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Form state
   const [platformCode, setPlatformCode] = useState('');
   const [platformUid, setPlatformUid] = useState('');
@@ -76,33 +75,17 @@ export function PlatformIdentityDialog({
     const loadPlatforms = async () => {
       setIsLoading(true);
       try {
-        // Use system dictionary API with 'social_platforms' type code
-        const response = await systemDictionaryApi.get('social_platforms');
+        const response = await systemDictionaryApi.get<SystemDictionaryItemRecord>('social_platforms');
         if (response.success && response.data) {
-          // System dictionary API returns paginated data, extract items array
-          const items = Array.isArray(response.data) ? response.data : (response.data.items || response.data);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setPlatforms(items.map((item: any) => ({
-            id: item.id,
-            code: item.code,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            displayName: (item.extraData as any)?.displayName || item.nameEn || (item as any).name_en || item.code,
-          })));
+          setPlatforms(mapPlatformOptions(response.data));
         }
       } catch {
-        // Use default platforms if API fails
-        setPlatforms([
-          { id: '1', code: 'YOUTUBE', displayName: 'YouTube' },
-          { id: '2', code: 'TWITCH', displayName: 'Twitch' },
-          { id: '3', code: 'TWITTER', displayName: 'Twitter/X' },
-          { id: '4', code: 'BILIBILI', displayName: 'Bilibili' },
-          { id: '5', code: 'TIKTOK', displayName: 'TikTok' },
-        ]);
+        setPlatforms(DEFAULT_PLATFORM_OPTIONS);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     if (open) {
       loadPlatforms();
     }
@@ -166,11 +149,11 @@ export function PlatformIdentityDialog({
         );
         toast.success(tToast('success.created'));
       }
-      
+
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      toast.error((error as Error).message || tToast('error.save'));
+      toast.error(error instanceof Error ? error.message : tToast('error.save'));
     } finally {
       setIsSaving(false);
     }

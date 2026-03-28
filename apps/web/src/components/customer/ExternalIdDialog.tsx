@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -9,29 +8,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-    Button,
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
-import { configurationEntityApi } from '@/lib/api/modules/configuration';
+import { configurationEntityApi, type ConfigurationEntityRecord } from '@/lib/api/modules/configuration';
 import { externalIdApi, type ExternalIdRecord } from '@/lib/api/modules/customer';
 
-interface Consumer {
-  id: string;
-  code: string;
-  nameEn: string;
-}
+import {
+  DEFAULT_CONSUMER_OPTIONS,
+  type DialogConsumerOption,
+  mapConsumerOptions,
+} from './dialog-option-mappers';
 
 interface ExternalIdDialogProps {
   customerId: string;
@@ -50,13 +49,13 @@ export function ExternalIdDialog({
 }: ExternalIdDialogProps) {
   const t = useTranslations('externalIdDialog');
   const tCommon = useTranslations('common');
-  
-  const [consumers, setConsumers] = useState<Consumer[]>([]);
+
+  const [consumers, setConsumers] = useState<DialogConsumerOption[]>([]);
   const [existingIds, setExistingIds] = useState<ExternalIdRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  
+
   // Form state
   const [consumerCode, setConsumerCode] = useState('');
   const [externalId, setExternalId] = useState('');
@@ -66,13 +65,9 @@ export function ExternalIdDialog({
     setIsLoading(true);
     try {
       // Load consumers
-      const consumerResponse = await configurationEntityApi.list('consumer');
+      const consumerResponse = await configurationEntityApi.list<ConfigurationEntityRecord>('consumer');
       if (consumerResponse.success && consumerResponse.data) {
-        setConsumers(consumerResponse.data.map((item: any) => ({
-          id: item.id,
-          code: item.code,
-          nameEn: item.nameEn || item.name_en || item.code,
-        })));
+        setConsumers(mapConsumerOptions(consumerResponse.data));
       }
 
       // Load existing external IDs
@@ -80,13 +75,8 @@ export function ExternalIdDialog({
       if (externalIdResponse.success && externalIdResponse.data) {
         setExistingIds(externalIdResponse.data);
       }
-    } catch (error) {
-      // Use default consumers if API fails
-      setConsumers([
-        { id: '1', code: 'LEGACY_CRM', nameEn: 'Legacy CRM' },
-        { id: '2', code: 'DISCORD_BOT', nameEn: 'Discord Bot' },
-        { id: '3', code: 'BILLING', nameEn: 'Billing System' },
-      ]);
+    } catch {
+      setConsumers(DEFAULT_CONSUMER_OPTIONS);
     } finally {
       setIsLoading(false);
     }
@@ -123,20 +113,21 @@ export function ExternalIdDialog({
         talentId
       );
       toast.success(t('addSuccess'));
-      
+
       // Reload data to show new entry
       await loadData();
-      
+
       // Reset form
       setConsumerCode('');
       setExternalId('');
-      
+
       onSuccess?.();
-    } catch (error: any) {
-      if (error.message?.includes('already exists')) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('addFailed');
+      if (errorMessage.includes('already exists')) {
         toast.error(t('duplicateError'));
       } else {
-        toast.error(error.message || t('addFailed'));
+        toast.error(errorMessage);
       }
     } finally {
       setIsSaving(false);
@@ -148,13 +139,13 @@ export function ExternalIdDialog({
     try {
       await externalIdApi.delete(customerId, id, talentId);
       toast.success(t('deleteSuccess'));
-      
+
       // Remove from local state
-      setExistingIds(prev => prev.filter(item => item.id !== id));
-      
+      setExistingIds((prev) => prev.filter((item) => item.id !== id));
+
       onSuccess?.();
-    } catch (error: any) {
-      toast.error(error.message || t('deleteFailed'));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t('deleteFailed'));
     } finally {
       setDeletingId(null);
     }
@@ -182,8 +173,8 @@ export function ExternalIdDialog({
                 <Label>{t('existingIds')}</Label>
                 <div className="rounded-md border">
                   {existingIds.map((item) => (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       className="flex items-center justify-between px-3 py-2 border-b last:border-b-0"
                     >
                       <div>
