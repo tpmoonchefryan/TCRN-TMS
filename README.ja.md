@@ -188,6 +188,7 @@ Tencent Cloud SESと統合：
 - **テンプレートシステム**：変数置換付き多言語テンプレート（英/中/日）
 - **キュー処理**：リトライとレート制限付きBullMQワーカー
 - **プリセットテンプレート**：パスワードリセット、ログイン認証、メンバーシップアラート
+- **現在のサポート境界**：デフォルトランタイムで完全に配線済みの outbound integration はこれだけです。`NATS JetStream` は現時点では内部 async 基盤であり、公式の外部 integration contract ではありません。
 
 ### パフォーマンス最適化
 
@@ -306,6 +307,7 @@ Zodによるエンドツーエンドの型安全バリデーション：
 上記インフラの現在のランタイム状態は次のとおりです。
 
 - `NATS JetStream` は現在のローカル/本番 Compose スタックで実際に使われている依存です。
+- `NATS JetStream` は現時点では内部 async plumbing を担っています。実際のビジネスフローが配線されるまでは、本番利用可能な外部 integration surface と説明しないでください。
 - `Grafana Loki` には Compose サービスと query/push helper がありますが、現在の既定の正本は依然としてテナント PostgreSQL のログテーブルです。`/api/v1/logs/search*` は Loki を参照し、`LOKI_ENABLED=false` の場合は空結果を返します。API / worker 側の Loki push helper は、まだ既定の本番 producer path ではありません。
 - `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。
 - `Prometheus` は現時点ではロードマップ上の予約項目で、現在の Compose デプロイには含まれません。
@@ -701,6 +703,12 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 セキュリティコンプライアンスのため、PIIプロキシサービスはメインアプリケーションとは**別のサーバー**にデプロイする必要があります。
 
+現在の rollout 境界:
+
+- デフォルトのローカル/本番 Compose スタックでは、独立した PII サーバーは**有効化されません**。この章は opt-in のデプロイ手順であり、既定で有効なランタイム機能ではありません。
+- メインアプリ運用側の責務: `PII_SERVICE_URL`、クライアント側 mTLS 証明書パス、worker の定期ジョブ挙動、および tenant-local の `profile_store` / `pii_service_config` 参照を実在 endpoint のみに向けること。
+- PII サーバー運用側の責務: firewall / VPN 到達性、メインアプリと一致する `JWT_SECRET`、サーバー側 mTLS 証明書、暗号化ストレージ、そして observability を有効化した後の任意の Prometheus scrape。
+
 ### アーキテクチャ概要
 
 ```
@@ -922,6 +930,8 @@ PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
 PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
 PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
 ```
+
+この手順の検証が終わる前に、tenant-local の `profile_store` を placeholder の `pii_service_config` endpoint に結び付けないでください。worker は参照されている tenant-local config だけを probe するため、placeholder の紐付けでも実際の `pii-health-check` ノイズが発生します。
 
 ### ステップ6：デプロイを検証
 

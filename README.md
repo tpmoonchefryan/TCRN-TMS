@@ -188,6 +188,7 @@ Integrated with Tencent Cloud SES:
 - **Template System**: Multi-language templates (en/zh/ja) with variable substitution
 - **Queue Processing**: BullMQ worker with retry and rate limiting
 - **Preset Templates**: Password reset, login verification, membership alerts
+- **Current Support Boundary**: This is the only fully wired outbound integration in the default runtime. `NATS JetStream` exists as internal async infrastructure today, not as the official external integration contract.
 
 ### Performance Optimization
 
@@ -306,6 +307,7 @@ End-to-end type-safe validation with Zod:
 Current runtime status for the infrastructure above:
 
 - `NATS JetStream` is an active dependency in the current local and production Compose stack.
+- `NATS JetStream` currently serves internal async plumbing. Do not describe it as a production-ready external integration surface unless the business flow is actually wired to it.
 - `Grafana Loki` has a running Compose service and real query/push helpers, but the default source of truth is still the tenant PostgreSQL log tables. `/api/v1/logs/search*` reads Loki and returns empty results when `LOKI_ENABLED=false`; the API/worker-side Loki push helpers are not the default producer path today.
 - `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned for future rollout; distributed tracing is not enabled by default in the current runtime.
 - `Prometheus` is a reserved roadmap item and is not part of the current Compose deployment.
@@ -701,6 +703,12 @@ Customer-side steps:
 
 The PII Proxy Service must be deployed on a **separate server** from the main application for security compliance.
 
+Current rollout boundary:
+
+- The default local and production Compose stacks do **not** enable a separate PII server by default. Treat this section as an opt-in deployment guide, not as an already-active runtime capability.
+- Main application operator responsibilities: `PII_SERVICE_URL`, client-side mTLS certificate paths, scheduled worker behavior, and keeping tenant-local `profile_store` / `pii_service_config` references pointed only at real endpoints.
+- PII server operator responsibilities: firewall/VPN reachability, `JWT_SECRET` parity with the main application, server-side mTLS certificates, encrypted storage, and optional Prometheus scraping once observability is enabled.
+
 ### Architecture Overview
 
 ```
@@ -922,6 +930,8 @@ PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
 PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
 PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
 ```
+
+Do not link tenant-local `profile_store` records to placeholder `pii_service_config` endpoints before this step is validated. The worker only probes referenced tenant-local configs, so placeholder links will create real `pii-health-check` noise.
 
 ### Step 6: Verify Deployment
 

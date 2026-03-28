@@ -188,6 +188,7 @@ Loki 集成支持跨所有日志的全文搜索。
 - **模板系统**：多语言模板（中/英/日），带变量替换
 - **队列处理**：BullMQ Worker，带重试和限流
 - **预置模板**：密码重置、登录验证、会员提醒
+- **当前支持边界**：这是默认运行时中唯一已完整接线的外发集成能力。`NATS JetStream` 目前只是内部异步基础设施，不应被描述为官方对外集成契约。
 
 ### 性能优化
 
@@ -306,6 +307,7 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 以上基础设施的当前运行状态如下：
 
 - `NATS JetStream` 是当前本地与生产 Compose 栈中的真实运行依赖。
+- `NATS JetStream` 当前承担的是内部异步 plumbing。除非某条业务流已经真实接线到它，否则不要把它描述成生产可用的对外集成接口。
 - `Grafana Loki` 的 Compose 服务与 query/push helper 已存在，但当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
 - `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。
 - `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
@@ -701,6 +703,12 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 出于安全合规要求，PII 代理服务必须部署在与主应用**独立的服务器**上。
 
+当前 rollout 边界：
+
+- 默认的本地与生产 Compose 栈都**不会**默认启用独立 PII 服务器。应把本节视为按需启用的部署指南，而不是已默认生效的运行能力。
+- 主应用运维侧职责：`PII_SERVICE_URL`、客户端 mTLS 证书路径、worker 定时任务行为，以及确保租户本地 `profile_store` / `pii_service_config` 引用只指向真实 endpoint。
+- PII 服务器运维侧职责：防火墙 / VPN 连通性、与主应用保持一致的 `JWT_SECRET`、服务端 mTLS 证书、加密存储，以及在启用观测后接入可选的 Prometheus 抓取。
+
 ### 架构概览
 
 ```
@@ -922,6 +930,8 @@ PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
 PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
 PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
 ```
+
+在完成本步骤验证前，不要把租户本地 `profile_store` 记录关联到占位 `pii_service_config` endpoint。worker 只会探测被引用的租户本地配置，因此占位链接会制造真实的 `pii-health-check` 噪音。
 
 ### 步骤 6：验证部署
 
