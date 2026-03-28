@@ -5,6 +5,11 @@
 
 set -e
 
+BUILD_ARGS=()
+if [[ "${NO_CACHE_BUILD:-0}" == "1" ]]; then
+    BUILD_ARGS+=(--no-cache)
+fi
+
 DEPLOY_PATH="/home/ubuntu/tcrn-tms"
 GITHUB_REPO="https://github.com/tpmoonchefryan/TCRN-TMS.git"
 
@@ -88,8 +93,13 @@ sudo chown -R 1000:1000 /var/log/caddy 2>/dev/null || true
 # Step 5: Build Docker images
 echo ""
 echo "[5/7] Building Docker images (this may take 10-20 minutes)..."
+if [[ "${#BUILD_ARGS[@]}" -gt 0 ]]; then
+    echo "Build mode: clean (--no-cache)"
+else
+    echo "Build mode: cached"
+fi
 cd ${DEPLOY_PATH}
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build --parallel
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build "${BUILD_ARGS[@]}" --parallel web api worker
 
 # Step 6: Start services
 echo ""
@@ -130,4 +140,4 @@ echo "Useful commands:"
 echo "  - View logs: docker compose logs -f [service]"
 echo "  - Restart:   docker compose restart [service]"
 echo "  - Stop all:  docker compose down"
-echo "  - Rebuild:   docker compose build --no-cache [service]"
+echo "  - Force clean script rebuild: NO_CACHE_BUILD=1 ./scripts/remote-deploy.sh"

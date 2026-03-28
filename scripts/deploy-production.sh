@@ -4,6 +4,11 @@
 
 set -e
 
+BUILD_ARGS=()
+if [[ "${NO_CACHE_BUILD:-0}" == "1" ]]; then
+    BUILD_ARGS+=(--no-cache)
+fi
+
 # Configuration
 DEPLOY_USER="ubuntu"
 DEPLOY_HOST="43.153.195.213"
@@ -107,9 +112,14 @@ read -p "Press Enter after you have configured .env on the server..."
 # Step 4: Build Docker images
 echo ""
 echo "[4/6] Building Docker images (this may take a while)..."
+if [[ "${#BUILD_ARGS[@]}" -gt 0 ]]; then
+    echo "Build mode: clean (--no-cache)"
+else
+    echo "Build mode: cached"
+fi
 run_remote "
     cd ${DEPLOY_PATH}
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_ARGS[*]} web api worker
 "
 
 # Step 5: Start services

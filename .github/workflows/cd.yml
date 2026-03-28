@@ -15,6 +15,14 @@ on:
         options:
           - production
           - pii
+      build_mode:
+        description: 'Docker build mode'
+        required: true
+        default: 'cached'
+        type: choice
+        options:
+          - cached
+          - clean
 
 env:
   REGISTRY: ghcr.io
@@ -30,6 +38,7 @@ jobs:
     outputs:
       should_run_cd: ${{ steps.classify.outputs.should_run_cd }}
       skip_reason: ${{ steps.classify.outputs.skip_reason }}
+      build_no_cache: ${{ steps.classify.outputs.build_no_cache }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,12 +53,19 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
-            echo "skip_reason=manual_dispatch" >> "$GITHUB_OUTPUT"
+            if [[ "${{ github.event.inputs.build_mode }}" == "clean" ]]; then
+              echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
+              echo "skip_reason=manual_dispatch_clean_build" >> "$GITHUB_OUTPUT"
+            else
+              echo "build_no_cache=" >> "$GITHUB_OUTPUT"
+              echo "skip_reason=manual_dispatch_cached_build" >> "$GITHUB_OUTPUT"
+            fi
             exit 0
           fi
 
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
             echo "skip_reason=tag_release" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -60,6 +76,7 @@ jobs:
           if [[ -z "$before_sha" || "$before_sha" == "0000000000000000000000000000000000000000" ]]; then
             echo "Unable to determine a stable diff base, running full CD."
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=unknown_diff_base" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -69,6 +86,7 @@ jobs:
           if [[ "${#changed_files[@]}" -eq 0 ]]; then
             echo "No changed files detected, running full CD."
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=no_changed_files" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -88,11 +106,13 @@ jobs:
             echo "Detected docs/local-rules only change set:"
             printf ' - %s\n' "${changed_files[@]}"
             echo "should_run_cd=false" >> "$GITHUB_OUTPUT"
+            echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=docs_only" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+          echo "build_no_cache=" >> "$GITHUB_OUTPUT"
           echo "skip_reason=runtime_change" >> "$GITHUB_OUTPUT"
 
   # =============================================================================
@@ -166,6 +186,7 @@ jobs:
           script: |
             set -e
             echo "🚀 Starting deployment..."
+            BUILD_NO_CACHE="${{ needs.classify-changes.outputs.build_no_cache }}"
 
             # Navigate to project directory
             cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
@@ -177,7 +198,12 @@ jobs:
 
             # Rebuild and restart services
             echo "🔨 Building and restarting services..."
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache web api worker
+            if [ -n "$BUILD_NO_CACHE" ]; then
+              echo "Using clean Docker rebuild for web/api/worker."
+            else
+              echo "Using cached Docker rebuild for web/api/worker."
+            fi
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_NO_CACHE:+$BUILD_NO_CACHE} web api worker
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate web api worker
 
             # Run database migrations (if any)
@@ -252,13 +278,19 @@ jobs:
           script: |
             set -e
             echo "🔐 Starting PII service deployment..."
+            BUILD_NO_CACHE="${{ needs.classify-changes.outputs.build_no_cache }}"
 
             cd ${{ vars.PII_PROJECT_PATH || '/root/tcrn-tms-pii' }}
 
             git fetch origin main
             git reset --hard origin/main
 
-            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml build --no-cache pii-service
+            if [ -n "$BUILD_NO_CACHE" ]; then
+              echo "Using clean Docker rebuild for pii-service."
+            else
+              echo "Using cached Docker rebuild for pii-service."
+            fi
+            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml build ${BUILD_NO_CACHE:+$BUILD_NO_CACHE} pii-service
             docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml up -d --force-recreate pii-service pii-postgres
 
             docker image prune -f
