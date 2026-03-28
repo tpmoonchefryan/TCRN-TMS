@@ -25,7 +25,10 @@ import {
     Switch,
 } from '@/components/ui';
 import { systemDictionaryApi } from '@/lib/api/modules/configuration';
-import { platformIdentityApi } from '@/lib/api/modules/customer';
+import {
+  type CustomerPlatformIdentity,
+  platformIdentityApi,
+} from '@/lib/api/modules/customer';
 
 interface Platform {
   id: string;
@@ -33,20 +36,10 @@ interface Platform {
   displayName: string;
 }
 
-interface PlatformIdentity {
-  id: string;
-  platform: Platform;
-  platformUid: string;
-  platformNickname?: string;
-  platformAvatarUrl?: string;
-  isVerified: boolean;
-  isCurrent: boolean;
-}
-
 interface PlatformIdentityDialogProps {
   customerId: string;
   talentId: string;
-  identity?: PlatformIdentity | null;
+  identity?: CustomerPlatformIdentity | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;

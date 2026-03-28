@@ -60,9 +60,233 @@ export interface CustomerUpdateData {
   expectedVersion: number;
 }
 
+export interface CustomerStatusSummary {
+  id: string;
+  code: string;
+  name: string;
+  color: string | null;
+}
+
+export interface CustomerMembershipSummary {
+  highestLevel: {
+    platformCode: string;
+    platformName: string;
+    levelCode: string;
+    levelName: string;
+    color: string | null;
+  };
+  activeCount: number;
+  totalCount: number;
+}
+
+export interface CustomerListItemResponse {
+  id: string;
+  profileType: 'individual' | 'company';
+  nickname: string;
+  primaryLanguage: string | null;
+  status: CustomerStatusSummary | null;
+  tags: string[];
+  isActive: boolean;
+  companyShortName: string | null;
+  membershipSummary: CustomerMembershipSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerTalentSummary {
+  id: string;
+  code: string;
+  displayName: string;
+}
+
+export interface CustomerProfileStoreSummary {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CustomerInactivationReasonSummary {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CustomerRecentAccessLogEntry {
+  talent: {
+    id: string;
+    displayName: string;
+  };
+  action: string;
+  operator: {
+    id: string;
+    username: string;
+  } | null;
+  occurredAt: string;
+}
+
+export interface CustomerIndividualDetailData {
+  rmProfileId: string;
+  piiLoaded: boolean;
+}
+
+export interface CustomerCompanyBusinessSegment {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CustomerCompanyDetailData {
+  companyLegalName: string;
+  companyShortName: string | null;
+  registrationNumber: string | null;
+  vatId: string | null;
+  establishmentDate: string | null;
+  website: string | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  contactDepartment: string | null;
+  businessSegment: CustomerCompanyBusinessSegment | null;
+}
+
+export interface CustomerDetailBase {
+  id: string;
+  profileType: 'individual' | 'company';
+  talentId: string;
+  nickname: string;
+  primaryLanguage: string | null;
+  status: CustomerStatusSummary | null;
+  inactivationReason: CustomerInactivationReasonSummary | null;
+  tags: string[];
+  source: string | null;
+  notes: string | null;
+  isActive: boolean;
+  inactivatedAt: string | null;
+  profileStore: CustomerProfileStoreSummary;
+  originTalent: CustomerTalentSummary;
+  lastModifiedTalent: CustomerTalentSummary | null;
+  membershipSummary: CustomerMembershipSummary | null;
+  platformIdentityCount: number;
+  recentAccessHistory: CustomerRecentAccessLogEntry[];
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface CustomerIndividualDetailResponse extends CustomerDetailBase {
+  profileType: 'individual';
+  individual: CustomerIndividualDetailData;
+  company?: never;
+}
+
+export interface CustomerCompanyDetailResponse extends CustomerDetailBase {
+  profileType: 'company';
+  company: CustomerCompanyDetailData;
+  individual?: never;
+}
+
+export type CustomerDetailResponse =
+  | CustomerIndividualDetailResponse
+  | CustomerCompanyDetailResponse;
+
+export interface CustomerPlatformIdentity {
+  id: string;
+  platform: {
+    id: string;
+    code: string;
+    name: string;
+    iconUrl?: string | null;
+    color?: string | null;
+  };
+  platformUid: string;
+  platformNickname: string | null;
+  platformAvatarUrl: string | null;
+  profileUrl: string | null;
+  isVerified: boolean;
+  isCurrent: boolean;
+  capturedAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerPlatformIdentityHistoryItem {
+  id: string;
+  identityId: string;
+  platform: {
+    code: string;
+    name: string;
+  };
+  changeType: string;
+  oldValue: string | null;
+  newValue: string | null;
+  capturedAt: string;
+  capturedBy: string | null;
+}
+
+export interface CustomerPlatformIdentityHistoryResponse {
+  items: CustomerPlatformIdentityHistoryItem[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      totalCount: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  };
+}
+
+export interface CustomerMembershipRecord {
+  id: string;
+  platform: {
+    code: string;
+    name: string;
+  };
+  membershipClass: {
+    code: string;
+    name: string;
+  };
+  membershipType: {
+    code: string;
+    name: string;
+  };
+  membershipLevel: {
+    code: string;
+    name: string;
+    rank: number;
+    color: string | null;
+    badgeUrl: string | null;
+  };
+  validFrom: string;
+  validTo: string | null;
+  autoRenew: boolean;
+  isExpired: boolean;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface CustomerMembershipListResponse {
+  items: CustomerMembershipRecord[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      totalCount: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+    summary: {
+      activeCount: number;
+      expiredCount: number;
+      totalCount: number;
+    };
+  };
+}
+
 export const customerApi = {
   list: (params: CustomerListParams) =>
-    apiClient.get<any[]>('/api/v1/customers', {
+    apiClient.get<CustomerListItemResponse[]>('/api/v1/customers', {
       talentId: params.talentId,
       page: params.page?.toString(),
       pageSize: params.pageSize?.toString(),
@@ -74,7 +298,7 @@ export const customerApi = {
     }),
 
   get: (id: string, talentId?: string) =>
-    apiClient.get<any>(
+    apiClient.get<CustomerDetailResponse>(
       `/api/v1/customers/${id}`,
       undefined,
       talentId ? { 'X-Talent-Id': talentId } : undefined,
@@ -214,9 +438,11 @@ export interface UpdatePlatformIdentityData {
 
 export const platformIdentityApi = {
   list: (customerId: string, talentId: string) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities`, undefined, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.get<CustomerPlatformIdentity[]>(
+      `/api/v1/customers/${customerId}/platform-identities`,
+      undefined,
+      { 'X-Talent-Id': talentId },
+    ),
 
   create: (customerId: string, data: CreatePlatformIdentityData, talentId: string) =>
     apiClient.post<any>(`/api/v1/customers/${customerId}/platform-identities`, data, {
@@ -240,9 +466,11 @@ export const platformIdentityApi = {
     talentId: string,
     query?: { platformCode?: string; changeType?: string; page?: number; pageSize?: number },
   ) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/platform-identities/history`, query, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.get<CustomerPlatformIdentityHistoryResponse>(
+      `/api/v1/customers/${customerId}/platform-identities/history`,
+      query,
+      { 'X-Talent-Id': talentId },
+    ),
 };
 
 export interface CreateMembershipData {
@@ -272,9 +500,11 @@ export const membershipApi = {
       pageSize?: number;
     },
   ) =>
-    apiClient.get<any[]>(`/api/v1/customers/${customerId}/memberships`, query, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.get<CustomerMembershipListResponse>(
+      `/api/v1/customers/${customerId}/memberships`,
+      query,
+      { 'X-Talent-Id': talentId },
+    ),
 
   create: (customerId: string, data: CreateMembershipData, talentId: string) =>
     apiClient.post<any>(`/api/v1/customers/${customerId}/memberships`, data, {

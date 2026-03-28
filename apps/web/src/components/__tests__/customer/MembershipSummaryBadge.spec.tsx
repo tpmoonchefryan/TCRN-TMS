@@ -21,6 +21,19 @@ describe('MembershipSummaryBadge Component', () => {
     customerId: 'customer-123',
     talentId: 'talent-456',
   };
+  const buildMembershipResponse = (items: unknown[], totalCount: number = items.length) => ({
+    success: true,
+    data: {
+      items,
+      meta: {
+        summary: {
+          activeCount: items.length,
+          expiredCount: Math.max(totalCount - items.length, 0),
+          totalCount,
+        },
+      },
+    },
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,10 +52,7 @@ describe('MembershipSummaryBadge Component', () => {
 
   describe('No memberships', () => {
     it('should display "no memberships" message when empty', async () => {
-      mockMembershipList.mockResolvedValue({
-        success: true,
-        data: [],
-      });
+      mockMembershipList.mockResolvedValue(buildMembershipResponse([]));
 
       render(<MembershipSummaryBadge {...defaultProps} />);
 
@@ -69,20 +79,20 @@ describe('MembershipSummaryBadge Component', () => {
     const mockMemberships = [
       {
         id: 'mem-1',
-        platform: { code: 'YOUTUBE', displayName: 'YouTube', name: 'YouTube' },
+        platform: { code: 'YOUTUBE', name: 'YouTube' },
         membershipLevel: { code: 'GOLD', name: 'Gold', rank: 1, color: '#FFD700' },
       },
       {
         id: 'mem-2',
-        platform: { code: 'BILIBILI', displayName: 'Bilibili', name: 'Bilibili' },
+        platform: { code: 'BILIBILI', name: 'Bilibili' },
         membershipLevel: { code: 'SILVER', name: 'Silver', rank: 2, color: '#C0C0C0' },
       },
     ];
 
     it('should display highest level badge', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({ success: true, data: mockMemberships })
-        .mockResolvedValueOnce({ success: true, data: mockMemberships });
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships))
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships));
 
       render(<MembershipSummaryBadge {...defaultProps} />);
 
@@ -94,8 +104,8 @@ describe('MembershipSummaryBadge Component', () => {
 
     it('should display platform name with level', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({ success: true, data: mockMemberships })
-        .mockResolvedValueOnce({ success: true, data: mockMemberships });
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships))
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships));
 
       render(<MembershipSummaryBadge {...defaultProps} />);
 
@@ -106,8 +116,8 @@ describe('MembershipSummaryBadge Component', () => {
 
     it('should display active count', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({ success: true, data: mockMemberships })
-        .mockResolvedValueOnce({ success: true, data: mockMemberships });
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships))
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships));
 
       render(<MembershipSummaryBadge {...defaultProps} showCounts={true} />);
 
@@ -118,8 +128,8 @@ describe('MembershipSummaryBadge Component', () => {
 
     it('should hide counts when showCounts is false', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({ success: true, data: mockMemberships })
-        .mockResolvedValueOnce({ success: true, data: mockMemberships });
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships))
+        .mockResolvedValueOnce(buildMembershipResponse(mockMemberships));
 
       render(<MembershipSummaryBadge {...defaultProps} showCounts={false} />);
 
@@ -135,26 +145,24 @@ describe('MembershipSummaryBadge Component', () => {
     it('should call onClick when provided and clicked', async () => {
       const handleClick = vi.fn();
       mockMembershipList
-        .mockResolvedValueOnce({
-          success: true,
-          data: [
+        .mockResolvedValueOnce(
+          buildMembershipResponse([
             {
               id: 'mem-1',
-              platform: { code: 'YOUTUBE', displayName: 'YouTube' },
+              platform: { code: 'YOUTUBE', name: 'YouTube' },
               membershipLevel: { code: 'GOLD', name: 'Gold', rank: 1, color: '#FFD700' },
             },
-          ],
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: [
+          ])
+        )
+        .mockResolvedValueOnce(
+          buildMembershipResponse([
             {
               id: 'mem-1',
-              platform: { code: 'YOUTUBE', displayName: 'YouTube' },
+              platform: { code: 'YOUTUBE', name: 'YouTube' },
               membershipLevel: { code: 'GOLD', name: 'Gold', rank: 1, color: '#FFD700' },
             },
-          ],
-        });
+          ])
+        );
 
       render(<MembershipSummaryBadge {...defaultProps} onClick={handleClick} />);
       const user = userEvent.setup();
@@ -171,17 +179,16 @@ describe('MembershipSummaryBadge Component', () => {
 
     it('should not have button role when no onClick', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({
-          success: true,
-          data: [
+        .mockResolvedValueOnce(
+          buildMembershipResponse([
             {
               id: 'mem-1',
-              platform: { code: 'YOUTUBE', displayName: 'YouTube' },
+              platform: { code: 'YOUTUBE', name: 'YouTube' },
               membershipLevel: { code: 'GOLD', name: 'Gold', rank: 1, color: '#FFD700' },
             },
-          ],
-        })
-        .mockResolvedValueOnce({ success: true, data: [] });
+          ])
+        )
+        .mockResolvedValueOnce(buildMembershipResponse([], 1));
 
       render(<MembershipSummaryBadge {...defaultProps} />);
 
@@ -207,7 +214,7 @@ describe('MembershipSummaryBadge Component', () => {
 
   describe('Styling', () => {
     it('should apply custom className', async () => {
-      mockMembershipList.mockResolvedValue({ success: true, data: [] });
+      mockMembershipList.mockResolvedValue(buildMembershipResponse([]));
 
       const { container } = render(
         <MembershipSummaryBadge {...defaultProps} className="custom-class" />
@@ -220,17 +227,16 @@ describe('MembershipSummaryBadge Component', () => {
 
     it('should apply correct badge color from membership level', async () => {
       mockMembershipList
-        .mockResolvedValueOnce({
-          success: true,
-          data: [
+        .mockResolvedValueOnce(
+          buildMembershipResponse([
             {
               id: 'mem-1',
-              platform: { code: 'YOUTUBE', displayName: 'YouTube' },
+              platform: { code: 'YOUTUBE', name: 'YouTube' },
               membershipLevel: { code: 'GOLD', name: 'Gold', rank: 1, color: '#FFD700' },
             },
-          ],
-        })
-        .mockResolvedValueOnce({ success: true, data: [] });
+          ])
+        )
+        .mockResolvedValueOnce(buildMembershipResponse([], 1));
 
       render(<MembershipSummaryBadge {...defaultProps} />);
 

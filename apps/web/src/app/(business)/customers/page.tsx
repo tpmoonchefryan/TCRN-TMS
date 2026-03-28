@@ -2,22 +2,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
-
-// Using local interface as API returns camelCase, not matching shared types
-interface CustomerListItem {
-  id: string;
-  profileType: 'individual' | 'company';
-  nickname: string;
-  primaryLanguage?: string;
-  status: { id: string; code: string; name: string; color: string | null } | null;
-  tags: string[];
-  isActive: boolean;
-  companyShortName?: string;
-  originTalent?: { id: string; displayName: string };
-  membershipSummary?: { highestLevel: { name: string; rank: number } };
-  createdAt: string;
-  updatedAt: string;
-}
 import { formatDistanceToNow } from 'date-fns';
 import { Building2, Filter, Loader2, Plus, Search, Upload, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -44,7 +28,7 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui';
-import { customerApi } from '@/lib/api/modules/customer';
+import { customerApi, type CustomerListItemResponse } from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
 
 export default function CustomersPage() {
@@ -71,7 +55,7 @@ export default function CustomersPage() {
   
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
-  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [customers, setCustomers] = useState<CustomerListItemResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -240,8 +224,8 @@ export default function CustomersPage() {
                         {customer.nickname}
                         {customer.profileType === 'company' && <Building2 size={14} className="text-slate-400" />}
                       </div>
-                      {customer.profileType === 'company' && (customer as any).company?.companyShortName && (
-                        <div className="text-xs text-muted-foreground">{(customer as any).company.companyShortName}</div>
+                      {customer.profileType === 'company' && customer.companyShortName && (
+                        <div className="text-xs text-muted-foreground">{customer.companyShortName}</div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -260,7 +244,7 @@ export default function CustomersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-slate-500">
-                      {customer.originTalent?.displayName || '-'}
+                      -
                     </TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground font-mono">
                       {formatDistanceToNow(new Date(customer.updatedAt), { addSuffix: true })}

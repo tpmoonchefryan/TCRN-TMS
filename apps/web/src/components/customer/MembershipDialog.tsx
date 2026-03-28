@@ -27,7 +27,7 @@ import {
     Textarea,
 } from '@/components/ui';
 import { configurationEntityApi, systemDictionaryApi } from '@/lib/api/modules/configuration';
-import { membershipApi } from '@/lib/api/modules/customer';
+import { type CustomerMembershipRecord,membershipApi } from '@/lib/api/modules/customer';
 
 interface Platform {
   id?: string;
@@ -59,22 +59,10 @@ interface MembershipClass {
   types: MembershipType[];
 }
 
-interface MembershipRecord {
-  id: string;
-  platform: Platform;
-  membershipClass?: { code: string; name: string };
-  membershipType?: { code: string; name: string };
-  membershipLevel: { code: string; name: string; rank?: number; color?: string };
-  validFrom: string;
-  validTo?: string;
-  autoRenew: boolean;
-  note?: string;
-}
-
 interface MembershipDialogProps {
   customerId: string;
   talentId: string;
-  membership?: MembershipRecord | null;
+  membership?: CustomerMembershipRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;

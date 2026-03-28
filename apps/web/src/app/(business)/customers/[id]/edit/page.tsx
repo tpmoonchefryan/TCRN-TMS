@@ -24,7 +24,13 @@ import {
   Textarea,
 } from '@/components/ui';
 import { dictionaryApi } from '@/lib/api/modules/configuration';
-import { AddressData, companyCustomerApi, customerApi } from '@/lib/api/modules/customer';
+import {
+  AddressData,
+  companyCustomerApi,
+  customerApi,
+  type CustomerCompanyDetailResponse,
+  type CustomerDetailResponse,
+} from '@/lib/api/modules/customer';
 import { type PiiProfile, piiTokenManager } from '@/lib/pii';
 import { useTalentStore } from '@/stores/talent-store';
 
@@ -40,25 +46,6 @@ interface AddressFormData {
   street: string;
   postalCode: string;
   isPrimary: boolean;
-}
-
-interface CustomerData {
-  id: string;
-  profileType: 'individual' | 'company';
-  nickname: string;
-  tags: string[];
-  notes?: string;
-  version: number;
-  // Company info
-  companyInfo?: {
-    companyLegalName?: string;
-    companyShortName?: string;
-    registrationNumber?: string;
-    website?: string;
-    contactName?: string;
-    contactPhone?: string;
-    contactEmail?: string;
-  };
 }
 
 interface IndividualFormData {
@@ -100,7 +87,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPiiLoaded, setIsPiiLoaded] = useState(false);
-  const [customer, setCustomer] = useState<CustomerData | null>(null);
+  const [customer, setCustomer] = useState<CustomerDetailResponse | null>(null);
   const [countries, setCountries] = useState<
     Array<{ code: string; nameEn: string; nameZh?: string; nameJa?: string }>
   >([]);
@@ -222,17 +209,19 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
             console.warn('Failed to load customer PII for edit form:', piiError);
           }
         } else {
+          const companyCustomer = data as CustomerCompanyDetailResponse;
+
           setCompanyForm({
             nickname: data.nickname || '',
             tags: (data.tags || []).join(', '),
             notes: data.notes || '',
-            companyLegalName: data.companyInfo?.companyLegalName || '',
-            companyShortName: data.companyInfo?.companyShortName || '',
-            registrationNumber: data.companyInfo?.registrationNumber || '',
-            website: data.companyInfo?.website || '',
-            contactName: data.companyInfo?.contactName || '',
-            contactPhone: data.companyInfo?.contactPhone || '',
-            contactEmail: data.companyInfo?.contactEmail || '',
+            companyLegalName: companyCustomer.company.companyLegalName || '',
+            companyShortName: companyCustomer.company.companyShortName || '',
+            registrationNumber: companyCustomer.company.registrationNumber || '',
+            website: companyCustomer.company.website || '',
+            contactName: companyCustomer.company.contactName || '',
+            contactPhone: companyCustomer.company.contactPhone || '',
+            contactEmail: companyCustomer.company.contactEmail || '',
           });
         }
       } else {

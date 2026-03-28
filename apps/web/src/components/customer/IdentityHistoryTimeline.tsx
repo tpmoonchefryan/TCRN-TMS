@@ -7,25 +7,11 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui';
-import { platformIdentityApi } from '@/lib/api/modules/customer';
+import {
+  type CustomerPlatformIdentityHistoryItem,
+  platformIdentityApi,
+} from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
-
-interface HistoryRecord {
-  id: string;
-  identityId: string;
-  platform: {
-    code: string;
-    name: string;
-  };
-  changeType: 'uid_changed' | 'nickname_changed' | 'deactivated';
-  oldValue?: string;
-  newValue?: string;
-  capturedAt: string;
-  capturedBy?: {
-    id: string;
-    username: string;
-  };
-}
 
 interface IdentityHistoryTimelineProps {
   customerId: string;
@@ -42,7 +28,7 @@ export function IdentityHistoryTimeline({
 }: IdentityHistoryTimelineProps) {
   const t = useTranslations('identityHistory');
   
-  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [history, setHistory] = useState<CustomerPlatformIdentityHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -56,7 +42,7 @@ export function IdentityHistoryTimeline({
         pageSize: maxItems,
       });
       if (response.success && response.data) {
-        const items = response.data as HistoryRecord[];
+        const items = response.data.items;
         if (pageNum === 1) {
           setHistory(items);
         } else {
@@ -189,7 +175,7 @@ export function IdentityHistoryTimeline({
               {record.capturedBy && (
                 <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                   <User className="h-3 w-3" />
-                  <span>{record.capturedBy.username}</span>
+                  <span>{record.capturedBy}</span>
                 </div>
               )}
             </div>

@@ -440,6 +440,10 @@ export class CustomerProfileService {
             vat_id: string | null;
             establishment_date: Date | null;
             website: string | null;
+            contact_name: string | null;
+            contact_phone: string | null;
+            contact_email: string | null;
+            contact_department: string | null;
             business_segment_id: string | null;
             bs_id: string | null;
             bs_code: string | null;
@@ -452,6 +456,10 @@ export class CustomerProfileService {
               cci.vat_id,
               cci.establishment_date,
               cci.website,
+              cci.contact_name,
+              cci.contact_phone,
+              cci.contact_email,
+              cci.contact_department,
               cci.business_segment_id,
               bs.id as bs_id,
               bs.code as bs_code,
@@ -576,6 +584,10 @@ export class CustomerProfileService {
         vatId: companyInfoData[0].vat_id,
         establishmentDate: companyInfoData[0].establishment_date,
         website: companyInfoData[0].website,
+        contactName: companyInfoData[0].contact_name,
+        contactPhone: companyInfoData[0].contact_phone,
+        contactEmail: companyInfoData[0].contact_email,
+        contactDepartment: companyInfoData[0].contact_department,
         businessSegment: companyInfoData[0].bs_id ? {
           id: companyInfoData[0].bs_id,
           code: companyInfoData[0].bs_code || '',
@@ -890,6 +902,10 @@ export class CustomerProfileService {
       vatId: string | null;
       establishmentDate: Date | null;
       website: string | null;
+      contactName: string | null;
+      contactPhone: string | null;
+      contactEmail: string | null;
+      contactDepartment: string | null;
       businessSegment: { id: string; code: string; nameEn: string } | null;
     } | null;
     membershipRecords: Array<{
@@ -997,6 +1013,10 @@ export class CustomerProfileService {
           vatId: item.companyInfo.vatId,
           establishmentDate: item.companyInfo.establishmentDate,
           website: item.companyInfo.website,
+          contactName: item.companyInfo.contactName,
+          contactPhone: item.companyInfo.contactPhone,
+          contactEmail: item.companyInfo.contactEmail,
+          contactDepartment: item.companyInfo.contactDepartment,
           businessSegment: item.companyInfo.businessSegment
             ? {
                 id: item.companyInfo.businessSegment.id,

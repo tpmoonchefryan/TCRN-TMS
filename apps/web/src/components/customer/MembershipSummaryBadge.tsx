@@ -52,7 +52,7 @@ export function MembershipSummaryBadge({
       });
       
       if (response.success && response.data) {
-        const memberships = Array.isArray(response.data) ? response.data : [];
+        const memberships = response.data.items;
         
         // Calculate summary from memberships
         const activeCount = memberships.length;
@@ -66,10 +66,10 @@ export function MembershipSummaryBadge({
           if (rank < lowestRank) {
             lowestRank = rank;
             highestLevel = {
-              platformCode: m.platform?.code || '',
-              platformName: m.platform?.displayName || m.platform?.name || '',
-              levelCode: m.membershipLevel?.code || '',
-              levelName: m.membershipLevel?.name || '',
+              platformCode: m.platform.code || '',
+              platformName: m.platform.name || '',
+              levelCode: m.membershipLevel.code || '',
+              levelName: m.membershipLevel.name || '',
               color: m.membershipLevel?.color || '#808080',
             };
           }
@@ -79,7 +79,7 @@ export function MembershipSummaryBadge({
         const totalResponse = await membershipApi.list(customerId, talentId, {
           includeExpired: true,
         });
-        const totalCount = Array.isArray(totalResponse.data) ? totalResponse.data.length : 0;
+        const totalCount = totalResponse.data?.meta.summary.totalCount || 0;
         
         setSummary({
           highestLevel,
