@@ -43,13 +43,18 @@ import {
   systemDictionaryApi,
   type SystemDictionaryItemRecord,
 } from '@/lib/api/modules/configuration';
-import { reportApi, ReportFormat } from '@/lib/api/modules/content';
+import {
+  reportApi,
+  type ReportFilters,
+  ReportFormat,
+  type ReportSearchResult,
+} from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface MfrConfigDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (filters: Record<string, unknown>, format: ReportFormat) => void;
+  onSubmit: (filters: ReportFilters, format: ReportFormat) => void;
 }
 
 interface FilterState {
@@ -66,25 +71,6 @@ interface FilterState {
   includeInactive: boolean;
 }
 
-interface PreviewRow {
-  nickname: string;
-  platformName: string;
-  membershipLevelName: string;
-  validFrom: string;
-  validTo: string | null;
-  statusName: string;
-}
-
-interface PreviewData {
-  totalCount: number;
-  preview: PreviewRow[];
-  filterSummary: {
-    platforms: string[];
-    dateRange: string | null;
-    includeExpired: boolean;
-  };
-}
-
 const MAX_ROWS = 50000;
 
 export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogProps) {
@@ -95,7 +81,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
   const [step, setStep] = useState(1); // 1: Filter, 2: Preview
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [previewData, setPreviewData] = useState<ReportSearchResult | null>(null);
   const [format, setFormat] = useState<ReportFormat>('xlsx');
   
   // Filter state
@@ -242,7 +228,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
       const response = await reportApi.search(currentTalent.id, filters, 20);
       
       if (response.success && response.data) {
-        setPreviewData(response.data as PreviewData);
+        setPreviewData(response.data);
         setStep(2);
       }
     } catch (error: unknown) {
@@ -254,7 +240,7 @@ export function MfrConfigDialog({ isOpen, onClose, onSubmit }: MfrConfigDialogPr
 
   const handleSubmit = () => {
     // Build filters object (only include non-empty values)
-    const submitFilters: Record<string, unknown> = {};
+    const submitFilters: ReportFilters = {};
     
     if (filters.platformCodes.length > 0) {
       submitFilters.platformCodes = filters.platformCodes;

@@ -1,43 +1,123 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { ReportJobStatus as SharedReportJobStatus } from '@tcrn/shared';
+
 import { apiClient } from '../core';
 
 export type ReportFormat = 'xlsx' | 'csv';
 
+export interface ReportFilters {
+  platformCodes?: string[];
+  membershipClassCodes?: string[];
+  membershipTypeCodes?: string[];
+  membershipLevelCodes?: string[];
+  statusCodes?: string[];
+  validFromStart?: string;
+  validFromEnd?: string;
+  validToStart?: string;
+  validToEnd?: string;
+  includeExpired?: boolean;
+  includeInactive?: boolean;
+}
+
 export interface ReportCreateData {
-  reportType: string;
   talentId: string;
-  filters: {
-    platformCodes?: string[];
-    membershipClassCodes?: string[];
-    membershipTypeCodes?: string[];
-    membershipLevelCodes?: string[];
-    statusCodes?: string[];
-    validFromStart?: string;
-    validFromEnd?: string;
-    validToStart?: string;
-    validToEnd?: string;
-    includeExpired?: boolean;
-    includeInactive?: boolean;
-  };
+  filters: ReportFilters;
   format?: ReportFormat;
-  options?: {
-    includePii?: boolean;
-    language?: string;
+}
+
+export interface ReportJobListItemRecord {
+  id: string;
+  reportType: string;
+  status: SharedReportJobStatus;
+  totalRows: number | null;
+  fileName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface ReportJobListPayload {
+  items: ReportJobListItemRecord[];
+  meta: {
+    total: number;
   };
+}
+
+export interface ReportJobCreateResponse {
+  jobId: string;
+  status: SharedReportJobStatus;
+  estimatedRows: number;
+  createdAt: string;
+}
+
+export interface ReportJobStatusResponse {
+  id: string;
+  reportType: string;
+  status: SharedReportJobStatus;
+  progress: {
+    totalRows: number | null;
+    processedRows: number;
+    percentage: number;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  fileName: string | null;
+  fileSizeBytes: number | null;
+  queuedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    username: string;
+  };
+}
+
+export interface MfrPreviewRow {
+  nickname: string | null;
+  platformName: string;
+  membershipLevelName: string;
+  validFrom: string;
+  validTo: string | null;
+  statusName: string;
+}
+
+export interface ReportSearchResult {
+  totalCount: number;
+  preview: MfrPreviewRow[];
+  filterSummary: {
+    platforms: string[];
+    dateRange: string | null;
+    includeExpired: boolean;
+  };
+}
+
+export interface ReportDownloadResponse {
+  downloadUrl: string;
+  expiresIn: number;
+  fileName: string | null;
+}
+
+export interface ReportCancelResponse {
+  id: string;
+  status: SharedReportJobStatus;
 }
 
 export const reportApi = {
   list: (talentId: string, page?: number, pageSize?: number) =>
-    apiClient.get<{ items: any[]; meta: { total: number } }>('/api/v1/reports/mfr/jobs', {
+    apiClient.get<ReportJobListPayload>('/api/v1/reports/mfr/jobs', {
       talentId,
       page: page || 1,
       pageSize: pageSize || 20,
     }),
 
   create: (data: ReportCreateData) =>
-    apiClient.post<{ jobId: string; status: string; createdAt: string }>('/api/v1/reports/mfr/jobs', {
+    apiClient.post<ReportJobCreateResponse>('/api/v1/reports/mfr/jobs', {
       talentId: data.talentId,
       filters: {
         platformCodes: data.filters.platformCodes,
@@ -55,23 +135,23 @@ export const reportApi = {
       format: data.format || 'xlsx',
     }),
 
-  search: (talentId: string, filters: ReportCreateData['filters'], previewLimit?: number) =>
-    apiClient.post<any>('/api/v1/reports/mfr/search', {
+  search: (talentId: string, filters: ReportFilters, previewLimit?: number) =>
+    apiClient.post<ReportSearchResult>('/api/v1/reports/mfr/search', {
       talentId,
       filters,
       previewLimit: previewLimit || 20,
     }),
 
   getStatus: (jobId: string, talentId: string) =>
-    apiClient.get<any>(`/api/v1/reports/mfr/jobs/${jobId}`, { talent_id: talentId }),
+    apiClient.get<ReportJobStatusResponse>(`/api/v1/reports/mfr/jobs/${jobId}`, { talent_id: talentId }),
 
   getDownloadUrl: (jobId: string, talentId: string) =>
-    apiClient.get<{ downloadUrl: string }>(`/api/v1/reports/mfr/jobs/${jobId}/download`, {
+    apiClient.get<ReportDownloadResponse>(`/api/v1/reports/mfr/jobs/${jobId}/download`, {
       talent_id: talentId,
     }),
 
   cancel: (jobId: string, talentId: string) =>
-    apiClient.delete<any>(`/api/v1/reports/mfr/jobs/${jobId}?talent_id=${talentId}`),
+    apiClient.delete<ReportCancelResponse>(`/api/v1/reports/mfr/jobs/${jobId}?talent_id=${talentId}`),
 };
 
 export const marshmallowApi = {
