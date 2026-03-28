@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { CreateRoleDialog } from '@/components/admin/create-role-dialog';
 import { EditRoleDialog } from '@/components/admin/edit-role-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { systemRoleApi } from '@/lib/api/client';
+import { systemRoleApi } from '@/lib/api/modules/user-management';
 
 export default function RolesPage() {
   const t = useTranslations('adminConsole.roles');

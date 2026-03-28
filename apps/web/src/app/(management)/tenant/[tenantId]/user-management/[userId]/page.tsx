@@ -43,7 +43,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { systemRoleApi, systemUserApi, userRoleApi } from '@/lib/api/client';
+import { systemRoleApi, systemUserApi, userRoleApi } from '@/lib/api/modules/user-management';
 import type { UserRoleAssignmentState } from '@/lib/rbac/user-role-assignment';
 import {
     findUserRoleAssignment,

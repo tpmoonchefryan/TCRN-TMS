@@ -36,7 +36,13 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui';
-import { DelegatedAdmin, delegatedAdminApi, organizationApi, systemRoleApi, systemUserApi } from '@/lib/api/client';
+import { organizationApi } from '@/lib/api/client';
+import {
+  DelegatedAdmin,
+  delegatedAdminApi,
+  systemRoleApi,
+  systemUserApi,
+} from '@/lib/api/modules/user-management';
 
 interface DelegatedAdminPanelProps {
   scopeType?: 'subsidiary' | 'talent';

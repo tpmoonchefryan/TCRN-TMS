@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from '@/components/ui';
-import { systemUserApi } from '@/lib/api/client';
+import { systemUserApi } from '@/lib/api/modules/user-management';
 
 interface UserDetails {
   id: string;

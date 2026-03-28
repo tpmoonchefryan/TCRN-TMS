@@ -43,7 +43,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { systemRoleApi, systemUserApi } from '@/lib/api/client';
+import { systemRoleApi, systemUserApi } from '@/lib/api/modules/user-management';
 
 
 // User interface from API

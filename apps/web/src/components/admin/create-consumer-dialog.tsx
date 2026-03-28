@@ -23,7 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui';
-import { integrationApi } from '@/lib/api/client';
+import { integrationApi } from '@/lib/api/modules/integration';
 
 interface Platform {
   id: string;

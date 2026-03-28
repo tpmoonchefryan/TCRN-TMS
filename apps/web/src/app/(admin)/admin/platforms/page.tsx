@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 import { CreatePlatformDialog } from '@/components/admin/create-platform-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { integrationApi } from '@/lib/api/client';
+import { integrationApi } from '@/lib/api/modules/integration';
 
 interface Platform {
   id: string;

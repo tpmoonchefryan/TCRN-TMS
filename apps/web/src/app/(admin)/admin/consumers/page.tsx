@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 import { CreateConsumerDialog } from '@/components/admin/create-consumer-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { integrationApi } from '@/lib/api/client';
+import { integrationApi } from '@/lib/api/modules/integration';
 
 interface Adapter {
   id: string;

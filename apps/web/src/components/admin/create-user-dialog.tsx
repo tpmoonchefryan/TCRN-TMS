@@ -20,7 +20,7 @@ import {
     Label,
     Switch,
 } from '@/components/ui';
-import { systemUserApi } from '@/lib/api/client';
+import { systemUserApi } from '@/lib/api/modules/user-management';
 
 interface CreateUserDialogProps {
   open: boolean;

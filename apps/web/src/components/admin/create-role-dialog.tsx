@@ -21,7 +21,7 @@ import {
     Textarea
 } from '@/components/ui';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { systemRoleApi } from '@/lib/api/client';
+import { systemRoleApi } from '@/lib/api/modules/user-management';
 
 import { PermissionSelector } from './permission-selector';
 

@@ -49,7 +49,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { integrationApi } from '@/lib/api/client';
+import { integrationApi } from '@/lib/api/modules/integration';
 
 import { WebhookDialog } from './WebhookDialog';
 

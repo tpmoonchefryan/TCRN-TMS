@@ -39,7 +39,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { systemUserApi } from '@/lib/api/client';
+import { systemUserApi } from '@/lib/api/modules/user-management';
 
 // Note: AC User Management is for managing platform-level users (e.g., API support staff)
 // Not to be confused with tenant-level user management
