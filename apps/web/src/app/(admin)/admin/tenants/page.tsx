@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 import { CreateTenantDialog } from '@/components/admin/create-tenant-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { tenantApi } from '@/lib/api/client';
+import { tenantApi } from '@/lib/api/modules/configuration';
 
 interface Tenant {
   id: string;

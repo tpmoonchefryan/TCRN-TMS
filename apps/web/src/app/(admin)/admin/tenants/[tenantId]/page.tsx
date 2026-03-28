@@ -19,7 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from '@/components/ui';
-import { tenantApi } from '@/lib/api/client';
+import { tenantApi } from '@/lib/api/modules/configuration';
 
 interface TenantDetails {
   id: string;

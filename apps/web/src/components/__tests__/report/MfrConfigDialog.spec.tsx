@@ -25,8 +25,16 @@ vi.mock('@/lib/api/client', () => ({
   reportApi: {
     preview: vi.fn().mockResolvedValue({ data: { totalCount: 10, preview: [] } }),
   },
+}));
+
+vi.mock('@/lib/api/modules/configuration', () => ({
   dictionaryApi: {
     list: vi.fn().mockResolvedValue({ data: { items: [] } }),
+  },
+  configurationEntityApi: {
+    list: vi.fn().mockResolvedValue({ data: [] }),
+    getMembershipTypesByClass: vi.fn().mockResolvedValue({ data: [] }),
+    getMembershipLevelsByType: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
 

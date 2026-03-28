@@ -13,7 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUIMode } from '@/hooks/use-ui-mode';
-import { homepageApi, talentDomainApi } from '@/lib/api/client';
+import { homepageApi } from '@/lib/api/client';
+import { talentDomainApi } from '@/lib/api/modules/configuration';
 import { useTalentStore } from '@/stores/talent-store';
 
 // Homepage status interface

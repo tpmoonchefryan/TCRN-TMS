@@ -29,7 +29,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { organizationApi, profileStoreApi, subsidiaryApi, talentApi } from '@/lib/api/client';
+import { talentApi } from '@/lib/api/client';
+import { profileStoreApi, subsidiaryApi } from '@/lib/api/modules/configuration';
+import { organizationApi } from '@/lib/api/modules/organization';
 import { SubsidiaryInfo, useTalentStore } from '@/stores/talent-store';
 
 export default function OrganizationStructurePage() {

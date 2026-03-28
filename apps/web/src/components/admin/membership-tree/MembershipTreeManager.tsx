@@ -19,7 +19,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { configEntityApi } from '@/lib/api/client';
+import { configEntityApi } from '@/lib/api/modules/configuration';
 
 import { ConfigEntityForm } from '../config-entity-manager';
 

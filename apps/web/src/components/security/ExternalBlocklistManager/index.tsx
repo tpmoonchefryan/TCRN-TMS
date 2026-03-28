@@ -56,7 +56,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { externalBlocklistApi, type ExternalBlocklistPattern } from '@/lib/api/client';
+import {
+  externalBlocklistApi,
+  type ExternalBlocklistPattern,
+} from '@/lib/api/modules/configuration';
 
 import { PatternDialog } from './PatternDialog';
 

@@ -11,7 +11,7 @@ import { SystemDictionary } from '@/components/admin/system-dictionary';
 import { RateLimitStats } from '@/components/security/RateLimitStats';
 import { EmailConfigPanel } from '@/components/settings/EmailConfigPanel';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { platformConfigApi } from '@/lib/api/client';
+import { platformConfigApi } from '@/lib/api/modules/configuration';
 
 // Config keys for platform settings
 const CONFIG_KEYS = {

@@ -73,7 +73,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { configEntityApi, dictionaryApi, subsidiaryApi } from '@/lib/api/client';
+import { configEntityApi, dictionaryApi, subsidiaryApi } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 // NOTE: CONFIG_ENTITY_TYPES, DICTIONARY_TYPES, ConfigEntity, DictionaryRecord

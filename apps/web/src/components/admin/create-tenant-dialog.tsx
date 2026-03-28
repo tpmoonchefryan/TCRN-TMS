@@ -19,7 +19,7 @@ import {
     Input,
     Label,
 } from '@/components/ui';
-import { tenantApi } from '@/lib/api/client';
+import { tenantApi } from '@/lib/api/modules/configuration';
 
 interface CreateTenantDialogProps {
   open: boolean;

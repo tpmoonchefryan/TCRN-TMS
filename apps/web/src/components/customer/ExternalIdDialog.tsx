@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui';
-import { configurationEntityApi } from '@/lib/api/client';
+import { configurationEntityApi } from '@/lib/api/modules/configuration';
 import { externalIdApi, type ExternalIdRecord } from '@/lib/api/modules/customer';
 
 interface Consumer {

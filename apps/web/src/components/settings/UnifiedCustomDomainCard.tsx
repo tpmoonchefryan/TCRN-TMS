@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { platformConfigApi, talentDomainApi } from '@/lib/api/client';
+import { platformConfigApi, talentDomainApi } from '@/lib/api/modules/configuration';
 
 import { DnsSetupGuide } from './DnsSetupGuide';
 import { type SslMode,SslModeSelector } from './SslModeSelector';

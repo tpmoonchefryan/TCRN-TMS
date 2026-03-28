@@ -52,7 +52,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { configEntityApi } from '@/lib/api/client';
+import { configEntityApi } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 import { CONFIG_ENTITY_TYPES, ConfigEntity, ScopeType } from './constants';

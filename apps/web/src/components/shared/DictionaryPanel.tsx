@@ -22,7 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { dictionaryApi } from '@/lib/api/client';
+import { dictionaryApi } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 import { DICTIONARY_TYPES, DictionaryRecord } from './constants';

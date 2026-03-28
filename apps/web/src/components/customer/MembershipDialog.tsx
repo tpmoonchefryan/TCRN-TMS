@@ -26,7 +26,7 @@ import {
     Switch,
     Textarea,
 } from '@/components/ui';
-import { configurationEntityApi, systemDictionaryApi } from '@/lib/api/client';
+import { configurationEntityApi, systemDictionaryApi } from '@/lib/api/modules/configuration';
 import { membershipApi } from '@/lib/api/modules/customer';
 
 interface Platform {

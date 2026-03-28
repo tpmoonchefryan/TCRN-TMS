@@ -44,7 +44,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ScopeSettingsResponse, settingsApi } from '@/lib/api/client';
+import { ScopeSettingsResponse, settingsApi } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 // Setting field types

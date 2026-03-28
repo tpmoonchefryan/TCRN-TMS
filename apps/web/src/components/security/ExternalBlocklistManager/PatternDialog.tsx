@@ -28,7 +28,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { externalBlocklistApi, type ExternalBlocklistPattern } from '@/lib/api/client';
+import {
+  externalBlocklistApi,
+  type ExternalBlocklistPattern,
+} from '@/lib/api/modules/configuration';
 
 interface PatternDialogProps {
   open: boolean;

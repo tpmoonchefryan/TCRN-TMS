@@ -37,7 +37,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { tenantApi } from '@/lib/api/client';
+import { tenantApi } from '@/lib/api/modules/configuration';
 import { useAuthStore } from '@/stores/auth-store';
 
 // Configuration Entity Types (using singular kebab-case format to match backend API)
@@ -620,4 +620,3 @@ export default function TenantSettingsPage() {
     </div>
   );
 }
-

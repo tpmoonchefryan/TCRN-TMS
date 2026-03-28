@@ -23,7 +23,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { configEntityApi } from '@/lib/api/client';
+import { configEntityApi } from '@/lib/api/modules/configuration';
 
 import { ConfigEntityForm } from './ConfigEntityForm';
 import { InheritanceIndicator } from './InheritanceIndicator';

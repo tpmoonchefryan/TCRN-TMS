@@ -24,7 +24,7 @@ import {
     SelectValue,
     Switch,
 } from '@/components/ui';
-import { systemDictionaryApi } from '@/lib/api/client';
+import { systemDictionaryApi } from '@/lib/api/modules/configuration';
 import { platformIdentityApi } from '@/lib/api/modules/customer';
 
 interface Platform {

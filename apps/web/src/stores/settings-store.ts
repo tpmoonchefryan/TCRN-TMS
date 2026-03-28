@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 
-import { settingsApi } from '@/lib/api/client';
+import { settingsApi } from '@/lib/api/modules/configuration';
 
 /**
  * Feature toggle settings that control UI feature visibility

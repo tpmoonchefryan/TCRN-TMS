@@ -56,7 +56,7 @@ import {
     TableRow,
     Textarea
 } from '@/components/ui';
-import { dictionaryApi } from '@/lib/api/client';
+import { dictionaryApi } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 

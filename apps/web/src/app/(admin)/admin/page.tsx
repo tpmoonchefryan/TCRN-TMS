@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { tenantApi } from '@/lib/api/client';
+import { tenantApi } from '@/lib/api/modules/configuration';
 import { integrationApi } from '@/lib/api/modules/integration';
 import { systemUserApi } from '@/lib/api/modules/user-management';
 import { useAuthStore } from '@/stores/auth-store';
