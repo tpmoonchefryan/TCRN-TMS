@@ -22,7 +22,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { dictionaryApi } from '@/lib/api/modules/configuration';
+import {
+  dictionaryApi,
+  type SystemDictionaryItemRecord,
+} from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 import { DICTIONARY_TYPES, DictionaryRecord } from './constants';
@@ -52,12 +55,12 @@ export function DictionaryPanel({
     try {
       const response = await dictionaryApi.getByType(dictType);
       if (response.success && response.data) {
-        const records = response.data.map((item: Record<string, unknown>) => ({
-          code: item.code as string,
-          nameEn: (item.nameEn as string) || '',
-          nameZh: (item.nameZh as string) || '',
-          nameJa: (item.nameJa as string) || '',
-          isActive: (item.isActive as boolean) ?? true,
+        const records = response.data.map((item: SystemDictionaryItemRecord) => ({
+          code: item.code,
+          nameEn: item.nameEn,
+          nameZh: item.nameZh ?? '',
+          nameJa: item.nameJa ?? '',
+          isActive: item.isActive,
         }));
         setDictionaryRecords(prev => ({
           ...prev,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -12,6 +11,7 @@ import {
     Languages,
     Loader2,
     Lock,
+    type LucideIcon,
     MapPin,
     MoreHorizontal,
     Plug,
@@ -56,12 +56,16 @@ import {
     TableRow,
     Textarea
 } from '@/components/ui';
-import { dictionaryApi } from '@/lib/api/modules/configuration';
+import {
+  dictionaryApi,
+  type DictionaryTypeSummaryRecord,
+  type SystemDictionaryItemRecord,
+} from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 
 // Icon mapping for dictionary types
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   countries: MapPin,
   languages: Languages,
   timezones: Clock,
@@ -75,28 +79,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   log_severities: BookOpen,
 };
 
-interface DictionaryType {
-  type: string;
-  name: string;
-  description: string | null;
-  count: number;
-}
-
-interface DictionaryItem {
-  id: string;
-  dictionaryCode: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  descriptionEn?: string | null;
-  descriptionZh?: string | null;
-  descriptionJa?: string | null;
-  sortOrder: number;
-  isActive: boolean;
-  extraData?: Record<string, unknown> | null;
-  version: number;
-  name: string; // Localized name from API
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
 }
 
 export function SystemDictionary() {
@@ -105,7 +89,7 @@ export function SystemDictionary() {
   const { isAcTenant } = useAuthStore();
 
   // State
-  const [dictionaryTypes, setDictionaryTypes] = useState<DictionaryType[]>([]);
+  const [dictionaryTypes, setDictionaryTypes] = useState<DictionaryTypeSummaryRecord[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -113,12 +97,12 @@ export function SystemDictionary() {
   const [includeInactive, setIncludeInactive] = useState(false);
 
   // Dictionary items state
-  const [items, setItems] = useState<DictionaryItem[]>([]);
+  const [items, setItems] = useState<SystemDictionaryItemRecord[]>([]);
   const [totalItems, setTotalItems] = useState(0);
 
   // Add/Edit Dialog state
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingItem, setEditingItem] = useState<DictionaryItem | null>(null);
+  const [editingItem, setEditingItem] = useState<SystemDictionaryItemRecord | null>(null);
   const [newItem, setNewItem] = useState({
     code: '',
     nameEn: '',
@@ -144,8 +128,8 @@ export function SystemDictionary() {
       if (response.success && response.data) {
         setDictionaryTypes(response.data);
       }
-    } catch (err: any) {
-      toast.error('Failed to fetch dictionary types', { description: err.message });
+    } catch (error: unknown) {
+      toast.error('Failed to fetch dictionary types', { description: getErrorMessage(error) });
     } finally {
       setIsLoadingTypes(false);
     }
@@ -161,26 +145,11 @@ export function SystemDictionary() {
         pageSize: 500,
       });
       if (response.success && response.data) {
-        setItems(response.data.map((item: any) => ({
-          id: item.id,
-          dictionaryCode: item.dictionaryCode || item.dictionary_code || typeCode,
-          code: item.code,
-          nameEn: item.nameEn || item.name_en || '',
-          nameZh: item.nameZh || item.name_zh || null,
-          nameJa: item.nameJa || item.name_ja || null,
-          descriptionEn: item.descriptionEn || item.description_en || null,
-          descriptionZh: item.descriptionZh || item.description_zh || null,
-          descriptionJa: item.descriptionJa || item.description_ja || null,
-          sortOrder: item.sortOrder ?? item.sort_order ?? 0,
-          isActive: item.isActive ?? item.is_active ?? true,
-          extraData: item.extraData || item.extra_data || null,
-          version: item.version ?? 1,
-          name: item.name || item.nameEn || item.name_en || '',
-        })));
+        setItems(response.data);
         setTotalItems(response.meta?.pagination?.totalCount || response.data.length);
       }
-    } catch (err: any) {
-      toast.error('Failed to fetch items', { description: err.message });
+    } catch (error: unknown) {
+      toast.error('Failed to fetch items', { description: getErrorMessage(error) });
       setItems([]);
       setTotalItems(0);
     } finally {
@@ -239,7 +208,7 @@ export function SystemDictionary() {
     setShowAddDialog(true);
   };
 
-  const handleEdit = (item: DictionaryItem) => {
+  const handleEdit = (item: SystemDictionaryItemRecord) => {
     setEditingItem(item);
     setNewItem({
       code: item.code,
@@ -304,12 +273,12 @@ export function SystemDictionary() {
       }
       setShowAddDialog(false);
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
-    } catch (err: any) {
-      toast.error('Operation failed', { description: err.message });
+    } catch (error: unknown) {
+      toast.error('Operation failed', { description: getErrorMessage(error) });
     }
   };
 
-  const handleDeactivate = async (item: DictionaryItem) => {
+  const handleDeactivate = async (item: SystemDictionaryItemRecord) => {
     if (!selectedType) return;
     if (!confirm(`Are you sure you want to deactivate "${item.nameEn}"?`)) {
       return;
@@ -319,20 +288,20 @@ export function SystemDictionary() {
       await dictionaryApi.deactivateItem(selectedType, item.id, item.version);
       toast.success('Deactivated successfully');
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
-    } catch (err: any) {
-      toast.error('Failed to deactivate', { description: err.message });
+    } catch (error: unknown) {
+      toast.error('Failed to deactivate', { description: getErrorMessage(error) });
     }
   };
 
-  const handleReactivate = async (item: DictionaryItem) => {
+  const handleReactivate = async (item: SystemDictionaryItemRecord) => {
     if (!selectedType) return;
 
     try {
       await dictionaryApi.reactivateItem(selectedType, item.id, item.version);
       toast.success('Reactivated successfully');
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
-    } catch (err: any) {
-      toast.error('Failed to reactivate', { description: err.message });
+    } catch (error: unknown) {
+      toast.error('Failed to reactivate', { description: getErrorMessage(error) });
     }
   };
 

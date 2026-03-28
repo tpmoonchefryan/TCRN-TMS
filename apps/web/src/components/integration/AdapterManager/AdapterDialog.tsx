@@ -27,7 +27,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { dictionaryApi } from '@/lib/api/modules/configuration';
+import {
+  dictionaryApi,
+  type SystemDictionaryItemRecord,
+} from '@/lib/api/modules/configuration';
 import { integrationApi } from '@/lib/api/modules/integration';
 
 interface Platform {
@@ -93,11 +96,14 @@ export function AdapterDialog({
     try {
       const response = await dictionaryApi.getByType('social_platforms');
       if (response.success && response.data) {
-        setPlatforms(response.data.map((p: Record<string, unknown>) => ({
-          id: p.id as string,
-          code: p.code as string,
-          displayName: (p.nameEn || p.name) as string,
-          iconUrl: p.iconUrl as string | undefined,
+        setPlatforms(response.data.map((platform: SystemDictionaryItemRecord) => ({
+          id: platform.id,
+          code: platform.code,
+          displayName: platform.name,
+          iconUrl:
+            typeof platform.extraData?.iconUrl === 'string'
+              ? platform.extraData.iconUrl
+              : undefined,
         })));
       }
     } catch (error) {

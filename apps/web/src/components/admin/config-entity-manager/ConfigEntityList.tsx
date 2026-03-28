@@ -66,7 +66,7 @@ export function ConfigEntityList({
   const fetchEntities = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await configEntityApi.list(entityType, {
+      const response = await configEntityApi.list<ConfigEntity>(entityType, {
         scopeType,
         scopeId,
         includeInherited,
@@ -92,7 +92,7 @@ export function ConfigEntityList({
     if (!config.hasParent || !config.parentType) return;
 
     try {
-      const response = await configEntityApi.list(config.parentType, {
+      const response = await configEntityApi.list<ConfigEntity>(config.parentType, {
         scopeType,
         scopeId,
         includeInherited: true,
@@ -100,7 +100,7 @@ export function ConfigEntityList({
 
       if (response.success && response.data) {
         setParentOptions(
-          response.data.map((item: ConfigEntity) => ({
+          response.data.map((item) => ({
             id: item.id,
             name: item.name || item.nameEn,
           }))

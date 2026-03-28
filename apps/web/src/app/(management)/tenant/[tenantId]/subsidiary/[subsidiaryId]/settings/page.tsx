@@ -65,9 +65,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   configEntityApi,
+  type ConfigurationEntityRecord,
   dictionaryApi,
   subsidiaryApi,
   type SubsidiaryRecord,
+  type SystemDictionaryItemRecord,
 } from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
@@ -86,6 +88,17 @@ interface SubsidiaryData {
   childrenCount: number;
   talentCount: number;
   version: SubsidiaryRecord['version'];
+}
+
+function formatOwnerLevel(ownerType?: 'tenant' | 'subsidiary' | 'talent' | null): string {
+  switch (ownerType) {
+    case 'subsidiary':
+      return 'Subsidiary';
+    case 'talent':
+      return 'Talent';
+    default:
+      return 'Tenant';
+  }
 }
 
 export default function SubsidiarySettingsPage() {
@@ -159,19 +172,19 @@ export default function SubsidiarySettingsPage() {
         const data = response.data;
         setConfigEntities(prev => ({
           ...prev,
-          [entityType]: data.map((item: Record<string, unknown>) => ({
-            id: item.id as string,
-            code: item.code as string,
-            nameEn: item.nameEn as string || '',
-            nameZh: item.nameZh as string || '',
-            nameJa: item.nameJa as string || '',
-            ownerType: item.ownerType as 'tenant' | 'subsidiary' | 'talent' || 'tenant',
-            ownerLevel: item.ownerLevel as string || 'Tenant',
-            isActive: item.isActive as boolean ?? true,
-            isForceUse: item.isForceUse as boolean ?? false,
-            isSystem: item.isSystem as boolean ?? false,
-            sortOrder: item.sortOrder as number || 0,
-            inheritedFrom: item.inheritedFrom as string || undefined,
+          [entityType]: data.map((item: ConfigurationEntityRecord) => ({
+            id: item.id,
+            code: item.code,
+            nameEn: item.nameEn,
+            nameZh: item.nameZh ?? '',
+            nameJa: item.nameJa ?? '',
+            ownerType: item.ownerType ?? 'tenant',
+            ownerLevel: formatOwnerLevel(item.ownerType),
+            isActive: item.isActive,
+            isForceUse: item.isForceUse ?? false,
+            isSystem: item.isSystem ?? false,
+            sortOrder: item.sortOrder,
+            inheritedFrom: item.isInherited ? formatOwnerLevel(item.ownerType) : undefined,
           })),
         }));
       }
@@ -188,12 +201,12 @@ export default function SubsidiarySettingsPage() {
     try {
       const response = await dictionaryApi.getByType(dictType);
       if (response.success && response.data) {
-        const records = response.data.map((item: Record<string, unknown>) => ({
-          code: item.code as string,
-          nameEn: item.nameEn as string || '',
-          nameZh: item.nameZh as string || '',
-          nameJa: item.nameJa as string || '',
-          isActive: item.isActive as boolean ?? true,
+        const records = response.data.map((item: SystemDictionaryItemRecord) => ({
+          code: item.code,
+          nameEn: item.nameEn,
+          nameZh: item.nameZh ?? '',
+          nameJa: item.nameJa ?? '',
+          isActive: item.isActive,
         }));
         setDictionaryRecords(prev => ({
           ...prev,

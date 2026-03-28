@@ -5,6 +5,41 @@ import type { TalentGetResponse } from '@/lib/api/modules/talent';
 
 import type { TalentData } from './types';
 
+type ConfigEntitySource = {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
+  ownerType?: 'tenant' | 'subsidiary' | 'talent' | null;
+  ownerLevel?: string;
+  isActive?: boolean;
+  isForceUse?: boolean;
+  isSystem?: boolean;
+  sortOrder?: number;
+  isInherited?: boolean;
+  inheritedFrom?: string;
+};
+
+type DictionaryRecordSource = {
+  code: string;
+  nameEn: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
+  isActive?: boolean;
+};
+
+function formatOwnerLevel(ownerType?: 'tenant' | 'subsidiary' | 'talent' | null): string {
+  switch (ownerType) {
+    case 'subsidiary':
+      return 'Subsidiary';
+    case 'talent':
+      return 'Talent';
+    default:
+      return 'Tenant';
+  }
+}
+
 export function mapTalentApiResponseToTalentData(
   data: TalentGetResponse,
   subsidiaryId?: string
@@ -36,29 +71,30 @@ export function mapTalentApiResponseToTalentData(
   };
 }
 
-export function mapConfigEntities(items: Record<string, unknown>[]): ConfigEntity[] {
+export function mapConfigEntities(items: ConfigEntitySource[]): ConfigEntity[] {
   return items.map((item) => ({
-    id: (item.id as string) || '',
-    code: (item.code as string) || '',
-    nameEn: (item.nameEn as string) || '',
-    nameZh: (item.nameZh as string) || '',
-    nameJa: (item.nameJa as string) || '',
-    ownerType: ((item.ownerType as 'tenant' | 'subsidiary' | 'talent') || 'tenant'),
-    ownerLevel: (item.ownerLevel as string) || 'Tenant',
-    isActive: (item.isActive as boolean) ?? true,
-    isForceUse: (item.isForceUse as boolean) ?? false,
-    isSystem: (item.isSystem as boolean) ?? false,
-    sortOrder: (item.sortOrder as number) || 0,
-    inheritedFrom: (item.inheritedFrom as string) || undefined,
+    id: item.id,
+    code: item.code,
+    nameEn: item.nameEn,
+    nameZh: item.nameZh ?? '',
+    nameJa: item.nameJa ?? '',
+    ownerType: item.ownerType ?? 'tenant',
+    ownerLevel: formatOwnerLevel(item.ownerType),
+    isActive: item.isActive ?? true,
+    isForceUse: item.isForceUse ?? false,
+    isSystem: item.isSystem ?? false,
+    sortOrder: item.sortOrder ?? 0,
+    inheritedFrom:
+      item.inheritedFrom ?? (item.isInherited ? formatOwnerLevel(item.ownerType) : undefined),
   }));
 }
 
-export function mapDictionaryRecords(items: Record<string, unknown>[]): DictionaryRecord[] {
+export function mapDictionaryRecords(items: DictionaryRecordSource[]): DictionaryRecord[] {
   return items.map((item) => ({
-    code: (item.code as string) || '',
-    nameEn: (item.nameEn as string) || '',
-    nameZh: (item.nameZh as string) || '',
-    nameJa: (item.nameJa as string) || '',
-    isActive: (item.isActive as boolean) ?? true,
+    code: item.code,
+    nameEn: item.nameEn,
+    nameZh: item.nameZh ?? '',
+    nameJa: item.nameJa ?? '',
+    isActive: item.isActive ?? true,
   }));
 }

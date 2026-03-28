@@ -26,7 +26,7 @@ export interface SystemDictionaryItemRecord extends LocalizedOptionRecord {
 }
 
 export interface ConfigurationEntityRecord extends LocalizedOptionRecord {
-  ownerType?: string | null;
+  ownerType?: ConfigurationScopeType | null;
   ownerId?: string | null;
   description?: string | null;
   descriptionEn?: string | null;
@@ -49,6 +49,7 @@ export interface ConfigurationEntityRecord extends LocalizedOptionRecord {
   badgeUrl?: string | null;
   externalControl?: boolean;
   defaultRenewalDays?: number;
+  [key: string]: unknown;
 }
 
 export interface MembershipTreeLevel extends LocalizedOptionRecord {
@@ -168,6 +169,107 @@ export interface PagedItemsPayload<TItem> {
   };
 }
 
+export type ConfigurationScopeType = 'tenant' | 'subsidiary' | 'talent';
+
+export type ApiQueryValue = string | number | boolean | undefined;
+
+export interface ConfigurationEntityListQuery {
+  scopeType?: ConfigurationScopeType;
+  scopeId?: string;
+  includeInherited?: boolean;
+  includeInactive?: boolean;
+  search?: string;
+  parentId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export type ConfigurationEntityMutationPayload = Record<string, unknown>;
+
+export interface ConfigurationEntityActivationResponse {
+  id: string;
+  isActive: boolean;
+  deactivatedAt?: string;
+}
+
+export interface DictionaryTypeSummaryRecord {
+  type: string;
+  name: string;
+  description: string | null;
+  count: number;
+}
+
+export interface SystemDictionaryTypeRecord {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
+  descriptionJa?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export type SystemDictionaryItemMutationRecord = Omit<SystemDictionaryItemRecord, 'name'>;
+
+export interface DictionaryListQuery {
+  search?: string;
+  includeInactive?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface DictionaryTypeCreatePayload {
+  code: string;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+}
+
+export interface DictionaryTypeUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+  version: number;
+}
+
+export interface DictionaryItemCreatePayload {
+  code: string;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+  extraData?: Record<string, unknown>;
+}
+
+export interface DictionaryItemUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+  extraData?: Record<string, unknown>;
+  version: number;
+}
+
 export const tenantApi = {
   list: () => apiClient.get<TenantRecord[]>('/api/v1/tenants'),
 
@@ -255,51 +357,40 @@ export interface ProfileStoreUpdateResponse {
 }
 
 export const configEntityApi = {
-  list: (
+  list: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     entityType: string,
-    params?: {
-      scopeType?: string;
-      scopeId?: string;
-      includeInherited?: boolean;
-      includeInactive?: boolean;
-      search?: string;
-      parentId?: string;
-      page?: number;
-      pageSize?: number;
-    },
-  ) => apiClient.get<any[]>(`/api/v1/configuration-entity/${entityType}`, params),
+    params?: ConfigurationEntityListQuery,
+  ) => apiClient.get<T[]>(`/api/v1/configuration-entity/${entityType}`, params),
 
-  create: (
+  create: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     entityType: string,
-    data: {
-      code: string;
-      nameEn: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      sortOrder?: number;
-      isForceUse?: boolean;
-      ownerType?: string;
-      ownerId?: string;
-      [key: string]: unknown;
-    },
-  ) => apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
+    data: ConfigurationEntityMutationPayload,
+  ) => apiClient.post<T>(`/api/v1/configuration-entity/${entityType}`, data),
 
-  get: (entityType: string, id: string) =>
-    apiClient.get<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
+  get: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(entityType: string, id: string) =>
+    apiClient.get<T>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
-  update: (entityType: string, id: string, data: { version: number; [key: string]: unknown }) =>
-    apiClient.patch<any>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
+  update: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    entityType: string,
+    id: string,
+    data: ConfigurationEntityMutationPayload & { version: number },
+  ) => apiClient.patch<T>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
 
   deactivate: (entityType: string, id: string, version: number) =>
-    apiClient.post<any>(`/api/v1/configuration-entity/${entityType}/${id}/deactivate`, {
-      version,
-    }),
+    apiClient.post<ConfigurationEntityActivationResponse>(
+      `/api/v1/configuration-entity/${entityType}/${id}/deactivate`,
+      {
+        version,
+      },
+    ),
 
   reactivate: (entityType: string, id: string, version: number) =>
-    apiClient.post<any>(`/api/v1/configuration-entity/${entityType}/${id}/reactivate`, {
-      version,
-    }),
+    apiClient.post<ConfigurationEntityActivationResponse>(
+      `/api/v1/configuration-entity/${entityType}/${id}/reactivate`,
+      {
+        version,
+      },
+    ),
 };
 
 export const profileStoreApi = {
@@ -357,242 +448,94 @@ export const piiServiceConfigApi = {
 };
 
 export const dictionaryApi = {
-  listTypes: () => apiClient.get<any[]>('/api/v1/system-dictionary'),
+  listTypes: () => apiClient.get<DictionaryTypeSummaryRecord[]>('/api/v1/system-dictionary'),
 
-  getByType: (
+  getByType: <T extends SystemDictionaryItemRecord = SystemDictionaryItemRecord>(
     type: string,
-    params?: { search?: string; includeInactive?: boolean; page?: number; pageSize?: number },
-  ) => apiClient.get<any[]>(`/api/v1/system-dictionary/${type}`, params),
+    params?: DictionaryListQuery,
+  ) => apiClient.get<T[]>(`/api/v1/system-dictionary/${type}`, params),
 
-  getItem: (type: string, code: string) =>
-    apiClient.get<any>(`/api/v1/system-dictionary/${type}/${code}`),
+  getItem: <T extends SystemDictionaryItemRecord = SystemDictionaryItemRecord>(type: string, code: string) =>
+    apiClient.get<T>(`/api/v1/system-dictionary/${type}/${code}`),
 
-  createType: (data: {
-    code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    sortOrder?: number;
-  }) => apiClient.post<any>('/api/v1/system-dictionary', data),
+  createType: (data: DictionaryTypeCreatePayload) =>
+    apiClient.post<SystemDictionaryTypeRecord>('/api/v1/system-dictionary', data),
 
-  updateType: (
-    typeCode: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      sortOrder?: number;
-      version: number;
-    },
-  ) => apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}`, data),
+  updateType: (typeCode: string, data: DictionaryTypeUpdatePayload) =>
+    apiClient.put<SystemDictionaryTypeRecord>(`/api/v1/system-dictionary/${typeCode}`, data),
 
-  createItem: (
-    typeCode: string,
-    data: {
-      code: string;
-      nameEn: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      sortOrder?: number;
-      extraData?: Record<string, unknown>;
-    },
-  ) => apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items`, data),
+  createItem: (typeCode: string, data: DictionaryItemCreatePayload) =>
+    apiClient.post<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items`, data),
 
-  updateItem: (
-    typeCode: string,
-    itemId: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      sortOrder?: number;
-      extraData?: Record<string, unknown>;
-      version: number;
-    },
-  ) => apiClient.put<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
+  updateItem: (typeCode: string, itemId: string, data: DictionaryItemUpdatePayload) =>
+    apiClient.put<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
 
   deactivateItem: (typeCode: string, itemId: string, _version: number) =>
-    apiClient.delete<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`),
+    apiClient.delete<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`),
 
   reactivateItem: (typeCode: string, itemId: string, version: number) =>
-    apiClient.post<any>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}/reactivate`, {
-      version,
-    }),
+    apiClient.post<SystemDictionaryItemMutationRecord>(
+      `/api/v1/system-dictionary/${typeCode}/items/${itemId}/reactivate`,
+      {
+        version,
+      },
+    ),
 };
 
-export interface SubsidiaryRecord {
-  id: string;
-  parentId: string | null;
-  code: string;
-  path: string;
-  depth: number;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  name: string;
-  descriptionEn?: string | null;
-  descriptionZh?: string | null;
-  descriptionJa?: string | null;
-  sortOrder: number;
-  isActive: boolean;
-  childrenCount?: number;
-  talentCount?: number;
-  createdAt: string;
-  updatedAt?: string;
-  version: number;
+export interface ConfigEntityReadQuery {
+  search?: string;
+  includeInactive?: boolean;
+  page?: number;
+  pageSize?: number;
 }
-
-export interface SubsidiaryCreatePayload {
-  code: string;
-  nameEn: string;
-  parentId?: string | null;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  sortOrder?: number;
-}
-
-export interface SubsidiaryUpdatePayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  sortOrder?: number;
-  version: number;
-}
-
-export interface SubsidiaryMoveResponse {
-  id: string;
-  parentId: string | null;
-  path: string;
-  depth: number;
-  affectedChildren: number;
-  version: number;
-}
-
-export interface SubsidiaryActivationResponse {
-  id: string;
-  isActive: boolean;
-  cascadeAffected?: {
-    subsidiaries: number;
-    talents: number;
-  };
-  version?: number;
-}
-
-export const subsidiaryApi = {
-  list: () => apiClient.get<SubsidiaryRecord[]>('/api/v1/subsidiaries'),
-
-  get: (id: string) => apiClient.get<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`),
-
-  create: (data: SubsidiaryCreatePayload) => apiClient.post<SubsidiaryRecord>('/api/v1/subsidiaries', data),
-
-  update: (id: string, data: SubsidiaryUpdatePayload) =>
-    apiClient.patch<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`, data),
-
-  move: (id: string, data: { newParentId?: string | null; version: number }) =>
-    apiClient.post<SubsidiaryMoveResponse>(`/api/v1/subsidiaries/${id}/move`, data),
-
-  deactivate: (id: string, version: number) =>
-    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/deactivate`, { version }),
-
-  reactivate: (id: string, version: number) =>
-    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/reactivate`, { version }),
-};
-
-export interface ScopeSettingsResponse {
-  scopeType: 'tenant' | 'subsidiary' | 'talent';
-  scopeId: string | null;
-  settings: Record<string, unknown>;
-  overrides: string[];
-  inheritedFrom: Record<string, string>;
-  version: number;
-}
-
-export const settingsApi = {
-  getTenantSettings: () => apiClient.get<ScopeSettingsResponse>('/api/v1/organization/settings'),
-
-  updateTenantSettings: (settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>('/api/v1/organization/settings', { settings, version }),
-
-  getSubsidiarySettings: (id: string) =>
-    apiClient.get<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`),
-
-  updateSubsidiarySettings: (id: string, settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, {
-      settings,
-      version,
-    }),
-
-  resetSubsidiarySetting: (id: string, field: string) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings/reset`, { field }),
-
-  getTalentSettings: (id: string) =>
-    apiClient.get<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`),
-
-  updateTalentSettings: (id: string, settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`, { settings, version }),
-
-  resetTalentSetting: (id: string, field: string) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings/reset`, { field }),
-};
 
 export const systemDictionaryApi = {
   get: <T extends SystemDictionaryItemRecord = SystemDictionaryItemRecord>(
     dictionaryType: string,
-    query?: { search?: string; includeInactive?: boolean; page?: number; pageSize?: number },
+    query?: DictionaryListQuery,
   ) => apiClient.get<T[]>(`/api/v1/system-dictionary/${dictionaryType}`, query),
 
-  getItems: (dictionaryType: string, query?: { isActive?: boolean }) =>
-    apiClient.get<any[]>(`/api/v1/system-dictionary/${dictionaryType}/items`, query),
+  getItems: <T extends SystemDictionaryItemRecord = SystemDictionaryItemRecord>(
+    dictionaryType: string,
+    query?: { isActive?: boolean },
+  ) => apiClient.get<T[]>(`/api/v1/system-dictionary/${dictionaryType}/items`, query),
 };
 
 export const configurationEntityApi = {
   list: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     entityType: string,
-    query?: Record<string, string | number | boolean | undefined>,
+    query?: Record<string, ApiQueryValue>,
   ) => apiClient.get<T[]>(`/api/v1/configuration-entity/${entityType}`, query),
 
   get: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(entityType: string, id: string) =>
     apiClient.get<T>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
-  create: (entityType: string, data: Record<string, any>) =>
-    apiClient.post<any>(`/api/v1/configuration-entity/${entityType}`, data),
+  create: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    entityType: string,
+    data: ConfigurationEntityMutationPayload,
+  ) => apiClient.post<T>(`/api/v1/configuration-entity/${entityType}`, data),
 
-  update: (entityType: string, id: string, data: Record<string, any>) =>
-    apiClient.patch<any>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
+  update: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
+    entityType: string,
+    id: string,
+    data: ConfigurationEntityMutationPayload & { version: number },
+  ) => apiClient.patch<T>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
 
   delete: (entityType: string, id: string) =>
-    apiClient.delete<any>(`/api/v1/configuration-entity/${entityType}/${id}`),
+    apiClient.delete<{ message: string }>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
   getMembershipTypesByClass: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     classId: string,
-    query?: Record<string, string | number | boolean | undefined>,
+    query?: Record<string, ApiQueryValue>,
   ) => apiClient.get<T[]>(`/api/v1/configuration-entity/membership-classes/${classId}/types`, query),
 
   getMembershipLevelsByType: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     typeId: string,
-    query?: Record<string, string | number | boolean | undefined>,
+    query?: Record<string, ApiQueryValue>,
   ) => apiClient.get<T[]>(`/api/v1/configuration-entity/membership-types/${typeId}/levels`, query),
 
   getMembershipTree: (query?: {
-    scopeType?: 'tenant' | 'subsidiary' | 'talent';
+    scopeType?: ConfigurationScopeType;
     scopeId?: string;
     includeInactive?: boolean;
   }) => apiClient.get<MembershipTreeClass[]>('/api/v1/configuration-entity/membership-tree', query),
@@ -722,6 +665,128 @@ export const externalBlocklistApi = {
       isActive,
     }),
 };
+
+export interface SubsidiaryRecord {
+  id: string;
+  parentId: string | null;
+  code: string;
+  path: string;
+  depth: number;
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  name: string;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
+  descriptionJa?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  childrenCount?: number;
+  talentCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+  version: number;
+}
+
+export interface SubsidiaryCreatePayload {
+  code: string;
+  nameEn: string;
+  parentId?: string | null;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+}
+
+export interface SubsidiaryUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+  version: number;
+}
+
+export interface SubsidiaryMoveResponse {
+  id: string;
+  parentId: string | null;
+  path: string;
+  depth: number;
+  affectedChildren: number;
+  version: number;
+}
+
+export interface SubsidiaryActivationResponse {
+  id: string;
+  isActive: boolean;
+  cascadeAffected?: {
+    subsidiaries: number;
+    talents: number;
+  };
+  version?: number;
+}
+
+export const subsidiaryApi = {
+  list: () => apiClient.get<SubsidiaryRecord[]>('/api/v1/subsidiaries'),
+
+  get: (id: string) => apiClient.get<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`),
+
+  create: (data: SubsidiaryCreatePayload) => apiClient.post<SubsidiaryRecord>('/api/v1/subsidiaries', data),
+
+  update: (id: string, data: SubsidiaryUpdatePayload) =>
+    apiClient.patch<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`, data),
+
+  move: (id: string, data: { newParentId?: string | null; version: number }) =>
+    apiClient.post<SubsidiaryMoveResponse>(`/api/v1/subsidiaries/${id}/move`, data),
+
+  deactivate: (id: string, version: number) =>
+    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/deactivate`, { version }),
+
+  reactivate: (id: string, version: number) =>
+    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/reactivate`, { version }),
+};
+
+export interface ScopeSettingsResponse {
+  scopeType: 'tenant' | 'subsidiary' | 'talent';
+  scopeId: string | null;
+  settings: Record<string, unknown>;
+  overrides: string[];
+  inheritedFrom: Record<string, string>;
+  version: number;
+}
+
+export const settingsApi = {
+  getTenantSettings: () => apiClient.get<ScopeSettingsResponse>('/api/v1/organization/settings'),
+
+  updateTenantSettings: (settings: Record<string, unknown>, version: number) =>
+    apiClient.put<ScopeSettingsResponse>('/api/v1/organization/settings', { settings, version }),
+
+  getSubsidiarySettings: (id: string) =>
+    apiClient.get<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`),
+
+  updateSubsidiarySettings: (id: string, settings: Record<string, unknown>, version: number) =>
+    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, {
+      settings,
+      version,
+    }),
+
+  resetSubsidiarySetting: (id: string, field: string) =>
+    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings/reset`, { field }),
+
+  getTalentSettings: (id: string) =>
+    apiClient.get<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`),
+
+  updateTalentSettings: (id: string, settings: Record<string, unknown>, version: number) =>
+    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`, { settings, version }),
+
+  resetTalentSetting: (id: string, field: string) =>
+    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings/reset`, { field }),
+};
+
 
 export const talentDomainApi = {
   setHomepageDomain: (talentId: string, customDomain: string | null) =>

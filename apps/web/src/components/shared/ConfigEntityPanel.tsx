@@ -52,7 +52,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { configEntityApi } from '@/lib/api/modules/configuration';
+import {
+  configEntityApi,
+  type ConfigurationEntityRecord,
+} from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 import { CONFIG_ENTITY_TYPES, ConfigEntity, ScopeType } from './constants';
@@ -80,6 +83,17 @@ export interface CustomDialogField {
   required?: boolean;
   // For entityRef type: the entity type to reference (e.g., 'membership-class')
   refEntityType?: string;
+}
+
+function formatOwnerLevel(ownerType?: ScopeType | null): string {
+  switch (ownerType) {
+    case 'subsidiary':
+      return 'Subsidiary';
+    case 'talent':
+      return 'Talent';
+    default:
+      return 'Tenant';
+  }
 }
 
 interface ConfigEntityPanelProps {
@@ -155,21 +169,23 @@ export function ConfigEntityPanel({
         const data = response.data;
         setConfigEntities(prev => ({
           ...prev,
-          [entityType]: data.map((item: Record<string, unknown>) => ({
-            id: item.id as string,
-            code: item.code as string,
-            nameEn: (item.nameEn as string) || '',
-            nameZh: (item.nameZh as string) || '',
-            nameJa: (item.nameJa as string) || '',
-            ownerType: (item.ownerType as ScopeType) || 'tenant',
-            ownerLevel: (item.ownerLevel as string) || 'Tenant',
-            isActive: (item.isActive as boolean) ?? true,
-            isForceUse: (item.isForceUse as boolean) ?? false,
-            isSystem: (item.isSystem as boolean) ?? false,
-            sortOrder: (item.sortOrder as number) || 0,
-            inheritedFrom: (item.inheritedFrom as string) || undefined,
-            // Preserve all other custom fields
+          [entityType]: data.map((item: ConfigurationEntityRecord) => ({
+            // Preserve all custom fields from the API response first.
             ...item,
+            id: item.id,
+            code: item.code,
+            nameEn: item.nameEn,
+            nameZh: item.nameZh ?? '',
+            nameJa: item.nameJa ?? '',
+            ownerType: (item.ownerType as ScopeType | undefined) ?? 'tenant',
+            ownerLevel: formatOwnerLevel(item.ownerType as ScopeType | null | undefined),
+            isActive: item.isActive,
+            isForceUse: item.isForceUse ?? false,
+            isSystem: item.isSystem ?? false,
+            sortOrder: item.sortOrder,
+            inheritedFrom: item.isInherited
+              ? formatOwnerLevel(item.ownerType as ScopeType | null | undefined)
+              : undefined,
           })),
         }));
       }
@@ -386,8 +402,8 @@ export function ConfigEntityPanel({
             includeInherited: true,
           });
           if (response.success && response.data) {
-            updates[refType] = response.data.map((item: Record<string, unknown>) => ({
-              value: item.id as string,
+            updates[refType] = response.data.map((item: ConfigurationEntityRecord) => ({
+              value: item.id,
               label: `${item.nameEn || item.code} (${item.code})`,
             }));
           }
