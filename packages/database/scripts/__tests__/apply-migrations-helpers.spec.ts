@@ -64,6 +64,22 @@ describe('isIgnorableTenantMigrationError', () => {
       ),
       true
     );
+
+    assert.equal(
+      isIgnorableTenantMigrationError(
+        'ALTER TABLE "tenant_template"."membership_class" DROP CONSTRAINT IF EXISTS "membership_class_owner_type_owner_id_code_key";',
+        'constraint "membership_class_owner_type_owner_id_code_key" of relation "membership_class" does not exist'
+      ),
+      true
+    );
+
+    assert.equal(
+      isIgnorableTenantMigrationError(
+        'ALTER INDEX "tenant_template"."idx_membership_record_valid_to" RENAME TO "membership_record_valid_to_idx";',
+        'relation "tenant_template.idx_membership_record_valid_to" does not exist'
+      ),
+      true
+    );
   });
 
   it('does not ignore duplicate-key data conflicts anymore', () => {
