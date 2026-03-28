@@ -40,6 +40,7 @@ jobs:
       should_deploy_runtime: ${{ steps.classify.outputs.should_deploy_runtime }}
       skip_reason: ${{ steps.classify.outputs.skip_reason }}
       build_no_cache: ${{ steps.classify.outputs.build_no_cache }}
+      rollout_migrations_csv: ${{ steps.classify.outputs.rollout_migrations_csv }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,6 +56,7 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
+            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
             if [[ "${{ github.event.inputs.build_mode }}" == "clean" ]]; then
               echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
               echo "skip_reason=manual_dispatch_clean_build" >> "$GITHUB_OUTPUT"
@@ -69,6 +71,7 @@ jobs:
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
+            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=tag_release" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -81,6 +84,7 @@ jobs:
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
+            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=unknown_diff_base" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -92,13 +96,19 @@ jobs:
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
+            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=no_changed_files" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           only_docs_like=true
           only_build_test_like=true
+          rollout_migrations=()
           for file in "${changed_files[@]}"; do
+            if [[ "$file" =~ ^packages/database/prisma/migrations/([^/]+)/migration\.sql$ ]]; then
+              rollout_migrations+=("${BASH_REMATCH[1]}")
+            fi
+
             if [[ "$file" =~ ^README(\.zh-CN|\.ja)?\.md$ ]] || [[ "$file" =~ ^docs/ ]] || [[ "$file" =~ ^\.llm/ ]] || [[ "$file" =~ ^\.context/ ]]; then
               continue
             fi
@@ -117,8 +127,16 @@ jobs:
 
             only_build_test_like=false
             echo "Runtime-impacting file detected: $file"
-            break
           done
+
+          if [[ "${#rollout_migrations[@]}" -gt 0 ]]; then
+            mapfile -t unique_rollout_migrations < <(printf '%s\n' "${rollout_migrations[@]}" | sort -u)
+            rollout_migrations_csv=$(IFS=,; echo "${unique_rollout_migrations[*]}")
+          else
+            rollout_migrations_csv=""
+          fi
+
+          echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
 
           if [[ "$only_docs_like" == true ]]; then
             echo "Detected docs/local-rules only change set:"
@@ -253,6 +271,22 @@ jobs:
             # Run database migrations (if any)
             echo "📊 Running database migrations..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -c "cd /app/packages/database && npx prisma migrate deploy && npx tsx scripts/apply-migrations.ts"
+
+            ROLLOUT_MIGRATIONS="${{ needs.classify-changes.outputs.rollout_migrations_csv }}"
+            if [ -n "$ROLLOUT_MIGRATIONS" ]; then
+              echo "🔎 Running schema rollout verification for migrations: $ROLLOUT_MIGRATIONS"
+              VERIFY_ARGS="--infer-artifacts-from-migrations --json"
+              IFS=',' read -r -a ROLLOUT_MIGRATION_ARRAY <<< "$ROLLOUT_MIGRATIONS"
+              for migration in "${ROLLOUT_MIGRATION_ARRAY[@]}"; do
+                if [ -n "$migration" ]; then
+                  VERIFY_ARGS="$VERIFY_ARGS --migration $migration"
+                fi
+              done
+
+              docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc "cd /app/packages/database && npx tsx scripts/verify-schema-rollout.ts $VERIFY_ARGS"
+            else
+              echo "ℹ️ No migration.sql changes detected in this diff; skipping automated schema rollout verification."
+            fi
 
             # Clean up old images and build cache (run in background to avoid SSH timeout)
             echo "🧹 Cleaning up old images and cache (background)..."

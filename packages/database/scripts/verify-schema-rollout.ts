@@ -4,15 +4,15 @@
 // Goal:
 // - verify expected public Prisma migration records exist
 // - verify required tenant-schema artifacts exist in tenant_template and active tenants
-
-import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-interface RequiredColumn {
-  tableName: string;
-  columnName: string;
-}
+import {
+  type InferredRolloutArtifacts,
+  type RequiredColumn,
+  inferRolloutArtifactsFromMigrations,
+} from './verify-schema-rollout-helpers';
 
 interface CliOptions {
   migrations: string[];
@@ -20,6 +20,7 @@ interface CliOptions {
   requiredTables: string[];
   requiredColumns: RequiredColumn[];
   requiredIndexes: string[];
+  inferArtifactsFromMigrations: boolean;
   json: boolean;
 }
 
@@ -69,6 +70,12 @@ interface RolloutVerificationSummary {
     requiredColumns: string[];
     requiredIndexes: string[];
   };
+  inferredArtifacts: {
+    sourceMigrations: string[];
+    requiredTables: string[];
+    requiredColumns: string[];
+    requiredIndexes: string[];
+  } | null;
   checkedSchemas: string[];
   publicMigrations: PublicMigrationVerification[];
   schemaArtifacts: SchemaArtifactVerification[];
@@ -101,6 +108,7 @@ function parseCliArgs(argv: string[]): CliOptions {
   const requiredTables: string[] = [];
   const requiredColumns: RequiredColumn[] = [];
   const requiredIndexes: string[] = [];
+  let inferArtifactsFromMigrations = false;
   let json = false;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -175,7 +183,18 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--infer-artifacts-from-migrations') {
+      inferArtifactsFromMigrations = true;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  if (inferArtifactsFromMigrations && migrations.length === 0) {
+    throw new Error(
+      'The --infer-artifacts-from-migrations flag requires at least one --migration.'
+    );
   }
 
   if (
@@ -185,7 +204,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     requiredIndexes.length === 0
   ) {
     throw new Error(
-      'At least one verification target is required. Use --migration, --require-table, --require-column, or --require-index.',
+      'At least one verification target is required. Use --migration, --require-table, --require-column, or --require-index.'
     );
   }
 
@@ -197,18 +216,50 @@ function parseCliArgs(argv: string[]): CliOptions {
       (value, currentIndex, items) =>
         items.findIndex(
           (candidate) =>
-            candidate.tableName === value.tableName && candidate.columnName === value.columnName,
-        ) === currentIndex,
+            candidate.tableName === value.tableName && candidate.columnName === value.columnName
+        ) === currentIndex
     ),
     requiredIndexes: [...new Set(requiredIndexes)],
+    inferArtifactsFromMigrations,
     json,
   };
 }
 
-async function getTargetSchemas(
-  prisma: PrismaClient,
-  options: CliOptions,
-): Promise<string[]> {
+function resolveVerificationTargets(options: CliOptions): {
+  resolvedOptions: CliOptions;
+  inferredArtifacts: InferredRolloutArtifacts | null;
+} {
+  if (!options.inferArtifactsFromMigrations) {
+    return {
+      resolvedOptions: options,
+      inferredArtifacts: null,
+    };
+  }
+
+  const inferredArtifacts = inferRolloutArtifactsFromMigrations(options.migrations);
+
+  return {
+    resolvedOptions: {
+      ...options,
+      requiredTables: [
+        ...new Set([...options.requiredTables, ...inferredArtifacts.requiredTables]),
+      ],
+      requiredColumns: [...options.requiredColumns, ...inferredArtifacts.requiredColumns].filter(
+        (value, currentIndex, items) =>
+          items.findIndex(
+            (candidate) =>
+              candidate.tableName === value.tableName && candidate.columnName === value.columnName
+          ) === currentIndex
+      ),
+      requiredIndexes: [
+        ...new Set([...options.requiredIndexes, ...inferredArtifacts.requiredIndexes]),
+      ],
+    },
+    inferredArtifacts,
+  };
+}
+
+async function getTargetSchemas(prisma: PrismaClient, options: CliOptions): Promise<string[]> {
   if (options.schemas.length > 0) {
     return options.schemas;
   }
@@ -239,7 +290,7 @@ async function schemaExists(prisma: PrismaClient, schemaName: string): Promise<b
         WHERE schema_name = $1
       ) AS exists
     `,
-    schemaName,
+    schemaName
   );
 
   return rows[0]?.exists ?? false;
@@ -248,7 +299,7 @@ async function schemaExists(prisma: PrismaClient, schemaName: string): Promise<b
 async function tableExists(
   prisma: PrismaClient,
   schemaName: string,
-  tableName: string,
+  tableName: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -260,7 +311,7 @@ async function tableExists(
       ) AS exists
     `,
     schemaName,
-    tableName,
+    tableName
   );
 
   return rows[0]?.exists ?? false;
@@ -270,7 +321,7 @@ async function columnExists(
   prisma: PrismaClient,
   schemaName: string,
   tableName: string,
-  columnName: string,
+  columnName: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -284,7 +335,7 @@ async function columnExists(
     `,
     schemaName,
     tableName,
-    columnName,
+    columnName
   );
 
   return rows[0]?.exists ?? false;
@@ -293,7 +344,7 @@ async function columnExists(
 async function indexExists(
   prisma: PrismaClient,
   schemaName: string,
-  indexName: string,
+  indexName: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -305,7 +356,7 @@ async function indexExists(
       ) AS exists
     `,
     schemaName,
-    indexName,
+    indexName
   );
 
   return rows[0]?.exists ?? false;
@@ -313,7 +364,7 @@ async function indexExists(
 
 async function verifyPublicMigrations(
   prisma: PrismaClient,
-  migrationNames: string[],
+  migrationNames: string[]
 ): Promise<PublicMigrationVerification[]> {
   if (migrationNames.length === 0) {
     return [];
@@ -345,10 +396,10 @@ async function verifyPublicMigrations(
     }
 
     const successfulAttemptCount = matchingRows.filter(
-      (candidate) => candidate.finishedAt !== null && candidate.rolledBackAt === null,
+      (candidate) => candidate.finishedAt !== null && candidate.rolledBackAt === null
     ).length;
     const rolledBackAttemptCount = matchingRows.filter(
-      (candidate) => candidate.rolledBackAt !== null,
+      (candidate) => candidate.rolledBackAt !== null
     ).length;
 
     if (successfulAttemptCount > 0) {
@@ -399,7 +450,7 @@ async function verifyPublicMigrations(
 async function verifySchemaArtifacts(
   prisma: PrismaClient,
   schemaName: string,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<SchemaArtifactVerification> {
   const exists = await schemaExists(prisma, schemaName);
 
@@ -419,19 +470,19 @@ async function verifySchemaArtifacts(
     options.requiredTables.map(async (tableName) => ({
       tableName,
       present: await tableExists(prisma, schemaName, tableName),
-    })),
+    }))
   );
   const columns = await Promise.all(
     options.requiredColumns.map(async (column) => ({
       ...column,
       present: await columnExists(prisma, schemaName, column.tableName, column.columnName),
-    })),
+    }))
   );
   const indexes = await Promise.all(
     options.requiredIndexes.map(async (indexName) => ({
       indexName,
       present: await indexExists(prisma, schemaName, indexName),
-    })),
+    }))
   );
 
   const failures = [
@@ -460,11 +511,12 @@ async function verifySchemaArtifacts(
 async function verifySchemaRollout(
   prisma: PrismaClient,
   options: CliOptions,
+  inferredArtifacts: InferredRolloutArtifacts | null
 ): Promise<RolloutVerificationSummary> {
   const checkedSchemas = await getTargetSchemas(prisma, options);
   const publicMigrations = await verifyPublicMigrations(prisma, options.migrations);
   const schemaArtifacts = await Promise.all(
-    checkedSchemas.map((schemaName) => verifySchemaArtifacts(prisma, schemaName, options)),
+    checkedSchemas.map((schemaName) => verifySchemaArtifacts(prisma, schemaName, options))
   );
 
   const failures = [
@@ -478,10 +530,20 @@ async function verifySchemaRollout(
       explicitSchemas: options.schemas,
       requiredTables: options.requiredTables,
       requiredColumns: options.requiredColumns.map(
-        (item) => `${item.tableName}.${item.columnName}`,
+        (item) => `${item.tableName}.${item.columnName}`
       ),
       requiredIndexes: options.requiredIndexes,
     },
+    inferredArtifacts: inferredArtifacts
+      ? {
+          sourceMigrations: inferredArtifacts.sourceMigrations,
+          requiredTables: inferredArtifacts.requiredTables,
+          requiredColumns: inferredArtifacts.requiredColumns.map(
+            (item) => `${item.tableName}.${item.columnName}`
+          ),
+          requiredIndexes: inferredArtifacts.requiredIndexes,
+        }
+      : null,
     checkedSchemas,
     publicMigrations,
     schemaArtifacts,
@@ -491,15 +553,36 @@ async function verifySchemaRollout(
 }
 
 function printSummary(summary: RolloutVerificationSummary): void {
-  console.log(summary.passed ? '✅ Schema rollout verification passed' : '❌ Schema rollout verification failed');
+  console.log(
+    summary.passed
+      ? '✅ Schema rollout verification passed'
+      : '❌ Schema rollout verification failed'
+  );
 
   if (summary.publicMigrations.length > 0) {
     console.log('\nPublic migrations:');
 
     for (const migration of summary.publicMigrations) {
       console.log(
-        `- ${migration.migrationName}: ${migration.passed ? 'ok' : 'failed'} (${migration.reason})`,
+        `- ${migration.migrationName}: ${migration.passed ? 'ok' : 'failed'} (${migration.reason})`
       );
+    }
+  }
+
+  if (summary.inferredArtifacts) {
+    console.log('\nInferred tenant artifacts from migrations:');
+    console.log(`- source migrations: ${summary.inferredArtifacts.sourceMigrations.join(', ')}`);
+
+    for (const tableName of summary.inferredArtifacts.requiredTables) {
+      console.log(`  - table ${tableName}`);
+    }
+
+    for (const columnName of summary.inferredArtifacts.requiredColumns) {
+      console.log(`  - column ${columnName}`);
+    }
+
+    for (const indexName of summary.inferredArtifacts.requiredIndexes) {
+      console.log(`  - index ${indexName}`);
     }
   }
 
@@ -515,7 +598,7 @@ function printSummary(summary: RolloutVerificationSummary): void {
 
       for (const column of schema.columns) {
         console.log(
-          `  - column ${column.tableName}.${column.columnName}: ${column.present ? 'present' : 'missing'}`,
+          `  - column ${column.tableName}.${column.columnName}: ${column.present ? 'present' : 'missing'}`
         );
       }
 
@@ -532,12 +615,13 @@ function printSummary(summary: RolloutVerificationSummary): void {
 
 async function main(): Promise<void> {
   const prisma = new PrismaClient();
-  const options = parseCliArgs(process.argv.slice(2));
+  const parsedOptions = parseCliArgs(process.argv.slice(2));
+  const { resolvedOptions, inferredArtifacts } = resolveVerificationTargets(parsedOptions);
 
   try {
-    const summary = await verifySchemaRollout(prisma, options);
+    const summary = await verifySchemaRollout(prisma, resolvedOptions, inferredArtifacts);
 
-    if (options.json) {
+    if (resolvedOptions.json) {
       console.log(JSON.stringify(summary, null, 2));
     } else {
       printSummary(summary);
