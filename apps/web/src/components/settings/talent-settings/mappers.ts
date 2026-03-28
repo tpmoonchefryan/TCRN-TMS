@@ -22,9 +22,11 @@ interface TalentApiResponseData {
   isActive?: boolean | null;
   createdAt: string;
   version?: number | null;
-  inheritTimezone?: boolean | null;
-  homepageEnabled?: boolean | null;
-  marshmallowEnabled?: boolean | null;
+  settings?: {
+    inheritTimezone?: boolean | null;
+    homepageEnabled?: boolean | null;
+    marshmallowEnabled?: boolean | null;
+  } | null;
   externalPagesDomain?: TalentData['externalPagesDomain'] | null;
   _count?: {
     customers?: number | null;
@@ -55,9 +57,9 @@ export function mapTalentApiResponseToTalentData(
     customerCount: data._count?.customers || data.stats?.customerCount || 0,
     version: data.version || 1,
     settings: {
-      inheritTimezone: data.inheritTimezone ?? true,
-      homepageEnabled: data.homepageEnabled ?? true,
-      marshmallowEnabled: data.marshmallowEnabled ?? true,
+      inheritTimezone: data.settings?.inheritTimezone ?? true,
+      homepageEnabled: data.settings?.homepageEnabled ?? true,
+      marshmallowEnabled: data.settings?.marshmallowEnabled ?? true,
     },
     externalPagesDomain: {
       homepage: data.externalPagesDomain?.homepage || null,

@@ -17,6 +17,11 @@ describe('talent settings mappers', () => {
           nameEn: 'Aqua',
           subsidiary: { displayName: 'HQ' },
           createdAt: '2026-03-29T00:00:00.000Z',
+          settings: {
+            inheritTimezone: false,
+            homepageEnabled: true,
+            marshmallowEnabled: false,
+          },
           externalPagesDomain: {
             homepage: {
               customDomain: 'aqua.example.com',
@@ -39,6 +44,11 @@ describe('talent settings mappers', () => {
       homepagePath: 'ac',
       timezone: 'UTC',
       customerCount: 42,
+      settings: {
+        inheritTimezone: false,
+        homepageEnabled: true,
+        marshmallowEnabled: false,
+      },
       externalPagesDomain: {
         homepage: {
           customDomain: 'aqua.example.com',

@@ -34,6 +34,7 @@ export const talentApi = {
       avatarUrl?: string;
       homepagePath?: string;
       timezone?: string;
+      settings?: Record<string, unknown>;
       version: number;
     },
   ) => apiClient.patch<any>(`/api/v1/talents/${id}`, data),

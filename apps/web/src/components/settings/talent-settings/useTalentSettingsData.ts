@@ -140,6 +140,7 @@ export function useTalentSettingsData({
         displayName: talent.displayName,
         homepagePath: talent.homepagePath,
         timezone: talent.timezone,
+        settings: talent.settings,
         version: talent.version,
       });
       toast.success(tc('success'));
