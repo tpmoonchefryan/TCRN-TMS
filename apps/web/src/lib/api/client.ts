@@ -39,14 +39,11 @@ export interface CustomerCreateData {
   profileType: 'individual' | 'company';
   nickname: string;
   primaryLanguage?: string;
+  statusCode?: string;
   tags?: string[];
   source?: string;
   notes?: string;
-  pii?: {
-    realName?: string;
-    email?: string;
-    phone?: string;
-  };
+  pii?: PiiUpdateData;
 }
 
 export interface CustomerUpdateData {
@@ -92,6 +89,7 @@ export const customerApi = {
       profileType: data.profileType,
       nickname: data.nickname,
       primaryLanguage: data.primaryLanguage,
+      statusCode: data.statusCode,
       tags: data.tags,
       source: data.source,
       notes: data.notes,
@@ -145,8 +143,8 @@ export interface AddressData {
 export interface PiiUpdateData {
   givenName?: string;
   familyName?: string;
-  phoneNumbers?: Array<{ countryCode: string; number: string; type?: string; isPrimary?: boolean }>;
-  emails?: Array<{ address: string; type?: string; isPrimary?: boolean }>;
+  phoneNumbers?: Array<{ typeCode: string; number: string; isPrimary?: boolean }>;
+  emails?: Array<{ typeCode: string; address: string; isPrimary?: boolean }>;
   addresses?: AddressData[];
 }
 

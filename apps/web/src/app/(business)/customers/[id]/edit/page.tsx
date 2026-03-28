@@ -10,20 +10,21 @@ import { use, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-    Button,
-    Card,
-    Checkbox,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-    Skeleton,
-    Textarea,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Textarea,
 } from '@/components/ui';
 import { AddressData, companyCustomerApi, customerApi, dictionaryApi } from '@/lib/api/client';
+import { type PiiProfile, piiTokenManager } from '@/lib/pii';
 import { useTalentStore } from '@/stores/talent-store';
 
 // Address type options (static, as per shared/types/customer/schema.ts)
@@ -47,13 +48,6 @@ interface CustomerData {
   tags: string[];
   notes?: string;
   version: number;
-  // Individual PII
-  pii?: {
-    realName?: string;
-    phone?: string;
-    email?: string;
-    addresses?: AddressFormData[];
-  };
   // Company info
   companyInfo?: {
     companyLegalName?: string;
@@ -93,7 +87,7 @@ interface CompanyFormData {
 export default function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params Promise (Next.js 15+ requirement)
   const { id: customerId } = use(params);
-  
+
   const router = useRouter();
   const t = useTranslations('editCustomer');
   const tNew = useTranslations('newCustomer');
@@ -104,9 +98,12 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPiiLoaded, setIsPiiLoaded] = useState(false);
   const [customer, setCustomer] = useState<CustomerData | null>(null);
-  const [countries, setCountries] = useState<Array<{ code: string; nameEn: string; nameZh?: string; nameJa?: string }>>([]);
-  
+  const [countries, setCountries] = useState<
+    Array<{ code: string; nameEn: string; nameZh?: string; nameJa?: string }>
+  >([]);
+
   // Form states
   const [individualForm, setIndividualForm] = useState<IndividualFormData>({
     nickname: '',
@@ -118,7 +115,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
     email: '',
     addresses: [],
   });
-  
+
   const [companyForm, setCompanyForm] = useState<CompanyFormData>({
     nickname: '',
     tags: '',
@@ -148,6 +145,31 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
     return error?.message || te('generic');
   };
 
+  const mapPiiProfileToForm = useCallback((piiData: PiiProfile) => {
+    const primaryPhone =
+      piiData.phoneNumbers?.find((phone) => phone.isPrimary) || piiData.phoneNumbers?.[0];
+    const primaryEmail = piiData.emails?.find((email) => email.isPrimary) || piiData.emails?.[0];
+
+    const addresses: AddressFormData[] = (piiData.addresses || []).map((addr) => ({
+      typeCode: addr.typeCode || 'HOME',
+      countryCode: addr.countryCode || '',
+      province: addr.province || '',
+      city: addr.city || '',
+      district: addr.district || '',
+      street: addr.street || '',
+      postalCode: addr.postalCode || '',
+      isPrimary: addr.isPrimary || false,
+    }));
+
+    return {
+      givenName: piiData.givenName || '',
+      familyName: piiData.familyName || '',
+      phoneNumber: primaryPhone?.number || '',
+      email: primaryEmail?.address || '',
+      addresses,
+    };
+  }, []);
+
   // Load countries from dictionary
   const loadCountries = useCallback(async () => {
     try {
@@ -167,42 +189,37 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const response = await customerApi.get(customerId, talentId);
       if (response.success && response.data) {
         const data = response.data;
         setCustomer(data);
-        
+
         if (data.profileType === 'individual') {
-          // Parse real name into given name and family name
-          const nameParts = (data.pii?.realName || '').split(' ');
-          const familyName = nameParts.length > 1 ? nameParts[0] : '';
-          const givenName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '';
-          
-          // Map addresses from API format to form format
-          const addresses: AddressFormData[] = (data.pii?.addresses || []).map((addr: any) => ({
-            typeCode: addr.typeCode || addr.type_code || 'HOME',
-            countryCode: addr.countryCode || addr.country_code || '',
-            province: addr.province || '',
-            city: addr.city || '',
-            district: addr.district || '',
-            street: addr.street || '',
-            postalCode: addr.postalCode || addr.postal_code || '',
-            isPrimary: addr.isPrimary || addr.is_primary || false,
-          }));
-          
           setIndividualForm({
             nickname: data.nickname || '',
             tags: (data.tags || []).join(', '),
             notes: data.notes || '',
-            givenName,
-            familyName,
-            phoneNumber: data.pii?.phone || '',
-            email: data.pii?.email || '',
-            addresses,
+            givenName: '',
+            familyName: '',
+            phoneNumber: '',
+            email: '',
+            addresses: [],
           });
+          setIsPiiLoaded(false);
+
+          try {
+            const piiData = await piiTokenManager.getPiiProfile(customerId, talentId);
+            setIndividualForm((current) => ({
+              ...current,
+              ...mapPiiProfileToForm(piiData),
+            }));
+            setIsPiiLoaded(true);
+          } catch (piiError) {
+            console.warn('Failed to load customer PII for edit form:', piiError);
+          }
         } else {
           setCompanyForm({
             nickname: data.nickname || '',
@@ -235,31 +252,36 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
 
   const handleIndividualSubmit = async () => {
     if (!customer || !talentId) return;
-    
+
     if (!individualForm.nickname.trim()) {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await customerApi.update(
         customerId,
         {
           nickname: individualForm.nickname.trim(),
-          tags: individualForm.tags ? individualForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          tags: individualForm.tags
+            ? individualForm.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
           notes: individualForm.notes || undefined,
           expectedVersion: customer.version,
         },
         talentId
       );
-      
+
       if (response.success) {
         // Build addresses for PII update - filter out empty addresses
         const validAddresses: AddressData[] = individualForm.addresses
-          .filter(addr => addr.countryCode && addr.typeCode)
-          .map(addr => ({
+          .filter((addr) => addr.countryCode && addr.typeCode)
+          .map((addr) => ({
             typeCode: addr.typeCode,
             countryCode: addr.countryCode,
             province: addr.province || undefined,
@@ -269,19 +291,42 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
             postalCode: addr.postalCode || undefined,
             isPrimary: addr.isPrimary,
           }));
-        
-        // Update PII including addresses
-        await customerApi.updatePii(
-          customerId,
-          {
-            givenName: individualForm.givenName || undefined,
-            familyName: individualForm.familyName || undefined,
-            addresses: validAddresses.length > 0 ? validAddresses : undefined,
-          },
-          customer.version,
-          talentId
-        );
-        
+
+        const trimmedGivenName = individualForm.givenName.trim();
+        const trimmedFamilyName = individualForm.familyName.trim();
+        const trimmedPhoneNumber = individualForm.phoneNumber.trim();
+        const trimmedEmail = individualForm.email.trim();
+        const shouldUpdatePii =
+          isPiiLoaded ||
+          Boolean(trimmedGivenName) ||
+          Boolean(trimmedFamilyName) ||
+          Boolean(trimmedPhoneNumber) ||
+          Boolean(trimmedEmail) ||
+          validAddresses.length > 0;
+
+        if (shouldUpdatePii) {
+          await customerApi.updatePii(
+            customerId,
+            {
+              givenName: isPiiLoaded ? trimmedGivenName : trimmedGivenName || undefined,
+              familyName: isPiiLoaded ? trimmedFamilyName : trimmedFamilyName || undefined,
+              phoneNumbers: trimmedPhoneNumber
+                ? [{ typeCode: 'mobile', number: trimmedPhoneNumber, isPrimary: true }]
+                : isPiiLoaded
+                  ? []
+                  : undefined,
+              emails: trimmedEmail
+                ? [{ typeCode: 'personal', address: trimmedEmail, isPrimary: true }]
+                : isPiiLoaded
+                  ? []
+                  : undefined,
+              addresses: validAddresses.length > 0 ? validAddresses : isPiiLoaded ? [] : undefined,
+            },
+            customer.version,
+            talentId
+          );
+        }
+
         toast.success(t('updateSuccess'));
         router.push(`/customers/${customerId}`);
       } else {
@@ -296,25 +341,30 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
 
   const handleCompanySubmit = async () => {
     if (!customer || !talentId) return;
-    
+
     if (!companyForm.nickname.trim()) {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
     }
-    
+
     if (!companyForm.companyLegalName.trim()) {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await companyCustomerApi.update(
         customerId,
         {
           nickname: companyForm.nickname.trim(),
-          tags: companyForm.tags ? companyForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          tags: companyForm.tags
+            ? companyForm.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
           notes: companyForm.notes || undefined,
           companyLegalName: companyForm.companyLegalName.trim(),
           companyShortName: companyForm.companyShortName || undefined,
@@ -327,7 +377,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
         },
         talentId
       );
-      
+
       if (response.success) {
         toast.success(t('updateSuccess'));
         router.push(`/customers/${customerId}`);
@@ -344,8 +394,8 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   // Show message if no talent selected
   if (!currentTalent) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-        <User className="h-12 w-12 mb-4 opacity-50" />
+      <div className="text-muted-foreground flex h-64 flex-col items-center justify-center">
+        <User className="mb-4 h-12 w-12 opacity-50" />
         <p>{tNew('selectTalentFirst')}</p>
       </div>
     );
@@ -354,15 +404,15 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   // Loading state
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto py-8 px-4">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mb-8 flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-md" />
           <div className="space-y-2">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
-        <Card className="p-6 space-y-6">
+        <Card className="space-y-6 p-6">
           <Skeleton className="h-8 w-32" />
           <div className="grid grid-cols-2 gap-4">
             <Skeleton className="h-10 w-full" />
@@ -378,8 +428,8 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   // Customer not found
   if (!customer) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-        <User className="h-12 w-12 mb-4 opacity-50" />
+      <div className="text-muted-foreground flex h-64 flex-col items-center justify-center">
+        <User className="mb-4 h-12 w-12 opacity-50" />
         <p>{t('notFound')}</p>
         <Button variant="link" onClick={() => router.push('/customers')}>
           {tCommon('back')}
@@ -391,13 +441,15 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   const isIndividual = customer.profileType === 'individual';
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <div className="flex items-center gap-4 mb-8">
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mb-8 flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.push(`/customers/${customerId}`)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isIndividual ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-lg ${isIndividual ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}
+          >
             {isIndividual ? <User size={20} /> : <Building2 size={20} />}
           </div>
           <div>
@@ -410,31 +462,33 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
       </div>
 
       <div className="space-y-8">
-        <Card className="p-6 space-y-6">
+        <Card className="space-y-6 p-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-medium border-b pb-2">{tNew('basicInfo')}</h3>
-            
+            <h3 className="border-b pb-2 text-lg font-medium">{tNew('basicInfo')}</h3>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{tNew('nicknameLabel')} *</Label>
-                <Input 
-                  placeholder={tNew('nicknamePlaceholder')} 
-                  autoFocus 
+                <Input
+                  placeholder={tNew('nicknamePlaceholder')}
+                  autoFocus
                   value={isIndividual ? individualForm.nickname : companyForm.nickname}
-                  onChange={(e) => isIndividual 
-                    ? setIndividualForm(f => ({ ...f, nickname: e.target.value }))
-                    : setCompanyForm(f => ({ ...f, nickname: e.target.value }))
+                  onChange={(e) =>
+                    isIndividual
+                      ? setIndividualForm((f) => ({ ...f, nickname: e.target.value }))
+                      : setCompanyForm((f) => ({ ...f, nickname: e.target.value }))
                   }
                 />
               </div>
               <div className="space-y-2">
                 <Label>{tNew('tagsLabel')}</Label>
-                <Input 
-                  placeholder={tNew('tagsPlaceholder')} 
+                <Input
+                  placeholder={tNew('tagsPlaceholder')}
                   value={isIndividual ? individualForm.tags : companyForm.tags}
-                  onChange={(e) => isIndividual
-                    ? setIndividualForm(f => ({ ...f, tags: e.target.value }))
-                    : setCompanyForm(f => ({ ...f, tags: e.target.value }))
+                  onChange={(e) =>
+                    isIndividual
+                      ? setIndividualForm((f) => ({ ...f, tags: e.target.value }))
+                      : setCompanyForm((f) => ({ ...f, tags: e.target.value }))
                   }
                 />
               </div>
@@ -442,13 +496,14 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
 
             <div className="space-y-2">
               <Label>{tNew('notesLabel')}</Label>
-              <Textarea 
-                placeholder={tNew('notesPlaceholder')} 
+              <Textarea
+                placeholder={tNew('notesPlaceholder')}
                 rows={3}
                 value={isIndividual ? individualForm.notes : companyForm.notes}
-                onChange={(e) => isIndividual
-                  ? setIndividualForm(f => ({ ...f, notes: e.target.value }))
-                  : setCompanyForm(f => ({ ...f, notes: e.target.value }))
+                onChange={(e) =>
+                  isIndividual
+                    ? setIndividualForm((f) => ({ ...f, notes: e.target.value }))
+                    : setCompanyForm((f) => ({ ...f, notes: e.target.value }))
                 }
               />
             </div>
@@ -457,23 +512,27 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
           {/* Individual-specific fields */}
           {isIndividual && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">{tNew('personalInfo')}</h3>
-              
+              <h3 className="border-b pb-2 text-lg font-medium">{tNew('personalInfo')}</h3>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{tNew('familyNameLabel')}</Label>
-                  <Input 
+                  <Input
                     placeholder={tNew('familyNamePlaceholder')}
                     value={individualForm.familyName}
-                    onChange={(e) => setIndividualForm(f => ({ ...f, familyName: e.target.value }))}
+                    onChange={(e) =>
+                      setIndividualForm((f) => ({ ...f, familyName: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{tNew('givenNameLabel')}</Label>
-                  <Input 
+                  <Input
                     placeholder={tNew('givenNamePlaceholder')}
                     value={individualForm.givenName}
-                    onChange={(e) => setIndividualForm(f => ({ ...f, givenName: e.target.value }))}
+                    onChange={(e) =>
+                      setIndividualForm((f) => ({ ...f, givenName: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -481,20 +540,22 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{tNew('phoneLabel')}</Label>
-                  <Input 
+                  <Input
                     type="tel"
                     placeholder={tNew('phonePlaceholder')}
                     value={individualForm.phoneNumber}
-                    onChange={(e) => setIndividualForm(f => ({ ...f, phoneNumber: e.target.value }))}
+                    onChange={(e) =>
+                      setIndividualForm((f) => ({ ...f, phoneNumber: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{tNew('emailLabel')}</Label>
-                  <Input 
+                  <Input
                     type="email"
                     placeholder={tNew('emailPlaceholder')}
                     value={individualForm.email}
-                    onChange={(e) => setIndividualForm(f => ({ ...f, email: e.target.value }))}
+                    onChange={(e) => setIndividualForm((f) => ({ ...f, email: e.target.value }))}
                   />
                 </div>
               </div>
@@ -511,7 +572,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setIndividualForm(f => ({
+                    setIndividualForm((f) => ({
                       ...f,
                       addresses: [
                         ...f.addresses,
@@ -529,21 +590,19 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                     }));
                   }}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="mr-1 h-4 w-4" />
                   {t('addAddress')}
                 </Button>
               </div>
 
               {individualForm.addresses.length === 0 ? (
-                <p className="text-muted-foreground text-sm py-4 text-center">
-                  {t('addAddress')}
-                </p>
+                <p className="text-muted-foreground py-4 text-center text-sm">{t('addAddress')}</p>
               ) : (
                 <div className="space-y-6">
                   {individualForm.addresses.map((address, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4 relative">
+                    <div key={index} className="relative space-y-4 rounded-lg border p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">
+                        <span className="text-muted-foreground text-sm font-medium">
                           #{index + 1}
                         </span>
                         <Button
@@ -552,13 +611,13 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                           size="sm"
                           className="text-destructive hover:text-destructive"
                           onClick={() => {
-                            setIndividualForm(f => ({
+                            setIndividualForm((f) => ({
                               ...f,
                               addresses: f.addresses.filter((_, i) => i !== index),
                             }));
                           }}
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
+                          <Trash2 className="mr-1 h-4 w-4" />
                           {t('removeAddress')}
                         </Button>
                       </div>
@@ -569,7 +628,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                           <Select
                             value={address.typeCode}
                             onValueChange={(value) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, typeCode: value } : a
@@ -594,7 +653,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                           <Select
                             value={address.countryCode}
                             onValueChange={(value) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, countryCode: value } : a
@@ -623,7 +682,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             placeholder={t('provincePlaceholder')}
                             value={address.province}
                             onChange={(e) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, province: e.target.value } : a
@@ -638,7 +697,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             placeholder={t('cityPlaceholder')}
                             value={address.city}
                             onChange={(e) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, city: e.target.value } : a
@@ -653,7 +712,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             placeholder={t('districtPlaceholder')}
                             value={address.district}
                             onChange={(e) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, district: e.target.value } : a
@@ -671,7 +730,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             placeholder={t('streetPlaceholder')}
                             value={address.street}
                             onChange={(e) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, street: e.target.value } : a
@@ -686,7 +745,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             placeholder={t('postalCodePlaceholder')}
                             value={address.postalCode}
                             onChange={(e) => {
-                              setIndividualForm(f => ({
+                              setIndividualForm((f) => ({
                                 ...f,
                                 addresses: f.addresses.map((a, i) =>
                                   i === index ? { ...a, postalCode: e.target.value } : a
@@ -702,7 +761,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                           id={`primary-${index}`}
                           checked={address.isPrimary}
                           onCheckedChange={(checked) => {
-                            setIndividualForm(f => ({
+                            setIndividualForm((f) => ({
                               ...f,
                               addresses: f.addresses.map((a, i) => ({
                                 ...a,
@@ -725,23 +784,27 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
           {/* Company-specific fields */}
           {!isIndividual && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">{tNew('companyInfo')}</h3>
-              
+              <h3 className="border-b pb-2 text-lg font-medium">{tNew('companyInfo')}</h3>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{tNew('companyLegalNameLabel')} *</Label>
-                  <Input 
+                  <Input
                     placeholder={tNew('companyLegalNamePlaceholder')}
                     value={companyForm.companyLegalName}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, companyLegalName: e.target.value }))}
+                    onChange={(e) =>
+                      setCompanyForm((f) => ({ ...f, companyLegalName: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{tNew('companyShortNameLabel')}</Label>
-                  <Input 
+                  <Input
                     placeholder={tNew('companyShortNamePlaceholder')}
                     value={companyForm.companyShortName}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, companyShortName: e.target.value }))}
+                    onChange={(e) =>
+                      setCompanyForm((f) => ({ ...f, companyShortName: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -749,51 +812,57 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{tNew('registrationNumberLabel')}</Label>
-                  <Input 
+                  <Input
                     placeholder={tNew('registrationNumberPlaceholder')}
                     value={companyForm.registrationNumber}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, registrationNumber: e.target.value }))}
+                    onChange={(e) =>
+                      setCompanyForm((f) => ({ ...f, registrationNumber: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{tNew('websiteLabel')}</Label>
-                  <Input 
+                  <Input
                     type="url"
                     placeholder={tNew('websitePlaceholder')}
                     value={companyForm.website}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, website: e.target.value }))}
+                    onChange={(e) => setCompanyForm((f) => ({ ...f, website: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <h3 className="text-lg font-medium border-b pb-2 mt-6">{tNew('contactInfo')}</h3>
-              
+              <h3 className="mt-6 border-b pb-2 text-lg font-medium">{tNew('contactInfo')}</h3>
+
               <div className="space-y-2">
                 <Label>{tNew('contactNameLabel')}</Label>
-                <Input 
+                <Input
                   placeholder={tNew('contactNamePlaceholder')}
                   value={companyForm.contactName}
-                  onChange={(e) => setCompanyForm(f => ({ ...f, contactName: e.target.value }))}
+                  onChange={(e) => setCompanyForm((f) => ({ ...f, contactName: e.target.value }))}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{tNew('contactPhoneLabel')}</Label>
-                  <Input 
+                  <Input
                     type="tel"
                     placeholder={tNew('contactPhonePlaceholder')}
                     value={companyForm.contactPhone}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, contactPhone: e.target.value }))}
+                    onChange={(e) =>
+                      setCompanyForm((f) => ({ ...f, contactPhone: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{tNew('contactEmailLabel')}</Label>
-                  <Input 
+                  <Input
                     type="email"
                     placeholder={tNew('contactEmailPlaceholder')}
                     value={companyForm.contactEmail}
-                    onChange={(e) => setCompanyForm(f => ({ ...f, contactEmail: e.target.value }))}
+                    onChange={(e) =>
+                      setCompanyForm((f) => ({ ...f, contactEmail: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -802,20 +871,17 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 justify-end">
-          <Button 
-            variant="outline" 
-            onClick={() => router.push(`/customers/${customerId}`)}
-          >
+        <div className="flex justify-end gap-4">
+          <Button variant="outline" onClick={() => router.push(`/customers/${customerId}`)}>
             {tCommon('cancel')}
           </Button>
-          <Button 
+          <Button
             onClick={isIndividual ? handleIndividualSubmit : handleCompanySubmit}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {tCommon('saving')}
               </>
             ) : (
