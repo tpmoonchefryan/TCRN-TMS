@@ -137,7 +137,6 @@ export default [
 
   {
     files: ['apps/web/src/**/*.{ts,tsx}'],
-    ignores: ['apps/web/src/lib/api/client.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
