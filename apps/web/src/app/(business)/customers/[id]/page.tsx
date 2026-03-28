@@ -16,7 +16,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type ComponentProps, use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CustomerStatusBadge } from '@/components/customer/CustomerShared';
@@ -213,9 +213,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const companyCustomer: CustomerCompanyDetailResponse | null =
     customer.profileType === 'company' ? customer : null;
   const piiCustomer =
-    customer.profileType === 'individual'
-      ? (customer as unknown as ComponentProps<typeof PiiReveal>['customer'])
-      : null;
+    customer.profileType === 'individual' ? customer : null;
 
   return (
     <Watermark className="min-h-screen">
