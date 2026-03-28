@@ -73,6 +73,5 @@ module.exports = {
     '.next',
     'coverage',
     '*.js',
-    '!.eslintrc.js',
   ],
 };

@@ -33,18 +33,15 @@ COPY packages/database/prisma ./packages/database/prisma
 
 # Copy source code (copy only src/ to avoid overwriting pnpm node_modules symlinks)
 COPY packages/shared/src ./packages/shared/src
-COPY packages/shared/.eslintrc.js ./packages/shared/.eslintrc.js
 COPY packages/database/src ./packages/database/src
 COPY packages/database/scripts ./packages/database/scripts
 COPY packages/database/tsup.config.ts ./packages/database/tsup.config.ts
-COPY packages/database/.eslintrc.js ./packages/database/.eslintrc.js
 COPY packages/eslint-config/*.js ./packages/eslint-config/
 COPY apps/api/src ./apps/api/src
 COPY apps/api/test ./apps/api/test
 COPY apps/api/nest-cli.json ./apps/api/nest-cli.json
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 COPY apps/api/tsconfig.build.json ./apps/api/tsconfig.build.json
-COPY apps/api/.eslintrc.js ./apps/api/.eslintrc.js
 
 # Build packages
 ARG NODE_ENV=production
