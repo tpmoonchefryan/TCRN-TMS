@@ -3,17 +3,18 @@
 
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { JwtContext } from '../../auth/strategies/jwt.strategy';
 import { ProfilesService } from '../services/profiles.service';
 
 describe('ProfilesService', () => {
   let service: ProfilesService;
-   
+
   let mockPrisma: any;
-   
+
   let mockCryptoService: any;
-   
+
   let mockAuditService: any;
 
   const mockUserContext: JwtContext = {
@@ -57,29 +58,29 @@ describe('ProfilesService', () => {
   beforeEach(async () => {
     mockPrisma = {
       piiProfile: {
-        create: jest.fn(),
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        $queryRawUnsafe: jest.fn(),
-        $executeRawUnsafe: jest.fn(),
+        create: vi.fn(),
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        $queryRawUnsafe: vi.fn(),
+        $executeRawUnsafe: vi.fn(),
       },
     };
 
     mockCryptoService = {
-      encryptString: jest.fn().mockResolvedValue(Buffer.from('encrypted')),
-      decryptString: jest.fn().mockImplementation((_, buf) => {
+      encryptString: vi.fn().mockResolvedValue(Buffer.from('encrypted')),
+      decryptString: vi.fn().mockImplementation((_, buf) => {
         if (!buf) return null;
         return 'decrypted-value';
       }),
-      encryptJson: jest.fn().mockResolvedValue(Buffer.from('encrypted-json')),
-      decryptJson: jest.fn().mockResolvedValue([{ typeCode: 'MOBILE', number: '+1234567890' }]),
-      computeHash: jest.fn().mockReturnValue('computed-hash'),
+      encryptJson: vi.fn().mockResolvedValue(Buffer.from('encrypted-json')),
+      decryptJson: vi.fn().mockResolvedValue([{ typeCode: 'MOBILE', number: '+1234567890' }]),
+      computeHash: vi.fn().mockReturnValue('computed-hash'),
     };
 
     mockAuditService = {
-      log: jest.fn().mockResolvedValue(undefined),
+      log: vi.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
