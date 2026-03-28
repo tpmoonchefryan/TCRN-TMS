@@ -33,6 +33,32 @@ const CompanyRowSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
+export const INDIVIDUAL_IMPORT_HEADERS = [
+  'external_id',
+  'nickname',
+  'primary_language',
+  'status_code',
+  'tags',
+  'notes',
+] as const;
+
+export const COMPANY_IMPORT_HEADERS = [
+  'external_id',
+  'nickname',
+  'company_legal_name',
+  'company_short_name',
+  'registration_number',
+  'vat_id',
+  'establishment_date',
+  'business_segment_code',
+  'website',
+  'status_code',
+  'tags',
+  'notes',
+] as const;
+
+export type ImportTemplateKind = 'individual' | 'company';
+
 export interface ParsedIndividualRow {
   externalId?: string;
   nickname: string;
@@ -66,8 +92,63 @@ export interface ParseResult<T> {
   warnings: string[];
 }
 
+export interface CsvTemplateValidationResult {
+  success: boolean;
+  headers: string[];
+  totalRows: number;
+  errors: string[];
+}
+
 @Injectable()
 export class ImportParserService {
+  validateCsvTemplate(
+    content: string,
+    templateKind: ImportTemplateKind,
+  ): CsvTemplateValidationResult {
+    const normalizedContent = content.replace(/^\ufeff/, '');
+    const lines = normalizedContent
+      .split(/\r?\n/)
+      .map((line) => line.trimEnd())
+      .filter((line) => line.trim().length > 0);
+
+    if (lines.length === 0) {
+      return {
+        success: false,
+        headers: [],
+        totalRows: 0,
+        errors: ['CSV file is empty'],
+      };
+    }
+
+    const headers = lines[0].split(',').map((header) => header.trim());
+    const expectedHeaders = [...this.getExpectedHeaders(templateKind)];
+    const errors: string[] = [];
+
+    const duplicateHeaders = headers.filter(
+      (header, index) => header.length > 0 && headers.indexOf(header) !== index,
+    );
+    if (duplicateHeaders.length > 0) {
+      errors.push(`Duplicate headers are not allowed: ${[...new Set(duplicateHeaders)].join(', ')}`);
+    }
+
+    const missingHeaders = expectedHeaders.filter((header) => !headers.includes(header));
+    if (missingHeaders.length > 0) {
+      errors.push(`Missing required headers: ${missingHeaders.join(', ')}`);
+    }
+
+    const unexpectedHeaders = headers.filter((header) => !expectedHeaders.includes(header));
+    if (unexpectedHeaders.length > 0) {
+      errors.push(`Unexpected headers: ${unexpectedHeaders.join(', ')}`);
+    }
+
+    return {
+      success: errors.length === 0,
+      headers,
+      totalRows: Math.max(0, lines.length - 1),
+      errors,
+    };
+  }
+
   /**
    * Parse individual import row
    */
@@ -154,15 +235,6 @@ export class ImportParserService {
    * Generate individual import template CSV
    */
   generateIndividualTemplate(): string {
-    const headers = [
-      'external_id',
-      'nickname',
-      'primary_language',
-      'status_code',
-      'tags',
-      'notes',
-    ];
-
     const exampleRow = [
       'EXT001',
       '粉丝小明',
@@ -172,28 +244,13 @@ export class ImportParserService {
       '老粉丝',
     ];
 
-    return [headers.join(','), exampleRow.join(',')].join('\n');
+    return [INDIVIDUAL_IMPORT_HEADERS.join(','), exampleRow.join(',')].join('\n');
   }
 
   /**
    * Generate company import template CSV
    */
   generateCompanyTemplate(): string {
-    const headers = [
-      'external_id',
-      'nickname',
-      'company_legal_name',
-      'company_short_name',
-      'registration_number',
-      'vat_id',
-      'establishment_date',
-      'business_segment_code',
-      'website',
-      'status_code',
-      'tags',
-      'notes',
-    ];
-
     const exampleRow = [
       'EXT002',
       '合作方A',
@@ -209,7 +266,7 @@ export class ImportParserService {
       '年度合作伙伴',
     ];
 
-    return [headers.join(','), exampleRow.join(',')].join('\n');
+    return [COMPANY_IMPORT_HEADERS.join(','), exampleRow.join(',')].join('\n');
   }
 
   /**
@@ -230,5 +287,11 @@ export class ImportParserService {
     ].join(','));
 
     return [headers.join(','), ...rows].join('\n');
+  }
+
+  private getExpectedHeaders(templateKind: ImportTemplateKind): readonly string[] {
+    return templateKind === 'company'
+      ? COMPANY_IMPORT_HEADERS
+      : INDIVIDUAL_IMPORT_HEADERS;
   }
 }

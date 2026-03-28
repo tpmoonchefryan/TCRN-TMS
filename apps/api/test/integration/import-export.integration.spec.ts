@@ -272,6 +272,26 @@ describe('Import/Export Integration Tests', () => {
       await expect(minioService.fileExists(BUCKETS.IMPORTS, objectName)).resolves.toBe(true);
     });
 
+    it('rejects individual import csv files with headers outside the current template', async () => {
+      const csvContent = [
+        'external_id,nickname,primary_language,status_code,tags,notes,legacy_pii_email',
+        'EXT001,Queued User,zh,,vip,queued from integration,hidden@example.com',
+      ].join('\n');
+
+      const response = await withAuth(
+        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+      )
+        .field('talentId', talentId)
+        .field('consumerCode', 'CRM_SYSTEM')
+        .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import_invalid_headers.csv')
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe('CSV headers do not match the current import template');
+      expect(response.body.error.details.fields).toContain('Unexpected headers: legacy_pii_email');
+    });
+
     it('should list import jobs for the current talent profile store', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get('/api/v1/imports/customers'),

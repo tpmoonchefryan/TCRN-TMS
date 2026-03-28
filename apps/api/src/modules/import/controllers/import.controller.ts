@@ -2,6 +2,7 @@
 
 import { InjectQueue } from '@nestjs/bullmq';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -19,7 +20,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { RequestContext } from '@tcrn/shared';
+import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
@@ -33,7 +34,7 @@ import {
     ImportJobType,
 } from '../dto/import.dto';
 import { ImportJobService } from '../services/import-job.service';
-import { ImportParserService } from '../services/import-parser.service';
+import { ImportParserService, type ImportTemplateKind } from '../services/import-parser.service';
 
 @ApiTags('Customer - Import')
 @Controller('imports/customers')
@@ -112,10 +113,8 @@ export class ImportController {
 
     const context = this.buildContext(user, req);
 
-    // Count rows (simple newline count for estimation)
     const content = file.buffer.toString('utf-8');
-    const lines = content.split('\n').filter((l) => l.trim());
-    const totalRows = Math.max(0, lines.length - 1); // Exclude header
+    const totalRows = this.validateCsvUpload(content, 'individual');
 
     // Create job
     const job = await this.importJobService.createJob(
@@ -187,8 +186,7 @@ export class ImportController {
     const context = this.buildContext(user, req);
 
     const content = file.buffer.toString('utf-8');
-    const lines = content.split('\n').filter((l) => l.trim());
-    const totalRows = Math.max(0, lines.length - 1);
+    const totalRows = this.validateCsvUpload(content, 'company');
 
     const job = await this.importJobService.createJob(
       ImportJobType.COMPANY_IMPORT,
@@ -334,5 +332,21 @@ export class ImportController {
       userAgent: req.headers['user-agent'],
       requestId: req.headers['x-request-id'] as string,
     };
+  }
+
+  private validateCsvUpload(content: string, templateKind: ImportTemplateKind): number {
+    const validation = this.importParserService.validateCsvTemplate(content, templateKind);
+
+    if (!validation.success) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'CSV headers do not match the current import template',
+        details: {
+          fields: validation.errors,
+        },
+      });
+    }
+
+    return validation.totalRows;
   }
 }

@@ -2,7 +2,11 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ImportParserService } from '../import-parser.service';
+import {
+  COMPANY_IMPORT_HEADERS,
+  ImportParserService,
+  INDIVIDUAL_IMPORT_HEADERS,
+} from '../import-parser.service';
 
 describe('ImportParserService', () => {
   let service: ImportParserService;
@@ -68,6 +72,57 @@ describe('ImportParserService', () => {
     });
   });
 
+  describe('validateCsvTemplate', () => {
+    it('accepts the current individual template headers', () => {
+      const csv = [
+        INDIVIDUAL_IMPORT_HEADERS.join(','),
+        'EXT001,Test User,en,ACTIVE,vip,notes',
+      ].join('\n');
+
+      const result = service.validateCsvTemplate(csv, 'individual');
+
+      expect(result.success).toBe(true);
+      expect(result.totalRows).toBe(1);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('rejects unexpected headers for individual imports', () => {
+      const csv = [
+        `${INDIVIDUAL_IMPORT_HEADERS.join(',')},legacy_pii_email`,
+        'EXT001,Test User,en,ACTIVE,vip,notes,hidden@example.com',
+      ].join('\n');
+
+      const result = service.validateCsvTemplate(csv, 'individual');
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain('Unexpected headers: legacy_pii_email');
+    });
+
+    it('rejects missing company headers', () => {
+      const csv = [
+        COMPANY_IMPORT_HEADERS.filter((header) => header !== 'company_legal_name').join(','),
+        'EXT002,Corp Alias,ABC Corp,91110000XXXXXXXX,91110000XXXXXXXX,2020-01-01,TECH,https://www.abc.com,ACTIVE,biz,notes',
+      ].join('\n');
+
+      const result = service.validateCsvTemplate(csv, 'company');
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain('Missing required headers: company_legal_name');
+    });
+
+    it('rejects duplicate headers', () => {
+      const csv = [
+        'external_id,nickname,nickname,primary_language,status_code,tags,notes',
+        'EXT001,Test User,Duplicate,en,ACTIVE,vip,notes',
+      ].join('\n');
+
+      const result = service.validateCsvTemplate(csv, 'individual');
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('Duplicate headers are not allowed');
+    });
+  });
+
   describe('parseCompanyRow', () => {
     it('should parse valid company row', () => {
       const row = {
@@ -126,6 +181,4 @@ describe('ImportParserService', () => {
       expect(result.warnings.length).toBeGreaterThan(0);
     });
   });
-
-
 });
