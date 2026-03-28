@@ -6,12 +6,10 @@
 import {
     ArrowLeft,
     BookOpen,
-    Clock,
     Copy,
     Database,
     Edit,
     FolderTree,
-    Globe,
     Layers,
     Loader2,
     Lock,
@@ -19,7 +17,6 @@ import {
     Plus,
     Save,
     Search,
-    Settings,
     Shield,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -56,13 +53,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
     Table,
@@ -73,28 +63,29 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { configEntityApi, dictionaryApi, subsidiaryApi } from '@/lib/api/modules/configuration';
+import {
+  configEntityApi,
+  dictionaryApi,
+  subsidiaryApi,
+  type SubsidiaryRecord,
+} from '@/lib/api/modules/configuration';
 import { cn } from '@/lib/utils';
 
 // NOTE: CONFIG_ENTITY_TYPES, DICTIONARY_TYPES, ConfigEntity, DictionaryRecord
 // are now centralized in @/components/shared/constants
 
 interface SubsidiaryData {
-  id: string;
-  code: string;
+  id: SubsidiaryRecord['id'];
+  code: SubsidiaryRecord['code'];
   displayName: string;
-  path: string;
-  parentId: string | null;
-  timezone: string;
-  isActive: boolean;
-  createdAt: string;
+  path: SubsidiaryRecord['path'];
+  parentId: SubsidiaryRecord['parentId'];
+  isActive: SubsidiaryRecord['isActive'];
+  createdAt: SubsidiaryRecord['createdAt'];
+  updatedAt?: SubsidiaryRecord['updatedAt'];
+  childrenCount: number;
   talentCount: number;
-  version: number;
-  settings: {
-    inheritTimezone: boolean;
-    allowCustomHomepage: boolean;
-    allowMarshmallow: boolean;
-  };
+  version: SubsidiaryRecord['version'];
 }
 
 export default function SubsidiarySettingsPage() {
@@ -137,19 +128,15 @@ export default function SubsidiarySettingsPage() {
         setSubsidiary({
           id: data.id,
           code: data.code,
-          displayName: data.displayName || data.nameEn || data.code,
-          path: data.path || `/${data.code}/`,
+          displayName: data.name || data.nameEn || data.code,
+          path: data.path,
           parentId: data.parentId || null,
-          timezone: data.timezone || 'UTC',
-          isActive: data.isActive ?? true,
+          isActive: data.isActive,
           createdAt: data.createdAt,
-          talentCount: data._count?.talents || 0,
-          version: data.version || 1,
-          settings: {
-            inheritTimezone: data.inheritTimezone ?? true,
-            allowCustomHomepage: data.allowCustomHomepage ?? true,
-            allowMarshmallow: data.allowMarshmallow ?? true,
-          },
+          updatedAt: data.updatedAt,
+          childrenCount: data.childrenCount ?? 0,
+          talentCount: data.talentCount ?? 0,
+          version: data.version,
         });
       }
     } catch {
@@ -424,10 +411,6 @@ export default function SubsidiarySettingsPage() {
             <Shield size={14} className="mr-2" />
             {t('security')}
           </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings size={14} className="mr-2" />
-            {t('featureSettings')}
-          </TabsTrigger>
           <TabsTrigger value="scope">
             <Layers size={14} className="mr-2" />
             {tSubsidiary('scope')}
@@ -462,40 +445,8 @@ export default function SubsidiarySettingsPage() {
                   <Input value={subsidiary.path} disabled />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Clock size={14} /> {t('timezone')}
-                  </Label>
-                  <Select
-                    value={subsidiary.timezone}
-                    onValueChange={(value) => setSubsidiary({ ...subsidiary, timezone: value })}
-                    disabled={subsidiary.settings.inheritTimezone}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
-                      <SelectItem value="Asia/Shanghai">Asia/Shanghai (CST)</SelectItem>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="checkbox"
-                      id="inherit-tz"
-                      checked={subsidiary.settings.inheritTimezone}
-                      onChange={(e) =>
-                        setSubsidiary({
-                          ...subsidiary,
-                          settings: { ...subsidiary.settings, inheritTimezone: e.target.checked },
-                        })
-                      }
-                      className="rounded"
-                    />
-                    <label htmlFor="inherit-tz" className="text-sm text-muted-foreground">
-                      {tc('inheritFromTenant')}
-                    </label>
-                  </div>
+                  <Label>{tc('status')}</Label>
+                  <Input value={subsidiary.isActive ? tc('active') : tc('inactive')} disabled />
                 </div>
               </div>
 
@@ -505,7 +456,7 @@ export default function SubsidiarySettingsPage() {
                   <p className="text-xs text-muted-foreground">{t('talents')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">{subsidiary.childrenCount}</p>
                   <p className="text-xs text-muted-foreground">{t('subDirectories')}</p>
                 </div>
                 <div className="text-center">
@@ -521,6 +472,11 @@ export default function SubsidiarySettingsPage() {
                   <p className="text-xs text-muted-foreground">{t('inheritedConfigs')}</p>
                 </div>
               </div>
+
+              <p className="text-sm text-muted-foreground">
+                Runtime inheritance and feature behavior are managed through real scoped settings in the `Scope` tab, not
+                standalone subsidiary-only toggles on this endpoint.
+              </p>
 
               <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={isSaving}>
@@ -845,77 +801,6 @@ export default function SubsidiarySettingsPage() {
         {/* Security Tab - Unified Security Panel */}
         <TabsContent value="security" className="mt-6">
           <SecurityPanel scopeType="subsidiary" scopeId={subsidiary.id} />
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('featureSettings')}</CardTitle>
-              <CardDescription>
-                {t('subsidiaryFeatureDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Globe size={16} />
-                    {t('externalHomepage')}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('externalHomepageSubsidiaryDesc')}
-                  </p>
-                </div>
-                <Switch
-                  checked={subsidiary.settings.allowCustomHomepage}
-                  onCheckedChange={(checked) =>
-                    setSubsidiary({
-                      ...subsidiary,
-                      settings: { ...subsidiary.settings, allowCustomHomepage: checked },
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <h4 className="font-medium flex items-center gap-2">
-                    <svg
-                      className="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z" />
-                      <path d="M12 8v8M8 12h8" />
-                    </svg>
-                    {t('marshmallow')}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('marshmallowSubsidiaryDesc')}
-                  </p>
-                </div>
-                <Switch
-                  checked={subsidiary.settings.allowMarshmallow}
-                  onCheckedChange={(checked) =>
-                    setSubsidiary({
-                      ...subsidiary,
-                      settings: { ...subsidiary.settings, allowMarshmallow: checked },
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex justify-end mt-6">
-                <Button onClick={handleSave} disabled={isSaving}>
-                  <Save size={16} className="mr-2" />
-                  {isSaving ? tc('saving') : tc('saveChanges')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Scope Settings Tab - Hierarchical Settings with Inheritance */}

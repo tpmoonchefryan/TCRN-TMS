@@ -151,6 +151,23 @@ export interface TenantActivationResponse {
   deactivatedAt?: string;
 }
 
+export interface PaginationDetails {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PagedItemsPayload<TItem> {
+  items: TItem[];
+  meta: {
+    pagination: PaginationDetails;
+    [key: string]: unknown;
+  };
+}
+
 export const tenantApi = {
   list: () => apiClient.get<TenantRecord[]>('/api/v1/tenants'),
 
@@ -166,6 +183,76 @@ export const tenantApi = {
   deactivate: (id: string, reason?: string) =>
     apiClient.post<TenantActivationResponse>(`/api/v1/tenants/${id}/deactivate`, { reason }),
 };
+
+export interface ProfileStorePiiServiceConfigSummary {
+  id: string;
+  code: string | null;
+  name: string | null;
+  isHealthy: boolean;
+  apiUrl?: string | null;
+}
+
+export interface ProfileStoreSummaryRecord {
+  id: string;
+  code: string;
+  name: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  piiServiceConfig: ProfileStorePiiServiceConfigSummary | null;
+  talentCount: number;
+  customerCount: number;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  version: number;
+}
+
+export interface ProfileStoreDetailRecord extends ProfileStoreSummaryRecord {
+  description: string | null;
+  descriptionZh: string | null;
+  descriptionJa: string | null;
+  updatedAt: string;
+}
+
+export interface ProfileStoreCreatePayload {
+  code: string;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  piiServiceConfigCode?: string;
+  isDefault?: boolean;
+}
+
+export interface ProfileStoreCreateResponse {
+  id: string;
+  code: string;
+  name: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface ProfileStoreUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  piiServiceConfigCode?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  version: number;
+}
+
+export interface ProfileStoreUpdateResponse {
+  id: string;
+  code: string;
+  version: number;
+  updatedAt: string;
+}
 
 export const configEntityApi = {
   list: (
@@ -217,37 +304,14 @@ export const configEntityApi = {
 
 export const profileStoreApi = {
   list: (params?: { page?: number; pageSize?: number; includeInactive?: boolean }) =>
-    apiClient.get<{ items: any[]; meta: any }>('/api/v1/profile-stores', params),
+    apiClient.get<PagedItemsPayload<ProfileStoreSummaryRecord>>('/api/v1/profile-stores', params),
 
-  get: (id: string) => apiClient.get<any>(`/api/v1/profile-stores/${id}`),
+  get: (id: string) => apiClient.get<ProfileStoreDetailRecord>(`/api/v1/profile-stores/${id}`),
 
-  create: (data: {
-    code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    descriptionZh?: string;
-    descriptionJa?: string;
-    piiServiceConfigCode: string;
-    isDefault?: boolean;
-  }) => apiClient.post<any>('/api/v1/profile-stores', data),
+  create: (data: ProfileStoreCreatePayload) => apiClient.post<ProfileStoreCreateResponse>('/api/v1/profile-stores', data),
 
-  update: (
-    id: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      piiServiceConfigCode?: string;
-      isDefault?: boolean;
-      isActive?: boolean;
-      version: number;
-    },
-  ) => apiClient.patch<any>(`/api/v1/profile-stores/${id}`, data),
+  update: (id: string, data: ProfileStoreUpdatePayload) =>
+    apiClient.patch<ProfileStoreUpdateResponse>(`/api/v1/profile-stores/${id}`, data),
 };
 
 export const piiServiceConfigApi = {
@@ -368,41 +432,88 @@ export const dictionaryApi = {
     }),
 };
 
+export interface SubsidiaryRecord {
+  id: string;
+  parentId: string | null;
+  code: string;
+  path: string;
+  depth: number;
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+  name: string;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
+  descriptionJa?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  childrenCount?: number;
+  talentCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+  version: number;
+}
+
+export interface SubsidiaryCreatePayload {
+  code: string;
+  nameEn: string;
+  parentId?: string | null;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+}
+
+export interface SubsidiaryUpdatePayload {
+  nameEn?: string;
+  nameZh?: string;
+  nameJa?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  descriptionJa?: string;
+  sortOrder?: number;
+  version: number;
+}
+
+export interface SubsidiaryMoveResponse {
+  id: string;
+  parentId: string | null;
+  path: string;
+  depth: number;
+  affectedChildren: number;
+  version: number;
+}
+
+export interface SubsidiaryActivationResponse {
+  id: string;
+  isActive: boolean;
+  cascadeAffected?: {
+    subsidiaries: number;
+    talents: number;
+  };
+  version?: number;
+}
+
 export const subsidiaryApi = {
-  list: () => apiClient.get<any[]>('/api/v1/subsidiaries'),
+  list: () => apiClient.get<SubsidiaryRecord[]>('/api/v1/subsidiaries'),
 
-  get: (id: string) => apiClient.get<any>(`/api/v1/subsidiaries/${id}`),
+  get: (id: string) => apiClient.get<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`),
 
-  create: (data: {
-    code: string;
-    nameEn: string;
-    parentId?: string | null;
-    nameZh?: string;
-    nameJa?: string;
-    descriptionEn?: string;
-    sortOrder?: number;
-  }) => apiClient.post<any>('/api/v1/subsidiaries', data),
+  create: (data: SubsidiaryCreatePayload) => apiClient.post<SubsidiaryRecord>('/api/v1/subsidiaries', data),
 
-  update: (
-    id: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      sortOrder?: number;
-      version: number;
-    },
-  ) => apiClient.patch<any>(`/api/v1/subsidiaries/${id}`, data),
+  update: (id: string, data: SubsidiaryUpdatePayload) =>
+    apiClient.patch<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`, data),
 
   move: (id: string, data: { newParentId?: string | null; version: number }) =>
-    apiClient.post<any>(`/api/v1/subsidiaries/${id}/move`, data),
+    apiClient.post<SubsidiaryMoveResponse>(`/api/v1/subsidiaries/${id}/move`, data),
 
   deactivate: (id: string, version: number) =>
-    apiClient.post<any>(`/api/v1/subsidiaries/${id}/deactivate`, { version }),
+    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/deactivate`, { version }),
 
   reactivate: (id: string, version: number) =>
-    apiClient.post<any>(`/api/v1/subsidiaries/${id}/reactivate`, { version }),
+    apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/reactivate`, { version }),
 };
 
 export interface ScopeSettingsResponse {

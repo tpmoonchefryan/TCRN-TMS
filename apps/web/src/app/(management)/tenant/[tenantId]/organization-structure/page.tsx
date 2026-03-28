@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -29,7 +28,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { profileStoreApi, subsidiaryApi } from '@/lib/api/modules/configuration';
+import {
+  profileStoreApi,
+  type ProfileStoreSummaryRecord,
+  subsidiaryApi,
+} from '@/lib/api/modules/configuration';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { talentApi } from '@/lib/api/modules/talent';
 import { SubsidiaryInfo, useTalentStore } from '@/stores/talent-store';
@@ -122,7 +125,7 @@ export default function OrganizationStructurePage() {
   });
 
   // Profile Store list for talent creation
-  const [profileStores, setProfileStores] = useState<Array<{ id: string; code: string; nameEn: string }>>([]);
+  const [profileStores, setProfileStores] = useState<ProfileStoreSummaryRecord[]>([]);
 
   // Fetch Profile Stores using dedicated API
   useEffect(() => {
@@ -130,11 +133,7 @@ export default function OrganizationStructurePage() {
       try {
         const response = await profileStoreApi.list({ includeInactive: false });
         if (response.success && response.data?.items) {
-          setProfileStores(response.data.items.map((item: any) => ({
-            id: item.id,
-            code: item.code,
-            nameEn: item.nameEn || item.name_en || item.code,
-          })));
+          setProfileStores(response.data.items);
         }
       } catch {
         // Silently fail - profile stores will be empty
@@ -188,8 +187,13 @@ export default function OrganizationStructurePage() {
       } else {
         toast.error(response.error?.message || 'Failed to create subsidiary');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create subsidiary');
+    } catch (error: unknown) {
+      const description =
+        typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'Failed to create subsidiary';
+
+      toast.error(description);
     } finally {
       setIsCreating(false);
     }
@@ -224,8 +228,13 @@ export default function OrganizationStructurePage() {
       } else {
         toast.error(response.error?.message || 'Failed to create talent');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create talent');
+    } catch (error: unknown) {
+      const description =
+        typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'Failed to create talent';
+
+      toast.error(description);
     } finally {
       setIsCreating(false);
     }
@@ -578,7 +587,7 @@ export default function OrganizationStructurePage() {
                 <SelectContent>
                   {profileStores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
-                      {store.nameEn} ({store.code})
+                      {store.name} ({store.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
