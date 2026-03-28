@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run_cd: ${{ steps.classify.outputs.should_run_cd }}
+      should_deploy_runtime: ${{ steps.classify.outputs.should_deploy_runtime }}
       skip_reason: ${{ steps.classify.outputs.skip_reason }}
       build_no_cache: ${{ steps.classify.outputs.build_no_cache }}
     steps:
@@ -53,6 +54,7 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             if [[ "${{ github.event.inputs.build_mode }}" == "clean" ]]; then
               echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
               echo "skip_reason=manual_dispatch_clean_build" >> "$GITHUB_OUTPUT"
@@ -65,6 +67,7 @@ jobs:
 
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
             echo "skip_reason=tag_release" >> "$GITHUB_OUTPUT"
             exit 0
@@ -76,6 +79,7 @@ jobs:
           if [[ -z "$before_sha" || "$before_sha" == "0000000000000000000000000000000000000000" ]]; then
             echo "Unable to determine a stable diff base, running full CD."
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=unknown_diff_base" >> "$GITHUB_OUTPUT"
             exit 0
@@ -86,18 +90,32 @@ jobs:
           if [[ "${#changed_files[@]}" -eq 0 ]]; then
             echo "No changed files detected, running full CD."
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=no_changed_files" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           only_docs_like=true
+          only_build_test_like=true
           for file in "${changed_files[@]}"; do
             if [[ "$file" =~ ^README(\.zh-CN|\.ja)?\.md$ ]] || [[ "$file" =~ ^docs/ ]] || [[ "$file" =~ ^\.llm/ ]] || [[ "$file" =~ ^\.context/ ]]; then
               continue
             fi
 
             only_docs_like=false
+
+            if [[ "$file" =~ ^\.github/ ]] || \
+               [[ "$file" =~ ^scripts/ ]] || \
+               [[ "$file" =~ ^apps/[^/]+/test/ ]] || \
+               [[ "$file" =~ ^apps/[^/]+/src/(__tests__/|.+/__tests__/) ]] || \
+               [[ "$file" =~ ^apps/[^/]+/src/.+\.(spec|test)\.[tj]sx?$ ]] || \
+               [[ "$file" =~ ^packages/[^/]+/(src|scripts)/(__tests__/|.+/__tests__/) ]] || \
+               [[ "$file" =~ ^packages/[^/]+/(src|scripts)/.+\.(spec|test)\.[tj]sx?$ ]]; then
+              continue
+            fi
+
+            only_build_test_like=false
             echo "Runtime-impacting file detected: $file"
             break
           done
@@ -106,12 +124,24 @@ jobs:
             echo "Detected docs/local-rules only change set:"
             printf ' - %s\n' "${changed_files[@]}"
             echo "should_run_cd=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=false" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
             echo "skip_reason=docs_only" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
+          if [[ "$only_build_test_like" == true ]]; then
+            echo "Detected build/test-only change set:"
+            printf ' - %s\n' "${changed_files[@]}"
+            echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy_runtime=false" >> "$GITHUB_OUTPUT"
+            echo "build_no_cache=" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=build_test_only" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+          echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
           echo "build_no_cache=" >> "$GITHUB_OUTPUT"
           echo "skip_reason=runtime_change" >> "$GITHUB_OUTPUT"
 
@@ -158,6 +188,19 @@ jobs:
           echo "Skipping build/deploy because this push only touched docs or local rule layers."
           echo "Reason: ${{ needs.classify-changes.outputs.skip_reason }}"
 
+  skip-runtime-deploy:
+    name: Skip Runtime Deploy
+    runs-on: ubuntu-latest
+    needs: [classify-changes, build-test]
+    if: |
+      needs.classify-changes.outputs.should_run_cd == 'true' &&
+      needs.classify-changes.outputs.should_deploy_runtime != 'true'
+    steps:
+      - name: Report skip reason
+        run: |
+          echo "Build/test completed, but skipping runtime deploy because this change set is classified as build-test-only."
+          echo "Reason: ${{ needs.classify-changes.outputs.skip_reason }}"
+
   # =============================================================================
   # Deploy to Production Server (Main Services)
   # =============================================================================
@@ -167,6 +210,7 @@ jobs:
     needs: [classify-changes, build-test]
     if: |
       needs.classify-changes.outputs.should_run_cd == 'true' &&
+      needs.classify-changes.outputs.should_deploy_runtime == 'true' &&
       (github.ref == 'refs/heads/main' || 
       startsWith(github.ref, 'refs/tags/v') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production')
@@ -263,6 +307,7 @@ jobs:
     needs: [classify-changes, build-test]
     if: |
       needs.classify-changes.outputs.should_run_cd == 'true' &&
+      needs.classify-changes.outputs.should_deploy_runtime == 'true' &&
       github.event_name == 'workflow_dispatch' &&
       github.event.inputs.deploy_target == 'pii'
     environment:
@@ -306,6 +351,7 @@ jobs:
     needs: [classify-changes, build-test]
     if: |
       needs.classify-changes.outputs.should_run_cd == 'true' &&
+      needs.classify-changes.outputs.should_deploy_runtime == 'true' &&
       startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
