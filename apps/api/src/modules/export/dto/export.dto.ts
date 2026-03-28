@@ -1,38 +1,64 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  type CreateExportJobInput,
+  DataExportFormatSchema,
+  type ExportJobQueryInput,
+  ExportJobStatusSchema,
+  ExportJobTypeSchema,
+} from '@tcrn/shared';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
-export enum ExportJobType {
-  CUSTOMER_EXPORT = 'customer_export',
-}
+const EXPORT_JOB_TYPE_VALUES = ExportJobTypeSchema.options;
+const EXPORT_FORMAT_VALUES = DataExportFormatSchema.options;
+const EXPORT_JOB_STATUS_VALUES = ExportJobStatusSchema.options;
 
-export enum ExportFormat {
-  CSV = 'csv',
-  XLSX = 'xlsx',
-  JSON = 'json',
-}
+export const ExportJobType = {
+  CUSTOMER_EXPORT: EXPORT_JOB_TYPE_VALUES[0],
+} as const;
 
-export enum ExportJobStatus {
-  PENDING = 'pending',
-  RUNNING = 'running',
-  SUCCESS = 'success',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled',
-}
+export type ExportJobTypeValue = CreateExportJobInput['jobType'];
+
+export const ExportFormat = {
+  CSV: EXPORT_FORMAT_VALUES[0],
+  XLSX: EXPORT_FORMAT_VALUES[1],
+  JSON: EXPORT_FORMAT_VALUES[2],
+} as const;
+
+export type ExportFormatValue = NonNullable<CreateExportJobInput['format']>;
+
+export const ExportJobStatus = {
+  PENDING: EXPORT_JOB_STATUS_VALUES[0],
+  RUNNING: EXPORT_JOB_STATUS_VALUES[1],
+  SUCCESS: EXPORT_JOB_STATUS_VALUES[2],
+  FAILED: EXPORT_JOB_STATUS_VALUES[3],
+  CANCELLED: EXPORT_JOB_STATUS_VALUES[4],
+} as const;
+
+export type ExportJobStatusValue = NonNullable<ExportJobQueryInput['status']>;
 
 export class CreateExportJobDto {
   @ApiProperty({
-    enum: ExportJobType,
+    enum: EXPORT_JOB_TYPE_VALUES,
     description: 'Generic /exports currently supports customer_export only',
   })
-  @IsEnum(ExportJobType)
-  jobType: ExportJobType;
+  @IsIn(EXPORT_JOB_TYPE_VALUES)
+  jobType!: CreateExportJobInput['jobType'];
 
-  @ApiPropertyOptional({ enum: ExportFormat, default: ExportFormat.CSV })
+  @ApiPropertyOptional({ enum: EXPORT_FORMAT_VALUES, default: ExportFormat.CSV })
   @IsOptional()
-  @IsEnum(ExportFormat)
-  format?: ExportFormat = ExportFormat.CSV;
+  @IsIn(EXPORT_FORMAT_VALUES)
+  format?: CreateExportJobInput['format'] = ExportFormat.CSV;
 
   @ApiPropertyOptional({ description: 'Filter by customer IDs' })
   @IsOptional()
@@ -59,25 +85,30 @@ export class CreateExportJobDto {
 }
 
 export class ExportJobQueryDto {
-  @ApiPropertyOptional({ enum: ExportJobStatus })
+  @ApiPropertyOptional({ enum: EXPORT_JOB_STATUS_VALUES })
   @IsOptional()
-  @IsEnum(ExportJobStatus)
-  status?: ExportJobStatus;
+  @IsIn(EXPORT_JOB_STATUS_VALUES)
+  status?: ExportJobQueryInput['status'];
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
+  @Type(() => Number)
+  @Min(1)
   page?: number = 1;
 
   @ApiPropertyOptional({ default: 20 })
   @IsOptional()
+  @Type(() => Number)
+  @Min(1)
+  @Max(50)
   pageSize?: number = 20;
 }
 
 export interface ExportJobResponse {
   id: string;
-  jobType: ExportJobType;
-  format: ExportFormat;
-  status: ExportJobStatus;
+  jobType: ExportJobTypeValue;
+  format: ExportFormatValue;
+  status: ExportJobStatusValue;
   fileName: string | null;
   totalRecords: number;
   processedRecords: number;

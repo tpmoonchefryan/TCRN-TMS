@@ -6,7 +6,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  LogSeverity,
+  type RequestContext,
+  TechEventType,
+} from '@tcrn/shared';
 import type { Queue } from 'bullmq';
 
 import { DatabaseService } from '../../database';
@@ -16,10 +21,13 @@ import { QUEUE_NAMES } from '../../queue';
 import {
   CreateExportJobDto,
   ExportFormat,
+  type ExportFormatValue,
   ExportJobQueryDto,
   ExportJobResponse,
   ExportJobStatus,
+  type ExportJobStatusValue,
   ExportJobType,
+  type ExportJobTypeValue,
 } from '../dto/export.dto';
 
 const GENERIC_EXPORT_JOB_TYPE = ExportJobType.CUSTOMER_EXPORT;
@@ -416,9 +424,9 @@ export class ExportJobService {
   }): ExportJobResponse {
     return {
       id: job.id,
-      jobType: job.job_type as ExportJobType,
-      format: job.format as ExportFormat,
-      status: job.status as ExportJobStatus,
+      jobType: job.job_type as ExportJobTypeValue,
+      format: job.format as ExportFormatValue,
+      status: job.status as ExportJobStatusValue,
       fileName: job.file_name,
       totalRecords: job.total_records,
       processedRecords: job.processed_records,
