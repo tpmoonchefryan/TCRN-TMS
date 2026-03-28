@@ -1,16 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { apiClient } from '../api/client';
-
-/**
- * PII Token Response from backend
- */
-interface PiiTokenResponse {
-  accessToken: string;
-  piiProfileId: string;
-  piiServiceUrl: string;
-  expiresIn: number; // seconds
-}
+import {
+  type PiiAccessTokenData,
+  requestPiiAccessToken,
+} from '../api/modules/customer';
 
 /**
  * Cached token entry
@@ -186,12 +179,8 @@ export class PiiTokenManager {
   /**
    * Fetch PII access token from backend
    */
-  private async fetchToken(customerId: string, talentId: string): Promise<PiiTokenResponse> {
-    const response = await apiClient.post<PiiTokenResponse>(
-      `/api/v1/customers/individuals/${customerId}/request-pii-access`,
-      {},
-      { 'X-Talent-Id': talentId }
-    );
+  private async fetchToken(customerId: string, talentId: string): Promise<PiiAccessTokenData> {
+    const response = await requestPiiAccessToken(customerId, talentId);
 
     if (!response.data) {
       throw new Error('Failed to obtain PII access token');

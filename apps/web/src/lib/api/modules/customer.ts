@@ -33,6 +33,13 @@ export interface PiiUpdateData {
   addresses?: AddressData[];
 }
 
+export interface PiiAccessTokenData {
+  accessToken: string;
+  piiProfileId: string;
+  piiServiceUrl: string;
+  expiresIn: number;
+}
+
 export interface CustomerCreateData {
   talentId: string;
   profileStoreId: string;
@@ -73,11 +80,14 @@ export const customerApi = {
       talentId ? { 'X-Talent-Id': talentId } : undefined,
     ),
 
-  requestPiiAccess: (id: string, talentId: string) =>
-    apiClient.post<{ accessToken: string; piiProfileId: string }>(
+  requestPiiAccess: (id: string, talentId: string, accessReason?: string) =>
+    apiClient.post<PiiAccessTokenData>(
       `/api/v1/customers/individuals/${id}/request-pii-access`,
       {},
-      { 'X-Talent-Id': talentId },
+      {
+        'X-Talent-Id': talentId,
+        ...(accessReason ? { 'X-PII-Access-Reason': accessReason } : {}),
+      },
     ),
 
   create: (data: CustomerCreateData) =>
@@ -127,14 +137,9 @@ export const customerApi = {
 export const requestPiiAccessToken = async (
   customerId: string,
   talentId: string,
-  accessReason: string,
+  accessReason?: string,
 ) => {
-  const response = await apiClient.post<{ accessToken: string; piiProfileId: string }>(
-    `/api/v1/customers/individuals/${customerId}/request-pii-access`,
-    {},
-    { 'X-Talent-Id': talentId, 'X-PII-Access-Reason': accessReason },
-  );
-  return response;
+  return customerApi.requestPiiAccess(customerId, talentId, accessReason);
 };
 
 export const getPiiWithReason = async (customerId: string, reason: string) =>
