@@ -2,6 +2,7 @@
 
 import { Module } from '@nestjs/common';
 
+import { ConfigSanityService } from '../../config/config-sanity.service';
 import { BlocklistService } from './blocklist.service';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -11,7 +12,7 @@ import { GlobalConfigService } from './global-config.service';
 
 @Module({
   controllers: [ConfigController, GlobalConfigController],
-  providers: [ConfigService, BlocklistService, ConsumerKeyService, GlobalConfigService],
+  providers: [ConfigService, BlocklistService, ConsumerKeyService, GlobalConfigService, ConfigSanityService],
   exports: [ConfigService, BlocklistService, ConsumerKeyService, GlobalConfigService],
 })
 export class ConfigModule {}
