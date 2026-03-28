@@ -65,6 +65,44 @@ describe('inferRolloutArtifactsFromSql', () => {
       requiredIndexes: ['export_job_created_at_idx', 'export_job_status_idx'],
     });
   });
+
+  it('supports quoted tenant identifiers and EXECUTE format tenant artifacts', () => {
+    const sql = `
+      CREATE TABLE IF NOT EXISTS "tenant_template"."user_scope_access" (
+        "id" UUID PRIMARY KEY
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS "user_scope_access_user_id_scope_type_scope_id_key"
+        ON "tenant_template"."user_scope_access"("user_id", "scope_type", "scope_id");
+
+      ALTER TABLE "tenant_template"."marshmallow_message"
+        ADD COLUMN IF NOT EXISTS "image_url" VARCHAR(512);
+
+      DO $$
+      BEGIN
+        EXECUTE format('
+          CREATE TABLE IF NOT EXISTS %I."user_scope_access" (
+            "id" UUID PRIMARY KEY
+          )',
+          tenant_schema
+        );
+
+        EXECUTE format(
+          'CREATE INDEX IF NOT EXISTS "user_scope_access_user_id_idx" ON %I."user_scope_access"("user_id")',
+          tenant_schema
+        );
+      END $$;
+    `;
+
+    assert.deepEqual(inferRolloutArtifactsFromSql(sql), {
+      requiredTables: ['user_scope_access'],
+      requiredColumns: [{ tableName: 'marshmallow_message', columnName: 'image_url' }],
+      requiredIndexes: [
+        'user_scope_access_user_id_idx',
+        'user_scope_access_user_id_scope_type_scope_id_key',
+      ],
+    });
+  });
 });
 
 describe('inferRolloutArtifactsFromMigrations', () => {
