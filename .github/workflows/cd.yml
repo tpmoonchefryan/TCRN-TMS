@@ -23,6 +23,11 @@ on:
         options:
           - cached
           - clean
+      rollout_migrations:
+        description: 'Optional comma-separated migration directories for schema rollout verification'
+        required: false
+        default: ''
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -54,9 +59,22 @@ jobs:
           set -euo pipefail
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            raw_rollout_migrations="${{ github.event.inputs.rollout_migrations }}"
+            if [[ -n "$raw_rollout_migrations" ]]; then
+              rollout_migrations_csv=$(
+                printf '%s' "$raw_rollout_migrations" |
+                  tr ',[:space:]' '\n' |
+                  sed '/^$/d' |
+                  sort -u |
+                  paste -sd ',' -
+              )
+            else
+              rollout_migrations_csv=""
+            fi
+
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
-            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
+            echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
             if [[ "${{ github.event.inputs.build_mode }}" == "clean" ]]; then
               echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
               echo "skip_reason=manual_dispatch_clean_build" >> "$GITHUB_OUTPUT"
