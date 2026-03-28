@@ -1,5 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type {
+  TalentExternalPageDomainConfig,
+  TalentExternalPagesDomain,
+  TalentProfileStoreSummary,
+} from '@/lib/api/modules/talent';
+
 export type TalentSettingsTab =
   | 'details'
   | 'config'
@@ -8,24 +14,9 @@ export type TalentSettingsTab =
   | 'settings'
   | 'scope';
 
-export interface ExternalPageDomainConfig {
-  isPublished?: boolean;
-  isEnabled?: boolean;
-  path?: string | null;
-  customDomain: string | null;
-  customDomainVerified: boolean;
-  customDomainVerificationToken: string | null;
-}
+export type ExternalPageDomainConfig = TalentExternalPageDomainConfig;
 
-export interface ProfileStoreInfo {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  isDefault: boolean;
-  piiProxyUrl: string | null;
-}
+export type ProfileStoreInfo = TalentProfileStoreSummary;
 
 export interface TalentData {
   id: string;
@@ -34,9 +25,8 @@ export interface TalentData {
   avatarUrl: string | null;
   path: string;
   subsidiaryId: string | null;
-  subsidiaryName: string | null;
   profileStoreId: string | null;
-  profileStore: ProfileStoreInfo | null;
+  profileStore: TalentProfileStoreSummary | null;
   homepagePath: string;
   timezone: string;
   isActive: boolean;
@@ -48,8 +38,5 @@ export interface TalentData {
     homepageEnabled: boolean;
     marshmallowEnabled: boolean;
   };
-  externalPagesDomain: {
-    homepage: ExternalPageDomainConfig | null;
-    marshmallow: ExternalPageDomainConfig | null;
-  };
+  externalPagesDomain: TalentExternalPagesDomain;
 }

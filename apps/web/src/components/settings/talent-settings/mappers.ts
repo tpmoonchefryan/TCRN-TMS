@@ -1,43 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { ConfigEntity, DictionaryRecord } from '@/components/shared/constants';
+import type { TalentGetResponse } from '@/lib/api/modules/talent';
 
 import type { TalentData } from './types';
 
-interface TalentApiResponseData {
-  id: string;
-  code: string;
-  displayName?: string | null;
-  nameEn?: string | null;
-  avatarUrl?: string | null;
-  path?: string | null;
-  subsidiaryId?: string | null;
-  subsidiary?: {
-    displayName?: string | null;
-  } | null;
-  profileStoreId?: string | null;
-  profileStore?: TalentData['profileStore'] | null;
-  homepagePath?: string | null;
-  timezone?: string | null;
-  isActive?: boolean | null;
-  createdAt: string;
-  version?: number | null;
-  settings?: {
-    inheritTimezone?: boolean | null;
-    homepageEnabled?: boolean | null;
-    marshmallowEnabled?: boolean | null;
-  } | null;
-  externalPagesDomain?: TalentData['externalPagesDomain'] | null;
-  _count?: {
-    customers?: number | null;
-  } | null;
-  stats?: {
-    customerCount?: number | null;
-  } | null;
-}
-
 export function mapTalentApiResponseToTalentData(
-  data: TalentApiResponseData,
+  data: TalentGetResponse,
   subsidiaryId?: string
 ): TalentData {
   return {
@@ -47,14 +16,13 @@ export function mapTalentApiResponseToTalentData(
     avatarUrl: data.avatarUrl || null,
     path: data.path || `/${data.code}/`,
     subsidiaryId: data.subsidiaryId || subsidiaryId || null,
-    subsidiaryName: data.subsidiary?.displayName || null,
     profileStoreId: data.profileStoreId || null,
     profileStore: data.profileStore || null,
     homepagePath: data.homepagePath || data.code.toLowerCase(),
     timezone: data.timezone || 'UTC',
     isActive: data.isActive ?? true,
     createdAt: data.createdAt,
-    customerCount: data._count?.customers || data.stats?.customerCount || 0,
+    customerCount: data.stats?.customerCount || 0,
     version: data.version || 1,
     settings: {
       inheritTimezone: data.settings?.inheritTimezone ?? true,

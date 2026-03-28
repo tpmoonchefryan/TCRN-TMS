@@ -40,9 +40,7 @@ export function TalentSettingsHeader({
       )}
       <div className="flex-1">
         <h1 className="text-2xl font-bold">{talent.displayName}</h1>
-        <p className="text-muted-foreground">
-          {t('talentSettings')} {talent.subsidiaryName && `• ${talent.subsidiaryName}`}
-        </p>
+        <p className="text-muted-foreground">{t('talentSettings')}</p>
       </div>
       <Badge variant={talent.isActive ? 'default' : 'secondary'}>
         {talent.isActive ? tc('active') : tc('inactive')}
