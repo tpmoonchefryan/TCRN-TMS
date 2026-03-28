@@ -469,6 +469,22 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 Use it together with your normal runtime health check whenever a release adds or repairs schema artifacts.
 
+Release artifact template:
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration <migration_folder_name> \
+  --require-table <table_name> \
+  --require-column <table_name.column_name> \
+  --require-index <index_name> \
+  [--schema <tenant_schema>] \
+  --json
+```
+
+- Repeat `--require-table`, `--require-column`, and `--require-index` for every artifact that the release must prove.
+- Omit `--schema` for a tenant-wide sweep across `tenant_template` plus every active tenant schema. Add `--schema` only when you need a targeted follow-up proof for one tenant.
+- Keep this command separate from Playwright/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
+
 #### Option 2: Kubernetes (Recommended for Production)
 
 Best for: High availability, auto-scaling, enterprise deployments

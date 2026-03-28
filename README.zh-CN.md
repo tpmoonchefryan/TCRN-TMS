@@ -469,6 +469,22 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 凡是新增或修补 schema artifact 的发布，都应将它与常规运行时健康检查一起执行。
 
+发布 artifact 模板：
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration <migration_folder_name> \
+  --require-table <table_name> \
+  --require-column <table_name.column_name> \
+  --require-index <index_name> \
+  [--schema <tenant_schema>] \
+  --json
+```
+
+- 对本次发布必须证明的每个 artifact，重复传入 `--require-table`、`--require-column` 和 `--require-index`。
+- 若要覆盖 `tenant_template` 与全部 active tenant schema 的全量扫描，请省略 `--schema`；只有在需要单租户定点补充证明时才加入 `--schema`。
+- 该命令应与 Playwright 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
+
 #### 方式二：Kubernetes（生产环境推荐）
 
 适用于：高可用、自动扩展、企业级部署

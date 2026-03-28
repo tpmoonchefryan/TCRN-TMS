@@ -469,6 +469,22 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 schema artifact を追加または修復するリリースでは、通常のランタイム health check とあわせて実行してください。
 
+release artifact template:
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration <migration_folder_name> \
+  --require-table <table_name> \
+  --require-column <table_name.column_name> \
+  --require-index <index_name> \
+  [--schema <tenant_schema>] \
+  --json
+```
+
+- そのリリースで証明すべき artifact ごとに、`--require-table`、`--require-column`、`--require-index` を繰り返して指定してください。
+- `tenant_template` とすべての active tenant schema を横断確認する場合は `--schema` を省略します。単一テナントの追跡確認が必要なときだけ `--schema` を追加してください。
+- このコマンドは Playwright やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
+
 #### オプション2：Kubernetes（本番環境推奨）
 
 適用：高可用性、オートスケーリング、エンタープライズデプロイ
