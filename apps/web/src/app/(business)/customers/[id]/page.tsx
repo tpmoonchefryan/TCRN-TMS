@@ -40,7 +40,7 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui';
-import { customerApi, membershipApi, platformIdentityApi } from '@/lib/api/client';
+import { customerApi, membershipApi, platformIdentityApi } from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface PlatformIdentity {

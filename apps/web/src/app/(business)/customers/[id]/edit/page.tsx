@@ -23,7 +23,8 @@ import {
   Skeleton,
   Textarea,
 } from '@/components/ui';
-import { AddressData, companyCustomerApi, customerApi, dictionaryApi } from '@/lib/api/client';
+import { dictionaryApi } from '@/lib/api/client';
+import { AddressData, companyCustomerApi, customerApi } from '@/lib/api/modules/customer';
 import { type PiiProfile, piiTokenManager } from '@/lib/pii';
 import { useTalentStore } from '@/stores/talent-store';
 

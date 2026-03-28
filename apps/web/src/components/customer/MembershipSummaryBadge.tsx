@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui';
-import { membershipApi } from '@/lib/api/client';
+import { membershipApi } from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
 
 interface MembershipSummary {

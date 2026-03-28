@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 // Mock the API client
 const mockMembershipList = vi.fn();
 
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api/modules/customer', () => ({
   membershipApi: {
     list: (...args: unknown[]) => mockMembershipList(...args),
   },

@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui';
-import { platformIdentityApi } from '@/lib/api/client';
+import { platformIdentityApi } from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
 
 interface HistoryRecord {

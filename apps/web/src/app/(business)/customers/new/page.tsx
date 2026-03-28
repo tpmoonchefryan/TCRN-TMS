@@ -21,7 +21,7 @@ import {
   SelectValue,
   Textarea,
 } from '@/components/ui';
-import { companyCustomerApi, customerApi } from '@/lib/api/client';
+import { companyCustomerApi, customerApi } from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface IndividualFormData {

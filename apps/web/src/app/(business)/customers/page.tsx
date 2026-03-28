@@ -44,7 +44,7 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui';
-import { customerApi } from '@/lib/api/client';
+import { customerApi } from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
 
 export default function CustomersPage() {

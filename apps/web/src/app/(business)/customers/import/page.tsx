@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button, Card } from '@/components/ui';
-import { customerImportApi } from '@/lib/api/client';
+import { customerImportApi } from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
 import { useTalentStore } from '@/stores/talent-store';
 
