@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -12,24 +11,31 @@ import { toast } from 'sonner';
 
 import { CustomerStatusBadge, CustomerTypeIcon } from '@/components/customer/CustomerShared';
 import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-    Badge,
-    Button,
-    Input,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-    Tabs,
-    TabsList,
-    TabsTrigger
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
-import { customerApi, type CustomerListItemResponse } from '@/lib/api/modules/customer';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
+import {
+  customerApi,
+  type CustomerListItemResponse,
+  type CustomerListParams,
+} from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
+
+type CustomerTab = 'all' | NonNullable<CustomerListParams['profileType']>;
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -38,11 +44,11 @@ export default function CustomersPage() {
   const { currentTalent } = useTalentStore();
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useCallback((error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = useCallback((error: unknown): string => {
+    const errorCode = getApiErrorCode(error);
     if (errorCode && typeof errorCode === 'string') {
       try {
-        const translated = te(errorCode as any);
+        const translated = te(errorCode as never);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
         }
@@ -50,10 +56,10 @@ export default function CustomersPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return getApiErrorMessage(error) || te('generic');
   }, [te]);
-  
-  const [activeTab, setActiveTab] = useState('all');
+
+  const [activeTab, setActiveTab] = useState<CustomerTab>('all');
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState<CustomerListItemResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +72,12 @@ export default function CustomersPage() {
 
   // Get talentId from current talent context
   const talentId = currentTalent?.id || '';
+
+  const handleTabChange = (value: string) => {
+    if (value === 'all' || value === 'individual' || value === 'company') {
+      setActiveTab(value);
+    }
+  };
 
   const fetchCustomers = useCallback(async () => {
     if (!talentId) {
@@ -82,7 +94,7 @@ export default function CustomersPage() {
         page: pagination.page,
         pageSize: pagination.pageSize,
         search: search || undefined,
-        profileType: activeTab !== 'all' ? (activeTab as 'individual' | 'company') : undefined,
+        profileType: activeTab !== 'all' ? activeTab : undefined,
       });
 
       if (response.success && response.data) {
@@ -98,7 +110,7 @@ export default function CustomersPage() {
       } else {
         throw response.error || new Error('Failed to fetch customers');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       setCustomers([]);
     } finally {
@@ -119,8 +131,6 @@ export default function CustomersPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-
-  const filteredCustomers = customers;
 
   // Show message if no talent selected
   if (!currentTalent) {
@@ -156,7 +166,7 @@ export default function CustomersPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-950 p-1 rounded-lg border">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full md:w-auto">
           <TabsList>
             <TabsTrigger value="all" className="w-20">All</TabsTrigger>
             <TabsTrigger value="individual" className="w-24">Individuals</TabsTrigger>
@@ -167,11 +177,11 @@ export default function CustomersPage() {
         <div className="flex gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder={t('searchPlaceholder')} 
+            <Input
+              placeholder={t('searchPlaceholder')}
               className="pl-9"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Button variant="ghost" size="icon">
@@ -185,7 +195,7 @@ export default function CustomersPage() {
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filteredCustomers.length === 0 ? (
+        ) : customers.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <Users className="h-12 w-12 mb-4 opacity-50" />
             <p>No customers found</p>
@@ -205,9 +215,9 @@ export default function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.map(customer => (
-                  <TableRow 
-                    key={customer.id} 
+                {customers.map((customer) => (
+                  <TableRow
+                    key={customer.id}
                     className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
                     onClick={() => router.push(`/customers/${customer.id}`)}
                   >
@@ -233,7 +243,7 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {customer.tags.slice(0, 3).map(tag => (
+                        {customer.tags.slice(0, 3).map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-[10px] px-1 h-5 font-normal">
                             {tag}
                           </Badge>

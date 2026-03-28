@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -21,6 +20,7 @@ import {
   SelectValue,
   Textarea,
 } from '@/components/ui';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
 import { companyCustomerApi, customerApi } from '@/lib/api/modules/customer';
 import { useTalentStore } from '@/stores/talent-store';
 
@@ -57,11 +57,11 @@ export default function NewCustomerPage() {
   const { currentTalent } = useTalentStore();
 
   // Helper to get translated error message from API error
-  const getErrorMessage = (error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = (error: unknown): string => {
+    const errorCode = getApiErrorCode(error);
     if (errorCode && typeof errorCode === 'string') {
       try {
-        const translated = te(errorCode as any);
+        const translated = te(errorCode as never);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
         }
@@ -69,7 +69,7 @@ export default function NewCustomerPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return getApiErrorMessage(error) || te('generic');
   };
 
   const [type, setType] = useState<'individual' | 'company' | null>(null);
@@ -149,7 +149,7 @@ export default function NewCustomerPage() {
       } else {
         throw response.error || new Error('Failed to create customer');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -205,7 +205,7 @@ export default function NewCustomerPage() {
       } else {
         throw response.error || new Error('Failed to create company');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);

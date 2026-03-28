@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -9,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button, Card } from '@/components/ui';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
 import { customerImportApi } from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
 import { useTalentStore } from '@/stores/talent-store';
@@ -34,11 +34,11 @@ export default function ImportCustomersPage() {
   const { currentTalent } = useTalentStore();
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useCallback((error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = useCallback((error: unknown): string => {
+    const errorCode = getApiErrorCode(error);
     if (errorCode && typeof errorCode === 'string') {
       try {
-        const translated = te(errorCode as any);
+        const translated = te(errorCode as never);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
         }
@@ -46,7 +46,7 @@ export default function ImportCustomersPage() {
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return getApiErrorMessage(error) || te('generic');
   }, [te]);
   
   const [step, setStep] = useState(1); // 1: Select/Upload, 2: Processing, 3: Result
@@ -86,7 +86,7 @@ export default function ImportCustomersPage() {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Ignore polling errors
     }
   }, []);
@@ -108,7 +108,7 @@ export default function ImportCustomersPage() {
         await customerImportApi.downloadCompanyTemplate();
       }
       toast.success(t('templateDownloaded'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };
@@ -155,8 +155,8 @@ export default function ImportCustomersPage() {
       } else {
         throw new Error(response.error?.message || 'Failed to upload file');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to upload file');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
       setStep(1);
     } finally {
       setIsUploading(false);
@@ -188,8 +188,8 @@ export default function ImportCustomersPage() {
     try {
       await customerImportApi.downloadErrors(selectedType, activeJob.id);
       toast.success('Error report downloaded');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to download error report');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
     }
   };
 

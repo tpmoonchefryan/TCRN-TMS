@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -23,7 +22,8 @@ import {
   Skeleton,
   Textarea,
 } from '@/components/ui';
-import { dictionaryApi } from '@/lib/api/modules/configuration';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
+import { systemDictionaryApi, type SystemDictionaryItemRecord } from '@/lib/api/modules/configuration';
 import {
   AddressData,
   companyCustomerApi,
@@ -88,9 +88,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPiiLoaded, setIsPiiLoaded] = useState(false);
   const [customer, setCustomer] = useState<CustomerDetailResponse | null>(null);
-  const [countries, setCountries] = useState<
-    Array<{ code: string; nameEn: string; nameZh?: string; nameJa?: string }>
-  >([]);
+  const [countries, setCountries] = useState<SystemDictionaryItemRecord[]>([]);
 
   // Form states
   const [individualForm, setIndividualForm] = useState<IndividualFormData>({
@@ -118,11 +116,11 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   });
 
   // Helper to get translated error message from API error
-  const getErrorMessage = (error: any): string => {
-    const errorCode = error?.code;
+  const getErrorMessage = (error: unknown): string => {
+    const errorCode = getApiErrorCode(error);
     if (errorCode && typeof errorCode === 'string') {
       try {
-        const translated = te(errorCode as any);
+        const translated = te(errorCode as never);
         if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
           return translated;
         }
@@ -130,7 +128,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
         // Fall through
       }
     }
-    return error?.message || te('generic');
+    return getApiErrorMessage(error) || te('generic');
   };
 
   const mapPiiProfileToForm = useCallback((piiData: PiiProfile) => {
@@ -161,13 +159,12 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
   // Load countries from dictionary
   const loadCountries = useCallback(async () => {
     try {
-      const response = await dictionaryApi.getByType('countries');
+      const response = await systemDictionaryApi.get<SystemDictionaryItemRecord>('countries');
       if (response.success && response.data) {
-        const data = response.data as any;
-        setCountries(data.items || data || []);
+        setCountries(response.data);
       }
-    } catch (err) {
-      console.error('Failed to load countries:', err);
+    } catch (error) {
+      console.error('Failed to load countries:', error);
     }
   }, []);
 
@@ -209,7 +206,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
             console.warn('Failed to load customer PII for edit form:', piiError);
           }
         } else {
-          const companyCustomer = data as CustomerCompanyDetailResponse;
+          const companyCustomer: CustomerCompanyDetailResponse = data;
 
           setCompanyForm({
             nickname: data.nickname || '',
@@ -227,7 +224,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
       } else {
         throw new Error(response.error?.message || t('loadFailed'));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       router.push('/customers');
     } finally {
@@ -322,7 +319,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
       } else {
         throw response.error || new Error(t('updateFailed'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -374,7 +371,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
       } else {
         throw response.error || new Error(t('updateFailed'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
