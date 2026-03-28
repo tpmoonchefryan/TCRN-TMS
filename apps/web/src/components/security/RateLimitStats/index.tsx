@@ -47,7 +47,7 @@ interface RateLimitStatsProps {
   className?: string;
 }
 
-import { securityApi } from '@/lib/api/client';
+import { securityApi } from '@/lib/api/modules/security';
 
 export function RateLimitStats({ onFetch, refreshInterval = 30000, className }: RateLimitStatsProps) {
   const t = useTranslations('security');

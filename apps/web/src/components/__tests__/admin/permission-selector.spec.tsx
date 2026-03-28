@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetResources = vi.fn();
 
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api/modules/permission', () => ({
   permissionApi: {
     getResources: (...args: unknown[]) => mockGetResources(...args),
   },

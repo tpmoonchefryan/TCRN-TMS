@@ -4,7 +4,7 @@
 
 import { useCallback,useEffect, useState } from 'react';
 
-import { securityApi } from '@/lib/api/client';
+import { securityApi } from '@/lib/api/modules/security';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface WatermarkProps {

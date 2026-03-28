@@ -24,7 +24,7 @@ import {
     Label
 } from '@/components/ui';
 import { setUserLocale } from '@/i18n/locale';
-import { userApi } from '@/lib/api/client';
+import { userApi } from '@/lib/api/modules/auth';
 import { useZodForm } from '@/lib/form';
 import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';

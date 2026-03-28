@@ -15,7 +15,7 @@ const BlocklistPatternType = {
 } as const;
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea } from '@/components/ui';
-import { securityApi } from '@/lib/api/client';
+import { securityApi } from '@/lib/api/modules/security';
 import { useZodForm } from '@/lib/form';
 
 interface PatternTesterProps {

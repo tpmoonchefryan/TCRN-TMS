@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { securityApi } from '@/lib/api/client';
+import { securityApi } from '@/lib/api/modules/security';
 
 export function IpChecker() {
   const t = useTranslations('security');

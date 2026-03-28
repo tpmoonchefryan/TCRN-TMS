@@ -45,8 +45,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { securityApi } from '@/lib/api/client';
 import { configEntityApi, externalBlocklistApi } from '@/lib/api/modules/configuration';
+import { securityApi } from '@/lib/api/modules/security';
 
 import type { ScopeType } from './constants';
 

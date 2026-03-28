@@ -36,7 +36,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui';
-import { organizationApi } from '@/lib/api/client';
+import { organizationApi } from '@/lib/api/modules/organization';
 import {
   DelegatedAdmin,
   delegatedAdminApi,

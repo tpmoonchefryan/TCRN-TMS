@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { ManagementSidebar } from '@/components/layout/management-sidebar';
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
-import { organizationApi } from '@/lib/api/client';
+import { organizationApi } from '@/lib/api/modules/organization';
 import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { SubsidiaryInfo, TalentInfo, useTalentStore } from '@/stores/talent-store';

@@ -17,7 +17,7 @@ import {
     Label,
     Switch,
 } from '@/components/ui';
-import { securityApi } from '@/lib/api/client';
+import { securityApi } from '@/lib/api/modules/security';
 
 import { BlocklistForm } from './BlocklistForm';
 import { BlocklistTable } from './BlocklistTable';

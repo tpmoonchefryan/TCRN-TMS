@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
-import { authApi } from '@/lib/api/client';
+import { authApi } from '@/lib/api/modules/auth';
 import { useZodForm } from '@/lib/form';
 
 export default function ForgotPasswordPage() {

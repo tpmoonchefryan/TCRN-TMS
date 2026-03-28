@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { permissionApi } from '@/lib/api/client';
+import { permissionApi } from '@/lib/api/modules/permission';
 
 interface PermissionSelectorLabels {
   grant: string;
