@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { QUEUE_NAMES } from '../queues';
 import {
+  WORKER_GROUPS,
   attachWorkerEventHandlers,
   createLogJobProcessor,
   getWorkerDefinitions,
-  WORKER_GROUPS,
 } from '../worker-runtime';
 
 describe('WORKER_GROUPS', () => {
