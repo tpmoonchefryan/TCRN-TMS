@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { reportApi } from '@/lib/api/client';
+import { reportApi } from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
 // Report job interface matching backend API response (camelCase)

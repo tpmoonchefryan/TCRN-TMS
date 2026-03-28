@@ -22,7 +22,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { marshmallowApi } from '@/lib/api/client';
+import { marshmallowApi } from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
 

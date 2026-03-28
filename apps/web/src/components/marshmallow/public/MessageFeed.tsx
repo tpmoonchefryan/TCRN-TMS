@@ -23,7 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { publicApi } from '@/lib/api/client';
+import { publicApi } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
 import { PublicMessageCard } from './PublicMessageCard';

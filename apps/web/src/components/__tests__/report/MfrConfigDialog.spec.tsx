@@ -21,7 +21,7 @@ vi.mock('@/stores/talent-store', () => ({
 }));
 
 // Mock API clients
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api/modules/content', () => ({
   reportApi: {
     preview: vi.fn().mockResolvedValue({ data: { totalCount: 10, preview: [] } }),
   },

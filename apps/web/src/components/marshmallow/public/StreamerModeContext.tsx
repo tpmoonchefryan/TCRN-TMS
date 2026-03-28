@@ -4,7 +4,7 @@
 
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-import { publicApi } from '@/lib/api/client';
+import { publicApi } from '@/lib/api/modules/content';
 
 // SSO User info from validated token
 interface SsoUser {

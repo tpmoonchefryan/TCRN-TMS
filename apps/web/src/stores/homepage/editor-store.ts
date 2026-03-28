@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 import { COMPONENT_REGISTRY } from '@/components/homepage/lib/component-registry';
 import { ComponentInstance, ComponentType, migrateComponentTypes } from '@/components/homepage/lib/types';
-import { homepageApi } from '@/lib/api/client';
+import { homepageApi } from '@/lib/api/modules/content';
 
 interface EditorState {
   content: HomepageContent;

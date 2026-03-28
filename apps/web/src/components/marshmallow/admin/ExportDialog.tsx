@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { marshmallowExportApi, type MarshmallowExportJob } from '@/lib/api/client';
+import { marshmallowExportApi, type MarshmallowExportJob } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
 interface ExportDialogProps {

@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { publicApi } from '@/lib/api/client';
+import { publicApi } from '@/lib/api/modules/content';
 import { useZodForm } from '@/lib/form';
 
 // Cloudflare Turnstile Site Key (use test key in development)

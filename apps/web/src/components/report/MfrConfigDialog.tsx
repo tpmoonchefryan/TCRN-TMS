@@ -38,8 +38,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { reportApi, ReportFormat } from '@/lib/api/client';
 import { configurationEntityApi, dictionaryApi } from '@/lib/api/modules/configuration';
+import { reportApi, ReportFormat } from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
 interface MfrConfigDialogProps {

@@ -32,7 +32,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { marshmallowApi } from '@/lib/api/client';
+import { marshmallowApi } from '@/lib/api/modules/content';
 
 
 // Config interface matching backend API response
