@@ -69,4 +69,4 @@ export type {
   Tenant,
   UserRole,
   Webhook,
-} from '@prisma/client';
+} from '@prisma/client/index';

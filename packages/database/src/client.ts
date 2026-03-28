@@ -99,7 +99,7 @@ export async function createTenantSchema(tenantId: string): Promise<string> {
     'external_blocklist_pattern', // External blocklist patterns
   ];
   for (const table of seedTables) {
-    if (tables.some(t => t.tablename === table)) {
+    if (tables.some((t: { tablename: string }) => t.tablename === table)) {
       await prisma.$executeRawUnsafe(`
         INSERT INTO "${schemaName}"."${table}"
         SELECT * FROM tenant_template."${table}"
