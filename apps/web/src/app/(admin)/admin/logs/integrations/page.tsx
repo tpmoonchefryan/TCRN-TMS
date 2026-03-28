@@ -34,27 +34,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { logApi } from '@/lib/api/modules/security';
-
-interface IntegrationLogEntry {
-  id: string;
-  occurredAt: string;
-  consumerId?: string;
-  consumerCode?: string;
-  direction: 'inbound' | 'outbound';
-  endpoint: string;
-  method: string;
-  responseStatus?: number;
-  latencyMs?: number;
-  errorMessage?: string;
-  traceId?: string;
-}
+import {
+  type IntegrationLogRecord,
+  type IntegrationLogStats,
+  logApi,
+} from '@/lib/api/modules/security';
 
 export default function IntegrationLogsPage() {
   const t = useTranslations('logsPage');
   const tCommon = useTranslations('common');
 
-  const [logs, setLogs] = useState<IntegrationLogEntry[]>([]);
+  const [logs, setLogs] = useState<IntegrationLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters
@@ -67,7 +57,7 @@ export default function IntegrationLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   // Stats
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<IntegrationLogStats>({
     totalRequests: 0,
     avgLatencyMs: 0,
     errorRate: 0,
@@ -102,7 +92,7 @@ export default function IntegrationLogsPage() {
     fetchLogs();
   }, [fetchLogs]);
 
-  const getStatusBadge = (status?: number) => {
+  const getStatusBadge = (status?: number | null) => {
     if (!status) return <Badge variant="secondary">-</Badge>;
     
     if (status >= 200 && status < 300) {

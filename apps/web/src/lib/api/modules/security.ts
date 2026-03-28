@@ -203,6 +203,88 @@ export interface IpAccessCheckResponse {
   matched_rule?: IpAccessCheckMatchedRule;
 }
 
+export interface ChangeLogRecord {
+  id: string;
+  occurredAt: string;
+  operatorId: string | null;
+  operatorName: string | null;
+  action: string;
+  objectType: string;
+  objectId: string;
+  objectName: string | null;
+  diff: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+}
+
+export interface ChangeLogListPayload {
+  items: ChangeLogRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export type TechEventSeverity = 'info' | 'warn' | 'error' | 'critical';
+
+export interface TechEventLogRecord {
+  id: string;
+  occurredAt: string;
+  severity: TechEventSeverity;
+  eventType: string;
+  scope: string;
+  traceId?: string | null;
+  spanId?: string | null;
+  source?: string | null;
+  message?: string | null;
+  payloadJson?: Record<string, unknown> | null;
+  errorCode?: string | null;
+  errorStack?: string | null;
+}
+
+export interface TechEventListPayload {
+  items: TechEventLogRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export type IntegrationDirection = 'inbound' | 'outbound';
+
+export interface IntegrationLogRecord {
+  id: string;
+  occurredAt: string;
+  consumerId?: string | null;
+  consumerCode?: string | null;
+  direction: IntegrationDirection;
+  endpoint: string;
+  method: string;
+  requestHeaders?: Record<string, unknown> | null;
+  requestBody?: unknown;
+  responseStatus?: number | null;
+  responseBody?: unknown;
+  latencyMs?: number | null;
+  errorMessage?: string | null;
+  traceId?: string | null;
+}
+
+export interface IntegrationLogStats {
+  totalRequests: number;
+  avgLatencyMs: number;
+  errorRate: number;
+}
+
+export interface IntegrationLogListPayload {
+  items: IntegrationLogRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  stats?: IntegrationLogStats;
+}
+
 export const securityApi = {
   generateFingerprint: () => apiClient.post<FingerprintRecord>('/api/v1/security/fingerprint', {}),
 
@@ -285,9 +367,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiClient.get<any>('/api/v1/logs/changes', params),
+  }) => apiClient.get<ChangeLogListPayload>('/api/v1/logs/changes', params),
 
   getTechEvents: (params?: {
     scope?: string;
@@ -295,9 +375,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiClient.get<any>('/api/v1/logs/events', params),
+  }) => apiClient.get<TechEventListPayload>('/api/v1/logs/events', params),
 
   getIntegrationLogs: (params?: {
     direction?: string;
@@ -306,17 +384,13 @@ export const logApi = {
     consumerId?: string;
     page?: number;
     pageSize?: number;
-  }) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiClient.get<any>('/api/v1/logs/integrations', params),
+  }) => apiClient.get<IntegrationLogListPayload>('/api/v1/logs/integrations', params),
 
   getIntegrationLogByTrace: (traceId: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiClient.get<any>(`/api/v1/logs/integrations/trace/${traceId}`),
+    apiClient.get<IntegrationLogRecord[]>(`/api/v1/logs/integrations/trace/${traceId}`),
 
   getFailedIntegrations: (params?: { page?: number; pageSize?: number }) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiClient.get<any>('/api/v1/logs/integrations/failed', params),
+    apiClient.get<IntegrationLogListPayload>('/api/v1/logs/integrations/failed', params),
 
   searchLoki: (params: {
     query: string;

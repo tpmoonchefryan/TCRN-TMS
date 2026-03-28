@@ -35,17 +35,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { logApi } from '@/lib/api/modules/security';
-
-interface TechEventEntry {
-  id: string;
-  occurredAt: string;
-  eventType: string;
-  scope: string;
-  severity: 'info' | 'warn' | 'error' | 'critical';
-  payload?: Record<string, unknown>;
-  traceId?: string;
-}
+import { logApi, type TechEventLogRecord } from '@/lib/api/modules/security';
 
 const SEVERITY_CONFIG: Record<string, { icon: React.ReactNode; className: string }> = {
   info: {
@@ -70,7 +60,7 @@ export default function SystemEventsPage() {
   const t = useTranslations('logsPage');
   const tCommon = useTranslations('common');
 
-  const [events, setEvents] = useState<TechEventEntry[]>([]);
+  const [events, setEvents] = useState<TechEventLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters
@@ -216,7 +206,7 @@ export default function SystemEventsPage() {
                           {event.traceId ? event.traceId.slice(0, 8) + '...' : '-'}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-                          {event.payload ? JSON.stringify(event.payload).slice(0, 50) + '...' : '-'}
+                          {event.payloadJson ? JSON.stringify(event.payloadJson).slice(0, 50) + '...' : '-'}
                         </TableCell>
                       </TableRow>
                     );

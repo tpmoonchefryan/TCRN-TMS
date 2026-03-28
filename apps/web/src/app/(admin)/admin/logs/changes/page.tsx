@@ -34,19 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { logApi } from '@/lib/api/modules/security';
-
-interface ChangeLogEntry {
-  id: string;
-  occurredAt: string;
-  action: string;
-  objectType: string;
-  objectId: string;
-  objectName: string;
-  operatorId: string;
-  operatorName?: string;
-  diff?: Record<string, unknown>;
-}
+import { type ChangeLogRecord,logApi } from '@/lib/api/modules/security';
 
 const ACTION_COLORS: Record<string, string> = {
   create: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -60,7 +48,7 @@ export default function ChangeLogsPage() {
   const t = useTranslations('logsPage');
   const tCommon = useTranslations('common');
 
-  const [logs, setLogs] = useState<ChangeLogEntry[]>([]);
+  const [logs, setLogs] = useState<ChangeLogRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
