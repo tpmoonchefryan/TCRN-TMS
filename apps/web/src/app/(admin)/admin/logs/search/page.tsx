@@ -24,7 +24,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { logApi } from '@/lib/api/client';
+import { logApi } from '@/lib/api/modules/security';
 
 interface LogResult {
   timestamp: string;

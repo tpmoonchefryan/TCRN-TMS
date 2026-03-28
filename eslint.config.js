@@ -135,6 +135,24 @@ export default [
     },
   },
 
+  {
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    ignores: ['apps/web/src/lib/api/client.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/lib/api/client',
+              message: 'Import focused API modules instead of the compatibility barrel.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // NestJS 特定配置
   {
     files: ['apps/api/**/*.ts', 'apps/pii-service/**/*.ts'],

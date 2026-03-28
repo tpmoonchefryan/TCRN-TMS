@@ -18,7 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { apiClient } from '@/lib/api/client';
+import { apiClient } from '@/lib/api/core';
 
 interface ChangeLogEntry {
   id: string;

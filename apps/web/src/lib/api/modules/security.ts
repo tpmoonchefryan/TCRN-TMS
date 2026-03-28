@@ -122,7 +122,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/changes', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/changes', params),
 
   getTechEvents: (params?: {
     scope?: string;
@@ -130,7 +130,7 @@ export const logApi = {
     search?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/events', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/events', params),
 
   getIntegrationLogs: (params?: {
     direction?: string;
@@ -139,13 +139,13 @@ export const logApi = {
     consumerId?: string;
     page?: number;
     pageSize?: number;
-  }) => apiClient.get<any>('/api/v1/logs/integrations', { params }),
+  }) => apiClient.get<any>('/api/v1/logs/integrations', params),
 
   getIntegrationLogByTrace: (traceId: string) =>
     apiClient.get<any>(`/api/v1/logs/integrations/trace/${traceId}`),
 
   getFailedIntegrations: (params?: { page?: number; pageSize?: number }) =>
-    apiClient.get<any>('/api/v1/logs/integrations/failed', { params }),
+    apiClient.get<any>('/api/v1/logs/integrations/failed', params),
 
   searchLoki: (params: { query: string; timeRange: string; limit?: number; app?: string }) =>
     apiClient.post<any>('/api/v1/logs/search', params),

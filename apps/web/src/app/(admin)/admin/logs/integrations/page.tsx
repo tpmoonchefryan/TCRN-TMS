@@ -34,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { logApi } from '@/lib/api/client';
+import { logApi } from '@/lib/api/modules/security';
 
 interface IntegrationLogEntry {
   id: string;
