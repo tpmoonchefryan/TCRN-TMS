@@ -1,26 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { HomepageComponentType } from '@tcrn/shared';
 import React from 'react';
 
 // =============================================================================
 // Component Types
 // =============================================================================
 
-export type ComponentType = 
-  | 'ProfileCard'
-  | 'SocialLinks'
-  | 'ImageGallery'
-  | 'VideoEmbed'
-  | 'RichText'
-  | 'LinkButton'
-  | 'MarshmallowWidget'
-  | 'Schedule'
-  | 'MusicPlayer'
-  | 'LiveStatus'
-  | 'Divider'
-  | 'Spacer'
-  | 'BilibiliDynamic';
+export type ComponentType = HomepageComponentType;
 
 export interface ComponentInstance {
   id: string;

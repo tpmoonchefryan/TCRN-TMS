@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { HomepageComponentType } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -20,18 +21,8 @@ import {
 // Component Types
 // =============================================================================
 
-export enum ComponentType {
-  PROFILE_CARD = 'ProfileCard',
-  SOCIAL_LINKS = 'SocialLinks',
-  IMAGE_GALLERY = 'ImageGallery',
-  VIDEO_EMBED = 'VideoEmbed',
-  RICH_TEXT = 'RichText',
-  LINK_BUTTON = 'LinkButton',
-  MARSHMALLOW_WIDGET = 'MarshmallowWidget',
-  DIVIDER = 'Divider',
-  SPACER = 'Spacer',
-  SCHEDULE = 'Schedule',
-}
+export type ComponentType = HomepageComponentType;
+export const SCHEDULE_COMPONENT_TYPE: ComponentType = 'Schedule';
 
 export interface ComponentInstance {
   id: string;

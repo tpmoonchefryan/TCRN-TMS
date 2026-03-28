@@ -3,15 +3,13 @@
 
 import { z } from 'zod';
 
+import { HOMEPAGE_COMPONENT_TYPES } from '../../types/homepage/schema';
 import { PaginationSchema } from '../common.schema';
 
 // ============================================================================
 // Enums
 // ============================================================================
-export const ComponentTypeSchema = z.enum([
-  'ProfileCard', 'SocialLinks', 'ImageGallery', 'VideoEmbed', 'RichText',
-  'LinkButton', 'MarshmallowWidget', 'Divider', 'Spacer', 'Schedule'
-]);
+export const ComponentTypeSchema = z.enum(HOMEPAGE_COMPONENT_TYPES);
 
 export const ThemePresetSchema = z.enum(['default', 'dark', 'soft', 'cute', 'minimal']);
 export const VisualStyleSchema = z.enum(['simple', 'glass', 'neo', 'retro', 'flat']);
@@ -23,7 +21,6 @@ export const AnimationIntensitySchema = z.enum(['low', 'medium', 'high']);
 export const DecorationTypeSchema = z.enum(['grid', 'dots', 'gradient-blobs', 'text', 'none']);
 export const VersionStatusSchema = z.enum(['draft', 'published', 'archived']);
 
-export type HomepageComponentType = z.infer<typeof ComponentTypeSchema>;
 export type HomepageThemePreset = z.infer<typeof ThemePresetSchema>;
 
 // ============================================================================

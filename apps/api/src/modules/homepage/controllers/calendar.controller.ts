@@ -8,7 +8,7 @@ import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
 import { UaCheckMode } from '../../security/guards/ua-detection.guard';
-import { ComponentInstance, ComponentType, HomepageContent } from '../dto/homepage.dto';
+import { ComponentInstance, HomepageContent, SCHEDULE_COMPONENT_TYPE } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
 
 @ApiTags('Public - Homepage')
@@ -44,7 +44,7 @@ export class CalendarController {
 
     if (content?.components && Array.isArray(content.components)) {
       scheduleComponents = content.components.filter(
-        (c: ComponentInstance) => c.type === ComponentType.SCHEDULE && c.visible !== false
+        (c: ComponentInstance) => c.type === SCHEDULE_COMPONENT_TYPE && c.visible !== false
       );
       if (scheduleComponents.length > 0) {
         componentTimezone = (scheduleComponents[0].props as { timezone?: string })?.timezone || null;

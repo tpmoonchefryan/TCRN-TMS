@@ -1,20 +1,24 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 // Component Types
-export type ComponentType = 
-  | 'ProfileCard'
-  | 'SocialLinks'
-  | 'ImageGallery'
-  | 'VideoEmbed'
-  | 'RichText'
-  | 'LinkButton'
-  | 'MarshmallowWidget'
-  | 'Schedule'
-  | 'MusicPlayer'
-  | 'LiveStatus'
-  | 'Divider'
-  | 'Spacer'
-  | 'BilibiliDynamic';
+export const HOMEPAGE_COMPONENT_TYPES = [
+  'ProfileCard',
+  'SocialLinks',
+  'ImageGallery',
+  'VideoEmbed',
+  'RichText',
+  'LinkButton',
+  'MarshmallowWidget',
+  'Schedule',
+  'MusicPlayer',
+  'LiveStatus',
+  'Divider',
+  'Spacer',
+  'BilibiliDynamic',
+] as const;
+
+export type ComponentType = (typeof HOMEPAGE_COMPONENT_TYPES)[number];
+export type HomepageComponentType = ComponentType;
 
 // Component Instance Structure
 export interface ComponentInstance {

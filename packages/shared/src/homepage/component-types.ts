@@ -5,21 +5,29 @@
  * Based on PRD §16 外部用户界面
  */
 
+import type { HomepageComponentType } from '../types/homepage/schema';
+
 // =============================================================================
 // Component Types
 // =============================================================================
 
-export enum ComponentType {
-  PROFILE_CARD = 'ProfileCard',
-  SOCIAL_LINKS = 'SocialLinks',
-  IMAGE_GALLERY = 'ImageGallery',
-  VIDEO_EMBED = 'VideoEmbed',
-  RICH_TEXT = 'RichText',
-  LINK_BUTTON = 'LinkButton',
-  MARSHMALLOW_WIDGET = 'MarshmallowWidget',
-  DIVIDER = 'Divider',
-  SPACER = 'Spacer',
-}
+export type ComponentType = HomepageComponentType;
+
+export const COMPONENT_TYPE = {
+  PROFILE_CARD: 'ProfileCard',
+  SOCIAL_LINKS: 'SocialLinks',
+  IMAGE_GALLERY: 'ImageGallery',
+  VIDEO_EMBED: 'VideoEmbed',
+  RICH_TEXT: 'RichText',
+  LINK_BUTTON: 'LinkButton',
+  MARSHMALLOW_WIDGET: 'MarshmallowWidget',
+  SCHEDULE: 'Schedule',
+  MUSIC_PLAYER: 'MusicPlayer',
+  LIVE_STATUS: 'LiveStatus',
+  DIVIDER: 'Divider',
+  SPACER: 'Spacer',
+  BILIBILI_DYNAMIC: 'BilibiliDynamic',
+} as const satisfies Record<string, HomepageComponentType>;
 
 export type ComponentCategory = 'core' | 'media' | 'content' | 'layout' | 'interactive';
 
@@ -122,8 +130,8 @@ export interface ComponentDefinition {
 }
 
 export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> = {
-  [ComponentType.PROFILE_CARD]: {
-    type: ComponentType.PROFILE_CARD,
+  [COMPONENT_TYPE.PROFILE_CARD]: {
+    type: COMPONENT_TYPE.PROFILE_CARD,
     nameEn: 'Profile Card',
     nameZh: '个人资料卡',
     nameJa: 'プロフィールカード',
@@ -138,8 +146,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       bioMaxLines: 3,
     },
   },
-  [ComponentType.SOCIAL_LINKS]: {
-    type: ComponentType.SOCIAL_LINKS,
+  [COMPONENT_TYPE.SOCIAL_LINKS]: {
+    type: COMPONENT_TYPE.SOCIAL_LINKS,
     nameEn: 'Social Links',
     nameZh: '社交媒体链接',
     nameJa: 'ソーシャルリンク',
@@ -152,8 +160,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       iconSize: 'medium',
     },
   },
-  [ComponentType.IMAGE_GALLERY]: {
-    type: ComponentType.IMAGE_GALLERY,
+  [COMPONENT_TYPE.IMAGE_GALLERY]: {
+    type: COMPONENT_TYPE.IMAGE_GALLERY,
     nameEn: 'Image Gallery',
     nameZh: '图片画廊',
     nameJa: '画像ギャラリー',
@@ -167,8 +175,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       showCaptions: false,
     },
   },
-  [ComponentType.VIDEO_EMBED]: {
-    type: ComponentType.VIDEO_EMBED,
+  [COMPONENT_TYPE.VIDEO_EMBED]: {
+    type: COMPONENT_TYPE.VIDEO_EMBED,
     nameEn: 'Video Embed',
     nameZh: '视频嵌入',
     nameJa: '動画埋め込み',
@@ -181,8 +189,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       showControls: true,
     },
   },
-  [ComponentType.RICH_TEXT]: {
-    type: ComponentType.RICH_TEXT,
+  [COMPONENT_TYPE.RICH_TEXT]: {
+    type: COMPONENT_TYPE.RICH_TEXT,
     nameEn: 'Rich Text',
     nameZh: '富文本',
     nameJa: 'リッチテキスト',
@@ -193,8 +201,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       textAlign: 'left',
     },
   },
-  [ComponentType.LINK_BUTTON]: {
-    type: ComponentType.LINK_BUTTON,
+  [COMPONENT_TYPE.LINK_BUTTON]: {
+    type: COMPONENT_TYPE.LINK_BUTTON,
     nameEn: 'Link Button',
     nameZh: '链接按钮',
     nameJa: 'リンクボタン',
@@ -207,8 +215,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       fullWidth: false,
     },
   },
-  [ComponentType.MARSHMALLOW_WIDGET]: {
-    type: ComponentType.MARSHMALLOW_WIDGET,
+  [COMPONENT_TYPE.MARSHMALLOW_WIDGET]: {
+    type: COMPONENT_TYPE.MARSHMALLOW_WIDGET,
     nameEn: 'Marshmallow Widget',
     nameZh: '棉花糖入口',
     nameJa: 'マシュマロウィジェット',
@@ -220,8 +228,54 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       showSubmitButton: true,
     },
   },
-  [ComponentType.DIVIDER]: {
-    type: ComponentType.DIVIDER,
+  [COMPONENT_TYPE.SCHEDULE]: {
+    type: COMPONENT_TYPE.SCHEDULE,
+    nameEn: 'Schedule',
+    nameZh: '日程表',
+    nameJa: 'スケジュール',
+    icon: 'Calendar',
+    category: 'interactive',
+    defaultProps: {
+      title: 'Weekly Schedule',
+      weekOf: '2026-01-26',
+      events: [
+        { day: 'mon', time: '20:00', title: 'Chatting Stream', type: 'chat' },
+        { day: 'wed', time: '21:00', title: 'Minecraft', type: 'game' },
+      ],
+    },
+  },
+  [COMPONENT_TYPE.MUSIC_PLAYER]: {
+    type: COMPONENT_TYPE.MUSIC_PLAYER,
+    nameEn: 'Music Player',
+    nameZh: '音乐播放器',
+    nameJa: '音楽プレーヤー',
+    icon: 'Music',
+    category: 'media',
+    defaultProps: {
+      platform: 'spotify',
+      embedValue: '4cOdK2wGLETKBW3PvgPWqT',
+      title: 'Starry Sky',
+      artist: 'Moon Chef Ryan',
+    },
+  },
+  [COMPONENT_TYPE.LIVE_STATUS]: {
+    type: COMPONENT_TYPE.LIVE_STATUS,
+    nameEn: 'Live Status',
+    nameZh: '直播状态',
+    nameJa: '配信ステータス',
+    icon: 'Radio',
+    category: 'core',
+    defaultProps: {
+      platform: 'youtube',
+      channelName: 'Moon Chef Ryan Ch.',
+      streamUrl: 'https://youtube.com',
+      isLive: true,
+      viewers: '1,234',
+      title: '🔴 [KAROKE] Singing untill I drop! come join!',
+    },
+  },
+  [COMPONENT_TYPE.DIVIDER]: {
+    type: COMPONENT_TYPE.DIVIDER,
     nameEn: 'Divider',
     nameZh: '分隔线',
     nameJa: '区切り線',
@@ -232,8 +286,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
       spacing: 'medium',
     },
   },
-  [ComponentType.SPACER]: {
-    type: ComponentType.SPACER,
+  [COMPONENT_TYPE.SPACER]: {
+    type: COMPONENT_TYPE.SPACER,
     nameEn: 'Spacer',
     nameZh: '空白间距',
     nameJa: 'スペーサー',
@@ -241,6 +295,23 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     category: 'layout',
     defaultProps: {
       height: 'medium',
+    },
+  },
+  [COMPONENT_TYPE.BILIBILI_DYNAMIC]: {
+    type: COMPONENT_TYPE.BILIBILI_DYNAMIC,
+    nameEn: 'Bilibili Dynamic',
+    nameZh: 'B站动态',
+    nameJa: 'Bilibili投稿',
+    icon: 'Activity',
+    category: 'interactive',
+    defaultProps: {
+      uid: '401742377',
+      title: 'Bilibili Dynamics',
+      maxItems: 5,
+      filterType: 'all',
+      cardStyle: 'standard',
+      refreshInterval: 0,
+      showHeader: true,
     },
   },
 };
