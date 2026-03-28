@@ -1,23 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { PrismaClient } from '@tcrn/database';
-import type { ConnectionOptions } from 'bullmq';
-import { Worker } from 'bullmq';
+import type { ConnectionOptions, Worker } from 'bullmq';
 import { CronJob } from 'cron';
 import Redis from 'ioredis';
 
-import { emailJobProcessor } from './jobs/email.job';
-import { exportJobProcessor } from './jobs/export.job';
-import { importJobProcessor } from './jobs/import.job';
-import { processLogCleanup } from './jobs/log-cleanup.job';
-import { processIntegrationLog, processTechEventLog } from './jobs/log-processor.job';
-import { membershipRenewalJobProcessor, scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
-import { permissionJobProcessor } from './jobs/permission.job';
-import { piiCleanupJobProcessor, schedulePiiCleanupJob } from './jobs/pii-cleanup.job';
-import { piiHealthCheckJobProcessor, setupPiiHealthCheckCron } from './jobs/pii-health-check.job';
-import { reportJobProcessor } from './jobs/report.job';
+import { scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
+import { schedulePiiCleanupJob } from './jobs/pii-cleanup.job';
+import { setupPiiHealthCheckCron } from './jobs/pii-health-check.job';
 import { workerLogger as logger } from './logger';
-import { logCleanupQueue, membershipRenewalQueue, piiCleanupQueue, piiHealthCheckQueue, QUEUE_NAMES, setupQueues } from './queues';
+import {
+  logCleanupQueue,
+  membershipRenewalQueue,
+  piiCleanupQueue,
+  piiHealthCheckQueue,
+  setupQueues,
+} from './queues';
+import { createWorkers } from './worker-runtime';
 
 // Global Prisma client for scheduled jobs
 let prisma: PrismaClient;
@@ -48,159 +46,7 @@ async function initializeWorkers(): Promise<void> {
 
   // Setup queue definitions
   await setupQueues(connection);
-
-  // Import Job Worker (PRD §11.7)
-  const importWorker = new Worker(QUEUE_NAMES.IMPORT, importJobProcessor, {
-    connection,
-    concurrency: 1, // Single-threaded processing
-    limiter: {
-      max: 1,
-      duration: 1000,
-    },
-  });
-  workers.push(importWorker);
-  logger.info('Import worker initialized');
-
-  // Report Job Worker (PRD §20.1)
-  const reportWorker = new Worker(QUEUE_NAMES.REPORT, reportJobProcessor, {
-    connection,
-    concurrency: 1, // PRD §20.1: Worker concurrency=1
-    limiter: {
-      max: 1,
-      duration: 1000,
-    },
-  });
-  workers.push(reportWorker);
-  logger.info('Report worker initialized');
-
-  // Permission Calculation Worker (PRD §12.6)
-  const permissionWorker = new Worker(QUEUE_NAMES.PERMISSION, permissionJobProcessor, {
-    connection,
-    concurrency: 1,
-  });
-  workers.push(permissionWorker);
-  logger.info('Permission worker initialized');
-
-  // Membership Renewal Worker (PRD §11.6)
-  const membershipRenewalWorker = new Worker(
-    QUEUE_NAMES.MEMBERSHIP_RENEWAL,
-    membershipRenewalJobProcessor,
-    {
-      connection,
-      concurrency: 1,
-    }
-  );
-  workers.push(membershipRenewalWorker);
-  logger.info('Membership renewal worker initialized');
-
-  // Log Worker (PRD §15) - handles both tech events and integration logs
-  const logWorker = new Worker(
-    QUEUE_NAMES.LOG,
-    async (job) => {
-      const { type } = job.data;
-      if (type === 'tech_event') {
-        return processTechEventLog(job);
-      } else if (type === 'integration_log') {
-        return processIntegrationLog(job);
-      }
-      throw new Error(`Unknown log job type: ${type}`);
-    },
-    {
-      connection,
-      concurrency: 5, // Higher concurrency for log processing
-      limiter: {
-        max: 100,
-        duration: 1000, // Rate limit to 100/s
-      },
-    }
-  );
-  workers.push(logWorker);
-  logger.info('Log worker initialized');
-
-  // PII Cleanup Worker (PRD §11 - Orphan PII cleanup)
-  const piiCleanupWorker = new Worker(
-    QUEUE_NAMES.PII_CLEANUP,
-    piiCleanupJobProcessor,
-    {
-      connection,
-      concurrency: 1, // Single-threaded for safety
-    }
-  );
-  workers.push(piiCleanupWorker);
-  logger.info('PII cleanup worker initialized');
-
-  // Export Worker (handles marshmallow exports and other export types)
-  const exportWorker = new Worker(
-    QUEUE_NAMES.EXPORT,
-    exportJobProcessor,
-    {
-      connection,
-      concurrency: 2, // Allow 2 concurrent exports
-    }
-  );
-  workers.push(exportWorker);
-  logger.info('Export worker initialized');
-
-  // Log Cleanup Worker (PRD §15 - Log retention)
-  const logCleanupWorker = new Worker(
-    QUEUE_NAMES.LOG_CLEANUP,
-    processLogCleanup,
-    {
-      connection,
-      concurrency: 1, // Single-threaded for safety
-    }
-  );
-  workers.push(logCleanupWorker);
-  logger.info('Log cleanup worker initialized');
-
-  // PII Health Check Worker (PRD §11 - PII service health monitoring)
-  const piiHealthCheckWorker = new Worker(
-    QUEUE_NAMES.PII_HEALTH_CHECK,
-    piiHealthCheckJobProcessor,
-    {
-      connection,
-      concurrency: 1, // Single-threaded
-    }
-  );
-  workers.push(piiHealthCheckWorker);
-  logger.info('PII health check worker initialized');
-
-  // Email Worker (Tencent Cloud SES)
-  const emailWorker = new Worker(
-    QUEUE_NAMES.EMAIL,
-    emailJobProcessor,
-    {
-      connection,
-      concurrency: 5, // Allow 5 concurrent emails
-      limiter: {
-        max: 10,
-        duration: 1000, // Rate limit: 10 emails per second
-      },
-    }
-  );
-  workers.push(emailWorker);
-  logger.info('Email worker initialized');
-
-  // Setup worker event handlers
-  workers.forEach((worker) => {
-    worker.on('completed', (job) => {
-      logger.info(`Job ${job.id} completed in queue ${job.queueName}`);
-    });
-
-    worker.on('failed', (job, err) => {
-      logger.error(`Job ${job?.id} failed in queue ${job?.queueName}: ${err.message}`);
-    });
-
-    worker.on('error', (err) => {
-      logger.error(`Worker error: ${err.message}`);
-    });
-
-    worker.on('progress', (job, progress) => {
-      logger.info(`Job ${job.id} progress: ${progress}%`);
-    });
-  });
-
-  logger.info('All workers initialized');
+  workers.push(...createWorkers(connection));
 
   // Setup scheduled jobs
   if (enableScheduledJobs) {
@@ -211,11 +57,13 @@ async function initializeWorkers(): Promise<void> {
 /**
  * Get all active tenants from the database
  */
-async function getActiveTenants(): Promise<Array<{ id: string; code: string; schemaName: string }>> {
+async function getActiveTenants(): Promise<
+  Array<{ id: string; code: string; schemaName: string }>
+> {
   if (!prisma) {
     prisma = new PrismaClient();
   }
-  
+
   try {
     const tenants = await prisma.tenant.findMany({
       where: { isActive: true },
@@ -243,12 +91,12 @@ async function setupScheduledJobs(): Promise<void> {
     '0 2 * * *', // 2:00 AM daily
     async () => {
       logger.info('Triggering scheduled membership renewal for all tenants');
-      
+
       try {
         // Get all active tenants
         const tenants = await getActiveTenants();
         logger.info(`Found ${tenants.length} active tenants for membership renewal`);
-        
+
         // Schedule renewal job for each tenant
         for (const tenant of tenants) {
           try {
@@ -260,10 +108,12 @@ async function setupScheduledJobs(): Promise<void> {
             logger.info(`Scheduled membership renewal for tenant: ${tenant.code}`);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            logger.error(`Failed to schedule membership renewal for tenant ${tenant.code}: ${errorMessage}`);
+            logger.error(
+              `Failed to schedule membership renewal for tenant ${tenant.code}: ${errorMessage}`
+            );
           }
         }
-        
+
         logger.info(`Membership renewal scheduled for ${tenants.length} tenants`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -282,11 +132,11 @@ async function setupScheduledJobs(): Promise<void> {
     '0 */6 * * *', // Every 6 hours
     async () => {
       logger.info('Triggering scheduled permission refresh for all tenants');
-      
+
       try {
         const tenants = await getActiveTenants();
         logger.info(`Found ${tenants.length} active tenants for permission refresh`);
-        
+
         // Permission refresh is handled by API side MembershipSchedulerService
         // This cron is just a backup trigger
         for (const tenant of tenants) {
@@ -309,7 +159,7 @@ async function setupScheduledJobs(): Promise<void> {
     '0 3 * * 0', // Every Sunday at 3:00 AM
     async () => {
       logger.info('Triggering scheduled PII orphan cleanup');
-      
+
       try {
         await schedulePiiCleanupJob(piiCleanupQueue);
         logger.info('PII cleanup job scheduled');
@@ -330,11 +180,11 @@ async function setupScheduledJobs(): Promise<void> {
     '0 4 * * *', // 4:00 AM daily
     async () => {
       logger.info('Triggering scheduled log cleanup for all tenants');
-      
+
       try {
         const tenants = await getActiveTenants();
         logger.info(`Found ${tenants.length} active tenants for log cleanup`);
-        
+
         for (const tenant of tenants) {
           try {
             await logCleanupQueue.add(
@@ -345,7 +195,9 @@ async function setupScheduledJobs(): Promise<void> {
             logger.info(`Scheduled log cleanup for tenant: ${tenant.code}`);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            logger.error(`Failed to schedule log cleanup for tenant ${tenant.code}: ${errorMessage}`);
+            logger.error(
+              `Failed to schedule log cleanup for tenant ${tenant.code}: ${errorMessage}`
+            );
           }
         }
       } catch (error) {
