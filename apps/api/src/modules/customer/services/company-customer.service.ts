@@ -127,11 +127,13 @@ export class CompanyCustomerService {
       await tx.$executeRawUnsafe(`
         INSERT INTO "${schema}".customer_company_info (
           id, customer_id, company_legal_name, company_short_name, registration_number,
-          vat_id, establishment_date, business_segment_id, website, created_at, updated_at
+          vat_id, establishment_date, business_segment_id, website,
+          contact_name, contact_phone, contact_email, contact_department,
+          created_at, updated_at
         )
         VALUES (
           gen_random_uuid(), $1::uuid, $2, $3, $4,
-          $5, $6, $7::uuid, $8, NOW(), NOW()
+          $5, $6, $7::uuid, $8, $9, $10, $11, $12, NOW(), NOW()
         )
       `,
         newCustomer.id,
@@ -142,6 +144,10 @@ export class CompanyCustomerService {
         dto.establishmentDate ? new Date(dto.establishmentDate) : null,
         businessSegmentId,
         dto.website ?? null,
+        dto.contactName ?? null,
+        dto.contactPhone ?? null,
+        dto.contactEmail ?? null,
+        dto.contactDepartment ?? null,
       );
 
       // Create external ID if provided
@@ -355,6 +361,22 @@ export class CompanyCustomerService {
       companySetParts.push(`website = $${companyParamIndex++}`);
       companyParams.push(dto.website);
     }
+    if (dto.contactName !== undefined) {
+      companySetParts.push(`contact_name = $${companyParamIndex++}`);
+      companyParams.push(dto.contactName);
+    }
+    if (dto.contactPhone !== undefined) {
+      companySetParts.push(`contact_phone = $${companyParamIndex++}`);
+      companyParams.push(dto.contactPhone);
+    }
+    if (dto.contactEmail !== undefined) {
+      companySetParts.push(`contact_email = $${companyParamIndex++}`);
+      companyParams.push(dto.contactEmail);
+    }
+    if (dto.contactDepartment !== undefined) {
+      companySetParts.push(`contact_department = $${companyParamIndex++}`);
+      companyParams.push(dto.contactDepartment);
+    }
 
     // Update or create company info if there are changes
     if (companySetParts.length > 0) {
@@ -409,6 +431,26 @@ export class CompanyCustomerService {
           insertColumns.push('website');
           insertValues.push(`$${insertParamIndex++}`);
           insertParams.push(dto.website);
+        }
+        if (dto.contactName !== undefined) {
+          insertColumns.push('contact_name');
+          insertValues.push(`$${insertParamIndex++}`);
+          insertParams.push(dto.contactName);
+        }
+        if (dto.contactPhone !== undefined) {
+          insertColumns.push('contact_phone');
+          insertValues.push(`$${insertParamIndex++}`);
+          insertParams.push(dto.contactPhone);
+        }
+        if (dto.contactEmail !== undefined) {
+          insertColumns.push('contact_email');
+          insertValues.push(`$${insertParamIndex++}`);
+          insertParams.push(dto.contactEmail);
+        }
+        if (dto.contactDepartment !== undefined) {
+          insertColumns.push('contact_department');
+          insertValues.push(`$${insertParamIndex++}`);
+          insertParams.push(dto.contactDepartment);
         }
 
         await prisma.$executeRawUnsafe(`

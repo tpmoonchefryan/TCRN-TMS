@@ -1,99 +1,52 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException,NotFoundException } from '@nestjs/common';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
 import { CompanyCustomerService } from '../company-customer.service';
 
-// Skip full integration tests - service has complex transaction dependencies
-describe.skip('CompanyCustomerService', () => {
+describe('CompanyCustomerService', () => {
   let service: CompanyCustomerService;
   let mockDatabaseService: Partial<DatabaseService>;
   let mockChangeLogService: Partial<ChangeLogService>;
   let mockPrisma: {
-    customerProfile: {
-      findUnique: ReturnType<typeof vi.fn>;
-      findFirst: ReturnType<typeof vi.fn>;
-      create: ReturnType<typeof vi.fn>;
-      update: ReturnType<typeof vi.fn>;
-    };
-    customerStatus: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    businessSegment: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
     $queryRawUnsafe: ReturnType<typeof vi.fn>;
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
     $transaction: ReturnType<typeof vi.fn>;
   };
-
-  const mockTalent = {
-    id: 'talent-123',
-    profileStoreId: 'store-123',
-  };
-
-  const mockCompanyCustomer = {
-    id: 'company-123',
-    talentId: 'talent-123',
-    profileStoreId: 'store-123',
-    rmProfileId: 'rm-123',
-    profileType: 'company',
-    nickname: 'ACME Corp',
-    companyName: 'ACME Corporation',
-    companyRegistrationNumber: '12345678',
-    industry: 'Technology',
-    isActive: true,
-    version: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  let mockTx: {
+    $queryRawUnsafe: ReturnType<typeof vi.fn>;
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
   };
 
   const mockContext = {
     tenantId: 'tenant-123',
-    userId: 'user-123',
     tenantSchema: 'tenant_test',
+    userId: 'user-123',
+    userName: 'Test User',
+    requestId: 'req-123',
+    ipAddress: '127.0.0.1',
+    userAgent: 'vitest',
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    const mockTxPrisma = {
-      customerProfile: {
-        findUnique: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        findFirst: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        create: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        update: vi.fn().mockResolvedValue({ ...mockCompanyCustomer, version: 2 }),
-      },
-      customerStatus: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'status-123', code: 'ACTIVE' }),
-      },
-      businessSegment: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'segment-123', code: 'ENTERPRISE' }),
-      },
+    mockTx = {
+      $queryRawUnsafe: vi.fn(),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
     };
 
     mockPrisma = {
-      customerProfile: {
-        findUnique: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        findFirst: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        create: vi.fn().mockResolvedValue(mockCompanyCustomer),
-        update: vi.fn().mockResolvedValue({ ...mockCompanyCustomer, version: 2 }),
-      },
-      customerStatus: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'status-123', code: 'ACTIVE' }),
-      },
-      businessSegment: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'segment-123', code: 'ENTERPRISE' }),
-      },
-      $queryRawUnsafe: vi.fn().mockResolvedValue([mockTalent]),
-      $transaction: vi.fn().mockImplementation((cb) => cb(mockTxPrisma)),
+      $queryRawUnsafe: vi.fn(),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+      $transaction: vi.fn().mockImplementation(async (callback: (tx: typeof mockTx) => unknown) =>
+        callback(mockTx)),
     };
 
     mockDatabaseService = {
       getPrisma: vi.fn().mockReturnValue(mockPrisma),
-      buildPagination: vi.fn().mockReturnValue({ skip: 0, take: 20 }),
     };
 
     mockChangeLogService = {
@@ -110,68 +63,107 @@ describe.skip('CompanyCustomerService', () => {
     vi.restoreAllMocks();
   });
 
-  describe('create', () => {
-    it('should create company customer profile', async () => {
-      const dto = {
+  it('persists contact fields when creating a company customer', async () => {
+    const createdAt = new Date('2026-03-29T00:00:00.000Z');
+
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      { id: 'talent-123', profileStoreId: 'store-123' },
+    ]);
+    mockTx.$queryRawUnsafe.mockResolvedValueOnce([
+      { id: 'company-123', nickname: 'Acme', createdAt },
+    ]);
+
+    await service.create(
+      {
         talentId: 'talent-123',
-        nickname: 'ACME Corp',
-        companyLegalName: 'ACME Corporation',
-        registrationNumber: '12345678',
-        statusCode: 'ACTIVE',
-      };
+        nickname: 'Acme',
+        companyLegalName: 'Acme Corporation',
+        website: 'https://acme.example.com',
+        contactName: 'Alice',
+        contactPhone: '+1-555-0100',
+        contactEmail: 'alice@acme.example.com',
+        contactDepartment: 'Partnerships',
+      },
+      mockContext as never,
+    );
 
-      const result = await service.create(dto, mockContext);
+    const companyInsertCall = mockTx.$executeRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes('INSERT INTO "tenant_test".customer_company_info'),
+    );
 
-      expect(result.id).toBe('company-123');
-      expect(mockPrisma.customerProfile.create).toHaveBeenCalled();
+    expect(companyInsertCall).toBeDefined();
+    expect(String(companyInsertCall?.[0])).toContain('contact_name');
+    expect(companyInsertCall?.slice(1)).toEqual([
+      'company-123',
+      'Acme Corporation',
+      null,
+      null,
+      null,
+      null,
+      null,
+      'https://acme.example.com',
+      'Alice',
+      '+1-555-0100',
+      'alice@acme.example.com',
+      'Partnerships',
+    ]);
+  });
+
+  it('updates contact fields when editing a company customer', async () => {
+    const verifyAccessSpy = vi.spyOn(
+      service as unknown as {
+        verifyAccess: (...args: unknown[]) => Promise<unknown>;
+      },
+      'verifyAccess',
+    );
+    verifyAccessSpy.mockResolvedValue({
+      id: 'company-123',
+      profileStoreId: 'store-123',
+      nickname: 'Acme',
+      version: 1,
+      primaryLanguage: 'en',
+      statusId: null,
+      tags: [],
+      notes: null,
     });
 
-    it('should throw NotFoundException when talent not found', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        id: 'company-123',
+        nickname: 'Acme',
+        version: 2,
+        updatedAt: new Date('2026-03-29T00:05:00.000Z'),
+      },
+    ]);
+    mockPrisma.$executeRawUnsafe
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(undefined);
 
-      const dto = {
-        talentId: 'invalid-talent',
-        nickname: 'ACME Corp',
-        companyLegalName: 'ACME Corporation',
-      };
+    await service.update(
+      'company-123',
+      'talent-123',
+      {
+        version: 1,
+        contactName: 'Alice',
+        contactPhone: '+1-555-0100',
+        contactEmail: 'alice@acme.example.com',
+        contactDepartment: 'Partnerships',
+      },
+      mockContext as never,
+    );
 
-      await expect(service.create(dto, mockContext)).rejects.toThrow(NotFoundException);
-    });
+    const companyUpdateCall = mockPrisma.$executeRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes('UPDATE "tenant_test".customer_company_info'),
+    );
 
-    it('should throw BadRequestException when talent has no profile store', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([{ id: 'talent-123', profileStoreId: null }]);
-
-      const dto = {
-        talentId: 'talent-123',
-        nickname: 'ACME Corp',
-        companyLegalName: 'ACME Corporation',
-      };
-
-      await expect(service.create(dto, mockContext)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should resolve business segment by code', async () => {
-      const dto = {
-        talentId: 'talent-123',
-        nickname: 'ACME Corp',
-        companyLegalName: 'ACME Corporation',
-      };
-
-      await service.create(dto, mockContext);
-
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should log creation in change log', async () => {
-      const dto = {
-        talentId: 'talent-123',
-        nickname: 'ACME Corp',
-        companyLegalName: 'ACME Corporation',
-      };
-
-      await service.create(dto, mockContext);
-
-      expect(mockChangeLogService.create).toHaveBeenCalled();
-    });
+    expect(companyUpdateCall).toBeDefined();
+    expect(String(companyUpdateCall?.[0])).toContain('contact_name');
+    expect(companyUpdateCall?.slice(1)).toEqual([
+      'Alice',
+      '+1-555-0100',
+      'alice@acme.example.com',
+      'Partnerships',
+      'company-123',
+    ]);
   });
 });

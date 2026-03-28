@@ -67,14 +67,14 @@ export default function ImportCustomersPage() {
         setActiveJob({
           id: job.id,
           status: job.status,
-          fileName: job.file_name || job.fileName,
-          totalRows: job.total_rows || job.totalRows || 0,
-          processedRows: job.processed_rows || job.processedRows || 0,
-          successCount: job.success_count || job.successCount || 0,
-          errorCount: job.error_count || job.errorCount || 0,
-          createdAt: job.created_at || job.createdAt,
-          startedAt: job.started_at || job.startedAt,
-          completedAt: job.completed_at || job.completedAt,
+          fileName: job.fileName,
+          totalRows: job.progress.totalRows,
+          processedRows: job.progress.processedRows,
+          successCount: job.progress.successRows,
+          errorCount: job.progress.failedRows,
+          createdAt: job.createdAt,
+          startedAt: job.startedAt || undefined,
+          completedAt: job.completedAt || undefined,
         });
         
         // Check if job is complete
@@ -132,25 +132,26 @@ export default function ImportCustomersPage() {
         ? await customerImportApi.uploadIndividual(file, currentTalent.id)
         : await customerImportApi.uploadCompany(file, currentTalent.id);
 
-      if (response.id) {
+      if (response.success && response.data) {
+        const createdJob = response.data;
         setActiveJob({
-          id: response.id,
-          status: response.status || 'pending',
-          fileName: response.fileName || file.name,
-          totalRows: response.totalRows || 0,
+          id: createdJob.id,
+          status: createdJob.status,
+          fileName: createdJob.fileName || file.name,
+          totalRows: createdJob.totalRows,
           processedRows: 0,
           successCount: 0,
           errorCount: 0,
-          createdAt: response.createdAt || new Date().toISOString(),
+          createdAt: createdJob.createdAt,
         });
 
         // Start polling
         pollingRef.current = setInterval(() => {
-          pollJobStatus(response.id, selectedType);
+          pollJobStatus(createdJob.id, selectedType);
         }, 2000);
 
         // Initial poll
-        pollJobStatus(response.id, selectedType);
+        pollJobStatus(createdJob.id, selectedType);
       } else {
         throw new Error(response.error?.message || 'Failed to upload file');
       }

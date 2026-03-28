@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { apiClient } from '../core';
+import { apiClient, type ApiResponse } from '../core';
 
 export interface CustomerListParams {
   talentId: string;
@@ -40,10 +39,39 @@ export interface PiiAccessTokenData {
   expiresIn: number;
 }
 
+export interface CustomerIndividualCreateResponse {
+  id: string;
+  profileType: 'individual';
+  nickname: string;
+  individual: {
+    rmProfileId: string;
+    searchHintName: string | null;
+    searchHintPhoneLast4: string | null;
+  };
+  createdAt: string;
+}
+
+export interface CustomerProfileMutationResponse {
+  id: string;
+  nickname: string;
+  version: number;
+  updatedAt: string;
+}
+
+export interface CustomerActivationResponse {
+  id: string;
+  isActive: boolean;
+}
+
+export interface CustomerPiiUpdateResponse {
+  id: string;
+  searchHintName: string | null;
+  searchHintPhoneLast4: string | null;
+  message: string;
+}
+
 export interface CustomerCreateData {
   talentId: string;
-  profileStoreId: string;
-  profileType: 'individual' | 'company';
   nickname: string;
   primaryLanguage?: string;
   statusCode?: string;
@@ -315,10 +343,8 @@ export const customerApi = {
     ),
 
   create: (data: CustomerCreateData) =>
-    apiClient.post<any>('/api/v1/customers/individuals', {
+    apiClient.post<CustomerIndividualCreateResponse>('/api/v1/customers/individuals', {
       talentId: data.talentId,
-      profileStoreId: data.profileStoreId,
-      profileType: data.profileType,
       nickname: data.nickname,
       primaryLanguage: data.primaryLanguage,
       statusCode: data.statusCode,
@@ -329,7 +355,7 @@ export const customerApi = {
     }),
 
   update: (id: string, data: CustomerUpdateData, talentId: string) =>
-    apiClient.patch<any>(
+    apiClient.patch<CustomerProfileMutationResponse>(
       `/api/v1/customers/individuals/${id}`,
       {
         nickname: data.nickname,
@@ -341,17 +367,21 @@ export const customerApi = {
     ),
 
   deactivate: (id: string, reasonCode: string, version: number, talentId: string) =>
-    apiClient.post<any>(
+    apiClient.post<CustomerActivationResponse>(
       `/api/v1/customers/${id}/deactivate`,
       { reasonCode, version },
       { 'X-Talent-Id': talentId },
     ),
 
   reactivate: (id: string, talentId: string) =>
-    apiClient.post<any>(`/api/v1/customers/${id}/reactivate`, {}, { 'X-Talent-Id': talentId }),
+    apiClient.post<CustomerActivationResponse>(
+      `/api/v1/customers/${id}/reactivate`,
+      {},
+      { 'X-Talent-Id': talentId },
+    ),
 
   updatePii: (id: string, pii: PiiUpdateData, version: number, talentId: string) =>
-    apiClient.patch<any>(
+    apiClient.patch<CustomerPiiUpdateResponse>(
       `/api/v1/customers/individuals/${id}/pii`,
       { pii, version },
       { 'X-Talent-Id': talentId },
@@ -365,11 +395,6 @@ export const requestPiiAccessToken = async (
 ) => {
   return customerApi.requestPiiAccess(customerId, talentId, accessReason);
 };
-
-export const getPiiWithReason = async (customerId: string, reason: string) =>
-  apiClient.post<{ pii: any }>(`/api/v1/customers/individuals/${customerId}/retrieve-pii`, {
-    reason,
-  });
 
 export interface CompanyCreateData {
   talentId: string;
@@ -412,12 +437,26 @@ export interface CompanyUpdateData {
   version: number;
 }
 
+export interface CustomerCompanyCreateResponse {
+  id: string;
+  profileType: 'company';
+  nickname: string;
+  company: Pick<CustomerCompanyDetailData, 'companyLegalName' | 'companyShortName'>;
+  createdAt: string;
+}
+
 export const companyCustomerApi = {
   create: (data: CompanyCreateData, talentId: string) =>
-    apiClient.post<any>('/api/v1/customers/companies', data, { 'X-Talent-Id': talentId }),
+    apiClient.post<CustomerCompanyCreateResponse>('/api/v1/customers/companies', data, {
+      'X-Talent-Id': talentId,
+    }),
 
   update: (id: string, data: CompanyUpdateData, talentId: string) =>
-    apiClient.patch<any>(`/api/v1/customers/companies/${id}`, data, { 'X-Talent-Id': talentId }),
+    apiClient.patch<CustomerProfileMutationResponse>(
+      `/api/v1/customers/companies/${id}`,
+      data,
+      { 'X-Talent-Id': talentId },
+    ),
 };
 
 export interface CreatePlatformIdentityData {
@@ -436,6 +475,31 @@ export interface UpdatePlatformIdentityData {
   isCurrent?: boolean;
 }
 
+export interface CustomerPlatformIdentityCreateResponse {
+  id: string;
+  platform: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  platformUid: string;
+  platformNickname: string | null;
+  profileUrl: string | null;
+  isVerified: boolean;
+  isCurrent: boolean;
+  capturedAt: string;
+}
+
+export interface CustomerPlatformIdentityUpdateResponse {
+  id: string;
+  platformUid: string;
+  platformNickname: string | null;
+  profileUrl: string | null;
+  isVerified: boolean;
+  isCurrent: boolean;
+  updatedAt: string;
+}
+
 export const platformIdentityApi = {
   list: (customerId: string, talentId: string) =>
     apiClient.get<CustomerPlatformIdentity[]>(
@@ -445,9 +509,11 @@ export const platformIdentityApi = {
     ),
 
   create: (customerId: string, data: CreatePlatformIdentityData, talentId: string) =>
-    apiClient.post<any>(`/api/v1/customers/${customerId}/platform-identities`, data, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.post<CustomerPlatformIdentityCreateResponse>(
+      `/api/v1/customers/${customerId}/platform-identities`,
+      data,
+      { 'X-Talent-Id': talentId },
+    ),
 
   update: (
     customerId: string,
@@ -455,7 +521,7 @@ export const platformIdentityApi = {
     data: UpdatePlatformIdentityData,
     talentId: string,
   ) =>
-    apiClient.patch<any>(
+    apiClient.patch<CustomerPlatformIdentityUpdateResponse>(
       `/api/v1/customers/${customerId}/platform-identities/${identityId}`,
       data,
       { 'X-Talent-Id': talentId },
@@ -488,6 +554,30 @@ export interface UpdateMembershipData {
   note?: string;
 }
 
+export interface CustomerMembershipCreateResponse {
+  id: string;
+  platform: {
+    code: string;
+    name: string;
+  };
+  membershipLevel: {
+    code: string;
+    name: string;
+  };
+  validFrom: string;
+  validTo: string | null;
+  autoRenew: boolean;
+  createdAt: string;
+}
+
+export interface CustomerMembershipUpdateResponse {
+  id: string;
+  validTo: string | null;
+  autoRenew: boolean;
+  note: string | null;
+  updatedAt: string;
+}
+
 export const membershipApi = {
   list: (
     customerId: string,
@@ -507,14 +597,108 @@ export const membershipApi = {
     ),
 
   create: (customerId: string, data: CreateMembershipData, talentId: string) =>
-    apiClient.post<any>(`/api/v1/customers/${customerId}/memberships`, data, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.post<CustomerMembershipCreateResponse>(
+      `/api/v1/customers/${customerId}/memberships`,
+      data,
+      { 'X-Talent-Id': talentId },
+    ),
 
   update: (customerId: string, recordId: string, data: UpdateMembershipData, talentId: string) =>
-    apiClient.patch<any>(`/api/v1/customers/${customerId}/memberships/${recordId}`, data, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.patch<CustomerMembershipUpdateResponse>(
+      `/api/v1/customers/${customerId}/memberships/${recordId}`,
+      data,
+      { 'X-Talent-Id': talentId },
+    ),
+};
+
+type CustomerImportType = 'individuals' | 'companies';
+type CustomerImportJobType = 'individual_import' | 'company_import';
+type CustomerImportJobStatus =
+  | 'pending'
+  | 'running'
+  | 'success'
+  | 'partial'
+  | 'failed'
+  | 'cancelled';
+
+export interface CustomerImportProgress {
+  totalRows: number;
+  processedRows: number;
+  successRows: number;
+  failedRows: number;
+  warningRows: number;
+  percentage: number;
+}
+
+export interface CustomerImportJobResponse {
+  id: string;
+  jobType: CustomerImportJobType;
+  status: CustomerImportJobStatus;
+  fileName: string;
+  consumerCode: string | null;
+  progress: CustomerImportProgress;
+  startedAt: string | null;
+  completedAt: string | null;
+  estimatedRemainingSeconds: number | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    username: string;
+  };
+}
+
+export interface CustomerImportJobListResponse {
+  items: CustomerImportJobResponse[];
+  meta: {
+    total: number;
+  };
+}
+
+export interface CustomerImportJobCreateResponse {
+  id: string;
+  status: CustomerImportJobStatus;
+  fileName: string;
+  totalRows: number;
+  createdAt: string;
+}
+
+export interface CustomerImportCancelResponse {
+  message: string;
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const parseUploadResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  const payload = (await response.json()) as ApiResponse<T>;
+
+  if (!response.ok) {
+    throw {
+      code: payload.error?.code || 'UNKNOWN_ERROR',
+      message: payload.error?.message || payload.message || 'An error occurred',
+      statusCode: response.status,
+    };
+  }
+
+  return payload;
+};
+
+const uploadCustomerImportFile = async (
+  type: CustomerImportType,
+  file: File,
+  talentId: string,
+): Promise<ApiResponse<CustomerImportJobCreateResponse>> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('talentId', talentId);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/imports/customers/${type}`, {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Talent-Id': talentId },
+    credentials: 'include',
+  });
+
+  return parseUploadResponse<CustomerImportJobCreateResponse>(response);
 };
 
 export const customerImportApi = {
@@ -553,40 +737,20 @@ export const customerImportApi = {
   },
 
   uploadIndividual: async (file: File, talentId: string) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Talent-Id': talentId },
-        credentials: 'include',
-      },
-    );
-    return response.json();
+    return uploadCustomerImportFile('individuals', file, talentId);
   },
 
   uploadCompany: async (file: File, talentId: string) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Talent-Id': talentId },
-        credentials: 'include',
-      },
-    );
-    return response.json();
+    return uploadCustomerImportFile('companies', file, talentId);
   },
 
-  getJob: (type: 'individuals' | 'companies', jobId: string) =>
-    apiClient.get<any>(`/api/v1/imports/customers/${type}/${jobId}`),
+  getJob: (type: CustomerImportType, jobId: string) =>
+    apiClient.get<CustomerImportJobResponse>(`/api/v1/imports/customers/${type}/${jobId}`),
 
   listJobs: (talentId: string, query?: { status?: string; page?: number; pageSize?: number }) =>
-    apiClient.get<any[]>('/api/v1/imports/customers', query, { 'X-Talent-Id': talentId }),
+    apiClient.get<CustomerImportJobListResponse>('/api/v1/imports/customers', query, {
+      'X-Talent-Id': talentId,
+    }),
 
   downloadErrors: async (type: 'individuals' | 'companies', jobId: string) => {
     const response = await fetch(
@@ -605,8 +769,8 @@ export const customerImportApi = {
     window.URL.revokeObjectURL(url);
   },
 
-  cancel: (type: 'individuals' | 'companies', jobId: string) =>
-    apiClient.delete<any>(`/api/v1/imports/customers/${type}/${jobId}`),
+  cancel: (type: CustomerImportType, jobId: string) =>
+    apiClient.delete<CustomerImportCancelResponse>(`/api/v1/imports/customers/${type}/${jobId}`),
 };
 
 export interface CreateExternalIdData {

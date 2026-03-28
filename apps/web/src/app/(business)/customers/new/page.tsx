@@ -123,8 +123,6 @@ export default function NewCustomerPage() {
 
       const response = await customerApi.create({
         talentId: currentTalent.id,
-        profileStoreId: '', // Will be resolved by backend from talent
-        profileType: 'individual',
         nickname: individualForm.nickname.trim(),
         primaryLanguage: 'en',
         statusCode: individualForm.statusCode || undefined,
