@@ -22,11 +22,87 @@ env:
 
 jobs:
   # =============================================================================
+  # Change Classification
+  # =============================================================================
+  classify-changes:
+    name: Classify Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_cd: ${{ steps.classify.outputs.should_run_cd }}
+      skip_reason: ${{ steps.classify.outputs.skip_reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether this push needs runtime CD
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=manual_dispatch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=tag_release" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          before_sha="${{ github.event.before }}"
+          after_sha="${GITHUB_SHA}"
+
+          if [[ -z "$before_sha" || "$before_sha" == "0000000000000000000000000000000000000000" ]]; then
+            echo "Unable to determine a stable diff base, running full CD."
+            echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=unknown_diff_base" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "$before_sha" "$after_sha")
+
+          if [[ "${#changed_files[@]}" -eq 0 ]]; then
+            echo "No changed files detected, running full CD."
+            echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=no_changed_files" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          only_docs_like=true
+          for file in "${changed_files[@]}"; do
+            if [[ "$file" =~ ^README(\.zh-CN|\.ja)?\.md$ ]] || [[ "$file" =~ ^docs/ ]] || [[ "$file" =~ ^\.llm/ ]] || [[ "$file" =~ ^\.context/ ]]; then
+              continue
+            fi
+
+            only_docs_like=false
+            echo "Runtime-impacting file detected: $file"
+            break
+          done
+
+          if [[ "$only_docs_like" == true ]]; then
+            echo "Detected docs/local-rules only change set:"
+            printf ' - %s\n' "${changed_files[@]}"
+            echo "should_run_cd=false" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=docs_only" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
+          echo "skip_reason=runtime_change" >> "$GITHUB_OUTPUT"
+
+  # =============================================================================
   # Build and Test
   # =============================================================================
   build-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    needs: [classify-changes]
+    if: needs.classify-changes.outputs.should_run_cd == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,17 +127,30 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+  skip-docs-only:
+    name: Skip Docs-Only Push
+    runs-on: ubuntu-latest
+    needs: [classify-changes]
+    if: needs.classify-changes.outputs.should_run_cd != 'true'
+    steps:
+      - name: Report skip reason
+        run: |
+          echo "Skipping build/deploy because this push only touched docs or local rule layers."
+          echo "Reason: ${{ needs.classify-changes.outputs.skip_reason }}"
+
   # =============================================================================
   # Deploy to Production Server (Main Services)
   # =============================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build-test]
+    needs: [classify-changes, build-test]
     if: |
-      github.ref == 'refs/heads/main' || 
+      needs.classify-changes.outputs.should_run_cd == 'true' &&
+      (github.ref == 'refs/heads/main' || 
       startsWith(github.ref, 'refs/tags/v') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production')
+      )
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}
@@ -77,28 +166,28 @@ jobs:
           script: |
             set -e
             echo "🚀 Starting deployment..."
-            
+
             # Navigate to project directory
             cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
-            
+
             # Pull latest code
             echo "📥 Pulling latest code..."
             git fetch origin main
             git reset --hard origin/main
-            
+
             # Rebuild and restart services
             echo "🔨 Building and restarting services..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache web api worker
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate web api worker
-            
+
             # Run database migrations (if any)
             echo "📊 Running database migrations..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -c "cd /app/packages/database && npx prisma migrate deploy && npx tsx scripts/apply-migrations.ts"
-            
+
             # Clean up old images and build cache (run in background to avoid SSH timeout)
             echo "🧹 Cleaning up old images and cache (background)..."
             nohup sh -c 'docker image prune -a -f && docker builder prune -a -f' > /tmp/docker-cleanup.log 2>&1 &
-            
+
             echo "✅ Deployment completed successfully!"
 
       - name: Verify Deployment
@@ -113,13 +202,13 @@ jobs:
             set -e
             echo "🔍 Verifying deployment..."
             cd ${{ vars.PROD_PROJECT_PATH || '/root/tcrn-tms' }}
-            
+
             # Check container health
             docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
-            
+
             # Wait for services to be ready
             sleep 10
-            
+
             # Probe the API from inside its container because the production compose
             # topology only exposes port 4000 on the internal Docker network.
             for attempt in $(seq 1 12); do
@@ -136,7 +225,7 @@ jobs:
               echo "⏳ Waiting for API health... ($attempt/12)"
               sleep 5
             done
-            
+
             echo "✅ Deployment verification completed!"
 
   # =============================================================================
@@ -145,8 +234,11 @@ jobs:
   deploy-pii:
     name: Deploy PII Service
     runs-on: ubuntu-latest
-    needs: [build-test]
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'pii'
+    needs: [classify-changes, build-test]
+    if: |
+      needs.classify-changes.outputs.should_run_cd == 'true' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_target == 'pii'
     environment:
       name: pii-production
     steps:
@@ -160,17 +252,17 @@ jobs:
           script: |
             set -e
             echo "🔐 Starting PII service deployment..."
-            
+
             cd ${{ vars.PII_PROJECT_PATH || '/root/tcrn-tms-pii' }}
-            
+
             git fetch origin main
             git reset --hard origin/main
-            
+
             docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml build --no-cache pii-service
             docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml up -d --force-recreate pii-service pii-postgres
-            
+
             docker image prune -f
-            
+
             echo "✅ PII service deployment completed!"
 
   # =============================================================================
@@ -179,8 +271,10 @@ jobs:
   build-images:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [build-test]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [classify-changes, build-test]
+    if: |
+      needs.classify-changes.outputs.should_run_cd == 'true' &&
+      startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
       packages: write
