@@ -5,17 +5,16 @@
 // - requires explicit schema selection
 // - requires explicit legacy resource selection
 // - refuses when any target is unmapped, coverage-blocked, snapshot-blocked, or skipped
-
-import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  auditLegacyRbac,
-  formatCanonicalLabel,
   type LegacyRbacAuditSummary,
   type LegacyTargetAudit,
   type PruneReadiness,
+  auditLegacyRbac,
+  formatCanonicalLabel,
 } from './audit-legacy-rbac';
 import {
   assertHistoricalRoleExclusionsSafe,
@@ -209,6 +208,23 @@ function matchesSelectedResources(target: LegacyTargetAudit, legacyCodes: string
   return legacyCodes.includes(target.legacyCode);
 }
 
+export function selectRuntimeProofTargets(
+  auditSummary: LegacyRbacAuditSummary,
+  schemaName: string,
+  legacyCodes: string[]
+): string[] {
+  const schemaAudit = auditSummary.audited.find((candidate) => candidate.schemaName === schemaName);
+
+  if (!schemaAudit) {
+    return [];
+  }
+
+  return schemaAudit.targets
+    .filter((target) => matchesSelectedResources(target, legacyCodes))
+    .filter((target) => target.readiness !== 'absent')
+    .map((target) => target.legacyCode);
+}
+
 function toCandidate(target: LegacyTargetAudit): PlannedPruneTarget {
   return {
     legacyCode: target.legacyCode,
@@ -240,11 +256,11 @@ function toBlocked(target: LegacyTargetAudit): BlockedPruneTarget {
 
 export function buildPrunePlan(
   auditSummary: LegacyRbacAuditSummary,
-  options: CliOptions,
+  options: CliOptions
 ): PrunePlanSummary {
   const plans = auditSummary.audited.map((schemaAudit) => {
     const selectedTargets = schemaAudit.targets.filter((target) =>
-      matchesSelectedResources(target, options.legacyCodes),
+      matchesSelectedResources(target, options.legacyCodes)
     );
 
     const candidates: PlannedPruneTarget[] = [];
@@ -296,7 +312,7 @@ export function promoteRuntimeVerifiedTargetInAudit(
   auditSummary: LegacyRbacAuditSummary,
   schemaName: string,
   legacyCode: string,
-  proofUsers: string[],
+  proofUsers: string[]
 ): LegacyRbacAuditSummary {
   return {
     ...auditSummary,
@@ -318,8 +334,7 @@ export function promoteRuntimeVerifiedTargetInAudit(
           return {
             ...target,
             readiness: 'covered_assigned_verified',
-            reason:
-              `${target.reason} Runtime proof verified for affected users: ${proofUsers.join(', ')}.`,
+            reason: `${target.reason} Runtime proof verified for affected users: ${proofUsers.join(', ')}.`,
           };
         }),
       };
@@ -338,17 +353,17 @@ function assertApplyAllowed(summary: PrunePlanSummary): void {
 
   if (summary.skipped.length > 0) {
     throw new Error(
-      `Apply mode refused because some schemas were skipped: ${summary.skipped.map((item) => `${item.schemaName} (${item.reason})`).join(', ')}`,
+      `Apply mode refused because some schemas were skipped: ${summary.skipped.map((item) => `${item.schemaName} (${item.reason})`).join(', ')}`
     );
   }
 
   const blockedEntries = summary.plans.flatMap((plan) =>
-    plan.blocked.map((target) => `${plan.schemaName}:${target.legacyCode}[${target.readiness}]`),
+    plan.blocked.map((target) => `${plan.schemaName}:${target.legacyCode}[${target.readiness}]`)
   );
 
   if (blockedEntries.length > 0) {
     throw new Error(
-      `Apply mode refused because blocked targets remain: ${blockedEntries.join(', ')}`,
+      `Apply mode refused because blocked targets remain: ${blockedEntries.join(', ')}`
     );
   }
 }
@@ -356,7 +371,7 @@ function assertApplyAllowed(summary: PrunePlanSummary): void {
 async function applyPruneTarget(
   prisma: PrismaClient,
   schemaName: string,
-  legacyCode: string,
+  legacyCode: string
 ): Promise<ApplyDeleteCounts> {
   const rows = await prisma.$queryRawUnsafe<DeleteCountRow[]>(
     `
@@ -388,7 +403,7 @@ async function applyPruneTarget(
         (SELECT COUNT(*)::bigint FROM deleted_policies) AS "policies",
         (SELECT COUNT(*)::bigint FROM deleted_resources) AS "resources"
     `,
-    legacyCode,
+    legacyCode
   );
 
   return {
@@ -400,7 +415,7 @@ async function applyPruneTarget(
 
 export async function executePrunePlan(
   prisma: PrismaClient,
-  summary: PrunePlanSummary,
+  summary: PrunePlanSummary
 ): Promise<PrunePlanSummary> {
   assertApplyAllowed(summary);
 
@@ -456,7 +471,9 @@ function printSummary(summary: PrunePlanSummary): void {
   }
 
   if (summary.filters.runtimeProof) {
-    console.log(`Runtime proof: enabled (${summary.filters.allowUsers.join(', ') || 'no allowlist'})`);
+    console.log(
+      `Runtime proof: enabled (${summary.filters.allowUsers.join(', ') || 'no allowlist'})`
+    );
   }
 
   for (const plan of summary.plans) {
@@ -469,20 +486,20 @@ function printSummary(summary: PrunePlanSummary): void {
 
     for (const candidate of plan.candidates) {
       console.log(
-        `- candidate ${candidate.legacyCode} -> ${formatCanonicalLabel(candidate)} [${candidate.readiness}]`,
+        `- candidate ${candidate.legacyCode} -> ${formatCanonicalLabel(candidate)} [${candidate.readiness}]`
       );
       console.log(
-        `  would delete resource=${candidate.plannedDeletes.resources} policies=${candidate.plannedDeletes.policies} rolePolicies=${candidate.plannedDeletes.rolePolicies}`,
+        `  would delete resource=${candidate.plannedDeletes.resources} policies=${candidate.plannedDeletes.policies} rolePolicies=${candidate.plannedDeletes.rolePolicies}`
       );
       console.log(`  note: ${candidate.reason}`);
     }
 
     for (const blocked of plan.blocked) {
       console.log(
-        `- blocked ${blocked.legacyCode} -> ${formatCanonicalLabel(blocked)} [${blocked.readiness}]`,
+        `- blocked ${blocked.legacyCode} -> ${formatCanonicalLabel(blocked)} [${blocked.readiness}]`
       );
       console.log(
-        `  assignedRoles=${blocked.assignedRoleCount} affectedUsers=${blocked.affectedUserCount}`,
+        `  assignedRoles=${blocked.assignedRoleCount} affectedUsers=${blocked.affectedUserCount}`
       );
       console.log(`  note: ${blocked.reason}`);
     }
@@ -508,19 +525,19 @@ function printSummary(summary: PrunePlanSummary): void {
 
       for (const target of appliedSchema.targets) {
         console.log(
-          `  ${target.legacyCode}: resource=${target.deleted.resources} policies=${target.deleted.policies} rolePolicies=${target.deleted.rolePolicies}`,
+          `  ${target.legacyCode}: resource=${target.deleted.resources} policies=${target.deleted.policies} rolePolicies=${target.deleted.rolePolicies}`
         );
       }
     }
 
     console.log(
-      '\nNext step: run pnpm --filter @tcrn/database db:refresh-snapshots and targeted RBAC integration proof.',
+      '\nNext step: run pnpm --filter @tcrn/database db:refresh-snapshots and targeted RBAC integration proof.'
     );
     return;
   }
 
   console.log(
-    '\nDry-run only. Apply mode requires explicit --schema and --resource, and refuses blocked targets.',
+    '\nDry-run only. Apply mode requires explicit --schema and --resource, and refuses blocked targets.'
   );
 }
 
@@ -550,10 +567,18 @@ async function main(): Promise<void> {
 
     if (options.runtimeProof) {
       if (options.schemas.length !== 1) {
-        throw new Error('Prune planning with --runtime-proof currently requires exactly one --schema.');
+        throw new Error(
+          'Prune planning with --runtime-proof currently requires exactly one --schema.'
+        );
       }
 
-      for (const legacyCode of options.legacyCodes) {
+      const runtimeProofTargets = selectRuntimeProofTargets(
+        auditSummary,
+        options.schemas[0]!,
+        options.legacyCodes
+      );
+
+      for (const legacyCode of runtimeProofTargets) {
         const runtimeProof = await verifyLegacyPruneRuntime(prisma, {
           schemas: options.schemas,
           legacyCodes: [legacyCode],
@@ -570,7 +595,7 @@ async function main(): Promise<void> {
           auditSummary,
           options.schemas[0],
           legacyCode,
-          runtimeProof.target.affectedUsers.map((user) => user.username),
+          runtimeProof.target.affectedUsers.map((user) => user.username)
         );
       }
     }
