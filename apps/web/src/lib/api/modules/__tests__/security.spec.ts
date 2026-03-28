@@ -1,19 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logApi } from '@/lib/api/modules/security';
+
 const mockGet = vi.fn();
+const mockPost = vi.fn();
 
 vi.mock('@/lib/api/core', () => ({
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
-    post: vi.fn(),
+    post: (...args: unknown[]) => mockPost(...args),
     patch: vi.fn(),
     delete: vi.fn(),
   },
 }));
-
-import { logApi } from '@/lib/api/modules/security';
 
 describe('logApi', () => {
   beforeEach(() => {
@@ -54,5 +54,24 @@ describe('logApi', () => {
       page: 1,
       pageSize: 50,
     });
+  });
+
+  it('uses GET query params for Loki search requests', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { entries: [] } });
+
+    await logApi.searchLoki({
+      query: 'timeout',
+      timeRange: '1h',
+      limit: 100,
+      stream: 'technical_event_log',
+    });
+
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/logs/search', {
+      query: 'timeout',
+      timeRange: '1h',
+      limit: 100,
+      stream: 'technical_event_log',
+    });
+    expect(mockPost).not.toHaveBeenCalled();
   });
 });

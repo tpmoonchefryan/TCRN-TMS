@@ -4,7 +4,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { RequirePermissions } from '../../../common/decorators';
-import { LokiQueryService } from '../services';
+import { buildCompatibleLogSearchQuery, LokiQueryService } from '../services';
 
 @ApiTags('System - Logs')
 @Controller('logs/search')
@@ -20,6 +20,21 @@ export class LogSearchController {
   @ApiQuery({ name: 'start', required: false, description: 'Start time (ISO string)' })
   @ApiQuery({ name: 'end', required: false, description: 'End time (ISO string)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Max results' })
+  @ApiQuery({
+    name: 'query',
+    required: false,
+    description: 'Raw LogQL query or plain-text keyword fallback',
+  })
+  @ApiQuery({
+    name: 'timeRange',
+    required: false,
+    description: 'Relative time range (15m, 1h, 6h, 24h, 7d)',
+  })
+  @ApiQuery({
+    name: 'app',
+    required: false,
+    description: 'Legacy application filter (kept for compatibility only)',
+  })
   @ApiResponse({ status: 200, description: 'Returns matching log entries' })
   async search(
     @Query('keyword') keyword?: string,
@@ -28,15 +43,23 @@ export class LogSearchController {
     @Query('start') start?: string,
     @Query('end') end?: string,
     @Query('limit') limit?: string,
+    @Query('query') query?: string,
+    @Query('timeRange') timeRange?: string,
+    @Query('app') app?: string,
   ) {
-    return this.lokiQueryService.query({
-      keyword,
-      stream,
-      severity,
-      start,
-      end,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    });
+    return this.lokiQueryService.query(
+      buildCompatibleLogSearchQuery({
+        keyword,
+        stream,
+        severity,
+        start,
+        end,
+        limit,
+        query,
+        timeRange,
+        app,
+      }),
+    );
   }
 
   @Get('change-logs')

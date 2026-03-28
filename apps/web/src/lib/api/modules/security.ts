@@ -1,7 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { apiClient } from '../core';
+
+export type LogSearchStream = 'change_log' | 'technical_event_log' | 'integration_log';
+
+export type LogSearchTimeRange = '15m' | '1h' | '6h' | '24h' | '7d';
+
+export interface LokiSearchEntry {
+  timestamp: string;
+  labels: Record<string, string>;
+  data: unknown;
+}
+
+export interface LokiSearchResponse {
+  entries: LokiSearchEntry[];
+  stats?: Record<string, unknown>;
+}
 
 export const securityApi = {
   generateFingerprint: () => apiClient.post<any>('/api/v1/security/fingerprint', {}),
@@ -87,7 +101,7 @@ export const securityApi = {
   checkIpAccess: (ip: string, scope: 'global' | 'admin' | 'public' | 'api' = 'global') =>
     apiClient.post<{ allowed: boolean; reason?: string; matched_rule?: any; matchedRule?: any }>(
       '/api/v1/ip-access-rules/check',
-      { ip, scope },
+      { ip, scope }
     ),
 
   getRateLimitStats: () =>
@@ -147,8 +161,12 @@ export const logApi = {
   getFailedIntegrations: (params?: { page?: number; pageSize?: number }) =>
     apiClient.get<any>('/api/v1/logs/integrations/failed', params),
 
-  searchLoki: (params: { query: string; timeRange: string; limit?: number; app?: string }) =>
-    apiClient.post<any>('/api/v1/logs/search', params),
+  searchLoki: (params: {
+    query: string;
+    timeRange: LogSearchTimeRange;
+    limit?: number;
+    stream?: LogSearchStream;
+  }) => apiClient.get<LokiSearchResponse>('/api/v1/logs/search', params),
 
   searchUnified: (params?: {
     keyword?: string;

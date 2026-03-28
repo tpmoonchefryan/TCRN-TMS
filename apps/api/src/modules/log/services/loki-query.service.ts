@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 /**
  * Loki query parameters
  */
-interface LokiQueryParams {
+export interface LokiQueryParams {
   stream?: string;
   severity?: string;
   eventType?: string;
@@ -18,6 +18,161 @@ interface LokiQueryParams {
   limit?: number;
   direction?: 'forward' | 'backward';
   rawQuery?: string;
+}
+
+export const LOKI_LOG_STREAMS = [
+  'change_log',
+  'technical_event_log',
+  'integration_log',
+] as const;
+
+export type LokiLogStream = (typeof LOKI_LOG_STREAMS)[number];
+
+export interface CompatibleLogSearchParams {
+  keyword?: string;
+  stream?: string;
+  severity?: string;
+  start?: string;
+  end?: string;
+  limit?: number | string;
+  query?: string;
+  timeRange?: string;
+  app?: string;
+}
+
+const RELATIVE_TIME_RANGE_MS = {
+  '15m': 15 * 60 * 1000,
+  '1h': 60 * 60 * 1000,
+  '6h': 6 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+} as const;
+
+const LEGACY_APPLICATION_FILTERS = new Set(['api', 'web', 'worker']);
+
+export function normalizeLogSearchStream(value?: string): LokiLogStream | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (LEGACY_APPLICATION_FILTERS.has(value)) {
+    return undefined;
+  }
+
+  return (LOKI_LOG_STREAMS as readonly string[]).includes(value)
+    ? (value as LokiLogStream)
+    : undefined;
+}
+
+export function resolveRelativeTimeRange(
+  timeRange?: string,
+  now = new Date(),
+): { start: string; end: string } | undefined {
+  if (!timeRange) {
+    return undefined;
+  }
+
+  const durationMs =
+    RELATIVE_TIME_RANGE_MS[timeRange as keyof typeof RELATIVE_TIME_RANGE_MS];
+
+  if (!durationMs) {
+    return undefined;
+  }
+
+  const end = new Date(now);
+  const start = new Date(end.getTime() - durationMs);
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+}
+
+export function buildCompatibleRawLogSearchQuery(
+  query: string,
+  stream?: LokiLogStream,
+): string {
+  const trimmedQuery = query.trim();
+
+  if (hasLogSelector(trimmedQuery)) {
+    return injectStreamIntoFirstSelector(trimmedQuery, stream);
+  }
+
+  const selector = stream
+    ? `{app="tcrn-tms", stream="${stream}"}`
+    : '{app="tcrn-tms"}';
+
+  return `${selector} |= ${JSON.stringify(trimmedQuery)}`;
+}
+
+export function buildCompatibleLogSearchQuery(
+  params: CompatibleLogSearchParams,
+  now = new Date(),
+): LokiQueryParams {
+  const query = params.query?.trim();
+  const keyword = params.keyword?.trim() || undefined;
+  const limit = parsePositiveInteger(params.limit);
+  const stream = normalizeLogSearchStream(params.stream ?? params.app);
+  const relativeRange = resolveRelativeTimeRange(params.timeRange, now);
+  const start = params.start || relativeRange?.start;
+  const end = params.end || relativeRange?.end;
+
+  if (query) {
+    return {
+      rawQuery: buildCompatibleRawLogSearchQuery(query, stream),
+      start,
+      end,
+      limit,
+    };
+  }
+
+  return {
+    keyword,
+    stream,
+    severity: params.severity?.trim() || undefined,
+    start,
+    end,
+    limit,
+  };
+}
+
+function hasLogSelector(query: string): boolean {
+  return /\{[^}]*\}/.test(query);
+}
+
+function injectStreamIntoFirstSelector(
+  query: string,
+  stream?: LokiLogStream,
+): string {
+  if (!stream) {
+    return query;
+  }
+
+  return query.replace(/\{([^}]*)\}/, (_selector, labels: string) => {
+    if (/\bstream\s*=/.test(labels)) {
+      return `{${labels}}`;
+    }
+
+    const normalizedLabels = labels.trim();
+    const nextLabels = normalizedLabels
+      ? `${normalizedLabels}, stream="${stream}"`
+      : `stream="${stream}"`;
+
+    return `{${nextLabels}}`;
+  });
+}
+
+function parsePositiveInteger(value?: number | string): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
+  }
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 /**

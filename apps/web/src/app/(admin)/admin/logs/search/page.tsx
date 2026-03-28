@@ -24,28 +24,29 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { logApi } from '@/lib/api/modules/security';
-
-interface LogResult {
-  timestamp: string;
-  level: string;
-  message: string;
-  labels: Record<string, string>;
-}
+import {
+  logApi,
+  type LogSearchStream,
+  type LogSearchTimeRange,
+} from '@/lib/api/modules/security';
+import {
+  type LogSearchResult,
+  mapLokiSearchEntry,
+} from '@/lib/log-search-results';
 
 export default function LogSearchPage() {
   const t = useTranslations('logsPage');
   const tCommon = useTranslations('common');
 
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState<LogResult[]>([]);
+  const [results, setResults] = useState<LogSearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Search params
   const [query, setQuery] = useState('');
-  const [timeRange, setTimeRange] = useState('1h');
+  const [timeRange, setTimeRange] = useState<LogSearchTimeRange>('1h');
   const [limit, setLimit] = useState('100');
-  const [app, setApp] = useState('all');
+  const [stream, setStream] = useState<'all' | LogSearchStream>('all');
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) {
@@ -59,12 +60,13 @@ export default function LogSearchPage() {
       const response = await logApi.searchLoki?.({
         query,
         timeRange,
-        limit: parseInt(limit),
-        app: app !== 'all' ? app : undefined,
+        limit: Number.parseInt(limit, 10),
+        stream: stream !== 'all' ? stream : undefined,
       });
       if (response?.success && response.data) {
-        setResults(response.data.results || []);
-        if (response.data.results?.length === 0) {
+        const entries = response.data.entries ?? [];
+        setResults(entries.map(mapLokiSearchEntry));
+        if (entries.length === 0) {
           toast.info(t('noResults'));
         }
       }
@@ -74,14 +76,16 @@ export default function LogSearchPage() {
     } finally {
       setIsSearching(false);
     }
-  }, [query, timeRange, limit, app, t, tCommon]);
+  }, [query, timeRange, limit, stream, t, tCommon]);
 
   const getLevelBadge = (level: string) => {
     const levelColors: Record<string, string> = {
       debug: 'bg-gray-100 text-gray-700',
       info: 'bg-blue-100 text-blue-700',
       warn: 'bg-yellow-100 text-yellow-700',
+      warning: 'bg-yellow-100 text-yellow-700',
       error: 'bg-red-100 text-red-700',
+      critical: 'bg-red-200 text-red-900',
     };
     return (
       <Badge className={levelColors[level.toLowerCase()] || 'bg-gray-100'}>
@@ -115,7 +119,7 @@ export default function LogSearchPage() {
           <div className="space-y-2">
             <Label>{t('lokiQuery')}</Label>
             <Textarea
-              placeholder='{app="api"} |= "error"'
+              placeholder='{app="tcrn-tms", stream="technical_event_log"} |= "error"'
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="font-mono text-sm"
@@ -130,7 +134,10 @@ export default function LogSearchPage() {
                 <Calendar size={14} />
                 {t('timeRange')}
               </Label>
-              <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select
+                value={timeRange}
+                onValueChange={(value) => setTimeRange(value as LogSearchTimeRange)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -145,16 +152,19 @@ export default function LogSearchPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('application')}</Label>
-              <Select value={app} onValueChange={setApp}>
+              <Label>{t('stream')}</Label>
+              <Select
+                value={stream}
+                onValueChange={(value) => setStream(value as 'all' | LogSearchStream)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('allApps')}</SelectItem>
-                  <SelectItem value="api">API</SelectItem>
-                  <SelectItem value="web">Web</SelectItem>
-                  <SelectItem value="worker">Worker</SelectItem>
+                  <SelectItem value="all">{t('allStreams')}</SelectItem>
+                  <SelectItem value="change_log">{t('changeLogStream')}</SelectItem>
+                  <SelectItem value="technical_event_log">{t('techEventStream')}</SelectItem>
+                  <SelectItem value="integration_log">{t('integrationLogStream')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
