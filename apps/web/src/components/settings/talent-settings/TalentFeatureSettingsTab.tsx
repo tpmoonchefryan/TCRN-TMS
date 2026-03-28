@@ -83,7 +83,7 @@ export function TalentFeatureSettingsTab({
 
         <div className="pt-4 border-t">
           <h4 className="font-medium mb-3">{tTalent('statistics')}</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="text-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
               <p className="text-2xl font-bold">{talent.customerCount.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">{tTalent('customers')}</p>
@@ -95,10 +95,6 @@ export function TalentFeatureSettingsTab({
             <div className="text-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
               <p className="text-2xl font-bold">{inheritedConfigCount}</p>
               <p className="text-xs text-muted-foreground">{tTalent('inheritedConfigs')}</p>
-            </div>
-            <div className="text-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <p className="text-2xl font-bold">{talent.socialLinks.length}</p>
-              <p className="text-xs text-muted-foreground">{tTalent('socialLinks')}</p>
             </div>
           </div>
         </div>

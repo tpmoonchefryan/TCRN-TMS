@@ -34,7 +34,6 @@ export const talentApi = {
       avatarUrl?: string;
       homepagePath?: string;
       timezone?: string;
-      socialLinks?: Array<{ platform: string; url: string }>;
       version: number;
     },
   ) => apiClient.patch<any>(`/api/v1/talents/${id}`, data),

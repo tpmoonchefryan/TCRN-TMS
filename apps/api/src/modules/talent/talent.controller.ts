@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
@@ -122,10 +122,6 @@ class UpdateTalentDto {
   @IsOptional()
   @IsObject()
   settings?: Record<string, unknown>;
-
-  @IsOptional()
-  @IsArray()
-  socialLinks?: Array<{ platform: string; url: string; label?: string }>;
 
   @IsInt()
   @Min(1)

@@ -2,7 +2,7 @@
 
 import type { ConfigEntity, DictionaryRecord } from '@/components/shared/constants';
 
-import type { SocialLink, TalentData } from './types';
+import type { TalentData } from './types';
 
 interface TalentApiResponseData {
   id: string;
@@ -25,7 +25,6 @@ interface TalentApiResponseData {
   inheritTimezone?: boolean | null;
   homepageEnabled?: boolean | null;
   marshmallowEnabled?: boolean | null;
-  socialLinks?: SocialLink[] | null;
   externalPagesDomain?: TalentData['externalPagesDomain'] | null;
   _count?: {
     customers?: number | null;
@@ -60,7 +59,6 @@ export function mapTalentApiResponseToTalentData(
       homepageEnabled: data.homepageEnabled ?? true,
       marshmallowEnabled: data.marshmallowEnabled ?? true,
     },
-    socialLinks: data.socialLinks || [],
     externalPagesDomain: {
       homepage: data.externalPagesDomain?.homepage || null,
       marshmallow: data.externalPagesDomain?.marshmallow || null,

@@ -17,7 +17,6 @@ describe('talent settings mappers', () => {
           nameEn: 'Aqua',
           subsidiary: { displayName: 'HQ' },
           createdAt: '2026-03-29T00:00:00.000Z',
-          socialLinks: [{ platform: 'X', url: 'https://x.example' }],
           externalPagesDomain: {
             homepage: {
               customDomain: 'aqua.example.com',
@@ -40,7 +39,6 @@ describe('talent settings mappers', () => {
       homepagePath: 'ac',
       timezone: 'UTC',
       customerCount: 42,
-      socialLinks: [{ platform: 'X', url: 'https://x.example' }],
       externalPagesDomain: {
         homepage: {
           customDomain: 'aqua.example.com',

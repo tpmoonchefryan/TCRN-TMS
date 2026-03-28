@@ -1,10 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-export interface SocialLink {
-  platform: string;
-  url: string;
-}
-
 export type TalentSettingsTab =
   | 'details'
   | 'config'
@@ -53,7 +48,6 @@ export interface TalentData {
     homepageEnabled: boolean;
     marshmallowEnabled: boolean;
   };
-  socialLinks: SocialLink[];
   externalPagesDomain: {
     homepage: ExternalPageDomainConfig | null;
     marshmallow: ExternalPageDomainConfig | null;

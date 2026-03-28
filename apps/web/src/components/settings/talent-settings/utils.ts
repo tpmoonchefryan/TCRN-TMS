@@ -2,8 +2,6 @@
 
 import type { ConfigEntity, DictionaryRecord } from '@/components/shared/constants';
 
-import type { SocialLink } from './types';
-
 export function filterConfigEntities(
   configEntities: Record<string, ConfigEntity[]>,
   selectedEntityType: string,
@@ -56,27 +54,4 @@ export function countInheritedConfigEntities(
   return Object.values(configEntities)
     .flat()
     .filter((entity) => Boolean(entity.inheritedFrom)).length;
-}
-
-export function addSocialLink(links: SocialLink[]): SocialLink[] {
-  return [...links, { platform: '', url: '' }];
-}
-
-export function updateSocialLink(
-  links: SocialLink[],
-  index: number,
-  field: keyof SocialLink,
-  value: string
-): SocialLink[] {
-  return links.map((link, linkIndex) =>
-    linkIndex === index ? { ...link, [field]: value } : link
-  );
-}
-
-export function removeSocialLink(links: SocialLink[], index: number): SocialLink[] {
-  return links.filter((_, linkIndex) => linkIndex !== index);
-}
-
-export function normalizeSocialLinksForSave(links: SocialLink[]): SocialLink[] {
-  return links.filter((link) => link.platform && link.url);
 }

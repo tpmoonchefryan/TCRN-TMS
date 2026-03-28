@@ -49,13 +49,8 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
     dictCounts,
     dictSearch,
     dictionaryRecords,
-    editedSocialLinks,
     entitySearch,
     fetchTalent,
-    handleAddSocialLink,
-    handleOpenSocialLink,
-    handleRemoveSocialLink,
-    handleUpdateSocialLink,
     isLoading,
     isLoadingConfig,
     isLoadingDict,
@@ -69,7 +64,6 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
     setSelectedEntityType,
     setTalent,
     setEntitySearch,
-    socialLinksChanged,
     talent,
   } = useTalentSettingsData({
     talentId,
@@ -128,14 +122,8 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
           <TalentDetailsTab
             talentId={talentId}
             talent={talent}
-            editedSocialLinks={editedSocialLinks}
-            socialLinksChanged={socialLinksChanged}
             isSaving={isSaving}
             onTalentChange={setTalent}
-            onAddSocialLink={handleAddSocialLink}
-            onUpdateSocialLink={handleUpdateSocialLink}
-            onRemoveSocialLink={handleRemoveSocialLink}
-            onOpenSocialLink={handleOpenSocialLink}
             onSave={saveTalent}
             onDomainChange={fetchTalent}
             t={t}

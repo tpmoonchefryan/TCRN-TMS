@@ -2,7 +2,7 @@
 
 'use client';
 
-import { AlertCircle, Database, ExternalLink, Image, Plus, Save, Shield, Trash2 } from 'lucide-react';
+import { AlertCircle, Database, Image, Save, Shield } from 'lucide-react';
 
 import { UnifiedCustomDomainCard } from '@/components/settings/UnifiedCustomDomainCard';
 import { Badge } from '@/components/ui/badge';
@@ -11,19 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import type { SocialLink, TalentData } from './types';
+import type { TalentData } from './types';
 
 interface TalentDetailsTabProps {
   talentId: string;
   talent: TalentData;
-  editedSocialLinks: SocialLink[];
-  socialLinksChanged: boolean;
   isSaving: boolean;
   onTalentChange: (talent: TalentData) => void;
-  onAddSocialLink: () => void;
-  onUpdateSocialLink: (index: number, field: keyof SocialLink, value: string) => void;
-  onRemoveSocialLink: (index: number) => void;
-  onOpenSocialLink: (url: string) => void;
   onSave: () => void;
   onDomainChange: () => Promise<void>;
   t: (key: string) => string;
@@ -35,14 +29,8 @@ interface TalentDetailsTabProps {
 export function TalentDetailsTab({
   talentId,
   talent,
-  editedSocialLinks,
-  socialLinksChanged,
   isSaving,
   onTalentChange,
-  onAddSocialLink,
-  onUpdateSocialLink,
-  onRemoveSocialLink,
-  onOpenSocialLink,
   onSave,
   onDomainChange,
   t,
@@ -135,61 +123,6 @@ export function TalentDetailsTab({
           talentCode={talent.code}
           onDomainChange={onDomainChange}
         />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{tTalent('socialLinks')}</span>
-              {socialLinksChanged && (
-                <Badge variant="outline" className="text-xs">
-                  {tc('unsaved')}
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {editedSocialLinks.map((link, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={link.platform}
-                    onChange={(event) =>
-                      onUpdateSocialLink(index, 'platform', event.target.value)
-                    }
-                    placeholder={tTalent('platformPlaceholder')}
-                    className="w-32"
-                  />
-                  <Input
-                    value={link.url}
-                    onChange={(event) => onUpdateSocialLink(index, 'url', event.target.value)}
-                    placeholder="https://..."
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onOpenSocialLink(link.url)}
-                    disabled={!link.url}
-                  >
-                    <ExternalLink size={14} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveSocialLink(index)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={onAddSocialLink}>
-                <Plus size={14} className="mr-2" />
-                {tTalent('addLink')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="flex justify-end mt-6">

@@ -4,14 +4,10 @@ import { describe, expect, it } from 'vitest';
 import type { ConfigEntity, DictionaryRecord } from '@/components/shared/constants';
 
 import {
-  addSocialLink,
   countInheritedConfigEntities,
   countLocalConfigEntities,
   filterConfigEntities,
   filterDictionaryRecords,
-  normalizeSocialLinksForSave,
-  removeSocialLink,
-  updateSocialLink,
 } from './utils';
 
 describe('talent settings utils', () => {
@@ -128,30 +124,5 @@ describe('talent settings utils', () => {
 
     expect(countLocalConfigEntities(configEntities)).toBe(1);
     expect(countInheritedConfigEntities(configEntities)).toBe(2);
-  });
-
-  it('adds, updates, removes, and normalizes social links for save', () => {
-    const addedLinks = addSocialLink([{ platform: 'X', url: 'https://x.example' }]);
-    expect(addedLinks).toEqual([
-      { platform: 'X', url: 'https://x.example' },
-      { platform: '', url: '' },
-    ]);
-
-    const updatedLinks = updateSocialLink(addedLinks, 1, 'platform', 'YouTube');
-    expect(updatedLinks[1]).toEqual({ platform: 'YouTube', url: '' });
-
-    const normalizedLinks = normalizeSocialLinksForSave([
-      ...updatedLinks,
-      { platform: '', url: 'https://ignored.example' },
-      { platform: 'Bilibili', url: 'https://bili.example' },
-    ]);
-    expect(normalizedLinks).toEqual([
-      { platform: 'X', url: 'https://x.example' },
-      { platform: 'Bilibili', url: 'https://bili.example' },
-    ]);
-
-    expect(removeSocialLink(normalizedLinks, 0)).toEqual([
-      { platform: 'Bilibili', url: 'https://bili.example' },
-    ]);
   });
 });

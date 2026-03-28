@@ -19,13 +19,7 @@ import {
   mapDictionaryRecords,
   mapTalentApiResponseToTalentData,
 } from './mappers';
-import type { SocialLink, TalentData, TalentSettingsTab } from './types';
-import {
-  addSocialLink,
-  normalizeSocialLinksForSave,
-  removeSocialLink,
-  updateSocialLink,
-} from './utils';
+import type { TalentData, TalentSettingsTab } from './types';
 
 interface UseTalentSettingsDataOptions {
   talentId: string;
@@ -58,9 +52,6 @@ export function useTalentSettingsData({
   const [isLoadingDict, setIsLoadingDict] = useState(false);
   const [dictCounts, setDictCounts] = useState<Record<string, number>>({});
 
-  const [editedSocialLinks, setEditedSocialLinks] = useState<SocialLink[]>([]);
-  const [socialLinksChanged, setSocialLinksChanged] = useState(false);
-
   const fetchTalent = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -68,8 +59,6 @@ export function useTalentSettingsData({
       if (response.success && response.data) {
         const mappedTalent = mapTalentApiResponseToTalentData(response.data, subsidiaryId);
         setTalent(mappedTalent);
-        setEditedSocialLinks(mappedTalent.socialLinks);
-        setSocialLinksChanged(false);
       }
     } catch {
       toast.error(tc('error'));
@@ -152,9 +141,7 @@ export function useTalentSettingsData({
         homepagePath: talent.homepagePath,
         timezone: talent.timezone,
         version: talent.version,
-        socialLinks: normalizeSocialLinksForSave(editedSocialLinks),
       });
-      setSocialLinksChanged(false);
       toast.success(tc('success'));
       await fetchTalent();
     } catch {
@@ -162,33 +149,7 @@ export function useTalentSettingsData({
     } finally {
       setIsSaving(false);
     }
-  }, [editedSocialLinks, fetchTalent, talent, talentId, tc]);
-
-  const handleAddSocialLink = useCallback(() => {
-    setEditedSocialLinks((previous) => addSocialLink(previous));
-    setSocialLinksChanged(true);
-  }, []);
-
-  const handleUpdateSocialLink = useCallback(
-    (index: number, field: keyof SocialLink, value: string) => {
-      setEditedSocialLinks((previous) => updateSocialLink(previous, index, field, value));
-      setSocialLinksChanged(true);
-    },
-    []
-  );
-
-  const handleRemoveSocialLink = useCallback((index: number) => {
-    setEditedSocialLinks((previous) => removeSocialLink(previous, index));
-    setSocialLinksChanged(true);
-  }, []);
-
-  const handleOpenSocialLink = useCallback((url: string) => {
-    if (!url) {
-      return;
-    }
-
-    window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
-  }, []);
+  }, [fetchTalent, talent, talentId, tc]);
 
   return {
     activeTab,
@@ -196,13 +157,8 @@ export function useTalentSettingsData({
     dictCounts,
     dictSearch,
     dictionaryRecords,
-    editedSocialLinks,
     entitySearch,
     fetchTalent,
-    handleAddSocialLink,
-    handleOpenSocialLink,
-    handleRemoveSocialLink,
-    handleUpdateSocialLink,
     isLoading,
     isLoadingConfig,
     isLoadingDict,
@@ -216,7 +172,6 @@ export function useTalentSettingsData({
     setSelectedEntityType,
     setTalent,
     setEntitySearch,
-    socialLinksChanged,
     talent,
   };
 }
