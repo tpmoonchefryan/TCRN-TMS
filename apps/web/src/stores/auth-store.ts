@@ -14,6 +14,19 @@ import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
 const isAcTenantCode = (tenantCode: string | null | undefined) =>
   tenantCode?.toUpperCase() === 'AC';
 
+const getApiErrorStatusCode = (error: unknown): number | null => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    typeof (error as { statusCode?: unknown }).statusCode === 'number'
+  ) {
+    return (error as { statusCode: number }).statusCode;
+  }
+
+  return null;
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
@@ -372,10 +385,14 @@ export const useAuthStore = create<AuthState>()(
               isRefreshing: false,
               isAuthenticated: false,
               user: null,
+              tenantId: null,
+              isAcTenant: false,
               refreshPromise: null,
               sessionBootstrapStatus: 'idle',
               sessionBootstrapErrors: null,
               sessionBootstrapPromise: null,
+              effectivePermissions: null,
+              currentScope: null,
             });
             apiClient.setAccessToken(null);
             return false;
@@ -386,21 +403,43 @@ export const useAuthStore = create<AuthState>()(
         },
 
         checkAuth: async () => {
-          // First try to use existing access token in memory
           if (apiClient.getAccessToken()) {
-            void get().bootstrapAuthenticatedSession();
-            return true;
+            try {
+              const meRes = await authApi.me();
+
+              if (meRes.success && meRes.data) {
+                const tenantId = meRes.data.tenant?.id || get().tenantId;
+                set({
+                  user: meRes.data,
+                  tenantId,
+                  isAuthenticated: true,
+                });
+                void get().bootstrapAuthenticatedSession();
+                return true;
+              }
+            } catch (error) {
+              if (getApiErrorStatusCode(error) === 0 && get().user) {
+                set({ isAuthenticated: true });
+                console.warn(
+                  'Session verification hit a network error; preserving current in-memory session'
+                );
+                void get().bootstrapAuthenticatedSession();
+                return true;
+              }
+            }
           }
 
-          // If no token, try to refresh
-          // If no token, try to refresh
           const refreshed = await get().refreshSession();
           if (refreshed) {
-            // Fetch latest user info
             try {
               const meRes = await authApi.me();
               if (meRes.success && meRes.data) {
-                set({ user: meRes.data });
+                const tenantId = meRes.data.tenant?.id || get().tenantId;
+                set({
+                  user: meRes.data,
+                  tenantId,
+                  isAuthenticated: true,
+                });
                 void get().bootstrapAuthenticatedSession();
                 return true;
               }
