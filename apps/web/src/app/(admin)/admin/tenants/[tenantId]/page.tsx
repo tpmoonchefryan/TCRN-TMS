@@ -19,22 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from '@/components/ui';
-import { tenantApi } from '@/lib/api/modules/configuration';
-
-interface TenantDetails {
-  id: string;
-  code: string;
-  name: string;
-  tier: 'ac' | 'standard';
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  settings?: {
-    maxTalents?: number;
-    maxCustomersPerTalent?: number;
-    features?: string[];
-  };
-}
+import { tenantApi, type TenantRecord } from '@/lib/api/modules/configuration';
 
 export default function TenantDetailPage() {
   const router = useRouter();
@@ -61,7 +46,7 @@ export default function TenantDetailPage() {
     return (error as Error)?.message || te('generic');
   }, [te]);
 
-  const [tenant, setTenant] = useState<TenantDetails | null>(null);
+  const [tenant, setTenant] = useState<TenantRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -305,7 +290,7 @@ export default function TenantDetailPage() {
               </div>
               <div className="flex items-center gap-2 text-slate-500">
                 <Calendar size={14} />
-                <span>Updated: {new Date(tenant.updatedAt).toLocaleDateString()}</span>
+                <span>Updated: {new Date(tenant.updatedAt || tenant.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
 

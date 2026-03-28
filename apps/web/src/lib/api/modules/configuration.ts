@@ -75,19 +75,96 @@ export interface MembershipTreeClass extends LocalizedOptionRecord {
   types: MembershipTreeType[];
 }
 
+export type TenantTier = 'ac' | 'standard';
+
+export interface TenantSettingsRecord {
+  maxTalents?: number;
+  maxCustomersPerTalent?: number;
+  features?: string[];
+  [key: string]: unknown;
+}
+
+export interface TenantStatsRecord {
+  subsidiaryCount: number;
+  talentCount: number;
+  userCount: number;
+}
+
+export interface TenantRecord {
+  id: string;
+  code: string;
+  name: string;
+  schemaName?: string;
+  tier: TenantTier;
+  isActive: boolean;
+  settings?: TenantSettingsRecord | null;
+  stats?: TenantStatsRecord;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TenantCreatePayload {
+  code: string;
+  name: string;
+  settings?: TenantSettingsRecord;
+  adminUser: {
+    username: string;
+    email: string;
+    password: string;
+    displayName?: string;
+  };
+}
+
+export interface TenantCreateResponse {
+  id: string;
+  code: string;
+  name: string;
+  schemaName: string;
+  tier: TenantTier;
+  isActive: boolean;
+  adminUser: {
+    username: string;
+    email: string;
+  };
+  createdAt: string;
+}
+
+export interface TenantUpdatePayload {
+  name?: string;
+  settings?: TenantSettingsRecord;
+  version?: number;
+}
+
+export interface TenantUpdateResponse {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+  settings?: TenantSettingsRecord | null;
+  updatedAt: string;
+}
+
+export interface TenantActivationResponse {
+  id: string;
+  isActive: boolean;
+  activatedAt?: string;
+  deactivatedAt?: string;
+}
+
 export const tenantApi = {
-  list: () => apiClient.get<any[]>('/api/v1/tenants'),
+  list: () => apiClient.get<TenantRecord[]>('/api/v1/tenants'),
 
-  get: (id: string) => apiClient.get<any>(`/api/v1/tenants/${id}`),
+  get: (id: string) => apiClient.get<TenantRecord>(`/api/v1/tenants/${id}`),
 
-  create: (data: any) => apiClient.post<any>('/api/v1/tenants', data),
+  create: (data: TenantCreatePayload) => apiClient.post<TenantCreateResponse>('/api/v1/tenants', data),
 
-  update: (id: string, data: any) => apiClient.patch<any>(`/api/v1/tenants/${id}`, data),
+  update: (id: string, data: TenantUpdatePayload) =>
+    apiClient.patch<TenantUpdateResponse>(`/api/v1/tenants/${id}`, data),
 
-  activate: (id: string) => apiClient.post<any>(`/api/v1/tenants/${id}/activate`, {}),
+  activate: (id: string) => apiClient.post<TenantActivationResponse>(`/api/v1/tenants/${id}/activate`, {}),
 
   deactivate: (id: string, reason?: string) =>
-    apiClient.post<any>(`/api/v1/tenants/${id}/deactivate`, { reason }),
+    apiClient.post<TenantActivationResponse>(`/api/v1/tenants/${id}/deactivate`, { reason }),
 };
 
 export const configEntityApi = {
@@ -598,11 +675,18 @@ export const talentDomainApi = {
     }),
 };
 
-export const platformConfigApi = {
-  get: (key: string) => apiClient.get<{ key: string; value: any }>(`/api/v1/platform/config/${key}`),
+export interface PlatformConfigEntry<TValue = unknown> {
+  key: string;
+  value: TValue;
+  description?: string | null;
+}
 
-  set: (key: string, value: any) =>
-    apiClient.put<{ key: string; value: any }>(`/api/v1/platform/config/${key}`, { value }),
+export const platformConfigApi = {
+  get: <TValue = unknown>(key: string) =>
+    apiClient.get<PlatformConfigEntry<TValue>>(`/api/v1/platform/config/${key}`),
+
+  set: <TValue = unknown>(key: string, value: TValue) =>
+    apiClient.put<PlatformConfigEntry<TValue>>(`/api/v1/platform/config/${key}`, { value }),
 };
 
 export interface EmailConfigResponse {

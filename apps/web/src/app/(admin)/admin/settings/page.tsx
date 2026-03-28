@@ -72,18 +72,18 @@ export default function PlatformSettingsPage() {
         maxLoginAttemptsRes,
         logRetentionRes,
       ] = await Promise.all([
-        platformConfigApi.get(CONFIG_KEYS.baseDomain),
-        platformConfigApi.get(CONFIG_KEYS.platformName),
-        platformConfigApi.get(CONFIG_KEYS.supportEmail),
-        platformConfigApi.get(CONFIG_KEYS.adminEmail),
-        platformConfigApi.get(CONFIG_KEYS.sessionTimeout),
-        platformConfigApi.get(CONFIG_KEYS.maxLoginAttempts),
-        platformConfigApi.get(CONFIG_KEYS.logRetention),
+        platformConfigApi.get<{ domain?: string }>(CONFIG_KEYS.baseDomain),
+        platformConfigApi.get<string>(CONFIG_KEYS.platformName),
+        platformConfigApi.get<string>(CONFIG_KEYS.supportEmail),
+        platformConfigApi.get<string>(CONFIG_KEYS.adminEmail),
+        platformConfigApi.get<number>(CONFIG_KEYS.sessionTimeout),
+        platformConfigApi.get<number>(CONFIG_KEYS.maxLoginAttempts),
+        platformConfigApi.get<number>(CONFIG_KEYS.logRetention),
       ]);
 
       // Extract domain
       if (domainRes.success && domainRes.data?.value) {
-        const domainConfig = domainRes.data.value as { domain?: string };
+        const domainConfig = domainRes.data.value;
         if (domainConfig.domain) {
           setSystemBaseDomain(domainConfig.domain);
         }
@@ -91,12 +91,12 @@ export default function PlatformSettingsPage() {
 
       // Build settings object
       const loadedSettings: PlatformSettings = {
-        platformName: (platformNameRes.data?.value as string) || 'TCRN TMS',
-        supportEmail: (supportEmailRes.data?.value as string) || 'support@tcrn-tms.com',
-        adminEmail: (adminEmailRes.data?.value as string) || 'admin@tcrn-tms.com',
-        sessionTimeout: (sessionTimeoutRes.data?.value as number) || 30,
-        maxLoginAttempts: (maxLoginAttemptsRes.data?.value as number) || 5,
-        logRetention: (logRetentionRes.data?.value as number) || 90,
+        platformName: platformNameRes.data?.value || 'TCRN TMS',
+        supportEmail: supportEmailRes.data?.value || 'support@tcrn-tms.com',
+        adminEmail: adminEmailRes.data?.value || 'admin@tcrn-tms.com',
+        sessionTimeout: sessionTimeoutRes.data?.value || 30,
+        maxLoginAttempts: maxLoginAttemptsRes.data?.value || 5,
+        logRetention: logRetentionRes.data?.value || 90,
       };
 
       setSettings(loadedSettings);

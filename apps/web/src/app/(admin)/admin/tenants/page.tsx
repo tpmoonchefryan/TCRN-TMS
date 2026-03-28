@@ -11,21 +11,7 @@ import { toast } from 'sonner';
 
 import { CreateTenantDialog } from '@/components/admin/create-tenant-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { tenantApi } from '@/lib/api/modules/configuration';
-
-interface Tenant {
-  id: string;
-  code: string;
-  name: string;
-  tier: 'ac' | 'standard';
-  isActive: boolean;
-  createdAt: string;
-  settings?: {
-    maxTalents?: number;
-    maxCustomersPerTalent?: number;
-    features?: string[];
-  };
-}
+import { tenantApi, type TenantRecord } from '@/lib/api/modules/configuration';
 
 export default function TenantsPage() {
   const router = useRouter();
@@ -33,7 +19,7 @@ export default function TenantsPage() {
   const tCommon = useTranslations('common');
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<TenantRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

@@ -6,9 +6,7 @@
 import {
     BookOpen,
     Building2,
-    Clock,
     Database,
-    Languages,
     Layers,
     Save,
     Shield
@@ -29,15 +27,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { tenantApi } from '@/lib/api/modules/configuration';
+import {
+  tenantApi,
+  type TenantRecord,
+  type TenantSettingsRecord,
+  type TenantStatsRecord,
+} from '@/lib/api/modules/configuration';
 import { useAuthStore } from '@/stores/auth-store';
 
 // Configuration Entity Types (using singular kebab-case format to match backend API)
@@ -102,25 +98,14 @@ interface PiiServiceConfigEntity extends ConfigEntityBase {
 // Dictionary records are loaded from API - no mock data needed
 
 interface TenantState {
-  id: string;
-  code: string;
-  name: string;
-  tier: 'standard' | 'premium' | 'enterprise';
-  timezone: string;
-  defaultLanguage: string;
-  isActive: boolean;
-  createdAt: string;
-  features: {
-    pii_encryption: boolean;
-    totp_2fa: boolean;
-    external_homepage: boolean;
-    marshmallow: boolean;
-  };
-  stats?: {
-    subsidiaryCount: number;
-    talentCount: number;
-    userCount: number;
-  };
+  id: TenantRecord['id'];
+  code: TenantRecord['code'];
+  name: TenantRecord['name'];
+  tier: TenantRecord['tier'];
+  isActive: TenantRecord['isActive'];
+  createdAt: TenantRecord['createdAt'];
+  settings: TenantSettingsRecord | null;
+  stats?: TenantStatsRecord;
 }
 
 export default function TenantSettingsPage() {
@@ -148,14 +133,12 @@ export default function TenantSettingsPage() {
           setTenant({
             id: data.id,
             code: data.code,
-            name: data.name || data.displayName,
-            tier: data.tier || 'standard',
-            timezone: data.timezone || 'Asia/Tokyo',
-            defaultLanguage: data.defaultLanguage || 'en',
-            isActive: data.isActive ?? true,
+            name: data.name,
+            tier: data.tier,
+            isActive: data.isActive,
             createdAt: data.createdAt,
-            features: data.features || { pii_encryption: false, totp_2fa: false, external_homepage: false, marshmallow: false },
-            stats: data.stats || { subsidiaryCount: 0, talentCount: 0, userCount: 0 },
+            settings: data.settings ?? null,
+            stats: data.stats,
           });
           return;
         }
@@ -170,11 +153,9 @@ export default function TenantSettingsPage() {
       code: authState.tenantCode || 'TENANT',
       name: authState.tenantCode || 'Current Tenant',
       tier: 'standard',
-      timezone: 'Asia/Tokyo',
-      defaultLanguage: 'en',
       isActive: true,
       createdAt: new Date().toISOString(),
-      features: { pii_encryption: false, totp_2fa: false, external_homepage: false, marshmallow: false },
+      settings: null,
     });
   }, [tenantId]);
 
@@ -192,8 +173,6 @@ export default function TenantSettingsPage() {
         // AC tenant can update tenant settings via API
         await tenantApi.update(tenantId, {
           name: tenant.name,
-          timezone: tenant.timezone,
-          defaultLanguage: tenant.defaultLanguage,
         });
         toast.success(t('settingsSaved') || 'Settings saved successfully');
       } else {
@@ -294,43 +273,19 @@ export default function TenantSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Clock size={14} /> Timezone
-                  </Label>
-                  <Select
-                    value={tenant?.timezone || 'UTC'}
-                    onValueChange={(value) => tenant && setTenant({ ...tenant, timezone: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
-                      <SelectItem value="Asia/Shanghai">Asia/Shanghai (CST)</SelectItem>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Tier</Label>
+                  <Input value={tenant?.tier?.toUpperCase() || 'STANDARD'} disabled />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Languages size={14} /> Default Language
-                  </Label>
-                  <Select
-                    value={tenant?.defaultLanguage || 'en'}
-                    onValueChange={(value) => tenant && setTenant({ ...tenant, defaultLanguage: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="zh">Chinese (Simplified)</SelectItem>
-                      <SelectItem value="ja">Japanese</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Created At</Label>
+                  <Input value={tenant ? new Date(tenant.createdAt).toLocaleString() : ''} disabled />
                 </div>
               </div>
+
+              <p className="text-sm text-muted-foreground">
+                Tenant runtime timezone, language, and inheritance behavior are managed via dedicated scope settings and
+                related modules, not this tenant detail endpoint.
+              </p>
 
               <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={isSaving}>

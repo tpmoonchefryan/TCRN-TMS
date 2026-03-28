@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -97,9 +96,14 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           description: response.error?.message || tToast('error.generic'),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const description =
+        typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : tToast('error.generic');
+
       toast.error(tToast('error.create'), {
-        description: err.message || tToast('error.generic'),
+        description,
       });
     } finally {
       setIsSubmitting(false);

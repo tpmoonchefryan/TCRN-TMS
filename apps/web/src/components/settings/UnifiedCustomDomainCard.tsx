@@ -93,9 +93,9 @@ export function UnifiedCustomDomainCard({
   useEffect(() => {
     fetchConfig();
     // Fetch platform base domain for CNAME target
-    platformConfigApi.get('system.baseDomain').then((res) => {
+    platformConfigApi.get<{ domain?: string }>('system.baseDomain').then((res) => {
       if (res.success && res.data?.value) {
-        const domainConfig = res.data.value as { domain?: string };
+        const domainConfig = res.data.value;
         if (domainConfig.domain) {
           setPlatformBaseDomain(`proxy.${domainConfig.domain}`);
         }
