@@ -5,6 +5,14 @@ export interface SocialLink {
   url: string;
 }
 
+export type TalentSettingsTab =
+  | 'details'
+  | 'config'
+  | 'dictionary'
+  | 'security'
+  | 'settings'
+  | 'scope';
+
 export interface ExternalPageDomainConfig {
   isPublished?: boolean;
   isEnabled?: boolean;
