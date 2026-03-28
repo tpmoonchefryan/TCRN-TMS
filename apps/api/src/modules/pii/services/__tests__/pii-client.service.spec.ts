@@ -39,6 +39,7 @@ describe('PiiClientService', () => {
   const testProfileId = 'profile-123';
   const testAccessToken = 'test-access-token';
   const testTenantId = 'tenant-abc';
+  const testTenantSchema = 'tenant_test';
 
   const mockProfile: PiiProfile = {
     id: testProfileId,
@@ -93,6 +94,7 @@ describe('PiiClientService', () => {
         testProfileId,
         testAccessToken,
         testTenantId,
+        testTenantSchema,
       );
 
       expect(result).toEqual(mockProfile);
@@ -111,6 +113,9 @@ describe('PiiClientService', () => {
           method: 'GET',
           success: true,
         }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
+        }),
       );
     });
 
@@ -125,13 +130,22 @@ describe('PiiClientService', () => {
       (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
 
       await expect(
-        service.getProfile(testPiiServiceUrl, testProfileId, testAccessToken, testTenantId),
+        service.getProfile(
+          testPiiServiceUrl,
+          testProfileId,
+          testAccessToken,
+          testTenantId,
+          testTenantSchema,
+        ),
       ).rejects.toThrow();
 
       expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           errorMessage: 'Not found',
+        }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
         }),
       );
     });
@@ -157,6 +171,7 @@ describe('PiiClientService', () => {
         newProfile,
         testAccessToken,
         testTenantId,
+        testTenantSchema,
       );
 
       expect(result).toEqual({ id: testProfileId, createdAt: '2026-01-20T10:00:00Z' });
@@ -167,6 +182,15 @@ describe('PiiClientService', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
           }),
+        }),
+      );
+      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          success: true,
+        }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
         }),
       );
     });
@@ -188,6 +212,7 @@ describe('PiiClientService', () => {
         updates,
         testAccessToken,
         testTenantId,
+        testTenantSchema,
       );
 
       expect(result).toEqual({ id: testProfileId, updatedAt: '2026-01-21T10:00:00Z' });
@@ -195,6 +220,15 @@ describe('PiiClientService', () => {
         `${testPiiServiceUrl}/api/v1/profiles/${testProfileId}`,
         updates,
         expect.any(Object),
+      );
+      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'PATCH',
+          success: true,
+        }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
+        }),
       );
     });
   });

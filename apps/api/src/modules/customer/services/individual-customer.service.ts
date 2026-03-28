@@ -115,6 +115,7 @@ export class IndividualCustomerService {
         },
         piiWriteToken,
         context.tenantId,
+        context.tenantSchema,
       );
     }
 
@@ -240,6 +241,7 @@ export class IndividualCustomerService {
           rmProfileId,
           piiWriteToken,
           context.tenantId,
+          context.tenantSchema,
         ).catch(async (compensationError) => {
           await this.techEventLogService.warn(
             'PII_PROFILE_COMPENSATION_FAILED',
@@ -531,6 +533,7 @@ export class IndividualCustomerService {
       dto.pii,
       accessToken.token,
       context.tenantId,
+      context.tenantSchema,
     );
 
     // Generate new search hints

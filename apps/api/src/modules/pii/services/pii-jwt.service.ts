@@ -3,8 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { LogSeverity } from '@tcrn/shared';
-import { TechEventType } from '@tcrn/shared';
+import { LogSeverity, TechEventType, type RequestContext } from '@tcrn/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 import { TechEventLogService } from '../../log';
@@ -89,7 +88,7 @@ export class PiiJwtService {
     });
 
     // Log token issuance
-    await this.techEventLogService.log({
+    await this.logTokenEvent({
       eventType: TechEventType.PII_ACCESS_REQUESTED,
       scope: 'pii',
       severity: LogSeverity.INFO,
@@ -103,7 +102,7 @@ export class PiiJwtService {
         actions,
         ttl_seconds: this.accessTokenTtl,
       },
-    });
+    }, tenantSchema);
 
     return {
       token,
@@ -118,12 +117,13 @@ export class PiiJwtService {
   async issueServiceToken(params: {
     service: string;
     tenantId: string;
+    tenantSchema?: string;
     profileStoreId: string;
     jobId: string;
     originalUserId: string;
     actions: string[];
   }): Promise<{ token: string; expiresIn: number; jti: string }> {
-    const { service, tenantId, profileStoreId, jobId, originalUserId, actions } = params;
+    const { service, tenantId, tenantSchema, profileStoreId, jobId, originalUserId, actions } = params;
 
     const jti = uuidv4();
     const payload: Omit<ServiceJwtPayload, 'iat' | 'exp'> = {
@@ -144,7 +144,7 @@ export class PiiJwtService {
     });
 
     // Log service token issuance
-    await this.techEventLogService.log({
+    await this.logTokenEvent({
       eventType: TechEventType.IMPORT_JOB_STARTED, // Using similar event type
       scope: 'pii',
       severity: LogSeverity.INFO,
@@ -159,12 +159,32 @@ export class PiiJwtService {
         actions,
         ttl_seconds: this.serviceTokenTtl,
       },
-    });
+    }, tenantSchema);
 
     return {
       token,
       expiresIn: this.serviceTokenTtl,
       jti,
     };
+  }
+
+  private async logTokenEvent(
+    payload: {
+      eventType: TechEventType | string;
+      scope: string;
+      severity: LogSeverity;
+      traceId: string;
+      payload: Record<string, unknown>;
+    },
+    tenantSchema?: string,
+  ): Promise<void> {
+    if (tenantSchema) {
+      await this.techEventLogService.log(payload, {
+        tenantSchema,
+      } as RequestContext);
+      return;
+    }
+
+    await this.techEventLogService.log(payload);
   }
 }

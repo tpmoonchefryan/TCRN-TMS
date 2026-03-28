@@ -116,6 +116,9 @@ describe('PiiJwtService', () => {
             ttl_seconds: 300,
           }),
         }),
+        expect.objectContaining({
+          tenantSchema: 'tenant_abc123',
+        }),
       );
     });
 

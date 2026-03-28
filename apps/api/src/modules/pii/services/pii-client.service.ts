@@ -2,11 +2,12 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { RequestContext } from '@tcrn/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import * as fs from 'fs';
 import * as https from 'https';
 
-import { IntegrationLogService } from '../../log';
+import { IntegrationLogService, type OutboundLogDto } from '../../log';
 
 /**
  * PII Profile Data
@@ -102,6 +103,7 @@ export class PiiClientService {
     profileId: string,
     accessToken: string,
     tenantId: string,
+    tenantSchema?: string,
   ): Promise<PiiProfile> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -116,7 +118,7 @@ export class PiiClientService {
           },
         });
 
-        await this.integrationLogService.logOutbound({
+        await this.logOutbound({
           externalSystem: 'pii-service',
           endpoint: url,
           method: 'GET',
@@ -125,11 +127,11 @@ export class PiiClientService {
           responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
-        });
+        }, tenantSchema);
 
         return response.data.data as PiiProfile;
       } catch (error) {
-        await this.logError('GET', url, tenantId, error, startTime);
+        await this.logError('GET', url, tenantId, error, startTime, tenantSchema);
         throw error;
       }
     });
@@ -153,6 +155,7 @@ export class PiiClientService {
     },
     accessToken: string,
     tenantId: string,
+    tenantSchema?: string,
   ): Promise<{ id: string; createdAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -168,7 +171,7 @@ export class PiiClientService {
           },
         });
 
-        await this.integrationLogService.logOutbound({
+        await this.logOutbound({
           externalSystem: 'pii-service',
           endpoint: url,
           method: 'POST',
@@ -177,11 +180,11 @@ export class PiiClientService {
           responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
-        });
+        }, tenantSchema);
 
         return response.data.data;
       } catch (error) {
-        await this.logError('POST', url, tenantId, error, startTime);
+        await this.logError('POST', url, tenantId, error, startTime, tenantSchema);
         throw error;
       }
     });
@@ -196,6 +199,7 @@ export class PiiClientService {
     updates: Partial<PiiProfile>,
     accessToken: string,
     tenantId: string,
+    tenantSchema?: string,
   ): Promise<{ id: string; updatedAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -211,7 +215,7 @@ export class PiiClientService {
           },
         });
 
-        await this.integrationLogService.logOutbound({
+        await this.logOutbound({
           externalSystem: 'pii-service',
           endpoint: url,
           method: 'PATCH',
@@ -220,11 +224,11 @@ export class PiiClientService {
           responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
-        });
+        }, tenantSchema);
 
         return response.data.data;
       } catch (error) {
-        await this.logError('PATCH', url, tenantId, error, startTime);
+        await this.logError('PATCH', url, tenantId, error, startTime, tenantSchema);
         throw error;
       }
     });
@@ -239,6 +243,7 @@ export class PiiClientService {
     fields: string[] | undefined,
     accessToken: string,
     tenantId: string,
+    tenantSchema?: string,
   ): Promise<{
     data: Record<string, PiiProfile>;
     errors: Record<string, { code: string; message: string }>;
@@ -261,7 +266,7 @@ export class PiiClientService {
           },
         );
 
-        await this.integrationLogService.logOutbound({
+        await this.logOutbound({
           externalSystem: 'pii-service',
           endpoint: url,
           method: 'POST',
@@ -271,14 +276,14 @@ export class PiiClientService {
           responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
-        });
+        }, tenantSchema);
 
         return {
           data: response.data.data || {},
           errors: response.data.errors || {},
         };
       } catch (error) {
-        await this.logError('POST', url, tenantId, error, startTime);
+        await this.logError('POST', url, tenantId, error, startTime, tenantSchema);
         throw error;
       }
     });
@@ -292,6 +297,7 @@ export class PiiClientService {
     profileId: string,
     accessToken: string,
     tenantId: string,
+    tenantSchema?: string,
   ): Promise<void> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -306,7 +312,7 @@ export class PiiClientService {
           },
         });
 
-        await this.integrationLogService.logOutbound({
+        await this.logOutbound({
           externalSystem: 'pii-service',
           endpoint: url,
           method: 'DELETE',
@@ -314,9 +320,9 @@ export class PiiClientService {
           responseStatus: 200,
           latencyMs: Date.now() - startTime,
           success: true,
-        });
+        }, tenantSchema);
       } catch (error) {
-        await this.logError('DELETE', url, tenantId, error, startTime);
+        await this.logError('DELETE', url, tenantId, error, startTime, tenantSchema);
         throw error;
       }
     });
@@ -406,10 +412,11 @@ export class PiiClientService {
     tenantId: string,
     error: unknown,
     startTime: number,
+    tenantSchema?: string,
   ): Promise<void> {
     const axiosError = error as AxiosError;
 
-    await this.integrationLogService.logOutbound({
+    await this.logOutbound({
       externalSystem: 'pii-service',
       endpoint: url,
       method,
@@ -420,7 +427,21 @@ export class PiiClientService {
       latencyMs: Date.now() - startTime,
       success: false,
       errorMessage: axiosError.message,
-    });
+    }, tenantSchema);
+  }
+
+  private async logOutbound(
+    data: OutboundLogDto,
+    tenantSchema?: string,
+  ): Promise<void> {
+    if (tenantSchema) {
+      await this.integrationLogService.logOutbound(data, {
+        tenantSchema,
+      } as RequestContext);
+      return;
+    }
+
+    await this.integrationLogService.logOutbound(data);
   }
 
   /**

@@ -181,6 +181,7 @@ describe('IndividualCustomerService', () => {
         }),
         'pii-access-token',
         'tenant-123',
+        'tenant_test',
       );
       expect(mockChangeLogService.create).toHaveBeenCalled();
       expect(result.id).toBe('customer-123');
@@ -210,6 +211,7 @@ describe('IndividualCustomerService', () => {
         expect.any(String),
         'pii-access-token',
         'tenant-123',
+        'tenant_test',
       );
     });
   });
@@ -291,6 +293,7 @@ describe('IndividualCustomerService', () => {
         },
         'pii-access-token',
         'tenant-123',
+        'tenant_test',
       );
       expect(result).toEqual({
         id: 'customer-123',
