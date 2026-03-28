@@ -1,23 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import {
-    ArrowLeft,
-    Building2,
-    Edit,
-    ExternalLink,
-    History,
-    Loader2,
-    Plus,
-    ShieldCheck,
-    User
+  ArrowLeft,
+  Building2,
+  Edit,
+  ExternalLink,
+  History,
+  Loader2,
+  Plus,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { use, useCallback, useEffect, useState } from 'react';
+import { type ComponentProps, use, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CustomerStatusBadge } from '@/components/customer/CustomerShared';
@@ -26,20 +25,21 @@ import { PiiReveal } from '@/components/customer/PiiReveal';
 import { PlatformIdentityDialog } from '@/components/customer/PlatformIdentityDialog';
 import { Watermark } from '@/components/security/Watermark';
 import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-    Badge,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
+import { getApiErrorMessage } from '@/lib/api/error-utils';
 import {
   customerApi,
   type CustomerCompanyDetailResponse,
@@ -56,12 +56,11 @@ import { useTalentStore } from '@/stores/talent-store';
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params Promise (Next.js 15+ requirement)
   const { id: customerId } = use(params);
-  
+
   const router = useRouter();
   const t = useTranslations('customerDetail');
-  const tCommon = useTranslations('common');
   const { currentTalent } = useTalentStore();
-  
+
   const [customer, setCustomer] = useState<CustomerDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [platformIdentities, setPlatformIdentities] = useState<CustomerPlatformIdentity[]>([]);
@@ -70,7 +69,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [accessLogs, setAccessLogs] = useState<CustomerRecentAccessLogEntry[]>([]);
   const [loadingIdentities, setLoadingIdentities] = useState(false);
   const [loadingMemberships, setLoadingMemberships] = useState(false);
-  
+
   // Dialog states
   const [identityDialogOpen, setIdentityDialogOpen] = useState(false);
   const [editingIdentity, setEditingIdentity] = useState<CustomerPlatformIdentity | null>(null);
@@ -100,8 +99,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       } else {
         throw new Error(response.error?.message || t('fetchFailed'));
       }
-    } catch (err: any) {
-      toast.error(t('loadFailed'));
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || t('loadFailed'));
       setCustomer(null);
     } finally {
       setIsLoading(false);
@@ -125,7 +124,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       if (historyResponse.success && historyResponse.data) {
         setIdentityHistory(historyResponse.data.items);
       }
-    } catch (err: any) {
+    } catch {
       // Silently fail - identities might not exist
     } finally {
       setLoadingIdentities(false);
@@ -142,7 +141,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       if (response.success && response.data) {
         setMemberships(response.data.items);
       }
-    } catch (err: any) {
+    } catch {
       // Silently fail
     } finally {
       setLoadingMemberships(false);
@@ -163,7 +162,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   // Handle deactivate
   const handleDeactivate = async () => {
     if (!customer || !talentId) return;
-    
+
     try {
       await customerApi.deactivate(
         customer.id,
@@ -173,21 +172,21 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       );
       toast.success(t('deactivateSuccess'));
       fetchCustomer();
-    } catch (err: any) {
-      toast.error(err.message || t('deactivateFailed'));
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || t('deactivateFailed'));
     }
   };
 
   // Handle reactivate
   const handleReactivate = async () => {
     if (!customer || !talentId) return;
-    
+
     try {
       await customerApi.reactivate(customer.id, talentId);
       toast.success(t('reactivateSuccess'));
       fetchCustomer();
-    } catch (err: any) {
-      toast.error(err.message || t('reactivateFailed'));
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || t('reactivateFailed'));
     }
   };
 
@@ -213,6 +212,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const isIndividual = customer.profileType === 'individual';
   const companyCustomer: CustomerCompanyDetailResponse | null =
     customer.profileType === 'company' ? customer : null;
+  const piiCustomer =
+    customer.profileType === 'individual'
+      ? (customer as unknown as ComponentProps<typeof PiiReveal>['customer'])
+      : null;
 
   return (
     <Watermark className="min-h-screen">
@@ -289,10 +292,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <PiiReveal 
-                        customer={customer as any} 
-                        onReveal={(data) => {}} 
-                      />
+                      {piiCustomer && <PiiReveal customer={piiCustomer} onReveal={() => undefined} />}
                     </CardContent>
                   </Card>
                 ) : (
