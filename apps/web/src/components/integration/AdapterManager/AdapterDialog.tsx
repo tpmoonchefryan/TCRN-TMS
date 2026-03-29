@@ -28,10 +28,9 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
-  dictionaryApi,
-  type SystemDictionaryItemRecord,
-} from '@/lib/api/modules/configuration';
-import { integrationApi } from '@/lib/api/modules/integration';
+  integrationApi,
+  type IntegrationPlatformRecord,
+} from '@/lib/api/modules/integration';
 
 interface Platform {
   id: string;
@@ -44,8 +43,8 @@ interface Adapter {
   id: string;
   code: string;
   nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
+  nameZh?: string | null;
+  nameJa?: string | null;
   platformId: string;
   adapterType: 'oauth' | 'api_key' | 'webhook';
   inherit: boolean;
@@ -94,17 +93,16 @@ export function AdapterDialog({
   const fetchPlatforms = useCallback(async () => {
     setIsLoadingPlatforms(true);
     try {
-      const response = await dictionaryApi.getByType('social_platforms');
+      const response = await integrationApi.listPlatforms();
       if (response.success && response.data) {
-        setPlatforms(response.data.map((platform: SystemDictionaryItemRecord) => ({
-          id: platform.id,
-          code: platform.code,
-          displayName: platform.name,
-          iconUrl:
-            typeof platform.extraData?.iconUrl === 'string'
-              ? platform.extraData.iconUrl
-              : undefined,
-        })));
+        setPlatforms(
+          response.data.map((platform: IntegrationPlatformRecord) => ({
+            id: platform.id,
+            code: platform.code,
+            displayName: platform.displayName || platform.name || platform.nameEn,
+            iconUrl: platform.iconUrl || undefined,
+          })),
+        );
       }
     } catch (error) {
       // Fallback empty
@@ -151,7 +149,9 @@ export function AdapterDialog({
       if (isEdit && adapter) {
         const response = await integrationApi.updateAdapter(adapter.id, {
           nameEn: formData.nameEn,
+          nameZh: formData.nameZh || undefined,
           nameJa: formData.nameJa || undefined,
+          inherit: formData.inherit,
           version: adapter.version,
         });
         if (response.success) {
@@ -163,7 +163,10 @@ export function AdapterDialog({
           platformId: formData.platformId,
           code: formData.code.toUpperCase().replace(/\s+/g, '_'),
           nameEn: formData.nameEn,
+          nameZh: formData.nameZh || undefined,
+          nameJa: formData.nameJa || undefined,
           adapterType: formData.adapterType,
+          inherit: formData.inherit,
           ownerType,
           ownerId: ownerId || undefined,
         });

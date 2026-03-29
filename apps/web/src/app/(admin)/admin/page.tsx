@@ -48,10 +48,10 @@ export default function AdminDashboardPage() {
     
     setIsLoading(true);
     try {
-      const [tenantsRes, usersRes, adaptersRes] = await Promise.all([
+      const [tenantsRes, usersRes, consumersRes] = await Promise.all([
         tenantApi.list(),
         systemUserApi.list({ pageSize: 1 }), // Just to get meta.total
-        integrationApi.listAdapters(),
+        integrationApi.listConsumers(),
       ]);
 
       const activeTenants = tenantsRes.success && tenantsRes.data
@@ -62,12 +62,12 @@ export default function AdminDashboardPage() {
         ? usersRes.meta.pagination.totalCount
         : (usersRes.success && usersRes.data ? usersRes.data.length : 0);
 
-      const apiConsumers = adaptersRes.success && adaptersRes.data
-        ? adaptersRes.data.filter((a: { isActive?: boolean }) => a.isActive !== false).length
+      const apiConsumers = consumersRes.success && consumersRes.data
+        ? consumersRes.data.filter((consumer) => consumer.isActive !== false).length
         : 0;
 
       // Platform health: if all API calls succeeded, show 100%
-      const allSucceeded = tenantsRes.success && usersRes.success && adaptersRes.success;
+      const allSucceeded = tenantsRes.success && usersRes.success && consumersRes.success;
 
       setStats({
         activeTenants,

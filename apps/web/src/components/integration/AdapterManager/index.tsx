@@ -38,35 +38,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { integrationApi } from '@/lib/api/modules/integration';
+import {
+  type IntegrationAdapterListItemRecord,
+  integrationApi,
+} from '@/lib/api/modules/integration';
 
 import { AdapterConfigDialog } from './AdapterConfigDialog';
 import { AdapterDialog } from './AdapterDialog';
 
 
-interface Adapter {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  ownerType: string;
-  ownerId: string | null;
-  platformId: string;
-  platform: {
-    code: string;
-    displayName: string;
-    iconUrl?: string;
-  };
-  adapterType: 'oauth' | 'api_key' | 'webhook';
-  inherit: boolean;
-  isActive: boolean;
-  isInherited?: boolean;
-  configCount: number;
-  version: number;
-  createdAt: string;
-  updatedAt: string;
-}
+type Adapter = IntegrationAdapterListItemRecord;
 
 interface AdapterManagerProps {
   ownerType?: 'tenant' | 'subsidiary' | 'talent';
@@ -89,7 +70,17 @@ export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManager
   const fetchAdapters = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await integrationApi.listAdapters();
+      const response = await integrationApi.listAdapters(
+        ownerId
+          ? {
+              scopeType: ownerType,
+              scopeId: ownerId,
+              includeInherited: true,
+              includeDisabled: false,
+              ownerOnly: false,
+            }
+          : undefined,
+      );
       if (response.success && response.data) {
         setAdapters(response.data);
       }
@@ -99,7 +90,7 @@ export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManager
     } finally {
       setIsLoading(false);
     }
-  }, [tCommon]);
+  }, [ownerId, ownerType, tCommon]);
 
   useEffect(() => {
     fetchAdapters();

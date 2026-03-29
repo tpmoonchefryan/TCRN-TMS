@@ -1,36 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-    Button,
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
-import { integrationApi } from '@/lib/api/modules/integration';
-
-interface Platform {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-}
+import {
+  integrationApi,
+  type IntegrationConsumerCategory,
+} from '@/lib/api/modules/integration';
 
 interface CreateConsumerDialogProps {
   open: boolean;
@@ -38,55 +33,38 @@ interface CreateConsumerDialogProps {
   onSuccess: () => void;
 }
 
-const ADAPTER_TYPES = [
-  { value: 'api_key', label: 'API Key', description: 'Simple API key authentication' },
-  { value: 'oauth', label: 'OAuth 2.0', description: 'OAuth 2.0 client credentials' },
-  { value: 'webhook', label: 'Webhook', description: 'Outbound webhook events' },
-] as const;
+const CONSUMER_CATEGORIES: Array<{
+  value: IntegrationConsumerCategory;
+  label: string;
+  description: string;
+}> = [
+  { value: 'external', label: 'External', description: 'Third-party API client' },
+  { value: 'partner', label: 'Partner', description: 'Trusted partner integration' },
+  { value: 'internal', label: 'Internal', description: 'Internal platform service' },
+];
 
-export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateConsumerDialogProps) {
+export function CreateConsumerDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateConsumerDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [formData, setFormData] = useState({
     code: '',
     nameEn: '',
     nameJa: '',
-    platformId: '',
-    adapterType: '' as 'oauth' | 'api_key' | 'webhook' | '',
+    consumerCategory: '' as IntegrationConsumerCategory | '',
+    contactEmail: '',
   });
-
-  // Fetch platforms when dialog opens
-  useEffect(() => {
-    if (open && platforms.length === 0) {
-      fetchPlatforms();
-    }
-  }, [open]);
-
-  const fetchPlatforms = async () => {
-    setIsLoadingPlatforms(true);
-    try {
-      const response = await integrationApi.listPlatforms();
-      if (response.success && response.data) {
-        setPlatforms(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch platforms:', err);
-    } finally {
-      setIsLoadingPlatforms(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
-    if (!formData.code || !formData.nameEn || !formData.platformId || !formData.adapterType) {
+
+    if (!formData.code || !formData.nameEn || !formData.consumerCategory) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    // Validate code format
     if (!/^[A-Z0-9_]{3,32}$/.test(formData.code)) {
       toast.error('Code must be 3-32 uppercase letters, numbers, or underscores');
       return;
@@ -94,25 +72,24 @@ export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateCo
 
     setIsSubmitting(true);
     try {
-      const response = await integrationApi.createAdapter({
+      const response = await integrationApi.createConsumer({
         code: formData.code,
         nameEn: formData.nameEn,
         nameJa: formData.nameJa || undefined,
-        platformId: formData.platformId,
-        adapterType: formData.adapterType as 'oauth' | 'api_key' | 'webhook',
+        consumerCategory: formData.consumerCategory,
+        contactEmail: formData.contactEmail || undefined,
       });
 
       if (response.success) {
         toast.success('API Consumer created successfully', {
           description: `Consumer ${formData.code} has been created.`,
         });
-        // Reset form
         setFormData({
           code: '',
           nameEn: '',
           nameJa: '',
-          platformId: '',
-          adapterType: '',
+          consumerCategory: '',
+          contactEmail: '',
         });
         onOpenChange(false);
         onSuccess();
@@ -121,9 +98,9 @@ export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateCo
           description: response.error?.message || 'An error occurred',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to create consumer', {
-        description: err.message || 'An error occurred',
+        description: err instanceof Error ? err.message : 'An error occurred',
       });
     } finally {
       setIsSubmitting(false);
@@ -136,7 +113,7 @@ export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateCo
         <DialogHeader>
           <DialogTitle>Create API Consumer</DialogTitle>
           <DialogDescription>
-            Create a new API consumer for external integration.
+            Create a new API consumer for external integrations and key-based access.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,54 +125,41 @@ export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateCo
                 id="code"
                 placeholder="EXAMPLE_API"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''),
+                  })
+                }
                 disabled={isSubmitting}
               />
               <p className="text-xs text-slate-500">3-32 uppercase chars</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="platformId">Platform *</Label>
-              <Select 
-                value={formData.platformId} 
-                onValueChange={(value) => setFormData({ ...formData, platformId: value })}
-                disabled={isSubmitting || isLoadingPlatforms}
+              <Label htmlFor="consumerCategory">Category *</Label>
+              <Select
+                value={formData.consumerCategory}
+                onValueChange={(value: IntegrationConsumerCategory) =>
+                  setFormData({ ...formData, consumerCategory: value })
+                }
+                disabled={isSubmitting}
               >
-                <SelectTrigger id="platformId">
-                  <SelectValue placeholder={isLoadingPlatforms ? "Loading..." : "Select platform"} />
+                <SelectTrigger id="consumerCategory">
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {platforms.map((platform) => (
-                    <SelectItem key={platform.id} value={platform.id}>
-                      {platform.nameEn}
+                  {CONSUMER_CATEGORIES.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      <div className="flex flex-col">
+                        <span>{category.label}</span>
+                        <span className="text-xs text-slate-500">{category.description}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="adapterType">Adapter Type *</Label>
-            <Select 
-              value={formData.adapterType} 
-              onValueChange={(value) => setFormData({ ...formData, adapterType: value as any })}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger id="adapterType">
-                <SelectValue placeholder="Select adapter type" />
-              </SelectTrigger>
-              <SelectContent>
-                {ADAPTER_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    <div className="flex flex-col">
-                      <span>{type.label}</span>
-                      <span className="text-xs text-slate-500">{type.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
@@ -216,6 +180,18 @@ export function CreateConsumerDialog({ open, onOpenChange, onSuccess }: CreateCo
               placeholder="サンプルAPIコンシューマー"
               value={formData.nameJa}
               onChange={(e) => setFormData({ ...formData, nameJa: e.target.value })}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactEmail">Contact Email</Label>
+            <Input
+              id="contactEmail"
+              type="email"
+              placeholder="api-team@example.com"
+              value={formData.contactEmail}
+              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
               disabled={isSubmitting}
             />
           </div>

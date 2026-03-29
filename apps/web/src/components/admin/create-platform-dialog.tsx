@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -19,6 +18,7 @@ import {
     Input,
     Label,
 } from '@/components/ui';
+import { integrationApi } from '@/lib/api/modules/integration';
 
 interface CreatePlatformDialogProps {
   open: boolean;
@@ -51,30 +51,23 @@ export function CreatePlatformDialog({ open, onOpenChange, onSuccess }: CreatePl
     }
 
     // Validate code format
-    if (!/^[A-Z0-9_]{2,32}$/.test(formData.code)) {
+    if (!/^[A-Z0-9_]{3,32}$/.test(formData.code)) {
       toast.error(tForms('validation.invalidCode'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Note: This requires a backend API endpoint to be implemented
-      // POST /api/v1/social-platforms
-      const response = await fetch('/api/v1/social-platforms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: formData.code,
-          nameEn: formData.nameEn,
-          nameZh: formData.nameZh || undefined,
-          nameJa: formData.nameJa || undefined,
-          iconUrl: formData.iconUrl || undefined,
-        }),
+      const response = await integrationApi.createPlatform({
+        code: formData.code,
+        nameEn: formData.nameEn,
+        nameZh: formData.nameZh || undefined,
+        nameJa: formData.nameJa || undefined,
+        displayName: formData.nameEn,
+        iconUrl: formData.iconUrl || undefined,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (response.success) {
         toast.success(tToast('success.created'), {
           description: t('platformCreated', { code: formData.code }),
         });
@@ -90,12 +83,12 @@ export function CreatePlatformDialog({ open, onOpenChange, onSuccess }: CreatePl
         onSuccess();
       } else {
         toast.error(tToast('error.create'), {
-          description: data.error?.message || tToast('error.generic'),
+          description: response.error?.message || tToast('error.generic'),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(tToast('error.create'), {
-        description: err.message || tToast('error.generic'),
+        description: err instanceof Error ? err.message : tToast('error.generic'),
       });
     } finally {
       setIsSubmitting(false);

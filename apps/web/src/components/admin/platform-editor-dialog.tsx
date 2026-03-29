@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -20,28 +19,15 @@ import {
     Label,
     Switch,
 } from '@/components/ui';
-import { integrationApi } from '@/lib/api/modules/integration';
-
-interface Platform {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  displayName: string;
-  iconUrl?: string;
-  baseUrl?: string;
-  profileUrlTemplate?: string;
-  color?: string;
-  sortOrder: number;
-  isActive: boolean;
-  version: number;
-}
+import {
+  integrationApi,
+  type IntegrationPlatformRecord,
+} from '@/lib/api/modules/integration';
 
 interface PlatformEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  platform: Platform | null; // null = create new
+  platform: IntegrationPlatformRecord | null; // null = create new
   onSuccess: () => void;
 }
 
@@ -72,7 +58,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
       if (platform) {
         setFormData({
           code: platform.code,
-          displayName: platform.displayName,
+          displayName: platform.displayName || platform.nameEn,
           nameEn: platform.nameEn,
           nameZh: platform.nameZh || '',
           nameJa: platform.nameJa || '',
@@ -111,15 +97,14 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
     }
 
     // Validate code format
-    if (!/^[A-Z0-9_]{2,32}$/.test(formData.code)) {
+    if (!/^[A-Z0-9_]{3,32}$/.test(formData.code)) {
       toast.error(tPlatform('codeFormatError'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        code: formData.code,
+      const basePayload = {
         displayName: formData.displayName,
         nameEn: formData.nameEn,
         nameZh: formData.nameZh || undefined,
@@ -129,17 +114,31 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
         profileUrlTemplate: formData.profileUrlTemplate || undefined,
         color: formData.color || undefined,
         sortOrder: formData.sortOrder,
-        isActive: formData.isActive,
       };
 
       let response;
-      if (isEditing) {
-        response = await integrationApi.updatePlatform?.(platform.id, { ...payload, version: platform.version });
+      if (isEditing && platform) {
+        response = await integrationApi.updatePlatform(platform.id, {
+          ...basePayload,
+          version: platform.version,
+        });
       } else {
-        response = await integrationApi.createPlatform?.(payload);
+        response = await integrationApi.createPlatform({
+          code: formData.code,
+          ...basePayload,
+        });
       }
 
-      if (response?.success) {
+      if (response.success && response.data) {
+        const savedPlatform = response.data;
+        if (formData.isActive !== savedPlatform.isActive) {
+          if (formData.isActive) {
+            await integrationApi.reactivatePlatform(savedPlatform.id, savedPlatform.version);
+          } else {
+            await integrationApi.deactivatePlatform(savedPlatform.id, savedPlatform.version);
+          }
+        }
+
         toast.success(isEditing ? tPlatform('updateSuccess') : tPlatform('createSuccess'), {
           description: tPlatform('changesVisible'),
         });
@@ -147,12 +146,12 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
         onSuccess();
       } else {
         toast.error(isEditing ? tPlatform('updateFailed') : tPlatform('createFailed'), {
-          description: response?.error?.message || tCommon('error'),
+          description: response.error?.message || tCommon('error'),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(isEditing ? tPlatform('updateFailed') : tPlatform('createFailed'), {
-        description: err.message || tCommon('error'),
+        description: err instanceof Error ? err.message : tCommon('error'),
       });
     } finally {
       setIsSubmitting(false);

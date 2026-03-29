@@ -49,26 +49,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { integrationApi } from '@/lib/api/modules/integration';
+import {
+  integrationApi,
+  type IntegrationWebhookListItemRecord,
+} from '@/lib/api/modules/integration';
 
 import { WebhookDialog } from './WebhookDialog';
 
 
-interface WebhookItem {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  url: string;
-  events: string[];
-  isActive: boolean;
-  lastTriggeredAt: string | null;
-  lastStatus: number | null;
-  consecutiveFailures: number;
-  createdAt: string;
-  version?: number;
-}
+type WebhookItem = IntegrationWebhookListItemRecord;
 
 export function WebhookManager() {
   const t = useTranslations('integrationManagement');
@@ -106,8 +95,8 @@ export function WebhookManager() {
   const handleToggleActive = async (webhook: WebhookItem) => {
     try {
       const response = webhook.isActive
-        ? await integrationApi.deactivateWebhook?.(webhook.id)
-        : await integrationApi.reactivateWebhook?.(webhook.id);
+        ? await integrationApi.deactivateWebhook(webhook.id)
+        : await integrationApi.reactivateWebhook(webhook.id);
 
       if (response?.success) {
         toast.success(webhook.isActive ? t('webhookDeactivated') : t('webhookReactivated'));

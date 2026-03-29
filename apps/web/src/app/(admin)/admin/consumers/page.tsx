@@ -9,36 +9,28 @@ import { toast } from 'sonner';
 
 import { CreateConsumerDialog } from '@/components/admin/create-consumer-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { integrationApi } from '@/lib/api/modules/integration';
-
-interface Adapter {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameJa?: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  apiKeyPrefix?: string;
-}
+import {
+  integrationApi,
+  type IntegrationConsumerRecord,
+} from '@/lib/api/modules/integration';
 
 export default function ConsumersPage() {
   const t = useTranslations('adminConsole.consumers');
   const tCommon = useTranslations('common');
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [adapters, setAdapters] = useState<Adapter[]>([]);
+  const [consumers, setConsumers] = useState<IntegrationConsumerRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const fetchAdapters = useCallback(async () => {
+  const fetchConsumers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await integrationApi.listAdapters();
+      const response = await integrationApi.listConsumers();
       if (response.success && response.data) {
-        setAdapters(response.data);
+        setConsumers(response.data);
       } else {
         setError(response.error?.message || tCommon('error'));
       }
@@ -54,22 +46,21 @@ export default function ConsumersPage() {
   }, [tCommon]);
 
   useEffect(() => {
-    fetchAdapters();
-  }, [fetchAdapters]);
+    fetchConsumers();
+  }, [fetchConsumers]);
 
   const handleAddConsumer = () => {
     setIsCreateDialogOpen(true);
   };
 
   const handleRefresh = () => {
-    fetchAdapters();
+    fetchConsumers();
     toast.success(t('refreshing'));
   };
 
-  // Filter adapters by search query
-  const filteredAdapters = adapters.filter(adapter => 
-    adapter.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    adapter.nameEn.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConsumers = consumers.filter((consumer) =>
+    consumer.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    consumer.nameEn.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -118,7 +109,7 @@ export default function ConsumersPage() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <ShieldAlert size={20} className="text-purple-600" />
-            {t('title')} ({filteredAdapters.length})
+            {t('title')} ({filteredConsumers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -135,7 +126,7 @@ export default function ConsumersPage() {
                 {tCommon('retry')}
               </Button>
             </div>
-          ) : filteredAdapters.length === 0 ? (
+          ) : filteredConsumers.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
               <ShieldAlert size={48} className="mx-auto mb-4 text-slate-300" />
               <p>{searchQuery ? t('noConsumersMatch') : t('noConsumers')}</p>
@@ -147,6 +138,7 @@ export default function ConsumersPage() {
                   <tr className="border-b border-slate-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">{tCommon('code')}</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">{tCommon('name')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Category</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">{t('apiKey')}</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">{tCommon('status')}</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">{tCommon('created')}</th>
@@ -154,23 +146,24 @@ export default function ConsumersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAdapters.map((adapter) => (
-                    <tr key={adapter.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                  {filteredConsumers.map((consumer) => (
+                    <tr key={consumer.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                       <td className="py-3 px-4">
-                        <span className="font-mono text-sm font-medium text-purple-600">{adapter.code}</span>
+                        <span className="font-mono text-sm font-medium text-purple-600">{consumer.code}</span>
                       </td>
-                      <td className="py-3 px-4 text-slate-700">{adapter.nameEn}</td>
+                      <td className="py-3 px-4 text-slate-700">{consumer.nameEn}</td>
+                      <td className="py-3 px-4 text-slate-500 capitalize">{consumer.consumerCategory}</td>
                       <td className="py-3 px-4">
-                        {adapter.apiKeyPrefix ? (
+                        {consumer.apiKeyPrefix ? (
                           <span className="flex items-center gap-1 text-slate-500 font-mono text-sm">
-                            <Key size={14} /> {adapter.apiKeyPrefix}...
+                            <Key size={14} /> {consumer.apiKeyPrefix}...
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {adapter.isActive ? (
+                        {consumer.isActive ? (
                           <Badge className="bg-green-100 text-green-700">
                             <CheckCircle size={12} className="mr-1" /> {tCommon('active')}
                           </Badge>
@@ -181,13 +174,13 @@ export default function ConsumersPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-slate-500 text-sm">
-                        {new Date(adapter.createdAt).toLocaleDateString()}
+                        {consumer.createdAt ? new Date(consumer.createdAt).toLocaleDateString() : '-'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => toast.info(`View details: ${adapter.code}`)}
+                          onClick={() => toast.info(`View details: ${consumer.code}`)}
                         >
                           {tCommon('view')}
                         </Button>
@@ -204,7 +197,7 @@ export default function ConsumersPage() {
       <CreateConsumerDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={fetchAdapters}
+        onSuccess={fetchConsumers}
       />
     </div>
   );

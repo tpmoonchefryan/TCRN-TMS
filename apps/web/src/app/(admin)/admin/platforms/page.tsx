@@ -9,18 +9,10 @@ import { toast } from 'sonner';
 
 import { CreatePlatformDialog } from '@/components/admin/create-platform-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { integrationApi } from '@/lib/api/modules/integration';
-
-interface Platform {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  iconUrl?: string;
-  isActive: boolean;
-  createdAt: string;
-}
+import {
+  integrationApi,
+  type IntegrationPlatformRecord,
+} from '@/lib/api/modules/integration';
 
 export default function PlatformsPage() {
   const t = useTranslations('adminConsole.platforms');
@@ -46,7 +38,7 @@ export default function PlatformsPage() {
     return (error as any)?.message || te('generic');
   }, [te]);
 
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [platforms, setPlatforms] = useState<IntegrationPlatformRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -63,7 +55,7 @@ export default function PlatformsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getErrorMessage]);
 
   useEffect(() => {
     fetchPlatforms();
@@ -176,9 +168,9 @@ export default function PlatformsPage() {
                   <CardContent className="pt-4">
                     <div className="flex items-start gap-3">
                       {platform.iconUrl ? (
-                        <img 
-                          src={platform.iconUrl} 
-                          alt={platform.nameEn} 
+                        <img
+                          src={platform.iconUrl}
+                          alt={platform.displayName || platform.nameEn}
                           className="w-10 h-10 rounded-lg object-cover"
                         />
                       ) : (
@@ -188,7 +180,9 @@ export default function PlatformsPage() {
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-slate-800">{platform.nameEn}</h3>
+                          <h3 className="font-semibold text-slate-800">
+                            {platform.displayName || platform.nameEn}
+                          </h3>
                           <Badge variant={platform.isActive ? 'default' : 'secondary'}>
                             {platform.isActive ? tCommon('active') : tCommon('inactive')}
                           </Badge>

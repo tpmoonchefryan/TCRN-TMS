@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
+import type { WebhookEventDefinition, WebhookEventType } from '@tcrn/shared';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -12,41 +12,62 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { integrationApi } from '@/lib/api/modules/integration';
-
-interface WebhookEventDef {
-  event: string;
-  name: string;
-  description: string;
-  category: string;
-}
-
-interface WebhookItem {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  url: string;
-  events: string[];
-  version?: number;
-}
+import {
+  integrationApi,
+  type IntegrationWebhookDetailRecord,
+  type IntegrationWebhookListItemRecord,
+} from '@/lib/api/modules/integration';
 
 interface WebhookDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  webhook: WebhookItem | null;
+  webhook: IntegrationWebhookListItemRecord | null;
   onSuccess: () => void;
+}
+
+interface WebhookFormState {
+  code: string;
+  nameEn: string;
+  nameZh: string;
+  nameJa: string;
+  url: string;
+  secret: string;
+  events: WebhookEventType[];
+}
+
+const EMPTY_FORM: WebhookFormState = {
+  code: '',
+  nameEn: '',
+  nameZh: '',
+  nameJa: '',
+  url: '',
+  secret: '',
+  events: [],
+};
+
+function toFormState(webhook: Pick<
+  IntegrationWebhookDetailRecord,
+  'code' | 'nameEn' | 'nameZh' | 'nameJa' | 'url' | 'events'
+>): WebhookFormState {
+  return {
+    code: webhook.code,
+    nameEn: webhook.nameEn,
+    nameZh: webhook.nameZh || '',
+    nameJa: webhook.nameJa || '',
+    url: webhook.url,
+    secret: '',
+    events: webhook.events,
+  };
 }
 
 export function WebhookDialog({
@@ -57,73 +78,67 @@ export function WebhookDialog({
 }: WebhookDialogProps) {
   const t = useTranslations('integrationManagement');
   const tCommon = useTranslations('common');
-  const tForms = useTranslations('forms');
   const tToast = useTranslations('toast');
 
   const isEdit = !!webhook;
 
-  const [eventDefinitions, setEventDefinitions] = useState<WebhookEventDef[]>([]);
+  const [eventDefinitions, setEventDefinitions] = useState<WebhookEventDefinition[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [isLoadingWebhook, setIsLoadingWebhook] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [version, setVersion] = useState<number | null>(null);
+  const [formData, setFormData] = useState<WebhookFormState>(EMPTY_FORM);
 
-  const [formData, setFormData] = useState({
-    code: '',
-    nameEn: '',
-    nameZh: '',
-    nameJa: '',
-    url: '',
-    secret: '',
-    events: [] as string[],
-  });
-
-  // Load event definitions
   const fetchEvents = useCallback(async () => {
     setIsLoadingEvents(true);
     try {
-      const response = await integrationApi.getWebhookEvents?.();
-      if (response?.success && response.data) {
+      const response = await integrationApi.getWebhookEvents();
+      if (response.success && response.data) {
         setEventDefinitions(response.data);
       }
-    } catch (error) {
-      // Use empty list
     } finally {
       setIsLoadingEvents(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (open) {
-      fetchEvents();
-      if (webhook) {
-        setFormData({
-          code: webhook.code,
-          nameEn: webhook.nameEn,
-          nameZh: webhook.nameZh || '',
-          nameJa: webhook.nameJa || '',
-          url: webhook.url,
-          secret: '',
-          events: webhook.events,
-        });
-      } else {
-        setFormData({
-          code: '',
-          nameEn: '',
-          nameZh: '',
-          nameJa: '',
-          url: '',
-          secret: '',
-          events: [],
-        });
+  const fetchWebhookDetail = useCallback(async (webhookId: string) => {
+    setIsLoadingWebhook(true);
+    try {
+      const response = await integrationApi.getWebhook(webhookId);
+      if (response.success && response.data) {
+        setFormData(toFormState(response.data));
+        setVersion(response.data.version);
       }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : tCommon('error');
+      toast.error(tCommon('error'), { description: message });
+    } finally {
+      setIsLoadingWebhook(false);
     }
-  }, [open, webhook, fetchEvents]);
+  }, [tCommon]);
 
-  const handleEventToggle = (event: string, checked: boolean) => {
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    void fetchEvents();
+
+    if (webhook) {
+      setFormData(toFormState(webhook));
+      setVersion(null);
+      void fetchWebhookDetail(webhook.id);
+      return;
+    }
+
+    setFormData(EMPTY_FORM);
+    setVersion(null);
+  }, [fetchEvents, fetchWebhookDetail, open, webhook]);
+
+  const handleEventToggle = (event: WebhookEventType, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      events: checked
-        ? [...prev.events, event]
-        : prev.events.filter((e) => e !== event),
+      events: checked ? [...prev.events, event] : prev.events.filter((item) => item !== event),
     }));
   };
 
@@ -133,7 +148,6 @@ export function WebhookDialog({
       return;
     }
 
-    // Validate URL
     try {
       new URL(formData.url);
     } catch {
@@ -141,26 +155,46 @@ export function WebhookDialog({
       return;
     }
 
+    const currentVersion = version;
+
+    if (isEdit && currentVersion === null) {
+      toast.error(tCommon('error'), {
+        description: 'Webhook details are still loading. Please try again.',
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
-      if (isEdit && webhook) {
+      if (isEdit) {
+        if (!webhook || currentVersion === null) {
+          return;
+        }
+
         const response = await integrationApi.updateWebhook(webhook.id, {
-          name: formData.nameEn,
-          targetUrl: formData.url,
+          nameEn: formData.nameEn,
+          nameZh: formData.nameZh || undefined,
+          nameJa: formData.nameJa || undefined,
+          url: formData.url,
           events: formData.events,
-          version: webhook.version || 1,
+          version: currentVersion,
         });
+
         if (response.success) {
           toast.success(tToast('success.updated'));
           onSuccess();
         }
       } else {
         const response = await integrationApi.createWebhook({
-          name: formData.nameEn,
-          targetUrl: formData.url,
-          events: formData.events,
+          code: formData.code.toUpperCase().replace(/\s+/g, '_'),
+          nameEn: formData.nameEn,
+          nameZh: formData.nameZh || undefined,
+          nameJa: formData.nameJa || undefined,
+          url: formData.url,
           secret: formData.secret || undefined,
+          events: formData.events,
         });
+
         if (response.success) {
           toast.success(tToast('success.created'));
           onSuccess();
@@ -168,18 +202,22 @@ export function WebhookDialog({
       }
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(tToast('error.update'), { description: err.message });
+      toast.error(tToast(isEdit ? 'error.update' : 'error.create'), { description: err.message });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Group events by category
-  const eventsByCategory = eventDefinitions.reduce((acc, event) => {
-    if (!acc[event.category]) acc[event.category] = [];
-    acc[event.category].push(event);
-    return acc;
-  }, {} as Record<string, WebhookEventDef[]>);
+  const eventsByCategory = eventDefinitions.reduce<Record<string, WebhookEventDefinition[]>>(
+    (acc, event) => {
+      if (!acc[event.category]) {
+        acc[event.category] = [];
+      }
+      acc[event.category].push(event);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,7 +234,12 @@ export function WebhookDialog({
             <Label>{tCommon('code')} *</Label>
             <Input
               value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''),
+                })
+              }
               placeholder={t('placeholderWebhookCodeExample')}
               disabled={isEdit}
             />
@@ -208,6 +251,7 @@ export function WebhookDialog({
               value={formData.nameEn}
               onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
               placeholder={t('placeholderWebhookName')}
+              disabled={isLoadingWebhook}
             />
           </div>
 
@@ -218,6 +262,7 @@ export function WebhookDialog({
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
               placeholder={t('placeholderWebhookUrl')}
               type="url"
+              disabled={isLoadingWebhook}
             />
             <p className="text-xs text-muted-foreground">{t('httpsRequired')}</p>
           </div>
@@ -237,7 +282,7 @@ export function WebhookDialog({
           <div className="space-y-2">
             <Label>{t('subscribedEvents')} *</Label>
             <p className="text-xs text-muted-foreground mb-2">{t('selectEvents')}</p>
-            
+
             {isLoadingEvents ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="animate-spin text-muted-foreground" size={20} />
@@ -252,21 +297,16 @@ export function WebhookDialog({
                         <div key={event.event} className="flex items-start gap-2">
                           <Checkbox
                             id={event.event}
-                            checked={formData.events.includes(event.event)}
+                            checked={formData.events.includes(event.event as WebhookEventType)}
                             onCheckedChange={(checked) =>
-                              handleEventToggle(event.event, !!checked)
+                              handleEventToggle(event.event as WebhookEventType, !!checked)
                             }
                           />
                           <div className="grid gap-0.5">
-                            <label
-                              htmlFor={event.event}
-                              className="text-sm font-medium cursor-pointer"
-                            >
+                            <label htmlFor={event.event} className="text-sm font-medium cursor-pointer">
                               {event.name}
                             </label>
-                            <p className="text-xs text-muted-foreground">
-                              {event.description}
-                            </p>
+                            <p className="text-xs text-muted-foreground">{event.description}</p>
                           </div>
                         </div>
                       ))}
@@ -275,12 +315,12 @@ export function WebhookDialog({
                 ))}
               </ScrollArea>
             )}
-            
+
             {formData.events.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {formData.events.map((e) => (
-                  <Badge key={e} variant="secondary" className="text-xs">
-                    {e}
+                {formData.events.map((event) => (
+                  <Badge key={event} variant="secondary" className="text-xs">
+                    {event}
                   </Badge>
                 ))}
               </div>
@@ -292,8 +332,8 @@ export function WebhookDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tCommon('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={handleSubmit} disabled={isSaving || isLoadingWebhook}>
+            {(isSaving || isLoadingWebhook) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEdit ? tCommon('save') : tCommon('create')}
           </Button>
         </DialogFooter>

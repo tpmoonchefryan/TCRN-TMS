@@ -122,9 +122,10 @@ export function AdapterConfigDialog({
 
     setRevealingKey(configKey);
     try {
-      const response = await integrationApi.revealConfig?.(adapter.id, configKey);
-      if (response?.success && response.data) {
-        setConfigs((prev) => ({ ...prev, [configKey]: response.data.configValue }));
+      const response = await integrationApi.revealConfig(adapter.id, configKey);
+      if (response.success && response.data) {
+        const revealedValue = response.data.configValue;
+        setConfigs((prev) => ({ ...prev, [configKey]: revealedValue }));
         setRevealedKeys((prev) => new Set([...prev, configKey]));
         toast.success(t('secretRevealed'));
         
@@ -159,11 +160,11 @@ export function AdapterConfigDialog({
 
     setIsSaving(true);
     try {
-      const response = await integrationApi.updateAdapterConfigs?.(adapter.id, {
+      const response = await integrationApi.updateAdapterConfigs(adapter.id, {
         configs: configsToSave,
         adapterVersion,
       });
-      if (response?.success) {
+      if (response.success) {
         toast.success(t('configsSaved'));
         onSuccess();
         onOpenChange(false);

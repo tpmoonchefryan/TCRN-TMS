@@ -14,8 +14,8 @@ import {
     Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -181,6 +181,60 @@ class CreateConfigDto {
   @IsString()
   urlPattern?: string;
 
+  @ApiPropertyOptional({ description: 'Profile URL template', example: 'https://twitter.com/{username}' })
+  @IsOptional()
+  @IsString()
+  profileUrlTemplate?: string;
+
+  @ApiPropertyOptional({ description: 'Consumer category', enum: ['internal', 'external', 'partner'] })
+  @IsOptional()
+  @IsEnum(['internal', 'external', 'partner'])
+  consumerCategory?: 'internal' | 'external' | 'partner';
+
+  @ApiPropertyOptional({ description: 'Consumer contact name' })
+  @IsOptional()
+  @IsString()
+  contactName?: string;
+
+  @ApiPropertyOptional({ description: 'Consumer contact email' })
+  @IsOptional()
+  @IsString()
+  contactEmail?: string;
+
+  @ApiPropertyOptional({
+    description: 'Allowed IP addresses or CIDR blocks',
+    type: [String],
+    example: ['192.168.1.10', '10.0.0.0/8'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return value;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  allowedIps?: string[];
+
+  @ApiPropertyOptional({ description: 'Per-minute rate limit', example: 1000, minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  rateLimit?: number;
+
+  @ApiPropertyOptional({ description: 'Consumer notes' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
   // Allow any additional fields for entity-specific properties
   [key: string]: unknown;
 }
@@ -226,6 +280,85 @@ class UpdateConfigDto {
   @IsOptional()
   @IsBoolean()
   isForceUse?: boolean;
+
+  @ApiPropertyOptional({ description: 'Display name for social platform', example: 'Twitter/X' })
+  @IsOptional()
+  @IsString()
+  displayName?: string;
+
+  @ApiPropertyOptional({ description: 'Brand color (hex)', example: '#1DA1F2' })
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @ApiPropertyOptional({ description: 'Base URL for platform', example: 'https://twitter.com' })
+  @IsOptional()
+  @IsString()
+  baseUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Icon URL', example: 'https://example.com/icons/twitter.svg' })
+  @IsOptional()
+  @IsString()
+  iconUrl?: string;
+
+  @ApiPropertyOptional({ description: 'URL pattern for validation', example: 'https://twitter.com/{username}' })
+  @IsOptional()
+  @IsString()
+  urlPattern?: string;
+
+  @ApiPropertyOptional({ description: 'Profile URL template', example: 'https://twitter.com/{username}' })
+  @IsOptional()
+  @IsString()
+  profileUrlTemplate?: string;
+
+  @ApiPropertyOptional({ description: 'Consumer category', enum: ['internal', 'external', 'partner'] })
+  @IsOptional()
+  @IsEnum(['internal', 'external', 'partner'])
+  consumerCategory?: 'internal' | 'external' | 'partner';
+
+  @ApiPropertyOptional({ description: 'Consumer contact name' })
+  @IsOptional()
+  @IsString()
+  contactName?: string;
+
+  @ApiPropertyOptional({ description: 'Consumer contact email' })
+  @IsOptional()
+  @IsString()
+  contactEmail?: string;
+
+  @ApiPropertyOptional({
+    description: 'Allowed IP addresses or CIDR blocks',
+    type: [String],
+    example: ['192.168.1.10', '10.0.0.0/8'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return value;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  allowedIps?: string[];
+
+  @ApiPropertyOptional({ description: 'Per-minute rate limit', example: 1000, minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  rateLimit?: number;
+
+  @ApiPropertyOptional({ description: 'Consumer notes' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
@@ -335,11 +468,18 @@ export class ConfigController {
     const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const normalizedDto = {
+      ...dto,
+      profileUrlTemplate:
+        typeof dto.profileUrlTemplate === 'string'
+          ? dto.profileUrlTemplate
+          : dto.urlPattern,
+    };
 
     const entity = await this.configService.create(
       validEntityType,
       user.tenantSchema,
-      dto,
+      normalizedDto,
       user.id
     );
 
@@ -393,12 +533,19 @@ export class ConfigController {
     const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const normalizedDto = {
+      ...dto,
+      profileUrlTemplate:
+        typeof dto.profileUrlTemplate === 'string'
+          ? dto.profileUrlTemplate
+          : dto.urlPattern,
+    };
 
     const entity = await this.configService.update(
       validEntityType,
       id,
       user.tenantSchema,
-      dto,
+      normalizedDto,
       user.id
     );
 
