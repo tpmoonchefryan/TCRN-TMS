@@ -4,14 +4,18 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm as useReactHookForm,UseFormProps, UseFormReturn } from 'react-hook-form';
+import {
+  type FieldValues,
+  useForm as useReactHookForm,
+  type UseFormProps,
+  type UseFormReturn,
+} from 'react-hook-form';
 import { z } from 'zod';
 
 /**
- * Type for Zod object schemas that produce FieldValues-compatible output
+ * Type for Zod schemas that produce react-hook-form compatible values
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ZodObjectSchema = z.ZodObject<any>;
+type ZodFormSchema = z.ZodType<FieldValues, FieldValues>;
 
 /**
  * useZodForm - Wrapper around react-hook-form with Zod validation
@@ -36,32 +40,40 @@ type ZodObjectSchema = z.ZodObject<any>;
  * }
  * ```
  */
-export function useZodForm<TSchema extends ZodObjectSchema>(
+export function useZodForm<TSchema extends ZodFormSchema>(
   schema: TSchema,
-  options?: Omit<UseFormProps<z.infer<TSchema>>, 'resolver'>
-): UseFormReturn<z.infer<TSchema>> {
-   
-  return useReactHookForm<z.infer<TSchema>>({
+  options?: Omit<UseFormProps<z.input<TSchema>, unknown, z.output<TSchema>>, 'resolver'>
+): UseFormReturn<z.input<TSchema>, unknown, z.output<TSchema>> {
+  return useReactHookForm<z.input<TSchema>, unknown, z.output<TSchema>>({
     ...options,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zodResolver requires any for generic schema compatibility
-    resolver: zodResolver(schema as any),
-  }) as UseFormReturn<z.infer<TSchema>>;
+    resolver: zodResolver(schema),
+  });
 }
 
 /**
  * Type helper for form data from Zod schema
  */
-export type FormData<T extends ZodObjectSchema> = z.infer<T>;
+export type FormData<T extends ZodFormSchema> = z.output<T>;
 
 /**
  * Re-export common hooks from react-hook-form for convenience
  */
 export type {
-    Control, FieldError, FieldErrors, FieldValues, SubmitHandler, UseFormGetValues, UseFormRegister, UseFormReturn, UseFormSetValue
+  Control,
+  FieldError,
+  FieldErrors,
+  FieldValues,
+  SubmitHandler,
+  UseFormGetValues,
+  UseFormRegister,
+  UseFormReturn,
+  UseFormSetValue,
 } from 'react-hook-form';
 export {
-    Controller,
-    FormProvider, useController, useFieldArray, useFormContext,
-    useWatch
+  Controller,
+  FormProvider,
+  useController,
+  useFieldArray,
+  useFormContext,
+  useWatch,
 } from 'react-hook-form';
-
