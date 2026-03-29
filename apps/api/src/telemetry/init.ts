@@ -2,9 +2,20 @@
 // OpenTelemetry initialization for TCRN TMS (PRD P-32)
 
 import { Logger } from '@nestjs/common';
+import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
+import type { Sampler as OtelSampler } from '@opentelemetry/sdk-trace-base';
 
 import { createSampler } from './sampler';
 import { ErrorCapturingProcessor,SlowRequestProcessor } from './slow-request-processor';
+
+type OtelAutoInstrumentationModule = typeof import('@opentelemetry/auto-instrumentations-node');
+type OtelMetricExporterModule = typeof import('@opentelemetry/exporter-metrics-otlp-http');
+type OtelTraceExporterModule = typeof import('@opentelemetry/exporter-trace-otlp-http');
+type OtelResourcesModule = typeof import('@opentelemetry/resources');
+type OtelSdkMetricsModule = typeof import('@opentelemetry/sdk-metrics');
+type OtelSdkNodeModule = typeof import('@opentelemetry/sdk-node');
+type OtelSemanticModule = typeof import('@opentelemetry/semantic-conventions');
+type OtelTraceBaseModule = typeof import('@opentelemetry/sdk-trace-base');
 
 const logger = new Logger('Telemetry');
 
@@ -65,26 +76,22 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
 
   try {
     // Dynamic import to avoid loading dependencies if not enabled
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type AnyModule = any;
+    const sdkNode = (await import('@opentelemetry/sdk-node')) as OtelSdkNodeModule;
+    const autoInstrument = (await import('@opentelemetry/auto-instrumentations-node')) as OtelAutoInstrumentationModule;
+    const traceExporterModule = (await import('@opentelemetry/exporter-trace-otlp-http')) as OtelTraceExporterModule;
+    const metricExporterModule = (await import('@opentelemetry/exporter-metrics-otlp-http')) as OtelMetricExporterModule;
+    const metricsModule = (await import('@opentelemetry/sdk-metrics')) as OtelSdkMetricsModule;
+    const resourcesModule = (await import('@opentelemetry/resources')) as OtelResourcesModule;
+    const semanticModule = (await import('@opentelemetry/semantic-conventions')) as OtelSemanticModule;
+    const traceBaseModule = (await import('@opentelemetry/sdk-trace-base')) as OtelTraceBaseModule;
 
-    // Use type casting to avoid compile-time type checking for optional deps
-    const sdkNode: AnyModule = await import('@opentelemetry/sdk-node');
-    const autoInstrument: AnyModule = await import('@opentelemetry/auto-instrumentations-node');
-    const traceExporterModule: AnyModule = await import('@opentelemetry/exporter-trace-otlp-http');
-    const metricExporterModule: AnyModule = await import('@opentelemetry/exporter-metrics-otlp-http');
-    const metricsModule: AnyModule = await import('@opentelemetry/sdk-metrics');
-    const resourcesModule: AnyModule = await import('@opentelemetry/resources');
-    const semanticModule: AnyModule = await import('@opentelemetry/semantic-conventions');
-    const traceBaseModule: AnyModule = await import('@opentelemetry/sdk-trace-base');
-
-    // Extract classes/constants (handle both default and named exports)
+    // Extract classes/constants after the opt-in gate to avoid eager runtime loading.
     const NodeSDK = sdkNode.NodeSDK;
     const getNodeAutoInstrumentations = autoInstrument.getNodeAutoInstrumentations;
     const OTLPTraceExporter = traceExporterModule.OTLPTraceExporter;
     const OTLPMetricExporter = metricExporterModule.OTLPMetricExporter;
     const PeriodicExportingMetricReader = metricsModule.PeriodicExportingMetricReader;
-    const Resource = resourcesModule.Resource;
+    const resourceFromAttributes = resourcesModule.resourceFromAttributes;
     const SEMRESATTRS_SERVICE_NAME = semanticModule.SEMRESATTRS_SERVICE_NAME;
     const SEMRESATTRS_SERVICE_VERSION = semanticModule.SEMRESATTRS_SERVICE_VERSION;
     const SEMRESATTRS_DEPLOYMENT_ENVIRONMENT = semanticModule.SEMRESATTRS_DEPLOYMENT_ENVIRONMENT;
@@ -103,24 +110,53 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
       url: `${telemetryConfig.endpoint}/v1/metrics`,
     });
 
-    // Create SDK - use type assertion for sampler compatibility
+    const instrumentationConfig: InstrumentationConfigMap = {
+      // Disable filesystem instrumentation (too noisy)
+      '@opentelemetry/instrumentation-fs': { enabled: false },
+      // Configure HTTP instrumentation
+      '@opentelemetry/instrumentation-http': {
+        ignoreIncomingRequestHook: (request: { url?: string }) => {
+          // Ignore health checks and metrics
+          const url = request.url || '';
+          return (
+            url === '/health' ||
+            url === '/health/live' ||
+            url === '/health/ready' ||
+            url === '/metrics'
+          );
+        },
+      },
+      // Configure Express instrumentation
+      '@opentelemetry/instrumentation-express': {
+        enabled: true,
+      },
+      // Configure Prisma/pg instrumentation
+      '@opentelemetry/instrumentation-pg': {
+        enabled: true,
+        enhancedDatabaseReporting: true,
+      },
+      // Configure ioredis instrumentation (redis-4 was renamed)
+      '@opentelemetry/instrumentation-ioredis': {
+        enabled: true,
+      },
+    };
+
     const sdk = new NodeSDK({
-      resource: new Resource({
+      resource: resourceFromAttributes({
         [SEMRESATTRS_SERVICE_NAME]: telemetryConfig.serviceName,
         [SEMRESATTRS_SERVICE_VERSION]: telemetryConfig.serviceVersion,
         [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: telemetryConfig.environment,
       }),
 
-      // Use custom sampler (cast to any for compatibility with dynamic types)
-      sampler: createSampler() as unknown,
+      sampler: createSampler() as OtelSampler,
 
       // Trace exporter with batch processing
       traceExporter,
 
       // Add custom span processors
       spanProcessors: [
-        new SlowRequestProcessor() as unknown,
-        new ErrorCapturingProcessor() as unknown,
+        new SlowRequestProcessor(),
+        new ErrorCapturingProcessor(),
         new BatchSpanProcessor(traceExporter, {
           maxQueueSize: 2048,
           maxExportBatchSize: 512,
@@ -137,36 +173,7 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
 
       // Auto-instrumentations
       instrumentations: [
-        getNodeAutoInstrumentations({
-          // Disable filesystem instrumentation (too noisy)
-          '@opentelemetry/instrumentation-fs': { enabled: false },
-          // Configure HTTP instrumentation
-          '@opentelemetry/instrumentation-http': {
-            ignoreIncomingRequestHook: (request: { url?: string }) => {
-              // Ignore health checks and metrics
-              const url = request.url || '';
-              return (
-                url === '/health' ||
-                url === '/health/live' ||
-                url === '/health/ready' ||
-                url === '/metrics'
-              );
-            },
-          },
-          // Configure Express instrumentation
-          '@opentelemetry/instrumentation-express': {
-            enabled: true,
-          },
-          // Configure Prisma/pg instrumentation
-          '@opentelemetry/instrumentation-pg': {
-            enabled: true,
-            enhancedDatabaseReporting: true,
-          },
-          // Configure ioredis instrumentation (redis-4 was renamed)
-          '@opentelemetry/instrumentation-ioredis': {
-            enabled: true,
-          },
-        } as Record<string, unknown>),
+        getNodeAutoInstrumentations(instrumentationConfig),
       ],
     });
 
