@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Edit, ExternalLink, Eye, Globe, Loader2, Settings } from 'lucide-react';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUIMode } from '@/hooks/use-ui-mode';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import { talentDomainApi } from '@/lib/api/modules/configuration';
 import { homepageApi } from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
@@ -145,18 +146,8 @@ export default function HomepagePage() {
         }
       }
       toast.success(t('publishSuccess'));
-    } catch (error: any) {
-      const errorCode = error?.code;
-      if (errorCode && typeof errorCode === 'string') {
-        const translated = te(errorCode as any);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          toast.error(translated);
-        } else {
-          toast.error(error?.message || te('generic'));
-        }
-      } else {
-        toast.error(error?.message || te('generic'));
-      }
+    } catch (error: unknown) {
+      toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
     }
   };
 
@@ -180,18 +171,8 @@ export default function HomepagePage() {
         }
       }
       toast.success(t('unpublishSuccess'));
-    } catch (error: any) {
-      const errorCode = error?.code;
-      if (errorCode && typeof errorCode === 'string') {
-        const translated = te(errorCode as any);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          toast.error(translated);
-        } else {
-          toast.error(error?.message || te('generic'));
-        }
-      } else {
-        toast.error(error?.message || te('generic'));
-      }
+    } catch (error: unknown) {
+      toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
     }
   };
 

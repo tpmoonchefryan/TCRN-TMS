@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { CreatePlatformDialog } from '@/components/admin/create-platform-dialog';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import {
   integrationApi,
   type IntegrationPlatformRecord,
@@ -21,21 +22,7 @@ export default function PlatformsPage() {
 
   // Helper to get translated error message from API error
   const getErrorMessage = useCallback((error: unknown): string => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errorCode = (error as any)?.code;
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const translated = te(errorCode as any);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through
-      }
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (error as any)?.message || te('generic');
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
 
   const [platforms, setPlatforms] = useState<IntegrationPlatformRecord[]>([]);

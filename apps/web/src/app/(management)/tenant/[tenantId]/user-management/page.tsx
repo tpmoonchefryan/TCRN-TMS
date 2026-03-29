@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -43,6 +42,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import {
   type CreateSystemUserPayload,
   systemRoleApi,
@@ -61,25 +61,8 @@ export default function UserManagementPage() {
   const tenantId = params.tenantId as string;
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useMemo(() => (error: any): string => {
-    // Try to get error code first
-    const errorCode = error?.code;
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        // Try to get translated message for this error code
-        const translated = te(errorCode as any);
-        // Check if translation was found (not returning the key itself or MISSING_MESSAGE)
-        if (translated && 
-            translated !== errorCode && 
-            !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through to message
-      }
-    }
-    // Fall back to error message or generic error
-    return error?.message || te('generic');
+  const getErrorMessage = useMemo(() => (error: unknown): string => {
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
 
   // Get tab from URL parameter, default to 'users'
@@ -117,7 +100,7 @@ export default function UserManagementPage() {
       if (response.success && response.data) {
         setUsers(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoadingUsers(false);
@@ -132,7 +115,7 @@ export default function UserManagementPage() {
       if (response.success && response.data) {
         setRoles(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoadingRoles(false);
@@ -203,7 +186,7 @@ export default function UserManagementPage() {
       } else {
         toast.error(getErrorMessage(response.error));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsCreatingUser(false);
@@ -241,7 +224,7 @@ export default function UserManagementPage() {
       } else {
         toast.error(te('generic'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };
@@ -285,7 +268,7 @@ export default function UserManagementPage() {
       setIsCreatingRole(false);
       setRolePermissions([]);
       fetchRoles(); // Refresh roles list
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSaving(false);
@@ -299,7 +282,7 @@ export default function UserManagementPage() {
       if (result.success) {
         toast.success('Password reset successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };
@@ -309,7 +292,7 @@ export default function UserManagementPage() {
       await systemUserApi.deactivate(userId);
       toast.success('User deactivated');
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };
@@ -319,7 +302,7 @@ export default function UserManagementPage() {
       await systemUserApi.reactivate(userId);
       toast.success('User reactivated');
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };

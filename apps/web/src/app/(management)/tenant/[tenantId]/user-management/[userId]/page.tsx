@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -39,6 +39,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import {
   systemRoleApi,
   systemUserApi,
@@ -65,22 +66,8 @@ export default function UserSettingsPage() {
   const userId = params.userId as string;
 
   // Helper to get translated error message from API error
-  const getErrorMessage = useMemo(() => (error: any): string => {
-    const errorCode = error?.code;
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        const translated = te(errorCode as any);
-        // Check if translation was found (not returning the key itself or MISSING_MESSAGE)
-        if (translated && 
-            translated !== errorCode && 
-            !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through to message
-      }
-    }
-    return error?.message || te('generic');
+  const getErrorMessage = useMemo(() => (error: unknown): string => {
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
 
   const { currentTenantCode, organizationTree, directTalents } = useTalentStore();
@@ -113,7 +100,7 @@ export default function UserSettingsPage() {
       if (response.success && response.data) {
         setUser(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -128,7 +115,7 @@ export default function UserSettingsPage() {
       if (response.success && response.data && Array.isArray(response.data)) {
         setAvailableRoles(response.data.filter((role) => role.isActive !== false));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setAvailableRoles([]);
       toast.error(getErrorMessage(error));
     } finally {
@@ -229,7 +216,7 @@ export default function UserSettingsPage() {
           toast.success(t('roleAssigned'));
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsAssigningRole(false);
@@ -250,7 +237,7 @@ export default function UserSettingsPage() {
           r.id === assignment.id ? { ...r, inherit: newInherit } : r
         )
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };
@@ -285,7 +272,7 @@ export default function UserSettingsPage() {
       setShowPasswordDialog(false);
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -385,7 +372,7 @@ export default function UserSettingsPage() {
     
     try {
       await systemUserApi.setScopeAccess(userId, accesses);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   }, [userId, tenantId, buildNodeMap, getErrorMessage]);
@@ -450,7 +437,7 @@ export default function UserSettingsPage() {
       await systemUserApi.resetPassword(user.id, { forceReset: true });
       setUser((prev) => prev ? { ...prev, forceReset: true } : null);
       toast.success('Password change required on next login');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
   };

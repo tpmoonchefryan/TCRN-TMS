@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button, Card } from '@/components/ui';
-import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import { customerImportApi } from '@/lib/api/modules/customer';
 import { cn } from '@/lib/utils';
 import { useTalentStore } from '@/stores/talent-store';
@@ -35,18 +35,7 @@ export default function ImportCustomersPage() {
 
   // Helper to get translated error message from API error
   const getErrorMessage = useCallback((error: unknown): string => {
-    const errorCode = getApiErrorCode(error);
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        const translated = te(errorCode as never);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through
-      }
-    }
-    return getApiErrorMessage(error) || te('generic');
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
   
   const [step, setStep] = useState(1); // 1: Select/Upload, 2: Processing, 3: Result

@@ -27,7 +27,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
-import { getApiErrorCode, getApiErrorMessage } from '@/lib/api/error-utils';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import {
   customerApi,
   type CustomerListItemResponse,
@@ -45,18 +45,7 @@ export default function CustomersPage() {
 
   // Helper to get translated error message from API error
   const getErrorMessage = useCallback((error: unknown): string => {
-    const errorCode = getApiErrorCode(error);
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        const translated = te(errorCode as never);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through
-      }
-    }
-    return getApiErrorMessage(error) || te('generic');
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
 
   const [activeTab, setActiveTab] = useState<CustomerTab>('all');

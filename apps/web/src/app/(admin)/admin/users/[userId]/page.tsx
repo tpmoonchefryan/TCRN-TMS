@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from '@/components/ui';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import {
   systemUserApi,
   type SystemUserDetailRecord,
@@ -37,20 +38,7 @@ export default function UserDetailPage() {
 
   // Helper to get translated error message from API error
   const getErrorMessage = useCallback((error: unknown): string => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errorCode = (error as any)?.code;
-    if (errorCode && typeof errorCode === 'string') {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const translated = te(errorCode as any);
-        if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
-          return translated;
-        }
-      } catch {
-        // Fall through
-      }
-    }
-    return (error as Error)?.message || te('generic');
+    return getTranslatedApiErrorMessage(error, te, te('generic'));
   }, [te]);
 
   const [user, setUser] = useState<SystemUserDetailRecord | null>(null);

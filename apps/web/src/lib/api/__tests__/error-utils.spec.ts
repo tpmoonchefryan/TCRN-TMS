@@ -5,6 +5,7 @@ import {
   getApiErrorCode,
   getApiErrorMessage,
   getApiResponseMessage,
+  getTranslatedApiErrorMessage,
   getThrownErrorMessage,
 } from '@/lib/api/error-utils';
 
@@ -54,5 +55,37 @@ describe('api error utils', () => {
     );
     expect(getThrownErrorMessage(new Error('Boom'), 'Fallback')).toBe('Boom');
     expect(getThrownErrorMessage(null, 'Fallback')).toBe('Fallback');
+  });
+
+  it('prefers translated error codes, then raw messages, then the provided fallback', () => {
+    const translate = ((key: string) => {
+      if (key === 'VALIDATION_FAILED') {
+        return 'Translated validation failed';
+      }
+
+      return `MISSING_MESSAGE:${key}`;
+    }) as (key: never) => string;
+
+    expect(
+      getTranslatedApiErrorMessage(
+        {
+          error: { code: 'VALIDATION_FAILED', message: 'Nested validation failed' },
+        },
+        translate,
+        'Fallback'
+      )
+    ).toBe('Translated validation failed');
+
+    expect(
+      getTranslatedApiErrorMessage(
+        {
+          error: { code: 'UNKNOWN_CODE', message: 'Nested validation failed' },
+        },
+        translate,
+        'Fallback'
+      )
+    ).toBe('Nested validation failed');
+
+    expect(getTranslatedApiErrorMessage(null, translate, 'Fallback')).toBe('Fallback');
   });
 });

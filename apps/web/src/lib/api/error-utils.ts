@@ -61,6 +61,26 @@ export const getApiErrorCode = (error: unknown): string | undefined => {
   return undefined;
 };
 
+export const getTranslatedApiErrorMessage = (
+  error: unknown,
+  translate: (key: never) => string,
+  fallback: string
+): string => {
+  const errorCode = getApiErrorCode(error);
+  if (errorCode && typeof errorCode === 'string') {
+    try {
+      const translated = translate(errorCode as never);
+      if (translated && translated !== errorCode && !translated.startsWith('MISSING_MESSAGE')) {
+        return translated;
+      }
+    } catch {
+      // Fall through to the raw error message or fallback below.
+    }
+  }
+
+  return getApiErrorMessage(error) || fallback;
+};
+
 export const getThrownErrorMessage = (error: unknown, fallback: string): string => {
   return getApiErrorMessage(error) || fallback;
 };
