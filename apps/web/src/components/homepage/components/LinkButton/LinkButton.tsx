@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import * as LucideIcons from 'lucide-react';
@@ -10,6 +9,8 @@ import { cn } from '@/lib/utils';
 
 import { LinkButtonProps } from './schema';
 
+const ICON_COMPONENTS = LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>;
+
 export const LinkButton: React.FC<LinkButtonProps & { className?: string }> = ({
   label,
   url,
@@ -19,9 +20,9 @@ export const LinkButton: React.FC<LinkButtonProps & { className?: string }> = ({
   className,
 }) => {
   // Dynamic icon rendering
-  const IconComponent = icon && (LucideIcons as any)[icon];
+  const IconComponent = icon ? ICON_COMPONENTS[icon] : undefined;
 
-  const variantMap: Record<string, "default" | "outline" | "ghost" | "link" | "secondary" | "destructive"> = {
+  const variantMap: Record<LinkButtonProps['style'], "default" | "outline" | "ghost" | "link" | "secondary" | "destructive"> = {
     solid: 'default', // Map to default/primary
     outline: 'outline',
     ghost: 'ghost',

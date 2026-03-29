@@ -1,3 +1,8 @@
+import {
+  hasExplicitGridPosition,
+  resolveComponentColSpan,
+  resolveComponentRowSpan,
+} from './layout-props';
 import { ComponentInstance } from './types';
 
 // Grid Constants
@@ -45,34 +50,20 @@ export function layoutComponents(components: ComponentInstance[]): ComponentInst
 
   return components.map(comp => {
       // 1. Resolve dimensions
-      const props = comp.props || {};
-      const colSpan = props.colSpan || props.w || 6;
-      let rowSpan = props.rowSpan || props.h;
-      
-      if (!rowSpan) {
-          // Fallback legacy logic
-          const heightMode = props.heightMode || 'auto';
-          const isProfile = comp.type === 'ProfileCard';
-          const autoSpan = isProfile ? 6 : 4;
-          rowSpan = {
-            'auto': autoSpan,
-            'small': 2,
-            'medium': 4,
-            'large': 6
-          }[heightMode as string] || 4;
-      }
+      const colSpan = resolveComponentColSpan(comp.props);
+      const rowSpan = resolveComponentRowSpan(comp.type, comp.props);
       
       const w = Math.min(colSpan, GRID_COLS);
       const h = rowSpan;
 
       // 2. If x and y already exist, respect them (and mark grid)
       // Check if valid first
-      if (typeof props.x === 'number' && typeof props.y === 'number') {
+      if (hasExplicitGridPosition(comp.props)) {
           // TODO: Check for overlap? For now, if explicit x/y exists, we assume user put it there.
           // But we should mark the grid so subsequent auto-items flow around it.
           // Adjust 1-based to 0-based for calculation
-          const row = props.y - 1;
-          const col = props.x - 1;
+          const row = comp.props.y - 1;
+          const col = comp.props.x - 1;
           
           if (row >= 0 && col >= 0) {
               markOccupied(row, col, w, h, comp.id);

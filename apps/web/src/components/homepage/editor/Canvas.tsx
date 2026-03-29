@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -7,7 +6,10 @@ import {
     closestCenter,
     defaultDropAnimationSideEffects,
     DndContext,
+    DragCancelEvent,
+    DragEndEvent,
     DragOverlay,
+    DragStartEvent,
     DropAnimation,
     KeyboardSensor,
     MeasuringStrategy // Added
@@ -22,6 +24,7 @@ import {
     SortableContext,
     sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
+import { ComponentInstance } from '@tcrn/shared';
 import { motion } from 'framer-motion';
 import { NextIntlClientProvider } from 'next-intl';
 import React, { useState } from 'react';
@@ -33,15 +36,26 @@ import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import {
+  getLayoutProps,
+  resolveComponentColSpan,
+} from '../lib/layout-props';
 import { layoutComponents } from '../lib/layout-utils';
 import { SortableComponent } from './SortableComponent';
 
-const MESSAGES: Record<string, any> = {
+type CssVariableStyle = React.CSSProperties & Partial<Record<`--${string}`, string | number>>;
+
+const MESSAGES: Record<string, Record<string, unknown>> = {
   default: enMessages,
   en: enMessages,
   zh: zhMessages,
   ja: jaMessages
 };
+
+function getTextDecorationTileSize(text: string, fontSize: number, density: 'low' | 'medium' | 'high'): number {
+  const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
+  return (text.length || 1) * fontSize + basePadding;
+}
 
 const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({
@@ -80,28 +94,29 @@ export function Canvas() {
     })
   );
 
-  const handleDragStart = (event: any) => {
-     setActiveId(event.active.id);
+  const handleDragStart = (event: DragStartEvent) => {
+     const activeId = String(event.active.id);
+     setActiveId(activeId);
      
      // Robust Width & Height Calculation
-     const node = document.getElementById(event.active.id);
+     const node = document.getElementById(activeId);
      if (node) {
         setDragWidth(node.offsetWidth);
         setDragHeight(node.offsetHeight); // Capture Height
      } else {
         // Fallback Width
-        const component = content.components.find(c => c.id === event.active.id);
+        const component = content.components.find(c => c.id === activeId);
         if (component && containerRef.current) {
            const containerWidth = containerRef.current.offsetWidth;
            const availableWidth = containerWidth - 32; 
-           const colSpan = (component.props as any).colSpan || 6;
+           const colSpan = resolveComponentColSpan(component.props);
            const approxWidth = (availableWidth / 6) * colSpan; 
            setDragWidth(approxWidth);
         }
      }
   };
 
-  const handleDragCancel = () => {
+  const handleDragCancel = (_event: DragCancelEvent) => {
     setActiveId(null);
     setDragWidth(null);
     setDragHeight(null);
@@ -124,16 +139,18 @@ export function Canvas() {
          // Bulk update if any changed (simple id check)
          // Since we don't have a bulk update in store, we update one by one or we should add a bulk update action.
          // For now, let's just update the ones missing props to avoid infinite loop if store ref causes rerender.
-         newComponents.forEach((nc: any) => {
+         newComponents.forEach((nc) => {
              const oc = content.components.find(c => c.id === nc.id);
-             if (oc && (oc.props.x !== nc.props.x || oc.props.y !== nc.props.y)) {
+             const oldLayout = oc ? getLayoutProps(oc.props) : null;
+             const nextLayout = getLayoutProps(nc.props);
+             if (oc && (oldLayout?.x !== nextLayout.x || oldLayout?.y !== nextLayout.y)) {
                  useEditorStore.getState().updateComponent(nc.id, nc.props);
              }
          });
      }
   }, [content.components.length, isDesktop, content.components]); // Add content.components dependency check deep comparison ideally or just length? Warning: infinite loop risk if not careful. Added content.components for now but we guard with props check.
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event; // delta contains the x/y movement
     setActiveId(null);
     setDragWidth(null);
@@ -145,15 +162,16 @@ export function Canvas() {
     if (!isDesktop) {
         // Mobile: Sortable List Logic (Reorder)
         if (active && over && active.id !== over.id) {
-            const oldIndex = content.components.findIndex((c) => c.id === active.id);
-            const newIndex = content.components.findIndex((c) => c.id === over.id);
+            const oldIndex = content.components.findIndex((c) => c.id === String(active.id));
+            const newIndex = content.components.findIndex((c) => c.id === String(over.id));
             moveComponent(oldIndex, newIndex);
         }
         return;
     }
 
     // Desktop: 2D Grid Logic
-    const component = content.components.find(c => c.id === active.id);
+    const activeId = String(active.id);
+    const component = content.components.find(c => c.id === activeId);
     if (!component) return;
 
     // Calculate Grid Delta
@@ -170,8 +188,9 @@ export function Canvas() {
     const rowHeight = 80 + gap; // 5rem + gap
 
     // Start Position
-    const currentX = (component.props as any).x || 1;
-    const currentY = (component.props as any).y || 1;
+    const layoutProps = getLayoutProps(component.props);
+    const currentX = layoutProps.x || 1;
+    const currentY = layoutProps.y || 1;
 
     // Delta Steps
     const dCol = Math.round(delta.x / (colWidth + gap));
@@ -181,12 +200,12 @@ export function Canvas() {
     let newY = currentY + dRow;
 
     // Boundary Checks
-    const colSpan = (component.props as any).colSpan || (component.props as any).w || 6;
+    const colSpan = resolveComponentColSpan(component.props);
     newX = Math.max(1, Math.min(7 - colSpan, newX)); // Ensure fits in 6 cols
     newY = Math.max(1, newY); // Min row 1
 
     if (newX !== currentX || newY !== currentY) {
-        useEditorStore.getState().updateComponent(active.id, {
+        useEditorStore.getState().updateComponent(activeId, {
             ...component.props,
             x: newX,
             y: newY
@@ -202,8 +221,6 @@ export function Canvas() {
          const color = (d.color || '#000000').replace('#', '%23');
          const density = d.density || 'medium';
          // Increased base padding values
-         const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
-         
          const fontFamily = d.fontFamily || 'system-ui';
          const fontSize = d.fontSize || 24;
          const fontWeight = d.fontWeight || 'normal';
@@ -211,10 +228,8 @@ export function Canvas() {
          const textDecoration = d.textDecoration || 'none';
          const opacity = 0.1;
 
-         // Adaptive Sizing using Padding
-         const textLen = d.text?.length || 1;
-         const estTextWidth = textLen * (fontSize as number); 
-         const size = estTextWidth + basePadding;
+         // Adaptive sizing using padding and estimated text width
+         const size = getTextDecorationTileSize(d.text || '', fontSize, density);
 
          const svgWidth = size;
          const svgHeight = size;
@@ -368,11 +383,7 @@ export function Canvas() {
                 const textDecoration = d.textDecoration || 'none';
                 
                 const density = d.density || 'medium';
-                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
-                
-                const textLen = d.text?.length || 1;
-                const estTextWidth = textLen * (fontSize as number); 
-                const size = estTextWidth + basePadding;
+                const size = getTextDecorationTileSize(d.text || '', fontSize, density);
                 
                 const svgWidth = size;
                 const svgHeight = size;
@@ -403,11 +414,8 @@ export function Canvas() {
               backgroundSize: (() => {
                 const d = theme.decorations;
                 const density = d.density || 'medium';
-                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
                 const fontSize = d.fontSize || 24;
-                const textLen = d.text?.length || 1;
-                const estTextWidth = textLen * (fontSize as number);
-                const size = estTextWidth + basePadding;
+                const size = getTextDecorationTileSize(d.text || '', fontSize, density);
                 
                 return `${size}px ${size}px`;
               })(),
@@ -417,11 +425,8 @@ export function Canvas() {
               backgroundPosition: (() => {
                 const d = theme.decorations;
                 const density = d.density || 'medium';
-                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
                 const fontSize = d.fontSize || 24;
-                const textLen = d.text?.length || 1;
-                const estTextWidth = textLen * (fontSize as number);
-                const sizeVal = estTextWidth + basePadding;
+                const sizeVal = getTextDecorationTileSize(d.text || '', fontSize, density);
 
                 const angle = d.scrollAngle ?? 135;
                 const isAlternate = d.scrollMode === 'alternate';
@@ -461,84 +466,69 @@ export function Canvas() {
              theme.decorations?.scrollMode === 'alternate' ? "animate-bg-move-alternate" : "animate-bg-move-parallel",
              !isDesktop ? "flex-1 overflow-y-auto custom-scrollbar touch-pan-y" : "min-h-full"
           )} 
-          style={{
-            '--color-primary': theme.colors.primary,
-            '--color-bg': theme.colors.background,
-            '--color-text': theme.colors.text,
-            backgroundColor: theme.background.value,
-            color: theme.colors.text,
-            backgroundImage: getBgImage(),
-            ...(() => {
-               const d = theme.decorations;
-               let size = '20px';
-               if (d?.type === 'dots') {
-                  const density = d.density || 'medium';
-                  const sizeVal = density === 'low' ? 40 : density === 'high' ? 10 : 20;
-                  size = `${sizeVal}px`;
-               } else if (d?.type === 'grid') {
-                  const density = d.density || 'medium';
-                  const sizeVal = density === 'low' ? 60 : density === 'high' ? 15 : 30;
-                  size = `${sizeVal}px`;
-               } else if (d?.type === 'text') {
-                  const density = d.density || 'medium';
-                  const sizeVal = density === 'low' ? 400 : density === 'high' ? 100 : 200;
-                  size = `${sizeVal}px`;
-               }
-               
-               if (d?.type === 'none') {
-                 return {};
-               }
+          style={(() => {
+            const baseStyle: CssVariableStyle = {
+              '--color-primary': theme.colors.primary,
+              '--color-bg': theme.colors.background,
+              '--color-text': theme.colors.text,
+              backgroundColor: theme.background.value,
+              color: theme.colors.text,
+              backgroundImage: getBgImage(),
+            };
 
+            const d = theme.decorations;
+            let size = '20px';
+            if (d?.type === 'dots') {
+              const density = d.density || 'medium';
+              const sizeVal = density === 'low' ? 40 : density === 'high' ? 10 : 20;
+              size = `${sizeVal}px`;
+            } else if (d?.type === 'grid') {
+              const density = d.density || 'medium';
+              const sizeVal = density === 'low' ? 60 : density === 'high' ? 15 : 30;
+              size = `${sizeVal}px`;
+            } else if (d?.type === 'text') {
+              const density = d.density || 'medium';
+              const sizeVal = density === 'low' ? 400 : density === 'high' ? 100 : 200;
+              size = `${sizeVal}px`;
+            }
 
-                // Calculate scroll end position based on angle and size
-                
-                // d is already defined in the closure
-                const density = d.density || 'medium';
-                const basePadding = density === 'low' ? 400 : density === 'high' ? 100 : 250;
-                
-                const fontSize = d.fontSize || 24;
-                const textLen = d.text?.length || 1;
-                const estTextWidth = textLen * (fontSize as number);
-                const sizeVal = estTextWidth + basePadding;
-                
-                const isAlternate = d.scrollMode === 'alternate';
-                const loopSize = sizeVal; // Standard loop size
-                
-                const angle = d.scrollAngle ?? 135;
-                const rad = (angle * Math.PI) / 180;
-                
-                const dx = Math.round(Math.sin(rad)) * loopSize;
-                const dy = Math.round(Math.cos(rad) * -1) * loopSize;
-                
-                // Adjust duration based on loop distance if alternate
-                const durationVal = d.speed === 'slow' ? 40 : d.speed === 'fast' ? 5 : 20;
-                const durationStr = `${durationVal}s`;
+            if (d?.type === 'none') {
+              return baseStyle;
+            }
 
-                // Calculate bgSize string
-                const bgSizeStr = `${sizeVal}px ${sizeVal}px`;
-                
-                const variables: any = {
-                    '--bg-size': size,
-                    '--bg-end-x': `${dx}px`,
-                    '--bg-end-y': `${dy}px`,
-                };
-                
-                if (isAlternate) {
-                  const half = sizeVal / 2;
-                  variables['--bg-alt-start-x'] = `${half}px`;
-                  variables['--bg-alt-start-y'] = `${half}px`;
-                  variables['--bg-alt-end-x'] = `${half + dx}px`;
-                  variables['--bg-alt-end-y'] = `${half + dy}px`;
-                }
+            const density = d.density || 'medium';
+            const fontSize = d.fontSize || 24;
+            const sizeVal = getTextDecorationTileSize(d.text || '', fontSize, density);
+            const isAlternate = d.scrollMode === 'alternate';
+            const loopSize = sizeVal;
+            const angle = d.scrollAngle ?? 135;
+            const rad = (angle * Math.PI) / 180;
+            const dx = Math.round(Math.sin(rad)) * loopSize;
+            const dy = Math.round(Math.cos(rad) * -1) * loopSize;
+            const durationVal = d.speed === 'slow' ? 40 : d.speed === 'fast' ? 5 : 20;
 
-                return {
-                  backgroundSize: bgSizeStr,
-                  animationDuration: durationStr,
-                  animationDirection: 'normal',
-                  ...variables
-                } as any as React.CSSProperties;
-            })()
-          } as any as React.CSSProperties}
+            const variables: CssVariableStyle = {
+              '--bg-size': size,
+              '--bg-end-x': `${dx}px`,
+              '--bg-end-y': `${dy}px`,
+            };
+
+            if (isAlternate) {
+              const half = sizeVal / 2;
+              variables['--bg-alt-start-x'] = `${half}px`;
+              variables['--bg-alt-start-y'] = `${half}px`;
+              variables['--bg-alt-end-x'] = `${half + dx}px`;
+              variables['--bg-alt-end-y'] = `${half + dy}px`;
+            }
+
+            return {
+              ...baseStyle,
+              backgroundSize: `${sizeVal}px ${sizeVal}px`,
+              animationDuration: `${durationVal}s`,
+              animationDirection: 'normal',
+              ...variables,
+            };
+          })()}
         >
           <div className="min-h-full pb-20 pt-8 px-4">
             <DndContext 
@@ -604,7 +594,7 @@ export function Canvas() {
                       const Definition = COMPONENT_REGISTRY[activeComponent.type];
                       if (!Definition) return null;
                       const Preview = Definition.preview;
-                      const effectiveProps = { 
+                      const effectiveProps: ComponentInstance['props'] = {
                         ...activeComponent.props, 
                         ...(activeComponent.i18n?.[useEditorStore.getState().editingLocale] || {}) 
                       };

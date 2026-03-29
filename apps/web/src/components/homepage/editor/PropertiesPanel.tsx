@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
+import type { ThemeConfig } from '@tcrn/shared';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
@@ -12,6 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+
+const THEME_PRESETS = ['default', 'dark', 'cute', 'soft', 'minimal'] as const;
+const VISUAL_STYLES = ['simple', 'glass', 'neo', 'retro', 'flat'] as const satisfies readonly ThemeConfig['visualStyle'][];
+const ANIMATION_INTENSITIES = ['low', 'medium', 'high'] as const satisfies readonly ThemeConfig['animation']['intensity'][];
+const DECORATION_TYPES = ['none', 'dots', 'grid', 'text'] as const satisfies readonly ThemeConfig['decorations']['type'][];
+const DECORATION_DENSITIES = ['low', 'medium', 'high'] as const satisfies readonly NonNullable<ThemeConfig['decorations']['density']>[];
+const DECORATION_SPEEDS = ['slow', 'normal', 'fast'] as const satisfies readonly NonNullable<ThemeConfig['decorations']['speed']>[];
+const DECORATION_SCROLL_MODES = ['parallel', 'alternate'] as const satisfies readonly NonNullable<ThemeConfig['decorations']['scrollMode']>[];
+type ThemeFontWeightOption = Extract<NonNullable<ThemeConfig['decorations']['fontWeight']>, string>;
+const FONT_WEIGHT_OPTIONS = ['normal', 'bold', 'lighter'] as const satisfies readonly ThemeFontWeightOption[];
+
+function isOptionValue<T extends string>(options: readonly T[], value: string): value is T {
+  return (options as readonly string[]).includes(value);
+}
 
 export function PropertiesPanel() {
   const t = useTranslations('homepageEditor');
@@ -26,6 +40,15 @@ export function PropertiesPanel() {
       setActiveTab("component");
     }
   }, [selectedComponentId]);
+
+  const updateDecorations = (patch: Partial<ThemeConfig['decorations']>) => {
+    setTheme({
+      decorations: {
+        ...theme.decorations,
+        ...patch,
+      },
+    });
+  };
 
   // Render form based on component type
   const renderComponentForm = () => {
@@ -59,13 +82,10 @@ export function PropertiesPanel() {
           </div>
         )}
         
-
-
-        
         {/* Helper to debug props if needed: <pre>{JSON.stringify(props, null, 2)}</pre> */}
         <EditorComponent 
-          props={effectiveProps} 
-          onChange={(newProps: any) => updateComponent(selectedComponent.id, newProps)} 
+          props={effectiveProps}
+          onChange={(newProps: Record<string, unknown>) => updateComponent(selectedComponent.id, newProps)}
         />
       </div>
     );
@@ -77,7 +97,7 @@ export function PropertiesPanel() {
         <Label>{t('preset')}</Label>
         <ScrollArea className="w-full whitespace-nowrap pb-2">
           <div className="flex w-max space-x-2">
-            {['default', 'dark', 'cute', 'soft', 'minimal'].map(preset => (
+            {THEME_PRESETS.map(preset => (
               <button
                 key={preset}
                 className={`px-3 py-2 rounded-md text-xs capitalize min-w-[70px] transition-all border-2 
@@ -85,7 +105,7 @@ export function PropertiesPanel() {
                     ? 'border-primary bg-primary/5 font-medium text-primary' 
                     : 'border-transparent bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground'
                   }`}
-                onClick={() => setThemePreset(preset as any)}
+                onClick={() => setThemePreset(preset)}
               >
                 {t(`preset${preset.charAt(0).toUpperCase() + preset.slice(1)}`)}
               </button>
@@ -100,9 +120,14 @@ export function PropertiesPanel() {
         <select 
           className="w-full p-2 border rounded text-sm bg-background"
           value={theme.visualStyle || 'simple'}
-          onChange={(e) => setTheme({ visualStyle: e.target.value as any })}
+          onChange={(e) => {
+            const nextStyle = e.target.value;
+            if (isOptionValue(VISUAL_STYLES, nextStyle)) {
+              setTheme({ visualStyle: nextStyle });
+            }
+          }}
         >
-          {['simple', 'glass', 'neo', 'retro', 'flat'].map(style => (
+          {VISUAL_STYLES.map(style => (
             <option key={style} value={style}>{t(`style_${style}`)}</option>
           ))}
         </select>
@@ -161,11 +186,16 @@ export function PropertiesPanel() {
           <select 
             className="w-full p-1.5 border rounded text-xs bg-background"
             value={theme.animation?.intensity || 'medium'}
-            onChange={(e) => setTheme({ animation: { ...theme.animation, intensity: e.target.value as any } })}
+            onChange={(e) => {
+              const nextIntensity = e.target.value;
+              if (isOptionValue(ANIMATION_INTENSITIES, nextIntensity)) {
+                setTheme({ animation: { ...theme.animation, intensity: nextIntensity } });
+              }
+            }}
           >
-            <option value="low">{t('low')}</option>
-            <option value="medium">{t('medium')}</option>
-            <option value="high">{t('high')}</option>
+            {ANIMATION_INTENSITIES.map(intensity => (
+              <option key={intensity} value={intensity}>{t(intensity)}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -177,12 +207,16 @@ export function PropertiesPanel() {
           <select 
             className="w-full p-1.5 border rounded text-xs bg-background"
             value={theme.decorations?.type || 'none'}
-            onChange={(e) => setTheme({ decorations: { ...theme.decorations, type: e.target.value as any } })}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              if (isOptionValue(DECORATION_TYPES, nextType)) {
+                updateDecorations({ type: nextType });
+              }
+            }}
           >
-            <option value="none">{t('none')}</option>
-            <option value="dots">{t('dots')}</option>
-            <option value="grid">{t('grid')}</option>
-            <option value="text">{t('text')}</option>
+            {DECORATION_TYPES.map(type => (
+              <option key={type} value={type}>{t(type)}</option>
+            ))}
           </select>
         </div>
 
@@ -193,11 +227,16 @@ export function PropertiesPanel() {
               <select 
                 className="w-full p-1.5 border rounded text-xs bg-background h-8"
                 value={theme.decorations.density || 'medium'}
-                onChange={(e) => setTheme({ decorations: { ...theme.decorations, density: e.target.value as any } })}
+                onChange={(e) => {
+                  const nextDensity = e.target.value;
+                  if (isOptionValue(DECORATION_DENSITIES, nextDensity)) {
+                    updateDecorations({ density: nextDensity });
+                  }
+                }}
               >
-                <option value="low">{t('low')}</option>
-                <option value="medium">{t('medium')}</option>
-                <option value="high">{t('high')}</option>
+                {DECORATION_DENSITIES.map(density => (
+                  <option key={density} value={density}>{t(density)}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1">
@@ -205,11 +244,16 @@ export function PropertiesPanel() {
               <select 
                 className="w-full p-1.5 border rounded text-xs bg-background h-8"
                 value={theme.decorations.speed || 'normal'}
-                onChange={(e) => setTheme({ decorations: { ...theme.decorations, speed: e.target.value as any } })}
+                onChange={(e) => {
+                  const nextSpeed = e.target.value;
+                  if (isOptionValue(DECORATION_SPEEDS, nextSpeed)) {
+                    updateDecorations({ speed: nextSpeed });
+                  }
+                }}
               >
-                <option value="slow">{t('slow')}</option>
-                <option value="normal">{t('normal')}</option>
-                <option value="fast">{t('fast')}</option>
+                {DECORATION_SPEEDS.map(speed => (
+                  <option key={speed} value={speed}>{t(speed)}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1">
@@ -217,10 +261,16 @@ export function PropertiesPanel() {
               <select 
                 className="w-full p-1.5 border rounded text-xs bg-background h-8"
                 value={theme.decorations.scrollMode || 'parallel'}
-                onChange={(e) => setTheme({ decorations: { ...theme.decorations, scrollMode: e.target.value as any } })}
+                onChange={(e) => {
+                  const nextMode = e.target.value;
+                  if (isOptionValue(DECORATION_SCROLL_MODES, nextMode)) {
+                    updateDecorations({ scrollMode: nextMode });
+                  }
+                }}
               >
-                <option value="parallel">{t('parallel')}</option>
-                <option value="alternate">{t('alternate')}</option>
+                {DECORATION_SCROLL_MODES.map(mode => (
+                  <option key={mode} value={mode}>{t(mode)}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1">
@@ -288,7 +338,12 @@ export function PropertiesPanel() {
                 <select 
                   className="w-full p-1.5 border rounded text-xs bg-background h-8"
                   value={theme.decorations.fontWeight || 'normal'}
-                  onChange={(e) => setTheme({ decorations: { ...theme.decorations, fontWeight: e.target.value as any } })}
+                  onChange={(e) => {
+                    const nextWeight = e.target.value;
+                    if (isOptionValue(FONT_WEIGHT_OPTIONS, nextWeight)) {
+                      updateDecorations({ fontWeight: nextWeight });
+                    }
+                  }}
                 >
                   <option value="normal">Normal</option>
                   <option value="bold">Bold</option>

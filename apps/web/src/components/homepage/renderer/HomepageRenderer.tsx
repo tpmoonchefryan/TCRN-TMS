@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const */
+/* eslint-disable prefer-const */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -17,6 +17,11 @@ import zhMessages from '@/i18n/messages/zh.json';
 import { cn } from '@/lib/utils';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import {
+  resolveComponentColSpan,
+  resolveComponentGridPosition,
+  resolveComponentRowSpan,
+} from '../lib/layout-props';
 import { migrateComponentTypes } from '../lib/types';
 
 
@@ -27,7 +32,9 @@ interface HomepageRendererProps {
   homepagePath?: string;
 }
 
-const MESSAGES: Record<string, any> = {
+type CssVariableStyle = React.CSSProperties & Partial<Record<`--${string}`, string | number>>;
+
+const MESSAGES: Record<'en' | 'zh' | 'ja', Record<string, unknown>> = {
   en: enMessages,
   zh: zhMessages,
   ja: jaMessages
@@ -59,7 +66,7 @@ function hexToHsl(hex: string): string {
 
 export function HomepageRenderer({ content, theme, className, homepagePath }: HomepageRendererProps) {
   const t = useTranslations('homepageEditor');
-  const [currentLocale, setCurrentLocale] = useState('en');
+  const [currentLocale, setCurrentLocale] = useState<keyof typeof MESSAGES>('en');
 
   // Migrate legacy component types to current types
   const migratedContent = migrateComponentTypes(content);
@@ -67,7 +74,7 @@ export function HomepageRenderer({ content, theme, className, homepagePath }: Ho
   const visualStyle = theme?.visualStyle || 'simple';
   
   // Inject CSS variables for theme
-  const style = {
+  const style: CssVariableStyle = {
     ...generateCssVariables(theme || DEFAULT_THEME),
     
     // Background handling
@@ -84,7 +91,7 @@ export function HomepageRenderer({ content, theme, className, homepagePath }: Ho
     // Visual Style specific vars
     '--glass-opacity': visualStyle === 'glass' ? '0.7' : '1',
     '--glass-border': visualStyle === 'glass' ? '1px solid rgba(255,255,255,0.2)' : 'none',
-  } as React.CSSProperties & Record<string, any>;
+  };
 
   // Animation variants
   const containerVariants = {
@@ -335,37 +342,16 @@ export function HomepageRenderer({ content, theme, className, homepagePath }: Ho
               if (currentLocale && currentLocale !== 'en' && comp.i18n?.[currentLocale]) {
                    effectiveProps = { ...effectiveProps, ...comp.i18n[currentLocale] };
               }
-              
-              const props = effectiveProps as any;
 
               // Resolve Col Span (1-6)
               // Priority: props.colSpan > props.w > defaultProps.colSpan > 6
-              const colSpan = props.colSpan || props.w || defaultProps.colSpan || 6;
+              const colSpan = resolveComponentColSpan(effectiveProps, defaultProps);
  
               // Resolve Row Span
-              // We prioritize explicit rowSpan if available
-              let rowSpan = props.rowSpan || props.h;
-              if (!rowSpan) {
-                 const heightMode = props.heightMode || defaultProps.heightMode || 'auto';
-                 const isProfile = comp.type === 'ProfileCard';
-                 const autoSpan = isProfile ? 6 : 4;
-                 
-                  // Check if registry has a specific default rowSpan
-                 if (defaultProps.rowSpan) {
-                   rowSpan = defaultProps.rowSpan;
-                 } else {
-                   rowSpan = {
-                       'auto': autoSpan,
-                       'small': 2,
-                       'medium': 4,
-                       'large': 6
-                   }[heightMode as string] || 4;
-                 }
-              }
+              const rowSpan = resolveComponentRowSpan(comp.type, effectiveProps, defaultProps);
 
               // Position
-              const gridColumnStart = props.x || 'auto';
-              const gridRowStart = props.y || 'auto';
+              const { gridColumnStart, gridRowStart } = resolveComponentGridPosition(effectiveProps);
 
               // Visual Style Overrides
               const cardBgHex = theme?.card?.background || '#FFFFFF';
@@ -373,11 +359,11 @@ export function HomepageRenderer({ content, theme, className, homepagePath }: Ho
                                  theme?.card?.borderRadius === 'large' ? '1rem' : 
                                  theme?.card?.borderRadius === 'full' ? '9999px' : '0.5rem';
               
-              const visualVars = {
+              const visualVars: CssVariableStyle = {
                  '--radius': cardRadius,
                  '--card': hexToHsl(cardBgHex),
                  '--hp-card-bg': cardBgHex, // For components using direct hex
-              } as React.CSSProperties & Record<string, string>;
+              };
 
               let visualClass = "";
 
@@ -416,13 +402,13 @@ export function HomepageRenderer({ content, theme, className, homepagePath }: Ho
                   variants={theme?.animation?.enableEntrance ? itemVariants : undefined}
                   whileHover={theme?.animation?.enableHover ? { scale: 1.02 } : undefined}
                   style={{ 
-                      ...comp.styleOverrides as any, 
+                      ...(comp.styleOverrides || {}),
                       ...visualVars,
                       '--desktop-col-start': gridColumnStart,
                       '--desktop-row-start': gridRowStart,
                       '--desktop-col-span': `${colSpan}`, // Raw number
                       '--desktop-row-span': `${rowSpan}`, // Raw number
-                  } as React.CSSProperties}
+                  } as CssVariableStyle}
                 >
                   <Component {...effectiveProps} />
                 </motion.div>

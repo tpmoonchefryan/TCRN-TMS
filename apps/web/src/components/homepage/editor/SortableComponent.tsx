@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useDraggable } from '@dnd-kit/core';
@@ -12,28 +11,25 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 import { COMPONENT_REGISTRY } from '../lib/component-registry';
+import {
+  resolveComponentColSpan,
+  resolveComponentGridPosition,
+  resolveComponentRowSpan,
+} from '../lib/layout-props';
 
 interface SortableComponentProps {
   comp: ComponentInstance;
   isSelected: boolean;
   theme: ThemeConfig;
   editingLocale?: string;
-  messages: Record<string, any>;
+  messages: Record<string, Record<string, unknown>>;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
-interface ComponentProps {
-  colSpan?: number;
-  rowSpan?: number;
-  heightMode?: string;
-  x?: number;
-  y?: number;
-  w?: number; // Alias for colSpan
-  h?: number; // Alias for rowSpan
-}
+type SortableStyle = React.CSSProperties & Partial<Record<`--${string}`, string | number>>;
 
-export function SortableComponent({ comp, isSelected, theme, editingLocale, messages, onSelect, onRemove, onUpdate }: SortableComponentProps & { onUpdate?: (id: string, props: any) => void }) { // Added onUpdate
+export function SortableComponent({ comp, isSelected, theme, editingLocale, messages, onSelect, onRemove, onUpdate }: SortableComponentProps & { onUpdate?: (id: string, props: Record<string, unknown>) => void }) { // Added onUpdate
   const {
     attributes,
     listeners,
@@ -54,7 +50,6 @@ export function SortableComponent({ comp, isSelected, theme, editingLocale, mess
 
 
   // --- Dimension Logic ---
-  const props = comp.props as ComponentProps;
   const definition = COMPONENT_REGISTRY[comp.type]; // Ensure definition is used
   const defaultProps = definition?.defaultProps || {};
   const PreviewComponent = definition?.preview;
@@ -66,32 +61,13 @@ export function SortableComponent({ comp, isSelected, theme, editingLocale, mess
 
   // Resolve Col Span (1-6)
   // Priority: props.colSpan > props.w > defaultProps.colSpan > 6
-  const colSpan = props.colSpan || props.w || defaultProps.colSpan || 6;
+  const colSpan = resolveComponentColSpan(comp.props, defaultProps);
   
   // Resolve Row Span
-  let rowSpan = props.rowSpan || props.h;
-  if (!rowSpan) {
-    // If explicit rowSpan missing, check heightMode or fallback to defaults
-    const heightMode = props.heightMode || defaultProps.heightMode || 'auto';
-    const isProfile = comp.type === 'ProfileCard';
-    const autoSpan = isProfile ? 6 : 4;
-    
-    // Check if registry has a specific default rowSpan (e.g. spacers might need it)
-    if (defaultProps.rowSpan) {
-      rowSpan = defaultProps.rowSpan;
-    } else {
-      rowSpan = {
-          'auto': autoSpan,
-          'small': 2,
-          'medium': 4,
-          'large': 6
-      }[heightMode as string] || 4;
-    }
-  }
+  const rowSpan = resolveComponentRowSpan(comp.type, comp.props, defaultProps);
 
   // Resolve Position (x, y)
-  const gridColumnStart = props.x || 'auto';
-  const gridRowStart = props.y || 'auto';
+  const { gridColumnStart, gridRowStart } = resolveComponentGridPosition(comp.props);
 
   // --- Resize Handler ---
   const handleResizeStart = (e: React.PointerEvent) => {
@@ -158,7 +134,7 @@ export function SortableComponent({ comp, isSelected, theme, editingLocale, mess
           '--desktop-row-start': gridRowStart,
           '--desktop-col-span': `${colSpan}`, // Just the number
           '--desktop-row-span': `${rowSpan}`, // Just the number
-      } as React.CSSProperties}
+      } as SortableStyle}
       className={cn(
         "relative group cursor-pointer border-2 border-transparent rounded-lg",
         // Mobile: auto width (col-span-1), auto height

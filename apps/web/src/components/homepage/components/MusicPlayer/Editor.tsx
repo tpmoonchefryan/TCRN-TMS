@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -8,6 +7,12 @@ import { useTranslations } from 'next-intl';
 import { Input, Label } from '@/components/ui';
 
 import { MusicPlayerProps } from './Preview';
+
+const MUSIC_PLATFORM_OPTIONS = ['spotify', 'apple', 'soundcloud', 'youtube_music'] as const satisfies readonly NonNullable<MusicPlayerProps['platform']>[];
+
+function isMusicPlatform(value: string): value is (typeof MUSIC_PLATFORM_OPTIONS)[number] {
+  return MUSIC_PLATFORM_OPTIONS.includes(value as (typeof MUSIC_PLATFORM_OPTIONS)[number]);
+}
 
 interface MusicPlayerEditorProps {
   props: MusicPlayerProps;
@@ -22,7 +27,7 @@ export function MusicPlayerEditor({ props, onChange }: MusicPlayerEditorProps) {
     { value: 'apple', label: t('platformApple') },
     { value: 'soundcloud', label: t('platformSoundcloud') },
     { value: 'youtube_music', label: t('platformYoutubeMusic') },
-  ];
+  ] as const;
 
   return (
     <div className="space-y-4">
@@ -31,7 +36,12 @@ export function MusicPlayerEditor({ props, onChange }: MusicPlayerEditorProps) {
         <select 
           className="w-full p-2 border rounded text-sm bg-background"
           value={props.platform || 'spotify'}
-          onChange={(e) => onChange({ ...props, platform: e.target.value as any })}
+          onChange={(e) => {
+            const nextPlatform = e.target.value;
+            if (isMusicPlatform(nextPlatform)) {
+              onChange({ ...props, platform: nextPlatform });
+            }
+          }}
         >
           {platforms.map(p => (
             <option key={p.value} value={p.value}>{p.label}</option>

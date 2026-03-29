@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -19,6 +18,14 @@ export interface LiveStatusProps {
   isLive?: boolean;
   viewers?: string;
   title?: string;
+}
+
+interface FetchedLiveStatus {
+  channelName?: string;
+  coverUrl?: string;
+  isLive: boolean;
+  title?: string;
+  viewers?: string;
 }
 
 export const defaultProps: LiveStatusProps = {
@@ -81,7 +88,7 @@ export function LiveStatus({
   const colorClass = PLATFORM_COLORS[platform] || PLATFORM_COLORS.other;
 
   const [isFetching, setIsFetching] = React.useState(false);
-  const [fetchedData, setFetchedData] = React.useState<{ isLive: boolean; title?: string; viewers?: string; coverUrl?: string; } | null>(null);
+  const [fetchedData, setFetchedData] = React.useState<FetchedLiveStatus | null>(null);
 
   React.useEffect(() => {
     if (!channelId || !['bilibili', 'youtube'].includes(platform)) return;
@@ -110,7 +117,7 @@ export function LiveStatus({
   const viewers = (fetchedData?.viewers) || viewersProp;
   const coverUrl = fetchedData?.coverUrl; 
   
-  const displayChannelName = (fetchedData as any)?.channelName || channelName || (channelId ? `Channel ${channelId}` : '');
+  const displayChannelName = fetchedData?.channelName || channelName || (channelId ? `Channel ${channelId}` : '');
 
   let finalStreamUrl = streamUrl;
   if (!finalStreamUrl && channelId) {
