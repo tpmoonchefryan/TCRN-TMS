@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { customerApi, customerImportApi } from '@/lib/api/modules/customer';
 
+const mockBuildApiUrl = vi.fn((pathname: string) => `http://localhost:4000${pathname}`);
 const mockGet = vi.fn();
 const mockPost = vi.fn();
 const mockPatch = vi.fn();
@@ -11,6 +12,7 @@ const mockDelete = vi.fn();
 const fetchMock = vi.fn();
 
 vi.mock('@/lib/api/core', () => ({
+  buildApiUrl: (pathname: string) => mockBuildApiUrl(pathname),
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
@@ -23,6 +25,7 @@ describe('customer api module', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('fetch', fetchMock);
+    mockBuildApiUrl.mockImplementation((pathname: string) => `http://localhost:4000${pathname}`);
   });
 
   it('does not send legacy profile store fields when creating an individual customer', async () => {
@@ -81,5 +84,35 @@ describe('customer api module', () => {
     const body = init.body as FormData;
     expect(body.get('talentId')).toBe('talent-1');
     expect(body.get('file')).toBeInstanceOf(File);
+  });
+
+  it('downloads individual import templates through the canonical api url helper', async () => {
+    const createObjectUrl = vi.fn(() => 'blob:template');
+    const revokeObjectUrl = vi.fn();
+    const click = vi.fn();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(['nickname'], { type: 'text/csv' }),
+    });
+    vi.stubGlobal(
+      'URL',
+      Object.assign(globalThis.URL, {
+        createObjectURL: createObjectUrl,
+        revokeObjectURL: revokeObjectUrl,
+      }),
+    );
+    vi.spyOn(document, 'createElement').mockReturnValue({
+      click,
+    } as unknown as HTMLAnchorElement);
+
+    await customerImportApi.downloadIndividualTemplate();
+
+    expect(mockBuildApiUrl).toHaveBeenCalledWith('/api/v1/imports/customers/individuals/template');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/imports/customers/individuals/template',
+      { credentials: 'include' },
+    );
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:template');
   });
 });

@@ -1,26 +1,32 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { publicApi, reportApi } from '@/lib/api/modules/content';
+import { marshmallowApi, publicApi, reportApi } from '@/lib/api/modules/content';
 
+const mockBuildApiUrl = vi.fn((pathname: string) => `http://localhost:4000${pathname}`);
 const mockGet = vi.fn();
+const mockGetAccessToken = vi.fn();
 const mockPost = vi.fn();
 const mockDelete = vi.fn();
+const fetchMock = vi.fn();
 
 vi.mock('@/lib/api/core', () => ({
+  buildApiUrl: (pathname: string) => mockBuildApiUrl(pathname),
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
     patch: vi.fn(),
     put: vi.fn(),
     delete: (...args: unknown[]) => mockDelete(...args),
-    getAccessToken: vi.fn(),
+    getAccessToken: (...args: unknown[]) => mockGetAccessToken(...args),
   },
 }));
 
 describe('reportApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('fetch', fetchMock);
+    mockBuildApiUrl.mockImplementation((pathname: string) => `http://localhost:4000${pathname}`);
   });
 
   it('lists report jobs with flattened query params', async () => {
@@ -108,6 +114,39 @@ describe('reportApi', () => {
     await reportApi.cancel('job-1', 'talent-1');
 
     expect(mockDelete).toHaveBeenCalledWith('/api/v1/reports/mfr/jobs/job-1?talent_id=talent-1');
+  });
+
+  it('uploads marshmallow avatars through the canonical api url helper with auth when available', async () => {
+    mockGetAccessToken.mockReturnValue('token-1');
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          url: 'https://cdn.example/avatar.png',
+          fileName: 'avatar.png',
+        },
+      }),
+    });
+
+    const result = await marshmallowApi.uploadAvatar(
+      'talent-1',
+      new File(['avatar'], 'avatar.png', { type: 'image/png' }),
+    );
+
+    expect(mockBuildApiUrl).toHaveBeenCalledWith('/api/v1/talents/talent-1/marshmallow/avatar');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/talents/talent-1/marshmallow/avatar',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token-1',
+        },
+      }),
+    );
+    expect(result).toEqual({
+      url: 'https://cdn.example/avatar.png',
+      fileName: 'avatar.png',
+    });
   });
 });
 

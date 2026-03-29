@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { apiClient, type ApiResponse } from '../core';
+import type { ApiResponse } from '../core';
+import { apiClient, buildApiUrl } from '../core';
 
 export interface CustomerListParams {
   talentId: string;
@@ -666,8 +667,6 @@ export interface CustomerImportCancelResponse {
   message: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 const parseUploadResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   const payload = (await response.json()) as ApiResponse<T>;
 
@@ -691,7 +690,7 @@ const uploadCustomerImportFile = async (
   formData.append('file', file);
   formData.append('talentId', talentId);
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/imports/customers/${type}`, {
+  const response = await fetch(buildApiUrl(`/api/v1/imports/customers/${type}`), {
     method: 'POST',
     body: formData,
     headers: { 'X-Talent-Id': talentId },
@@ -704,7 +703,7 @@ const uploadCustomerImportFile = async (
 export const customerImportApi = {
   downloadIndividualTemplate: async () => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/individuals/template`,
+      buildApiUrl('/api/v1/imports/customers/individuals/template'),
       {
         credentials: 'include',
       },
@@ -721,7 +720,7 @@ export const customerImportApi = {
 
   downloadCompanyTemplate: async () => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/companies/template`,
+      buildApiUrl('/api/v1/imports/customers/companies/template'),
       {
         credentials: 'include',
       },
@@ -754,7 +753,7 @@ export const customerImportApi = {
 
   downloadErrors: async (type: 'individuals' | 'companies', jobId: string) => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/imports/customers/${type}/${jobId}/errors`,
+      buildApiUrl(`/api/v1/imports/customers/${type}/${jobId}/errors`),
       {
         credentials: 'include',
       },

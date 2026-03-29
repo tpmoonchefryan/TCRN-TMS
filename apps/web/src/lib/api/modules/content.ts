@@ -10,7 +10,7 @@ import type {
   UpdateHomepageSettingsInput,
 } from '@tcrn/shared';
 
-import { apiClient } from '../core';
+import { apiClient, buildApiUrl } from '../core';
 
 export type ReportFormat = 'xlsx' | 'csv';
 
@@ -552,7 +552,7 @@ export const marshmallowApi = {
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/talents/${talentId}/marshmallow/avatar`,
+      buildApiUrl(`/api/v1/talents/${talentId}/marshmallow/avatar`),
       {
         method: 'POST',
         body: formData,

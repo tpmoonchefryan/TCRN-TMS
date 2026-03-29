@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+}
+
+export function buildApiUrl(pathname: string): string {
+  return `${getApiBaseUrl()}${pathname}`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
