@@ -4,20 +4,12 @@
 
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-import { publicApi } from '@/lib/api/modules/content';
-
-// SSO User info from validated token
-interface SsoUser {
-  id: string;
-  displayName: string;
-  email: string;
-  talentId: string;
-}
+import { publicApi, type PublicMarshmallowSsoUser } from '@/lib/api/modules/content';
 
 // Streamer mode context value
 interface StreamerModeContextValue {
   isStreamerMode: boolean;
-  user: SsoUser | null;
+  user: PublicMarshmallowSsoUser | null;
   ssoToken: string | null;
   isLoading: boolean;
   error: string | null;
@@ -41,7 +33,7 @@ interface StreamerModeProviderProps {
 }
 
 export function StreamerModeProvider({ children, ssoToken }: StreamerModeProviderProps) {
-  const [user, setUser] = useState<SsoUser | null>(null);
+  const [user, setUser] = useState<PublicMarshmallowSsoUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

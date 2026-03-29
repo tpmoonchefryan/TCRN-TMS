@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reportApi } from '@/lib/api/modules/content';
+import { publicApi, reportApi } from '@/lib/api/modules/content';
 
 const mockGet = vi.fn();
 const mockPost = vi.fn();
@@ -108,5 +108,77 @@ describe('reportApi', () => {
     await reportApi.cancel('job-1', 'talent-1');
 
     expect(mockDelete).toHaveBeenCalledWith('/api/v1/reports/mfr/jobs/job-1?talent_id=talent-1');
+  });
+});
+
+describe('publicApi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('requests public marshmallow config through the current public route', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { title: 'Marshmallow' } });
+
+    await publicApi.getMarshmallowConfig('talent-path');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/public/marshmallow/talent-path/config');
+  });
+
+  it('posts public marshmallow submit payloads unchanged', async () => {
+    mockPost.mockResolvedValue({ success: true, data: { id: 'message-1', status: 'pending' } });
+
+    await publicApi.submitMarshmallow('talent-path', {
+      content: 'hello',
+      isAnonymous: true,
+      fingerprint: 'fp-1',
+      turnstileToken: 'turnstile-1',
+      socialLink: 'https://t.bilibili.com/1',
+      selectedImageUrls: ['https://image.example/1.jpg'],
+    });
+
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/public/marshmallow/talent-path/submit', {
+      content: 'hello',
+      isAnonymous: true,
+      fingerprint: 'fp-1',
+      turnstileToken: 'turnstile-1',
+      socialLink: 'https://t.bilibili.com/1',
+      selectedImageUrls: ['https://image.example/1.jpg'],
+    });
+  });
+
+  it('serializes public message list params as the current query contract', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { messages: [], hasMore: false } });
+
+    await publicApi.getPublicMessages('talent-path', '2026-03-29T00:00:00.000Z', 200, 'fp-1', true);
+
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/public/marshmallow/talent-path/messages', {
+      cursor: '2026-03-29T00:00:00.000Z',
+      limit: '200',
+      fingerprint: 'fp-1',
+      _t: expect.any(String),
+    });
+  });
+
+  it('posts streamer and reaction actions to the public marshmallow routes', async () => {
+    mockPost.mockResolvedValue({ success: true, data: { success: true } });
+
+    await publicApi.markMarshmallowReadAuth('talent-path', 'message-1', 'sso-1');
+    await publicApi.replyMarshmallowAuth('talent-path', 'message-1', 'reply body', 'sso-1');
+    await publicApi.toggleMarshmallowReaction('message-1', '❤️', 'fp-1');
+
+    expect(mockPost).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/public/marshmallow/talent-path/messages/message-1/mark-read-auth',
+      { ssoToken: 'sso-1' },
+    );
+    expect(mockPost).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/public/marshmallow/talent-path/messages/message-1/reply-auth',
+      { ssoToken: 'sso-1', content: 'reply body' },
+    );
+    expect(mockPost).toHaveBeenNthCalledWith(3, '/api/v1/public/marshmallow/messages/message-1/react', {
+      reaction: '❤️',
+      fingerprint: 'fp-1',
+    });
   });
 });

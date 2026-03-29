@@ -5,6 +5,7 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { publicApi } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
 interface ReactionBarProps {
@@ -55,30 +56,20 @@ export function ReactionBar({
     setCounts(newCounts);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(
-        `${apiUrl}/api/v1/public/marshmallow/messages/${messageId}/react`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reaction: emoji, fingerprint }),
-        }
-      );
-
-      if (!res.ok) throw new Error('Failed to react');
-
-      const response = await res.json();
-      const data = response.data || response;
+      const response = await publicApi.toggleMarshmallowReaction(messageId, emoji, fingerprint);
+      if (!response.success || !response.data) {
+        throw new Error('Failed to react');
+      }
 
       // Update with server response
-      setCounts(data.counts || newCounts);
+      setCounts(response.data.counts || newCounts);
       
-      const finalUserReactions = data.added
+      const finalUserReactions = response.data.added
         ? [...new Set([...userReactions, emoji])]
         : userReactions.filter((e) => e !== emoji);
       setUserReactions(finalUserReactions);
 
-      onReactionChange?.(data.counts || newCounts, finalUserReactions);
+      onReactionChange?.(response.data.counts || newCounts, finalUserReactions);
     } catch (error) {
       // Revert on error
       setUserReactions(wasReacted ? [...userReactions, emoji] : userReactions.filter((e) => e !== emoji));

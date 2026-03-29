@@ -6,38 +6,7 @@ import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 import { Button } from '@/components/ui/button';
-
-// Config type
-interface MarshmallowConfig {
-  talent: {
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  title: string | null;
-  terms: {
-    en: string | null;
-    zh: string | null;
-    ja: string | null;
-  };
-}
-
-// Fetch config from API
-const getConfig = async (path: string): Promise<MarshmallowConfig | null> => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  
-  try {
-    const res = await fetch(`${apiUrl}/api/v1/public/marshmallow/${path}/config`, {
-      next: { revalidate: 300 }
-    });
-    
-    if (!res.ok) return null;
-    const response = await res.json();
-    return response.data || response;
-  } catch (error) {
-    console.error('Error fetching marshmallow config:', error);
-    return null;
-  }
-};
+import { fetchPublicMarshmallowConfig } from '@/lib/api/modules/public-marshmallow-fetch';
 
 // Default terms content
 const DEFAULT_TERMS = {
@@ -117,7 +86,7 @@ export default async function TermsPage({ params }: { params: Promise<{ path: st
   const t = await getTranslations('legal');
   const locale = await getLocale();
   
-  const config = await getConfig(path);
+  const config = await fetchPublicMarshmallowConfig(path, { revalidate: 300 });
   
   if (!config) {
     notFound();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-console */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -16,57 +15,49 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { publicApi } from '@/lib/api/modules/content';
+import { publicApi, type PublicMarshmallowConfigResponse } from '@/lib/api/modules/content';
 import { useZodForm } from '@/lib/form';
 
 // Cloudflare Turnstile Site Key (use test key in development)
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'; // Test key
-if (process.env.NODE_ENV === 'development') {
-   
-  console.log('[Debug] Turnstile Site Key:', TURNSTILE_SITE_KEY);
+
+interface TurnstileRenderOptions {
+  sitekey: string;
+  callback: (token: string) => void;
+  'expired-callback'?: () => void;
+  'error-callback'?: () => void;
 }
 
-// Config type matching backend API response (camelCase)
-interface MarshmallowConfig {
-  talent: {
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  title: string | null;
-  welcomeText: string | null;
-  placeholderText: string | null;
-  thankYouText?: string | null;
-  allowAnonymous: boolean;
-  maxMessageLength: number;
-  minMessageLength: number;
-  reactionsEnabled: boolean;
-  allowedReactions: string[];
-  theme: Record<string, unknown>;
+interface TurnstileApi {
+  render: (container: string | HTMLElement, options: TurnstileRenderOptions) => string;
+  reset: (widgetId: string) => void;
+  getResponse: (widgetId: string) => string | undefined;
 }
 
 // Default config for when API fails
-const DEFAULT_CONFIG: MarshmallowConfig = {
+const DEFAULT_CONFIG: PublicMarshmallowConfigResponse = {
   talent: { displayName: 'Unknown', avatarUrl: null },
   title: 'Marshmallow',
   welcomeText: 'Send me a message!',
   placeholderText: 'Write your message here...',
-  thankYouText: 'Thank you for your message!',
   allowAnonymous: true,
   maxMessageLength: 500,
   minMessageLength: 1,
   reactionsEnabled: true,
   allowedReactions: ['❤️', '👍', '😊'],
   theme: {},
+  terms: { en: null, zh: null, ja: null },
+  privacy: { en: null, zh: null, ja: null },
 };
 
 declare global {
   interface Window {
-    turnstile?: {
-      render: (container: string | HTMLElement, options: any) => string;
-      reset: (widgetId: string) => void;
-      getResponse: (widgetId: string) => string | undefined;
-    };
+    turnstile?: TurnstileApi;
   }
+}
+
+function getErrorMessage(error: unknown): string | null {
+  return error instanceof Error ? error.message : null;
 }
 
 // Simple fingerprint generation
@@ -91,14 +82,13 @@ const generateFingerprint = async (): Promise<string> => {
 export default function AskMarshmallowPage({ params }: { params: Promise<{ path: string }> }) {
   const { path } = use(params);
   const t = useTranslations('publicMarshmallow');
-  const [config, setConfig] = useState<MarshmallowConfig>(DEFAULT_CONFIG);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [config, setConfig] = useState<PublicMarshmallowConfigResponse>(DEFAULT_CONFIG);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState('');
   const [honeypot, setHoneypot] = useState('');  // Honeypot field - should remain empty
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -142,10 +132,8 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
         if (response.success && response.data) {
           setConfig(response.data);
         }
-      } catch (err) {
-        console.error('Failed to load config:', err);
-      } finally {
-        setIsLoadingConfig(false);
+      } catch {
+        // Keep the default client-safe config if the public request fails.
       }
     };
     loadConfig();
@@ -242,10 +230,11 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
         throw new Error(response.error?.message || t('sendFailed'));
       }
 
+      setSubmitMessage(response.data?.message || t('defaultThankYou'));
       setIsSubmitted(true);
       toast.success(t('sendSuccess'));
-    } catch (err: any) {
-      toast.error(err.message || t('sendFailed'));
+    } catch (error) {
+      toast.error(getErrorMessage(error) || t('sendFailed'));
       // Reset Turnstile on error
       if (window.turnstile && widgetIdRef.current) {
         window.turnstile.reset(widgetIdRef.current);
@@ -261,29 +250,22 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
     if (!socialLink?.trim()) return;
     
     setLoadingPreview(true);
-    setPreviewImage(null);
     setPreviewImages([]);
     setSelectedImages([]);
 
     try {
         const res = await publicApi.previewMarshmallowImage(socialLink.trim());
-        if (res.success) {
-            if (res.data?.images && res.data.images.length > 0) {
+        if (res.success && res.data) {
+            if (res.data.images.length > 0) {
                  setPreviewImages(res.data.images);
-                 // Auto-select all by default? Or none? Let's select none and let user pick, or maybe select all?
-                 // Let's select all by default for convenience if <= 9? 
-                 // Actually user requested "let submitter choose".
-                 // Let's select none or let them click. 
-                 // We can also just show them to pick.
-            } else if (res.data?.imageUrl) {
-                 setPreviewImages([res.data.imageUrl]);
-                 setSelectedImages([res.data.imageUrl]);
+                 toast.success('Images loaded successfully');
+            } else {
+                 toast.error(res.data.error || 'Failed to load images');
             }
-            toast.success('Images loaded successfully');
         } else {
-            toast.error(res.data?.error || 'Failed to load images');
+            toast.error(res.error?.message || 'Failed to load images');
         }
-    } catch (e) {
+    } catch {
         toast.error('Failed to load images');
     } finally {
         setLoadingPreview(false);
@@ -308,10 +290,10 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-3">{t('sent')}</h2>
         <p className="text-slate-600 max-w-md mx-auto mb-8 whitespace-pre-wrap">
-          {config.thankYouText || t('defaultThankYou')}
+          {submitMessage || t('defaultThankYou')}
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { setIsSubmitted(false); form.reset(); form.setValue('fingerprint', fingerprint); }}>
+          <Button variant="outline" onClick={() => { setIsSubmitted(false); setSubmitMessage(null); form.reset(); form.setValue('fingerprint', fingerprint); }}>
             {t('sendAnother')}
           </Button>
           <Button asChild>
@@ -470,19 +452,6 @@ export default function AskMarshmallowPage({ params }: { params: Promise<{ path:
                     ))}
                 </div>
             )}
-            {previewImages.length > 0 && (
-                <p className="text-[10px] text-slate-500 mt-1">
-                    {/* Reuse existing "click to select" logic or keep it simple? Actually user only asked to change the bottom help text. */}
-                    {/* The text "点击图片选择要发送的内容" was not requested to be changed, but good to check. */}
-                    {/* Wait, the user provided text is: "在此粘贴你想发送图片的Bilibili动态网址，点击获取图片，然后选择你想发给主播的图片后点击发送棉花糖即可" */}
-                    {/* This single sentence seems to replace the previous help text at the bottom. */}
-                    {/* So I should remove the separate "Click to select" text if it's redundant, or just focus on the bottom text. */}
-                    {/* The bottom text was: "本链接仅作为获取图片用途，不会存储用户账号信息" */}
-                    {/* The user request says: "Change THIS text to..." */}
-                    {/* So I will replace the bottom text with the new one. */}
-                </p>
-            )}
-
             <p className="text-[10px] text-slate-400">
                 {t('bilibiliHelpText')}
             </p>

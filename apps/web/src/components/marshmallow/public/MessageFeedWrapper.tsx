@@ -4,26 +4,14 @@
 
 import { useSearchParams } from 'next/navigation';
 
+import type { PublicMarshmallowMessageRecord } from '@/lib/api/modules/content';
+
 import { MessageFeed } from './MessageFeed';
 import { StreamerModeProvider } from './StreamerModeContext';
 
-// Message type
-interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  reactionCounts: Record<string, number>;
-  userReactions: string[];
-  createdAt: string;
-  isRead?: boolean;
-}
-
 interface MessageFeedWrapperProps {
   path: string;
-  initialMessages: MarshmallowMessage[];
+  initialMessages: PublicMarshmallowMessageRecord[];
   reactionsEnabled: boolean;
   allowedReactions: string[];
 }

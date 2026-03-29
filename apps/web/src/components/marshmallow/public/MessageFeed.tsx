@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -23,33 +22,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { publicApi } from '@/lib/api/modules/content';
+import { publicApi, type PublicMarshmallowMessageRecord } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
 import { PublicMessageCard } from './PublicMessageCard';
 import { useStreamerMode } from './StreamerModeContext';
 
-
-// Message type
-interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  repliedBy?: { id: string; displayName: string } | null;
-  reactionCounts: Record<string, number>;
-  userReactions: string[];
-  createdAt: string;
-  isRead?: boolean;
-  imageUrl?: string | null;
-  imageUrls?: string[];
-}
-
 interface MessageFeedProps {
   path: string;
-  initialMessages: MarshmallowMessage[];
+  initialMessages: PublicMarshmallowMessageRecord[];
   reactionsEnabled: boolean;
   allowedReactions: string[];
 }
@@ -65,8 +46,8 @@ export function MessageFeed({
 }: MessageFeedProps) {
   const t = useTranslations('publicMarshmallow');
   const { isStreamerMode, user, ssoToken } = useStreamerMode();
-  const [messages, setMessages] = useState<MarshmallowMessage[]>(initialMessages);
-  const [filteredMessages, setFilteredMessages] = useState<MarshmallowMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<PublicMarshmallowMessageRecord[]>(initialMessages);
+  const [filteredMessages, setFilteredMessages] = useState<PublicMarshmallowMessageRecord[]>(initialMessages);
   
   // Filter states (changed from replyFilter to readFilter)
   const [readFilter, setReadFilter] = useState<ReadFilter>('all');
@@ -154,9 +135,8 @@ export function MessageFeed({
     
     try {
       const response = await publicApi.markMarshmallowReadAuth(path, messageId, ssoToken);
-      // Backend returns { success, isRead } directly (not wrapped in data)
-      const isReadResult = (response as any).isRead ?? response.data?.isRead;
-      if (response.success) {
+      if (response.success && response.data?.success) {
+        const isReadResult = response.data.isRead ?? false;
         // Update local readMessages Set for immediate UI feedback
         setReadMessages(prev => {
           const next = new Set(prev);
@@ -173,7 +153,7 @@ export function MessageFeed({
         ));
         toast.success(isReadResult ? t('markedAsRead') : t('markedAsUnread'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('markReadFailed'));
     }
   }, [path, ssoToken, isStreamerMode, t]);
@@ -187,23 +167,21 @@ export function MessageFeed({
     
     try {
       const response = await publicApi.replyMarshmallowAuth(path, messageId, content, ssoToken);
-      // Backend returns { success, replyContent, repliedAt, repliedBy } directly (not wrapped in data)
-      const replyData = response.data || response;
-      if (response.success && (replyData as any).replyContent) {
+      if (response.success && response.data?.success && response.data.replyContent) {
         // Update the message with the reply
         setMessages(prev => prev.map(m => 
           m.id === messageId 
             ? { 
                 ...m, 
-                replyContent: (replyData as any).replyContent,
-                repliedAt: (replyData as any).repliedAt,
-                repliedBy: (replyData as any).repliedBy,
+                replyContent: response.data?.replyContent ?? null,
+                repliedAt: response.data?.repliedAt ?? null,
+                repliedBy: response.data?.repliedBy ?? null,
               }
             : m
         ));
         toast.success(t('replySuccess'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('replyFailed'));
     }
   }, [path, ssoToken, isStreamerMode, t]);

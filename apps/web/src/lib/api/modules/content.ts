@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type {
@@ -364,6 +363,132 @@ export interface HomepageRestoreVersionResponse {
   };
 }
 
+export interface PublicHomepageTalent {
+  displayName: string;
+  avatarUrl: string | null;
+  timezone?: string | null;
+}
+
+export interface PublicHomepageResponse {
+  talent: PublicHomepageTalent;
+  content: HomepageContent;
+  theme: ThemeConfig;
+  seo: {
+    title: string | null;
+    description: string | null;
+    ogImageUrl: string | null;
+  };
+  updatedAt: string;
+}
+
+export interface PublicMarshmallowLocalizedContent {
+  en: string | null;
+  zh: string | null;
+  ja: string | null;
+}
+
+export interface PublicMarshmallowTalent {
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface PublicMarshmallowConfigResponse {
+  talent: PublicMarshmallowTalent;
+  title: string | null;
+  welcomeText: string | null;
+  placeholderText: string | null;
+  allowAnonymous: boolean;
+  maxMessageLength: number;
+  minMessageLength: number;
+  reactionsEnabled: boolean;
+  allowedReactions: string[];
+  theme: Record<string, unknown>;
+  terms: PublicMarshmallowLocalizedContent;
+  privacy: PublicMarshmallowLocalizedContent;
+}
+
+export interface PublicMarshmallowSubmitPayload {
+  content: string;
+  senderName?: string;
+  isAnonymous: boolean;
+  turnstileToken?: string;
+  fingerprint: string;
+  honeypot?: string;
+  socialLink?: string;
+  selectedImageUrls?: string[];
+}
+
+export interface PublicMarshmallowSubmitResponse {
+  id: string;
+  status: SharedMessageStatus;
+  message: string;
+}
+
+export interface PublicMarshmallowReplyUser {
+  id: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  email?: string | null;
+}
+
+export interface PublicMarshmallowMessageRecord {
+  id: string;
+  content: string;
+  senderName: string | null;
+  isAnonymous: boolean;
+  isRead: boolean;
+  replyContent: string | null;
+  repliedAt: string | null;
+  repliedBy: PublicMarshmallowReplyUser | null;
+  reactionCounts: Record<string, number>;
+  userReactions: string[];
+  createdAt: string;
+  imageUrl?: string | null;
+  imageUrls?: string[];
+}
+
+export interface PublicMarshmallowMessagesResponse {
+  messages: PublicMarshmallowMessageRecord[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+export interface PublicMarshmallowReadResponse {
+  success: boolean;
+  isRead?: boolean;
+  error?: string;
+}
+
+export interface PublicMarshmallowSsoUser {
+  id: string;
+  displayName: string;
+  email: string;
+  talentId: string;
+}
+
+export interface PublicMarshmallowValidateSsoResponse {
+  valid: boolean;
+  user: PublicMarshmallowSsoUser | null;
+}
+
+export interface PublicMarshmallowReplyResponse {
+  success: boolean;
+  replyContent?: string;
+  repliedAt?: string;
+  repliedBy?: { id: string; displayName: string };
+  error?: string;
+}
+
+export interface PublicMarshmallowPreviewImageResponse {
+  images: string[];
+  error?: string;
+}
+
+export interface PublicMarshmallowReactionResponse {
+  added: boolean;
+  counts: Record<string, number>;
+}
+
 export const reportApi = {
   list: (talentId: string, page?: number, pageSize?: number) =>
     apiClient.get<ReportJobListPayload>('/api/v1/reports/mfr/jobs', {
@@ -537,24 +662,16 @@ export const homepageApi = {
 };
 
 export const publicApi = {
-  getHomepage: (talentPath: string) => apiClient.get<any>(`/api/v1/public/homepage/${talentPath}`),
+  getHomepage: (talentPath: string) =>
+    apiClient.get<PublicHomepageResponse>(`/api/v1/public/homepage/${talentPath}`),
 
   getMarshmallowConfig: (talentPath: string) =>
-    apiClient.get<any>(`/api/v1/public/marshmallow/${talentPath}/config`),
+    apiClient.get<PublicMarshmallowConfigResponse>(`/api/v1/public/marshmallow/${talentPath}/config`),
 
   submitMarshmallow: (
     talentPath: string,
-    data: {
-      content: string;
-      senderName?: string;
-      isAnonymous: boolean;
-      turnstileToken?: string;
-      fingerprint: string;
-      honeypot?: string;
-      socialLink?: string;
-      selectedImageUrls?: string[];
-    },
-  ) => apiClient.post<any>(`/api/v1/public/marshmallow/${talentPath}/submit`, data),
+    data: PublicMarshmallowSubmitPayload,
+  ) => apiClient.post<PublicMarshmallowSubmitResponse>(`/api/v1/public/marshmallow/${talentPath}/submit`, data),
 
   getPublicMessages: (
     talentPath: string,
@@ -563,7 +680,7 @@ export const publicApi = {
     fingerprint?: string,
     bustCache?: boolean,
   ) =>
-    apiClient.get<any>(`/api/v1/public/marshmallow/${talentPath}/messages`, {
+    apiClient.get<PublicMarshmallowMessagesResponse>(`/api/v1/public/marshmallow/${talentPath}/messages`, {
       cursor,
       limit: limit?.toString(),
       fingerprint,
@@ -571,19 +688,16 @@ export const publicApi = {
     }),
 
   markMarshmallowRead: (talentPath: string, messageId: string, fingerprint: string) =>
-    apiClient.post<{ success: boolean; isRead: boolean }>(
+    apiClient.post<PublicMarshmallowReadResponse>(
       `/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/mark-read`,
       { fingerprint },
     ),
 
   validateSsoToken: (token: string) =>
-    apiClient.post<{
-      valid: boolean;
-      user: { id: string; displayName: string; email: string; talentId: string } | null;
-    }>('/api/v1/public/marshmallow/validate-sso', { token }),
+    apiClient.post<PublicMarshmallowValidateSsoResponse>('/api/v1/public/marshmallow/validate-sso', { token }),
 
   markMarshmallowReadAuth: (talentPath: string, messageId: string, ssoToken: string) =>
-    apiClient.post<{ success: boolean; isRead: boolean }>(
+    apiClient.post<PublicMarshmallowReadResponse>(
       `/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/mark-read-auth`,
       { ssoToken },
     ),
@@ -594,21 +708,24 @@ export const publicApi = {
     content: string,
     ssoToken: string,
   ) =>
-    apiClient.post<{
-      success: boolean;
-      replyContent: string;
-      repliedAt: string;
-      repliedBy: { id: string; displayName: string };
-    }>(`/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/reply-auth`, {
-      ssoToken,
-      content,
+    apiClient.post<PublicMarshmallowReplyResponse>(
+      `/api/v1/public/marshmallow/${talentPath}/messages/${messageId}/reply-auth`,
+      {
+        ssoToken,
+        content,
+      },
+    ),
+
+  toggleMarshmallowReaction: (messageId: string, reaction: string, fingerprint: string) =>
+    apiClient.post<PublicMarshmallowReactionResponse>(`/api/v1/public/marshmallow/messages/${messageId}/react`, {
+      reaction,
+      fingerprint,
     }),
 
   previewMarshmallowImage: (url: string) =>
-    apiClient.post<{ success: boolean; imageUrl?: string; images?: string[]; error?: string }>(
-      '/api/v1/public/marshmallow/preview-image',
-      { url },
-    ),
+    apiClient.post<PublicMarshmallowPreviewImageResponse>('/api/v1/public/marshmallow/preview-image', {
+      url,
+    }),
 };
 
 export interface MarshmallowExportJob {

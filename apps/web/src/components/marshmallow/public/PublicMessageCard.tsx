@@ -15,35 +15,14 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { publicApi, type PublicMarshmallowMessageRecord } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/utils/gravatar';
 
 import { EmojiPicker } from './EmojiPicker';
 
-
-// Message type matching backend API response (camelCase)
-interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  repliedBy?: { 
-    id: string; 
-    displayName: string;
-    avatarUrl?: string | null;
-    email?: string | null;
-  } | null;
-  reactionCounts: Record<string, number>;
-  userReactions: string[];
-  createdAt: string;
-  imageUrl?: string | null;
-  imageUrls?: string[];
-}
-
 interface PublicMessageCardProps {
-  message: MarshmallowMessage;
+  message: PublicMarshmallowMessageRecord;
   reactionsEnabled: boolean;
   allowedReactions: string[];
   path: string;
@@ -129,21 +108,14 @@ export const PublicMessageCard = memo(function PublicMessageCard({
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${apiUrl}/api/v1/public/marshmallow/messages/${message.id}/react`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reaction: emoji, fingerprint }),
-      });
-
-      if (!res.ok) throw new Error('Failed to react');
-      
-      const response = await res.json();
-      const data = response.data || response;
+      const response = await publicApi.toggleMarshmallowReaction(message.id, emoji, fingerprint);
+      if (!response.success || !response.data) {
+        throw new Error('Failed to react');
+      }
       
       // Update with server response
-      setReactions(data.counts || {});
-      if (data.added) {
+      setReactions(response.data.counts || {});
+      if (response.data.added) {
         setUserReactions(prev => prev.includes(emoji) ? prev : [...prev, emoji]);
       } else {
         setUserReactions(prev => prev.filter(e => e !== emoji));

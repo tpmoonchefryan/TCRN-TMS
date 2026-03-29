@@ -10,94 +10,24 @@ import { MessageFeedWrapper } from '@/components/marshmallow/public/MessageFeedW
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Config type matching backend API response
-interface MarshmallowConfig {
-  talent: {
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  title: string | null;
-  welcomeText: string | null;
-  placeholderText: string | null;
-  allowAnonymous: boolean;
-  maxMessageLength: number;
-  minMessageLength: number;
-  reactionsEnabled: boolean;
-  allowedReactions: string[];
-  theme: Record<string, unknown>;
-}
-
-// Message type matching backend API response
-interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  reactionCounts: Record<string, number>;
-  userReactions: string[];
-  createdAt: string;
-  isRead?: boolean;
-  imageUrl?: string | null;
-  imageUrls?: string[];
-}
-
-// Fetch config from API
-const getConfig = async (path: string): Promise<MarshmallowConfig | null> => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  
-  try {
-    const res = await fetch(`${apiUrl}/api/v1/public/marshmallow/${path}/config`, {
-      next: { revalidate: 10 }  // Short cache for faster updates
-    });
-    
-    if (!res.ok) return null;
-    const response = await res.json();
-    return response.data || response;
-  } catch (error) {
-    console.error('Error fetching marshmallow config:', error);
-    return null;
-  }
-};
-
-// Fetch messages from API
-// Note: Using short revalidate time and cache-busting to ensure fresh isRead status
-const getMessages = async (path: string): Promise<{ messages: MarshmallowMessage[]; hasMore: boolean }> => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  
-  try {
-    // Add timestamp for cache-busting to get fresh isRead status on every request
-    const res = await fetch(`${apiUrl}/api/v1/public/marshmallow/${path}/messages?limit=200&_t=${Date.now()}`, {
-      next: { revalidate: 0 }, // Disable SSR caching for messages to ensure fresh isRead status
-      cache: 'no-store', // Also disable fetch caching
-    });
-    
-    if (!res.ok) return { messages: [], hasMore: false };
-    const response = await res.json();
-    const data = response.data || response;
-    return {
-      messages: data.messages || [],
-      hasMore: data.hasMore || false,
-    };
-  } catch (error) {
-    console.error('Error fetching marshmallow messages:', error);
-    return { messages: [], hasMore: false };
-  }
-};
+import { fetchPublicMarshmallowConfig, fetchPublicMarshmallowMessages } from '@/lib/api/modules/public-marshmallow-fetch';
 
 export default async function MarshmallowFeedPage({ params }: { params: Promise<{ path: string }> }) {
   const { path } = await params;
   const t = await getTranslations('publicMarshmallow');
   
-  const config = await getConfig(path);
+  const config = await fetchPublicMarshmallowConfig(path, { revalidate: 10 });
   
   if (!config) {
     notFound();
   }
 
-  const { messages } = await getMessages(path);
+  const messagesResponse = await fetchPublicMarshmallowMessages(
+    path,
+    { limit: 200, bustCache: true },
+    { revalidate: 0, cache: 'no-store' },
+  );
+  const messages = messagesResponse?.messages ?? [];
   
   // Get initials for avatar fallback
   const initials = config.talent.displayName
