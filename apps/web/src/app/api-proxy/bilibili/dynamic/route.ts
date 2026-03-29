@@ -1,7 +1,33 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { LegacyFeedResponse, PrimaryFeedResponse } from './normalizers';
+import {
+    getErrorMessage,
+    normalizeLegacyFeedItems,
+    normalizePrimaryFeedItems,
+} from './normalizers';
+
 export const dynamic = 'force-dynamic';
+
+interface WbiNavResponse {
+    data?: {
+        wbi_img?: {
+            img_url?: string;
+            sub_url?: string;
+        };
+    };
+}
+
+interface BilibiliLiveUserInfoResponse {
+    code?: number;
+    data?: {
+        info?: {
+            uname?: string;
+            face?: string;
+        };
+    };
+}
 
 function getMixinKey(orig: string) {
     const mixinKeyEncTab = [
@@ -67,7 +93,7 @@ async function getWbiKeys() {
             next: { revalidate: 3600 } 
         });
         clearTimeout(timeoutId);
-        const json = await res.json();
+        const json: WbiNavResponse = await res.json();
         
         const img_url = json.data?.wbi_img?.img_url || '';
         const sub_url = json.data?.wbi_img?.sub_url || '';
@@ -120,115 +146,10 @@ async function fetchPrimary(uid: string) {
     });
 
     if (!response.ok) throw new Error(`${response.status} (Primary)`);
-    const data = await response.json();
+    const data: PrimaryFeedResponse & { code?: number; message?: string } = await response.json();
     if (data.code !== 0) throw new Error(data.message || `API Code ${data.code}`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data.data?.items || []).map((item: any) => {
-       const author = item.modules.module_author;
-       const dyn = item.modules.module_dynamic;
-       const stat = item.modules.module_stat;
-       const major = dyn.major;
-       
-       let content = '';
-       let images: string[] = [];
-       // Normalized types: 'video', 'image', 'article', 'live', 'music', 'text', 'opus'
-       let type = 'text';
-       let title = ''; 
-       let duration = '';
-
-       if (major) {
-           switch (major.type) {
-               // Video (Archive)
-               case 'MAJOR_TYPE_ARCHIVE':
-                   type = 'video';
-                   title = major.archive?.title || '';
-                   content = major.archive?.desc || '';
-                   images = major.archive?.cover ? [major.archive.cover] : [];
-                   duration = major.archive?.duration_text || '';
-                   break;
-
-               // Image (Draw)
-               case 'MAJOR_TYPE_DRAW':
-                   type = 'image';
-                   content = dyn.desc?.text || '';
-                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                   images = (major.draw?.items || []).map((img: any) => img.src);
-                   break;
-
-                // Opus (New Mixed Type)
-                case 'MAJOR_TYPE_OPUS':
-                    type = 'opus';
-                    title = major.opus?.title || '';
-                    content = major.opus?.summary?.text || '';
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    images = (major.opus?.pics || []).map((pic: any) => pic.url);
-                    break;
-
-                // Article
-                case 'MAJOR_TYPE_ARTICLE':
-                    type = 'article';
-                    title = major.article?.title || '';
-                    content = major.article?.desc || '';
-                    images = major.article?.covers || [];
-                    break;
-                
-                // Live Status
-                case 'MAJOR_TYPE_LIVE_RCMD':
-                    type = 'live';
-                    // Content often is JSON string in `content`, parse if needed or use live status
-                    // Actually, module_author has label "直播中" often
-                    const liveData = JSON.parse(major.live_rcmd?.content || '{}');
-                    title = liveData.live_play_info?.title || 'Live Stream';
-                    images = [liveData.live_play_info?.cover];
-                    break;
-                
-                // PGC (Anime/Movies)
-                case 'MAJOR_TYPE_PGC':
-                    type = 'pgc';
-                    title = major.pgc?.title || '';
-                    content = `${major.pgc?.stat?.play} plays • ${major.pgc?.stat?.danmaku} danmaku`;
-                    images = [major.pgc?.cover];
-                    break;
-                
-                // Music
-                case 'MAJOR_TYPE_MUSIC':
-                    type = 'music';
-                    title = major.music?.title || '';
-                    content = major.music?.label || '';
-                    images = [major.music?.cover];
-                    break;
-
-               default:
-                   // Fallback for text only or unknown
-                   content = dyn.desc?.text || '';
-                   break;
-           }
-       } else {
-            // Text only dynamic usually
-            content = dyn.desc?.text || '';
-       }
-
-       const jumpUrl = item.basic?.comment_id_str 
-            ? `https://t.bilibili.com/${item.id_str}` 
-            : (major?.archive?.jump_url || major?.article?.jump_url || `https://t.bilibili.com/${item.id_str}`);
-
-       return {
-         id: item.id_str,
-         type,
-         title,
-         content,
-         images,
-         duration,
-         date: author.pub_time, 
-         likes: stat.like.count,
-         url: jumpUrl,
-         author: {
-             name: author.name,
-             face: author.face
-         }
-       };
-    });
+    return normalizePrimaryFeedItems(data);
 }
 
 async function fetchLegacy(uid: string) {
@@ -239,42 +160,10 @@ async function fetchLegacy(uid: string) {
     });
 
     if (!response.ok) throw new Error(`${response.status} (Legacy)`);
-    const data = await response.json();
+    const data: LegacyFeedResponse & { code?: number; message?: string } = await response.json();
     if (data.code !== 0) throw new Error(data.message || 'Legacy API Error');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data.data?.cards || []).map((cardItem: any) => {
-       const card = JSON.parse(cardItem.card);
-       const desc = cardItem.desc;
-       
-       let content = '';
-       let images: string[] = [];
-       let type = 'text';
-
-       if (desc.type === 8) { 
-           type = 'video';
-           content = card.title || card.dynamic || '';
-           images = [card.pic];
-       } else if (desc.type === 2) { 
-           type = 'image';
-           content = card.description || '';
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           if (card.item && card.item.pictures) images = card.item.pictures.map((p: any) => p.img_src);
-       } else {
-           type = 'text';
-           content = card.item?.content || card.content || '';
-       }
-
-       return {
-         id: desc.dynamic_id_str,
-         type,
-         content,
-         images,
-         date: new Date(desc.timestamp * 1000).toLocaleString(), 
-         likes: desc.like || 0,
-         url: `https://t.bilibili.com/${desc.dynamic_id_str}`
-       };
-    });
+    return normalizeLegacyFeedItems(data);
 }
 
 // Fallback to Live API to get basic user info (Low WAF risk)
@@ -289,7 +178,7 @@ async function fetchUserInfo(uid: string) {
         });
         
         if (!response.ok) return null;
-        const data = await response.json();
+        const data: BilibiliLiveUserInfoResponse = await response.json();
         if (data.code !== 0) return null;
 
         return {
@@ -317,8 +206,7 @@ export async function GET(req: NextRequest) {
         const items = await fetchPrimary(uid);
         return NextResponse.json({ items });
     } catch (e) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const msg = (e as any).message || String(e);
+        const msg = getErrorMessage(e);
         console.warn('Primary Bilibili API (WBI) failed:', msg);
         errors.push(`Primary: ${msg}`);
     }
@@ -329,8 +217,7 @@ export async function GET(req: NextRequest) {
         if (items.length === 0) throw new Error("Empty legacy response");
         return NextResponse.json({ items });
     } catch (e) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const msg = (e as any).message || String(e);
+        const msg = getErrorMessage(e);
         console.warn('Legacy Bilibili API failed:', msg);
         errors.push(`Legacy: ${msg}`);
     }
@@ -357,8 +244,7 @@ export async function GET(req: NextRequest) {
     const sessData = process.env.BILIBILI_SESSDATA || '';
     const hasSessData = !!sessData && sessData.length > 10;
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return NextResponse.json({ error: (error as any).message }, { 
+    return NextResponse.json({ error: getErrorMessage(error) }, {
         status: 500,
         headers: { 'X-Debug-SessData': hasSessData ? 'true' : 'false' } 
     });
