@@ -14,6 +14,7 @@ describe('public homepage fetch helper', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('unwraps the current API envelope for canonical public homepage fetches', async () => {
@@ -69,5 +70,27 @@ describe('public homepage fetch helper', () => {
     const result = await fetchPublicHomepage('missing-page');
 
     expect(result).toBeNull();
+  });
+
+  it('keeps canonical public homepage fetches on NEXT_PUBLIC_API_URL semantics only', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', '');
+    vi.stubEnv('API_URL', 'http://internal-api:4000');
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        talent: { displayName: 'Sora', avatarUrl: null },
+        content: { version: '1.0', components: [] },
+        theme: { preset: 'default' },
+        seo: { title: 'Sora', description: 'Homepage', ogImageUrl: null },
+        updatedAt: '2026-03-29T00:00:00.000Z',
+      }),
+    });
+
+    await fetchPublicHomepage('sora');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/public/homepage/sora',
+      { next: { revalidate: 0 } },
+    );
   });
 });

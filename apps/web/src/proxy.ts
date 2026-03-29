@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { defaultLocale, locales } from './i18n/request';
+import { fetchPublicDomainLookup } from './lib/api/modules/public-domain-lookup-fetch';
 
 function extractHostname(value: string | undefined): string | null {
   if (!value) {
@@ -33,9 +34,6 @@ const MAIN_DOMAINS = Array.from(new Set([
 // System subdomain suffixes for automatic routing
 const MARSHMALLOW_SUBDOMAIN_SUFFIX = '.m.tcrn.app';
 const HOMEPAGE_SUBDOMAIN_SUFFIX = '.p.tcrn.app';
-
-// API URL for domain lookup (only used in production)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:4000';
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -90,44 +88,19 @@ async function getDomainMapping(domain: string): Promise<{ homepagePath: string;
     };
   }
 
-  try {
-    // Query the backend API for domain mapping
-    const res = await fetch(`${API_URL}/api/v1/public/domain-lookup?domain=${encodeURIComponent(domain)}`, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      // Short timeout to avoid blocking
-      signal: AbortSignal.timeout(3000),
-    });
-
-    if (!res.ok) {
-      return null;
-    }
-
-    const payload = await res.json();
-    const data = payload?.success === true && payload.data
-      ? payload.data
-      : payload;
-    const homepagePath = data?.homepagePath || data?.path;
-    const marshmallowPath = data?.marshmallowPath || data?.path;
-
-    if (!homepagePath || !marshmallowPath) {
-      return null;
-    }
-
-    // Cache the result
-    domainCache.set(domain, {
-      homepagePath,
-      marshmallowPath,
-      expiry: Date.now() + CACHE_TTL,
-    });
-
-    return { homepagePath, marshmallowPath };
-  } catch (error) {
-    // Log error but don't block the request
-    console.warn(`Domain lookup failed for ${domain}:`, error);
+  const mapping = await fetchPublicDomainLookup(domain);
+  if (!mapping) {
     return null;
   }
+
+  // Cache the result
+  domainCache.set(domain, {
+    homepagePath: mapping.homepagePath,
+    marshmallowPath: mapping.marshmallowPath,
+    expiry: Date.now() + CACHE_TTL,
+  });
+
+  return mapping;
 }
 
 /**

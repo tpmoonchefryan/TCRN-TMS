@@ -5,15 +5,25 @@ interface ApiEnvelope<T> {
   data?: T;
 }
 
+export interface PublicApiUrlOptions {
+  allowServerApiUrlFallback?: boolean;
+}
+
 export interface PublicFetchOptions {
   revalidate?: number;
   cache?: RequestCache;
 }
 
-const PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export function getPublicApiBaseUrl(options?: PublicApiUrlOptions): string {
+  if (options?.allowServerApiUrlFallback) {
+    return process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:4000';
+  }
 
-export function getPublicApiUrl(pathname: string): string {
-  return `${PUBLIC_API_BASE_URL}${pathname}`;
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+}
+
+export function getPublicApiUrl(pathname: string, options?: PublicApiUrlOptions): string {
+  return `${getPublicApiBaseUrl(options)}${pathname}`;
 }
 
 export function encodePublicPath(path: string): string {
@@ -40,7 +50,7 @@ export function buildPublicRequestInit(
   return requestInit;
 }
 
-function unwrapApiEnvelope<T>(payload: ApiEnvelope<T> | T): T | null {
+export function unwrapPublicApiEnvelope<T>(payload: ApiEnvelope<T> | T): T | null {
   if (!payload || typeof payload !== 'object') {
     return null;
   }
@@ -60,7 +70,7 @@ export async function fetchPublicJsonResource<T>(url: string, init?: RequestInit
     }
 
     const payload = (await response.json()) as ApiEnvelope<T> | T;
-    return unwrapApiEnvelope(payload);
+    return unwrapPublicApiEnvelope(payload);
   } catch (error) {
     console.error(`Error fetching public resource ${url}:`, error);
     return null;
