@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -82,14 +81,19 @@ export const MessageCard = memo(function MessageCard({
   // Check if message was auto-rejected (has profanity flags with rejected status)
   const hasProfanityFlags = message.profanityFlags && message.profanityFlags.length > 0;
   const isAutoRejected = message.status === 'rejected' && hasProfanityFlags;
+  const imageUrls = (
+    message.imageUrls && message.imageUrls.length > 0
+      ? message.imageUrls
+      : [message.imageUrl]
+  ).filter((imageUrl): imageUrl is string => typeof imageUrl === 'string' && imageUrl.length > 0);
 
   // Get translated rejection reason
   const getRejectionReasonLabel = (reason: string | null) => {
     if (!reason) return null;
-    const reasonKey = `rejectionReason.${reason}` as any;
+    const reasonKey = `rejectionReason.${reason}`;
     // Try to get translated key, fallback to raw reason
     try {
-      return t(reasonKey);
+      return t(reasonKey as never);
     } catch {
       return reason;
     }
@@ -192,19 +196,19 @@ export const MessageCard = memo(function MessageCard({
           </p>
 
           {/* Image Grid */}
-          {(message.imageUrls?.length || message.imageUrl) && (
+          {imageUrls.length > 0 && (
              <div className="mt-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                 {(message.imageUrls && message.imageUrls.length > 0 ? message.imageUrls : [message.imageUrl]).filter(Boolean).map((img, index) => (
+                 {imageUrls.map((img, index) => (
                      <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in">
                          <img 
-                            src={img!} 
+                            src={img}
                             alt={`Attachment ${index}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
                             referrerPolicy="no-referrer"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setPreviewImage(img!);
+                                setPreviewImage(img);
                             }}
                          />
                      </div>

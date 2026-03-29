@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -21,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import { marshmallowExportApi, type MarshmallowExportJob } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
@@ -105,9 +105,9 @@ export function ExportDialog({ open, onClose, talentId }: ExportDialogProps) {
         // Initial poll
         pollJobStatus(jobId);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to create export:', error);
-      toast.error(error?.message || t('exportError'));
+      toast.error(getThrownErrorMessage(error, t('exportError')));
       setIsExporting(false);
     }
   };
@@ -120,9 +120,9 @@ export function ExportDialog({ open, onClose, talentId }: ExportDialogProps) {
       if (response.success && response.data?.url) {
         window.open(response.data.url, '_blank');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to get download URL:', error);
-      toast.error(error?.message || t('downloadError'));
+      toast.error(getThrownErrorMessage(error, t('downloadError')));
     }
   };
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -32,6 +31,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import {
   marshmallowApi,
   type MarshmallowConfigResponse,
@@ -44,8 +44,6 @@ interface MarshmallowConfigDialogProps {
   talentId: string;
   onSave?: () => void;
 }
-
-const DEFAULT_REACTIONS = ['❤️', '👍', '😊', '🎉', '💯'];
 
 export function MarshmallowConfigDialog({
   open,
@@ -74,7 +72,7 @@ export function MarshmallowConfigDialog({
         setConfig(response.data);
         setLocalConfig(response.data);
       }
-    } catch (error) {
+    } catch {
       toast.error(t('loadFailed'));
     } finally {
       setIsLoading(false);
@@ -126,8 +124,8 @@ export function MarshmallowConfigDialog({
       } else {
         throw new Error(response.error?.message || t('saveFailed'));
       }
-    } catch (error: any) {
-      toast.error(error.message || t('saveFailed'));
+    } catch (error) {
+      toast.error(getThrownErrorMessage(error, t('saveFailed')));
     } finally {
       setIsSaving(false);
     }
