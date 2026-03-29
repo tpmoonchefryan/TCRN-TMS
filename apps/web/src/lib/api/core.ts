@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 export function getApiBaseUrl(): string {
@@ -11,33 +10,101 @@ export function buildApiUrl(pathname: string): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
+export interface ApiResponseError {
+  code: string;
+  message: string;
+  details?: unknown;
+  requestId?: string;
+}
+
+export interface ApiResponsePagination {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export type ApiResponseMeta = Record<string, unknown> & {
+  pagination?: ApiResponsePagination;
+};
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-    requestId?: string;
-  };
+  error?: ApiResponseError;
   message?: string;
-  meta?: {
-    pagination?: {
-      page: number;
-      pageSize: number;
-      totalCount: number;
-      totalPages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-    };
-    [key: string]: any;
-  };
+  meta?: ApiResponseMeta;
 }
 
 export interface ApiError {
   code: string;
   message: string;
   statusCode: number;
+}
+
+export type ApiQueryParams = object;
+
+type ApiResponsePayload<T> = Omit<ApiResponse<T>, 'error' | 'message'> & {
+  error?: ApiResponseError | string;
+  message?: string | string[];
+};
+
+function buildQueryString(params?: ApiQueryParams): string {
+  if (!params) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (value === undefined || value === '') {
+      return;
+    }
+
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : '';
+}
+
+function getResponseErrorMessage<T>(payload: ApiResponsePayload<T>): string {
+  if (typeof payload.error === 'object' && payload.error !== null && payload.error.message) {
+    return payload.error.message;
+  }
+
+  if (Array.isArray(payload.message)) {
+    return payload.message.join(', ');
+  }
+
+  if (typeof payload.message === 'string' && payload.message) {
+    return payload.message;
+  }
+
+  return 'An error occurred';
+}
+
+function getResponseErrorCode<T>(payload: ApiResponsePayload<T>): string {
+  if (typeof payload.error === 'object' && payload.error !== null && payload.error.code) {
+    return payload.error.code;
+  }
+
+  if (typeof payload.error === 'string' && payload.error) {
+    return payload.error;
+  }
+
+  return 'UNKNOWN_ERROR';
+}
+
+function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    typeof (error as { statusCode?: unknown }).statusCode === 'number'
+  );
 }
 
 interface ApiClientAuthHooks {
@@ -88,7 +155,7 @@ class ApiClient {
         credentials: 'include',
       });
 
-      const data = await response.json();
+      const data: ApiResponsePayload<T> = await response.json();
 
       if (!response.ok) {
         if (
@@ -107,31 +174,28 @@ class ApiClient {
               headers,
               credentials: 'include',
             });
-            return retryResponse.json();
+            return retryResponse.json() as Promise<ApiResponse<T>>;
           }
 
           void authClientHooks?.logout();
           authClientHooks?.redirectToLogin();
         }
 
-        const errorMessage =
-          data.error?.message ||
-          (Array.isArray(data.message) ? data.message.join(', ') : data.message) ||
-          'An error occurred';
-
-        const errorCode = data.error?.code || data.error || 'UNKNOWN_ERROR';
-
         const error: ApiError = {
-          code: errorCode,
-          message: errorMessage,
+          code: getResponseErrorCode(data),
+          message: getResponseErrorMessage(data),
           statusCode: response.status,
         };
         throw error;
       }
 
-      return data;
+      return {
+        ...data,
+        error: typeof data.error === 'string' ? undefined : data.error,
+        message: Array.isArray(data.message) ? data.message.join(', ') : data.message,
+      };
     } catch (error) {
-      if ((error as ApiError).statusCode) {
+      if (isApiError(error)) {
         throw error;
       }
 
@@ -176,19 +240,10 @@ class ApiClient {
 
   async get<T>(
     endpoint: string,
-    params?: Record<string, any>,
+    params?: ApiQueryParams,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
-    const filteredParams = params
-      ? Object.fromEntries(
-          Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
-        )
-      : undefined;
-    const searchParams =
-      filteredParams && Object.keys(filteredParams).length > 0
-        ? `?${new URLSearchParams(filteredParams as Record<string, string>).toString()}`
-        : '';
-    return this.request<T>(`${endpoint}${searchParams}`, { method: 'GET', headers });
+    return this.request<T>(`${endpoint}${buildQueryString(params)}`, { method: 'GET', headers });
   }
 
   async post<T>(
