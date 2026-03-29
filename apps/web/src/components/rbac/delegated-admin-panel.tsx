@@ -1,6 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { SystemRoleRecord } from '@tcrn/shared';
@@ -36,7 +35,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui';
-import { organizationApi } from '@/lib/api/modules/organization';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
+import {
+  buildOrganizationScopeOptions,
+  organizationApi,
+  type OrganizationScopeOption,
+} from '@/lib/api/modules/organization';
 import {
   DelegatedAdmin,
   delegatedAdminApi,
@@ -52,13 +56,7 @@ interface DelegatedAdminPanelProps {
 interface UserOption {
   id: string;
   username: string;
-  displayName?: string;
-}
-
-interface Scope {
-  id: string;
-  name: string;
-  type: 'subsidiary' | 'talent';
+  displayName?: string | null;
 }
 
 export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelProps) {
@@ -79,7 +77,7 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
   // Available options for dropdowns
   const [users, setUsers] = useState<UserOption[]>([]);
   const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
-  const [scopes, setScopes] = useState<Scope[]>([]);
+  const [scopes, setScopes] = useState<OrganizationScopeOption[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   // Fetch delegations
@@ -92,8 +90,8 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
       if (response.success && response.data) {
         setDelegations(response.data);
       }
-    } catch (error) {
-      toast.error(tc('error'));
+    } catch (error: unknown) {
+      toast.error(getThrownErrorMessage(error, tc('error')));
     } finally {
       setIsLoading(false);
     }
@@ -106,11 +104,13 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
       // Fetch users
       const usersResponse = await systemUserApi.list({ isActive: true });
       if (usersResponse.success && usersResponse.data) {
-        setUsers(usersResponse.data.map((u: any) => ({
-          id: u.id,
-          username: u.username,
-          displayName: u.displayName,
-        })));
+        setUsers(
+          usersResponse.data.map((user: UserOption) => ({
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+          }))
+        );
       }
 
       // Fetch roles
@@ -122,39 +122,14 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
       // Fetch organization tree for scopes
       const orgResponse = await organizationApi.getTree();
       if (orgResponse.success && orgResponse.data) {
-        const allScopes: Scope[] = [];
-        
-        // Add subsidiaries
-        if (orgResponse.data.subsidiaries) {
-          orgResponse.data.subsidiaries.forEach((sub: any) => {
-            allScopes.push({
-              id: sub.id,
-              name: sub.name,
-              type: 'subsidiary',
-            });
-          });
-        }
-        
-        // Add talents (if available in response)
-        const orgData = orgResponse.data as any;
-        if (orgData.talents) {
-          orgData.talents.forEach((talent: any) => {
-            allScopes.push({
-              id: talent.id,
-              name: talent.name,
-              type: 'talent',
-            });
-          });
-        }
-        
-        setScopes(allScopes);
+        setScopes(buildOrganizationScopeOptions(orgResponse.data));
       }
-    } catch (error) {
-      console.error('Failed to fetch options:', error);
+    } catch (error: unknown) {
+      toast.error(getThrownErrorMessage(error, tc('error')));
     } finally {
       setIsLoadingOptions(false);
     }
-  }, []);
+  }, [tc]);
 
   useEffect(() => {
     fetchDelegations();
@@ -189,8 +164,8 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
         setIsDialogOpen(false);
         fetchDelegations();
       }
-    } catch (error: any) {
-      toast.error(error.message || tc('error'));
+    } catch (error: unknown) {
+      toast.error(getThrownErrorMessage(error, tc('error')));
     } finally {
       setIsSaving(false);
     }
@@ -203,8 +178,8 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
       await delegatedAdminApi.delete(id);
       toast.success(t('deleted'));
       fetchDelegations();
-    } catch (error) {
-      toast.error(tc('error'));
+    } catch (error: unknown) {
+      toast.error(getThrownErrorMessage(error, tc('error')));
     }
   };
 
@@ -357,7 +332,7 @@ export function DelegatedAdminPanel({ scopeType, scopeId }: DelegatedAdminPanelP
                     <SelectContent>
                       {filteredScopes.map((scope) => (
                         <SelectItem key={scope.id} value={scope.id}>
-                          {scope.name}
+                          {scope.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
