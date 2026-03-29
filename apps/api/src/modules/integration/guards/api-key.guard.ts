@@ -7,10 +7,23 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
+import type { IncomingHttpHeaders } from 'http';
 
 import { IntegrationLogService } from '../../log';
 import { ApiKeyService } from '../services/api-key.service';
+
+type ValidatedConsumer = NonNullable<Awaited<ReturnType<ApiKeyService['validateApiKey']>>>;
+
+interface IntegrationLogContext {
+  consumer: ValidatedConsumer;
+  startTime: number;
+}
+
+interface ApiKeyRequest extends Request {
+  consumer?: ValidatedConsumer;
+  _integrationLogContext?: IntegrationLogContext;
+}
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -20,7 +33,7 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<ApiKeyRequest>();
     const apiKey = this.extractApiKey(request);
     const startTime = Date.now();
 
@@ -45,10 +58,8 @@ export class ApiKeyGuard implements CanActivate {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (request as any).consumer = consumer;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (request as any)._integrationLogContext = {
+    request.consumer = consumer;
+    request._integrationLogContext = {
       consumer,
       startTime,
     };
@@ -57,16 +68,17 @@ export class ApiKeyGuard implements CanActivate {
   }
 
   private extractApiKey(request: Request): string | null {
-    const headerKey = request.headers['x-api-key'] as string;
-    const queryKey = request.query['api_key'] as string;
-    return headerKey || queryKey || null;
+    return (
+      this.getHeaderValue(request.headers['x-api-key']) ??
+      this.getQueryValue(request.query['api_key'])
+    );
   }
 
   private getClientIp(request: Request): string {
     return (
-      (request.headers['cf-connecting-ip'] as string) ||
-      (request.headers['x-real-ip'] as string) ||
-      (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+      this.getHeaderValue(request.headers['cf-connecting-ip']) ||
+      this.getHeaderValue(request.headers['x-real-ip']) ||
+      this.getHeaderValue(request.headers['x-forwarded-for'])?.split(',')[0]?.trim() ||
       request.ip ||
       'unknown'
     );
@@ -74,8 +86,7 @@ export class ApiKeyGuard implements CanActivate {
 
   private async logInbound(
     request: Request,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    consumer: any | null,
+    consumer: ValidatedConsumer | null,
     status: number,
     errorMessage: string | null,
     startTime: number,
@@ -86,30 +97,56 @@ export class ApiKeyGuard implements CanActivate {
         consumerCode: consumer?.code,
         endpoint: request.url,
         method: request.method,
-        requestHeaders: this.maskHeaders(request.headers as Record<string, string>),
+        requestHeaders: this.maskHeaders(request.headers),
         requestBody: request.body,
         responseStatus: status,
         errorMessage,
         latencyMs: Date.now() - startTime,
-        traceId: request.headers['x-trace-id'] as string,
+        traceId: this.getHeaderValue(request.headers['x-trace-id']) ?? undefined,
       });
     } catch {
       // Silently fail logging
     }
   }
 
-  private maskHeaders(headers: Record<string, string>): Record<string, string> {
+  private maskHeaders(headers: IncomingHttpHeaders): Record<string, string> {
     const sensitiveHeaders = ['authorization', 'x-api-key', 'cookie'];
     const result: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(headers)) {
+      if (value === undefined) {
+        continue;
+      }
+
+      const normalizedValue = Array.isArray(value) ? value.join(', ') : value;
       if (sensitiveHeaders.includes(key.toLowerCase())) {
         result[key] = '***';
       } else {
-        result[key] = value;
+        result[key] = normalizedValue;
       }
     }
 
     return result;
+  }
+
+  private getHeaderValue(value: string | string[] | undefined): string | null {
+    if (Array.isArray(value)) {
+      return value[0] ?? null;
+    }
+
+    return value ?? null;
+  }
+
+  private getQueryValue(value: unknown): string | null {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      const firstValue = value[0];
+      return typeof firstValue === 'string' ? firstValue : null;
+    }
+
+    return null;
   }
 }
