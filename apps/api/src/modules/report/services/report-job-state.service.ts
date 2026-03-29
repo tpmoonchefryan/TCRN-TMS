@@ -6,7 +6,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ErrorCodes, LogSeverity } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, TechEventScope, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
@@ -136,9 +136,8 @@ export class ReportJobStateService {
 
     if (result.count > 0) {
       await this.techEventLog.log({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        eventType: 'SCHEDULED_TASK_COMPLETED' as any,
-        scope: 'scheduled',
+        eventType: TechEventType.SCHEDULED_TASK_COMPLETED,
+        scope: TechEventScope.SCHEDULED,
         severity: LogSeverity.INFO,
         payload: {
           task: 'report_expiry_check',
