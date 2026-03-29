@@ -19,6 +19,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
+import { mergeAuthUserContext } from '@/lib/api/modules/auth-user-contract';
 import { userApi } from '@/lib/api/modules/user';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -41,16 +43,11 @@ export default function AdminProfilePage() {
     try {
       const response = await userApi.updateProfile({ displayName });
       if (response.success && response.data) {
-        if (user) {
-          setUser({
-            ...user,
-            display_name: displayName,
-          });
-        }
+        setUser(mergeAuthUserContext(response.data, user));
         toast.success(t('saveSuccess'));
       }
-    } catch {
-      toast.error(t('saveFailed'));
+    } catch (error) {
+      toast.error(getThrownErrorMessage(error, t('saveFailed') || 'Failed to save profile'));
     } finally {
       setIsSaving(false);
     }

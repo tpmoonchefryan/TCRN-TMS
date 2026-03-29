@@ -4,7 +4,10 @@ import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
-import { withTenantContext } from '@/lib/api/modules/auth-user-contract';
+import {
+  mergeAuthUserContext,
+  withTenantContext,
+} from '@/lib/api/modules/auth-user-contract';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
 import { userApi } from '@/lib/api/modules/user';
@@ -411,11 +414,14 @@ export const useAuthStore = create<AuthState>()(
                 const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
                 const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: withTenantContext(meRes.data, {
-                    id: tenantId,
-                    code: tenantCode,
-                    name: currentUser?.tenant?.name,
-                  }),
+                  user: mergeAuthUserContext(
+                    withTenantContext(meRes.data, {
+                      id: tenantId,
+                      code: tenantCode,
+                      name: currentUser?.tenant?.name,
+                    }),
+                    currentUser
+                  ),
                   tenantId,
                   isAuthenticated: true,
                 });
@@ -442,11 +448,14 @@ export const useAuthStore = create<AuthState>()(
                 const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
                 const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: withTenantContext(meRes.data, {
-                    id: tenantId,
-                    code: tenantCode,
-                    name: currentUser?.tenant?.name,
-                  }),
+                  user: mergeAuthUserContext(
+                    withTenantContext(meRes.data, {
+                      id: tenantId,
+                      code: tenantCode,
+                      name: currentUser?.tenant?.name,
+                    }),
+                    currentUser
+                  ),
                   tenantId,
                   isAuthenticated: true,
                 });

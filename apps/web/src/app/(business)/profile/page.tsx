@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -28,6 +27,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { getApiResponseMessage, getThrownErrorMessage } from '@/lib/api/error-utils';
+import { mergeAuthUserContext } from '@/lib/api/modules/auth-user-contract';
 import { userApi } from '@/lib/api/modules/user';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -95,10 +96,14 @@ export default function ProfilePage() {
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setPasswordError(response.message || t('passwordChangeFailed') || 'Failed to change password');
+        setPasswordError(
+          getApiResponseMessage(response, t('passwordChangeFailed') || 'Failed to change password')
+        );
       }
-    } catch (error: any) {
-      setPasswordError(error?.message || t('passwordChangeFailed') || 'Failed to change password');
+    } catch (error) {
+      setPasswordError(
+        getThrownErrorMessage(error, t('passwordChangeFailed') || 'Failed to change password')
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -134,10 +139,14 @@ export default function ProfilePage() {
       if (response.success) {
         setEmailSent(true);
       } else {
-        setEmailError(response.message || t('emailChangeFailed') || 'Failed to request email change');
+        setEmailError(
+          getApiResponseMessage(response, t('emailChangeFailed') || 'Failed to request email change')
+        );
       }
-    } catch (error: any) {
-      setEmailError(error?.message || t('emailChangeFailed') || 'Failed to request email change');
+    } catch (error) {
+      setEmailError(
+        getThrownErrorMessage(error, t('emailChangeFailed') || 'Failed to request email change')
+      );
     } finally {
       setIsChangingEmail(false);
     }
@@ -154,14 +163,11 @@ export default function ProfilePage() {
     try {
       const response = await userApi.updateProfile({ displayName });
       if (response.success && response.data) {
-        setUser({
-          ...user!,
-          display_name: displayName,
-        });
+        setUser(mergeAuthUserContext(response.data, user));
         toast.success(t('saveSuccess'));
       }
     } catch (error) {
-      toast.error(t('saveFailed'));
+      toast.error(getThrownErrorMessage(error, t('saveFailed') || 'Failed to save profile'));
     } finally {
       setIsSaving(false);
     }

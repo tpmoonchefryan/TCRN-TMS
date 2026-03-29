@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-useless-escape */
+/* eslint-disable no-useless-escape */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
+import { getApiResponseMessage, getThrownErrorMessage } from '@/lib/api/error-utils';
 import { authApi } from '@/lib/api/modules/auth';
 import { useZodForm } from '@/lib/form';
 
@@ -89,10 +90,10 @@ export default function ResetPasswordEmailPage() {
           router.push('/login');
         }, 3000);
       } else {
-        setError(response.message || t('resetFailed') || 'Failed to reset password');
+        setError(getApiResponseMessage(response, t('resetFailed') || 'Failed to reset password'));
       }
-    } catch (err: any) {
-      setError(err?.message || t('resetFailed') || 'Failed to reset password');
+    } catch (error) {
+      setError(getThrownErrorMessage(error, t('resetFailed') || 'Failed to reset password'));
     } finally {
       setIsLoading(false);
     }

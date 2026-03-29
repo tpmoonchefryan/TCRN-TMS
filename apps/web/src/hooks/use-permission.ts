@@ -19,8 +19,7 @@ export function usePermission() {
   // Get user's role codes
   const userRoles = useMemo(() => {
     if (!user?.roles) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return user.roles.map((r: any) => r.code || r);
+    return user.roles.map((role) => role.code);
   }, [user]);
 
   // Check if user has wildcard permissions

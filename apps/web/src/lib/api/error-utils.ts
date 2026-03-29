@@ -1,21 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-export const getApiErrorCode = (error: unknown): string | null => {
+import type { ApiResponse } from './core';
+
+export const getApiResponseMessage = <T>(
+  response: ApiResponse<T>,
+  fallback: string
+): string => response.error?.message || response.message || fallback;
+
+export const getApiErrorMessage = (error: unknown): string | undefined => {
   if (
     typeof error === 'object' &&
     error !== null &&
-    'code' in error &&
-    typeof (error as { code?: unknown }).code === 'string'
+    'error' in error &&
+    typeof (error as { error?: unknown }).error === 'object' &&
+    (error as { error?: unknown }).error !== null &&
+    'message' in ((error as { error: { message?: unknown } }).error)
   ) {
-    return (error as { code: string }).code;
-  }
-
-  return null;
-};
-
-export const getApiErrorMessage = (error: unknown): string | null => {
-  if (error instanceof Error && error.message) {
-    return error.message;
+    const nestedMessage = (error as { error: { message?: unknown } }).error.message;
+    if (typeof nestedMessage === 'string') {
+      return nestedMessage;
+    }
   }
 
   if (
@@ -27,5 +31,36 @@ export const getApiErrorMessage = (error: unknown): string | null => {
     return (error as { message: string }).message;
   }
 
-  return null;
+  return undefined;
+};
+
+export const getApiErrorCode = (error: unknown): string | undefined => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    typeof (error as { error?: unknown }).error === 'object' &&
+    (error as { error?: unknown }).error !== null &&
+    'code' in ((error as { error: { code?: unknown } }).error)
+  ) {
+    const nestedCode = (error as { error: { code?: unknown } }).error.code;
+    if (typeof nestedCode === 'string') {
+      return nestedCode;
+    }
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string'
+  ) {
+    return (error as { code: string }).code;
+  }
+
+  return undefined;
+};
+
+export const getThrownErrorMessage = (error: unknown, fallback: string): string => {
+  return getApiErrorMessage(error) || fallback;
 };

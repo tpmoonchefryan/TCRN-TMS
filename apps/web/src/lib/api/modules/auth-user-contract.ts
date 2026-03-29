@@ -143,6 +143,28 @@ export const withTenantContext = (
       : undefined),
 });
 
+export const mergeAuthUserContext = (
+  user: AuthUser,
+  currentUser?: AuthUser | null,
+  fallback?: AuthUserTenantFallback
+): AuthUser => ({
+  ...(currentUser ?? {}),
+  ...user,
+  roles: user.roles ?? currentUser?.roles,
+  permissions: user.permissions ?? currentUser?.permissions,
+  tenant_code: user.tenant_code ?? currentUser?.tenant_code ?? fallback?.code ?? undefined,
+  tenant:
+    user.tenant ??
+    currentUser?.tenant ??
+    (fallback?.id
+      ? {
+          id: fallback.id,
+          code: fallback.code ?? undefined,
+          name: fallback.name ?? undefined,
+        }
+      : undefined),
+});
+
 export const normalizeApiResponseData = <TInput, TOutput>(
   response: ApiResponse<TInput>,
   normalize: (data: TInput) => TOutput

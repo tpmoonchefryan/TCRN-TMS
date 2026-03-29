@@ -69,14 +69,26 @@ describe('useAuthStore checkAuth', () => {
     const refreshSpy = vi.fn().mockResolvedValue(false);
 
     apiClient.setAccessToken('access-token');
-    useAuthStore.setState({ refreshSession: refreshSpy, tenantId: null });
+    useAuthStore.setState({
+      refreshSession: refreshSpy,
+      tenantId: null,
+      user: {
+        ...userFromApi('tenant-cached'),
+        roles: [{ code: 'TENANT_ADMIN' }],
+        permissions: ['customer.profile:read'],
+      },
+    });
 
     await expect(useAuthStore.getState().checkAuth()).resolves.toBe(true);
 
     expect(refreshSpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
     expect(useAuthStore.getState().tenantId).toBe('tenant-live');
-    expect(useAuthStore.getState().user).toMatchObject({ id: 'user-1' });
+    expect(useAuthStore.getState().user).toMatchObject({
+      id: 'user-1',
+      roles: [{ code: 'TENANT_ADMIN' }],
+      permissions: ['customer.profile:read'],
+    });
     expect(mockRunSessionBootstrap).toHaveBeenCalledTimes(1);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(fetchSpy).toHaveBeenCalledWith(

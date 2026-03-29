@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -10,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@/components/ui';
+import { getApiResponseMessage, getThrownErrorMessage } from '@/lib/api/error-utils';
 import { authApi } from '@/lib/api/modules/auth';
 import { useZodForm } from '@/lib/form';
 
@@ -36,10 +36,10 @@ export default function ForgotPasswordPage() {
       if (response.success) {
         setSuccess(true);
       } else {
-        setError(response.message || t('requestFailed') || 'Failed to send reset email');
+        setError(getApiResponseMessage(response, t('requestFailed') || 'Failed to send reset email'));
       }
-    } catch (err: any) {
-      setError(err?.message || t('requestFailed') || 'Failed to send reset email');
+    } catch (error) {
+      setError(getThrownErrorMessage(error, t('requestFailed') || 'Failed to send reset email'));
     } finally {
       setIsLoading(false);
     }
