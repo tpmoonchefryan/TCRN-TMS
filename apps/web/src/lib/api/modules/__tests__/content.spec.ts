@@ -124,6 +124,14 @@ describe('publicApi', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/v1/public/marshmallow/talent-path/config');
   });
 
+  it('requests public homepage data through the canonical public route', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { updatedAt: '2026-03-29T00:00:00.000Z' } });
+
+    await publicApi.getHomepage('talent-path');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/public/homepage/talent-path');
+  });
+
   it('posts public marshmallow submit payloads unchanged', async () => {
     mockPost.mockResolvedValue({ success: true, data: { id: 'message-1', status: 'pending' } });
 

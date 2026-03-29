@@ -5,33 +5,10 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { HomepageRenderer } from '@/components/homepage/renderer/HomepageRenderer';
+import { fetchPublicHomepage } from '@/lib/api/modules/public-homepage-fetch';
 
 // Disable cache for instant updates during development/testing
 export const revalidate = 0; 
-
-const getPublishedHomepage = async (path: string) => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  
-  try {
-    // The path here matches wildcard *path in backend
-    const res = await fetch(`${apiUrl}/api/v1/public/homepage/${path}`, {
-      cache: 'no-store' // Ensure we always get fresh data
-    });
-
-    if (!res.ok) {
-      if (res.status === 404) return null;
-      throw new Error(`Failed to fetch homepage: ${res.statusText}`);
-    }
-
-    const response = await res.json();
-    // Backend wraps all responses in { success: true, data: {...} }
-    // Extract the actual data
-    return response.data || response;
-  } catch (error) {
-    console.error('Error fetching homepage:', error);
-    return null;
-  }
-};
 
 interface PageProps {
   params: Promise<{
@@ -46,7 +23,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await props.params;
   const pathStr = Array.isArray(params.path) ? params.path.join('/') : params.path;
-  const data = await getPublishedHomepage(pathStr);
+  const data = await fetchPublicHomepage(pathStr, { cache: 'no-store' });
   
   if (!data) {
     return {
@@ -91,7 +68,7 @@ export async function generateMetadata(
 export default async function PublicHomepage(props: PageProps) {
   const params = await props.params;
   const pathStr = Array.isArray(params.path) ? params.path.join('/') : params.path;
-  const data = await getPublishedHomepage(pathStr);
+  const data = await fetchPublicHomepage(pathStr, { cache: 'no-store' });
 
   if (!data) {
     notFound();
