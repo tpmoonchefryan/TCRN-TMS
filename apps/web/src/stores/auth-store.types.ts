@@ -1,5 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import type { EffectivePermissionMap, SystemUser } from '@tcrn/shared';
+import type { EffectivePermissionMap } from '@tcrn/shared';
+
+import type { AuthUser } from '@/lib/api/modules/auth-user-contract';
+export type { AuthUser, LoginResponseData } from '@/lib/api/modules/auth-user-contract';
 
 import type {
   SessionBootstrapErrors,
@@ -9,24 +12,6 @@ import type {
 export interface PermissionScope {
   scopeType?: 'GLOBAL' | 'TENANT' | 'SUBSIDIARY' | 'TALENT';
   scopeId?: string;
-}
-
-export interface AuthUser extends Partial<SystemUser> {
-  roles?: Array<{ code: string; name?: string; is_system?: boolean }>;
-  permissions?: string[];
-  tenant_code?: string;
-  tenant?: { id: string; code?: string; name?: string };
-}
-
-export interface LoginResponseData {
-  accessToken?: string;
-  expiresIn?: number;
-  sessionToken?: string;
-  passwordResetRequired?: boolean;
-  totpRequired?: boolean;
-  reason?: string;
-  tenantId?: string;
-  user?: AuthUser;
 }
 
 export interface AuthState {

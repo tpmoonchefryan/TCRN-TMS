@@ -32,6 +32,7 @@ const createJsonResponse = (body: unknown, status = 200) =>
 
 const userFromApi = (tenantId: string): AuthUser => ({
   id: 'user-1',
+  username: 'admin',
   email: 'user@example.com',
   tenant: {
     id: tenantId,

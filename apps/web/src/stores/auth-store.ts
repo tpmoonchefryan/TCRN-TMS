@@ -4,12 +4,13 @@ import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
+import { withTenantContext } from '@/lib/api/modules/auth-user-contract';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
 import { userApi } from '@/lib/api/modules/user';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
-import type { AuthState, AuthUser, LoginResponseData, PermissionScope } from './auth-store.types';
+import type { AuthState, AuthUser, PermissionScope } from './auth-store.types';
 import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
 
 const isAcTenantCode = (tenantCode: string | null | undefined) =>
@@ -200,8 +201,7 @@ export const useAuthStore = create<AuthState>()(
             const response = await authApi.login(login, password, tenantCode);
 
             if (response.success && response.data) {
-              // Cast to LoginResponseData for proper type access
-              const data = response.data as LoginResponseData;
+              const data = response.data;
 
               // Case 1: Password Reset Required
               if (data.passwordResetRequired) {
@@ -247,8 +247,7 @@ export const useAuthStore = create<AuthState>()(
             }
 
             set({
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              error: (response as any).error?.message || 'Login failed',
+              error: response.error?.message || 'Login failed',
               isLoading: false,
             });
             return { success: false };
@@ -409,9 +408,14 @@ export const useAuthStore = create<AuthState>()(
               const meRes = await userApi.me();
 
               if (meRes.success && meRes.data) {
-                const tenantId = meRes.data.tenant?.id || get().tenantId;
+                const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
+                const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: meRes.data,
+                  user: withTenantContext(meRes.data, {
+                    id: tenantId,
+                    code: tenantCode,
+                    name: currentUser?.tenant?.name,
+                  }),
                   tenantId,
                   isAuthenticated: true,
                 });
@@ -435,9 +439,14 @@ export const useAuthStore = create<AuthState>()(
             try {
               const meRes = await userApi.me();
               if (meRes.success && meRes.data) {
-                const tenantId = meRes.data.tenant?.id || get().tenantId;
+                const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
+                const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: meRes.data,
+                  user: withTenantContext(meRes.data, {
+                    id: tenantId,
+                    code: tenantCode,
+                    name: currentUser?.tenant?.name,
+                  }),
                   tenantId,
                   isAuthenticated: true,
                 });
