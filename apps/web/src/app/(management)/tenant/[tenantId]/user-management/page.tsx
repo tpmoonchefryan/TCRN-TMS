@@ -43,21 +43,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { systemRoleApi, systemUserApi } from '@/lib/api/modules/user-management';
-
-
-// User interface from API
-interface SystemUser {
-  id: string;
-  username: string;
-  email: string;
-  displayName: string;
-  isActive: boolean;
-  isTotpEnabled: boolean;
-  forceReset: boolean;
-  lastLoginAt: string | null;
-  createdAt: string;
-}
+import {
+  type CreateSystemUserPayload,
+  systemRoleApi,
+  systemUserApi,
+  type SystemUserListItem,
+} from '@/lib/api/modules/user-management';
 
 export default function UserManagementPage() {
   const params = useParams();
@@ -97,7 +88,7 @@ export default function UserManagementPage() {
 
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
-  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [users, setUsers] = useState<SystemUserListItem[]>([]);
   const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
@@ -124,7 +115,7 @@ export default function UserManagementPage() {
         pageSize: 100,
       });
       if (response.success && response.data) {
-        setUsers(response.data as SystemUser[]);
+        setUsers(response.data);
       }
     } catch (error: any) {
       toast.error(getErrorMessage(error));
@@ -188,16 +179,21 @@ export default function UserManagementPage() {
       toast.error(te('VALIDATION_FIELD_REQUIRED'));
       return;
     }
+    if (newUser.password.length < 12) {
+      toast.error(te('AUTH_PASSWORD_WEAK'));
+      return;
+    }
     
     setIsCreatingUser(true);
     try {
-      const response = await systemUserApi.create({
+      const payload: CreateSystemUserPayload = {
         username: newUser.username,
         email: newUser.email,
         password: newUser.password,
         displayName: newUser.displayName || newUser.username,
         forceReset: newUser.forceReset,
-      });
+      };
+      const response = await systemUserApi.create(payload);
       
       if (response.success) {
         toast.success('User created successfully');

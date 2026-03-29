@@ -22,20 +22,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from '@/components/ui';
-import { systemUserApi } from '@/lib/api/modules/user-management';
-
-interface UserDetails {
-  id: string;
-  username: string;
-  email: string;
-  displayName?: string;
-  isActive: boolean;
-  totpEnabled?: boolean;
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt?: string;
-  roles?: Array<{ id: string; name: string; code: string }>;
-}
+import {
+  systemUserApi,
+  type SystemUserDetailRecord,
+  type UpdateSystemUserPayload,
+} from '@/lib/api/modules/user-management';
 
 export default function UserDetailPage() {
   const router = useRouter();
@@ -62,14 +53,14 @@ export default function UserDetailPage() {
     return (error as Error)?.message || te('generic');
   }, [te]);
 
-  const [user, setUser] = useState<UserDetails | null>(null);
+  const [user, setUser] = useState<SystemUserDetailRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UpdateSystemUserPayload>({
     displayName: '',
     phone: '',
     preferredLanguage: 'en',
@@ -286,16 +277,16 @@ export default function UserDetailPage() {
 
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <Shield size={20} className={user.totpEnabled ? 'text-green-500' : 'text-slate-400'} />
+                <Shield size={20} className={user.isTotpEnabled ? 'text-green-500' : 'text-slate-400'} />
                 <div>
                   <p className="font-medium">2FA</p>
                   <p className="text-sm text-slate-500">
-                    {user.totpEnabled ? 'Enabled' : 'Not configured'}
+                    {user.isTotpEnabled ? 'Enabled' : 'Not configured'}
                   </p>
                 </div>
               </div>
-              <Badge variant={user.totpEnabled ? 'default' : 'secondary'}>
-                {user.totpEnabled ? 'ON' : 'OFF'}
+              <Badge variant={user.isTotpEnabled ? 'default' : 'secondary'}>
+                {user.isTotpEnabled ? 'ON' : 'OFF'}
               </Badge>
             </div>
 

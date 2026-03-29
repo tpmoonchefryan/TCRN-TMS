@@ -1,22 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
 import type { RbacScopeType, SystemRoleRecord } from '@tcrn/shared';
 import {
-    AlertTriangle,
     ArrowLeft,
-    Calendar,
     Check,
     Clock,
     Key,
     Loader2,
-    Lock,
     Mail,
     Phone,
     Shield,
-    Unlock,
     User
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -43,30 +39,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { systemRoleApi, systemUserApi, userRoleApi } from '@/lib/api/modules/user-management';
+import {
+  systemRoleApi,
+  systemUserApi,
+  type SystemUserDetailRecord,
+  type SystemUserScopeAccessMutation,
+  userRoleApi,
+} from '@/lib/api/modules/user-management';
 import type { UserRoleAssignmentState } from '@/lib/rbac/user-role-assignment';
 import {
     findUserRoleAssignment,
     getRbacScopeKey,
     toUserRoleAssignmentState,
 } from '@/lib/rbac/user-role-assignment';
+import type { SubsidiaryInfo } from '@/stores/talent-store';
 import { useTalentStore } from '@/stores/talent-store';
-
-// User interface from API
-interface SystemUserDetail {
-  id: string;
-  username: string;
-  email: string;
-  phone?: string;
-  displayName: string;
-  preferredLanguage?: string;
-  isActive: boolean;
-  isTotpEnabled: boolean;
-  passwordExpiresAt?: string | null;
-  forceReset: boolean;
-  lastLoginAt?: string | null;
-  createdAt: string;
-}
 
 export default function UserSettingsPage() {
   const params = useParams();
@@ -99,22 +86,18 @@ export default function UserSettingsPage() {
   const { currentTenantCode, organizationTree, directTalents } = useTalentStore();
 
   const [activeTab, setActiveTab] = useState('details');
-  const [user, setUser] = useState<SystemUserDetail | null>(null);
+  const [user, setUser] = useState<SystemUserDetailRecord | null>(null);
   const [userRoles, setUserRoles] = useState<UserRoleAssignmentState[]>([]);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<SystemRoleRecord[]>([]);
   const [isLoadingAvailableRoles, setIsLoadingAvailableRoles] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [showRemove2FADialog, setShowRemove2FADialog] = useState(false);
-  const [showPasswordExpiryDialog, setShowPasswordExpiryDialog] = useState(false);
 
   // Dialog form state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [enableExpiry, setEnableExpiry] = useState(false);
-  const [expiryDays, setExpiryDays] = useState(90);
 
   // Role management state
   const [selectedScope, setSelectedScope] = useState<TreeNode | null>(null);
@@ -128,21 +111,7 @@ export default function UserSettingsPage() {
     try {
       const response = await systemUserApi.get(userId);
       if (response.success && response.data) {
-        const data = response.data;
-        setUser({
-          id: data.id,
-          username: data.username,
-          email: data.email,
-          phone: data.phone,
-          displayName: data.displayName || data.username,
-          preferredLanguage: data.preferredLanguage,
-          isActive: data.isActive ?? true,
-          isTotpEnabled: data.isTotpEnabled ?? false,
-          passwordExpiresAt: data.passwordExpiresAt,
-          forceReset: data.forceReset ?? false,
-          lastLoginAt: data.lastLoginAt,
-          createdAt: data.createdAt,
-        });
+        setUser(response.data);
       }
     } catch (error: any) {
       toast.error(getErrorMessage(error));
@@ -192,7 +161,7 @@ export default function UserSettingsPage() {
         }
         setAccessibilityState(newAccessState);
       }
-    } catch (error) {
+    } catch {
       // Keep default state
     }
   }, [userId, tenantId]);
@@ -204,7 +173,7 @@ export default function UserSettingsPage() {
       if (response.success && response.data) {
         setUserRoles(response.data.map(toUserRoleAssignmentState));
       }
-    } catch (error) {
+    } catch {
       // Keep empty roles
     }
   }, [userId]);
@@ -323,54 +292,6 @@ export default function UserSettingsPage() {
     }
   };
 
-  // Remove 2FA handler
-  const handleRemove2FA = async () => {
-    setIsSubmitting(true);
-    try {
-      await systemUserApi.disableTotp(userId);
-      toast.success(t('2faRemoved') || '2FA has been disabled');
-      setShowRemove2FADialog(false);
-      if (user) {
-        setUser({ ...user, isTotpEnabled: false });
-      }
-    } catch (error: any) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Password expiry handler
-  const handleSavePasswordExpiry = async () => {
-    setIsSubmitting(true);
-    try {
-      await systemUserApi.setPasswordExpiry(userId, {
-        enabled: enableExpiry,
-        expiresInDays: enableExpiry ? expiryDays : undefined,
-      });
-      toast.success(t('expirySettingsSaved') || 'Password expiry settings saved');
-      setShowPasswordExpiryDialog(false);
-      // Update local user state
-      if (user) {
-        const newExpiresAt = enableExpiry
-          ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString()
-          : null;
-        setUser({ ...user, passwordExpiresAt: newExpiresAt });
-      }
-    } catch (error: any) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Reset dialog state when opening password expiry
-  const handleOpenPasswordExpiryDialog = () => {
-    setEnableExpiry(!!user?.passwordExpiresAt);
-    setExpiryDays(90);
-    setShowPasswordExpiryDialog(true);
-  };
-
   // Helper: Build a flat map of all nodes with their parent info
   const buildNodeMap = useCallback(() => {
     const nodeMap: Record<string, { parentId: string | null; type: string; childIds: string[] }> = {};
@@ -379,7 +300,7 @@ export default function UserSettingsPage() {
     nodeMap[tenantId] = { parentId: null, type: 'tenant', childIds: [] };
     
     // Recursively process subsidiaries
-    const processSubsidiary = (sub: any, parentId: string) => {
+    const processSubsidiary = (sub: SubsidiaryInfo, parentId: string) => {
       nodeMap[sub.id] = { parentId, type: 'subsidiary', childIds: [] };
       nodeMap[parentId].childIds.push(sub.id);
       
@@ -442,12 +363,17 @@ export default function UserSettingsPage() {
   // Save scope access to backend
   const saveScopeAccess = useCallback(async (state: Record<string, AccessibilityState>) => {
     const nodeMap = buildNodeMap();
-    const accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }> = [];
+    const accesses: SystemUserScopeAccessMutation[] = [];
     
     for (const [nodeId, nodeState] of Object.entries(state)) {
       if (nodeState.enabled) {
         const nodeInfo = nodeMap[nodeId];
-        const scopeType = nodeInfo?.type || (nodeId === tenantId ? 'tenant' : 'unknown');
+        const scopeType: RbacScopeType | null =
+          nodeId === tenantId ? 'tenant' : (nodeInfo?.type as RbacScopeType | undefined) || null;
+
+        if (!scopeType) {
+          continue;
+        }
         
         accesses.push({
           scopeType,
@@ -557,7 +483,7 @@ export default function UserSettingsPage() {
           <ArrowLeft size={20} />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{user.displayName}</h1>
+          <h1 className="text-2xl font-bold">{user.displayName || user.username}</h1>
           <p className="text-muted-foreground">{t('title')}</p>
         </div>
         <Badge variant={user.isActive ? 'default' : 'secondary'}>
@@ -591,7 +517,7 @@ export default function UserSettingsPage() {
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label>{tc('name')}</Label>
-                    <Input value={user.displayName} readOnly />
+                    <Input value={user.displayName || user.username} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label>{tc('code')}</Label>
@@ -678,45 +604,6 @@ export default function UserSettingsPage() {
                       {user.isTotpEnabled ? tc('enabled') : tc('disabled')}
                     </Badge>
                   </div>
-                  {user.isTotpEnabled && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600"
-                      onClick={() => setShowRemove2FADialog(true)}
-                    >
-                      <Unlock size={14} className="mr-2" />
-                      {t('remove2FA')}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Password Expiry Section */}
-                <div className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Calendar size={16} />
-                        {t('passwordExpiry')}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {user.passwordExpiresAt
-                          ? t('expiresOn', { date: new Date(user.passwordExpiresAt).toLocaleDateString() })
-                          : t('noExpiry')}
-                      </p>
-                    </div>
-                    <Badge variant={user.passwordExpiresAt ? 'outline' : 'secondary'}>
-                      {user.passwordExpiresAt ? tc('custom') : tc('system')}
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPasswordExpiryDialog(true)}
-                  >
-                    <Lock size={14} className="mr-2" />
-                    {t('configureExpiry')}
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -862,7 +749,7 @@ export default function UserSettingsPage() {
           <DialogHeader>
             <DialogTitle>{t('changePassword')}</DialogTitle>
             <DialogDescription>
-              {user.displayName}
+              {user.displayName || user.username}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -897,74 +784,6 @@ export default function UserSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Remove 2FA Dialog */}
-      <Dialog open={showRemove2FADialog} onOpenChange={setShowRemove2FADialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle size={20} />
-              {t('remove2FATitle')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('remove2FADesc')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRemove2FADialog(false)}>
-              {tc('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleRemove2FA} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 size={16} className="mr-2 animate-spin" /> : null}
-              {t('remove2FA')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Password Expiry Dialog */}
-      <Dialog open={showPasswordExpiryDialog} onOpenChange={setShowPasswordExpiryDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('passwordExpirySettings')}</DialogTitle>
-            <DialogDescription>
-              {t('passwordExpiryDesc')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="enable-expiry"
-                className="rounded"
-                checked={enableExpiry}
-                onChange={(e) => setEnableExpiry(e.target.checked)}
-              />
-              <Label htmlFor="enable-expiry">{t('enableExpiry')}</Label>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('expiresInDays')}</Label>
-              <Input
-                type="number"
-                placeholder="90"
-                value={expiryDays}
-                onChange={(e) => setExpiryDays(parseInt(e.target.value) || 90)}
-                disabled={!enableExpiry}
-                min={7}
-                max={365}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordExpiryDialog(false)}>
-              {tc('cancel')}
-            </Button>
-            <Button onClick={handleSavePasswordExpiry} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 size={16} className="mr-2 animate-spin" /> : null}
-              {t('saveSettings')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

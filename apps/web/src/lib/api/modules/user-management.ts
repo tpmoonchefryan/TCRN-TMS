@@ -13,53 +13,163 @@ import type {
 
 import { apiClient } from '../core';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export type SystemUserPreferredLanguage = 'en' | 'zh' | 'ja';
+
+export interface SystemUserListQuery {
+  search?: string;
+  roleId?: string;
+  isActive?: boolean;
+  isTotpEnabled?: boolean;
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+}
+
+export interface SystemUserListItem {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isActive: boolean;
+  isTotpEnabled: boolean;
+  forceReset: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
+export interface SystemUserDetailRecord extends SystemUserListItem {
+  phone: string | null;
+  preferredLanguage: SystemUserPreferredLanguage;
+  updatedAt: string;
+}
+
+export interface CreateSystemUserPayload {
+  username: string;
+  email: string;
+  password: string;
+  displayName?: string;
+  phone?: string;
+  preferredLanguage?: SystemUserPreferredLanguage;
+  forceReset?: boolean;
+}
+
+export interface SystemUserCreateResponse {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string | null;
+  isActive: boolean;
+  forceReset: boolean;
+  createdAt: string;
+}
+
+export interface UpdateSystemUserPayload {
+  displayName?: string;
+  phone?: string;
+  preferredLanguage?: SystemUserPreferredLanguage;
+  avatarUrl?: string;
+}
+
+export interface SystemUserUpdateResponse {
+  id: string;
+  displayName: string | null;
+  phone: string | null;
+  preferredLanguage: SystemUserPreferredLanguage;
+  avatarUrl: string | null;
+  updatedAt: string;
+}
+
+export interface ResetSystemUserPasswordPayload {
+  newPassword?: string;
+  forceReset?: boolean;
+}
+
+export interface ResetSystemUserPasswordResponse {
+  message: string;
+  tempPassword?: string;
+  forceReset: boolean;
+}
+
+export interface SystemUserActivationResponse {
+  id: string;
+  isActive: boolean;
+}
+
+export interface SystemUserScopeAccessRecord {
+  id: string;
+  scopeType: RbacScopeType;
+  scopeId: string | null;
+  includeSubunits: boolean;
+}
+
+export interface SystemUserScopeAccessMutation {
+  scopeType: RbacScopeType;
+  scopeId?: string | null;
+  includeSubunits?: boolean;
+}
+
+export interface SystemUserScopeAccessUpdateResponse {
+  message: string;
+}
+
+export interface SystemUserForceTotpResponse {
+  message: string;
+}
+
+export interface SystemRoleDeleteResponse {
+  deleted: boolean;
+}
+
+export interface RecoveryCodeVerifyResponse {
+  accessToken?: string;
+  tokenType?: string;
+  expiresIn?: number;
+  user?: Record<string, unknown>;
+  recoveryCodesRemaining?: number;
+  warning?: string;
+}
+
+export interface LogoutAllResponse {
+  message: string;
+  revokedSessions: number;
+}
 
 export const systemUserApi = {
-  list: (params?: {
-    search?: string;
-    roleId?: string;
-    isActive?: boolean;
-    page?: number;
-    pageSize?: number;
-  }) => apiClient.get<any[]>('/api/v1/system-users', params),
+  list: (params?: SystemUserListQuery) =>
+    apiClient.get<SystemUserListItem[]>('/api/v1/system-users', params),
 
-  get: (id: string) => apiClient.get<any>(`/api/v1/system-users/${id}`),
+  get: (id: string) => apiClient.get<SystemUserDetailRecord>(`/api/v1/system-users/${id}`),
 
-  create: (data: {
-    username: string;
-    email: string;
-    password: string;
-    displayName?: string;
-    forceReset?: boolean;
-  }) => apiClient.post<any>('/api/v1/system-users', data),
+  create: (data: CreateSystemUserPayload) =>
+    apiClient.post<SystemUserCreateResponse>('/api/v1/system-users', data),
 
-  update: (
-    id: string,
-    data: { displayName?: string; phone?: string; preferredLanguage?: string },
-  ) => apiClient.patch<any>(`/api/v1/system-users/${id}`, data),
+  update: (id: string, data: UpdateSystemUserPayload) =>
+    apiClient.patch<SystemUserUpdateResponse>(`/api/v1/system-users/${id}`, data),
 
-  resetPassword: (id: string, options?: { newPassword?: string; forceReset?: boolean }) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/reset-password`, options || {}),
+  resetPassword: (id: string, options?: ResetSystemUserPasswordPayload) =>
+    apiClient.post<ResetSystemUserPasswordResponse>(
+      `/api/v1/system-users/${id}/reset-password`,
+      options || {}
+    ),
 
-  deactivate: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/deactivate`, {}),
+  deactivate: (id: string) =>
+    apiClient.post<SystemUserActivationResponse>(`/api/v1/system-users/${id}/deactivate`, {}),
 
-  reactivate: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/reactivate`, {}),
+  reactivate: (id: string) =>
+    apiClient.post<SystemUserActivationResponse>(`/api/v1/system-users/${id}/reactivate`, {}),
 
   getScopeAccess: (id: string) =>
-    apiClient.get<
-      Array<{ id: string; scopeType: string; scopeId: string | null; includeSubunits: boolean }>
-    >(`/api/v1/system-users/${id}/scope-access`),
+    apiClient.get<SystemUserScopeAccessRecord[]>(`/api/v1/system-users/${id}/scope-access`),
 
-  setScopeAccess: (
-    id: string,
-    accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }>,
-  ) => apiClient.post<any>(`/api/v1/system-users/${id}/scope-access`, { accesses }),
+  setScopeAccess: (id: string, accesses: SystemUserScopeAccessMutation[]) =>
+    apiClient.post<SystemUserScopeAccessUpdateResponse>(`/api/v1/system-users/${id}/scope-access`, {
+      accesses,
+    }),
 
-  disableTotp: (id: string) => apiClient.post<any>(`/api/v1/system-users/${id}/disable-totp`, {}),
+  forceTotp: (id: string) =>
+    apiClient.post<SystemUserForceTotpResponse>(`/api/v1/system-users/${id}/force-totp`, {}),
 
-  setPasswordExpiry: (id: string, options: { enabled: boolean; expiresInDays?: number }) =>
-    apiClient.post<any>(`/api/v1/system-users/${id}/password-expiry`, options),
 };
 
 export interface DelegatedAdmin {
@@ -130,14 +240,17 @@ export const systemRoleApi = {
     },
   ) => apiClient.patch<SystemRoleRecord>(`/api/v1/system-roles/${id}`, data),
 
-  delete: (id: string) => apiClient.delete<any>(`/api/v1/system-roles/${id}`),
+  delete: (id: string) => apiClient.delete<SystemRoleDeleteResponse>(`/api/v1/system-roles/${id}`),
 };
 
 export const authExtApi = {
   verifyRecoveryCode: (sessionToken: string, recoveryCode: string) =>
-    apiClient.post<any>('/api/v1/auth/recovery-code/verify', { sessionToken, recoveryCode }),
+    apiClient.post<RecoveryCodeVerifyResponse>('/api/v1/auth/recovery-code/verify', {
+      sessionToken,
+      recoveryCode,
+    }),
 
-  logoutAll: () => apiClient.post<any>('/api/v1/auth/logout-all', {}),
+  logoutAll: () => apiClient.post<LogoutAllResponse>('/api/v1/auth/logout-all', {}),
 };
 
 export const totpApi = {

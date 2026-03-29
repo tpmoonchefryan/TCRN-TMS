@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -39,27 +38,21 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { systemUserApi } from '@/lib/api/modules/user-management';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
+import {
+  systemUserApi,
+  type SystemUserListItem,
+} from '@/lib/api/modules/user-management';
 
 // Note: AC User Management is for managing platform-level users (e.g., API support staff)
 // Not to be confused with tenant-level user management
 
 
-interface SystemUser {
-  id: string;
-  username: string;
-  displayName: string;
-  email: string;
-  role: string;
-  isActive: boolean;
-  lastLogin: string;
-}
-
 export default function ACUsersPage() {
   const t = useTranslations('adminConsole.users');
   const tCommon = useTranslations('common');
   const router = useRouter();
-  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [users, setUsers] = useState<SystemUserListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -71,8 +64,10 @@ export default function ACUsersPage() {
       if (response.success && response.data) {
         setUsers(response.data);
       }
-    } catch (err: any) {
-      toast.error(tCommon('error'), { description: err.message });
+    } catch (error: unknown) {
+      toast.error(tCommon('error'), {
+        description: getThrownErrorMessage(error, tCommon('error')),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +79,7 @@ export default function ACUsersPage() {
 
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.displayName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -103,8 +98,10 @@ export default function ACUsersPage() {
         toast.success(t('passwordResetSuccess'));
         fetchUsers();
       }
-    } catch (err: any) {
-      toast.error(tCommon('error'), { description: err.message });
+    } catch (error: unknown) {
+      toast.error(tCommon('error'), {
+        description: getThrownErrorMessage(error, tCommon('error')),
+      });
     }
   };
 
@@ -115,8 +112,10 @@ export default function ACUsersPage() {
         toast.success(t('userDeactivated'));
         fetchUsers();
       }
-    } catch (err: any) {
-      toast.error(tCommon('error'), { description: err.message });
+    } catch (error: unknown) {
+      toast.error(tCommon('error'), {
+        description: getThrownErrorMessage(error, tCommon('error')),
+      });
     }
   };
 
@@ -194,7 +193,7 @@ export default function ACUsersPage() {
                   <TableHead>{t('username')}</TableHead>
                   <TableHead>{t('displayName')}</TableHead>
                   <TableHead>{t('email')}</TableHead>
-                  <TableHead>{t('role')}</TableHead>
+                  <TableHead>{t('twoFactorAuth')}</TableHead>
                   <TableHead>{tCommon('status')}</TableHead>
                   <TableHead>{t('lastLogin')}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
@@ -204,11 +203,11 @@ export default function ACUsersPage() {
                 {filteredUsers.map(user => (
                   <TableRow key={user.id}>
                     <TableCell className="font-mono">{user.username}</TableCell>
-                    <TableCell className="font-medium">{user.displayName}</TableCell>
+                    <TableCell className="font-medium">{user.displayName || user.username}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                        {user.role}
+                      <Badge variant={user.isTotpEnabled ? 'default' : 'secondary'}>
+                        {user.isTotpEnabled ? tCommon('enabled') : tCommon('disabled')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -217,7 +216,7 @@ export default function ACUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(user.lastLogin).toLocaleDateString()}
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

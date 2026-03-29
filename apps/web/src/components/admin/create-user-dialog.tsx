@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -20,7 +19,10 @@ import {
     Label,
     Switch,
 } from '@/components/ui';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import { systemUserApi } from '@/lib/api/modules/user-management';
+
+const MIN_SYSTEM_USER_PASSWORD_LENGTH = 12;
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -59,8 +61,8 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
     }
 
     // Validate password length
-    if (formData.password.length < 8) {
-      toast.error(tForms('validation.minLength', { min: 8 }));
+    if (formData.password.length < MIN_SYSTEM_USER_PASSWORD_LENGTH) {
+      toast.error(tForms('validation.minLength', { min: MIN_SYSTEM_USER_PASSWORD_LENGTH }));
       return;
     }
 
@@ -93,9 +95,9 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
           description: response.error?.message || tToast('error.generic'),
         });
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
       toast.error(tToast('error.create'), {
-        description: err.message || tToast('error.generic'),
+        description: getThrownErrorMessage(error, tToast('error.generic')),
       });
     } finally {
       setIsSubmitting(false);
@@ -158,7 +160,9 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               disabled={isSubmitting}
             />
-            <p className="text-xs text-slate-500">{tForms('hints.passwordStrength', { min: 8 })}</p>
+            <p className="text-xs text-slate-500">
+              {tForms('hints.passwordStrength', { min: MIN_SYSTEM_USER_PASSWORD_LENGTH })}
+            </p>
           </div>
 
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
