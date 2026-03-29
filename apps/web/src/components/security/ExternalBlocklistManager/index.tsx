@@ -60,6 +60,10 @@ import {
   externalBlocklistApi,
   type ExternalBlocklistPattern,
 } from '@/lib/api/modules/configuration';
+import {
+  toExternalBlocklistListQuery,
+  toExternalBlocklistScopePayload,
+} from '@/lib/api/modules/external-blocklist-contract';
 
 import { PatternDialog } from './PatternDialog';
 
@@ -99,13 +103,18 @@ export function ExternalBlocklistManager({
   const loadPatterns = useCallback(async () => {
     setLoading(true);
     try {
-      // Use new API with scope parameters
-      const result = await externalBlocklistApi.list({
-        scopeType: effectiveScopeType,
-        scopeId: effectiveScopeId,
+      const query = toExternalBlocklistListQuery(effectiveScopeType, effectiveScopeId, {
         includeInherited: showInherited,
         includeDisabled: showDisabled,
       });
+
+      if (!query) {
+        toast.error(t('loadError'));
+        setPatterns([]);
+        return;
+      }
+
+      const result = await externalBlocklistApi.list(query);
       setPatterns(result.data || []);
     } catch (error) {
       console.error('Failed to load patterns:', error);
@@ -177,10 +186,14 @@ export function ExternalBlocklistManager({
 
   const handleDisable = async (pattern: ExternalBlocklistPattern) => {
     try {
-      await externalBlocklistApi.disable(pattern.id, {
-        scopeType: effectiveScopeType,
-        scopeId: effectiveScopeId,
-      });
+      const scopePayload = toExternalBlocklistScopePayload(effectiveScopeType, effectiveScopeId);
+
+      if (!scopePayload) {
+        toast.error(t('disableError'));
+        return;
+      }
+
+      await externalBlocklistApi.disable(pattern.id, scopePayload);
       toast.success(t('disabledHereSuccess'));
       loadPatterns();
     } catch (error) {
@@ -191,10 +204,14 @@ export function ExternalBlocklistManager({
 
   const handleEnable = async (pattern: ExternalBlocklistPattern) => {
     try {
-      await externalBlocklistApi.enable(pattern.id, {
-        scopeType: effectiveScopeType,
-        scopeId: effectiveScopeId,
-      });
+      const scopePayload = toExternalBlocklistScopePayload(effectiveScopeType, effectiveScopeId);
+
+      if (!scopePayload) {
+        toast.error(t('enableError'));
+        return;
+      }
+
+      await externalBlocklistApi.enable(pattern.id, scopePayload);
       toast.success(t('enabledHereSuccess'));
       loadPatterns();
     } catch (error) {

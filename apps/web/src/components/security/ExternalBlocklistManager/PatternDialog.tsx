@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -28,29 +27,35 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import {
+  type ExternalBlocklistAction,
   externalBlocklistApi,
+  type ExternalBlocklistOwnerType,
   type ExternalBlocklistPattern,
+  type ExternalBlocklistPatternType,
+  type ExternalBlocklistSeverity,
 } from '@/lib/api/modules/configuration';
+import { toExternalBlocklistOwnerScope } from '@/lib/api/modules/external-blocklist-contract';
 
 interface PatternDialogProps {
   open: boolean;
   onClose: (saved: boolean) => void;
   pattern: ExternalBlocklistPattern | null;
-  ownerType: 'tenant' | 'subsidiary' | 'talent';
+  ownerType: ExternalBlocklistOwnerType;
   ownerId?: string;
 }
 
 interface FormData {
   pattern: string;
-  patternType: 'domain' | 'url_regex' | 'keyword';
+  patternType: ExternalBlocklistPatternType;
   nameEn: string;
   nameZh: string;
   nameJa: string;
   description: string;
   category: string;
-  severity: 'low' | 'medium' | 'high';
-  action: 'reject' | 'flag' | 'replace';
+  severity: ExternalBlocklistSeverity;
+  action: ExternalBlocklistAction;
   replacement: string;
   inherit: boolean;
 }
@@ -93,14 +98,14 @@ export function PatternDialog({
       if (pattern) {
         reset({
           pattern: pattern.pattern,
-          patternType: pattern.patternType as 'domain' | 'url_regex' | 'keyword',
+          patternType: pattern.patternType,
           nameEn: pattern.nameEn,
           nameZh: pattern.nameZh || '',
           nameJa: pattern.nameJa || '',
           description: pattern.description || '',
           category: pattern.category || '',
-          severity: pattern.severity as 'low' | 'medium' | 'high',
-          action: pattern.action as 'reject' | 'flag' | 'replace',
+          severity: pattern.severity,
+          action: pattern.action,
           replacement: pattern.replacement,
           inherit: pattern.inherit,
         });
@@ -141,9 +146,15 @@ export function PatternDialog({
         });
         toast.success(t('updateSuccess'));
       } else {
+        const ownerScope = toExternalBlocklistOwnerScope(ownerType, ownerId);
+
+        if (!ownerScope) {
+          toast.error(t('saveError'));
+          return;
+        }
+
         await externalBlocklistApi.create({
-          ownerType,
-          ownerId: ownerType === 'talent' ? ownerId : undefined,
+          ...ownerScope,
           pattern: data.pattern,
           patternType: data.patternType,
           nameEn: data.nameEn,
@@ -159,9 +170,9 @@ export function PatternDialog({
         toast.success(t('createSuccess'));
       }
       onClose(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save pattern:', error);
-      toast.error(error?.message || t('saveError'));
+      toast.error(getThrownErrorMessage(error, t('saveError')));
     }
   };
 
@@ -195,7 +206,7 @@ export function PatternDialog({
               <Label>{t('form.patternType')}</Label>
               <Select
                 value={watch('patternType')}
-                onValueChange={(v) => setValue('patternType', v as 'domain' | 'url_regex' | 'keyword')}
+                onValueChange={(value) => setValue('patternType', value as ExternalBlocklistPatternType)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -279,7 +290,7 @@ export function PatternDialog({
               <Label>{t('form.severity')}</Label>
               <Select
                 value={watch('severity')}
-                onValueChange={(v) => setValue('severity', v as 'low' | 'medium' | 'high')}
+                onValueChange={(value) => setValue('severity', value as ExternalBlocklistSeverity)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -295,7 +306,7 @@ export function PatternDialog({
               <Label>{t('form.action')}</Label>
               <Select
                 value={watch('action')}
-                onValueChange={(v) => setValue('action', v as 'reject' | 'flag' | 'replace')}
+                onValueChange={(value) => setValue('action', value as ExternalBlocklistAction)}
               >
                 <SelectTrigger>
                   <SelectValue />

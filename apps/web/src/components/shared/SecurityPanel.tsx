@@ -52,6 +52,10 @@ import {
   type ExternalBlocklistPattern,
 } from '@/lib/api/modules/configuration';
 import {
+  toExternalBlocklistListQuery,
+  toExternalBlocklistOwnerScope,
+} from '@/lib/api/modules/external-blocklist-contract';
+import {
   type IpAccessRuleRecord,
   type IpRuleType,
   securityApi,
@@ -208,11 +212,16 @@ export function SecurityPanel({
   const fetchExternalBlocklist = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await externalBlocklistApi.list({
-        scopeType: scopeType as 'tenant' | 'subsidiary' | 'talent',
-        scopeId,
+      const query = toExternalBlocklistListQuery(scopeType, scopeId, {
         includeInherited: true,
       });
+
+      if (!query) {
+        setExternalEntries([]);
+        return;
+      }
+
+      const response = await externalBlocklistApi.list(query);
       if (response.success && response.data) {
         setExternalEntries(response.data.map((item) => ({
           id: item.id,
@@ -290,9 +299,14 @@ export function SecurityPanel({
           return;
         }
 
+        const ownerScope = toExternalBlocklistOwnerScope(scopeType, scopeId);
+        if (!ownerScope) {
+          toast.error(tc('error'));
+          return;
+        }
+
         await externalBlocklistApi.create({
-          ownerType: scopeType,
-          ownerId: scopeId,
+          ...ownerScope,
           pattern,
           patternType: (newEntry.patternType as 'domain' | 'url_regex' | 'keyword') || 'domain',
           nameEn: pattern,

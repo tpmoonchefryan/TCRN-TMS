@@ -605,19 +605,24 @@ export const configurationEntityApi = {
   }) => apiClient.get<MembershipTreeClass[]>('/api/v1/configuration-entity/membership-tree', query),
 };
 
+export type ExternalBlocklistOwnerType = 'tenant' | 'subsidiary' | 'talent';
+export type ExternalBlocklistPatternType = 'domain' | 'url_regex' | 'keyword';
+export type ExternalBlocklistAction = 'reject' | 'flag' | 'replace';
+export type ExternalBlocklistSeverity = 'low' | 'medium' | 'high';
+
 export interface ExternalBlocklistPattern {
   id: string;
-  ownerType: 'tenant' | 'subsidiary' | 'talent';
+  ownerType: ExternalBlocklistOwnerType;
   ownerId: string | null;
   pattern: string;
-  patternType: 'domain' | 'url_regex' | 'keyword';
+  patternType: ExternalBlocklistPatternType;
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
   description: string | null;
   category: string | null;
-  severity: 'low' | 'medium' | 'high';
-  action: 'reject' | 'flag' | 'replace';
+  severity: ExternalBlocklistSeverity;
+  action: ExternalBlocklistAction;
   replacement: string;
   inherit: boolean;
   sortOrder?: number;
@@ -632,20 +637,72 @@ export interface ExternalBlocklistPattern {
   canDisable?: boolean;
 }
 
+export interface ExternalBlocklistListQuery {
+  scopeType?: ExternalBlocklistOwnerType;
+  scopeId?: string;
+  category?: string;
+  includeInherited?: boolean;
+  includeDisabled?: boolean;
+  includeInactive?: boolean;
+  page?: number;
+  pageSize?: number;
+  ownerType?: ExternalBlocklistOwnerType;
+  ownerId?: string;
+  isActive?: boolean;
+}
+
+export type ExternalBlocklistOwnerScope =
+  | { ownerType: 'tenant' }
+  | { ownerType: 'subsidiary' | 'talent'; ownerId: string };
+
+export interface ExternalBlocklistMutationBase {
+  pattern: string;
+  patternType: ExternalBlocklistPatternType;
+  nameEn: string;
+  nameZh?: string;
+  nameJa?: string;
+  description?: string;
+  category?: string;
+  severity?: ExternalBlocklistSeverity;
+  action?: ExternalBlocklistAction;
+  replacement?: string;
+  inherit?: boolean;
+  sortOrder?: number;
+  isForceUse?: boolean;
+}
+
+export type ExternalBlocklistCreatePayload =
+  ExternalBlocklistOwnerScope & ExternalBlocklistMutationBase;
+
+export interface ExternalBlocklistUpdatePayload extends Partial<ExternalBlocklistMutationBase> {
+  isActive?: boolean;
+  version: number;
+}
+
+export type ExternalBlocklistScopePayload =
+  | { scopeType: 'tenant' }
+  | { scopeType: 'subsidiary' | 'talent'; scopeId: string };
+
+export interface ExternalBlocklistDeleteResponse {
+  message: string;
+}
+
+export interface ExternalBlocklistDisableResponse {
+  id: string;
+  disabled: boolean;
+}
+
+export interface ExternalBlocklistEnableResponse {
+  id: string;
+  enabled: boolean;
+}
+
+export interface ExternalBlocklistBatchToggleResponse {
+  updated: number;
+}
+
 export const externalBlocklistApi = {
-  list: (query?: {
-    scopeType?: 'tenant' | 'subsidiary' | 'talent';
-    scopeId?: string;
-    category?: string;
-    includeInherited?: boolean;
-    includeDisabled?: boolean;
-    includeInactive?: boolean;
-    page?: number;
-    pageSize?: number;
-    ownerType?: 'tenant' | 'subsidiary' | 'talent';
-    ownerId?: string;
-    isActive?: boolean;
-  }) => {
+  list: (query?: ExternalBlocklistListQuery) => {
     const params: Record<string, string> = {};
     if (query?.scopeType) params.scopeType = query.scopeType;
     else if (query?.ownerType) params.scopeType = query.ownerType;
@@ -676,55 +733,23 @@ export const externalBlocklistApi = {
 
   get: (id: string) => apiClient.get<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`),
 
-  create: (data: {
-    ownerType: 'tenant' | 'subsidiary' | 'talent';
-    ownerId?: string;
-    pattern: string;
-    patternType: 'domain' | 'url_regex' | 'keyword';
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    description?: string;
-    category?: string;
-    severity?: 'low' | 'medium' | 'high';
-    action?: 'reject' | 'flag' | 'replace';
-    replacement?: string;
-    inherit?: boolean;
-    sortOrder?: number;
-    isForceUse?: boolean;
-  }) => apiClient.post<ExternalBlocklistPattern>('/api/v1/external-blocklist', data),
+  create: (data: ExternalBlocklistCreatePayload) =>
+    apiClient.post<ExternalBlocklistPattern>('/api/v1/external-blocklist', data),
 
-  update: (
-    id: string,
-    data: {
-      pattern?: string;
-      patternType?: 'domain' | 'url_regex' | 'keyword';
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      description?: string;
-      category?: string;
-      severity?: 'low' | 'medium' | 'high';
-      action?: 'reject' | 'flag' | 'replace';
-      replacement?: string;
-      inherit?: boolean;
-      sortOrder?: number;
-      isActive?: boolean;
-      isForceUse?: boolean;
-      version: number;
-    },
-  ) => apiClient.patch<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`, data),
+  update: (id: string, data: ExternalBlocklistUpdatePayload) =>
+    apiClient.patch<ExternalBlocklistPattern>(`/api/v1/external-blocklist/${id}`, data),
 
-  delete: (id: string) => apiClient.delete<{ message: string }>(`/api/v1/external-blocklist/${id}`),
+  delete: (id: string) =>
+    apiClient.delete<ExternalBlocklistDeleteResponse>(`/api/v1/external-blocklist/${id}`),
 
-  disable: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<{ id: string; disabled: boolean }>(`/api/v1/external-blocklist/${id}/disable`, scope),
+  disable: (id: string, scope: ExternalBlocklistScopePayload) =>
+    apiClient.post<ExternalBlocklistDisableResponse>(`/api/v1/external-blocklist/${id}/disable`, scope),
 
-  enable: (id: string, scope: { scopeType?: string; scopeId?: string }) =>
-    apiClient.post<{ id: string; enabled: boolean }>(`/api/v1/external-blocklist/${id}/enable`, scope),
+  enable: (id: string, scope: ExternalBlocklistScopePayload) =>
+    apiClient.post<ExternalBlocklistEnableResponse>(`/api/v1/external-blocklist/${id}/enable`, scope),
 
   batchToggle: (ids: string[], isActive: boolean) =>
-    apiClient.post<{ updated: number }>('/api/v1/external-blocklist/batch-toggle', {
+    apiClient.post<ExternalBlocklistBatchToggleResponse>('/api/v1/external-blocklist/batch-toggle', {
       ids,
       isActive,
     }),
