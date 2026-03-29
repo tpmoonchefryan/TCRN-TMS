@@ -410,8 +410,7 @@ export class PlatformIdentityService {
 
     // Build dynamic SQL query with filters
     let whereClause = 'pih.customer_id = $1::uuid';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const params: any[] = [customerId];
+    const params: string[] = [customerId];
     let paramIndex = 2;
 
     if (changeType) {
