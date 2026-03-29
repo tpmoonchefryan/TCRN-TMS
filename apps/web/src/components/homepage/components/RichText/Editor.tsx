@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -14,7 +13,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { RichTextProps } from './schema';
+
+const RICH_TEXT_ALIGN_OPTIONS = ['left', 'center', 'right', 'justify'] as const satisfies readonly RichTextProps['textAlign'][];
 
 interface RichTextEditorProps {
   props: RichTextProps;
@@ -38,7 +40,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ props, onChange 
         <Label>{t('textAlign')}</Label>
         <Select 
           value={props.textAlign} 
-          onValueChange={(v: any) => onChange({ textAlign: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(RICH_TEXT_ALIGN_OPTIONS, value)) {
+              onChange({ textAlign: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

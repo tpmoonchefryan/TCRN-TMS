@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Facebook, Github, Instagram, Link as LinkIcon, Mail, Twitter, Youtube } from 'lucide-react';
+import { Facebook, Github, Instagram, Link as LinkIcon, type LucideIcon, Mail, Twitter, Youtube } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
@@ -10,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { defaultProps, SocialLinksProps } from './schema';
 
 // Simple mapping for now - ideally this comes from a shared icon registry or system dictionary
-const PLATFORM_ICONS: Record<string, any> = {
+const PLATFORM_ICONS: Record<string, LucideIcon> = {
   twitter: Twitter,
   x: Twitter,
   youtube: Youtube,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -16,7 +15,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { ProfileCardProps } from './schema';
+
+const PROFILE_AVATAR_SHAPE_OPTIONS = ['circle', 'rounded', 'square'] as const satisfies readonly ProfileCardProps['avatarShape'][];
+const PROFILE_NAME_SIZE_OPTIONS = ['small', 'medium', 'large'] as const satisfies readonly ProfileCardProps['nameFontSize'][];
+const PROFILE_BORDER_WIDTH_OPTIONS = ['none', 'thin', 'medium', 'thick'] as const satisfies readonly NonNullable<ProfileCardProps['borderWidth']>[];
+const PROFILE_SHADOW_SIZE_OPTIONS = ['none', 'small', 'medium', 'large'] as const satisfies readonly NonNullable<ProfileCardProps['shadowSize']>[];
+const PROFILE_ANIMATION_OPTIONS = ['none', 'fadeIn', 'slideUp', 'pulse', 'bounce'] as const satisfies readonly NonNullable<ProfileCardProps['animation']>[];
 
 interface ProfileCardEditorProps {
   props: ProfileCardProps;
@@ -83,7 +89,11 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
           <Label>{t('avatarShape')}</Label>
           <Select 
             value={props.avatarShape} 
-            onValueChange={(v: any) => onChange({ avatarShape: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(PROFILE_AVATAR_SHAPE_OPTIONS, value)) {
+                onChange({ avatarShape: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -100,7 +110,11 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
           <Label>{t('nameSize')}</Label>
           <Select 
             value={props.nameFontSize} 
-            onValueChange={(v: any) => onChange({ nameFontSize: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(PROFILE_NAME_SIZE_OPTIONS, value)) {
+                onChange({ nameFontSize: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -152,7 +166,11 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
             <Label>{t('borderWidth')}</Label>
             <Select 
               value={props.borderWidth || 'none'} 
-              onValueChange={(v: any) => onChange({ borderWidth: v })}
+              onValueChange={(value) => {
+                if (isOptionValue(PROFILE_BORDER_WIDTH_OPTIONS, value)) {
+                  onChange({ borderWidth: value });
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -172,7 +190,11 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
             <Label>{t('shadowSize')}</Label>
             <Select 
               value={props.shadowSize || 'none'} 
-              onValueChange={(v: any) => onChange({ shadowSize: v })}
+              onValueChange={(value) => {
+                if (isOptionValue(PROFILE_SHADOW_SIZE_OPTIONS, value)) {
+                  onChange({ shadowSize: value });
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -190,7 +212,11 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
             <Label>{t('animation')}</Label>
             <Select 
               value={props.animation || 'none'} 
-              onValueChange={(v: any) => onChange({ animation: v })}
+              onValueChange={(value) => {
+                if (isOptionValue(PROFILE_ANIMATION_OPTIONS, value)) {
+                  onChange({ animation: value });
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue />

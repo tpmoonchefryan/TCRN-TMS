@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
-
 
 import {
     Activity,
@@ -10,6 +8,7 @@ import {
     Candy,
     Image as ImageIcon,
     Link as LinkIcon,
+    type LucideIcon,
     Minus,
     MoveVertical,
     Music,
@@ -27,8 +26,7 @@ import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { ComponentType } from '../lib/types';
 
-
-const COMPONENTS_LIST: { type: ComponentType, labelKey: string, icon: any }[] = [
+const COMPONENTS_LIST: Array<{ type: ComponentType; labelKey: string; icon: LucideIcon }> = [
   { type: 'ProfileCard', labelKey: 'profileCard', icon: User },
   { type: 'SocialLinks', labelKey: 'socialLinks', icon: Share2 },
   { type: 'Schedule', labelKey: 'schedule', icon: Calendar },

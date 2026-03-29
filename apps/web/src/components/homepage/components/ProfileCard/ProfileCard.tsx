@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import React from 'react';
@@ -10,7 +9,6 @@ import { defaultProps, ProfileCardProps } from './schema';
 
 interface ProfileCardRendererProps extends Partial<ProfileCardProps> {
   className?: string;
-  theme?: any; // Pass theme if needed for specific overrides not handled by CSS vars
 }
 
 export const ProfileCard: React.FC<ProfileCardRendererProps> = (props) => {

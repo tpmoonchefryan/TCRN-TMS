@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -15,7 +14,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { VideoEmbedProps } from './schema';
+
+const VIDEO_ASPECT_RATIO_OPTIONS = ['16:9', '4:3', '1:1', '9:16'] as const satisfies readonly VideoEmbedProps['aspectRatio'][];
 
 interface VideoEmbedEditorProps {
   props: VideoEmbedProps;
@@ -66,7 +68,11 @@ export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onCha
         <Label>{t('aspectRatio')}</Label>
         <Select 
           value={props.aspectRatio} 
-          onValueChange={(v: any) => onChange({ aspectRatio: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(VIDEO_ASPECT_RATIO_OPTIONS, value)) {
+              onChange({ aspectRatio: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

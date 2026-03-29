@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
@@ -17,7 +16,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { ImageGalleryProps } from './schema';
+
+const IMAGE_GALLERY_LAYOUT_OPTIONS = ['carousel', 'grid', 'masonry'] as const satisfies readonly ImageGalleryProps['layoutMode'][];
+const IMAGE_GALLERY_GAP_OPTIONS = ['small', 'medium', 'large'] as const satisfies readonly ImageGalleryProps['gap'][];
 
 
 interface ImageGalleryEditorProps {
@@ -53,7 +56,11 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
           <Label>{t('layoutMode')}</Label>
           <Select 
             value={props.layoutMode} 
-            onValueChange={(v: any) => onChange({ layoutMode: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(IMAGE_GALLERY_LAYOUT_OPTIONS, value)) {
+                onChange({ layoutMode: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -89,7 +96,11 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
               <Label>{t('gap')}</Label>
               <Select 
                 value={props.gap} 
-                onValueChange={(v: any) => onChange({ gap: v })}
+                onValueChange={(value) => {
+                  if (isOptionValue(IMAGE_GALLERY_GAP_OPTIONS, value)) {
+                    onChange({ gap: value });
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

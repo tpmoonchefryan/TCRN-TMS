@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -13,7 +12,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { DividerProps } from './schema';
+
+const DIVIDER_STYLE_OPTIONS = ['solid', 'dashed', 'dotted'] as const satisfies readonly DividerProps['style'][];
+const DIVIDER_SPACING_OPTIONS = ['small', 'medium', 'large'] as const satisfies readonly DividerProps['spacing'][];
+const DIVIDER_COLOR_OPTIONS = ['default', 'primary', 'accent'] as const satisfies readonly DividerProps['color'][];
 
 interface DividerEditorProps {
   props: DividerProps;
@@ -29,7 +33,11 @@ export const DividerEditor: React.FC<DividerEditorProps> = ({ props, onChange })
         <Label>{t('style')}</Label>
         <Select 
           value={props.style} 
-          onValueChange={(v: any) => onChange({ style: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(DIVIDER_STYLE_OPTIONS, value)) {
+              onChange({ style: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />
@@ -46,7 +54,11 @@ export const DividerEditor: React.FC<DividerEditorProps> = ({ props, onChange })
         <Label>{t('spacing')}</Label>
         <Select 
           value={props.spacing} 
-          onValueChange={(v: any) => onChange({ spacing: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(DIVIDER_SPACING_OPTIONS, value)) {
+              onChange({ spacing: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />
@@ -63,7 +75,11 @@ export const DividerEditor: React.FC<DividerEditorProps> = ({ props, onChange })
         <Label>{t('color')}</Label>
         <Select 
           value={props.color} 
-          onValueChange={(v: any) => onChange({ color: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(DIVIDER_COLOR_OPTIONS, value)) {
+              onChange({ color: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

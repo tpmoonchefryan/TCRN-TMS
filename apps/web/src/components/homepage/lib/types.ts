@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { HomepageComponentType } from '@tcrn/shared';
-import React from 'react';
+import type { LucideIcon } from 'lucide-react';
+import type { ElementType } from 'react';
 
 // =============================================================================
 // Component Types
@@ -13,7 +13,7 @@ export type ComponentType = HomepageComponentType;
 export interface ComponentInstance {
   id: string;
   type: ComponentType;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   order?: number;  // Optional: order can be inferred from array position
   visible: boolean;
 
@@ -31,7 +31,7 @@ export interface ComponentInstance {
   
   // New: Internationalization
   // Map of locale code (e.g., 'zh', 'ja') to partial props override
-  i18n?: Record<string, Record<string, any>>;
+  i18n?: Record<string, Record<string, unknown>>;
 
   // Layout Props (stored in props):
   // x: number (1-6) - Grid Column Start
@@ -54,12 +54,12 @@ export interface ComponentDefinition {
   nameEn: string;
   nameZh: string;
   nameJa: string;
-  icon: any; // Lucide icon component
+  icon: LucideIcon;
   category: 'core' | 'media' | 'content' | 'layout' | 'interactive';
-  defaultProps: Record<string, any>;
-  schema?: any; // JSON Schema or Zod schema (TBD)
-  preview: React.ComponentType<any>;
-  editor: React.ComponentType<any>;
+  defaultProps: object;
+  schema?: unknown; // JSON Schema or Zod schema (TBD)
+  preview: ElementType;
+  editor: ElementType;
 }
 
 // =============================================================================

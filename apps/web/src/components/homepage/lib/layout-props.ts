@@ -12,7 +12,7 @@ export interface ComponentLayoutProps extends Record<string, unknown> {
   heightMode?: LayoutHeightMode;
 }
 
-type LayoutPropsSource = ComponentInstance['props'] | Record<string, unknown> | undefined;
+type LayoutPropsSource = ComponentInstance['props'] | object | undefined;
 
 export function getLayoutProps(props: LayoutPropsSource): ComponentLayoutProps {
   return (props ?? {}) as ComponentLayoutProps;

@@ -42,8 +42,7 @@ interface EditorState {
   publish: (talentId: string) => Promise<boolean>;
   updateSettings: (talentId: string, settings: Partial<HomepageEditableSettings>) => Promise<void>;
   addComponent: (type: ComponentType, index?: number) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateComponent: (id: string, props: Partial<any>) => void;
+  updateComponent: (id: string, props: Partial<ComponentInstance['props']>) => void;
   removeComponent: (id: string) => void;
   moveComponent: (dragIndex: number, hoverIndex: number) => void;
   selectComponent: (id: string | null) => void;
@@ -475,6 +474,5 @@ export const useEditorStore = create<EditorState>()(
       const state = get();
       return state.historyIndex < state.history.length - 1;
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  })) as any
+  }))
 );

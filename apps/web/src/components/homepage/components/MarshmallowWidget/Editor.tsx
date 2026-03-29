@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -15,7 +14,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { MarshmallowWidgetProps } from './schema';
+
+const MARSHMALLOW_DISPLAY_MODE_OPTIONS = ['card', 'button'] as const satisfies readonly MarshmallowWidgetProps['displayMode'][];
 
 interface MarshmallowWidgetEditorProps {
   props: MarshmallowWidgetProps;
@@ -47,7 +49,11 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
         <Label>{t('displayMode')}</Label>
         <Select 
           value={props.displayMode} 
-          onValueChange={(v: any) => onChange({ displayMode: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(MARSHMALLOW_DISPLAY_MODE_OPTIONS, value)) {
+              onChange({ displayMode: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

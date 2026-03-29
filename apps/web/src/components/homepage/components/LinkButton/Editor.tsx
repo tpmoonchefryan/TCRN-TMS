@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -16,7 +15,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { LinkButtonProps } from './schema';
+
+const LINK_BUTTON_STYLE_OPTIONS = ['solid', 'outline', 'ghost', 'link'] as const satisfies readonly LinkButtonProps['style'][];
+const LINK_BUTTON_HOVER_OPTIONS = ['none', 'scale', 'glow', 'lift', 'shake'] as const satisfies readonly LinkButtonProps['hoverEffect'][];
 
 interface LinkButtonEditorProps {
   props: LinkButtonProps;
@@ -51,7 +54,11 @@ export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onCha
           <Label>{t('style')}</Label>
           <Select 
             value={props.style} 
-            onValueChange={(v: any) => onChange({ style: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(LINK_BUTTON_STYLE_OPTIONS, value)) {
+                onChange({ style: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -70,7 +77,11 @@ export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onCha
           <Label>{t('hoverEffect')}</Label>
           <Select 
             value={props.hoverEffect || 'none'} 
-            onValueChange={(v: any) => onChange({ hoverEffect: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(LINK_BUTTON_HOVER_OPTIONS, value)) {
+                onChange({ hoverEffect: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />

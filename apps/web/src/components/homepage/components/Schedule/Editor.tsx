@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -7,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 
 import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { ScheduleEvent, ScheduleProps } from './Preview';
 
 interface ScheduleEditorProps {
@@ -15,6 +15,9 @@ interface ScheduleEditorProps {
 }
 
 import { useTranslations } from 'next-intl';
+
+const SCHEDULE_DAY_OPTIONS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const satisfies readonly ScheduleEvent['day'][];
+const SCHEDULE_EVENT_TYPE_OPTIONS = ['game', 'chat', 'singing', 'collab', 'other'] as const satisfies readonly ScheduleEvent['type'][];
 
 export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
   const t = useTranslations('homepageComponentEditor');
@@ -92,13 +95,17 @@ export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
               <div className="flex gap-2">
                 <Select 
                   value={event.day} 
-                  onValueChange={(v: any) => handleUpdateEvent(index, { day: v })}
+                  onValueChange={(value) => {
+                    if (isOptionValue(SCHEDULE_DAY_OPTIONS, value)) {
+                      handleUpdateEvent(index, { day: value });
+                    }
+                  }}
                 >
                   <SelectTrigger className="h-7 w-20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => (
+                    {SCHEDULE_DAY_OPTIONS.map(d => (
                       <SelectItem key={d} value={d}>{t(d)}</SelectItem>
                     ))}
                   </SelectContent>
@@ -120,7 +127,11 @@ export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
               />
               <Select 
                 value={event.type} 
-                onValueChange={(v: any) => handleUpdateEvent(index, { type: v })}
+                onValueChange={(value) => {
+                  if (isOptionValue(SCHEDULE_EVENT_TYPE_OPTIONS, value)) {
+                    handleUpdateEvent(index, { type: value });
+                  }
+                }}
               >
                 <SelectTrigger className="h-7 w-full">
                   <SelectValue />

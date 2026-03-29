@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -8,7 +7,10 @@ import { useTranslations } from 'next-intl';
 
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@/components/ui';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { LiveStatusProps } from './Preview';
+
+const LIVE_STATUS_PLATFORM_OPTIONS = ['youtube', 'twitch', 'twitter', 'bilibili', 'other'] as const satisfies readonly NonNullable<LiveStatusProps['platform']>[];
 
 interface LiveStatusEditorProps {
   props: LiveStatusProps;
@@ -23,7 +25,11 @@ export function LiveStatusEditor({ props, onChange }: LiveStatusEditorProps) {
         <Label>{t('platform')}</Label>
         <Select 
           value={props.platform} 
-          onValueChange={(v: any) => onChange({ ...props, platform: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(LIVE_STATUS_PLATFORM_OPTIONS, value)) {
+              onChange({ ...props, platform: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

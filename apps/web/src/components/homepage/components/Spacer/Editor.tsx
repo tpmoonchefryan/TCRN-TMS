@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { useTranslations } from 'next-intl';
@@ -14,7 +13,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { SpacerProps } from './schema';
+
+const SPACER_HEIGHT_OPTIONS = ['small', 'medium', 'large', 'xl', 'xxl', 'custom'] as const satisfies readonly SpacerProps['height'][];
 
 interface SpacerEditorProps {
   props: SpacerProps;
@@ -30,7 +32,11 @@ export const SpacerEditor: React.FC<SpacerEditorProps> = ({ props, onChange }) =
         <Label>{t('height')}</Label>
         <Select 
           value={props.height} 
-          onValueChange={(v: any) => onChange({ height: v })}
+          onValueChange={(value) => {
+            if (isOptionValue(SPACER_HEIGHT_OPTIONS, value)) {
+              onChange({ height: value });
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue />

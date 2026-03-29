@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Plus, Trash2 } from 'lucide-react';
@@ -16,7 +15,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+import { isOptionValue } from '../../lib/option-guards';
 import { SocialLinksProps } from './schema';
+
+const SOCIAL_LINK_STYLE_OPTIONS = ['icon', 'button', 'pill'] as const satisfies readonly SocialLinksProps['style'][];
+const SOCIAL_LINK_LAYOUT_OPTIONS = ['horizontal', 'vertical', 'grid'] as const satisfies readonly SocialLinksProps['layout'][];
+const SOCIAL_LINK_SIZE_OPTIONS = ['small', 'medium', 'large'] as const satisfies readonly SocialLinksProps['iconSize'][];
 
 
 interface SocialLinksEditorProps {
@@ -52,7 +56,11 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
           <Label>{t('style')}</Label>
           <Select 
             value={props.style} 
-            onValueChange={(v: any) => onChange({ style: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(SOCIAL_LINK_STYLE_OPTIONS, value)) {
+                onChange({ style: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -69,7 +77,11 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
           <Label>{t('layout')}</Label>
           <Select 
             value={props.layout} 
-            onValueChange={(v: any) => onChange({ layout: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(SOCIAL_LINK_LAYOUT_OPTIONS, value)) {
+                onChange({ layout: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -86,7 +98,11 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
           <Label>{t('size')}</Label>
           <Select 
             value={props.iconSize} 
-            onValueChange={(v: any) => onChange({ iconSize: v })}
+            onValueChange={(value) => {
+              if (isOptionValue(SOCIAL_LINK_SIZE_OPTIONS, value)) {
+                onChange({ iconSize: value });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue />
