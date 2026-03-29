@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -21,13 +20,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
+import { buildSidebarTree, getSidebarHref, type SidebarTreeNode } from '@/components/layout/sidebar-tree';
 import { usePermission } from '@/hooks/use-permission';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTalentStore } from '@/stores/talent-store';
 
 type TreeNodeProps = {
-  node: any;
+  node: SidebarTreeNode;
   level?: number;
 };
 
@@ -41,9 +41,7 @@ const TreeNode = ({ node, level = 0 }: TreeNodeProps) => {
 
   const Icon = node.type === 'talent' ? Sparkles : (node.type === 'tenant' ? Building2 : Users);
   
-  const href = node.type === 'tenant' 
-    ? '/organization' 
-    : `/organization/${node.type === 'talent' ? 'talents' : 'subsidiaries'}/${node.id}`;
+  const href = getSidebarHref(node);
 
   return (
     <div className="select-none">
@@ -80,7 +78,7 @@ const TreeNode = ({ node, level = 0 }: TreeNodeProps) => {
 
       {hasChildren && isOpen && (
         <div className="animate-slide-up origin-top">
-          {node.children.map((child: any) => (
+          {node.children.map((child) => (
             <TreeNode key={child.id} node={child} level={level + 1} />
           ))}
         </div>
@@ -97,35 +95,7 @@ export function Sidebar() {
   const [isLoading] = useState(false);
 
   // Convert organizationTree to sidebar tree format
-  const treeData = useMemo(() => {
-    if (organizationTree.length === 0) {
-      // Return empty state instead of mock data
-      return [];
-    }
-    
-    // Convert store format to sidebar tree format
-    const convertSubsidiary = (sub: any): any => ({
-      id: sub.id,
-      name: sub.displayName,
-      type: 'subsidiary',
-      children: [
-        ...(sub.children || []).map(convertSubsidiary),
-        ...(sub.talents || []).map((tal: any) => ({
-          id: tal.id,
-          name: tal.displayName,
-          type: 'talent',
-          children: []
-        }))
-      ]
-    });
-    
-    return [{
-      id: tenantId || 'current-tenant',
-      name: 'Current Tenant',
-      type: 'tenant',
-      children: organizationTree.map(convertSubsidiary)
-    }];
-  }, [organizationTree, tenantId]);
+  const treeData = useMemo(() => buildSidebarTree(organizationTree, tenantId), [organizationTree, tenantId]);
 
   // Check for AC Tenant Access
   const isAcAdmin = tenantCode === 'AC' || user?.email?.includes('admin');
