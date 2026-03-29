@@ -18,6 +18,7 @@ export const BUCKETS = {
 } as const;
 
 export type BucketName = (typeof BUCKETS)[keyof typeof BUCKETS];
+type BucketLifecycleConfig = Parameters<Client['setBucketLifecycle']>[1];
 
 /**
  * MinIO Service
@@ -139,8 +140,7 @@ export class MinioService implements OnModuleInit {
   /**
    * Apply lifecycle policy helper
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async applyLifecyclePolicy(bucketName: string, config: any): Promise<void> {
+  private async applyLifecyclePolicy(bucketName: string, config: BucketLifecycleConfig): Promise<void> {
     try {
       await this.client.setBucketLifecycle(bucketName, config);
     } catch (error) {
