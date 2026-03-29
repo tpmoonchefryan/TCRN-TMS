@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ImagePlus, Loader2, X } from 'lucide-react';
@@ -7,6 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import { cn } from '@/lib/utils';
 
 interface ImageUploaderProps {
@@ -45,8 +45,8 @@ export function ImageUploader({
         const url = await onUpload(file);
         onChange(url);
         toast.success('Image uploaded successfully');
-      } catch (error: any) {
-        toast.error(error.message || 'Upload failed');
+      } catch (error) {
+        toast.error(getThrownErrorMessage(error, 'Upload failed'));
       } finally {
         setIsUploading(false);
       }

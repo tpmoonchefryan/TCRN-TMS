@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ADAPTER_CONFIG_KEYS, integrationSchema } from '@tcrn/shared';
@@ -6,15 +5,24 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { Button, Input, Label } from '@/components/ui';
+
 type AdapterConfig = integrationSchema.AdapterConfig;
 type AdapterType = integrationSchema.AdapterType;
-
-import { Button, Input, Label } from '@/components/ui';
+type AdapterConfigDefinition =
+  (typeof ADAPTER_CONFIG_KEYS)[keyof typeof ADAPTER_CONFIG_KEYS][number];
 
 interface AdapterConfigFormProps {
   type: AdapterType;
   configs?: AdapterConfig[];
   readOnly?: boolean;
+}
+
+interface ConfigFieldProps {
+  definition: AdapterConfigDefinition;
+  value: string;
+  onChange: (value: string) => void;
+  readOnly: boolean;
 }
 
 export function AdapterConfigForm({ type, configs = [], readOnly = false }: AdapterConfigFormProps) {
@@ -42,9 +50,8 @@ export function AdapterConfigForm({ type, configs = [], readOnly = false }: Adap
   );
 }
 
-function ConfigField({ definition, value, onChange, readOnly }: any) {
+function ConfigField({ definition, value, onChange, readOnly }: ConfigFieldProps) {
   const t = useTranslations('integrationManagement');
-  const tToast = useTranslations('toast');
   const [isRevealed, setIsRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [displayValue, setDisplayValue] = useState(value);
