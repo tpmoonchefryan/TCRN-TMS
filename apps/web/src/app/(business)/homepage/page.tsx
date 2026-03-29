@@ -74,15 +74,18 @@ export default function HomepagePage() {
         const data = homepageResponse.data;
         // Use unified domain data from talent table, fallback to homepage data for backward compatibility
         const domainData = domainResponse.data;
+        const publishedAt = data.publishedVersion?.publishedAt ?? null;
         setHomepageStatus({
-          isPublished: data.isPublished || false,
-          lastPublishedAt: data.publishedAt || data.lastPublishedAt,
-          publishedAt: data.publishedAt,
-          pageViews: data.pageViews || 0,
+          isPublished: data.isPublished,
+          lastPublishedAt: publishedAt ?? undefined,
+          publishedAt: publishedAt ?? undefined,
+          pageViews: 0,
           customDomain: domainData?.customDomain || data.customDomain || null,
-          customDomainVerified: domainData?.customDomainVerified || false,
-          hasDraftChanges: data.hasDraftChanges || (data.draftVersion && !data.publishedVersion),
-          draftUpdatedAt: data.draftUpdatedAt,
+          customDomainVerified: domainData?.customDomainVerified ?? data.customDomainVerified ?? false,
+          hasDraftChanges:
+            data.draftVersion !== null &&
+            (data.publishedVersion === null || data.draftVersion.id !== data.publishedVersion.id),
+          draftUpdatedAt: data.draftVersion?.createdAt,
           homepagePath: data.homepagePath,
         });
       }
@@ -127,14 +130,14 @@ export default function HomepagePage() {
       // Update UI directly from response instead of refetching
       if (response.success && response.data) {
         const data = response.data;
-        const path = data.homepagePath || homepageStatus?.homepagePath;
+        const path = homepageStatus?.homepagePath || currentTalent.homepagePath || null;
         setHomepageStatus(prev => ({
           ...prev,
           isPublished: true,
-          lastPublishedAt: data.publishedAt || new Date().toISOString(),
-          publishedAt: data.publishedAt || new Date().toISOString(),
+          lastPublishedAt: data.publishedVersion.publishedAt,
+          publishedAt: data.publishedVersion.publishedAt,
           hasDraftChanges: false,
-          homepagePath: data.homepagePath || prev?.homepagePath,
+          homepagePath: prev?.homepagePath || currentTalent.homepagePath || null,
         }));
         // Invalidate ISR cache so visitors see the new content immediately
         if (path) {

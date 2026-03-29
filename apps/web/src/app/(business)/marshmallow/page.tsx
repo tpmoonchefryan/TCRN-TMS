@@ -3,6 +3,7 @@
 
 'use client';
 
+import type { MarshmallowRejectionReason } from '@tcrn/shared';
 import { Archive, ChevronLeft, ChevronRight, ExternalLink, Flag, Inbox, Loader2, MessageSquareHeart, Radio, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -22,47 +23,22 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { marshmallowApi } from '@/lib/api/modules/content';
+import {
+  marshmallowApi,
+  type MarshmallowMessageRecord,
+  type MarshmallowMessageStats,
+} from '@/lib/api/modules/content';
 import { useTalentStore } from '@/stores/talent-store';
 
-
-// Message interface matching backend API response (camelCase)
-interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  status: 'pending' | 'approved' | 'rejected' | 'spam';
-  rejectionReason: string | null;
-  isRead: boolean;
-  isStarred: boolean;
-  isPinned: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  repliedBy: { id: string; username: string } | null;
-  reactionCounts: Record<string, number>;
-  profanityFlags: string[];
-  imageUrl?: string | null;
-  imageUrls?: string[];
-  socialLink?: string | null;
-  createdAt: string;
-}
-
-// Stats interface matching backend response
-interface MarshmallowStats {
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  unreadCount: number;
-}
+type AdminMessageTab = MarshmallowMessageRecord['status'] | 'flagged';
 
 export default function MarshmallowPage() {
   const { currentTalent } = useTalentStore();
   const t = useTranslations('marshmallowAdmin');
-  const [activeTab, setActiveTab] = useState('pending');
-  const [messages, setMessages] = useState<MarshmallowMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<AdminMessageTab>('pending');
+  const [messages, setMessages] = useState<MarshmallowMessageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<MarshmallowStats>({
+  const [stats, setStats] = useState<MarshmallowMessageStats>({
     pendingCount: 0,
     approvedCount: 0,
     rejectedCount: 0,
@@ -82,13 +58,8 @@ export default function MarshmallowPage() {
     try {
       const response = await marshmallowApi.getMessages(currentTalent.id, activeTab === 'flagged' ? undefined : activeTab);
       if (response.success && response.data) {
-        // Backend returns { items: [], meta: { total, stats } } wrapped in response.data
-        const data = response.data as { items?: MarshmallowMessage[]; meta?: { stats?: MarshmallowStats } };
-        setMessages(data.items || []);
-        // Update stats from response.data.meta.stats
-        if (data.meta?.stats) {
-          setStats(data.meta.stats);
-        }
+        setMessages(response.data.items);
+        setStats(response.data.meta.stats);
       }
     } catch (error) {
       toast.error(t('loadFailed'));
@@ -116,7 +87,7 @@ export default function MarshmallowPage() {
   };
 
   // Handle reject message
-  const handleReject = async (messageId: string, reason: string = 'other') => {
+  const handleReject = async (messageId: string, reason: MarshmallowRejectionReason = 'other') => {
     if (!currentTalent?.id) return;
     try {
       await marshmallowApi.rejectMessage(currentTalent.id, messageId, reason);
@@ -311,7 +282,7 @@ export default function MarshmallowPage() {
           <CardDescription>{t('messagesDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AdminMessageTab)}>
             <TabsList>
               <TabsTrigger value="pending">
                 {t('pending')} {counts.pending > 0 && <Badge className="ml-2">{counts.pending}</Badge>}

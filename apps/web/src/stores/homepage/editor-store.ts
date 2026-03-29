@@ -5,7 +5,11 @@ import { immer } from 'zustand/middleware/immer';
 
 import { COMPONENT_REGISTRY } from '@/components/homepage/lib/component-registry';
 import { ComponentInstance, ComponentType, migrateComponentTypes } from '@/components/homepage/lib/types';
-import { homepageApi } from '@/lib/api/modules/content';
+import {
+  homepageApi,
+  type HomepageEditableSettings,
+  type HomepageSettingsUpdatePayload,
+} from '@/lib/api/modules/content';
 
 interface EditorState {
   content: HomepageContent;
@@ -25,13 +29,7 @@ interface EditorState {
   maxHistorySize: number;
   
   // Settings
-  settings: {
-    homepagePath: string | null;
-    seoTitle: string | null;
-    seoDescription: string | null;
-    ogImageUrl: string | null;
-    analyticsId: string | null;
-  } | null;
+  settings: HomepageEditableSettings | null;
   dbVersion: number;
   
   // i18n
@@ -42,8 +40,7 @@ interface EditorState {
   load: (talentId: string) => Promise<void>;
   saveDraft: (talentId: string) => Promise<void>;
   publish: (talentId: string) => Promise<boolean>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateSettings: (talentId: string, settings: Partial<any>) => Promise<void>;
+  updateSettings: (talentId: string, settings: Partial<HomepageEditableSettings>) => Promise<void>;
   addComponent: (type: ComponentType, index?: number) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateComponent: (id: string, props: Partial<any>) => void;
@@ -102,7 +99,20 @@ export const useEditorStore = create<EditorState>()(
       });
       try {
         const response = await homepageApi.get(talentId);
-        const { draftVersion, publishedVersion, theme, homepagePath, seoTitle, seoDescription, ogImageUrl, analyticsId, version } = response.data;
+        if (!response.data) {
+          throw new Error('Missing homepage payload');
+        }
+
+        const {
+          draftVersion,
+          publishedVersion,
+          homepagePath,
+          seoTitle,
+          seoDescription,
+          ogImageUrl,
+          analyticsId,
+          version,
+        } = response.data;
 
         // Prioritize draft, fallback to published, then default
         // Also migrate legacy component types to current types
@@ -110,7 +120,7 @@ export const useEditorStore = create<EditorState>()(
         const contentToLoad = migrateComponentTypes(rawContent);
         
         // Initialize with default or loaded theme
-        const rawTheme = draftVersion?.theme || theme || {};
+        const rawTheme = draftVersion?.theme || publishedVersion?.theme || {};
         
         // Normalize raw theme to handle legacy keys
         const normalizedRaw = normalizeTheme(rawTheme);
@@ -295,20 +305,31 @@ export const useEditorStore = create<EditorState>()(
        try {
          // Use stored dbVersion (ensure number)
          const currentVersion = Number(get().dbVersion) || 0;
-         const payload = { ...settings, version: currentVersion };
+         const payload: HomepageSettingsUpdatePayload = {
+           version: currentVersion,
+           ...(settings.homepagePath !== undefined ? { homepagePath: settings.homepagePath } : {}),
+           ...(settings.seoTitle !== undefined ? { seoTitle: settings.seoTitle ?? undefined } : {}),
+           ...(settings.seoDescription !== undefined ? { seoDescription: settings.seoDescription ?? undefined } : {}),
+           ...(settings.ogImageUrl !== undefined ? { ogImageUrl: settings.ogImageUrl ?? undefined } : {}),
+           ...(settings.analyticsId !== undefined ? { analyticsId: settings.analyticsId ?? undefined } : {}),
+         };
          
          const response = await homepageApi.updateSettings(talentId, payload);
+         if (!response.data) {
+           throw new Error('Missing homepage settings payload');
+         }
+         const homepage = response.data;
          
          // Update state with response data to ensure consistency
          set((state) => {
             state.settings = {
-              homepagePath: response.data.homepagePath,
-              seoTitle: response.data.seoTitle,
-              seoDescription: response.data.seoDescription,
-              ogImageUrl: response.data.ogImageUrl,
-              analyticsId: response.data.analyticsId,
+              homepagePath: homepage.homepagePath,
+              seoTitle: homepage.seoTitle,
+              seoDescription: homepage.seoDescription,
+              ogImageUrl: homepage.ogImageUrl,
+              analyticsId: homepage.analyticsId,
             };
-            state.dbVersion = response.data.version; // Update version from response
+            state.dbVersion = homepage.version; // Update version from response
             state.isSaving = false;
          });
        } catch {

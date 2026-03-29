@@ -3,6 +3,7 @@
 
 'use client';
 
+import type { MarshmallowRejectionReason } from '@tcrn/shared';
 import { formatDistanceToNow } from 'date-fns';
 import {
     Check,
@@ -32,37 +33,17 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
+import type { MarshmallowMessageRecord } from '@/lib/api/modules/content';
 import { cn } from '@/lib/utils';
 
-// Message interface matching backend API response (camelCase)
-export interface MarshmallowMessage {
-  id: string;
-  content: string;
-  senderName: string | null;
-  isAnonymous: boolean;
-  status: 'pending' | 'approved' | 'rejected' | 'spam';
-  rejectionReason: string | null;
-  isRead: boolean;
-  isStarred: boolean;
-  isPinned: boolean;
-  replyContent: string | null;
-  repliedAt: string | null;
-  repliedBy: { id: string; username: string } | null;
-  reactionCounts: Record<string, number>;
-  profanityFlags: string[];
-  createdAt: string;
-  imageUrl?: string | null;
-  imageUrls?: string[];
-  socialLink?: string | null;
-  ipAddress?: string; // Admin only
-}
+export type MarshmallowMessage = MarshmallowMessageRecord;
 
 interface MessageCardProps {
   message: MarshmallowMessage;
   selected?: boolean;
   onSelect?: () => void;
   onApprove: (id: string) => void;
-  onReject: (id: string, reason?: string) => void;
+  onReject: (id: string, reason?: MarshmallowRejectionReason) => void;
   onUnreject?: (id: string) => void;
   onReply: (id: string, content: string) => void;
   onToggleStar?: (id: string, isStarred: boolean) => void;

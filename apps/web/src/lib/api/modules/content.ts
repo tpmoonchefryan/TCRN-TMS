@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { ReportJobStatus as SharedReportJobStatus } from '@tcrn/shared';
+import type {
+  HomepageContent,
+  MarshmallowBatchAction,
+  MarshmallowMessageStatus as SharedMessageStatus,
+  MarshmallowRejectionReason as SharedRejectionReason,
+  ReportJobStatus as SharedReportJobStatus,
+  ThemeConfig,
+  UpdateHomepageSettingsInput,
+} from '@tcrn/shared';
 
 import { apiClient } from '../core';
 
@@ -108,6 +116,254 @@ export interface ReportCancelResponse {
   status: SharedReportJobStatus;
 }
 
+export interface MarshmallowConfigStats {
+  totalMessages: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  unreadCount: number;
+}
+
+export interface MarshmallowConfigResponse {
+  id: string;
+  talentId: string;
+  isEnabled: boolean;
+  title: string | null;
+  welcomeText: string | null;
+  placeholderText: string | null;
+  thankYouText: string | null;
+  allowAnonymous: boolean;
+  captchaMode: 'always' | 'never' | 'auto';
+  moderationEnabled: boolean;
+  autoApprove: boolean;
+  profanityFilterEnabled: boolean;
+  externalBlocklistEnabled: boolean;
+  maxMessageLength: number;
+  minMessageLength: number;
+  rateLimitPerIp: number;
+  rateLimitWindowHours: number;
+  reactionsEnabled: boolean;
+  allowedReactions: string[];
+  theme: Record<string, unknown>;
+  avatarUrl: string | null;
+  termsContentEn: string | null;
+  termsContentZh: string | null;
+  termsContentJa: string | null;
+  privacyContentEn: string | null;
+  privacyContentZh: string | null;
+  privacyContentJa: string | null;
+  stats: MarshmallowConfigStats;
+  marshmallowUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface MarshmallowConfigUpdatePayload {
+  isEnabled?: boolean;
+  title?: string | null;
+  welcomeText?: string | null;
+  placeholderText?: string | null;
+  thankYouText?: string | null;
+  allowAnonymous?: boolean;
+  captchaMode?: MarshmallowConfigResponse['captchaMode'];
+  moderationEnabled?: boolean;
+  autoApprove?: boolean;
+  profanityFilterEnabled?: boolean;
+  externalBlocklistEnabled?: boolean;
+  maxMessageLength?: number;
+  minMessageLength?: number;
+  rateLimitPerIp?: number;
+  rateLimitWindowHours?: number;
+  reactionsEnabled?: boolean;
+  allowedReactions?: string[];
+  theme?: Record<string, unknown>;
+  avatarUrl?: string | null;
+  termsContentEn?: string | null;
+  termsContentZh?: string | null;
+  termsContentJa?: string | null;
+  privacyContentEn?: string | null;
+  privacyContentZh?: string | null;
+  privacyContentJa?: string | null;
+  version: number;
+}
+
+export interface MarshmallowMessageRecord {
+  id: string;
+  content: string;
+  senderName: string | null;
+  isAnonymous: boolean;
+  status: SharedMessageStatus;
+  rejectionReason: SharedRejectionReason | null;
+  isRead: boolean;
+  isStarred: boolean;
+  isPinned: boolean;
+  replyContent: string | null;
+  repliedAt: string | null;
+  repliedBy: { id: string; username: string } | null;
+  reactionCounts: Record<string, number>;
+  profanityFlags: string[];
+  imageUrl?: string | null;
+  imageUrls?: string[];
+  socialLink?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface MarshmallowMessageStats {
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  unreadCount: number;
+}
+
+export interface MarshmallowMessageListPayload {
+  items: MarshmallowMessageRecord[];
+  meta: {
+    total: number;
+    stats: MarshmallowMessageStats;
+  };
+}
+
+export interface MarshmallowModerationResponse {
+  id: string;
+  status: SharedMessageStatus;
+  moderatedAt?: string | null;
+}
+
+export interface MarshmallowMessageUpdateResponse {
+  id: string;
+  isRead: boolean;
+  isStarred: boolean;
+  isPinned: boolean;
+}
+
+export interface MarshmallowReplyResponse {
+  id: string;
+  replyContent: string | null;
+  repliedAt?: string | null;
+  repliedBy: { id: string; username: string };
+}
+
+export interface MarshmallowBatchActionResponse {
+  processed: number;
+  action: MarshmallowBatchAction;
+}
+
+export interface MarshmallowAvatarUploadResponse {
+  url: string;
+}
+
+export type HomepageVersionStatus = 'draft' | 'published' | 'archived';
+
+export interface HomepageVersionUser {
+  id: string;
+  username: string;
+}
+
+export interface HomepageSnapshotVersion {
+  id: string;
+  versionNumber: number;
+  content: HomepageContent;
+  theme: ThemeConfig;
+  publishedAt: string | null;
+  publishedBy: HomepageVersionUser | null;
+  createdAt: string;
+}
+
+export interface HomepageVersionRecord extends HomepageSnapshotVersion {
+  status: HomepageVersionStatus;
+  createdBy: HomepageVersionUser | null;
+}
+
+export interface HomepageVersionListItem {
+  id: string;
+  versionNumber: number;
+  status: HomepageVersionStatus;
+  contentPreview: string;
+  componentCount: number;
+  publishedAt: string | null;
+  publishedBy: HomepageVersionUser | null;
+  createdAt: string;
+  createdBy: HomepageVersionUser | null;
+}
+
+export interface HomepageVersionListPayload {
+  items: HomepageVersionListItem[];
+  meta: {
+    total: number;
+  };
+}
+
+export interface HomepageResponse {
+  id: string;
+  talentId: string;
+  isPublished: boolean;
+  publishedVersion: HomepageSnapshotVersion | null;
+  draftVersion: HomepageSnapshotVersion | null;
+  customDomain: string | null;
+  customDomainVerified: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  analyticsId: string | null;
+  homepagePath: string | null;
+  homepageUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface HomepageDraftSavePayload {
+  content: HomepageContent;
+  theme?: ThemeConfig;
+}
+
+export interface HomepageDraftSaveResponse {
+  draftVersion: {
+    id: string;
+    versionNumber: number;
+    contentHash: string;
+    updatedAt: string;
+  };
+  isNewVersion: boolean;
+}
+
+export interface HomepagePublishResponse {
+  publishedVersion: {
+    id: string;
+    versionNumber: number;
+    publishedAt: string;
+  };
+  homepageUrl: string;
+  cdnPurgeStatus: 'success' | 'pending' | 'failed';
+}
+
+export interface HomepageUnpublishResponse {
+  isPublished: boolean;
+  unpublishedAt: string;
+}
+
+export type HomepageSettingsUpdatePayload = Omit<UpdateHomepageSettingsInput, 'version'> & {
+  version: number;
+};
+
+export type HomepageEditableSettings = Pick<
+  HomepageResponse,
+  'homepagePath' | 'seoTitle' | 'seoDescription' | 'ogImageUrl' | 'analyticsId'
+>;
+
+export interface HomepageRestoreVersionResponse {
+  newDraftVersion: {
+    id: string;
+    versionNumber: number;
+  };
+  restoredFrom: {
+    id: string;
+    versionNumber: number;
+  };
+}
+
 export const reportApi = {
   list: (talentId: string, page?: number, pageSize?: number) =>
     apiClient.get<ReportJobListPayload>('/api/v1/reports/mfr/jobs', {
@@ -156,10 +412,10 @@ export const reportApi = {
 
 export const marshmallowApi = {
   getConfig: (talentId: string) =>
-    apiClient.get<any>(`/api/v1/talents/${talentId}/marshmallow/config`),
+    apiClient.get<MarshmallowConfigResponse>(`/api/v1/talents/${talentId}/marshmallow/config`),
 
-  updateConfig: (talentId: string, config: any) =>
-    apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/config`, config),
+  updateConfig: (talentId: string, config: MarshmallowConfigUpdatePayload) =>
+    apiClient.patch<MarshmallowConfigResponse>(`/api/v1/talents/${talentId}/marshmallow/config`, config),
 
   uploadAvatar: async (talentId: string, file: File) => {
     const formData = new FormData();
@@ -184,48 +440,64 @@ export const marshmallowApi = {
     }
 
     const result = await response.json();
-    return result.data;
+    return result.data as MarshmallowAvatarUploadResponse;
   },
 
-  getMessages: (talentId: string, status?: string, pageSize: number = 100) =>
-    apiClient.get<any[]>(`/api/v1/talents/${talentId}/marshmallow/messages`, {
+  getMessages: (talentId: string, status?: SharedMessageStatus, pageSize: number = 100) =>
+    apiClient.get<MarshmallowMessageListPayload>(`/api/v1/talents/${talentId}/marshmallow/messages`, {
       ...(status ? { status } : {}),
       pageSize,
     }),
 
   approveMessage: (talentId: string, messageId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/approve`, {}),
+    apiClient.post<MarshmallowModerationResponse>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/approve`,
+      {},
+    ),
 
-  rejectMessage: (talentId: string, messageId: string, reason: string, note?: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reject`, {
-      reason,
-      note,
-    }),
+  rejectMessage: (talentId: string, messageId: string, reason: SharedRejectionReason, note?: string) =>
+    apiClient.post<MarshmallowModerationResponse>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reject`,
+      {
+        reason,
+        note,
+      },
+    ),
 
   unrejectMessage: (talentId: string, messageId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/unreject`, {}),
+    apiClient.post<MarshmallowModerationResponse>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/unreject`,
+      {},
+    ),
 
   updateMessage: (
     talentId: string,
     messageId: string,
     data: { isRead?: boolean; isStarred?: boolean; isPinned?: boolean },
-  ) => apiClient.patch<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}`, data),
+  ) =>
+    apiClient.patch<MarshmallowMessageUpdateResponse>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}`,
+      data,
+    ),
 
   replyMessage: (talentId: string, messageId: string, content: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reply`, {
-      content,
-    }),
+    apiClient.post<MarshmallowReplyResponse>(
+      `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/reply`,
+      {
+        content,
+      },
+    ),
 
   batchAction: (
     talentId: string,
-    action: 'approve' | 'reject' | 'delete',
+    action: MarshmallowBatchAction,
     messageIds: string[],
-    reason?: string,
+    reason?: SharedRejectionReason,
   ) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/marshmallow/messages/batch`, {
+    apiClient.post<MarshmallowBatchActionResponse>(`/api/v1/talents/${talentId}/marshmallow/messages/batch`, {
       action,
       messageIds,
-      reason,
+      rejectionReason: reason,
     }),
 
   generateSsoToken: (talentId: string) =>
@@ -236,27 +508,32 @@ export const marshmallowApi = {
 };
 
 export const homepageApi = {
-  get: (talentId: string) => apiClient.get<any>(`/api/v1/talents/${talentId}/homepage`, { _t: Date.now() }),
+  get: (talentId: string) =>
+    apiClient.get<HomepageResponse>(`/api/v1/talents/${talentId}/homepage`, { _t: Date.now() }),
 
-  saveDraft: (talentId: string, draft: { content: any; theme?: any; settings?: any }) =>
-    apiClient.put<any>(`/api/v1/talents/${talentId}/homepage/draft`, draft),
+  saveDraft: (talentId: string, draft: HomepageDraftSavePayload) =>
+    apiClient.put<HomepageDraftSaveResponse>(`/api/v1/talents/${talentId}/homepage/draft`, draft),
 
-  publish: (talentId: string) => apiClient.post<any>(`/api/v1/talents/${talentId}/homepage/publish`, {}),
+  publish: (talentId: string) =>
+    apiClient.post<HomepagePublishResponse>(`/api/v1/talents/${talentId}/homepage/publish`, {}),
 
   unpublish: (talentId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/homepage/unpublish`, {}),
+    apiClient.post<HomepageUnpublishResponse>(`/api/v1/talents/${talentId}/homepage/unpublish`, {}),
 
-  updateSettings: (talentId: string, settings: any) =>
-    apiClient.patch<any>(`/api/v1/talents/${talentId}/homepage/settings`, settings),
+  updateSettings: (talentId: string, settings: HomepageSettingsUpdatePayload) =>
+    apiClient.patch<HomepageResponse>(`/api/v1/talents/${talentId}/homepage/settings`, settings),
 
   listVersions: (talentId: string, page?: number, pageSize?: number) =>
-    apiClient.get<any>(`/api/v1/talents/${talentId}/homepage/versions`, { page, pageSize }),
+    apiClient.get<HomepageVersionListPayload>(`/api/v1/talents/${talentId}/homepage/versions`, { page, pageSize }),
 
   getVersion: (talentId: string, versionId: string) =>
-    apiClient.get<any>(`/api/v1/talents/${talentId}/homepage/versions/${versionId}`),
+    apiClient.get<HomepageVersionRecord>(`/api/v1/talents/${talentId}/homepage/versions/${versionId}`),
 
   restoreVersion: (talentId: string, versionId: string) =>
-    apiClient.post<any>(`/api/v1/talents/${talentId}/homepage/versions/${versionId}/restore`, {}),
+    apiClient.post<HomepageRestoreVersionResponse>(
+      `/api/v1/talents/${talentId}/homepage/versions/${versionId}/restore`,
+      {},
+    ),
 };
 
 export const publicApi = {

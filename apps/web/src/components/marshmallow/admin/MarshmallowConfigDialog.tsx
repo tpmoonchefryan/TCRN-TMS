@@ -32,50 +32,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { marshmallowApi } from '@/lib/api/modules/content';
-
-
-// Config interface matching backend API response
-interface MarshmallowConfig {
-  id: string;
-  talentId: string;
-  isEnabled: boolean;
-  title: string | null;
-  welcomeText: string | null;
-  placeholderText: string | null;
-  thankYouText: string | null;
-  allowAnonymous: boolean;
-  captchaMode: 'always' | 'never' | 'auto';
-  moderationEnabled: boolean;
-  autoApprove: boolean;
-  profanityFilterEnabled: boolean;
-  externalBlocklistEnabled: boolean;
-  maxMessageLength: number;
-  minMessageLength: number;
-  rateLimitPerIp: number;
-  rateLimitWindowHours: number;
-  reactionsEnabled: boolean;
-  allowedReactions: string[];
-  theme: Record<string, unknown>;
-  avatarUrl: string | null;
-  termsContentEn: string | null;
-  termsContentZh: string | null;
-  termsContentJa: string | null;
-  privacyContentEn: string | null;
-  privacyContentZh: string | null;
-  privacyContentJa: string | null;
-  stats: {
-    totalMessages: number;
-    pendingCount: number;
-    approvedCount: number;
-    rejectedCount: number;
-    unreadCount: number;
-  };
-  marshmallowUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  version: number;
-}
+import {
+  marshmallowApi,
+  type MarshmallowConfigResponse,
+  type MarshmallowConfigUpdatePayload,
+} from '@/lib/api/modules/content';
 
 interface MarshmallowConfigDialogProps {
   open: boolean;
@@ -95,8 +56,8 @@ export function MarshmallowConfigDialog({
   const t = useTranslations('marshmallowConfig');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [config, setConfig] = useState<MarshmallowConfig | null>(null);
-  const [localConfig, setLocalConfig] = useState<Partial<MarshmallowConfig>>({});
+  const [config, setConfig] = useState<MarshmallowConfigResponse | null>(null);
+  const [localConfig, setLocalConfig] = useState<Partial<MarshmallowConfigResponse>>({});
 
   // Load config when dialog opens
   useEffect(() => {
@@ -153,11 +114,11 @@ export function MarshmallowConfigDialog({
         privacyContentZh: localConfig.privacyContentZh,
         privacyContentJa: localConfig.privacyContentJa,
         version: config.version,
-      };
+      } satisfies MarshmallowConfigUpdatePayload;
       
       const response = await marshmallowApi.updateConfig(talentId, editableFields);
 
-      if (response.success) {
+      if (response.success && response.data) {
         toast.success(t('saveSuccess'));
         setConfig(response.data);
         setLocalConfig(response.data);
@@ -172,9 +133,9 @@ export function MarshmallowConfigDialog({
     }
   };
 
-  const updateField = <K extends keyof MarshmallowConfig>(
+  const updateField = <K extends keyof MarshmallowConfigResponse>(
     field: K,
-    value: MarshmallowConfig[K]
+    value: MarshmallowConfigResponse[K]
   ) => {
     setLocalConfig((prev) => ({ ...prev, [field]: value }));
   };

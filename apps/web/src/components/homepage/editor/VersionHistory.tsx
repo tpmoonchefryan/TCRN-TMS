@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { homepageApi } from '@/lib/api/modules/content';
+import {
+  homepageApi,
+  type HomepageVersionListItem,
+  type HomepageVersionRecord,
+} from '@/lib/api/modules/content';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../ui/sheet';
@@ -23,22 +27,6 @@ interface VersionHistoryProps {
   talentId: string;
 }
 
-interface Version {
-  id: string;
-  versionNumber: number;
-  status: string;
-  createdAt: string;
-  createdBy: { username: string } | null;
-  publishedAt: string | null;
-}
-
-interface VersionDetail {
-  id: string;
-  versionNumber: number;
-  content: unknown;
-  theme: unknown;
-}
-
 type StatusFilter = 'all' | 'draft' | 'published' | 'archived';
 
 const PAGE_SIZE = 5;
@@ -46,7 +34,7 @@ const PAGE_SIZE = 5;
 export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryProps) {
   const t = useTranslations('homepageEditor');
   const { load } = useEditorStore();
-  const [versions, setVersions] = useState<Version[]>([]);
+  const [versions, setVersions] = useState<HomepageVersionListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   
@@ -55,7 +43,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
   const [currentPage, setCurrentPage] = useState(1);
   
   // Preview state
-  const [previewVersion, setPreviewVersion] = useState<VersionDetail | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<HomepageVersionRecord | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   useEffect(() => {
@@ -73,7 +61,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
     setLoading(true);
     try {
       const res = await homepageApi.listVersions(talentId);
-      setVersions(res.data.items || []);
+      setVersions(res.data?.items || []);
     } catch (error) {
       console.error('Failed to load versions', error);
     } finally {
@@ -100,11 +88,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
     setRestoringId(versionId);
     try {
       await homepageApi.restoreVersion(talentId, versionId);
-      // Reload current content after restore
-      const res = await homepageApi.get(talentId);
-      if (res.data) {
-        load(talentId);
-      }
+      await load(talentId);
       // Close the sheet after successful restore
       onOpenChange(false);
     } catch (error) {
@@ -119,12 +103,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
     try {
       const res = await homepageApi.getVersion(talentId, versionId);
       if (res.data) {
-        setPreviewVersion({
-          id: res.data.id,
-          versionNumber: res.data.versionNumber,
-          content: res.data.content,
-          theme: res.data.theme,
-        });
+        setPreviewVersion(res.data);
       }
     } catch (error) {
       console.error('Failed to load version for preview', error);
