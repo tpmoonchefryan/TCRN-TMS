@@ -49,6 +49,19 @@ interface RawSubsidiary {
   is_active: boolean;
 }
 
+interface RawTalent {
+  id: string;
+  subsidiary_id: string | null;
+  code: string;
+  name_en: string;
+  name_zh: string | null;
+  name_ja: string | null;
+  display_name: string;
+  avatar_url: string | null;
+  homepage_path: string | null;
+  is_active: boolean;
+}
+
 /**
  * Organization Service
  * Provides organization tree and breadcrumb navigation
@@ -450,17 +463,6 @@ export class OrganizationService {
     isSearch: boolean,
     searchQuery: string | undefined
   ): Promise<OrganizationTree> {
-    
-    // Get talent counts per subsidiary (Simplified: just get all if not search, or filter)
-    // Actually, tree construction logic is same
-    // We need to fetch talents if required.
-    
-    // ... Copying logic to new helper ...
-    // Wait, I should not make it too complex in replacement.
-    // I will inline the build logic back or use a helper *if* I define it in the class.
-    // Since I cannot easily add a new method AND replace body in one go (cleanly), 
-    // I will put the fetch logic here.
-
     // Calculate count map
     const talentCounts = await prisma.$queryRawUnsafe<Array<{ subsidiary_id: string; count: bigint }>>(`
       SELECT subsidiary_id, COUNT(*) as count
@@ -482,7 +484,7 @@ export class OrganizationService {
         path: sub.path,
         depth: sub.depth,
         isActive: sub.is_active,
-        talentCount: (countMap.get(sub.id) as number) || 0,
+        talentCount: countMap.get(sub.id) ?? 0,
         children: [],
       };
       nodeMap.set(sub.id, node);
@@ -499,20 +501,13 @@ export class OrganizationService {
 
     if (includeTalents) {
       let talentWhereClause = includeInactive ? '1=1' : 'is_active = true';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const params: any[] = [];
+      const params: string[] = [];
       if (isSearch && searchQuery) {
         talentWhereClause += ` AND (code ILIKE $1 OR name_en ILIKE $1 OR display_name ILIKE $1)`;
         params.push(`%${searchQuery}%`);
       }
 
-      // If search, we only want matching talents.
-      // If no search, we want ALL talents.
-      
-      // If no search, we want ALL talents.
-      
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const talents = await prisma.$queryRawUnsafe<any[]>(`
+      const talents = await prisma.$queryRawUnsafe<RawTalent[]>(`
         SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, display_name, avatar_url, homepage_path, is_active
         FROM "${tenantSchema}".talent
         WHERE ${talentWhereClause}
@@ -532,7 +527,7 @@ export class OrganizationService {
            isActive: talent.is_active,
          };
          
-         const key = talent.subsidiary_id;
+         const key = talent.subsidiary_id ?? null;
          if (!talentsBySubsidiary.has(key)) {
             talentsBySubsidiary.set(key, []);
          }
@@ -549,14 +544,7 @@ export class OrganizationService {
        
        talentsWithoutSubsidiary = talentsBySubsidiary.get(null) || [];
     }
-    
-    // We already have tenant from the top of the function
-    // But since I'm rewriting the body, I need to make sure 'tenant' variable is available
-    // I will just return the object structure expected.
-    
-    // RE-FETCH tenant (safe) or assume it's passed? The original method fetched it at top.
-    // I need to be careful about matching the return signature.
-    
+
     return {
         tenant: {
           id: tenant.id,

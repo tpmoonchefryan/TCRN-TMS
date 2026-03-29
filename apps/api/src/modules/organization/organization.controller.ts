@@ -10,10 +10,11 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
+import type { TalentSummary, TreeNode } from './organization.service';
 import { OrganizationService } from './organization.service';
 
 // DTOs
@@ -54,6 +55,64 @@ class GetChildrenQueryDto {
   @Type(() => Boolean)
   includeInactive?: boolean;
 }
+
+interface OrganizationTreeTalentResponse {
+  id: string;
+  code: string;
+  displayName: string;
+  avatarUrl: string | null;
+  subsidiaryId: string | null;
+  subsidiaryName?: string;
+  path: string;
+  homepagePath: string | null;
+}
+
+interface OrganizationTreeSubsidiaryResponse {
+  id: string;
+  code: string;
+  displayName: string;
+  parentId: string | null;
+  path: string;
+  talents: OrganizationTreeTalentResponse[];
+  children: OrganizationTreeSubsidiaryResponse[];
+}
+
+const mapTreeTalent = (
+  talent: TalentSummary,
+  options: {
+    subsidiaryId: string | null;
+    subsidiaryName?: string;
+    path: string;
+  }
+): OrganizationTreeTalentResponse => ({
+  id: talent.id,
+  code: talent.code,
+  displayName: talent.displayName,
+  avatarUrl: talent.avatarUrl,
+  subsidiaryId: options.subsidiaryId,
+  subsidiaryName: options.subsidiaryName,
+  path: options.path,
+  homepagePath: talent.homepagePath,
+});
+
+const mapTreeNode = (
+  node: TreeNode,
+  parentId: string | null = null
+): OrganizationTreeSubsidiaryResponse => ({
+  id: node.id,
+  code: node.code,
+  displayName: node.name,
+  parentId,
+  path: node.path,
+  talents: (node.talents ?? []).map((talent) =>
+    mapTreeTalent(talent, {
+      subsidiaryId: node.id,
+      subsidiaryName: node.name,
+      path: `${node.path}${talent.code}/`,
+    })
+  ),
+  children: node.children.map((child) => mapTreeNode(child, node.id)),
+});
 
 /**
  * Organization Controller
@@ -127,41 +186,15 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
       }
     );
 
-    // Transform response to match frontend expected structure
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformNode = (node: any): any => ({
-      id: node.id,
-      code: node.code,
-      displayName: node.name,
-      parentId: null, // Will be set by parent
-      path: node.path,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      talents: (node.talents || []).map((t: any) => ({
-        id: t.id,
-        code: t.code,
-        displayName: t.displayName,
-        avatarUrl: t.avatarUrl,
-        subsidiaryId: node.id,
-        subsidiaryName: node.name,
-        path: `${node.path}${t.code}/`,
-        homepagePath: t.homepagePath,
-      })),
-      children: (node.children || []).map(transformNode),
-    });
-
     return success({
       tenantId: tree.tenant.id,
-      subsidiaries: tree.tree.map(transformNode),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      directTalents: (tree.talentsWithoutSubsidiary || []).map((t: any) => ({
-        id: t.id,
-        code: t.code,
-        displayName: t.displayName,
-        avatarUrl: t.avatarUrl,
-        subsidiaryId: null,
-        path: `/${t.code}/`,
-        homepagePath: t.homepagePath,
-      })),
+      subsidiaries: tree.tree.map((node) => mapTreeNode(node)),
+      directTalents: tree.talentsWithoutSubsidiary.map((talent) =>
+        mapTreeTalent(talent, {
+          subsidiaryId: null,
+          path: `/${talent.code}/`,
+        })
+      ),
     });
   }
 
