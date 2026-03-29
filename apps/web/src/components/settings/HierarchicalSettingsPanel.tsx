@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -209,7 +208,7 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
 export function HierarchicalSettingsPanel({
   scopeType,
   scopeId,
-  scopeName,
+  scopeName: _scopeName,
   readOnly = false,
 }: HierarchicalSettingsPanelProps) {
   const t = useTranslations('scopeSettings');
@@ -540,7 +539,7 @@ export function HierarchicalSettingsPanel({
                 {settingsData.overrides.map(key => {
                   // Find the field definition to get the labelKey
                   const field = SETTING_FIELDS.find(f => f.key === key);
-                  return field ? t(field.labelKey as any) : key;
+                  return field ? t(field.labelKey as never) : key;
                 }).join(', ')}
               </span>
             </p>
