@@ -11,11 +11,14 @@ import {
   fetchPermissionSnapshotForSession,
 } from './auth-session-bootstrap-tasks';
 import {
-  createAuthenticatedSessionState,
   createClearedSessionState,
   mergeCurrentUserProfile as mergeStoredUserProfile,
   updateCurrentUserAvatar,
 } from './auth-session-state';
+import {
+  createAuthenticatedSessionTransition,
+  createPendingTenantAuthState,
+} from './auth-session-transitions';
 import {
   refreshAccessTokenForSession,
   verifyAuthenticatedSessionUser,
@@ -51,6 +54,21 @@ export const useAuthStore = create<AuthState>()(
         }
 
         return false;
+      };
+
+      const completeAuthenticatedSession = (params: {
+        accessToken: string | null;
+        user: AuthUser | null | undefined;
+        tenantCode: string | null | undefined;
+        tenantId?: string | null;
+      }) => {
+        set(
+          createAuthenticatedSessionTransition({
+            ...params,
+          })
+        );
+
+        void get().bootstrapAuthenticatedSession();
       };
 
       return {
@@ -157,11 +175,7 @@ export const useAuthStore = create<AuthState>()(
 
               // Case 1: Password Reset Required
               if (data.passwordResetRequired) {
-                set({
-                  isLoading: false,
-                  tenantCode,
-                  isAcTenant: tenantCode.toUpperCase() === 'AC',
-                });
+                set(createPendingTenantAuthState(tenantCode));
                 return {
                   success: true,
                   passwordResetRequired: true,
@@ -172,11 +186,7 @@ export const useAuthStore = create<AuthState>()(
 
               // Case 2: TOTP Required
               if (data.totpRequired) {
-                set({
-                  isLoading: false,
-                  tenantCode,
-                  isAcTenant: tenantCode.toUpperCase() === 'AC',
-                });
+                set(createPendingTenantAuthState(tenantCode));
                 return {
                   success: true,
                   totpRequired: true,
@@ -186,18 +196,12 @@ export const useAuthStore = create<AuthState>()(
 
               // Case 3: Login Success (No TOTP, No Password Reset)
               if (data.accessToken) {
-                apiClient.setAccessToken(data.accessToken);
-                set({
+                completeAuthenticatedSession({
+                  accessToken: data.accessToken,
+                  user: data.user,
                   tenantCode,
-                  ...createAuthenticatedSessionState({
-                    user: data.user,
-                    tenantCode,
-                    tenantId: data.tenantId,
-                  }),
-                  isLoading: false,
+                  tenantId: data.tenantId,
                 });
-
-                void get().bootstrapAuthenticatedSession();
 
                 return { success: true };
               }
@@ -223,17 +227,12 @@ export const useAuthStore = create<AuthState>()(
             const response = await authApi.verifyTotp(sessionToken, code);
             if (response.success && response.data) {
               const { accessToken, user, tenantId: responseTenantId } = response.data;
-              apiClient.setAccessToken(accessToken || null);
-              set({
-                ...createAuthenticatedSessionState({
-                  user,
-                  tenantCode: get().tenantCode,
-                  tenantId: responseTenantId,
-                }),
-                isLoading: false,
+              completeAuthenticatedSession({
+                accessToken: accessToken || null,
+                user,
+                tenantCode: get().tenantCode,
+                tenantId: responseTenantId,
               });
-
-              void get().bootstrapAuthenticatedSession();
 
               return true;
             }
@@ -258,17 +257,12 @@ export const useAuthStore = create<AuthState>()(
             if (response.success && response.data) {
               const { accessToken, user, tenantId: responseTenantId } = response.data;
               if (accessToken) {
-                apiClient.setAccessToken(accessToken);
-                set({
-                  ...createAuthenticatedSessionState({
-                    user,
-                    tenantCode: get().tenantCode,
-                    tenantId: responseTenantId,
-                  }),
-                  isLoading: false,
+                completeAuthenticatedSession({
+                  accessToken,
+                  user,
+                  tenantCode: get().tenantCode,
+                  tenantId: responseTenantId,
                 });
-
-                void get().bootstrapAuthenticatedSession();
 
                 return true;
               }
