@@ -10,6 +10,17 @@ if [[ "${NO_CACHE_BUILD:-0}" == "1" ]]; then
     BUILD_ARGS+=(--no-cache)
 fi
 
+APPLY_MIGRATIONS_MODE="${APPLY_MIGRATIONS_MODE:-default}"
+case "$APPLY_MIGRATIONS_MODE" in
+    default|strict_drift_watch)
+        ;;
+    *)
+        echo "Unsupported APPLY_MIGRATIONS_MODE: $APPLY_MIGRATIONS_MODE" >&2
+        echo "Supported values: default, strict_drift_watch" >&2
+        exit 1
+        ;;
+esac
+
 DEPLOY_PATH="/home/ubuntu/tcrn-tms"
 GITHUB_REPO="https://github.com/tpmoonchefryan/TCRN-TMS.git"
 
@@ -19,7 +30,7 @@ echo "=============================================="
 
 # Step 1: Install prerequisites
 echo ""
-echo "[1/7] Checking prerequisites..."
+echo "[1/8] Checking prerequisites..."
 
 # Install Docker if not present
 if ! command -v docker &> /dev/null; then
@@ -52,7 +63,7 @@ echo "Git: $(git --version)"
 
 # Step 2: Clone or update repository
 echo ""
-echo "[2/7] Syncing repository..."
+echo "[2/8] Syncing repository..."
 
 if [ -d "${DEPLOY_PATH}" ]; then
     cd ${DEPLOY_PATH}
@@ -68,7 +79,7 @@ echo "Current commit: $(git log --oneline -1)"
 
 # Step 3: Setup environment file
 echo ""
-echo "[3/7] Checking environment configuration..."
+echo "[3/8] Checking environment configuration..."
 
 if [ ! -f "${DEPLOY_PATH}/.env" ]; then
     echo ""
@@ -86,13 +97,13 @@ echo ".env file found."
 
 # Step 4: Create log directory for Caddy
 echo ""
-echo "[4/7] Setting up directories..."
+echo "[4/8] Setting up directories..."
 sudo mkdir -p /var/log/caddy
 sudo chown -R 1000:1000 /var/log/caddy 2>/dev/null || true
 
 # Step 5: Build Docker images
 echo ""
-echo "[5/7] Building Docker images (this may take 10-20 minutes)..."
+echo "[5/8] Building Docker images (this may take 10-20 minutes)..."
 if [[ "${#BUILD_ARGS[@]}" -gt 0 ]]; then
     echo "Build mode: clean (--no-cache)"
 else
@@ -103,13 +114,30 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build "${BUILD_A
 
 # Step 6: Start services
 echo ""
-echo "[6/7] Starting services..."
+echo "[6/8] Starting services..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# Step 7: Wait and check status
+# Step 7: Run database migrations
 echo ""
-echo "[7/7] Waiting for services to start..."
-sleep 30
+echo "[7/8] Running database migrations..."
+echo "Tenant migration replay mode: ${APPLY_MIGRATIONS_MODE}"
+sleep 10
+APPLY_MIGRATIONS_CMD="npx tsx scripts/apply-migrations.ts"
+case "$APPLY_MIGRATIONS_MODE" in
+    strict_drift_watch)
+        echo "Using strict drift-watch mode for tenant migration replay."
+        APPLY_MIGRATIONS_CMD="$APPLY_MIGRATIONS_CMD --fail-on-drift-watch-skips"
+        ;;
+    *)
+        echo "Using default tenant migration replay mode."
+        ;;
+esac
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc "cd /app/packages/database && npx prisma migrate deploy && $APPLY_MIGRATIONS_CMD"
+
+# Step 8: Wait and check status
+echo ""
+echo "[8/8] Waiting for services to stabilize..."
+sleep 20
 
 echo ""
 echo "=============================================="
@@ -133,7 +161,7 @@ echo "  https://web.prod.tcrn-tms.com"
 echo ""
 echo "Next steps:"
 echo "  1. Check logs: docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f"
-echo "  2. Run database migrations (if needed)"
+echo "  2. Review the migration output above if tenant replay reported skips or errors"
 echo "  3. Run database seed (if first deployment)"
 echo ""
 echo "Useful commands:"
@@ -141,3 +169,4 @@ echo "  - View logs: docker compose logs -f [service]"
 echo "  - Restart:   docker compose restart [service]"
 echo "  - Stop all:  docker compose down"
 echo "  - Force clean script rebuild: NO_CACHE_BUILD=1 ./scripts/remote-deploy.sh"
+echo "  - Strict drift-watch replay: APPLY_MIGRATIONS_MODE=strict_drift_watch ./scripts/remote-deploy.sh"

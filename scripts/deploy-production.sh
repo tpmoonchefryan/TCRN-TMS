@@ -9,6 +9,17 @@ if [[ "${NO_CACHE_BUILD:-0}" == "1" ]]; then
     BUILD_ARGS+=(--no-cache)
 fi
 
+APPLY_MIGRATIONS_MODE="${APPLY_MIGRATIONS_MODE:-default}"
+case "$APPLY_MIGRATIONS_MODE" in
+    default|strict_drift_watch)
+        ;;
+    *)
+        echo "Unsupported APPLY_MIGRATIONS_MODE: $APPLY_MIGRATIONS_MODE" >&2
+        echo "Supported values: default, strict_drift_watch" >&2
+        exit 1
+        ;;
+esac
+
 # Configuration
 DEPLOY_USER="ubuntu"
 DEPLOY_HOST="43.153.195.213"
@@ -133,14 +144,23 @@ run_remote "
 # Step 6: Run database migrations
 echo ""
 echo "[6/6] Running database migrations..."
+echo "Tenant migration replay mode: ${APPLY_MIGRATIONS_MODE}"
 run_remote "
     cd ${DEPLOY_PATH}
     # Wait for postgres to be ready
     sleep 10
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api node -e \"
-        const { execSync } = require('child_process');
-        execSync('npx prisma migrate deploy', { stdio: 'inherit', cwd: '/app/packages/database' });
-    \" || echo 'Migration may need to be run manually'
+    APPLY_MIGRATIONS_MODE='${APPLY_MIGRATIONS_MODE}'
+    APPLY_MIGRATIONS_CMD='npx tsx scripts/apply-migrations.ts'
+    case \"\$APPLY_MIGRATIONS_MODE\" in
+        strict_drift_watch)
+            echo 'Using strict drift-watch mode for tenant migration replay.'
+            APPLY_MIGRATIONS_CMD=\"\$APPLY_MIGRATIONS_CMD --fail-on-drift-watch-skips\"
+            ;;
+        *)
+            echo 'Using default tenant migration replay mode.'
+            ;;
+    esac
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc \"cd /app/packages/database && npx prisma migrate deploy && \$APPLY_MIGRATIONS_CMD\"
 "
 
 # Final status
@@ -163,3 +183,4 @@ echo "Next steps:"
 echo "  1. Configure reverse proxy (Caddy/Nginx) for HTTPS"
 echo "  2. Run database seed: docker compose exec api pnpm db:seed"
 echo "  3. Configure DNS for your domain"
+echo "  4. Optional strict drift-watch replay: APPLY_MIGRATIONS_MODE=strict_drift_watch ./scripts/deploy-production.sh"
