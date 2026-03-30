@@ -1547,7 +1547,7 @@ model ExportJob {
   id               String    @id @default(uuid()) @db.Uuid
   talentId         String    @map("talent_id") @db.Uuid
   profileStoreId   String    @map("profile_store_id") @db.Uuid
-  jobType          String    @map("job_type") @db.VarChar(32) // 'customer_export', 'membership_export'
+  jobType          String    @map("job_type") @db.VarChar(32) // 'customer_export', 'marshmallow_export'
   format           String    @default("csv") @db.VarChar(16) // 'csv', 'xlsx', 'json'
   status           String    @default("pending") @db.VarChar(16)
   filters          Json?     @db.JsonB
