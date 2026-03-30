@@ -14,6 +14,7 @@ describe('createTestTenantFixture', () => {
       tier: 'standard',
       isActive: true,
     });
+    const update = vi.fn().mockResolvedValue(undefined);
     const deleteFn = vi.fn().mockResolvedValue(undefined);
     const execute = vi
       .fn()
@@ -27,6 +28,7 @@ describe('createTestTenantFixture', () => {
         {
           tenant: {
             create,
+            update,
             delete: deleteFn,
           },
           $executeRawUnsafe: execute,
@@ -44,8 +46,62 @@ describe('createTestTenantFixture', () => {
         sql.endsWith('" CASCADE'),
     );
     expect(dropSchemaCall).toBeDefined();
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'tenant-123' },
+      data: { isActive: false },
+    });
     expect(deleteFn).toHaveBeenCalledWith({
       where: { id: 'tenant-123' },
     });
+  });
+
+  it('marks the tenant inactive before dropping the schema during cleanup', async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: 'tenant-123',
+      code: 'TEST_FIXTURE',
+      name: 'Test Fixture',
+      schemaName: 'tenant_test_fixture',
+      tier: 'standard',
+      isActive: true,
+    });
+    const update = vi.fn().mockResolvedValue(undefined);
+    const deleteFn = vi.fn().mockResolvedValue(undefined);
+    const execute = vi.fn().mockResolvedValue(undefined);
+    const query = vi.fn().mockResolvedValue([]);
+
+    const fixture = await createTestTenantFixture(
+      {
+        tenant: {
+          create,
+          update,
+          delete: deleteFn,
+        },
+        $executeRawUnsafe: execute,
+        $queryRawUnsafe: query,
+      },
+      'fixture',
+    );
+
+    await fixture.cleanup();
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'tenant-123' },
+      data: { isActive: false },
+    });
+
+    const dropSchemaCallIndex = execute.mock.calls.findIndex(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.startsWith('DROP SCHEMA IF EXISTS "tenant_test_fixture') &&
+        sql.endsWith('" CASCADE'),
+    );
+
+    expect(dropSchemaCallIndex).toBeGreaterThanOrEqual(0);
+    expect(update.mock.invocationCallOrder[0]).toBeLessThan(
+      execute.mock.invocationCallOrder[dropSchemaCallIndex],
+    );
+    expect(deleteFn.mock.invocationCallOrder[0]).toBeGreaterThan(
+      execute.mock.invocationCallOrder[dropSchemaCallIndex],
+    );
   });
 });

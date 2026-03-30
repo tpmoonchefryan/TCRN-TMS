@@ -164,6 +164,10 @@ async function seedRbacContractIntoSchema(
 async function cleanupTestTenantArtifacts(
   prisma: {
     tenant: {
+      update: (args: {
+        where: { id: string };
+        data: { isActive: boolean };
+      }) => Promise<unknown>;
       delete: (args: { where: { id: string } }) => Promise<unknown>;
     };
     $executeRawUnsafe: (query: string) => Promise<unknown>;
@@ -175,6 +179,15 @@ async function cleanupTestTenantArtifacts(
   } = {},
 ): Promise<void> {
   const errors: unknown[] = [];
+
+  try {
+    await prisma.tenant.update({
+      where: { id: artifacts.tenantId },
+      data: { isActive: false },
+    });
+  } catch (error) {
+    errors.push(error);
+  }
 
   try {
     await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${artifacts.schemaName}" CASCADE`);
@@ -312,6 +325,10 @@ export async function createTestTenantFixture(
         tier: string;
         isActive: boolean;
       }>;
+      update: (args: {
+        where: { id: string };
+        data: { isActive: boolean };
+      }) => Promise<unknown>;
       delete: (args: { where: { id: string } }) => Promise<unknown>;
     };
     $executeRawUnsafe: (query: string) => Promise<unknown>;
