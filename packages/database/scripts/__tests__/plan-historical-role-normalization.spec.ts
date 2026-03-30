@@ -1,6 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import assert from 'node:assert/strict';
+/* eslint-disable simple-import-sort/imports */
+// sort-imports-ignore
 import { describe, it } from 'node:test';
+
+import assert from 'node:assert/strict';
 
 import type {
   HistoricalRoleAudit,
@@ -13,7 +16,10 @@ import type {
   CliOptions,
   HistoricalRoleReferenceAudit,
 } from '../plan-historical-role-normalization';
-import { buildHistoricalRoleNormalizationPlan } from '../plan-historical-role-normalization';
+import {
+  buildHistoricalRoleNormalizationPlan,
+  formatHistoricalRoleNormalizationPlanMarkdown,
+} from '../plan-historical-role-normalization';
 
 function createResourceAudit(code: string, grants: ResourceGrantEntry[] = []): ResourceAudit {
   return {
@@ -91,6 +97,7 @@ function createOptions(roles: string[]): CliOptions {
     schemas: ['tenant_uat_corp'],
     roles,
     json: false,
+    markdown: false,
   };
 }
 
@@ -295,5 +302,43 @@ describe('buildHistoricalRoleNormalizationPlan', () => {
       plan.plans[0]?.roles[0]?.reason,
       'Role is inactive and unassigned and does not appear on the audited legacy resources; it is residue-only from the current prune perspective.'
     );
+  });
+
+  it('formats a markdown plan artifact with decisions and legacy grant details', () => {
+    const summary = createSummary(
+      {
+        roleCode: 'SUPER_ADMIN',
+        present: true,
+        isActive: false,
+        assignedUsers: 0,
+      },
+      [
+        createTarget('homepage', {
+          grants: [{ roleCode: 'SUPER_ADMIN', action: 'read', effect: 'grant' }],
+        }),
+        createTarget('log.change', {
+          grants: [{ roleCode: 'SUPER_ADMIN', action: 'write', effect: 'grant' }],
+          legacyOnlyGrants: ['SUPER_ADMIN:write:grant'],
+        }),
+      ]
+    );
+
+    const plan = buildHistoricalRoleNormalizationPlan(
+      summary,
+      createOptions(['SUPER_ADMIN']),
+      createReferenceAuditMap('SUPER_ADMIN', {
+        rolePolicyCount: 96,
+      })
+    );
+
+    const markdown = formatHistoricalRoleNormalizationPlanMarkdown(plan);
+
+    assert.match(markdown, /^# Historical Role Normalization Plan$/m);
+    assert.match(markdown, /^## tenant_uat_corp$/m);
+    assert.match(markdown, /^### SUPER_ADMIN$/m);
+    assert.match(markdown, /- Decision: `retire_or_exclude_before_prune`/);
+    assert.match(markdown, /- Legacy resources: `homepage`, `log\.change`/);
+    assert.match(markdown, /- Blocking legacy-only grants: `log\.change:write:grant`/);
+    assert.match(markdown, /- Covered legacy grants: `homepage:read:grant`/);
   });
 });

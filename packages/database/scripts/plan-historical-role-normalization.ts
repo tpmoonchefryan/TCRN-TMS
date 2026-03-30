@@ -1,14 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+/* eslint-disable simple-import-sort/imports */
 // Read-only planner for tenant-local historical role cleanup.
 //
 // This planner turns the legacy RBAC audit into role-centric output so we can
 // review which historical roles still block prune and whether they are already
 // inactive/unassigned enough to retire or explicitly exclude.
-
+// sort-imports-ignore
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PrismaClient } from '@prisma/client';
+
 import { RBAC_ROLE_TEMPLATES } from '@tcrn/shared';
 
 import {
@@ -27,6 +29,7 @@ export interface CliOptions {
   schemas: string[];
   roles: string[];
   json: boolean;
+  markdown: boolean;
 }
 
 export type HistoricalRoleDecision =
@@ -39,9 +42,7 @@ export type HistoricalRoleDecision =
   | 'retire_or_exclude_before_prune'
   | 'retire_residue';
 
-export type HistoricalRoleReferenceAuditStatus =
-  | 'complete'
-  | 'missing_delegated_admin_table';
+export type HistoricalRoleReferenceAuditStatus = 'complete' | 'missing_delegated_admin_table';
 
 export interface HistoricalRoleReferenceAudit {
   roleCode: string;
@@ -88,6 +89,7 @@ function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   const roles: string[] = [];
   let json = false;
+  let markdown = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -117,7 +119,7 @@ function parseCliArgs(argv: string[]): CliOptions {
 
       if (!(HISTORICAL_ROLE_CODES as readonly string[]).includes(value)) {
         throw new Error(
-          `Unsupported --role ${value}. Supported historical/compat roles: ${HISTORICAL_ROLE_CODES.join(', ')}`,
+          `Unsupported --role ${value}. Supported historical/compat roles: ${HISTORICAL_ROLE_CODES.join(', ')}`
         );
       }
 
@@ -131,13 +133,23 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--markdown') {
+      markdown = true;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  if (json && markdown) {
+    throw new Error('Choose at most one output flag: --json or --markdown.');
   }
 
   return {
     schemas: [...new Set(schemas)],
     roles: [...new Set(roles)],
     json,
+    markdown,
   };
 }
 
@@ -179,21 +191,21 @@ function getAuthoredRole(roleCode: string): {
 
 function formatRoleScopedGrant(
   legacyCode: string,
-  grant: Pick<ResourceGrantEntry, 'action' | 'effect'>,
+  grant: Pick<ResourceGrantEntry, 'action' | 'effect'>
 ): string {
   return `${legacyCode}:${grant.action}:${grant.effect}`;
 }
 
 function toRoleGrantKey(
   roleCode: string,
-  grant: Pick<ResourceGrantEntry, 'action' | 'effect'>,
+  grant: Pick<ResourceGrantEntry, 'action' | 'effect'>
 ): string {
   return `${roleCode}:${grant.action}:${grant.effect}`;
 }
 
 function findHistoricalRoleAudit(
   schemaAudit: SchemaLegacyAudit,
-  roleCode: string,
+  roleCode: string
 ): HistoricalRoleAudit {
   return (
     schemaAudit.historicalRoles.find((role) => role.roleCode === roleCode) ?? {
@@ -216,7 +228,7 @@ function resourceCodesFromGrants(grants: string[]): string[] {
 async function tableExists(
   prisma: PrismaClient,
   schemaName: string,
-  tableName: string,
+  tableName: string
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -228,7 +240,7 @@ async function tableExists(
       ) AS exists
     `,
     schemaName,
-    tableName,
+    tableName
   );
 
   return rows[0]?.exists ?? false;
@@ -237,7 +249,7 @@ async function tableExists(
 async function getHistoricalRoleReferenceAudit(
   prisma: PrismaClient,
   schemaName: string,
-  roleCode: string,
+  roleCode: string
 ): Promise<HistoricalRoleReferenceAudit> {
   const roleRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `
@@ -246,7 +258,7 @@ async function getHistoricalRoleReferenceAudit(
       WHERE code = $1
       LIMIT 1
     `,
-    roleCode,
+    roleCode
   );
 
   const roleId = roleRows[0]?.id ?? null;
@@ -269,7 +281,7 @@ async function getHistoricalRoleReferenceAudit(
         FROM "${schemaName}".role_policy
         WHERE role_id = CAST($1 AS uuid)
       `,
-      roleId,
+      roleId
     ),
     hasDelegatedAdminTable
       ? prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
@@ -278,7 +290,7 @@ async function getHistoricalRoleReferenceAudit(
             FROM "${schemaName}".delegated_admin
             WHERE admin_role_id = CAST($1 AS uuid)
           `,
-          roleId,
+          roleId
         )
       : Promise.resolve([{ count: 0n }]),
   ]);
@@ -287,9 +299,7 @@ async function getHistoricalRoleReferenceAudit(
     roleCode,
     roleId,
     rolePolicyCount: Number(rolePolicyRows[0]?.count ?? 0n),
-    delegatedAdminCount: hasDelegatedAdminTable
-      ? Number(delegatedAdminRows[0]?.count ?? 0n)
-      : null,
+    delegatedAdminCount: hasDelegatedAdminTable ? Number(delegatedAdminRows[0]?.count ?? 0n) : null,
     referenceAudit: hasDelegatedAdminTable ? 'complete' : 'missing_delegated_admin_table',
   };
 }
@@ -297,7 +307,7 @@ async function getHistoricalRoleReferenceAudit(
 function buildRolePlan(
   schemaAudit: SchemaLegacyAudit,
   roleCode: string,
-  referenceAudit: HistoricalRoleReferenceAudit,
+  referenceAudit: HistoricalRoleReferenceAudit
 ): HistoricalRoleNormalizationPlan {
   const roleAudit = findHistoricalRoleAudit(schemaAudit, roleCode);
   const authoredRole = getAuthoredRole(roleCode);
@@ -517,7 +527,7 @@ function buildRolePlan(
 export function buildHistoricalRoleNormalizationPlan(
   auditSummary: LegacyRbacAuditSummary,
   options: CliOptions,
-  referenceAudits: ReadonlyMap<string, HistoricalRoleReferenceAudit> = new Map(),
+  referenceAudits: ReadonlyMap<string, HistoricalRoleReferenceAudit> = new Map()
 ): HistoricalRoleNormalizationPlanSummary {
   const roleCodes = selectedRoleCodes(options);
 
@@ -538,8 +548,8 @@ export function buildHistoricalRoleNormalizationPlan(
             rolePolicyCount: 0,
             delegatedAdminCount: null,
             referenceAudit: 'missing_delegated_admin_table',
-          },
-        ),
+          }
+        )
       ),
     })),
     skipped: auditSummary.skipped,
@@ -548,7 +558,7 @@ export function buildHistoricalRoleNormalizationPlan(
 
 export async function planHistoricalRoleNormalization(
   prisma: PrismaClient,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<HistoricalRoleNormalizationPlanSummary> {
   const auditSummary = await auditLegacyRbac(prisma, toAuditOptions(options));
   const referenceAudits = new Map<string, HistoricalRoleReferenceAudit>();
@@ -558,12 +568,86 @@ export async function planHistoricalRoleNormalization(
     for (const roleCode of roleCodes) {
       referenceAudits.set(
         buildReferenceAuditKey(schemaAudit.schemaName, roleCode),
-        await getHistoricalRoleReferenceAudit(prisma, schemaAudit.schemaName, roleCode),
+        await getHistoricalRoleReferenceAudit(prisma, schemaAudit.schemaName, roleCode)
       );
     }
   }
 
   return buildHistoricalRoleNormalizationPlan(auditSummary, options, referenceAudits);
+}
+
+export function formatHistoricalRoleNormalizationPlanMarkdown(
+  summary: HistoricalRoleNormalizationPlanSummary
+): string {
+  const lines: string[] = [
+    '# Historical Role Normalization Plan',
+    '',
+    'Generated from `packages/database/scripts/plan-historical-role-normalization.ts`.',
+    '',
+    '## Filters',
+    '',
+    `- Schemas: ${summary.filters.schemas.length > 0 ? summary.filters.schemas.join(', ') : '(all eligible schemas)'}`,
+    `- Roles: ${summary.filters.roles.join(', ')}`,
+  ];
+
+  for (const schemaPlan of summary.plans) {
+    lines.push('', `## ${schemaPlan.schemaName}`);
+
+    for (const rolePlan of schemaPlan.roles) {
+      lines.push(
+        '',
+        `### ${rolePlan.roleCode}`,
+        '',
+        `- Decision: \`${rolePlan.decision}\``,
+        `- Present: \`${String(rolePlan.present)}\``,
+        `- Active: \`${String(rolePlan.isActive)}\``,
+        `- Assigned users: \`${rolePlan.assignedUsers}\``,
+        `- Role policies: \`${rolePlan.rolePolicyCount}\``,
+        `- Delegated-admin references: \`${rolePlan.delegatedAdminCount ?? 'n/a'}\``,
+        `- Reference audit: \`${rolePlan.referenceAudit}\``
+      );
+
+      if (rolePlan.aliasOf) {
+        lines.push(`- Alias of: \`${rolePlan.aliasOf}\``);
+      }
+
+      if (rolePlan.legacyResourceCodes.length > 0) {
+        lines.push(
+          `- Legacy resources: ${rolePlan.legacyResourceCodes.map((code) => `\`${code}\``).join(', ')}`
+        );
+      }
+
+      if (rolePlan.blockingLegacyOnlyGrants.length > 0) {
+        lines.push(
+          `- Blocking legacy-only grants: ${rolePlan.blockingLegacyOnlyGrants.map((grant) => `\`${grant}\``).join(', ')}`
+        );
+      }
+
+      if (rolePlan.ignoredLegacyOnlyGrants.length > 0) {
+        lines.push(
+          `- Ignored over-grants: ${rolePlan.ignoredLegacyOnlyGrants.map((grant) => `\`${grant}\``).join(', ')}`
+        );
+      }
+
+      if (rolePlan.coveredLegacyGrants.length > 0) {
+        lines.push(
+          `- Covered legacy grants: ${rolePlan.coveredLegacyGrants.map((grant) => `\`${grant}\``).join(', ')}`
+        );
+      }
+
+      lines.push(`- Reason: ${rolePlan.reason}`);
+    }
+  }
+
+  if (summary.skipped.length > 0) {
+    lines.push('', '## Skipped Schemas', '');
+
+    for (const skipped of summary.skipped) {
+      lines.push(`- ${skipped.schemaName}: ${skipped.reason}`);
+    }
+  }
+
+  return `${lines.join('\n')}\n`;
 }
 
 function printSummary(summary: HistoricalRoleNormalizationPlanSummary): void {
@@ -573,7 +657,7 @@ function printSummary(summary: HistoricalRoleNormalizationPlanSummary): void {
     for (const rolePlan of schemaPlan.roles) {
       console.log(`- ${rolePlan.roleCode} [${rolePlan.decision}]`);
       console.log(
-        `  present=${String(rolePlan.present)} active=${String(rolePlan.isActive)} assignedUsers=${rolePlan.assignedUsers} rolePolicies=${rolePlan.rolePolicyCount} delegatedAdmins=${rolePlan.delegatedAdminCount ?? 'n/a'}`,
+        `  present=${String(rolePlan.present)} active=${String(rolePlan.isActive)} assignedUsers=${rolePlan.assignedUsers} rolePolicies=${rolePlan.rolePolicyCount} delegatedAdmins=${rolePlan.delegatedAdminCount ?? 'n/a'}`
       );
       console.log(`  reference audit: ${rolePlan.referenceAudit}`);
 
@@ -586,7 +670,9 @@ function printSummary(summary: HistoricalRoleNormalizationPlanSummary): void {
       }
 
       if (rolePlan.blockingLegacyOnlyGrants.length > 0) {
-        console.log(`  blocking legacy-only grants: ${rolePlan.blockingLegacyOnlyGrants.join(', ')}`);
+        console.log(
+          `  blocking legacy-only grants: ${rolePlan.blockingLegacyOnlyGrants.join(', ')}`
+        );
       }
 
       if (rolePlan.ignoredLegacyOnlyGrants.length > 0) {
@@ -619,6 +705,11 @@ async function main(): Promise<void> {
 
     if (options.json) {
       console.log(JSON.stringify(summary, null, 2));
+      return;
+    }
+
+    if (options.markdown) {
+      console.log(formatHistoricalRoleNormalizationPlanMarkdown(summary));
       return;
     }
 
