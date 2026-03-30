@@ -25,6 +25,7 @@ describe('WORKER_GROUPS', () => {
       QUEUE_NAMES.IMPORT,
       QUEUE_NAMES.REPORT,
       QUEUE_NAMES.EXPORT,
+      QUEUE_NAMES.MARSHMALLOW_EXPORT,
       QUEUE_NAMES.EMAIL,
       QUEUE_NAMES.MEMBERSHIP_RENEWAL,
       QUEUE_NAMES.PII_CLEANUP,
@@ -58,6 +59,9 @@ describe('WORKER_GROUPS', () => {
     });
     expect(definitionsByQueue.get(QUEUE_NAMES.EXPORT)?.options).toMatchObject({
       concurrency: 2,
+    });
+    expect(definitionsByQueue.get(QUEUE_NAMES.MARSHMALLOW_EXPORT)?.options).toMatchObject({
+      concurrency: 1,
     });
   });
 });

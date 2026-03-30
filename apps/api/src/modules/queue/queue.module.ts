@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BullModule } from '@nestjs/bullmq';
-import { Global,Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 // Queue names (must match worker definitions)
@@ -10,6 +10,7 @@ export const QUEUE_NAMES = {
   REPORT: 'report',
   MEMBERSHIP_RENEWAL: 'membership-renewal',
   EXPORT: 'export',
+  MARSHMALLOW_EXPORT: 'marshmallow-export',
   EMAIL: 'email',
 } as const;
 
@@ -33,6 +34,7 @@ export const QUEUE_NAMES = {
       { name: QUEUE_NAMES.REPORT },
       { name: QUEUE_NAMES.MEMBERSHIP_RENEWAL },
       { name: QUEUE_NAMES.EXPORT },
+      { name: QUEUE_NAMES.MARSHMALLOW_EXPORT },
       { name: QUEUE_NAMES.EMAIL },
     ),
   ],

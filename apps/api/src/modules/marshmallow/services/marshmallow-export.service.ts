@@ -55,7 +55,8 @@ export class MarshmallowExportService {
     private readonly databaseService: DatabaseService,
     private readonly minioService: MinioService,
     private readonly techEventLogService: TechEventLogService,
-    @InjectQueue(QUEUE_NAMES.EXPORT) private readonly exportQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.MARSHMALLOW_EXPORT)
+    private readonly marshmallowExportQueue: Queue,
   ) {}
 
   /**
@@ -75,7 +76,7 @@ export class MarshmallowExportService {
       talentId,
     );
     const talent = talents[0];
-    
+
     // Use a default profile store ID if talent doesn't have one
     // For marshmallow exports, we don't really need it but the schema requires it
     const profileStoreId = talent?.profileStoreId || '00000000-0000-0000-0000-000000000000';
@@ -127,7 +128,7 @@ export class MarshmallowExportService {
     );
 
     // Queue for processing
-    await this.exportQueue.add('marshmallow_export', {
+    await this.marshmallowExportQueue.add('marshmallow_export', {
       jobId,
       talentId,
       tenantSchema,

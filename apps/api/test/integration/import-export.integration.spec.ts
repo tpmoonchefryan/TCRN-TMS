@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Import/Export Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createTestSubsidiaryInTenant,
@@ -17,17 +17,16 @@ import {
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
-import { BUCKETS, MinioService } from '../../src/modules/minio';
-import {
-  ImportJobStatus,
-} from '../../src/modules/import/dto/import.dto';
 import {
   ExportFormat,
   ExportJobStatus,
   ExportJobType,
 } from '../../src/modules/export/dto/export.dto';
+import { ImportJobStatus } from '../../src/modules/import/dto/import.dto';
+import { BUCKETS, MinioService } from '../../src/modules/minio';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 import {
+  findExportQueueJobByDataJobId,
   findImportQueueJobByDataJobId,
   removeExportQueueJobsByDataJobIds,
   removeImportQueueJobsByDataJobIds,
@@ -48,9 +47,7 @@ describe('Import/Export Integration Tests', () => {
   const createdImportObjectNames = new Set<string>();
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
     if (includeTalentHeader) {
       req.set('X-Talent-Id', talentId);
@@ -60,9 +57,7 @@ describe('Import/Export Integration Tests', () => {
   };
 
   const createExportJob = async () => {
-    const response = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/exports'),
-    )
+    const response = await withAuth(request(app.getHttpServer()).post('/api/v1/exports'))
       .send({
         jobType: ExportJobType.CUSTOMER_EXPORT,
         format: ExportFormat.CSV,
@@ -86,7 +81,7 @@ describe('Import/Export Integration Tests', () => {
   const createMarshmallowExportJob = async () => {
     const response = await withAuth(
       request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/marshmallow/export`),
-      false,
+      false
     )
       .send({
         format: 'csv',
@@ -110,7 +105,7 @@ describe('Import/Export Integration Tests', () => {
   const markExportJobCompleted = async (
     jobId: string,
     jobType: 'customer_export' | 'marshmallow_export',
-    fileName: string,
+    fileName: string
   ) => {
     const filePath = `${tenantFixture.schemaName}/${jobId}/${fileName}`;
 
@@ -129,7 +124,7 @@ describe('Import/Export Integration Tests', () => {
       filePath,
       fileName,
       jobId,
-      jobType,
+      jobType
     );
 
     return filePath;
@@ -146,12 +141,9 @@ describe('Import/Export Integration Tests', () => {
     prisma = new PrismaClient();
     minioService = moduleFixture.get(MinioService);
     tenantFixture = await createTestTenantFixture(prisma, 'impexp');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `impexp_user_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `impexp_user_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_IE_${Date.now().toString(36).toUpperCase()}`,
@@ -196,7 +188,7 @@ describe('Import/Export Integration Tests', () => {
   describe('Import Jobs', () => {
     it('should return a stable error when no file is uploaded', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
       )
         .field('talentId', talentId)
         .expect(201);
@@ -207,25 +199,29 @@ describe('Import/Export Integration Tests', () => {
 
     it('should return the individual import template', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers/individuals/template'),
+        request(app.getHttpServer()).get('/api/v1/imports/customers/individuals/template')
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
-      const headerLine = response.text.replace(/^\ufeff/, '').split('\n')[0]?.trim();
-      expect(headerLine).toBe(
-        'external_id,nickname,primary_language,status_code,tags,notes',
-      );
+      const headerLine = response.text
+        .replace(/^\ufeff/, '')
+        .split('\n')[0]
+        ?.trim();
+      expect(headerLine).toBe('external_id,nickname,primary_language,status_code,tags,notes');
     });
 
     it('should return the company import template with only currently supported columns', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers/companies/template'),
+        request(app.getHttpServer()).get('/api/v1/imports/customers/companies/template')
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
-      const headerLine = response.text.replace(/^\ufeff/, '').split('\n')[0]?.trim();
+      const headerLine = response.text
+        .replace(/^\ufeff/, '')
+        .split('\n')[0]
+        ?.trim();
       expect(headerLine).toBe(
-        'external_id,nickname,company_legal_name,company_short_name,registration_number,vat_id,establishment_date,business_segment_code,website,status_code,tags,notes',
+        'external_id,nickname,company_legal_name,company_short_name,registration_number,vat_id,establishment_date,business_segment_code,website,status_code,tags,notes'
       );
     });
 
@@ -236,7 +232,7 @@ describe('Import/Export Integration Tests', () => {
       ].join('\n');
 
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
       )
         .field('talentId', talentId)
         .field('consumerCode', 'CRM_SYSTEM')
@@ -279,7 +275,7 @@ describe('Import/Export Integration Tests', () => {
       ].join('\n');
 
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
       )
         .field('talentId', talentId)
         .field('consumerCode', 'CRM_SYSTEM')
@@ -288,14 +284,14 @@ describe('Import/Export Integration Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
-      expect(response.body.error.message).toBe('CSV headers do not match the current import template');
+      expect(response.body.error.message).toBe(
+        'CSV headers do not match the current import template'
+      );
       expect(response.body.error.details.fields).toContain('Unexpected headers: legacy_pii_email');
     });
 
     it('should list import jobs for the current talent profile store', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/imports/customers'))
         .query({ page: 1, pageSize: 10 })
         .expect(200);
 
@@ -305,9 +301,7 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should filter import jobs by status', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/imports/customers'))
         .query({ status: ImportJobStatus.PENDING })
         .expect(200);
 
@@ -317,7 +311,9 @@ describe('Import/Export Integration Tests', () => {
 
     it('should return 404 for a non-existent import job', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'),
+        request(app.getHttpServer()).get(
+          '/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'
+        )
       ).expect(404);
 
       expect(response.body.success).toBe(false);
@@ -326,7 +322,9 @@ describe('Import/Export Integration Tests', () => {
 
     it('should return 404 when cancelling a non-existent import job', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).delete('/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'),
+        request(app.getHttpServer()).delete(
+          '/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'
+        )
       ).expect(404);
 
       expect(response.body.success).toBe(false);
@@ -347,9 +345,7 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should reject an invalid export job type', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/exports'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).post('/api/v1/exports'))
         .send({
           jobType: 'INVALID_TYPE',
           format: ExportFormat.CSV,
@@ -361,9 +357,7 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should reject unsupported generic export job types at validation boundary', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/exports'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).post('/api/v1/exports'))
         .send({
           jobType: 'report_export',
           format: ExportFormat.CSV,
@@ -375,9 +369,7 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should reject includePii because generic /exports no longer exposes it', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/exports'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).post('/api/v1/exports'))
         .send({
           jobType: ExportJobType.CUSTOMER_EXPORT,
           format: ExportFormat.CSV,
@@ -392,38 +384,42 @@ describe('Import/Export Integration Tests', () => {
     it('should list export jobs for the current talent profile store', async () => {
       await ensureExportJob();
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/exports'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/exports'))
         .query({ page: 1, pageSize: 10 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data.items)).toBe(true);
-      expect(response.body.data.items.some((item: { id: string }) => item.id === exportJobId)).toBe(true);
+      expect(response.body.data.items.some((item: { id: string }) => item.id === exportJobId)).toBe(
+        true
+      );
     });
 
     it('should keep marshmallow export jobs outside the generic /exports surface', async () => {
       const customerJobId = await ensureExportJob();
       const marshmallowJobId = await ensureMarshmallowExportJob();
+      const customerQueueJob = await findExportQueueJobByDataJobId(customerJobId);
+      const marshmallowQueueJob = await findExportQueueJobByDataJobId(marshmallowJobId);
 
-      const listResponse = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/exports'),
-      )
+      const listResponse = await withAuth(request(app.getHttpServer()).get('/api/v1/exports'))
         .query({ page: 1, pageSize: 20 })
         .expect(200);
 
       expect(listResponse.body.success).toBe(true);
       expect(
-        listResponse.body.data.items.some((item: { id: string }) => item.id === customerJobId),
+        listResponse.body.data.items.some((item: { id: string }) => item.id === customerJobId)
       ).toBe(true);
       expect(
-        listResponse.body.data.items.some((item: { id: string }) => item.id === marshmallowJobId),
+        listResponse.body.data.items.some((item: { id: string }) => item.id === marshmallowJobId)
       ).toBe(false);
+      expect(customerQueueJob?.queueName).toBe('export');
+      expect(customerQueueJob?.job.name).toBe('customer_export');
+      expect(marshmallowQueueJob?.queueName).toBe('marshmallow-export');
+      expect(marshmallowQueueJob?.job.name).toBe('marshmallow_export');
 
       const detailResponse = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/exports/${marshmallowJobId}`),
-        false,
+        false
       ).expect(404);
 
       expect(detailResponse.body.success).toBe(false);
@@ -438,23 +434,21 @@ describe('Import/Export Integration Tests', () => {
 
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/export/${jobId}`),
-        false,
+        false
       ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.id).toBe(jobId);
       expect(response.body.data.status).toBe('success');
       expect(response.body.data.downloadUrl).toBe(
-        `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`,
+        `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
       );
     });
 
     it('should filter export jobs by status', async () => {
       await ensureExportJob();
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/exports'),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/exports'))
         .query({ status: ExportJobStatus.PENDING })
         .expect(200);
 
@@ -467,7 +461,7 @@ describe('Import/Export Integration Tests', () => {
 
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/exports/${jobId}`),
-        false,
+        false
       ).expect(200);
 
       expect(response.body.success).toBe(true);
@@ -477,7 +471,7 @@ describe('Import/Export Integration Tests', () => {
     it('should return 404 for a non-existent export job', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get('/api/v1/exports/00000000-0000-0000-0000-000000000000'),
-        false,
+        false
       ).expect(404);
 
       expect(response.body.success).toBe(false);
@@ -486,8 +480,10 @@ describe('Import/Export Integration Tests', () => {
 
     it('should return 404 for downloading a non-existent export job', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/exports/00000000-0000-0000-0000-000000000000/download'),
-        false,
+        request(app.getHttpServer()).get(
+          '/api/v1/exports/00000000-0000-0000-0000-000000000000/download'
+        ),
+        false
       ).expect(404);
 
       expect(response.body.success).toBe(false);
@@ -499,7 +495,7 @@ describe('Import/Export Integration Tests', () => {
 
       const response = await withAuth(
         request(app.getHttpServer()).delete(`/api/v1/exports/${jobId}`),
-        false,
+        false
       ).expect(200);
 
       expect(response.body.success).toBe(true);

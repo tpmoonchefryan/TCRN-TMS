@@ -118,6 +118,14 @@ export const WORKER_GROUPS: readonly WorkerGroupDefinition[] = [
         initializedMessage: 'Export worker initialized',
       },
       {
+        queueName: QUEUE_NAMES.MARSHMALLOW_EXPORT,
+        processor: exportJobProcessor as WorkerProcessor,
+        options: {
+          concurrency: 1,
+        },
+        initializedMessage: 'Marshmallow export worker initialized',
+      },
+      {
         queueName: QUEUE_NAMES.EMAIL,
         processor: emailJobProcessor as WorkerProcessor,
         options: {

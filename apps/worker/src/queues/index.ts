@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ConnectionOptions } from 'bullmq';
 import { Queue } from 'bullmq';
 
@@ -15,6 +14,7 @@ export const QUEUE_NAMES = {
   PII_CLEANUP: 'pii-cleanup',
   PII_HEALTH_CHECK: 'pii-health-check',
   EXPORT: 'export',
+  MARSHMALLOW_EXPORT: 'marshmallow-export',
   EMAIL: 'email',
 } as const;
 
@@ -27,6 +27,7 @@ let logCleanupQueue: Queue;
 let piiCleanupQueue: Queue;
 let piiHealthCheckQueue: Queue;
 let exportQueue: Queue;
+let marshmallowExportQueue: Queue;
 let emailQueue: Queue;
 
 /**
@@ -181,6 +182,25 @@ export async function setupQueues(connection: ConnectionOptions): Promise<void> 
     },
   });
 
+  // Dedicated marshmallow export queue
+  marshmallowExportQueue = new Queue(QUEUE_NAMES.MARSHMALLOW_EXPORT, {
+    connection,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+      removeOnComplete: {
+        age: 7 * 24 * 3600, // Keep for 7 days
+        count: 100,
+      },
+      removeOnFail: {
+        age: 14 * 24 * 3600,
+      },
+    },
+  });
+
   // Email queue (Tencent SES)
   emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
     connection,
@@ -203,14 +223,15 @@ export async function setupQueues(connection: ConnectionOptions): Promise<void> 
   logger.info(`Queues initialized: ${Object.values(QUEUE_NAMES).join(', ')}`);
 }
 
-export { 
+export {
   emailQueue,
   exportQueue,
-  importQueue, 
+  importQueue,
   logCleanupQueue,
-  logQueue, 
-  membershipRenewalQueue, 
-  piiCleanupQueue, 
+  logQueue,
+  marshmallowExportQueue,
+  membershipRenewalQueue,
+  piiCleanupQueue,
   piiHealthCheckQueue,
-  reportQueue, 
+  reportQueue,
 };
