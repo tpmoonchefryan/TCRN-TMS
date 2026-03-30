@@ -22,36 +22,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { emailConfigApi } from '@/lib/api/modules/configuration';
+import {
+  emailConfigApi,
+  type EmailConfigResponse,
+  type EmailTestResult,
+  type SaveEmailConfigPayload,
+} from '@/lib/api/modules/configuration';
 
-type EmailProvider = 'tencent_ses' | 'smtp';
-
-interface TencentSesConfig {
-  secretId: string;
-  secretKey: string;
-  region: string;
-  fromAddress: string;
-  fromName: string;
-  replyTo?: string;
-}
-
-interface SmtpConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  username: string;
-  password: string;
-  fromAddress: string;
-  fromName: string;
-}
-
-interface EmailConfig {
-  provider: EmailProvider;
-  tencentSes?: TencentSesConfig;
-  smtp?: SmtpConfig;
-  isConfigured: boolean;
-  lastUpdated?: string;
-}
+type EmailProvider = EmailConfigResponse['provider'];
 
 const TENCENT_SES_REGIONS = [
   { value: 'ap-hongkong', label: 'Hong Kong (ap-hongkong)' },
@@ -60,6 +38,10 @@ const TENCENT_SES_REGIONS = [
   { value: 'ap-shanghai', label: 'Shanghai (ap-shanghai)' },
   { value: 'ap-beijing', label: 'Beijing (ap-beijing)' },
 ];
+
+function isEmailProvider(value: string): value is EmailProvider {
+  return value === 'tencent_ses' || value === 'smtp';
+}
 
 export function EmailConfigPanel() {
   const t = useTranslations('emailConfig');
@@ -100,7 +82,7 @@ export function EmailConfigPanel() {
       setIsLoading(true);
       const response = await emailConfigApi.get();
       if (response.success && response.data) {
-        const config = response.data as EmailConfig;
+        const config = response.data;
         setProvider(config.provider || 'tencent_ses');
         setIsConfigured(config.isConfigured);
         setLastUpdated(config.lastUpdated);
@@ -140,11 +122,7 @@ export function EmailConfigPanel() {
     try {
       setIsSaving(true);
 
-      const config: {
-        provider: EmailProvider;
-        tencentSes?: TencentSesConfig;
-        smtp?: SmtpConfig;
-      } = {
+      const config: SaveEmailConfigPayload = {
         provider,
       };
 
@@ -198,7 +176,7 @@ export function EmailConfigPanel() {
       setIsTestingConnection(true);
       const response = await emailConfigApi.testConnection();
       if (response.success && response.data) {
-        const result = response.data as { success: boolean; message: string; error?: string };
+        const result: EmailTestResult = response.data;
         if (result.success) {
           toast.success(result.message || t('connectionSuccess') || 'Connection successful');
         } else {
@@ -229,7 +207,7 @@ export function EmailConfigPanel() {
       setIsTesting(true);
       const response = await emailConfigApi.test(testEmail);
       if (response.success && response.data) {
-        const result = response.data as { success: boolean; message: string; error?: string };
+        const result: EmailTestResult = response.data;
         if (result.success) {
           toast.success(result.message || t('testSuccess') || 'Test email sent');
         } else {
@@ -293,7 +271,14 @@ export function EmailConfigPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={provider} onValueChange={(v) => setProvider(v as EmailProvider)}>
+          <Tabs
+            value={provider}
+            onValueChange={(value) => {
+              if (isEmailProvider(value)) {
+                setProvider(value);
+              }
+            }}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="tencent_ses" className="flex items-center gap-2">
                 <Cloud className="h-4 w-4" />
