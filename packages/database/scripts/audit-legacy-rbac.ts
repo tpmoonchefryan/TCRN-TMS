@@ -293,7 +293,12 @@ export function formatCanonicalLabel(target: CanonicalTargetLike): string {
     return 'no canonical replacement';
   }
 
-  const primaryCode = target.canonicalCode ?? canonicalCodes[0]!;
+  const primaryCode = target.canonicalCode ?? canonicalCodes[0];
+
+  if (!primaryCode) {
+    return 'no canonical replacement';
+  }
+
   const secondaryCodes = canonicalCodes.filter((code) => code !== primaryCode);
 
   if (secondaryCodes.length === 0) {

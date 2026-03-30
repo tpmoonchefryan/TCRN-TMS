@@ -68,7 +68,7 @@ export interface SchemaPrunePlan {
   absent: string[];
 }
 
-export interface ApplyDeleteCounts extends PlannedDeleteCounts {}
+export type ApplyDeleteCounts = PlannedDeleteCounts;
 
 export interface AppliedPruneTarget {
   legacyCode: string;
@@ -573,9 +573,17 @@ async function main(): Promise<void> {
         );
       }
 
+      const [schemaName] = options.schemas;
+
+      if (!schemaName) {
+        throw new Error(
+          'Prune planning with --runtime-proof currently requires exactly one --schema.'
+        );
+      }
+
       const runtimeProofTargets = selectRuntimeProofTargets(
         auditSummary,
-        options.schemas[0]!,
+        schemaName,
         options.legacyCodes
       );
 
