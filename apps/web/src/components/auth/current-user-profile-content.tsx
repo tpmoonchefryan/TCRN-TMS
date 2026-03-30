@@ -14,10 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
-import type { AuthUser } from '@/stores/auth-store.types';
 
 interface CurrentUserProfileContentProps {
-  children?: ReactNode | ((user: AuthUser) => ReactNode);
+  children?: ReactNode;
 }
 
 export function CurrentUserProfileContent({ children }: CurrentUserProfileContentProps) {
@@ -107,7 +106,7 @@ export function CurrentUserProfileContent({ children }: CurrentUserProfileConten
         </CardContent>
       </Card>
 
-      {typeof children === 'function' ? children(user) : children}
+      {children}
     </div>
   );
 }
