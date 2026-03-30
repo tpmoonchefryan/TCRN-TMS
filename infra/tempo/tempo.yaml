@@ -43,7 +43,8 @@ storage:
       bloom_filter_false_positive: 0.05
       v2_encoding: zstd
 
-# Metrics generator (for trace-to-metrics)
+# Metrics generator defaults stay disabled until a Prometheus-compatible
+# remote_write target is actually deployed for the active environment.
 metrics_generator:
   registry:
     external_labels:
@@ -51,17 +52,15 @@ metrics_generator:
       service: tcrn-tms
   storage:
     path: /tmp/tempo/generator/wal
-    remote_write:
-      - url: http://prometheus:9090/api/v1/write
-        send_exemplars: true
+    remote_write: []
 
 # Overrides configuration
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, span-metrics]
+      processors: []
 
-# Query frontend configuration  
+# Query frontend configuration
 query_frontend:
   search:
     max_duration: 168h
