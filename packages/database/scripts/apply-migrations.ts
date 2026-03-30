@@ -6,12 +6,15 @@ import * as path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 
 import {
+  type ApplyMigrationsCliOptions,
   countTenantMigrationSkips,
+  evaluateApplyMigrationsExitStatus,
   executeTenantMigrationStatements,
   formatStatementPreview,
   formatTenantMigrationDriftWatchSkipReasonCounts,
   formatTenantMigrationSkipReasonCounts,
   mergeTenantMigrationSkipReasonCounts,
+  parseApplyMigrationsCliArgs,
   splitSqlStatements,
   TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS,
   type TenantMigrationExecutionSummary,
@@ -63,7 +66,7 @@ async function applyMigrationToSchema(
   });
 }
 
-async function applyMigrations() {
+async function applyMigrations(options: ApplyMigrationsCliOptions) {
   console.log('🔄 Applying SQL migrations to all tenant schemas...\n');
 
   // Get all tenant schemas
@@ -154,6 +157,9 @@ async function applyMigrations() {
   console.log(totalErrors > 0 ? '❌ Migration completed with errors:' : '✅ Migration complete:');
   console.log(`   - Statements executed: ${totalSuccess}`);
   console.log(`   - Statements skipped (ignorable replay conflicts): ${totalSkipped}`);
+  if (options.failOnDriftWatchSkips) {
+    console.log('   - Drift-watch strict mode: enabled');
+  }
   if (totalSkipped > 0) {
     console.log(
       `   - Skipped by reason: ${formatTenantMigrationSkipReasonCounts(totalSkippedByReason)}`
@@ -172,14 +178,37 @@ async function applyMigrations() {
       );
     }
   }
+  const exitEvaluation = evaluateApplyMigrationsExitStatus({
+    totalErrors,
+    totalSkippedByReason,
+    failOnDriftWatchSkips: options.failOnDriftWatchSkips,
+  });
+
   if (totalErrors > 0) {
     console.log(`   - Errors: ${totalErrors}`);
-    console.error('❌ Non-ignorable tenant migration errors detected; failing the process.');
+  }
+
+  if (exitEvaluation.shouldFail) {
+    if (totalErrors > 0) {
+      console.error('❌ Non-ignorable tenant migration errors detected; failing the process.');
+    }
+
+    if (options.failOnDriftWatchSkips && exitEvaluation.driftWatchSkips > 0) {
+      console.error(
+        '❌ Drift-watch skips detected under strict mode; failing the process so schema drift can be reviewed.'
+      );
+    }
+
     process.exitCode = 1;
   }
 }
 
-applyMigrations()
+async function main(): Promise<void> {
+  const options = parseApplyMigrationsCliArgs(process.argv.slice(2));
+  await applyMigrations(options);
+}
+
+main()
   .catch((e) => {
     console.error('Migration error:', e);
     process.exit(1);

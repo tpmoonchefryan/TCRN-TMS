@@ -89,6 +89,16 @@ export const TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS = [
 export type TenantMigrationDriftWatchSkipReason =
   (typeof TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS)[number];
 
+export interface ApplyMigrationsCliOptions {
+  failOnDriftWatchSkips: boolean;
+}
+
+export interface ApplyMigrationsExitEvaluation {
+  shouldFail: boolean;
+  driftWatchSkips: number;
+  reasons: string[];
+}
+
 const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<TenantMigrationSkipReason, string> = {
   create_exists: 'create/already_exists',
   alter_table_add_exists: 'alter_table_add/already_exists',
@@ -161,6 +171,51 @@ export function formatTenantMigrationDriftWatchSkipReasonCounts(
 
     return [`${TENANT_MIGRATION_SKIP_REASON_LABELS[reason]}=${amount}`];
   }).join(', ');
+}
+
+export function parseApplyMigrationsCliArgs(argv: string[]): ApplyMigrationsCliOptions {
+  let failOnDriftWatchSkips = false;
+
+  for (const arg of argv) {
+    if (arg === '--') {
+      continue;
+    }
+
+    if (arg === '--fail-on-drift-watch-skips') {
+      failOnDriftWatchSkips = true;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return { failOnDriftWatchSkips };
+}
+
+export function evaluateApplyMigrationsExitStatus(options: {
+  totalErrors: number;
+  totalSkippedByReason: TenantMigrationSkipReasonCounts;
+  failOnDriftWatchSkips: boolean;
+}): ApplyMigrationsExitEvaluation {
+  const driftWatchSkips = countTenantMigrationSkips(
+    options.totalSkippedByReason,
+    TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS
+  );
+  const reasons: string[] = [];
+
+  if (options.totalErrors > 0) {
+    reasons.push(`non_ignorable_errors=${options.totalErrors}`);
+  }
+
+  if (options.failOnDriftWatchSkips && driftWatchSkips > 0) {
+    reasons.push(`drift_watch_skips=${driftWatchSkips}`);
+  }
+
+  return {
+    shouldFail: reasons.length > 0,
+    driftWatchSkips,
+    reasons,
+  };
 }
 
 export function splitSqlStatements(sql: string): string[] {

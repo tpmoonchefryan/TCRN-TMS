@@ -495,6 +495,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - Repeat `--require-table`, `--require-column`, `--require-index`, `--require-absent-table`, `--require-absent-column`, and `--require-absent-index` for every artifact that the release must prove.
 - Omit `--schema` for a tenant-wide sweep across `tenant_template` plus every active tenant schema. Add `--schema` only when you need a targeted follow-up proof for one tenant.
 - Keep this command separate from Playwright/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
+- When investigating tenant migration replay drift, you can opt into a stricter apply step with `pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips`. This keeps the default replay behavior unchanged, but turns drift-watch skip families into a failing exit code.
 
 Example using inferred artifacts directly from migration SQL:
 

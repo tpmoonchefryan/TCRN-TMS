@@ -6,12 +6,14 @@ import { describe, it } from 'node:test';
 import {
   classifyIgnorableTenantMigrationError,
   countTenantMigrationSkips,
+  evaluateApplyMigrationsExitStatus,
   executeTenantMigrationStatements,
   formatStatementPreview,
   formatTenantMigrationDriftWatchSkipReasonCounts,
   formatTenantMigrationSkipReasonCounts,
   getErrorMessage,
   isIgnorableTenantMigrationError,
+  parseApplyMigrationsCliArgs,
   splitSqlStatements,
 } from '../apply-migrations-helpers';
 
@@ -262,6 +264,75 @@ describe('countTenantMigrationSkips', () => {
         ['alter_table_drop_column_missing']
       ),
       3
+    );
+  });
+});
+
+describe('parseApplyMigrationsCliArgs', () => {
+  it('accepts the opt-in drift-watch strict mode flag', () => {
+    assert.deepEqual(parseApplyMigrationsCliArgs(['--', '--fail-on-drift-watch-skips']), {
+      failOnDriftWatchSkips: true,
+    });
+  });
+
+  it('rejects unknown arguments', () => {
+    assert.throws(
+      () => parseApplyMigrationsCliArgs(['--unexpected']),
+      /Unknown argument: --unexpected/
+    );
+  });
+});
+
+describe('evaluateApplyMigrationsExitStatus', () => {
+  it('keeps drift-watch skips non-fatal when strict mode is disabled', () => {
+    assert.deepEqual(
+      evaluateApplyMigrationsExitStatus({
+        totalErrors: 0,
+        totalSkippedByReason: {
+          drop_table_missing: 2,
+        },
+        failOnDriftWatchSkips: false,
+      }),
+      {
+        shouldFail: false,
+        driftWatchSkips: 2,
+        reasons: [],
+      }
+    );
+  });
+
+  it('fails on drift-watch skips only when strict mode is enabled', () => {
+    assert.deepEqual(
+      evaluateApplyMigrationsExitStatus({
+        totalErrors: 0,
+        totalSkippedByReason: {
+          drop_index_missing: 1,
+          create_exists: 5,
+        },
+        failOnDriftWatchSkips: true,
+      }),
+      {
+        shouldFail: true,
+        driftWatchSkips: 1,
+        reasons: ['drift_watch_skips=1'],
+      }
+    );
+  });
+
+  it('always fails when non-ignorable errors are present', () => {
+    assert.deepEqual(
+      evaluateApplyMigrationsExitStatus({
+        totalErrors: 2,
+        totalSkippedByReason: {
+          create_exists: 3,
+        },
+        failOnDriftWatchSkips: false,
+      }),
+      {
+        shouldFail: true,
+        driftWatchSkips: 0,
+        reasons: ['non_ignorable_errors=2'],
+      }
     );
   });
 });

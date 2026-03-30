@@ -495,6 +495,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - 对本次发布必须证明的每个 artifact，重复传入 `--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column` 和 `--require-absent-index`。
 - 若要覆盖 `tenant_template` 与全部 active tenant schema 的全量扫描，请省略 `--schema`；只有在需要单租户定点补充证明时才加入 `--schema`。
 - 该命令应与 Playwright 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
+- 若在排查 tenant migration replay drift 时需要更严格的 apply 行为，可使用 `pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips`。这不会改变默认 replay 语义，但会把 drift-watch skip family 提升为失败退出码。
 
 直接从 migration SQL 推导 artifact 的示例：
 

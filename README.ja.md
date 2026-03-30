@@ -495,6 +495,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - そのリリースで証明すべき artifact ごとに、`--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column`、`--require-absent-index` を繰り返して指定してください。
 - `tenant_template` とすべての active tenant schema を横断確認する場合は `--schema` を省略します。単一テナントの追跡確認が必要なときだけ `--schema` を追加してください。
 - このコマンドは Playwright やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
+- tenant migration replay drift を調査するときは、`pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips` で stricter apply を明示的に有効化できます。既定の replay 挙動は変えず、drift-watch skip family を失敗終了コードに昇格させます。
 
 migration SQL から artifact を直接推論する例:
 
