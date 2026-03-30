@@ -208,6 +208,7 @@ model Talent {
   marshmallowConfig     MarshmallowConfig?
   importJobs            ImportJob[]
   exportJobs            ExportJob[]
+  marshmallowExportJobs MarshmallowExportJob[]
   reportJobs            ReportJob[]
   customerAccessLogs    CustomerAccessLog[]
   marshmallowMessages   MarshmallowMessage[]
@@ -262,6 +263,7 @@ model SystemUser {
   changeLogs          ChangeLog[]
   importJobs          ImportJob[]
   exportJobs          ExportJob[]
+  marshmallowExportJobs MarshmallowExportJob[]
   reportJobs          ReportJob[]
   customerAccessLogs  CustomerAccessLog[]
 
@@ -1572,6 +1574,35 @@ model ExportJob {
   @@index([status])
   @@index([createdAt])
   @@map("export_job")
+  @@schema("tenant_template")
+}
+
+/// Marshmallow Export Job (dedicated marshmallow export state)
+model MarshmallowExportJob {
+  id               String    @id @default(uuid()) @db.Uuid
+  talentId         String    @map("talent_id") @db.Uuid
+  format           String    @default("csv") @db.VarChar(16) // 'csv', 'xlsx', 'json'
+  status           String    @default("pending") @db.VarChar(16)
+  filters          Json?     @db.JsonB
+  totalRecords     Int       @default(0) @map("total_records")
+  processedRecords Int       @default(0) @map("processed_records")
+  fileName         String?   @map("file_name") @db.VarChar(255)
+  filePath         String?   @map("file_path") @db.VarChar(512)
+  errorMessage     String?   @map("error_message") @db.Text
+  startedAt        DateTime? @map("started_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  expiresAt        DateTime? @map("expires_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+
+  talent        Talent      @relation(fields: [talentId], references: [id])
+  createdByUser SystemUser? @relation(fields: [createdBy], references: [id])
+
+  @@index([talentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("marshmallow_export_job")
   @@schema("tenant_template")
 }
 

@@ -91,7 +91,7 @@ describe('marshmallowExportJobProcessor', () => {
           reactionCounts: { heart: 3 },
         },
       ]);
-    mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+    mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.bucketExists.mockResolvedValue(true);
     mockMinioClient.makeBucket.mockResolvedValue(undefined);
@@ -120,12 +120,34 @@ describe('marshmallowExportJobProcessor', () => {
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.$executeRawUnsafe.mock.calls.every((call) => {
+      const sql = call[0];
+      return typeof sql === 'string' && sql.includes('marshmallow_export_job');
+    })).toBe(true);
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain("file_path = $1");
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[1]).toMatch(
       /^tenant_test\/export-job-1\/marshmallow_export_.+\.csv$/,
     );
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[1]).not.toContain('temp-reports/');
     expect(mockFs.unlinkSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to legacy export_job rows when the dedicated table does not contain the job', async () => {
+    mockPrisma.$executeRawUnsafe
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1);
+
+    await marshmallowExportJobProcessor(mockJob);
+
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(4);
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain('marshmallow_export_job');
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('export_job');
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('job_type = $3');
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('marshmallow_export_job');
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[3]?.[0]).toContain('export_job');
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[3]?.[0]).toContain('job_type = $6');
   });
 
   it('creates the temp-reports bucket before upload when it does not exist', async () => {

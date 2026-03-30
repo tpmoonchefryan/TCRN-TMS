@@ -15,6 +15,10 @@ import { MinioService } from '../../minio';
 import { QUEUE_NAMES } from '../../queue';
 import { ExportMessagesDto } from '../dto/marshmallow.dto';
 
+const MARSHMALLOW_EXPORT_QUEUE_JOB_NAME = 'marshmallow_export';
+const CURRENT_MARSHMALLOW_EXPORT_TABLE = 'marshmallow_export_job';
+const LEGACY_MARSHMALLOW_EXPORT_TABLE = 'export_job';
+
 export enum MarshmallowExportStatus {
   PENDING = 'pending',
   RUNNING = 'running',
@@ -49,6 +53,19 @@ export interface MarshmallowExportJobResponse {
   completedAt: string | null;
 }
 
+interface MarshmallowExportJobRecord {
+  id: string;
+  status: string;
+  format: string;
+  fileName: string | null;
+  filePath: string | null;
+  totalRecords: number;
+  processedRecords: number;
+  expiresAt: Date | null;
+  createdAt: Date;
+  completedAt: Date | null;
+}
+
 @Injectable()
 export class MarshmallowExportService {
   constructor(
@@ -69,76 +86,52 @@ export class MarshmallowExportService {
     context: RequestContext,
   ): Promise<{ jobId: string; status: string }> {
     const prisma = this.databaseService.getPrisma();
-
-    // Get talent's profile store (required for export_job table)
-    const talents = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string | null }>>(
-      `SELECT profile_store_id as "profileStoreId" FROM "${tenantSchema}".talent WHERE id = $1::uuid`,
-      talentId,
-    );
-    const talent = talents[0];
-
-    // Use a default profile store ID if talent doesn't have one
-    // For marshmallow exports, we don't really need it but the schema requires it
-    const profileStoreId = talent?.profileStoreId || '00000000-0000-0000-0000-000000000000';
+    await this.ensureTalentExists(prisma, tenantSchema, talentId);
 
     // Create job record using raw SQL for multi-tenant support
     const jobId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const filters = this.buildFilters(dto);
 
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "${tenantSchema}".export_job (
+      `INSERT INTO "${tenantSchema}".marshmallow_export_job (
         id,
         talent_id,
-        profile_store_id,
-        job_type,
         format,
         status,
         filters,
         total_records,
         processed_records,
         created_at,
+        updated_at,
         created_by
       ) VALUES (
         $1::uuid,
         $2::uuid,
-        $3::uuid,
+        $3,
         $4,
-        $5,
-        $6,
-        $7::jsonb,
+        $5::jsonb,
         0,
         0,
-        $8::timestamptz,
-        $9::uuid
+        $6::timestamptz,
+        $6::timestamptz,
+        $7::uuid
       )`,
       jobId,
       talentId,
-      profileStoreId,
-      'marshmallow_export',
       dto.format,
       MarshmallowExportStatus.PENDING,
-      JSON.stringify({
-        status: dto.status,
-        startDate: dto.startDate,
-        endDate: dto.endDate,
-        includeRejected: dto.includeRejected,
-      }),
+      JSON.stringify(filters),
       now,
       context.userId,
     );
 
-    // Queue for processing
-    await this.marshmallowExportQueue.add('marshmallow_export', {
+    await this.marshmallowExportQueue.add(MARSHMALLOW_EXPORT_QUEUE_JOB_NAME, {
       jobId,
       talentId,
       tenantSchema,
       format: dto.format,
-      filters: {
-        status: dto.status,
-        startDate: dto.startDate,
-        endDate: dto.endDate,
-        includeRejected: dto.includeRejected,
-      },
+      filters,
     } as MarshmallowExportJobData);
 
     // Log event
@@ -169,36 +162,8 @@ export class MarshmallowExportService {
     tenantSchema: string,
   ): Promise<MarshmallowExportJobResponse> {
     const prisma = this.databaseService.getPrisma();
+    const job = await this.findJobRecord(prisma, tenantSchema, jobId);
 
-    const jobs = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      status: string;
-      format: string;
-      fileName: string | null;
-      filePath: string | null;
-      totalRecords: number;
-      processedRecords: number;
-      expiresAt: Date | null;
-      createdAt: Date;
-      completedAt: Date | null;
-    }>>(
-      `SELECT 
-        id,
-        status,
-        format,
-        file_name as "fileName",
-        file_path as "filePath",
-        total_records as "totalRecords",
-        processed_records as "processedRecords",
-        expires_at as "expiresAt",
-        created_at as "createdAt",
-        completed_at as "completedAt"
-      FROM "${tenantSchema}".export_job
-      WHERE id = $1::uuid AND job_type = 'marshmallow_export'`,
-      jobId,
-    );
-
-    const job = jobs[0];
     if (!job) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -206,20 +171,7 @@ export class MarshmallowExportService {
       });
     }
 
-    return {
-      id: job.id,
-      status: job.status as MarshmallowExportStatus,
-      format: job.format,
-      fileName: job.fileName,
-      totalRecords: job.totalRecords,
-      processedRecords: job.processedRecords,
-      downloadUrl: job.status === MarshmallowExportStatus.SUCCESS && job.filePath
-        ? `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
-        : null,
-      expiresAt: job.expiresAt?.toISOString() ?? null,
-      createdAt: job.createdAt.toISOString(),
-      completedAt: job.completedAt?.toISOString() ?? null,
-    };
+    return this.formatJobResponse(job, talentId);
   }
 
   /**
@@ -230,18 +182,8 @@ export class MarshmallowExportService {
     tenantSchema: string,
   ): Promise<string> {
     const prisma = this.databaseService.getPrisma();
+    const job = await this.findJobRecord(prisma, tenantSchema, jobId);
 
-    const jobs = await prisma.$queryRawUnsafe<Array<{
-      status: string;
-      filePath: string | null;
-    }>>(
-      `SELECT status, file_path as "filePath"
-      FROM "${tenantSchema}".export_job
-      WHERE id = $1::uuid AND job_type = 'marshmallow_export'`,
-      jobId,
-    );
-
-    const job = jobs[0];
     if (!job) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -257,8 +199,7 @@ export class MarshmallowExportService {
     }
 
     // Generate presigned URL (valid for 1 hour)
-    const url = await this.minioService.getPresignedUrl('temp-reports', job.filePath, 3600);
-    return url;
+    return this.minioService.getPresignedUrl('temp-reports', job.filePath, 3600);
   }
 
   /**
@@ -272,18 +213,36 @@ export class MarshmallowExportService {
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
-    await prisma.$executeRawUnsafe(
-      `UPDATE "${tenantSchema}".export_job
-      SET 
-        status = $2,
-        total_records = $3,
-        processed_records = $4,
-        started_at = COALESCE(started_at, NOW())
-      WHERE id = $1::uuid`,
-      jobId,
-      MarshmallowExportStatus.RUNNING,
-      totalRecords,
-      processedRecords,
+    await this.executeJobUpdate(
+      prisma,
+      `UPDATE "${tenantSchema}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           total_records = $2,
+           processed_records = $3,
+           started_at = COALESCE(started_at, NOW()),
+           updated_at = NOW()
+       WHERE id = $4::uuid`,
+      [
+        MarshmallowExportStatus.RUNNING,
+        totalRecords,
+        processedRecords,
+        jobId,
+      ],
+      `UPDATE "${tenantSchema}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           total_records = $2,
+           processed_records = $3,
+           started_at = COALESCE(started_at, NOW()),
+           updated_at = NOW()
+       WHERE id = $4::uuid
+         AND job_type = $5`,
+      [
+        MarshmallowExportStatus.RUNNING,
+        totalRecords,
+        processedRecords,
+        jobId,
+        MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
+      ],
     );
   }
 
@@ -303,23 +262,46 @@ export class MarshmallowExportService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    await prisma.$executeRawUnsafe(
-      `UPDATE "${tenantSchema}".export_job
-      SET 
-        status = $2,
-        file_path = $3,
-        file_name = $4,
-        total_records = $5,
-        processed_records = $5,
-        completed_at = NOW(),
-        expires_at = $6::timestamptz
-      WHERE id = $1::uuid`,
-      jobId,
-      MarshmallowExportStatus.SUCCESS,
-      filePath,
-      fileName,
-      totalRecords,
-      expiresAt.toISOString(),
+    await this.executeJobUpdate(
+      prisma,
+      `UPDATE "${tenantSchema}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           file_path = $2,
+           file_name = $3,
+           total_records = $4,
+           processed_records = $4,
+           completed_at = NOW(),
+           expires_at = $5::timestamptz,
+           updated_at = NOW()
+       WHERE id = $6::uuid`,
+      [
+        MarshmallowExportStatus.SUCCESS,
+        filePath,
+        fileName,
+        totalRecords,
+        expiresAt.toISOString(),
+        jobId,
+      ],
+      `UPDATE "${tenantSchema}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           file_path = $2,
+           file_name = $3,
+           total_records = $4,
+           processed_records = $4,
+           completed_at = NOW(),
+           expires_at = $5::timestamptz,
+           updated_at = NOW()
+       WHERE id = $6::uuid
+         AND job_type = $7`,
+      [
+        MarshmallowExportStatus.SUCCESS,
+        filePath,
+        fileName,
+        totalRecords,
+        expiresAt.toISOString(),
+        jobId,
+        MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
+      ],
     );
 
     // Log completion
@@ -346,16 +328,32 @@ export class MarshmallowExportService {
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
-    await prisma.$executeRawUnsafe(
-      `UPDATE "${tenantSchema}".export_job
-      SET 
-        status = $2,
-        error_message = $3,
-        completed_at = NOW()
-      WHERE id = $1::uuid`,
-      jobId,
-      MarshmallowExportStatus.FAILED,
-      errorMessage,
+    await this.executeJobUpdate(
+      prisma,
+      `UPDATE "${tenantSchema}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           error_message = $2,
+           completed_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $3::uuid`,
+      [
+        MarshmallowExportStatus.FAILED,
+        errorMessage,
+        jobId,
+      ],
+      `UPDATE "${tenantSchema}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+       SET status = $1,
+           error_message = $2,
+           completed_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $3::uuid
+         AND job_type = $4`,
+      [
+        MarshmallowExportStatus.FAILED,
+        errorMessage,
+        jobId,
+        MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
+      ],
     );
 
     // Log failure
@@ -369,5 +367,117 @@ export class MarshmallowExportService {
         error: errorMessage,
       },
     });
+  }
+
+  private buildFilters(dto: ExportMessagesDto): MarshmallowExportJobData['filters'] {
+    return {
+      status: dto.status,
+      startDate: dto.startDate,
+      endDate: dto.endDate,
+      includeRejected: dto.includeRejected,
+    };
+  }
+
+  private async ensureTalentExists(
+    prisma: ReturnType<DatabaseService['getPrisma']>,
+    tenantSchema: string,
+    talentId: string,
+  ): Promise<void> {
+    const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `SELECT id FROM "${tenantSchema}".talent WHERE id = $1::uuid`,
+      talentId,
+    );
+
+    if (talents.length > 0) {
+      return;
+    }
+
+    throw new BadRequestException({
+      code: ErrorCodes.VALIDATION_FAILED,
+      message: 'Invalid talent',
+    });
+  }
+
+  private async findJobRecord(
+    prisma: ReturnType<DatabaseService['getPrisma']>,
+    tenantSchema: string,
+    jobId: string,
+  ): Promise<MarshmallowExportJobRecord | null> {
+    const currentJobs = await prisma.$queryRawUnsafe<Array<MarshmallowExportJobRecord>>(
+      `SELECT
+         id,
+         status,
+         format,
+         file_name as "fileName",
+         file_path as "filePath",
+         total_records as "totalRecords",
+         processed_records as "processedRecords",
+         expires_at as "expiresAt",
+         created_at as "createdAt",
+         completed_at as "completedAt"
+       FROM "${tenantSchema}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+       WHERE id = $1::uuid`,
+      jobId,
+    );
+
+    if (currentJobs[0]) {
+      return currentJobs[0];
+    }
+
+    const legacyJobs = await prisma.$queryRawUnsafe<Array<MarshmallowExportJobRecord>>(
+      `SELECT
+         id,
+         status,
+         format,
+         file_name as "fileName",
+         file_path as "filePath",
+         total_records as "totalRecords",
+         processed_records as "processedRecords",
+         expires_at as "expiresAt",
+         created_at as "createdAt",
+         completed_at as "completedAt"
+       FROM "${tenantSchema}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+       WHERE id = $1::uuid
+         AND job_type = $2`,
+      jobId,
+      MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
+    );
+
+    return legacyJobs[0] ?? null;
+  }
+
+  private async executeJobUpdate(
+    prisma: ReturnType<DatabaseService['getPrisma']>,
+    currentSql: string,
+    currentParams: unknown[],
+    legacySql: string,
+    legacyParams: unknown[],
+  ): Promise<void> {
+    const currentUpdated = await prisma.$executeRawUnsafe(currentSql, ...currentParams);
+    if (currentUpdated > 0) {
+      return;
+    }
+
+    await prisma.$executeRawUnsafe(legacySql, ...legacyParams);
+  }
+
+  private formatJobResponse(
+    job: MarshmallowExportJobRecord,
+    talentId: string,
+  ): MarshmallowExportJobResponse {
+    return {
+      id: job.id,
+      status: job.status as MarshmallowExportStatus,
+      format: job.format,
+      fileName: job.fileName,
+      totalRecords: job.totalRecords,
+      processedRecords: job.processedRecords,
+      downloadUrl: job.status === MarshmallowExportStatus.SUCCESS && job.filePath
+        ? `/api/v1/talents/${talentId}/marshmallow/export/${job.id}/download`
+        : null,
+      expiresAt: job.expiresAt?.toISOString() ?? null,
+      createdAt: job.createdAt.toISOString(),
+      completedAt: job.completedAt?.toISOString() ?? null,
+    };
   }
 }

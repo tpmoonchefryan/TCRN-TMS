@@ -12,6 +12,9 @@ import * as path from 'path';
 import { reportLogger as logger } from '../logger';
 
 const TEMP_REPORTS_BUCKET = 'temp-reports';
+const CURRENT_MARSHMALLOW_EXPORT_TABLE = 'marshmallow_export_job';
+const LEGACY_MARSHMALLOW_EXPORT_TABLE = 'export_job';
+const LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE = 'marshmallow_export';
 
 /**
  * Export format options
@@ -312,12 +315,17 @@ async function updateJobStatus(
   jobId: string,
   status: string,
 ): Promise<void> {
-  await prisma.$executeRawUnsafe(
-    `UPDATE "${schemaName}".export_job
-    SET status = $1, started_at = NOW(), updated_at = NOW()
-    WHERE id = $2::uuid`,
-    status,
-    jobId,
+  await executeMarshmallowJobUpdate(
+    prisma,
+    `UPDATE "${schemaName}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+     SET status = $1, started_at = NOW(), updated_at = NOW()
+     WHERE id = $2::uuid`,
+    [status, jobId],
+    `UPDATE "${schemaName}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+     SET status = $1, started_at = NOW(), updated_at = NOW()
+     WHERE id = $2::uuid
+       AND job_type = $3`,
+    [status, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
   );
 }
 
@@ -335,23 +343,33 @@ async function updateJobCompleted(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE "${schemaName}".export_job
-    SET 
-      status = 'success',
-      file_path = $1,
-      file_name = $2,
-      total_records = $3,
-      processed_records = $3,
-      completed_at = NOW(),
-      expires_at = $4::timestamptz,
-      updated_at = NOW()
-    WHERE id = $5::uuid`,
-    filePath,
-    fileName,
-    totalRecords,
-    expiresAt.toISOString(),
-    jobId,
+  await executeMarshmallowJobUpdate(
+    prisma,
+    `UPDATE "${schemaName}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+     SET
+       status = 'success',
+       file_path = $1,
+       file_name = $2,
+       total_records = $3,
+       processed_records = $3,
+       completed_at = NOW(),
+       expires_at = $4::timestamptz,
+       updated_at = NOW()
+     WHERE id = $5::uuid`,
+    [filePath, fileName, totalRecords, expiresAt.toISOString(), jobId],
+    `UPDATE "${schemaName}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+     SET
+       status = 'success',
+       file_path = $1,
+       file_name = $2,
+       total_records = $3,
+       processed_records = $3,
+       completed_at = NOW(),
+       expires_at = $4::timestamptz,
+       updated_at = NOW()
+     WHERE id = $5::uuid
+       AND job_type = $6`,
+    [filePath, fileName, totalRecords, expiresAt.toISOString(), jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
   );
 }
 
@@ -364,15 +382,39 @@ async function updateJobFailed(
   jobId: string,
   errorMessage: string,
 ): Promise<void> {
-  await prisma.$executeRawUnsafe(
-    `UPDATE "${schemaName}".export_job
-    SET 
-      status = 'failed',
-      error_message = $1,
-      completed_at = NOW(),
-      updated_at = NOW()
-    WHERE id = $2::uuid`,
-    errorMessage,
-    jobId,
+  await executeMarshmallowJobUpdate(
+    prisma,
+    `UPDATE "${schemaName}".${CURRENT_MARSHMALLOW_EXPORT_TABLE}
+     SET
+       status = 'failed',
+       error_message = $1,
+       completed_at = NOW(),
+       updated_at = NOW()
+     WHERE id = $2::uuid`,
+    [errorMessage, jobId],
+    `UPDATE "${schemaName}".${LEGACY_MARSHMALLOW_EXPORT_TABLE}
+     SET
+       status = 'failed',
+       error_message = $1,
+       completed_at = NOW(),
+       updated_at = NOW()
+     WHERE id = $2::uuid
+       AND job_type = $3`,
+    [errorMessage, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
   );
+}
+
+async function executeMarshmallowJobUpdate(
+  prisma: PrismaClient,
+  currentSql: string,
+  currentParams: unknown[],
+  legacySql: string,
+  legacyParams: unknown[],
+): Promise<void> {
+  const currentUpdated = await prisma.$executeRawUnsafe(currentSql, ...currentParams);
+  if (currentUpdated > 0) {
+    return;
+  }
+
+  await prisma.$executeRawUnsafe(legacySql, ...legacyParams);
 }

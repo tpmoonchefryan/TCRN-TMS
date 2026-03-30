@@ -109,25 +109,66 @@ describe('Import/Export Integration Tests', () => {
   ) => {
     const filePath = `${tenantFixture.schemaName}/${jobId}/${fileName}`;
 
-    await prisma.$executeRawUnsafe(
-      `UPDATE "${tenantFixture.schemaName}".export_job
-       SET status = 'success',
-           file_path = $1,
-           file_name = $2,
-           total_records = 1,
-           processed_records = 1,
-           completed_at = NOW(),
-           expires_at = NOW() + INTERVAL '7 days',
-           updated_at = NOW()
-       WHERE id = $3::uuid
-         AND job_type = $4`,
-      filePath,
-      fileName,
-      jobId,
-      jobType
-    );
+    if (jobType === 'marshmallow_export') {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "${tenantFixture.schemaName}".marshmallow_export_job
+         SET status = 'success',
+             file_path = $1,
+             file_name = $2,
+             total_records = 1,
+             processed_records = 1,
+             completed_at = NOW(),
+             expires_at = NOW() + INTERVAL '7 days',
+             updated_at = NOW()
+         WHERE id = $3::uuid`,
+        filePath,
+        fileName,
+        jobId
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "${tenantFixture.schemaName}".export_job
+         SET status = 'success',
+             file_path = $1,
+             file_name = $2,
+             total_records = 1,
+             processed_records = 1,
+             completed_at = NOW(),
+             expires_at = NOW() + INTERVAL '7 days',
+             updated_at = NOW()
+         WHERE id = $3::uuid
+           AND job_type = $4`,
+        filePath,
+        fileName,
+        jobId,
+        jobType
+      );
+    }
 
     return filePath;
+  };
+
+  const getMarshmallowExportJobStorage = async (jobId: string) => {
+    const [currentRows, legacyRows] = await Promise.all([
+      prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        `SELECT COUNT(*) AS count
+         FROM "${tenantFixture.schemaName}".marshmallow_export_job
+         WHERE id = $1::uuid`,
+        jobId
+      ),
+      prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        `SELECT COUNT(*) AS count
+         FROM "${tenantFixture.schemaName}".export_job
+         WHERE id = $1::uuid
+           AND job_type = 'marshmallow_export'`,
+        jobId
+      ),
+    ]);
+
+    return {
+      currentCount: Number(currentRows[0]?.count ?? 0n),
+      legacyCount: Number(legacyRows[0]?.count ?? 0n),
+    };
   };
 
   beforeAll(async () => {
@@ -400,6 +441,7 @@ describe('Import/Export Integration Tests', () => {
       const marshmallowJobId = await ensureMarshmallowExportJob();
       const customerQueueJob = await findExportQueueJobByDataJobId(customerJobId);
       const marshmallowQueueJob = await findExportQueueJobByDataJobId(marshmallowJobId);
+      const marshmallowStorage = await getMarshmallowExportJobStorage(marshmallowJobId);
 
       const listResponse = await withAuth(request(app.getHttpServer()).get('/api/v1/exports'))
         .query({ page: 1, pageSize: 20 })
@@ -416,6 +458,8 @@ describe('Import/Export Integration Tests', () => {
       expect(customerQueueJob?.job.name).toBe('customer_export');
       expect(marshmallowQueueJob?.queueName).toBe('marshmallow-export');
       expect(marshmallowQueueJob?.job.name).toBe('marshmallow_export');
+      expect(marshmallowStorage.currentCount).toBe(1);
+      expect(marshmallowStorage.legacyCount).toBe(0);
 
       const detailResponse = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/exports/${marshmallowJobId}`),
