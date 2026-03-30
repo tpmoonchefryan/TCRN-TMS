@@ -1,17 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { apiClient } from '@/lib/api/core';
+
+import { useAuthStore } from '../auth-store';
+import type { AuthUser } from '../auth-store.types';
 
 const mockRunSessionBootstrap = vi.hoisted(() => vi.fn());
 
 vi.mock('../auth-session-bootstrap', () => ({
   runSessionBootstrap: mockRunSessionBootstrap,
 }));
-
-import { apiClient } from '@/lib/api/core';
-
-import { useAuthStore } from '../auth-store';
-import type { AuthUser } from '../auth-store.types';
 
 const initialState = useAuthStore.getState();
 
@@ -57,14 +56,12 @@ describe('useAuthStore checkAuth', () => {
   });
 
   it('verifies the in-memory token with /users/me before trusting the session', async () => {
-    const fetchSpy = vi
-      .spyOn(global, 'fetch')
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          success: true,
-          data: userFromApi('tenant-live'),
-        })
-      );
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      createJsonResponse({
+        success: true,
+        data: userFromApi('tenant-live'),
+      })
+    );
 
     const refreshSpy = vi.fn().mockResolvedValue(false);
 
@@ -212,5 +209,59 @@ describe('useAuthStore checkAuth', () => {
     expect(useAuthStore.getState().effectivePermissions).toBeNull();
     expect(useAuthStore.getState().currentScope).toBeNull();
     expect(mockRunSessionBootstrap).not.toHaveBeenCalled();
+  });
+
+  it('merges profile updates without dropping auth context fields', () => {
+    useAuthStore.setState({
+      user: {
+        ...userFromApi('tenant-cached'),
+        display_name: 'Old Name',
+        roles: [{ code: 'TENANT_ADMIN' }],
+        permissions: ['customer.profile:read'],
+      },
+      tenantId: 'tenant-cached',
+      isAuthenticated: true,
+    });
+
+    useAuthStore.getState().mergeCurrentUserProfile({
+      id: 'user-1',
+      username: 'admin',
+      email: 'updated@example.com',
+      display_name: 'Updated Name',
+    });
+
+    expect(useAuthStore.getState().user).toMatchObject({
+      id: 'user-1',
+      email: 'updated@example.com',
+      display_name: 'Updated Name',
+      roles: [{ code: 'TENANT_ADMIN' }],
+      permissions: ['customer.profile:read'],
+      tenant: {
+        id: 'tenant-cached',
+        code: 'TENANT_A',
+      },
+    });
+  });
+
+  it('updates the current avatar without replacing the full auth user object', () => {
+    useAuthStore.setState({
+      user: {
+        ...userFromApi('tenant-cached'),
+        avatar_url: 'https://example.com/old-avatar.png',
+        roles: [{ code: 'TENANT_ADMIN' }],
+      },
+    });
+
+    useAuthStore.getState().setCurrentUserAvatar(null);
+
+    expect(useAuthStore.getState().user).toMatchObject({
+      id: 'user-1',
+      roles: [{ code: 'TENANT_ADMIN' }],
+      tenant: {
+        id: 'tenant-cached',
+        code: 'TENANT_A',
+      },
+    });
+    expect(useAuthStore.getState().user?.avatar_url).toBeUndefined();
   });
 });

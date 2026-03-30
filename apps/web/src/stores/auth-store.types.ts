@@ -2,12 +2,10 @@
 import type { EffectivePermissionMap } from '@tcrn/shared';
 
 import type { AuthUser } from '@/lib/api/modules/auth-user-contract';
-export type { AuthUser, LoginResponseData } from '@/lib/api/modules/auth-user-contract';
 
-import type {
-  SessionBootstrapErrors,
-  SessionBootstrapTaskResult,
-} from './auth-session-bootstrap';
+import type { SessionBootstrapErrors, SessionBootstrapTaskResult } from './auth-session-bootstrap';
+
+export type { AuthUser, LoginResponseData } from '@/lib/api/modules/auth-user-contract';
 
 export interface PermissionScope {
   scopeType?: 'GLOBAL' | 'TENANT' | 'SUBSIDIARY' | 'TALENT';
@@ -49,7 +47,8 @@ export interface AuthState {
   clearError: () => void;
   setTenantCode: (code: string) => void;
   setHasHydrated: (state: boolean) => void;
-  setUser: (user: AuthUser) => void;
+  mergeCurrentUserProfile: (user: AuthUser) => void;
+  setCurrentUserAvatar: (avatarUrl: string | null) => void;
   fetchAccessibleTalents: () => Promise<SessionBootstrapTaskResult>;
   fetchMyPermissions: (scope?: PermissionScope) => Promise<SessionBootstrapTaskResult>;
   bootstrapAuthenticatedSession: () => Promise<void>;

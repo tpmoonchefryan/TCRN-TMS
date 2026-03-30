@@ -9,37 +9,30 @@ import { toast } from 'sonner';
 
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { getApiResponseMessage, getThrownErrorMessage } from '@/lib/api/error-utils';
-import { mergeAuthUserContext } from '@/lib/api/modules/auth-user-contract';
 import { userApi } from '@/lib/api/modules/user';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
-  const { user, setUser } = useAuthStore();
-  
+  const { user, mergeCurrentUserProfile, setCurrentUserAvatar } = useAuthStore();
+
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Password change state
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -47,7 +40,7 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  
+
   // Email change state
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -60,27 +53,27 @@ export default function ProfilePage() {
       setDisplayName(user.display_name || '');
     }
   }, [user]);
-  
+
   // Password change handler
   const handleChangePassword = async () => {
     setPasswordError('');
-    
+
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError(t('allFieldsRequired') || 'All fields are required');
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       setPasswordError(t('passwordMismatch') || 'Passwords do not match');
       return;
     }
-    
+
     if (newPassword.length < 12) {
       setPasswordError(t('passwordTooShort') || 'Password must be at least 12 characters');
       return;
     }
-    
+
     setIsChangingPassword(true);
     try {
       const response = await userApi.changePassword({
@@ -88,7 +81,7 @@ export default function ProfilePage() {
         newPassword,
         newPasswordConfirm: confirmPassword,
       });
-      
+
       if (response.success) {
         toast.success(t('passwordChanged') || 'Password changed successfully');
         setShowPasswordDialog(false);
@@ -108,39 +101,42 @@ export default function ProfilePage() {
       setIsChangingPassword(false);
     }
   };
-  
+
   const resetPasswordDialog = () => {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
     setPasswordError('');
   };
-  
+
   // Email change handler
   const handleRequestEmailChange = async () => {
     setEmailError('');
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!newEmail || !emailRegex.test(newEmail)) {
       setEmailError(t('invalidEmail') || 'Invalid email format');
       return;
     }
-    
+
     if (newEmail === user?.email) {
       setEmailError(t('emailSameAsCurrent') || 'New email must be different from current email');
       return;
     }
-    
+
     setIsChangingEmail(true);
     try {
       const response = await userApi.requestEmailChange(newEmail);
-      
+
       if (response.success) {
         setEmailSent(true);
       } else {
         setEmailError(
-          getApiResponseMessage(response, t('emailChangeFailed') || 'Failed to request email change')
+          getApiResponseMessage(
+            response,
+            t('emailChangeFailed') || 'Failed to request email change'
+          )
         );
       }
     } catch (error) {
@@ -151,7 +147,7 @@ export default function ProfilePage() {
       setIsChangingEmail(false);
     }
   };
-  
+
   const resetEmailDialog = () => {
     setNewEmail('');
     setEmailError('');
@@ -163,7 +159,7 @@ export default function ProfilePage() {
     try {
       const response = await userApi.updateProfile({ displayName });
       if (response.success && response.data) {
-        setUser(mergeAuthUserContext(response.data, user));
+        mergeCurrentUserProfile(response.data);
         toast.success(t('saveSuccess'));
       }
     } catch (error) {
@@ -174,12 +170,7 @@ export default function ProfilePage() {
   };
 
   const handleAvatarChange = (avatarUrl: string | null) => {
-    if (user) {
-      setUser({
-        ...user,
-        avatar_url: avatarUrl ?? undefined,
-      });
-    }
+    setCurrentUserAvatar(avatarUrl);
   };
 
   if (!user) {
@@ -222,13 +213,8 @@ export default function ProfilePage() {
               <User className="h-4 w-4" />
               {t('username')}
             </Label>
-            <Input
-              id="username"
-              value={user.username}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">{t('usernameHint')}</p>
+            <Input id="username" value={user.username} disabled className="bg-muted" />
+            <p className="text-muted-foreground text-xs">{t('usernameHint')}</p>
           </div>
 
           {/* Email (read-only) */}
@@ -237,12 +223,7 @@ export default function ProfilePage() {
               <Mail className="h-4 w-4" />
               {t('email')}
             </Label>
-            <Input
-              id="email"
-              value={user.email}
-              disabled
-              className="bg-muted"
-            />
+            <Input id="email" value={user.email} disabled className="bg-muted" />
           </div>
 
           <Separator />
@@ -256,7 +237,7 @@ export default function ProfilePage() {
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={t('displayNamePlaceholder')}
             />
-            <p className="text-xs text-muted-foreground">{t('displayNameHint')}</p>
+            <p className="text-muted-foreground text-xs">{t('displayNameHint')}</p>
           </div>
 
           <div className="flex justify-end">
@@ -271,24 +252,26 @@ export default function ProfilePage() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-lg">{t('security') || 'Security'}</CardTitle>
-          <CardDescription>{t('securityDescription') || 'Manage your account security settings'}</CardDescription>
+          <CardDescription>
+            {t('securityDescription') || 'Manage your account security settings'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Password */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Key className="h-5 w-5 text-primary" />
+              <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                <Key className="text-primary h-5 w-5" />
               </div>
               <div>
                 <p className="font-medium">{t('password') || 'Password'}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('passwordHint') || 'Keep your account secure by using a strong password'}
                 </p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 resetPasswordDialog();
                 setShowPasswordDialog(true);
@@ -303,18 +286,16 @@ export default function ProfilePage() {
           {/* Email */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Mail className="h-5 w-5 text-primary" />
+              <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                <Mail className="text-primary h-5 w-5" />
               </div>
               <div>
                 <p className="font-medium">{t('emailAddress') || 'Email Address'}</p>
-                <p className="text-sm text-muted-foreground">
-                  {user.email}
-                </p>
+                <p className="text-muted-foreground text-sm">{user.email}</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 resetEmailDialog();
                 setShowEmailDialog(true);
@@ -327,10 +308,13 @@ export default function ProfilePage() {
       </Card>
 
       {/* Password Change Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={(open) => {
-        if (!open) resetPasswordDialog();
-        setShowPasswordDialog(open);
-      }}>
+      <Dialog
+        open={showPasswordDialog}
+        onOpenChange={(open) => {
+          if (!open) resetPasswordDialog();
+          setShowPasswordDialog(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('changePassword') || 'Change Password'}</DialogTitle>
@@ -358,8 +342,9 @@ export default function ProfilePage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••••••"
               />
-              <p className="text-xs text-muted-foreground">
-                {t('passwordRequirements') || 'At least 12 characters with uppercase, lowercase, number, and special character'}
+              <p className="text-muted-foreground text-xs">
+                {t('passwordRequirements') ||
+                  'At least 12 characters with uppercase, lowercase, number, and special character'}
               </p>
             </div>
             <div className="space-y-2">
@@ -372,9 +357,7 @@ export default function ProfilePage() {
                 placeholder="••••••••••••"
               />
             </div>
-            {passwordError && (
-              <p className="text-sm text-destructive">{passwordError}</p>
-            )}
+            {passwordError && <p className="text-destructive text-sm">{passwordError}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
@@ -389,15 +372,19 @@ export default function ProfilePage() {
       </Dialog>
 
       {/* Email Change Dialog */}
-      <Dialog open={showEmailDialog} onOpenChange={(open) => {
-        if (!open) resetEmailDialog();
-        setShowEmailDialog(open);
-      }}>
+      <Dialog
+        open={showEmailDialog}
+        onOpenChange={(open) => {
+          if (!open) resetEmailDialog();
+          setShowEmailDialog(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('changeEmail') || 'Change Email'}</DialogTitle>
             <DialogDescription>
-              {t('changeEmailDescription') || 'Enter your new email address. We will send a verification link to confirm the change.'}
+              {t('changeEmailDescription') ||
+                'Enter your new email address. We will send a verification link to confirm the change.'}
             </DialogDescription>
           </DialogHeader>
           {emailSent ? (
@@ -408,8 +395,9 @@ export default function ProfilePage() {
               <h3 className="mt-4 text-lg font-medium">
                 {t('emailVerificationSent') || 'Verification Email Sent'}
               </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t('emailVerificationSentDescription') || 'Please check your new email inbox and click the verification link to complete the change.'}
+              <p className="text-muted-foreground mt-2 text-sm">
+                {t('emailVerificationSentDescription') ||
+                  'Please check your new email inbox and click the verification link to complete the change.'}
               </p>
               <Button className="mt-4" onClick={() => setShowEmailDialog(false)}>
                 {tCommon('close') || 'Close'}
@@ -438,9 +426,7 @@ export default function ProfilePage() {
                     placeholder="your.new.email@example.com"
                   />
                 </div>
-                {emailError && (
-                  <p className="text-sm text-destructive">{emailError}</p>
-                )}
+                {emailError && <p className="text-destructive text-sm">{emailError}</p>}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowEmailDialog(false)}>

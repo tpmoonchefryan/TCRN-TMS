@@ -4,20 +4,20 @@ import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
-import {
-  mergeAuthUserContext,
-  withTenantContext,
-} from '@/lib/api/modules/auth-user-contract';
 import { organizationApi } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
 import { userApi } from '@/lib/api/modules/user';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
+import {
+  createAuthenticatedSessionState,
+  createClearedSessionState,
+  mergeCurrentUserProfile as mergeStoredUserProfile,
+  mergeVerifiedAuthUser,
+  updateCurrentUserAvatar,
+} from './auth-session-state';
 import type { AuthState, AuthUser, PermissionScope } from './auth-store.types';
 import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
-
-const isAcTenantCode = (tenantCode: string | null | undefined) =>
-  tenantCode?.toUpperCase() === 'AC';
 
 const getApiErrorStatusCode = (error: unknown): number | null => {
   if (
@@ -60,9 +60,17 @@ export const useAuthStore = create<AuthState>()(
         },
 
         setTenantCode: (code: string) =>
-          set({ tenantCode: code, isAcTenant: isAcTenantCode(code) }),
+          set({ tenantCode: code, isAcTenant: code.toUpperCase() === 'AC' }),
 
-        setUser: (user: AuthUser) => set({ user }),
+        mergeCurrentUserProfile: (user: AuthUser) =>
+          set((state) => ({
+            user: mergeStoredUserProfile(state.user, user),
+          })),
+
+        setCurrentUserAvatar: (avatarUrl: string | null) =>
+          set((state) => ({
+            user: updateCurrentUserAvatar(state.user, avatarUrl),
+          })),
 
         fetchAccessibleTalents: async () => {
           const talentStore = useTalentStore.getState();
@@ -121,8 +129,7 @@ export const useAuthStore = create<AuthState>()(
             talentStore.setFetchError(error);
             return { success: false, error };
           } catch (error) {
-            const message =
-              error instanceof Error ? error.message : 'Failed to load organization';
+            const message = error instanceof Error ? error.message : 'Failed to load organization';
             talentStore.setFetchError(message);
             return { success: false, error: message };
           } finally {
@@ -208,7 +215,11 @@ export const useAuthStore = create<AuthState>()(
 
               // Case 1: Password Reset Required
               if (data.passwordResetRequired) {
-                set({ isLoading: false, tenantCode, isAcTenant: isAcTenantCode(tenantCode) });
+                set({
+                  isLoading: false,
+                  tenantCode,
+                  isAcTenant: tenantCode.toUpperCase() === 'AC',
+                });
                 return {
                   success: true,
                   passwordResetRequired: true,
@@ -219,7 +230,11 @@ export const useAuthStore = create<AuthState>()(
 
               // Case 2: TOTP Required
               if (data.totpRequired) {
-                set({ isLoading: false, tenantCode, isAcTenant: isAcTenantCode(tenantCode) });
+                set({
+                  isLoading: false,
+                  tenantCode,
+                  isAcTenant: tenantCode.toUpperCase() === 'AC',
+                });
                 return {
                   success: true,
                   totpRequired: true,
@@ -230,16 +245,13 @@ export const useAuthStore = create<AuthState>()(
               // Case 3: Login Success (No TOTP, No Password Reset)
               if (data.accessToken) {
                 apiClient.setAccessToken(data.accessToken);
-                // Extract tenantId from user.tenant.id or fallback to top-level tenantId
-                const tenantId = data.user?.tenant?.id || data.tenantId;
                 set({
-                  user: data.user || null,
                   tenantCode,
-                  tenantId,
-                  isAuthenticated: true,
-                  isAcTenant: isAcTenantCode(tenantCode),
-                  sessionBootstrapStatus: 'idle',
-                  sessionBootstrapErrors: null,
+                  ...createAuthenticatedSessionState({
+                    user: data.user,
+                    tenantCode,
+                    tenantId: data.tenantId,
+                  }),
                   isLoading: false,
                 });
 
@@ -269,16 +281,13 @@ export const useAuthStore = create<AuthState>()(
             const response = await authApi.verifyTotp(sessionToken, code);
             if (response.success && response.data) {
               const { accessToken, user, tenantId: responseTenantId } = response.data;
-              // Extract tenantId from user.tenant.id or fallback
-              const tenantId = user?.tenant?.id || responseTenantId;
               apiClient.setAccessToken(accessToken || null);
               set({
-                user,
-                tenantId,
-                isAcTenant: isAcTenantCode(get().tenantCode),
-                isAuthenticated: true,
-                sessionBootstrapStatus: 'idle',
-                sessionBootstrapErrors: null,
+                ...createAuthenticatedSessionState({
+                  user,
+                  tenantCode: get().tenantCode,
+                  tenantId: responseTenantId,
+                }),
                 isLoading: false,
               });
 
@@ -308,15 +317,12 @@ export const useAuthStore = create<AuthState>()(
               const { accessToken, user, tenantId: responseTenantId } = response.data;
               if (accessToken) {
                 apiClient.setAccessToken(accessToken);
-                // Extract tenantId from user.tenant.id or fallback
-                const tenantId = user?.tenant?.id || responseTenantId;
                 set({
-                  user,
-                  tenantId,
-                  isAcTenant: isAcTenantCode(get().tenantCode),
-                  isAuthenticated: true,
-                  sessionBootstrapStatus: 'idle',
-                  sessionBootstrapErrors: null,
+                  ...createAuthenticatedSessionState({
+                    user,
+                    tenantCode: get().tenantCode,
+                    tenantId: responseTenantId,
+                  }),
                   isLoading: false,
                 });
 
@@ -351,17 +357,7 @@ export const useAuthStore = create<AuthState>()(
           // Reset talent store
           useTalentStore.getState().reset();
 
-          set({
-            user: null,
-            tenantId: null,
-            isAuthenticated: false,
-            isAcTenant: false,
-            sessionBootstrapStatus: 'idle',
-            sessionBootstrapErrors: null,
-            sessionBootstrapPromise: null,
-            effectivePermissions: null,
-            currentScope: null,
-          });
+          set(createClearedSessionState());
         },
 
         refreshSession: async () => {
@@ -386,16 +382,8 @@ export const useAuthStore = create<AuthState>()(
             }
             set({
               isRefreshing: false,
-              isAuthenticated: false,
-              user: null,
-              tenantId: null,
-              isAcTenant: false,
               refreshPromise: null,
-              sessionBootstrapStatus: 'idle',
-              sessionBootstrapErrors: null,
-              sessionBootstrapPromise: null,
-              effectivePermissions: null,
-              currentScope: null,
+              ...createClearedSessionState(),
             });
             apiClient.setAccessToken(null);
             return false;
@@ -414,14 +402,12 @@ export const useAuthStore = create<AuthState>()(
                 const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
                 const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: mergeAuthUserContext(
-                    withTenantContext(meRes.data, {
-                      id: tenantId,
-                      code: tenantCode,
-                      name: currentUser?.tenant?.name,
-                    }),
-                    currentUser
-                  ),
+                  user: mergeVerifiedAuthUser({
+                    user: meRes.data,
+                    tenantCode,
+                    tenantId,
+                    currentUser,
+                  }),
                   tenantId,
                   isAuthenticated: true,
                 });
@@ -448,14 +434,12 @@ export const useAuthStore = create<AuthState>()(
                 const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
                 const tenantId = meRes.data.tenant?.id || currentTenantId;
                 set({
-                  user: mergeAuthUserContext(
-                    withTenantContext(meRes.data, {
-                      id: tenantId,
-                      code: tenantCode,
-                      name: currentUser?.tenant?.name,
-                    }),
-                    currentUser
-                  ),
+                  user: mergeVerifiedAuthUser({
+                    user: meRes.data,
+                    tenantCode,
+                    tenantId,
+                    currentUser,
+                  }),
                   tenantId,
                   isAuthenticated: true,
                 });

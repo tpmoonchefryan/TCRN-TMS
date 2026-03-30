@@ -9,26 +9,19 @@ import { toast } from 'sonner';
 
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { getThrownErrorMessage } from '@/lib/api/error-utils';
-import { mergeAuthUserContext } from '@/lib/api/modules/auth-user-contract';
 import { userApi } from '@/lib/api/modules/user';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function AdminProfilePage() {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
-  const { user, setUser } = useAuthStore();
-  
+  const { user, mergeCurrentUserProfile, setCurrentUserAvatar } = useAuthStore();
+
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,7 +36,7 @@ export default function AdminProfilePage() {
     try {
       const response = await userApi.updateProfile({ displayName });
       if (response.success && response.data) {
-        setUser(mergeAuthUserContext(response.data, user));
+        mergeCurrentUserProfile(response.data);
         toast.success(t('saveSuccess'));
       }
     } catch (error) {
@@ -54,12 +47,7 @@ export default function AdminProfilePage() {
   };
 
   const handleAvatarChange = (avatarUrl: string | null) => {
-    if (user) {
-      setUser({
-        ...user,
-        avatar_url: avatarUrl ?? undefined,
-      });
-    }
+    setCurrentUserAvatar(avatarUrl);
   };
 
   if (!user) {
@@ -102,13 +90,8 @@ export default function AdminProfilePage() {
               <User className="h-4 w-4" />
               {t('username')}
             </Label>
-            <Input
-              id="username"
-              value={user.username}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">{t('usernameHint')}</p>
+            <Input id="username" value={user.username} disabled className="bg-muted" />
+            <p className="text-muted-foreground text-xs">{t('usernameHint')}</p>
           </div>
 
           {/* Email (read-only) */}
@@ -117,12 +100,7 @@ export default function AdminProfilePage() {
               <Mail className="h-4 w-4" />
               {t('email')}
             </Label>
-            <Input
-              id="email"
-              value={user.email}
-              disabled
-              className="bg-muted"
-            />
+            <Input id="email" value={user.email} disabled className="bg-muted" />
           </div>
 
           <Separator />
@@ -136,7 +114,7 @@ export default function AdminProfilePage() {
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={t('displayNamePlaceholder')}
             />
-            <p className="text-xs text-muted-foreground">{t('displayNameHint')}</p>
+            <p className="text-muted-foreground text-xs">{t('displayNameHint')}</p>
           </div>
 
           <div className="flex justify-end">
