@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  executeTenantMigrationStatements,
+  formatStatementPreview,
+  getErrorMessage,
   isIgnorableTenantMigrationError,
   splitSqlStatements,
 } from '../apply-migrations-helpers';
@@ -107,5 +110,100 @@ describe('isIgnorableTenantMigrationError', () => {
       ),
       false
     );
+  });
+});
+
+describe('formatStatementPreview', () => {
+  it('normalizes whitespace and truncates long statements', () => {
+    assert.equal(
+      formatStatementPreview(
+        'ALTER   TABLE tenant_template.customer_profile\nADD COLUMN example TEXT;',
+        40,
+      ),
+      'ALTER TABLE tenant_template.customer_...',
+    );
+  });
+});
+
+describe('getErrorMessage', () => {
+  it('extracts messages from Error and message-like values', () => {
+    assert.equal(getErrorMessage(new Error('boom')), 'boom');
+    assert.equal(getErrorMessage({ message: 'nope' }), 'nope');
+    assert.equal(getErrorMessage('plain failure'), 'plain failure');
+  });
+});
+
+describe('executeTenantMigrationStatements', () => {
+  it('counts success and skipped statements while ignoring pure comments', async () => {
+    const executed: string[] = [];
+
+    const result = await executeTenantMigrationStatements({
+      statements: [
+        '-- comment only',
+        'CREATE TABLE tenant_template.foo (id INT);',
+        'ALTER TABLE tenant_template.foo ADD COLUMN bar TEXT;',
+      ],
+      targetSchema: 'tenant_test',
+      migrationName: '20260330_test',
+      executeStatement: async (statement) => {
+        executed.push(statement);
+
+        if (statement.includes('ADD COLUMN')) {
+          throw new Error('column "bar" of relation "foo" already exists');
+        }
+      },
+    });
+
+    assert.deepEqual(result, {
+      success: 1,
+      skipped: 1,
+      errors: 0,
+    });
+    assert.deepEqual(executed, [
+      'CREATE TABLE tenant_template.foo (id INT);',
+      'ALTER TABLE tenant_template.foo ADD COLUMN bar TEXT;',
+    ]);
+  });
+
+  it('reports non-ignorable errors with schema, migration, and statement preview', async () => {
+    const details: Array<{
+      migrationName: string;
+      targetSchema: string;
+      statementPreview: string;
+      message: string;
+    }> = [];
+
+    const result = await executeTenantMigrationStatements({
+      statements: [
+        "INSERT INTO tenant_template.role (code) VALUES ('ADMIN');",
+      ],
+      targetSchema: 'tenant_prod',
+      migrationName: '20260330_role_backfill',
+      executeStatement: async () => {
+        throw new Error('duplicate key value violates unique constraint "role_code_key"');
+      },
+      onNonIgnorableError: (detail) => {
+        details.push({
+          migrationName: detail.migrationName,
+          targetSchema: detail.targetSchema,
+          statementPreview: detail.statementPreview,
+          message: detail.message,
+        });
+      },
+    });
+
+    assert.deepEqual(result, {
+      success: 0,
+      skipped: 0,
+      errors: 1,
+    });
+    assert.deepEqual(details, [
+      {
+        migrationName: '20260330_role_backfill',
+        targetSchema: 'tenant_prod',
+        statementPreview: "INSERT INTO tenant_template.role (code) VALUES ('ADMIN');",
+        message: 'duplicate key value violates unique constraint "role_code_key"',
+      },
+    ]);
   });
 });

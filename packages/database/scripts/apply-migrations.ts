@@ -6,7 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {
-  isIgnorableTenantMigrationError,
+  executeTenantMigrationStatements,
+  formatStatementPreview,
   splitSqlStatements,
 } from './apply-migrations-helpers';
 
@@ -38,37 +39,21 @@ async function applyMigrationToSchema(
 ): Promise<{ success: number; skipped: number; errors: number }> {
   // Replace tenant_template with target schema
   const schemaSql = sql.replace(/tenant_template/g, targetSchema);
-  
-  // Split into statements (handles $$ blocks for stored procedures)
-  const statements = splitSqlStatements(schemaSql);
 
-  let success = 0;
-  let skipped = 0;
-  let errors = 0;
-
-  for (const statement of statements) {
-    // Skip pure comment lines
-    if (statement.split('\n').every(line => line.trim().startsWith('--') || line.trim() === '')) {
-      continue;
-    }
-
-    try {
+  return executeTenantMigrationStatements({
+    statements: splitSqlStatements(schemaSql),
+    targetSchema,
+    migrationName,
+    executeStatement: async (statement) => {
       await prisma.$executeRawUnsafe(statement);
-      success++;
-    } catch (error: any) {
-      const msg = error.message || '';
-      if (isIgnorableTenantMigrationError(statement, msg)) {
-        skipped++;
-      } else {
-        errors++;
-        console.error(
-          `      Error in ${migrationName} for ${targetSchema}: ${msg.substring(0, 100)}`
-        );
-      }
-    }
-  }
-
-  return { success, skipped, errors };
+    },
+    onNonIgnorableError: ({ message, statementPreview }) => {
+      const truncatedMessage = formatStatementPreview(message, 100);
+      console.error(
+        `      Error in ${migrationName} for ${targetSchema}: ${truncatedMessage} [statement: ${statementPreview}]`,
+      );
+    },
+  });
 }
 
 async function applyMigrations() {
