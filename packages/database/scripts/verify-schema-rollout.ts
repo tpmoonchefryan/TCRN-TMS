@@ -21,6 +21,9 @@ interface CliOptions {
   requiredTables: string[];
   requiredColumns: RequiredColumn[];
   requiredIndexes: string[];
+  requiredAbsentTables: string[];
+  requiredAbsentColumns: RequiredColumn[];
+  requiredAbsentIndexes: string[];
   inferArtifactsFromMigrations: boolean;
   json: boolean;
 }
@@ -61,6 +64,9 @@ interface SchemaArtifactVerification {
   tables: TableVerification[];
   columns: ColumnVerification[];
   indexes: IndexVerification[];
+  absentTables: TableVerification[];
+  absentColumns: ColumnVerification[];
+  absentIndexes: IndexVerification[];
 }
 
 interface RolloutVerificationSummary {
@@ -70,12 +76,18 @@ interface RolloutVerificationSummary {
     requiredTables: string[];
     requiredColumns: string[];
     requiredIndexes: string[];
+    requiredAbsentTables: string[];
+    requiredAbsentColumns: string[];
+    requiredAbsentIndexes: string[];
   };
   inferredArtifacts: {
     sourceMigrations: string[];
     requiredTables: string[];
     requiredColumns: string[];
     requiredIndexes: string[];
+    requiredAbsentTables: string[];
+    requiredAbsentColumns: string[];
+    requiredAbsentIndexes: string[];
   } | null;
   checkedSchemas: string[];
   publicMigrations: PublicMigrationVerification[];
@@ -103,12 +115,25 @@ function parseRequiredColumn(value: string): RequiredColumn {
   };
 }
 
+function uniqueRequiredColumns(values: RequiredColumn[]): RequiredColumn[] {
+  return values.filter(
+    (value, currentIndex, items) =>
+      items.findIndex(
+        (candidate) =>
+          candidate.tableName === value.tableName && candidate.columnName === value.columnName
+      ) === currentIndex
+  );
+}
+
 function parseCliArgs(argv: string[]): CliOptions {
   const migrations: string[] = [];
   const schemas: string[] = [];
   const requiredTables: string[] = [];
   const requiredColumns: RequiredColumn[] = [];
   const requiredIndexes: string[] = [];
+  const requiredAbsentTables: string[] = [];
+  const requiredAbsentColumns: RequiredColumn[] = [];
+  const requiredAbsentIndexes: string[] = [];
   let inferArtifactsFromMigrations = false;
   let json = false;
 
@@ -179,6 +204,42 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--require-absent-table') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --require-absent-table');
+      }
+
+      requiredAbsentTables.push(value);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--require-absent-column') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --require-absent-column');
+      }
+
+      requiredAbsentColumns.push(parseRequiredColumn(value));
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--require-absent-index') {
+      const value = argv[index + 1];
+
+      if (!value) {
+        throw new Error('Missing value for --require-absent-index');
+      }
+
+      requiredAbsentIndexes.push(value);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--json') {
       json = true;
       continue;
@@ -202,10 +263,13 @@ function parseCliArgs(argv: string[]): CliOptions {
     migrations.length === 0 &&
     requiredTables.length === 0 &&
     requiredColumns.length === 0 &&
-    requiredIndexes.length === 0
+    requiredIndexes.length === 0 &&
+    requiredAbsentTables.length === 0 &&
+    requiredAbsentColumns.length === 0 &&
+    requiredAbsentIndexes.length === 0
   ) {
     throw new Error(
-      'At least one verification target is required. Use --migration, --require-table, --require-column, or --require-index.'
+      'At least one verification target is required. Use --migration, --require-table, --require-column, --require-index, --require-absent-table, --require-absent-column, or --require-absent-index.'
     );
   }
 
@@ -213,14 +277,11 @@ function parseCliArgs(argv: string[]): CliOptions {
     migrations: [...new Set(migrations)],
     schemas: [...new Set(schemas)],
     requiredTables: [...new Set(requiredTables)],
-    requiredColumns: requiredColumns.filter(
-      (value, currentIndex, items) =>
-        items.findIndex(
-          (candidate) =>
-            candidate.tableName === value.tableName && candidate.columnName === value.columnName
-        ) === currentIndex
-    ),
+    requiredColumns: uniqueRequiredColumns(requiredColumns),
     requiredIndexes: [...new Set(requiredIndexes)],
+    requiredAbsentTables: [...new Set(requiredAbsentTables)],
+    requiredAbsentColumns: uniqueRequiredColumns(requiredAbsentColumns),
+    requiredAbsentIndexes: [...new Set(requiredAbsentIndexes)],
     inferArtifactsFromMigrations,
     json,
   };
@@ -245,15 +306,22 @@ function resolveVerificationTargets(options: CliOptions): {
       requiredTables: [
         ...new Set([...options.requiredTables, ...inferredArtifacts.requiredTables]),
       ],
-      requiredColumns: [...options.requiredColumns, ...inferredArtifacts.requiredColumns].filter(
-        (value, currentIndex, items) =>
-          items.findIndex(
-            (candidate) =>
-              candidate.tableName === value.tableName && candidate.columnName === value.columnName
-          ) === currentIndex
-      ),
+      requiredColumns: uniqueRequiredColumns([
+        ...options.requiredColumns,
+        ...inferredArtifacts.requiredColumns,
+      ]),
       requiredIndexes: [
         ...new Set([...options.requiredIndexes, ...inferredArtifacts.requiredIndexes]),
+      ],
+      requiredAbsentTables: [
+        ...new Set([...options.requiredAbsentTables, ...inferredArtifacts.requiredAbsentTables]),
+      ],
+      requiredAbsentColumns: uniqueRequiredColumns([
+        ...options.requiredAbsentColumns,
+        ...inferredArtifacts.requiredAbsentColumns,
+      ]),
+      requiredAbsentIndexes: [
+        ...new Set([...options.requiredAbsentIndexes, ...inferredArtifacts.requiredAbsentIndexes]),
       ],
     },
     inferredArtifacts,
@@ -464,6 +532,15 @@ async function verifySchemaArtifacts(
       tables: options.requiredTables.map((tableName) => ({ tableName, present: false })),
       columns: options.requiredColumns.map((column) => ({ ...column, present: false })),
       indexes: options.requiredIndexes.map((indexName) => ({ indexName, present: false })),
+      absentTables: options.requiredAbsentTables.map((tableName) => ({
+        tableName,
+        present: false,
+      })),
+      absentColumns: options.requiredAbsentColumns.map((column) => ({ ...column, present: false })),
+      absentIndexes: options.requiredAbsentIndexes.map((indexName) => ({
+        indexName,
+        present: false,
+      })),
     };
   }
 
@@ -485,6 +562,24 @@ async function verifySchemaArtifacts(
       present: await indexExists(prisma, schemaName, indexName),
     }))
   );
+  const absentTables = await Promise.all(
+    options.requiredAbsentTables.map(async (tableName) => ({
+      tableName,
+      present: await tableExists(prisma, schemaName, tableName),
+    }))
+  );
+  const absentColumns = await Promise.all(
+    options.requiredAbsentColumns.map(async (column) => ({
+      ...column,
+      present: await columnExists(prisma, schemaName, column.tableName, column.columnName),
+    }))
+  );
+  const absentIndexes = await Promise.all(
+    options.requiredAbsentIndexes.map(async (indexName) => ({
+      indexName,
+      present: await indexExists(prisma, schemaName, indexName),
+    }))
+  );
 
   const failures = [
     ...tables
@@ -496,6 +591,18 @@ async function verifySchemaArtifacts(
     ...indexes
       .filter((item) => !item.present)
       .map((item) => `Missing index ${schemaName}.${item.indexName}.`),
+    ...absentTables
+      .filter((item) => item.present)
+      .map((item) => `Unexpected table ${schemaName}.${item.tableName} is still present.`),
+    ...absentColumns
+      .filter((item) => item.present)
+      .map(
+        (item) =>
+          `Unexpected column ${schemaName}.${item.tableName}.${item.columnName} is still present.`
+      ),
+    ...absentIndexes
+      .filter((item) => item.present)
+      .map((item) => `Unexpected index ${schemaName}.${item.indexName} is still present.`),
   ];
 
   return {
@@ -506,6 +613,9 @@ async function verifySchemaArtifacts(
     tables,
     columns,
     indexes,
+    absentTables,
+    absentColumns,
+    absentIndexes,
   };
 }
 
@@ -534,6 +644,11 @@ async function verifySchemaRollout(
         (item) => `${item.tableName}.${item.columnName}`
       ),
       requiredIndexes: options.requiredIndexes,
+      requiredAbsentTables: options.requiredAbsentTables,
+      requiredAbsentColumns: options.requiredAbsentColumns.map(
+        (item) => `${item.tableName}.${item.columnName}`
+      ),
+      requiredAbsentIndexes: options.requiredAbsentIndexes,
     },
     inferredArtifacts: inferredArtifacts
       ? {
@@ -543,6 +658,11 @@ async function verifySchemaRollout(
             (item) => `${item.tableName}.${item.columnName}`
           ),
           requiredIndexes: inferredArtifacts.requiredIndexes,
+          requiredAbsentTables: inferredArtifacts.requiredAbsentTables,
+          requiredAbsentColumns: inferredArtifacts.requiredAbsentColumns.map(
+            (item) => `${item.tableName}.${item.columnName}`
+          ),
+          requiredAbsentIndexes: inferredArtifacts.requiredAbsentIndexes,
         }
       : null,
     checkedSchemas,
@@ -585,6 +705,18 @@ function printSummary(summary: RolloutVerificationSummary): void {
     for (const indexName of summary.inferredArtifacts.requiredIndexes) {
       console.log(`  - index ${indexName}`);
     }
+
+    for (const tableName of summary.inferredArtifacts.requiredAbsentTables) {
+      console.log(`  - absent table ${tableName}`);
+    }
+
+    for (const columnName of summary.inferredArtifacts.requiredAbsentColumns) {
+      console.log(`  - absent column ${columnName}`);
+    }
+
+    for (const indexName of summary.inferredArtifacts.requiredAbsentIndexes) {
+      console.log(`  - absent index ${indexName}`);
+    }
   }
 
   if (summary.schemaArtifacts.length > 0) {
@@ -605,6 +737,20 @@ function printSummary(summary: RolloutVerificationSummary): void {
 
       for (const index of schema.indexes) {
         console.log(`  - index ${index.indexName}: ${index.present ? 'present' : 'missing'}`);
+      }
+
+      for (const table of schema.absentTables) {
+        console.log(`  - absent table ${table.tableName}: ${table.present ? 'present' : 'absent'}`);
+      }
+
+      for (const column of schema.absentColumns) {
+        console.log(
+          `  - absent column ${column.tableName}.${column.columnName}: ${column.present ? 'present' : 'absent'}`
+        );
+      }
+
+      for (const index of schema.absentIndexes) {
+        console.log(`  - absent index ${index.indexName}: ${index.present ? 'present' : 'absent'}`);
       }
 
       for (const failure of schema.failures) {

@@ -475,6 +475,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 `db:verify-schema-rollout` 是只读校验工具。省略 `--schema` 时，会自动校验 `tenant_template` 和 `public.tenant` 中全部 active tenant schema。
 
 凡是新增或修补 schema artifact 的发布，都应将它与常规运行时健康检查一起执行。
+如果发布会移除 tenant artifact，也应按需传入 `--require-absent-table`、`--require-absent-column`、`--require-absent-index`。启用 `--infer-artifacts-from-migrations` 时，当前已支持自动推导 migration SQL 中的 `DROP TABLE`、`DROP COLUMN`、`DROP INDEX` tenant artifact。
 
 发布 artifact 模板：
 
@@ -484,11 +485,14 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
   --require-table <table_name> \
   --require-column <table_name.column_name> \
   --require-index <index_name> \
+  [--require-absent-table <table_name>] \
+  [--require-absent-column <table_name.column_name>] \
+  [--require-absent-index <index_name>] \
   [--schema <tenant_schema>] \
   --json
 ```
 
-- 对本次发布必须证明的每个 artifact，重复传入 `--require-table`、`--require-column` 和 `--require-index`。
+- 对本次发布必须证明的每个 artifact，重复传入 `--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column` 和 `--require-absent-index`。
 - 若要覆盖 `tenant_template` 与全部 active tenant schema 的全量扫描，请省略 `--schema`；只有在需要单租户定点补充证明时才加入 `--schema`。
 - 该命令应与 Playwright 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
 

@@ -475,6 +475,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 `db:verify-schema-rollout` is read-only. If `--schema` is omitted, it verifies `tenant_template` plus all active tenant schemas from `public.tenant`.
 
 Use it together with your normal runtime health check whenever a release adds or repairs schema artifacts.
+For destructive releases, also pass `--require-absent-table`, `--require-absent-column`, and `--require-absent-index` as needed. When `--infer-artifacts-from-migrations` is enabled, supported `DROP TABLE`, `DROP COLUMN`, and `DROP INDEX` tenant artifacts are inferred automatically too.
 
 Release artifact template:
 
@@ -484,11 +485,14 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
   --require-table <table_name> \
   --require-column <table_name.column_name> \
   --require-index <index_name> \
+  [--require-absent-table <table_name>] \
+  [--require-absent-column <table_name.column_name>] \
+  [--require-absent-index <index_name>] \
   [--schema <tenant_schema>] \
   --json
 ```
 
-- Repeat `--require-table`, `--require-column`, and `--require-index` for every artifact that the release must prove.
+- Repeat `--require-table`, `--require-column`, `--require-index`, `--require-absent-table`, `--require-absent-column`, and `--require-absent-index` for every artifact that the release must prove.
 - Omit `--schema` for a tenant-wide sweep across `tenant_template` plus every active tenant schema. Add `--schema` only when you need a targeted follow-up proof for one tenant.
 - Keep this command separate from Playwright/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
 

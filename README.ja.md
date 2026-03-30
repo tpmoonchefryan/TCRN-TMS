@@ -475,6 +475,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 `db:verify-schema-rollout` は read-only の検証ツールです。`--schema` を省略すると、`tenant_template` と `public.tenant` に存在するすべての active tenant schema を自動で検証します。
 
 schema artifact を追加または修復するリリースでは、通常のランタイム health check とあわせて実行してください。
+tenant artifact を削除するリリースでは、必要に応じて `--require-absent-table`、`--require-absent-column`、`--require-absent-index` も指定してください。`--infer-artifacts-from-migrations` を有効にすると、現在は migration SQL 中の `DROP TABLE`、`DROP COLUMN`、`DROP INDEX` tenant artifact も自動推論されます。
 
 release artifact template:
 
@@ -484,11 +485,14 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
   --require-table <table_name> \
   --require-column <table_name.column_name> \
   --require-index <index_name> \
+  [--require-absent-table <table_name>] \
+  [--require-absent-column <table_name.column_name>] \
+  [--require-absent-index <index_name>] \
   [--schema <tenant_schema>] \
   --json
 ```
 
-- そのリリースで証明すべき artifact ごとに、`--require-table`、`--require-column`、`--require-index` を繰り返して指定してください。
+- そのリリースで証明すべき artifact ごとに、`--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column`、`--require-absent-index` を繰り返して指定してください。
 - `tenant_template` とすべての active tenant schema を横断確認する場合は `--schema` を省略します。単一テナントの追跡確認が必要なときだけ `--schema` を追加してください。
 - このコマンドは Playwright やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
 

@@ -35,7 +35,7 @@ function createTempMigrationsDir(files: Record<string, string>): string {
 }
 
 describe('inferRolloutArtifactsFromSql', () => {
-  it('collects tenant table, add-column, create-index, and rename-index artifacts', () => {
+  it('collects tenant presence and absence artifacts while ignoring public-only drops', () => {
     const sql = `
       CREATE TABLE IF NOT EXISTS tenant_template.export_job (
         id UUID PRIMARY KEY
@@ -43,17 +43,24 @@ describe('inferRolloutArtifactsFromSql', () => {
 
       ALTER TABLE tenant_template.export_job
         ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        ADD COLUMN IF NOT EXISTS file_path TEXT;
+        ADD COLUMN IF NOT EXISTS file_path TEXT,
+        DROP COLUMN legacy_file_path;
 
       CREATE INDEX IF NOT EXISTS export_job_status_idx
         ON tenant_template.export_job(status);
 
+      DROP INDEX IF EXISTS tenant_template.idx_export_job_legacy_file_path;
+
       ALTER INDEX tenant_template.idx_export_job_created_at
         RENAME TO export_job_created_at_idx;
+
+      DROP TABLE tenant_template.export_job_archive;
 
       CREATE TABLE IF NOT EXISTS public.audit_log (
         id UUID PRIMARY KEY
       );
+
+      DROP INDEX public.audit_log_created_at_idx;
     `;
 
     assert.deepEqual(inferRolloutArtifactsFromSql(sql), {
@@ -63,6 +70,9 @@ describe('inferRolloutArtifactsFromSql', () => {
         { tableName: 'export_job', columnName: 'updated_at' },
       ],
       requiredIndexes: ['export_job_created_at_idx', 'export_job_status_idx'],
+      requiredAbsentTables: ['export_job_archive'],
+      requiredAbsentColumns: [{ tableName: 'export_job', columnName: 'legacy_file_path' }],
+      requiredAbsentIndexes: ['idx_export_job_legacy_file_path'],
     });
   });
 
@@ -101,12 +111,42 @@ describe('inferRolloutArtifactsFromSql', () => {
         'user_scope_access_user_id_idx',
         'user_scope_access_user_id_scope_type_scope_id_key',
       ],
+      requiredAbsentTables: [],
+      requiredAbsentColumns: [],
+      requiredAbsentIndexes: [],
+    });
+  });
+
+  it('keeps the final state when a later statement removes an earlier artifact', () => {
+    const sql = `
+      CREATE TABLE IF NOT EXISTS tenant_template.temp_export_job (
+        id UUID PRIMARY KEY
+      );
+      DROP TABLE tenant_template.temp_export_job;
+
+      ALTER TABLE tenant_template.export_job
+        ADD COLUMN IF NOT EXISTS transient_note TEXT;
+      ALTER TABLE tenant_template.export_job
+        DROP COLUMN transient_note;
+
+      CREATE INDEX IF NOT EXISTS export_job_transient_note_idx
+        ON tenant_template.export_job(transient_note);
+      DROP INDEX IF EXISTS tenant_template.export_job_transient_note_idx;
+    `;
+
+    assert.deepEqual(inferRolloutArtifactsFromSql(sql), {
+      requiredTables: [],
+      requiredColumns: [],
+      requiredIndexes: [],
+      requiredAbsentTables: ['temp_export_job'],
+      requiredAbsentColumns: [{ tableName: 'export_job', columnName: 'transient_note' }],
+      requiredAbsentIndexes: ['export_job_transient_note_idx'],
     });
   });
 });
 
 describe('inferRolloutArtifactsFromMigrations', () => {
-  it('merges and deduplicates inferred tenant artifacts across migrations', () => {
+  it('merges tenant artifacts across migrations while preserving final state', () => {
     const migrationsDir = createTempMigrationsDir({
       '20260324000001_add_export_job': `
         CREATE TABLE IF NOT EXISTS tenant_template.export_job (
@@ -122,6 +162,9 @@ describe('inferRolloutArtifactsFromMigrations', () => {
           ADD COLUMN IF NOT EXISTS "file_name" TEXT;
         CREATE INDEX IF NOT EXISTS export_job_status_idx
           ON %I."export_job"(status);
+        ALTER TABLE %I."export_job"
+          DROP COLUMN IF EXISTS "updated_at";
+        DROP INDEX IF EXISTS %I.export_job_status_idx;
       `,
     });
 
@@ -133,11 +176,11 @@ describe('inferRolloutArtifactsFromMigrations', () => {
       {
         sourceMigrations: ['20260324000001_add_export_job', '20260325000001_export_job_followup'],
         requiredTables: ['export_job'],
-        requiredColumns: [
-          { tableName: 'export_job', columnName: 'file_name' },
-          { tableName: 'export_job', columnName: 'updated_at' },
-        ],
-        requiredIndexes: ['export_job_status_idx'],
+        requiredColumns: [{ tableName: 'export_job', columnName: 'file_name' }],
+        requiredIndexes: [],
+        requiredAbsentTables: [],
+        requiredAbsentColumns: [{ tableName: 'export_job', columnName: 'updated_at' }],
+        requiredAbsentIndexes: ['export_job_status_idx'],
       }
     );
   });
