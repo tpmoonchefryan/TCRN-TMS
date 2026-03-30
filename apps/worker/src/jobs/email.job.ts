@@ -1,7 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { prisma } from '@tcrn/database';
-import { mask } from '@tcrn/shared';
+import {
+  DEFAULT_EMAIL_FROM_ADDRESS,
+  DEFAULT_EMAIL_FROM_NAME,
+  DEFAULT_EMAIL_PROVIDER,
+  DEFAULT_TENCENT_SES_REGION,
+  EMAIL_CONFIG_KEY,
+  type EmailProvider,
+  mask,
+  normalizeStoredEmailConfig,
+} from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import { createDecipheriv } from 'crypto';
 import * as nodemailer from 'nodemailer';
@@ -11,11 +20,6 @@ import { workerLogger as logger } from '../logger';
 import { getPiiClient } from '../services/pii-client';
 
 const SesClient = tencentcloud.ses.v20201002.Client;
-const EMAIL_CONFIG_KEY = 'email.config';
-const DEFAULT_EMAIL_PROVIDER: EmailProvider = 'tencent_ses';
-const DEFAULT_TENCENT_SES_REGION = 'ap-hongkong';
-const DEFAULT_EMAIL_FROM_ADDRESS = 'noreply@tcrn.app';
-const DEFAULT_EMAIL_FROM_NAME = 'TCRN TMS';
 
 // Job data interface
 interface EmailJobData {
@@ -33,9 +37,6 @@ interface EmailJobResult {
   messageId?: string;
   error?: string;
 }
-
-// Email provider types
-type EmailProvider = 'tencent_ses' | 'smtp';
 
 // Email configuration from database
 interface EmailConfig {
@@ -59,97 +60,9 @@ interface EmailConfig {
   };
 }
 
-type StoredTencentSesConfig = {
-  secretId?: string;
-  secretKey?: string;
-  region?: string;
-  fromAddress?: string;
-  fromName?: string;
-  replyTo?: string;
-};
-
-type StoredSmtpConfig = {
-  host?: string;
-  port?: number;
-  secure?: boolean;
-  username?: string;
-  password?: string;
-  fromAddress?: string;
-  fromName?: string;
-};
-
-type StoredEmailConfig = {
-  provider: EmailProvider;
-  tencentSes?: StoredTencentSesConfig;
-  smtp?: StoredSmtpConfig;
-};
-
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm';
 const AUTH_TAG_LENGTH = 16;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isEmailProvider(value: unknown): value is EmailProvider {
-  return value === 'tencent_ses' || value === 'smtp';
-}
-
-function getString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-function getNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function getBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined;
-}
-
-function normalizeTencentSesConfig(value: unknown): StoredTencentSesConfig | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  return {
-    secretId: getString(value.secretId),
-    secretKey: getString(value.secretKey),
-    region: getString(value.region),
-    fromAddress: getString(value.fromAddress),
-    fromName: getString(value.fromName),
-    replyTo: getString(value.replyTo),
-  };
-}
-
-function normalizeSmtpConfig(value: unknown): StoredSmtpConfig | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  return {
-    host: getString(value.host),
-    port: getNumber(value.port),
-    secure: getBoolean(value.secure),
-    username: getString(value.username),
-    password: getString(value.password),
-    fromAddress: getString(value.fromAddress),
-    fromName: getString(value.fromName),
-  };
-}
-
-function normalizeStoredEmailConfig(value: unknown): StoredEmailConfig {
-  if (!isRecord(value)) {
-    return { provider: DEFAULT_EMAIL_PROVIDER };
-  }
-
-  return {
-    provider: isEmailProvider(value.provider) ? value.provider : DEFAULT_EMAIL_PROVIDER,
-    tencentSes: normalizeTencentSesConfig(value.tencentSes),
-    smtp: normalizeSmtpConfig(value.smtp),
-  };
-}
 
 /**
  * Get encryption key from environment

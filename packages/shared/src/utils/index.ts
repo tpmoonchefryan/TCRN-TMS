@@ -2,4 +2,5 @@
 
 export * from './data-masking';
 export * from './date';
+export * from './email-config';
 export * from './string';

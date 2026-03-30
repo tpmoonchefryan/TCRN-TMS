@@ -43,6 +43,7 @@ export type {
 
 // Utilities
 export * from './utils/data-masking';
+export * from './utils/email-config';
 export * from './utils/i18n-helper';
 export * from './utils/string';
 
@@ -51,8 +52,8 @@ export * from './rbac/catalog';
 export * from './types/config';
 export * from './types/homepage/presets';
 export * from './types/homepage/schema';
-export * from './types/rbac';
 export type { SystemRolePermission, SystemRoleRecord } from './types/rbac';
+export * from './types/rbac';
 
 // Re-export specific non-conflicting types from feature schemas
 // Note: TechEventType, TechEventScope, IntegrationDirection are exported from constants/event-types.ts
