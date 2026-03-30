@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
 import {
   type CreateSystemRoleInput,
   type RbacRolePolicyEffect,
@@ -45,17 +46,16 @@ export class SystemRoleService {
 
   async findAll(filters?: { isActive?: boolean; isSystem?: boolean; search?: string }) {
     // Build where clause based on filters
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
-    
+    const where: Prisma.RoleWhereInput = {};
+
     if (filters?.isActive !== undefined) {
       where.isActive = filters.isActive;
     }
-    
+
     if (filters?.isSystem !== undefined) {
       where.isSystem = filters.isSystem;
     }
-    
+
     if (filters?.search) {
       where.OR = [
         { code: { contains: filters.search, mode: 'insensitive' } },
@@ -176,10 +176,9 @@ export class SystemRoleService {
    * Now supports three-state permissions: grant, deny, unset
    */
   private async assignPermissions(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tx: any, 
-    roleId: string, 
-    permissions: RolePermissionInput[]
+    tx: Prisma.TransactionClient,
+    roleId: string,
+    permissions: RolePermissionInput[],
   ) {
     const normalizedPermissions = permissions.map((permission) => {
       const resolved = resolveRbacPermission(permission.resource, permission.action);
@@ -202,8 +201,8 @@ export class SystemRoleService {
         })),
       },
       include: {
-        resource: { select: { code: true } }
-      }
+        resource: { select: { code: true } },
+      },
     });
 
     if (policies.length !== normalizedPermissions.length) {
@@ -231,7 +230,11 @@ export class SystemRoleService {
     }
 
     // Create RolePolicy entries with effect
-    const rolePolicyData: Array<{ roleId: string; policyId: string; effect: RbacRolePolicyEffect }> = [];
+    const rolePolicyData: Array<{
+      roleId: string;
+      policyId: string;
+      effect: RbacRolePolicyEffect;
+    }> = [];
     for (const permission of normalizedPermissions) {
       const key = `${permission.resource}:${permission.action}`;
       const policyId = policyMap.get(key);

@@ -64,6 +64,31 @@ describe('SystemRoleService', () => {
     ]);
   });
 
+  it('builds typed list filters for system-role reads', async () => {
+    mockPrisma.role.findMany.mockResolvedValue([]);
+
+    await service.findAll({
+      isActive: true,
+      isSystem: true,
+      search: 'export',
+    });
+
+    expect(mockPrisma.role.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          isActive: true,
+          isSystem: true,
+          OR: [
+            { code: { contains: 'export', mode: 'insensitive' } },
+            { nameEn: { contains: 'export', mode: 'insensitive' } },
+            { nameZh: { contains: 'export', mode: 'insensitive' } },
+            { nameJa: { contains: 'export', mode: 'insensitive' } },
+          ],
+        },
+      }),
+    );
+  });
+
   it('preserves explicit effects and defaults missing effects to grant on create', async () => {
     mockPrisma.role.findUnique.mockResolvedValue(null);
     mockTx.role.create.mockResolvedValue({ id: 'role-1' });
