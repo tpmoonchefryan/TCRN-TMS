@@ -6,7 +6,7 @@ import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentati
 import type { Sampler as OtelSampler } from '@opentelemetry/sdk-trace-base';
 
 import { createSampler } from './sampler';
-import { ErrorCapturingProcessor,SlowRequestProcessor } from './slow-request-processor';
+import { ErrorCapturingProcessor, SlowRequestProcessor } from './slow-request-processor';
 
 type OtelAutoInstrumentationModule = typeof import('@opentelemetry/auto-instrumentations-node');
 type OtelMetricExporterModule = typeof import('@opentelemetry/exporter-metrics-otlp-http');
@@ -19,10 +19,6 @@ type OtelTraceBaseModule = typeof import('@opentelemetry/sdk-trace-base');
 
 const logger = new Logger('Telemetry');
 
-// Check if OpenTelemetry should be enabled
-const OTEL_ENABLED = process.env.OTEL_ENABLED === 'true';
-const OTEL_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-
 /**
  * OpenTelemetry configuration options
  */
@@ -31,17 +27,21 @@ export interface TelemetryConfig {
   serviceVersion: string;
   environment: string;
   endpoint?: string;
+  metricsEndpoint?: string;
 }
 
 /**
  * Get default telemetry configuration
  */
-export function getDefaultTelemetryConfig(): TelemetryConfig {
+export function getDefaultTelemetryConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): TelemetryConfig {
   return {
-    serviceName: process.env.OTEL_SERVICE_NAME || 'tcrn-tms-api',
-    serviceVersion: process.env.APP_VERSION || 'unknown',
-    environment: process.env.NODE_ENV || 'development',
-    endpoint: OTEL_ENDPOINT,
+    serviceName: env.OTEL_SERVICE_NAME || 'tcrn-tms-api',
+    serviceVersion: env.APP_VERSION || 'unknown',
+    environment: env.NODE_ENV || 'development',
+    endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    metricsEndpoint: env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
   };
 }
 
@@ -61,9 +61,10 @@ export function getDefaultTelemetryConfig(): TelemetryConfig {
  */
 export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<void> {
   const telemetryConfig = { ...getDefaultTelemetryConfig(), ...config };
+  const otelEnabled = process.env.OTEL_ENABLED === 'true';
 
   // Skip if not enabled
-  if (!OTEL_ENABLED) {
+  if (!otelEnabled) {
     logger.log('OpenTelemetry disabled (set OTEL_ENABLED=true to enable)');
     return;
   }
@@ -79,8 +80,6 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
     const sdkNode = (await import('@opentelemetry/sdk-node')) as OtelSdkNodeModule;
     const autoInstrument = (await import('@opentelemetry/auto-instrumentations-node')) as OtelAutoInstrumentationModule;
     const traceExporterModule = (await import('@opentelemetry/exporter-trace-otlp-http')) as OtelTraceExporterModule;
-    const metricExporterModule = (await import('@opentelemetry/exporter-metrics-otlp-http')) as OtelMetricExporterModule;
-    const metricsModule = (await import('@opentelemetry/sdk-metrics')) as OtelSdkMetricsModule;
     const resourcesModule = (await import('@opentelemetry/resources')) as OtelResourcesModule;
     const semanticModule = (await import('@opentelemetry/semantic-conventions')) as OtelSemanticModule;
     const traceBaseModule = (await import('@opentelemetry/sdk-trace-base')) as OtelTraceBaseModule;
@@ -89,8 +88,6 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
     const NodeSDK = sdkNode.NodeSDK;
     const getNodeAutoInstrumentations = autoInstrument.getNodeAutoInstrumentations;
     const OTLPTraceExporter = traceExporterModule.OTLPTraceExporter;
-    const OTLPMetricExporter = metricExporterModule.OTLPMetricExporter;
-    const PeriodicExportingMetricReader = metricsModule.PeriodicExportingMetricReader;
     const resourceFromAttributes = resourcesModule.resourceFromAttributes;
     const SEMRESATTRS_SERVICE_NAME = semanticModule.SEMRESATTRS_SERVICE_NAME;
     const SEMRESATTRS_SERVICE_VERSION = semanticModule.SEMRESATTRS_SERVICE_VERSION;
@@ -105,10 +102,29 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
       url: `${telemetryConfig.endpoint}/v1/traces`,
     });
 
-    // Create metric exporter
-    const metricExporter = new OTLPMetricExporter({
-      url: `${telemetryConfig.endpoint}/v1/metrics`,
-    });
+    let metricReader:
+      | InstanceType<OtelSdkMetricsModule['PeriodicExportingMetricReader']>
+      | undefined;
+
+    if (telemetryConfig.metricsEndpoint) {
+      const metricExporterModule =
+        (await import('@opentelemetry/exporter-metrics-otlp-http')) as OtelMetricExporterModule;
+      const metricsModule = (await import('@opentelemetry/sdk-metrics')) as OtelSdkMetricsModule;
+      const OTLPMetricExporter = metricExporterModule.OTLPMetricExporter;
+      const PeriodicExportingMetricReader = metricsModule.PeriodicExportingMetricReader;
+      const metricExporter = new OTLPMetricExporter({
+        url: `${telemetryConfig.metricsEndpoint}/v1/metrics`,
+      });
+
+      metricReader = new PeriodicExportingMetricReader({
+        exporter: metricExporter,
+        exportIntervalMillis: 30000,
+      });
+    } else {
+      logger.log(
+        'OpenTelemetry metrics exporter disabled (set OTEL_EXPORTER_OTLP_METRICS_ENDPOINT to enable)',
+      );
+    }
 
     const instrumentationConfig: InstrumentationConfigMap = {
       // Disable filesystem instrumentation (too noisy)
@@ -165,11 +181,7 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
         }),
       ],
 
-      // Metric reader
-      metricReader: new PeriodicExportingMetricReader({
-        exporter: metricExporter,
-        exportIntervalMillis: 30000,
-      }),
+      ...(metricReader ? { metricReader } : {}),
 
       // Auto-instrumentations
       instrumentations: [
@@ -212,6 +224,8 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
 /**
  * Check if telemetry is enabled
  */
-export function isTelemetryEnabled(): boolean {
-  return OTEL_ENABLED && !!OTEL_ENDPOINT;
+export function isTelemetryEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env.OTEL_ENABLED === 'true' && !!env.OTEL_EXPORTER_OTLP_ENDPOINT;
 }
