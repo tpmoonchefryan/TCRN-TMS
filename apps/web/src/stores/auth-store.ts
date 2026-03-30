@@ -15,6 +15,7 @@ import {
   runResetPasswordSessionCommand,
   runVerifyTotpSessionCommand,
 } from './auth-session-commands';
+import { runSingleFlightTask } from './auth-session-single-flight';
 import {
   createClearedSessionState,
   mergeCurrentUserProfile as mergeStoredUserProfile,
@@ -137,32 +138,26 @@ export const useAuthStore = create<AuthState>()(
           }),
 
         bootstrapAuthenticatedSession: async () => {
-          const { sessionBootstrapPromise } = get();
+          return runSingleFlightTask({
+            currentPromise: get().sessionBootstrapPromise,
+            setPromise: (sessionBootstrapPromise) => set({ sessionBootstrapPromise }),
+            onStart: () =>
+              set({
+                sessionBootstrapStatus: 'loading',
+                sessionBootstrapErrors: null,
+              }),
+            task: async () => {
+              const result = await runSessionBootstrap({
+                talents: () => get().fetchAccessibleTalents(),
+                permissions: () => get().fetchMyPermissions(),
+              });
 
-          if (sessionBootstrapPromise) {
-            return sessionBootstrapPromise;
-          }
-
-          set({
-            sessionBootstrapStatus: 'loading',
-            sessionBootstrapErrors: null,
+              set({
+                sessionBootstrapStatus: result.status,
+                sessionBootstrapErrors: result.errors,
+              });
+            },
           });
-
-          const promise = (async () => {
-            const result = await runSessionBootstrap({
-              talents: () => get().fetchAccessibleTalents(),
-              permissions: () => get().fetchMyPermissions(),
-            });
-
-            set({
-              sessionBootstrapStatus: result.status,
-              sessionBootstrapErrors: result.errors,
-              sessionBootstrapPromise: null,
-            });
-          })();
-
-          set({ sessionBootstrapPromise: promise });
-          return promise;
         },
 
         clearPermissions: () => {
@@ -227,33 +222,27 @@ export const useAuthStore = create<AuthState>()(
           }),
 
         refreshSession: async () => {
-          const { refreshPromise, tenantCode } = get();
-          if (refreshPromise) {
-            return refreshPromise;
-          }
+          return runSingleFlightTask({
+            currentPromise: get().refreshPromise,
+            setPromise: (refreshPromise) => set({ refreshPromise }),
+            onStart: () => set({ isRefreshing: true }),
+            task: async () => {
+              const refreshed = await refreshAccessTokenForSession({
+                tenantCode: get().tenantCode,
+              });
 
-          set({ isRefreshing: true });
+              if (refreshed) {
+                set({ isRefreshing: false, isAuthenticated: true });
+                return true;
+              }
 
-          const promise = (async () => {
-            const refreshed = await refreshAccessTokenForSession({
-              tenantCode,
-            });
-
-            if (refreshed) {
-              set({ isRefreshing: false, isAuthenticated: true, refreshPromise: null });
-              return true;
-            }
-
-            set({
-              isRefreshing: false,
-              refreshPromise: null,
-              ...createClearedSessionState(),
-            });
-            return false;
-          })();
-
-          set({ refreshPromise: promise });
-          return promise;
+              set({
+                isRefreshing: false,
+                ...createClearedSessionState(),
+              });
+              return false;
+            },
+          });
         },
 
         checkAuth: async () => {
