@@ -8,7 +8,11 @@ import * as path from 'path';
 import {
   executeTenantMigrationStatements,
   formatStatementPreview,
+  formatTenantMigrationSkipReasonCounts,
+  mergeTenantMigrationSkipReasonCounts,
   splitSqlStatements,
+  type TenantMigrationExecutionSummary,
+  type TenantMigrationSkipReasonCounts,
 } from './apply-migrations-helpers';
 
 const prisma = new PrismaClient();
@@ -36,7 +40,7 @@ async function applyMigrationToSchema(
   sql: string,
   targetSchema: string,
   migrationName: string
-): Promise<{ success: number; skipped: number; errors: number }> {
+): Promise<TenantMigrationExecutionSummary> {
   // Replace tenant_template with target schema
   const schemaSql = sql.replace(/tenant_template/g, targetSchema);
 
@@ -75,6 +79,7 @@ async function applyMigrations() {
   let totalSuccess = 0;
   let totalSkipped = 0;
   let totalErrors = 0;
+  const totalSkippedByReason: TenantMigrationSkipReasonCounts = {};
 
   for (const migration of migrations) {
     const migrationPath = path.join(migrationsDir, migration, 'migration.sql');
@@ -87,6 +92,10 @@ async function applyMigrations() {
     console.log(`📌 Applying: ${migration}`);
     
     const sql = fs.readFileSync(migrationPath, 'utf-8');
+    let migrationSuccess = 0;
+    let migrationSkipped = 0;
+    let migrationErrors = 0;
+    const migrationSkippedByReason: TenantMigrationSkipReasonCounts = {};
     
     // Apply to each schema
     for (const schema of schemas) {
@@ -94,10 +103,29 @@ async function applyMigrations() {
       totalSuccess += result.success;
       totalSkipped += result.skipped;
       totalErrors += result.errors;
+      migrationSuccess += result.success;
+      migrationSkipped += result.skipped;
+      migrationErrors += result.errors;
+      mergeTenantMigrationSkipReasonCounts(totalSkippedByReason, result.skippedByReason);
+      mergeTenantMigrationSkipReasonCounts(migrationSkippedByReason, result.skippedByReason);
       
       if (result.errors > 0) {
         console.log(`    ${schema}: ${result.success} applied, ${result.skipped} skipped, ${result.errors} errors`);
       }
+    }
+
+    if (migrationSkipped > 0) {
+      console.log(
+        `    Skip summary: ${migrationSkipped} skipped (${formatTenantMigrationSkipReasonCounts(
+          migrationSkippedByReason,
+        )})`,
+      );
+    }
+
+    if (migrationErrors > 0) {
+      console.log(
+        `    Migration totals: ${migrationSuccess} applied, ${migrationSkipped} skipped, ${migrationErrors} errors`,
+      );
     }
 
     console.log(`    ✓ Applied to ${schemas.length} schema(s)`);
@@ -106,7 +134,12 @@ async function applyMigrations() {
   console.log('\n' + '='.repeat(50));
   console.log(totalErrors > 0 ? '❌ Migration completed with errors:' : '✅ Migration complete:');
   console.log(`   - Statements executed: ${totalSuccess}`);
-  console.log(`   - Statements skipped (already applied): ${totalSkipped}`);
+  console.log(`   - Statements skipped (ignorable replay conflicts): ${totalSkipped}`);
+  if (totalSkipped > 0) {
+    console.log(
+      `   - Skipped by reason: ${formatTenantMigrationSkipReasonCounts(totalSkippedByReason)}`,
+    );
+  }
   if (totalErrors > 0) {
     console.log(`   - Errors: ${totalErrors}`);
     console.error('❌ Non-ignorable tenant migration errors detected; failing the process.');

@@ -40,6 +40,7 @@ export interface TenantMigrationExecutionSummary {
   success: number;
   skipped: number;
   errors: number;
+  skippedByReason: TenantMigrationSkipReasonCounts;
 }
 
 export interface TenantMigrationErrorDetail {
@@ -56,6 +57,75 @@ export interface ExecuteTenantMigrationStatementsOptions {
   migrationName: string;
   executeStatement: (statement: string) => Promise<void>;
   onNonIgnorableError?: (detail: TenantMigrationErrorDetail) => void;
+}
+
+export const TENANT_MIGRATION_SKIP_REASONS = [
+  'create_exists',
+  'alter_table_add_exists',
+  'alter_type_add_value_exists',
+  'drop_missing',
+  'alter_table_drop_or_rename_missing',
+  'alter_index_rename_missing',
+  'alter_type_drop_or_rename_missing',
+] as const;
+
+export type TenantMigrationSkipReason =
+  (typeof TENANT_MIGRATION_SKIP_REASONS)[number];
+
+export type TenantMigrationSkipReasonCounts = Partial<
+  Record<TenantMigrationSkipReason, number>
+>;
+
+const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<
+  TenantMigrationSkipReason,
+  string
+> = {
+  create_exists: 'create/already_exists',
+  alter_table_add_exists: 'alter_table_add/already_exists',
+  alter_type_add_value_exists: 'alter_type_add_value/already_exists',
+  drop_missing: 'drop/does_not_exist',
+  alter_table_drop_or_rename_missing: 'alter_table_drop_or_rename/does_not_exist',
+  alter_index_rename_missing: 'alter_index_rename/does_not_exist',
+  alter_type_drop_or_rename_missing: 'alter_type_drop_or_rename/does_not_exist',
+};
+
+function incrementSkipReasonCount(
+  counts: TenantMigrationSkipReasonCounts,
+  reason: TenantMigrationSkipReason,
+  amount = 1
+): void {
+  counts[reason] = (counts[reason] ?? 0) + amount;
+}
+
+export function mergeTenantMigrationSkipReasonCounts(
+  target: TenantMigrationSkipReasonCounts,
+  source: TenantMigrationSkipReasonCounts
+): TenantMigrationSkipReasonCounts {
+  for (const reason of TENANT_MIGRATION_SKIP_REASONS) {
+    const amount = source[reason];
+
+    if (!amount) {
+      continue;
+    }
+
+    incrementSkipReasonCount(target, reason, amount);
+  }
+
+  return target;
+}
+
+export function formatTenantMigrationSkipReasonCounts(
+  counts: TenantMigrationSkipReasonCounts
+): string {
+  return TENANT_MIGRATION_SKIP_REASONS.flatMap((reason) => {
+    const amount = counts[reason];
+
+    if (!amount) {
+      return [];
+    }
+
+    return [`${TENANT_MIGRATION_SKIP_REASON_LABELS[reason]}=${amount}`];
+  }).join(', ');
 }
 
 export function splitSqlStatements(sql: string): string[] {
@@ -188,35 +258,61 @@ export function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-export function isIgnorableTenantMigrationError(
+export function classifyIgnorableTenantMigrationError(
   statement: string,
   message: string
-): boolean {
+): TenantMigrationSkipReason | null {
   const normalizedStatement = normalizeStatement(statement);
   const normalizedMessage = message.toLowerCase();
 
   if (normalizedMessage.includes('duplicate key')) {
-    return false;
+    return null;
   }
 
   if (normalizedMessage.includes('already exists')) {
-    return (
-      normalizedStatement.startsWith('CREATE ') ||
-      /^ALTER TABLE\b.*\bADD\b/.test(normalizedStatement) ||
-      /^ALTER TYPE\b.*\bADD VALUE\b/.test(normalizedStatement)
-    );
+    if (normalizedStatement.startsWith('CREATE ')) {
+      return 'create_exists';
+    }
+
+    if (/^ALTER TABLE\b.*\bADD\b/.test(normalizedStatement)) {
+      return 'alter_table_add_exists';
+    }
+
+    if (/^ALTER TYPE\b.*\bADD VALUE\b/.test(normalizedStatement)) {
+      return 'alter_type_add_value_exists';
+    }
+
+    return null;
   }
 
   if (normalizedMessage.includes('does not exist')) {
-    return (
-      normalizedStatement.startsWith('DROP ') ||
-      /^ALTER TABLE\b.*\b(DROP|RENAME)\b/.test(normalizedStatement) ||
-      /^ALTER INDEX\b.*\bRENAME\b/.test(normalizedStatement) ||
-      /^ALTER TYPE\b.*\b(DROP|RENAME)\b/.test(normalizedStatement)
-    );
+    if (normalizedStatement.startsWith('DROP ')) {
+      return 'drop_missing';
+    }
+
+    if (/^ALTER TABLE\b.*\b(DROP|RENAME)\b/.test(normalizedStatement)) {
+      return 'alter_table_drop_or_rename_missing';
+    }
+
+    if (/^ALTER INDEX\b.*\bRENAME\b/.test(normalizedStatement)) {
+      return 'alter_index_rename_missing';
+    }
+
+    if (/^ALTER TYPE\b.*\b(DROP|RENAME)\b/.test(normalizedStatement)) {
+      return 'alter_type_drop_or_rename_missing';
+    }
+
+    return null;
   }
 
-  return false;
+  return null;
+}
+
+export function isIgnorableTenantMigrationError(
+  statement: string,
+  message: string
+): boolean {
+  return classifyIgnorableTenantMigrationError(statement, message) !== null;
 }
 
 export async function executeTenantMigrationStatements(
@@ -233,6 +329,7 @@ export async function executeTenantMigrationStatements(
   let success = 0;
   let skipped = 0;
   let errors = 0;
+  const skippedByReason: TenantMigrationSkipReasonCounts = {};
 
   for (const statement of statements) {
     if (isCommentOnlyStatement(statement)) {
@@ -244,9 +341,11 @@ export async function executeTenantMigrationStatements(
       success += 1;
     } catch (error) {
       const message = getErrorMessage(error);
+      const skipReason = classifyIgnorableTenantMigrationError(statement, message);
 
-      if (isIgnorableTenantMigrationError(statement, message)) {
+      if (skipReason) {
         skipped += 1;
+        incrementSkipReasonCount(skippedByReason, skipReason);
         continue;
       }
 
@@ -261,5 +360,5 @@ export async function executeTenantMigrationStatements(
     }
   }
 
-  return { success, skipped, errors };
+  return { success, skipped, errors, skippedByReason };
 }

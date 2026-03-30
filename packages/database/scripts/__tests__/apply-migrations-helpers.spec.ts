@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  classifyIgnorableTenantMigrationError,
   executeTenantMigrationStatements,
   formatStatementPreview,
+  formatTenantMigrationSkipReasonCounts,
   getErrorMessage,
   isIgnorableTenantMigrationError,
   splitSqlStatements,
@@ -76,6 +78,13 @@ describe('splitSqlStatements', () => {
 describe('isIgnorableTenantMigrationError', () => {
   it('keeps create/add idempotency conflicts ignorable', () => {
     assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'CREATE INDEX foo_idx ON tenant_template.foo(id);',
+        'relation "foo_idx" already exists'
+      ),
+      'create_exists'
+    );
+    assert.equal(
       isIgnorableTenantMigrationError(
         'CREATE INDEX foo_idx ON tenant_template.foo(id);',
         'relation "foo_idx" already exists'
@@ -83,6 +92,13 @@ describe('isIgnorableTenantMigrationError', () => {
       true
     );
 
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'ALTER TABLE tenant_template.foo ADD COLUMN bar TEXT;',
+        'column "bar" of relation "foo" already exists'
+      ),
+      'alter_table_add_exists'
+    );
     assert.equal(
       isIgnorableTenantMigrationError(
         'ALTER TABLE tenant_template.foo ADD COLUMN bar TEXT;',
@@ -166,6 +182,19 @@ describe('formatStatementPreview', () => {
   });
 });
 
+describe('formatTenantMigrationSkipReasonCounts', () => {
+  it('formats skip reasons in stable order', () => {
+    assert.equal(
+      formatTenantMigrationSkipReasonCounts({
+        drop_missing: 2,
+        create_exists: 3,
+        alter_index_rename_missing: 1,
+      }),
+      'create/already_exists=3, drop/does_not_exist=2, alter_index_rename/does_not_exist=1'
+    );
+  });
+});
+
 describe('getErrorMessage', () => {
   it('extracts messages from Error and message-like values', () => {
     assert.equal(getErrorMessage(new Error('boom')), 'boom');
@@ -199,6 +228,9 @@ describe('executeTenantMigrationStatements', () => {
       success: 1,
       skipped: 1,
       errors: 0,
+      skippedByReason: {
+        alter_table_add_exists: 1,
+      },
     });
     assert.deepEqual(executed, [
       'CREATE TABLE tenant_template.foo (id INT);',
@@ -237,6 +269,7 @@ describe('executeTenantMigrationStatements', () => {
       success: 0,
       skipped: 0,
       errors: 1,
+      skippedByReason: {},
     });
     assert.deepEqual(details, [
       {
@@ -246,5 +279,33 @@ describe('executeTenantMigrationStatements', () => {
         message: 'duplicate key value violates unique constraint "role_code_key"',
       },
     ]);
+  });
+
+  it('aggregates multiple skip reasons in the execution summary', async () => {
+    const result = await executeTenantMigrationStatements({
+      statements: [
+        'CREATE INDEX foo_idx ON tenant_template.foo(id);',
+        'ALTER INDEX tenant_template.idx_old RENAME TO idx_new;',
+      ],
+      targetSchema: 'tenant_test',
+      migrationName: '20260330_multi_skip',
+      executeStatement: async (statement) => {
+        if (statement.startsWith('CREATE INDEX')) {
+          throw new Error('relation "foo_idx" already exists');
+        }
+
+        throw new Error('relation "tenant_template.idx_old" does not exist');
+      },
+    });
+
+    assert.deepEqual(result, {
+      success: 0,
+      skipped: 2,
+      errors: 0,
+      skippedByReason: {
+        create_exists: 1,
+        alter_index_rename_missing: 1,
+      },
+    });
   });
 });
