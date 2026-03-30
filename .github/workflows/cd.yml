@@ -28,6 +28,14 @@ on:
         required: false
         default: ''
         type: string
+      apply_migrations_mode:
+        description: 'Tenant migration replay mode during deploy'
+        required: true
+        default: 'default'
+        type: choice
+        options:
+          - default
+          - strict_drift_watch
 
 env:
   REGISTRY: ghcr.io
@@ -47,6 +55,7 @@ jobs:
       build_no_cache: ${{ steps.classify.outputs.build_no_cache }}
       rollout_migrations_csv: ${{ steps.classify.outputs.rollout_migrations_csv }}
       rollout_verification_mode: ${{ steps.classify.outputs.rollout_verification_mode }}
+      apply_migrations_mode: ${{ steps.classify.outputs.apply_migrations_mode }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,10 +70,12 @@ jobs:
 
           rollout_migrations_csv=""
           rollout_verification_mode="uninitialized"
+          apply_migrations_mode="default"
 
           write_rollout_outputs() {
             echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
             echo "rollout_verification_mode=$rollout_verification_mode" >> "$GITHUB_OUTPUT"
+            echo "apply_migrations_mode=$apply_migrations_mode" >> "$GITHUB_OUTPUT"
           }
 
           collect_rollout_migrations_from_changed_files() {
@@ -87,6 +98,7 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             raw_rollout_migrations="${{ github.event.inputs.rollout_migrations }}"
+            apply_migrations_mode="${{ github.event.inputs.apply_migrations_mode }}"
             if [[ -n "$raw_rollout_migrations" ]]; then
               rollout_migrations_csv=$(
                 printf '%s' "$raw_rollout_migrations" |
@@ -344,7 +356,18 @@ jobs:
 
             # Run database migrations (if any)
             echo "📊 Running database migrations..."
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -c "cd /app/packages/database && npx prisma migrate deploy && npx tsx scripts/apply-migrations.ts"
+            APPLY_MIGRATIONS_MODE="${{ needs.classify-changes.outputs.apply_migrations_mode }}"
+            APPLY_MIGRATIONS_CMD="npx tsx scripts/apply-migrations.ts"
+            case "$APPLY_MIGRATIONS_MODE" in
+              strict_drift_watch)
+                echo "Using strict drift-watch mode for tenant migration replay."
+                APPLY_MIGRATIONS_CMD="$APPLY_MIGRATIONS_CMD --fail-on-drift-watch-skips"
+                ;;
+              *)
+                echo "Using default tenant migration replay mode."
+                ;;
+            esac
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc "cd /app/packages/database && npx prisma migrate deploy && $APPLY_MIGRATIONS_CMD"
 
             ROLLOUT_MIGRATIONS="${{ needs.classify-changes.outputs.rollout_migrations_csv }}"
             ROLLOUT_VERIFICATION_MODE="${{ needs.classify-changes.outputs.rollout_verification_mode }}"
