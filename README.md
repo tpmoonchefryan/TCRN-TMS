@@ -496,6 +496,15 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - Omit `--schema` for a tenant-wide sweep across `tenant_template` plus every active tenant schema. Add `--schema` only when you need a targeted follow-up proof for one tenant.
 - Keep this command separate from Playwright/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
 
+Example using inferred artifacts directly from migration SQL:
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260330000001_add_marshmallow_export_job \
+  --infer-artifacts-from-migrations \
+  --json
+```
+
 #### Option 2: Kubernetes (Recommended for Production)
 
 Best for: High availability, auto-scaling, enterprise deployments

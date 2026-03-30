@@ -496,6 +496,15 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - 若要覆盖 `tenant_template` 与全部 active tenant schema 的全量扫描，请省略 `--schema`；只有在需要单租户定点补充证明时才加入 `--schema`。
 - 该命令应与 Playwright 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
 
+直接从 migration SQL 推导 artifact 的示例：
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260330000001_add_marshmallow_export_job \
+  --infer-artifacts-from-migrations \
+  --json
+```
+
 #### 方式二：Kubernetes（生产环境推荐）
 
 适用于：高可用、自动扩展、企业级部署

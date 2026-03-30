@@ -496,6 +496,15 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - `tenant_template` とすべての active tenant schema を横断確認する場合は `--schema` を省略します。単一テナントの追跡確認が必要なときだけ `--schema` を追加してください。
 - このコマンドは Playwright やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
 
+migration SQL から artifact を直接推論する例:
+
+```bash
+pnpm --filter @tcrn/database db:verify-schema-rollout -- \
+  --migration 20260330000001_add_marshmallow_export_job \
+  --infer-artifacts-from-migrations \
+  --json
+```
+
 #### オプション2：Kubernetes（本番環境推奨）
 
 適用：高可用性、オートスケーリング、エンタープライズデプロイ

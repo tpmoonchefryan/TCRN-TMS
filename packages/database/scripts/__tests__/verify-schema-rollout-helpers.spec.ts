@@ -185,4 +185,23 @@ describe('inferRolloutArtifactsFromMigrations', () => {
       }
     );
   });
+
+  it('infers the dedicated marshmallow export rollout artifacts from the real migration', () => {
+    assert.deepEqual(
+      inferRolloutArtifactsFromMigrations(['20260330000001_add_marshmallow_export_job']),
+      {
+        sourceMigrations: ['20260330000001_add_marshmallow_export_job'],
+        requiredTables: ['marshmallow_export_job'],
+        requiredColumns: [{ tableName: 'marshmallow_export_job', columnName: 'updated_at' }],
+        requiredIndexes: [
+          'marshmallow_export_job_created_at_idx',
+          'marshmallow_export_job_status_idx',
+          'marshmallow_export_job_talent_id_idx',
+        ],
+        requiredAbsentTables: [],
+        requiredAbsentColumns: [],
+        requiredAbsentIndexes: [],
+      }
+    );
+  });
 });
