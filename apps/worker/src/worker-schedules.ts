@@ -84,27 +84,6 @@ export function createMembershipRenewalHandler(
   };
 }
 
-export function createPermissionRefreshHandler(
-  prisma: PrismaClient,
-  eventLogger: ScheduledJobLogger = logger
-): () => Promise<void> {
-  return async () => {
-    eventLogger.info('Triggering scheduled permission refresh for all tenants');
-
-    try {
-      const tenants = await getActiveTenants(prisma, eventLogger);
-      eventLogger.info(`Found ${tenants.length} active tenants for permission refresh`);
-
-      for (const tenant of tenants) {
-        eventLogger.info(`Permission refresh triggered for tenant: ${tenant.code}`);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      eventLogger.error(`Failed to trigger permission refresh: ${errorMessage}`);
-    }
-  };
-}
-
 export function createPiiCleanupHandler(
   eventLogger: ScheduledJobLogger = logger
 ): () => Promise<void> {
@@ -169,13 +148,6 @@ export function createScheduledCronJobs(
       start,
       TOKYO_TIMEZONE
     ),
-    new CronJob(
-      '0 */6 * * *',
-      createPermissionRefreshHandler(prisma, eventLogger),
-      null,
-      start,
-      TOKYO_TIMEZONE
-    ),
     new CronJob('0 3 * * 0', createPiiCleanupHandler(eventLogger), null, start, TOKYO_TIMEZONE),
     new CronJob(
       '0 4 * * *',
@@ -187,7 +159,6 @@ export function createScheduledCronJobs(
   ];
 
   eventLogger.info('Membership renewal cron scheduled (daily at 2:00 AM JST)');
-  eventLogger.info('Permission refresh cron scheduled (every 6 hours)');
   eventLogger.info('PII cleanup cron scheduled (weekly on Sunday at 3:00 AM JST)');
   eventLogger.info('Log cleanup cron scheduled (daily at 4:00 AM JST)');
 

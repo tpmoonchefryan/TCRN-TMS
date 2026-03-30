@@ -158,16 +158,15 @@ describe('createScheduledCronJobs', () => {
     vi.clearAllMocks();
   });
 
-  it('creates the four started cron registrations in Tokyo timezone when requested', () => {
+  it('creates the three started cron registrations in Tokyo timezone when requested', () => {
     const logger = createLogger();
     const cronJobs = createScheduledCronJobs(createPrismaMock() as never, logger, false);
 
-    expect(cronJobs).toHaveLength(4);
+    expect(cronJobs).toHaveLength(3);
     expect(cronJobs.every((cronJob) => cronJob instanceof CronJob)).toBe(true);
     expect(logger.info).toHaveBeenCalledWith(
       'Membership renewal cron scheduled (daily at 2:00 AM JST)'
     );
-    expect(logger.info).toHaveBeenCalledWith('Permission refresh cron scheduled (every 6 hours)');
     expect(logger.info).toHaveBeenCalledWith(
       'PII cleanup cron scheduled (weekly on Sunday at 3:00 AM JST)'
     );

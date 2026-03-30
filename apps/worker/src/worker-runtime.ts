@@ -14,7 +14,6 @@ import { importJobProcessor } from './jobs/import.job';
 import { processLogCleanup } from './jobs/log-cleanup.job';
 import { processIntegrationLog, processTechEventLog } from './jobs/log-processor.job';
 import { membershipRenewalJobProcessor } from './jobs/membership-renewal.job';
-import { permissionJobProcessor } from './jobs/permission.job';
 import { piiCleanupJobProcessor } from './jobs/pii-cleanup.job';
 import { piiHealthCheckJobProcessor } from './jobs/pii-health-check.job';
 import { reportJobProcessor } from './jobs/report.job';
@@ -132,14 +131,6 @@ export const WORKER_GROUPS: readonly WorkerGroupDefinition[] = [
   {
     domain: 'platform-maintenance',
     definitions: [
-      {
-        queueName: QUEUE_NAMES.PERMISSION,
-        processor: permissionJobProcessor as WorkerProcessor,
-        options: {
-          concurrency: 1,
-        },
-        initializedMessage: 'Permission worker initialized',
-      },
       {
         queueName: QUEUE_NAMES.MEMBERSHIP_RENEWAL,
         processor: membershipRenewalJobProcessor as WorkerProcessor,

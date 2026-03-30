@@ -9,7 +9,6 @@ import { workerLogger as logger } from '../logger';
 export const QUEUE_NAMES = {
   IMPORT: 'import',
   REPORT: 'report',
-  PERMISSION: 'permission',
   MEMBERSHIP_RENEWAL: 'membership-renewal',
   LOG: 'log',
   LOG_CLEANUP: 'log-cleanup',
@@ -22,7 +21,6 @@ export const QUEUE_NAMES = {
 // Queue instances
 let importQueue: Queue;
 let reportQueue: Queue;
-let permissionQueue: Queue;
 let membershipRenewalQueue: Queue;
 let logQueue: Queue;
 let logCleanupQueue: Queue;
@@ -69,25 +67,6 @@ export async function setupQueues(connection: ConnectionOptions): Promise<void> 
       },
       removeOnFail: {
         age: 7 * 24 * 3600,
-      },
-    },
-  });
-
-  // Permission calculation queue (PRD §12.6)
-  permissionQueue = new Queue(QUEUE_NAMES.PERMISSION, {
-    connection,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 500,
-      },
-      removeOnComplete: {
-        age: 3600, // 1 hour
-        count: 100,
-      },
-      removeOnFail: {
-        age: 24 * 3600,
       },
     },
   });
@@ -231,7 +210,6 @@ export {
   logCleanupQueue,
   logQueue, 
   membershipRenewalQueue, 
-  permissionQueue, 
   piiCleanupQueue, 
   piiHealthCheckQueue,
   reportQueue, 

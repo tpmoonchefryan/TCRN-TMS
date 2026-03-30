@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 export const QUEUE_NAMES = {
   IMPORT: 'import',
   REPORT: 'report',
-  PERMISSION: 'permission',
   MEMBERSHIP_RENEWAL: 'membership-renewal',
   EXPORT: 'export',
   EMAIL: 'email',
@@ -32,7 +31,6 @@ export const QUEUE_NAMES = {
     BullModule.registerQueue(
       { name: QUEUE_NAMES.IMPORT },
       { name: QUEUE_NAMES.REPORT },
-      { name: QUEUE_NAMES.PERMISSION },
       { name: QUEUE_NAMES.MEMBERSHIP_RENEWAL },
       { name: QUEUE_NAMES.EXPORT },
       { name: QUEUE_NAMES.EMAIL },
