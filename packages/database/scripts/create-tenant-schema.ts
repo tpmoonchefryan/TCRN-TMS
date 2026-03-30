@@ -95,7 +95,7 @@ async function createTenantSchema(tenantCode: string) {
         FOREIGN KEY ("${fk.column_name}")
         REFERENCES "${schemaName}"."${fk.foreign_table_name}"("${fk.foreign_column_name}")
       `);
-    } catch (error) {
+    } catch {
       // Constraint might already exist from LIKE INCLUDING ALL
       console.log(`    Skipping existing constraint: ${fk.constraint_name}`);
     }
