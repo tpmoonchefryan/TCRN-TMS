@@ -171,6 +171,14 @@ export default [
     },
   },
 
+  // Database maintenance scripts are operator-facing CLIs; stdout/stderr is the UI.
+  {
+    files: ['packages/database/scripts/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   // 测试文件配置
   {
     files: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**', '**/e2e/**'],
