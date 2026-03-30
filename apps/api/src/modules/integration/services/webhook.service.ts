@@ -7,7 +7,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-// import { Prisma } from '@tcrn/database';
+import { Prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -25,6 +25,74 @@ const WEBHOOK_EVENTS = Object.values(WebhookEventType).map((event) => ({
   description: getEventDescription(event),
   category: event.split('.')[0],
 }));
+
+const DEFAULT_WEBHOOK_RETRY_POLICY = {
+  maxRetries: 3,
+  backoffMs: 1000,
+} satisfies Prisma.InputJsonObject;
+
+type WebhookRetryPolicy = {
+  maxRetries: number;
+  backoffMs: number;
+};
+
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getNumericProperty(
+  record: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function normalizeWebhookHeaders(value: unknown): Record<string, string> {
+  if (!isJsonRecord(value)) {
+    return {};
+  }
+
+  const headers: Record<string, string> = {};
+
+  for (const [headerName, headerValue] of Object.entries(value)) {
+    if (typeof headerValue === 'string') {
+      headers[headerName] = headerValue;
+    }
+  }
+
+  return headers;
+}
+
+function normalizeWebhookRetryPolicy(value: unknown): WebhookRetryPolicy {
+  if (!isJsonRecord(value)) {
+    return { ...DEFAULT_WEBHOOK_RETRY_POLICY };
+  }
+
+  return {
+    maxRetries:
+      getNumericProperty(value, 'maxRetries', 'max_retries') ??
+      DEFAULT_WEBHOOK_RETRY_POLICY.maxRetries,
+    backoffMs:
+      getNumericProperty(value, 'backoffMs', 'backoff_ms') ??
+      DEFAULT_WEBHOOK_RETRY_POLICY.backoffMs,
+  };
+}
+
+function toRetryPolicyInput(value: unknown): Prisma.InputJsonObject {
+  const normalized = normalizeWebhookRetryPolicy(value);
+
+  return {
+    maxRetries: normalized.maxRetries,
+    backoffMs: normalized.backoffMs,
+  };
+}
 
 function getEventName(event: WebhookEventType): string {
   const names: Record<string, string> = {
@@ -123,8 +191,8 @@ export class WebhookService {
       url: webhook.url,
       secret: webhook.secret ? '******' : null,
       events: webhook.events,
-      headers: webhook.headers as Record<string, string>,
-      retryPolicy: webhook.retryPolicy as { maxRetries: number; backoffMs: number },
+      headers: normalizeWebhookHeaders(webhook.headers),
+      retryPolicy: normalizeWebhookRetryPolicy(webhook.retryPolicy),
       isActive: webhook.isActive,
       lastTriggeredAt: webhook.lastTriggeredAt?.toISOString() ?? null,
       lastStatus: webhook.lastStatus,
@@ -176,8 +244,7 @@ export class WebhookService {
           secret: dto.secret ? this.cryptoService.encrypt(dto.secret) : null,
           events: dto.events,
           headers: dto.headers ?? {},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          retryPolicy: (dto.retryPolicy ?? { maxRetries: 3, backoffMs: 1000 }) as any,
+          retryPolicy: toRetryPolicyInput(dto.retryPolicy),
           isActive: true,
           consecutiveFailures: 0,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -236,7 +303,7 @@ export class WebhookService {
       }
     }
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: Prisma.WebhookUpdateInput = {};
 
     if (dto.nameEn !== undefined) updateData.nameEn = dto.nameEn;
     if (dto.nameZh !== undefined) updateData.nameZh = dto.nameZh;
@@ -247,7 +314,7 @@ export class WebhookService {
     }
     if (dto.events !== undefined) updateData.events = dto.events;
     if (dto.headers !== undefined) updateData.headers = dto.headers;
-    if (dto.retryPolicy !== undefined) updateData.retryPolicy = dto.retryPolicy;
+    if (dto.retryPolicy !== undefined) updateData.retryPolicy = toRetryPolicyInput(dto.retryPolicy);
 
     await prisma.$transaction(async (tx) => {
       await tx.webhook.update({
