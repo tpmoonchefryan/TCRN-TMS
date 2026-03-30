@@ -14,6 +14,23 @@ interface ColumnInfo {
   character_maximum_length: number | null;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
 async function getTenantSchemas(): Promise<string[]> {
   const schemas = await prisma.$queryRaw<Array<{ schema_name: string }>>`
     SELECT schema_name 
@@ -106,12 +123,13 @@ async function syncTableColumns(
           ADD COLUMN IF NOT EXISTS "${col.column_name}" ${colType}${defaultClause}${nullableClause}
         `);
         addedCount++;
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
         // Handle specific errors
-        if (error.message?.includes('already exists')) {
+        if (errorMessage.includes('already exists')) {
           // Column already exists, skip
         } else {
-          console.error(`      Error adding ${col.column_name}: ${error.message}`);
+          console.error(`      Error adding ${col.column_name}: ${errorMessage}`);
         }
       }
     }
@@ -152,8 +170,9 @@ async function syncSchema(tenantSchema: string): Promise<{ tables: number; colum
           (LIKE tenant_template."${tablename}" INCLUDING ALL)
         `);
         tablesWithChanges++;
-      } catch (error: any) {
-        console.error(`    Error creating table ${tablename}: ${error.message}`);
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        console.error(`    Error creating table ${tablename}: ${errorMessage}`);
       }
       continue;
     }
