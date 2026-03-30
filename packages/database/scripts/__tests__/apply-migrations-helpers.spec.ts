@@ -30,6 +30,47 @@ describe('splitSqlStatements', () => {
       'ALTER TABLE foo ADD COLUMN bar TEXT;',
     ]);
   });
+
+  it('keeps tagged dollar-quoted bodies intact', () => {
+    const sql = `
+      DO $fn$
+      BEGIN
+        EXECUTE 'CREATE TABLE foo (id INT);';
+        PERFORM 1;
+      END
+      $fn$;
+
+      CREATE INDEX foo_idx ON foo(id);
+    `;
+
+    assert.deepEqual(splitSqlStatements(sql), [
+      "DO $fn$\n      BEGIN\n        EXECUTE 'CREATE TABLE foo (id INT);';\n        PERFORM 1;\n      END\n      $fn$;",
+      'CREATE INDEX foo_idx ON foo(id);',
+    ]);
+  });
+
+  it('does not split semicolons inside single-quoted strings', () => {
+    const sql = `
+      DO $$
+      BEGIN
+        EXECUTE format('
+          CREATE OR REPLACE FUNCTION %I.test_fn()
+          RETURNS TRIGGER AS $func$
+          BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+          END;
+          $func$ LANGUAGE plpgsql', 'tenant_test');
+      END $$;
+
+      SELECT 1;
+    `;
+
+    assert.deepEqual(splitSqlStatements(sql), [
+      "DO $$\n      BEGIN\n        EXECUTE format('\n          CREATE OR REPLACE FUNCTION %I.test_fn()\n          RETURNS TRIGGER AS $func$\n          BEGIN\n            NEW.updated_at = now();\n            RETURN NEW;\n          END;\n          $func$ LANGUAGE plpgsql', 'tenant_test');\n      END $$;",
+      'SELECT 1;',
+    ]);
+  });
 });
 
 describe('isIgnorableTenantMigrationError', () => {

@@ -4,6 +4,32 @@ function normalizeStatement(statement: string): string {
   return statement.replace(/\s+/g, ' ').trim().toUpperCase();
 }
 
+function readDollarQuoteDelimiter(sql: string, start: number): string | null {
+  if (sql[start] !== '$') {
+    return null;
+  }
+
+  if (sql[start + 1] === '$') {
+    return '$$';
+  }
+
+  const firstTagChar = sql[start + 1];
+  if (!firstTagChar || !/[A-Za-z_]/.test(firstTagChar)) {
+    return null;
+  }
+
+  let end = start + 2;
+  while (end < sql.length && /[A-Za-z0-9_]/.test(sql[end])) {
+    end += 1;
+  }
+
+  if (sql[end] !== '$') {
+    return null;
+  }
+
+  return sql.slice(start, end + 1);
+}
+
 function isCommentOnlyStatement(statement: string): boolean {
   return statement
     .split('\n')
@@ -35,30 +61,96 @@ export interface ExecuteTenantMigrationStatementsOptions {
 export function splitSqlStatements(sql: string): string[] {
   const statements: string[] = [];
   let current = '';
-  let inDollarBlock = false;
+  let activeDollarQuoteDelimiter: string | null = null;
+  let inSingleQuotedString = false;
+  let inDoubleQuotedIdentifier = false;
   let i = 0;
 
   while (i < sql.length) {
-    if (sql[i] === '$' && sql[i + 1] === '$') {
-      current += '$$';
-      i += 2;
-      inDollarBlock = !inDollarBlock;
+    const currentChar = sql[i];
+
+    if (activeDollarQuoteDelimiter) {
+      if (sql.startsWith(activeDollarQuoteDelimiter, i)) {
+        current += activeDollarQuoteDelimiter;
+        i += activeDollarQuoteDelimiter.length;
+        activeDollarQuoteDelimiter = null;
+        continue;
+      }
+
+      current += currentChar;
+      i += 1;
       continue;
     }
 
-    if (sql[i] === ';' && !inDollarBlock) {
+    if (inSingleQuotedString) {
+      current += currentChar;
+
+      if (currentChar === '\'') {
+        if (sql[i + 1] === '\'') {
+          current += '\'';
+          i += 2;
+          continue;
+        }
+
+        inSingleQuotedString = false;
+      }
+
+      i += 1;
+      continue;
+    }
+
+    if (inDoubleQuotedIdentifier) {
+      current += currentChar;
+
+      if (currentChar === '"') {
+        if (sql[i + 1] === '"') {
+          current += '"';
+          i += 2;
+          continue;
+        }
+
+        inDoubleQuotedIdentifier = false;
+      }
+
+      i += 1;
+      continue;
+    }
+
+    const dollarQuoteDelimiter = readDollarQuoteDelimiter(sql, i);
+    if (dollarQuoteDelimiter) {
+      current += dollarQuoteDelimiter;
+      i += dollarQuoteDelimiter.length;
+      activeDollarQuoteDelimiter = dollarQuoteDelimiter;
+      continue;
+    }
+
+    if (currentChar === '\'') {
+      current += currentChar;
+      inSingleQuotedString = true;
+      i += 1;
+      continue;
+    }
+
+    if (currentChar === '"') {
+      current += currentChar;
+      inDoubleQuotedIdentifier = true;
+      i += 1;
+      continue;
+    }
+
+    if (currentChar === ';') {
       current += ';';
       const trimmed = current.trim();
       if (trimmed.length > 0 && !trimmed.match(/^--.*$/)) {
         statements.push(trimmed);
       }
       current = '';
-      i++;
+      i += 1;
       continue;
     }
 
-    current += sql[i];
-    i++;
+    current += currentChar;
+    i += 1;
   }
 
   const trimmed = current.trim();
