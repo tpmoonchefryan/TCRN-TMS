@@ -308,9 +308,9 @@ Current runtime status for the infrastructure above:
 
 - `NATS JetStream` is an active dependency in the current local and production Compose stack.
 - `NATS JetStream` currently serves internal async plumbing. Do not describe it as a production-ready external integration surface unless the business flow is actually wired to it.
-- `Grafana Loki` has a running Compose service and real query/push helpers, but the default source of truth is still the tenant PostgreSQL log tables. `/api/v1/logs/search*` reads Loki and returns empty results when `LOKI_ENABLED=false`; the API/worker-side Loki push helpers are not the default producer path today.
-- `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned for future rollout; distributed tracing is not enabled by default in the current runtime. To opt in, set `OTEL_ENABLED=true` and point `OTEL_EXPORTER_OTLP_ENDPOINT` at a trace backend such as Tempo. Metrics stay disabled unless `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` is explicitly set to a separate OTLP metrics collector; do not point that metrics endpoint at Tempo.
-- `Prometheus` is a reserved roadmap item and is not part of the current Compose deployment.
+- `Grafana Loki` has an optional Compose profile service and real query/push helpers, but the default source of truth is still the tenant PostgreSQL log tables. `/api/v1/logs/search*` reads Loki and returns empty results when `LOKI_ENABLED=false`; the API/worker-side Loki push helpers are not the default producer path today.
+- `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned behind the optional `observability` Compose profile for future rollout; distributed tracing is not enabled by default in the current runtime. To opt in locally, start `docker compose --profile observability up -d loki tempo`, set `OTEL_ENABLED=true`, and point `OTEL_EXPORTER_OTLP_ENDPOINT` at a trace backend such as Tempo. Metrics stay disabled unless `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` is explicitly set to a separate OTLP metrics collector; do not point that metrics endpoint at Tempo.
+- `Prometheus` is a reserved roadmap item and is not part of the current default Compose deployment.
 - `PII health check` is a scheduled worker dependency probe. Unless `ENABLE_SCHEDULED_JOBS=false`, the worker enqueues `pii-health-check` every 60 seconds for configured PII endpoints. Treat it as dependency telemetry, not the primary app liveness signal.
 - If no real external PII service is deployed, or Prometheus is not scraping that service yet, do not page on `pii-health-check` noise or localhost placeholder failures. That state is operator-facing telemetry only.
 - Once a real PII service is deployed and scraped, treat `HighPiiServiceLatency` / `HighPiiErrorRate` as warning-level degradation, and `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` as critical dependency alerts.
@@ -338,8 +338,11 @@ cd tcrn-tms
 pnpm install
 
 # 3. Start infrastructure services
-# Includes the core runtime dependencies plus optional local observability/PII helpers
-docker-compose up -d postgres redis minio nats loki tempo pii-postgres pii-service
+# Core runtime dependencies plus the local PII helper stack
+docker compose up -d postgres redis minio nats pii-postgres pii-service
+
+# Optional: start local observability services only when working on Loki/Tempo/OTEL paths
+docker compose --profile observability up -d loki tempo
 
 # 4. Configure environment
 cp .env.sample .env.local

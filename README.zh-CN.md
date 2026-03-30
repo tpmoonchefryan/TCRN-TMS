@@ -308,9 +308,9 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 
 - `NATS JetStream` 是当前本地与生产 Compose 栈中的真实运行依赖。
 - `NATS JetStream` 当前承担的是内部异步 plumbing。除非某条业务流已经真实接线到它，否则不要把它描述成生产可用的对外集成接口。
-- `Grafana Loki` 的 Compose 服务与 query/push helper 已存在，但当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
-- `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。若要显式启用，请设置 `OTEL_ENABLED=true`，并将 `OTEL_EXPORTER_OTLP_ENDPOINT` 指向 Tempo 这类 trace backend。metrics 仍默认关闭；只有在显式提供独立的 `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`（指向单独的 OTLP metrics collector）时才会启用，不应把该 metrics endpoint 直接指向 Tempo。
-- `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
+- `Grafana Loki` 的 Compose 服务当前改为可选 profile 服务，并保留真实 query/push helper；当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
+- `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于 `observability` 可选 Compose profile 下的预留能力；分布式追踪默认并未在当前运行时启用。若要在本地显式启用，请先执行 `docker compose --profile observability up -d loki tempo`，再设置 `OTEL_ENABLED=true`，并将 `OTEL_EXPORTER_OTLP_ENDPOINT` 指向 Tempo 这类 trace backend。metrics 仍默认关闭；只有在显式提供独立的 `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`（指向单独的 OTLP metrics collector）时才会启用，不应把该 metrics endpoint 直接指向 Tempo。
+- `Prometheus` 目前仍是路线图中的预留项，不在当前默认 Compose 部署里。
 - `PII health check` 属于 Worker 的周期性依赖探测。除非显式设置 `ENABLE_SCHEDULED_JOBS=false`，worker 会每 60 秒为已配置的 PII endpoint 入队一次 `pii-health-check`。它应被视为依赖健康遥测，而不是主应用存活探针。
 - 如果真实外部 PII 服务尚未部署，或 Prometheus 还未开始抓取该服务，就不要把 `pii-health-check` 噪音或 localhost 占位地址失败升级为值班告警；这类状态只应视为面向运维的依赖遥测。
 - 一旦真实 PII 服务已部署且被 Prometheus 抓取，应把 `HighPiiServiceLatency` / `HighPiiErrorRate` 视为 warning 级退化，把 `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` 视为 critical 级依赖告警。
@@ -338,8 +338,11 @@ cd tcrn-tms
 pnpm install
 
 # 3. 启动基础设施服务
-# 同时启动核心运行依赖，以及本地可选的观测/PII 辅助服务
-docker-compose up -d postgres redis minio nats loki tempo pii-postgres pii-service
+# 默认只启动核心运行依赖与本地 PII 辅助栈
+docker compose up -d postgres redis minio nats pii-postgres pii-service
+
+# 可选：仅在需要调试 Loki/Tempo/OTEL 链路时启动本地观测服务
+docker compose --profile observability up -d loki tempo
 
 # 4. 配置环境变量
 cp .env.sample .env.local
