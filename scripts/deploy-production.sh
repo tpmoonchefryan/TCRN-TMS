@@ -20,6 +20,13 @@ case "$APPLY_MIGRATIONS_MODE" in
         ;;
 esac
 
+normalize_rollout_migrations() {
+    printf '%s' "$1" | tr ',[:space:]' '\n' | sed '/^$/d' | sort -u | paste -sd ',' -
+}
+
+ROLLOUT_MIGRATIONS="${ROLLOUT_MIGRATIONS:-}"
+ROLLOUT_MIGRATIONS="$(normalize_rollout_migrations "$ROLLOUT_MIGRATIONS")"
+
 # Configuration
 DEPLOY_USER="ubuntu"
 DEPLOY_HOST="43.153.195.213"
@@ -150,6 +157,7 @@ run_remote "
     # Wait for postgres to be ready
     sleep 10
     APPLY_MIGRATIONS_MODE='${APPLY_MIGRATIONS_MODE}'
+    ROLLOUT_MIGRATIONS='${ROLLOUT_MIGRATIONS}'
     APPLY_MIGRATIONS_CMD='npx tsx scripts/apply-migrations.ts'
     case \"\$APPLY_MIGRATIONS_MODE\" in
         strict_drift_watch)
@@ -161,6 +169,19 @@ run_remote "
             ;;
     esac
     docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc \"cd /app/packages/database && npx prisma migrate deploy && \$APPLY_MIGRATIONS_CMD\"
+    if [ -n \"\$ROLLOUT_MIGRATIONS\" ]; then
+        echo \"Running schema rollout verification for migrations: \$ROLLOUT_MIGRATIONS\"
+        VERIFY_ARGS='--infer-artifacts-from-migrations --json'
+        IFS=',' read -r -a ROLLOUT_MIGRATION_ARRAY <<< \"\$ROLLOUT_MIGRATIONS\"
+        for migration in \"\${ROLLOUT_MIGRATION_ARRAY[@]}\"; do
+            if [ -n \"\$migration\" ]; then
+                VERIFY_ARGS=\"\$VERIFY_ARGS --migration \$migration\"
+            fi
+        done
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc \"cd /app/packages/database && npx tsx scripts/verify-schema-rollout.ts \$VERIFY_ARGS\"
+    else
+        echo 'No ROLLOUT_MIGRATIONS supplied; skipping schema rollout verification.'
+    fi
 "
 
 # Final status
@@ -184,3 +205,4 @@ echo "  1. Configure reverse proxy (Caddy/Nginx) for HTTPS"
 echo "  2. Run database seed: docker compose exec api pnpm db:seed"
 echo "  3. Configure DNS for your domain"
 echo "  4. Optional strict drift-watch replay: APPLY_MIGRATIONS_MODE=strict_drift_watch ./scripts/deploy-production.sh"
+echo "  5. Optional rollout verification: ROLLOUT_MIGRATIONS=<migration_a,migration_b> ./scripts/deploy-production.sh"
