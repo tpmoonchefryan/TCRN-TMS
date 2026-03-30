@@ -4,11 +4,13 @@ import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
-import { organizationApi } from '@/lib/api/modules/organization';
-import { permissionApi } from '@/lib/api/modules/permission';
 import { userApi } from '@/lib/api/modules/user';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
+import {
+  fetchAccessibleTalentsForSession,
+  fetchPermissionSnapshotForSession,
+} from './auth-session-bootstrap-tasks';
 import {
   createAuthenticatedSessionState,
   createClearedSessionState,
@@ -17,7 +19,7 @@ import {
   updateCurrentUserAvatar,
 } from './auth-session-state';
 import type { AuthState, AuthUser, PermissionScope } from './auth-store.types';
-import { SubsidiaryInfo, TalentInfo, useTalentStore } from './talent-store';
+import { useTalentStore } from './talent-store';
 
 const getApiErrorStatusCode = (error: unknown): number | null => {
   if (
@@ -72,104 +74,28 @@ export const useAuthStore = create<AuthState>()(
             user: updateCurrentUserAvatar(state.user, avatarUrl),
           })),
 
-        fetchAccessibleTalents: async () => {
-          const talentStore = useTalentStore.getState();
+        fetchAccessibleTalents: async () =>
+          fetchAccessibleTalentsForSession({
+            talentStore: useTalentStore.getState(),
+            getTenantCode: () => get().tenantCode,
+          }),
 
-          // Prevent duplicate concurrent calls
-          if (talentStore.isLoading) {
-            return { success: true };
-          }
-
-          try {
-            talentStore.setIsLoading(true);
-            talentStore.setFetchError(null);
-
-            // Fetch organization structure
-            const orgResponse = await organizationApi.getTree();
-
-            if (orgResponse.success && orgResponse.data) {
-              const { subsidiaries = [], directTalents = [], tenantId } = orgResponse.data;
-
-              // Extract all talents from the tree
-              const allTalents: TalentInfo[] = [];
-
-              const extractTalents = (subs: SubsidiaryInfo[]) => {
-                for (const sub of subs) {
-                  if (sub.talents) {
-                    allTalents.push(...sub.talents);
-                  }
-                  if (sub.children) {
-                    extractTalents(sub.children);
-                  }
-                }
-              };
-
-              extractTalents(subsidiaries);
-              allTalents.push(...directTalents);
-
-              // Update talent store
-              talentStore.setOrganizationTree(subsidiaries);
-              talentStore.setDirectTalents(directTalents);
-              talentStore.setAccessibleTalents(allTalents);
-
-              if (tenantId) {
-                const { tenantCode } = get();
-                talentStore.setCurrentTenant(tenantId, tenantCode || '');
-              }
-
-              // Auto-select if only one talent
-              if (allTalents.length === 1 && !talentStore.currentTalent) {
-                talentStore.setCurrentTalent(allTalents[0]);
-              }
-
-              return { success: true };
-            }
-
-            const error = orgResponse.error?.message || 'Failed to load organization';
-            talentStore.setFetchError(error);
-            return { success: false, error };
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to load organization';
-            talentStore.setFetchError(message);
-            return { success: false, error: message };
-          } finally {
-            const store = useTalentStore.getState();
-            store.setIsLoading(false);
-            store.setHasFetched(true);
-          }
-        },
-
-        fetchMyPermissions: async (scope?: PermissionScope) => {
-          try {
-            const response = await permissionApi.getMyPermissions({
-              scopeType: scope?.scopeType,
-              scopeId: scope?.scopeId,
-            });
-
-            if (response.success && response.data) {
-              set({
-                effectivePermissions: response.data.permissions,
-                currentScope: scope || { scopeType: 'GLOBAL' },
-              });
-              return { success: true };
-            }
-
-            set({ effectivePermissions: null, currentScope: null });
-            return {
-              success: false,
-              error: response.error?.message || 'Failed to fetch permission snapshot',
-            };
-          } catch {
-            set({ effectivePermissions: null, currentScope: null });
-            console.warn(
-              'Failed to fetch permissions from backend; permission checks will fail closed'
-            );
-            return {
-              success: false,
-              error: 'Failed to fetch permission snapshot',
-            };
-          }
-        },
+        fetchMyPermissions: async (scope?: PermissionScope) =>
+          fetchPermissionSnapshotForSession({
+            scope,
+            permissionStore: {
+              applyPermissionSnapshot: (effectivePermissions, currentScope) =>
+                set({
+                  effectivePermissions,
+                  currentScope,
+                }),
+              clearPermissionSnapshot: () =>
+                set({
+                  effectivePermissions: null,
+                  currentScope: null,
+                }),
+            },
+          }),
 
         bootstrapAuthenticatedSession: async () => {
           const { sessionBootstrapPromise } = get();
