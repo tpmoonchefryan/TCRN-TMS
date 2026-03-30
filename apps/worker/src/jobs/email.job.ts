@@ -11,6 +11,11 @@ import { workerLogger as logger } from '../logger';
 import { getPiiClient } from '../services/pii-client';
 
 const SesClient = tencentcloud.ses.v20201002.Client;
+const EMAIL_CONFIG_KEY = 'email.config';
+const DEFAULT_EMAIL_PROVIDER: EmailProvider = 'tencent_ses';
+const DEFAULT_TENCENT_SES_REGION = 'ap-hongkong';
+const DEFAULT_EMAIL_FROM_ADDRESS = 'noreply@tcrn.app';
+const DEFAULT_EMAIL_FROM_NAME = 'TCRN TMS';
 
 // Job data interface
 interface EmailJobData {
@@ -54,9 +59,97 @@ interface EmailConfig {
   };
 }
 
+type StoredTencentSesConfig = {
+  secretId?: string;
+  secretKey?: string;
+  region?: string;
+  fromAddress?: string;
+  fromName?: string;
+  replyTo?: string;
+};
+
+type StoredSmtpConfig = {
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  username?: string;
+  password?: string;
+  fromAddress?: string;
+  fromName?: string;
+};
+
+type StoredEmailConfig = {
+  provider: EmailProvider;
+  tencentSes?: StoredTencentSesConfig;
+  smtp?: StoredSmtpConfig;
+};
+
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm';
 const AUTH_TAG_LENGTH = 16;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isEmailProvider(value: unknown): value is EmailProvider {
+  return value === 'tencent_ses' || value === 'smtp';
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function getBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function normalizeTencentSesConfig(value: unknown): StoredTencentSesConfig | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return {
+    secretId: getString(value.secretId),
+    secretKey: getString(value.secretKey),
+    region: getString(value.region),
+    fromAddress: getString(value.fromAddress),
+    fromName: getString(value.fromName),
+    replyTo: getString(value.replyTo),
+  };
+}
+
+function normalizeSmtpConfig(value: unknown): StoredSmtpConfig | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return {
+    host: getString(value.host),
+    port: getNumber(value.port),
+    secure: getBoolean(value.secure),
+    username: getString(value.username),
+    password: getString(value.password),
+    fromAddress: getString(value.fromAddress),
+    fromName: getString(value.fromName),
+  };
+}
+
+function normalizeStoredEmailConfig(value: unknown): StoredEmailConfig {
+  if (!isRecord(value)) {
+    return { provider: DEFAULT_EMAIL_PROVIDER };
+  }
+
+  return {
+    provider: isEmailProvider(value.provider) ? value.provider : DEFAULT_EMAIL_PROVIDER,
+    tencentSes: normalizeTencentSesConfig(value.tencentSes),
+    smtp: normalizeSmtpConfig(value.smtp),
+  };
+}
 
 /**
  * Get encryption key from environment
@@ -106,40 +199,38 @@ function decrypt(ciphertext: string): string {
 /**
  * Get email configuration from database or environment
  */
-async function getEmailConfig(): Promise<EmailConfig | null> {
+export async function getEmailConfig(): Promise<EmailConfig | null> {
   // Try to get from database first
   const config = await prisma.globalConfig.findUnique({
-    where: { key: 'email.config' },
+    where: { key: EMAIL_CONFIG_KEY },
   });
 
   if (config?.value) {
-    const stored = config.value as Record<string, unknown>;
+    const stored = normalizeStoredEmailConfig(config.value);
     const result: EmailConfig = {
-      provider: (stored.provider as EmailProvider) || 'tencent_ses',
+      provider: stored.provider,
     };
 
     if (stored.tencentSes) {
-      const ses = stored.tencentSes as Record<string, unknown>;
       result.tencentSes = {
-        secretId: decrypt(ses.secretId as string),
-        secretKey: decrypt(ses.secretKey as string),
-        region: (ses.region as string) || 'ap-hongkong',
-        fromAddress: ses.fromAddress as string,
-        fromName: ses.fromName as string,
-        replyTo: ses.replyTo as string | undefined,
+        secretId: decrypt(stored.tencentSes.secretId ?? ''),
+        secretKey: decrypt(stored.tencentSes.secretKey ?? ''),
+        region: stored.tencentSes.region || DEFAULT_TENCENT_SES_REGION,
+        fromAddress: stored.tencentSes.fromAddress ?? '',
+        fromName: stored.tencentSes.fromName ?? '',
+        replyTo: stored.tencentSes.replyTo,
       };
     }
 
     if (stored.smtp) {
-      const smtp = stored.smtp as Record<string, unknown>;
       result.smtp = {
-        host: smtp.host as string,
-        port: smtp.port as number,
-        secure: smtp.secure as boolean,
-        username: smtp.username as string,
-        password: decrypt(smtp.password as string),
-        fromAddress: smtp.fromAddress as string,
-        fromName: smtp.fromName as string,
+        host: stored.smtp.host ?? '',
+        port: stored.smtp.port ?? 465,
+        secure: stored.smtp.secure ?? true,
+        username: stored.smtp.username ?? '',
+        password: decrypt(stored.smtp.password ?? ''),
+        fromAddress: stored.smtp.fromAddress ?? '',
+        fromName: stored.smtp.fromName ?? '',
       };
     }
 
@@ -152,13 +243,13 @@ async function getEmailConfig(): Promise<EmailConfig | null> {
 
   if (secretId && secretKey) {
     return {
-      provider: 'tencent_ses',
+      provider: DEFAULT_EMAIL_PROVIDER,
       tencentSes: {
         secretId,
         secretKey,
-        region: process.env.TENCENT_SES_REGION || 'ap-hongkong',
-        fromAddress: process.env.TENCENT_SES_FROM_ADDRESS || 'noreply@tcrn.app',
-        fromName: process.env.TENCENT_SES_FROM_NAME || 'TCRN TMS',
+        region: process.env.TENCENT_SES_REGION || DEFAULT_TENCENT_SES_REGION,
+        fromAddress: process.env.TENCENT_SES_FROM_ADDRESS || DEFAULT_EMAIL_FROM_ADDRESS,
+        fromName: process.env.TENCENT_SES_FROM_NAME || DEFAULT_EMAIL_FROM_NAME,
         replyTo: process.env.TENCENT_SES_REPLY_TO,
       },
     };
