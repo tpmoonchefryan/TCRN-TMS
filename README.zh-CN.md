@@ -309,7 +309,7 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 - `NATS JetStream` 是当前本地与生产 Compose 栈中的真实运行依赖。
 - `NATS JetStream` 当前承担的是内部异步 plumbing。除非某条业务流已经真实接线到它，否则不要把它描述成生产可用的对外集成接口。
 - `Grafana Loki` 的 Compose 服务与 query/push helper 已存在，但当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
-- `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。
+- `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于预留能力；分布式追踪默认并未在当前运行时启用。若要显式启用，请设置 `OTEL_ENABLED=true`，并将 `OTEL_EXPORTER_OTLP_ENDPOINT` 指向 Tempo 这类 trace backend。metrics 仍默认关闭；只有在显式提供独立的 `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`（指向单独的 OTLP metrics collector）时才会启用，不应把该 metrics endpoint 直接指向 Tempo。
 - `Prometheus` 目前仍是路线图中的预留项，不在当前 Compose 部署里。
 - `PII health check` 属于 Worker 的周期性依赖探测。除非显式设置 `ENABLE_SCHEDULED_JOBS=false`，worker 会每 60 秒为已配置的 PII endpoint 入队一次 `pii-health-check`。它应被视为依赖健康遥测，而不是主应用存活探针。
 - 如果真实外部 PII 服务尚未部署，或 Prometheus 还未开始抓取该服务，就不要把 `pii-health-check` 噪音或 localhost 占位地址失败升级为值班告警；这类状态只应视为面向运维的依赖遥测。

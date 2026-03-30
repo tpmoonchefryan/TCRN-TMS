@@ -309,7 +309,7 @@ Zodによるエンドツーエンドの型安全バリデーション：
 - `NATS JetStream` は現在のローカル/本番 Compose スタックで実際に使われている依存です。
 - `NATS JetStream` は現時点では内部 async plumbing を担っています。実際のビジネスフローが配線されるまでは、本番利用可能な外部 integration surface と説明しないでください。
 - `Grafana Loki` には Compose サービスと query/push helper がありますが、現在の既定の正本は依然としてテナント PostgreSQL のログテーブルです。`/api/v1/logs/search*` は Loki を参照し、`LOKI_ENABLED=false` の場合は空結果を返します。API / worker 側の Loki push helper は、まだ既定の本番 producer path ではありません。
-- `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。
+- `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは将来展開用の準備段階であり、分散トレーシングは現行ランタイムでデフォルト有効ではありません。明示的に有効化する場合は `OTEL_ENABLED=true` を設定し、`OTEL_EXPORTER_OTLP_ENDPOINT` を Tempo のような trace backend に向けてください。metrics は引き続き既定で無効であり、別個の OTLP metrics collector を指す `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` を明示設定した場合にのみ有効化してください。metrics endpoint を Tempo に直接向けてはいけません。
 - `Prometheus` は現時点ではロードマップ上の予約項目で、現在の Compose デプロイには含まれません。
 - `PII health check` は Worker の定期的な依存先プローブです。`ENABLE_SCHEDULED_JOBS=false` を明示しない限り、worker は設定済み PII endpoint に対して 60 秒ごとに `pii-health-check` を投入します。これはメインアプリの liveness ではなく、依存先テレメトリとして扱ってください。
 - 実際の外部 PII service がまだ未配備、または Prometheus がその service をまだ scrape していない段階では、`pii-health-check` のノイズや localhost placeholder の失敗を当番アラートに昇格させないでください。この状態は operator 向けの依存先テレメトリに留めます。
