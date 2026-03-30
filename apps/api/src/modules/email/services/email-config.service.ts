@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException,Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@tcrn/database';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 import { DatabaseService } from '../../database';
@@ -13,6 +14,102 @@ import type {
 } from '../dto/email-config.dto';
 
 const EMAIL_CONFIG_KEY = 'email.config';
+const DEFAULT_EMAIL_PROVIDER: EmailProvider = 'tencent_ses';
+const DEFAULT_TENCENT_SES_REGION = 'ap-hongkong';
+const DEFAULT_EMAIL_FROM_ADDRESS = 'noreply@tcrn.app';
+const DEFAULT_EMAIL_FROM_NAME = 'TCRN TMS';
+
+type StoredTencentSesConfig = {
+  secretId?: string;
+  secretKey?: string;
+  region?: string;
+  fromAddress?: string;
+  fromName?: string;
+  replyTo?: string;
+};
+
+type StoredSmtpConfig = {
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  username?: string;
+  password?: string;
+  fromAddress?: string;
+  fromName?: string;
+};
+
+type StoredEmailConfig = {
+  provider: EmailProvider;
+  tencentSes?: StoredTencentSesConfig;
+  smtp?: StoredSmtpConfig;
+};
+
+type JsonObject = {
+  [key: string]: Prisma.InputJsonValue;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isEmailProvider(value: unknown): value is EmailProvider {
+  return value === 'tencent_ses' || value === 'smtp';
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function getBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function normalizeTencentSesConfig(value: unknown): StoredTencentSesConfig | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return {
+    secretId: getString(value.secretId),
+    secretKey: getString(value.secretKey),
+    region: getString(value.region),
+    fromAddress: getString(value.fromAddress),
+    fromName: getString(value.fromName),
+    replyTo: getString(value.replyTo),
+  };
+}
+
+function normalizeSmtpConfig(value: unknown): StoredSmtpConfig | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return {
+    host: getString(value.host),
+    port: getNumber(value.port),
+    secure: getBoolean(value.secure),
+    username: getString(value.username),
+    password: getString(value.password),
+    fromAddress: getString(value.fromAddress),
+    fromName: getString(value.fromName),
+  };
+}
+
+function normalizeStoredEmailConfig(value: unknown): StoredEmailConfig {
+  if (!isRecord(value)) {
+    return { provider: DEFAULT_EMAIL_PROVIDER };
+  }
+
+  return {
+    provider: isEmailProvider(value.provider) ? value.provider : DEFAULT_EMAIL_PROVIDER,
+    tencentSes: normalizeTencentSesConfig(value.tencentSes),
+    smtp: normalizeSmtpConfig(value.smtp),
+  };
+}
 
 /**
  * Email Configuration Service
@@ -131,12 +228,11 @@ export class EmailConfigService {
       };
     }
 
-    const storedConfig = config.value as Record<string, unknown>;
-    const decrypted = this.decryptConfig(storedConfig);
+    const decrypted = this.decryptConfig(normalizeStoredEmailConfig(config.value));
 
     // Mask sensitive fields
     const response: EmailConfigResponse = {
-      provider: (decrypted.provider as EmailProvider) || 'tencent_ses',
+      provider: decrypted.provider,
       isConfigured: true,
       lastUpdated: config.updatedAt.toISOString(),
     };
@@ -145,7 +241,7 @@ export class EmailConfigService {
       response.tencentSes = {
         secretId: this.maskValue(decrypted.tencentSes.secretId),
         secretKey: this.maskValue(decrypted.tencentSes.secretKey),
-        region: decrypted.tencentSes.region || 'ap-hongkong',
+        region: decrypted.tencentSes.region || DEFAULT_TENCENT_SES_REGION,
         fromAddress: decrypted.tencentSes.fromAddress,
         fromName: decrypted.tencentSes.fromName,
         replyTo: decrypted.tencentSes.replyTo,
@@ -180,80 +276,21 @@ export class EmailConfigService {
 
     let existingDecrypted: DecryptedEmailConfig | null = null;
     if (existingConfig?.value) {
-      existingDecrypted = this.decryptConfig(existingConfig.value as Record<string, unknown>);
+      existingDecrypted = this.decryptConfig(normalizeStoredEmailConfig(existingConfig.value));
     }
 
-    // Build new config with encryption
-    const newConfig: Record<string, unknown> = {
-      provider: dto.provider,
-    };
+    const newConfig = this.buildStoredConfig(dto, existingDecrypted);
 
-    if (dto.tencentSes) {
-      const sesConfig: Record<string, unknown> = {
-        region: dto.tencentSes.region || 'ap-hongkong',
-        fromAddress: dto.tencentSes.fromAddress,
-        fromName: dto.tencentSes.fromName,
-        replyTo: dto.tencentSes.replyTo,
-      };
-      
-      // Encrypt secretId
-      const secretId = dto.tencentSes.secretId;
-      if (secretId && typeof secretId === 'string') {
-        if (secretId.includes('***') && existingDecrypted?.tencentSes?.secretId) {
-          sesConfig.secretId = this.encrypt(existingDecrypted.tencentSes.secretId);
-        } else {
-          sesConfig.secretId = this.encrypt(secretId);
-        }
-      }
-      
-      // Encrypt secretKey
-      const secretKey = dto.tencentSes.secretKey;
-      if (secretKey && typeof secretKey === 'string') {
-        if (secretKey.includes('***') && existingDecrypted?.tencentSes?.secretKey) {
-          sesConfig.secretKey = this.encrypt(existingDecrypted.tencentSes.secretKey);
-        } else {
-          sesConfig.secretKey = this.encrypt(secretKey);
-        }
-      }
-      
-      newConfig.tencentSes = sesConfig;
-    }
-
-    if (dto.smtp) {
-      const smtpConfig: Record<string, unknown> = {
-        host: dto.smtp.host,
-        port: dto.smtp.port,
-        secure: dto.smtp.secure,
-        username: dto.smtp.username,
-        fromAddress: dto.smtp.fromAddress,
-        fromName: dto.smtp.fromName,
-      };
-      
-      // Encrypt password
-      const password = dto.smtp.password;
-      if (password && typeof password === 'string') {
-        // If the value looks masked, use the existing encrypted value
-        if (password.includes('***') && existingDecrypted?.smtp?.password) {
-          smtpConfig.password = this.encrypt(existingDecrypted.smtp.password);
-        } else {
-          smtpConfig.password = this.encrypt(password);
-        }
-      }
-      
-      newConfig.smtp = smtpConfig;
-    }
-
-    // Upsert the config - cast to any to satisfy Prisma's Json type
     await prisma.globalConfig.upsert({
       where: { key: EMAIL_CONFIG_KEY },
       update: {
-        value: newConfig as object,
+        value: newConfig,
         updatedAt: new Date(),
         description: 'Email provider configuration',
       },
       create: {
         key: EMAIL_CONFIG_KEY,
-        value: newConfig as object,
+        value: newConfig,
         description: 'Email provider configuration',
       },
     });
@@ -277,44 +314,115 @@ export class EmailConfigService {
       return this.getEnvFallbackConfig();
     }
 
-    const storedConfig = config.value as Record<string, unknown>;
-    return this.decryptConfig(storedConfig);
+    return this.decryptConfig(normalizeStoredEmailConfig(config.value));
   }
 
   /**
    * Decrypt stored config object
    */
-  private decryptConfig(storedConfig: Record<string, unknown>): DecryptedEmailConfig {
+  private decryptConfig(storedConfig: StoredEmailConfig): DecryptedEmailConfig {
     const result: DecryptedEmailConfig = {
-      provider: (storedConfig.provider as EmailProvider) || 'tencent_ses',
+      provider: storedConfig.provider,
     };
 
     if (storedConfig.tencentSes) {
-      const sesConfig = storedConfig.tencentSes as Record<string, unknown>;
       result.tencentSes = {
-        secretId: this.decryptField(sesConfig.secretId as string),
-        secretKey: this.decryptField(sesConfig.secretKey as string),
-        region: (sesConfig.region as string) || 'ap-hongkong',
-        fromAddress: sesConfig.fromAddress as string,
-        fromName: sesConfig.fromName as string,
-        replyTo: sesConfig.replyTo as string | undefined,
+        secretId: this.decryptField(storedConfig.tencentSes.secretId ?? ''),
+        secretKey: this.decryptField(storedConfig.tencentSes.secretKey ?? ''),
+        region: storedConfig.tencentSes.region || DEFAULT_TENCENT_SES_REGION,
+        fromAddress: storedConfig.tencentSes.fromAddress ?? '',
+        fromName: storedConfig.tencentSes.fromName ?? '',
+        replyTo: storedConfig.tencentSes.replyTo,
       };
     }
 
     if (storedConfig.smtp) {
-      const smtpConfig = storedConfig.smtp as Record<string, unknown>;
       result.smtp = {
-        host: smtpConfig.host as string,
-        port: smtpConfig.port as number,
-        secure: smtpConfig.secure as boolean,
-        username: smtpConfig.username as string,
-        password: this.decryptField(smtpConfig.password as string),
-        fromAddress: smtpConfig.fromAddress as string,
-        fromName: smtpConfig.fromName as string,
+        host: storedConfig.smtp.host ?? '',
+        port: storedConfig.smtp.port ?? 465,
+        secure: storedConfig.smtp.secure ?? true,
+        username: storedConfig.smtp.username ?? '',
+        password: this.decryptField(storedConfig.smtp.password ?? ''),
+        fromAddress: storedConfig.smtp.fromAddress ?? '',
+        fromName: storedConfig.smtp.fromName ?? '',
       };
     }
 
     return result;
+  }
+
+  private buildStoredConfig(
+    dto: SaveEmailConfigDto,
+    existingDecrypted: DecryptedEmailConfig | null,
+  ): JsonObject {
+    const newConfig: JsonObject = {
+      provider: dto.provider,
+    };
+
+    if (dto.tencentSes) {
+      const sesConfig: JsonObject = {
+        region: dto.tencentSes.region || DEFAULT_TENCENT_SES_REGION,
+        fromAddress: dto.tencentSes.fromAddress,
+        fromName: dto.tencentSes.fromName,
+      };
+
+      if (dto.tencentSes.replyTo) {
+        sesConfig.replyTo = dto.tencentSes.replyTo;
+      }
+
+      const secretId = this.resolveEncryptedSecret(
+        dto.tencentSes.secretId,
+        existingDecrypted?.tencentSes?.secretId,
+      );
+      if (secretId) {
+        sesConfig.secretId = secretId;
+      }
+
+      const secretKey = this.resolveEncryptedSecret(
+        dto.tencentSes.secretKey,
+        existingDecrypted?.tencentSes?.secretKey,
+      );
+      if (secretKey) {
+        sesConfig.secretKey = secretKey;
+      }
+
+      newConfig.tencentSes = sesConfig;
+    }
+
+    if (dto.smtp) {
+      const smtpConfig: JsonObject = {
+        host: dto.smtp.host,
+        port: dto.smtp.port,
+        secure: dto.smtp.secure,
+        username: dto.smtp.username,
+        fromAddress: dto.smtp.fromAddress,
+        fromName: dto.smtp.fromName,
+      };
+
+      const password = this.resolveEncryptedSecret(
+        dto.smtp.password,
+        existingDecrypted?.smtp?.password,
+      );
+      if (password) {
+        smtpConfig.password = password;
+      }
+
+      newConfig.smtp = smtpConfig;
+    }
+
+    return newConfig;
+  }
+
+  private resolveEncryptedSecret(value: string | undefined, existingPlaintext?: string): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    if (value.includes('***') && existingPlaintext) {
+      return this.encrypt(existingPlaintext);
+    }
+
+    return this.encrypt(value);
   }
 
   /**
@@ -342,13 +450,14 @@ export class EmailConfigService {
 
     if (secretId && secretKey) {
       return {
-        provider: 'tencent_ses',
+        provider: DEFAULT_EMAIL_PROVIDER,
         tencentSes: {
           secretId,
           secretKey,
-          region: this.configService.get<string>('TENCENT_SES_REGION') || 'ap-hongkong',
-          fromAddress: this.configService.get<string>('TENCENT_SES_FROM_ADDRESS') || 'noreply@tcrn.app',
-          fromName: this.configService.get<string>('TENCENT_SES_FROM_NAME') || 'TCRN TMS',
+          region: this.configService.get<string>('TENCENT_SES_REGION') || DEFAULT_TENCENT_SES_REGION,
+          fromAddress:
+            this.configService.get<string>('TENCENT_SES_FROM_ADDRESS') || DEFAULT_EMAIL_FROM_ADDRESS,
+          fromName: this.configService.get<string>('TENCENT_SES_FROM_NAME') || DEFAULT_EMAIL_FROM_NAME,
           replyTo: this.configService.get<string>('TENCENT_SES_REPLY_TO'),
         },
       };
