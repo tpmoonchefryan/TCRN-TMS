@@ -200,15 +200,15 @@ describe('importJobProcessor', () => {
     expect(companyInfoInsert?.[7]).toBe('segment-1');
   });
 
-  it('maps current individual import template fields into persisted non-PII customer data', async () => {
+  it('maps the current public individual import template fields into persisted customer data', async () => {
     mockJob.data.options = {
       validateOnly: false,
     };
     mockJob.data.consumerCode = 'CRM_SYSTEM';
     mockMinioClient.getObject.mockResolvedValueOnce(
       Readable.from([
-        'external_id,nickname,primary_language,status_code,tags,notes,given_name,family_name,email_address,phone_number\n',
-        'EXT001,Template User,zh,ACTIVE,tag-a,notes here,明,张,user@example.com,+8613800138001\n',
+        'external_id,nickname,primary_language,status_code,tags,notes\n',
+        'EXT001,Template User,zh,ACTIVE,tag-a,notes here\n',
       ]),
     );
     customerStatusRows = [{ id: 'status-1', code: 'ACTIVE' }];
