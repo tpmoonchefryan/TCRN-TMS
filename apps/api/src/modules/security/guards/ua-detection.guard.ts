@@ -16,6 +16,11 @@ export const UA_CHECK_MODE = 'ua_check_mode';
 export const UaCheckMode = (mode: 'normal' | 'strict' | 'skip') =>
   SetMetadata(UA_CHECK_MODE, mode);
 
+interface UaDetectionRequest extends Request {
+  isSuspiciousUa?: boolean;
+  uaCheckReason?: string;
+}
+
 @Injectable()
 export class UaDetectionGuard implements CanActivate {
   constructor(
@@ -33,7 +38,7 @@ export class UaDetectionGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<UaDetectionRequest>();
     const userAgent = request.headers['user-agent'];
 
     const result =
@@ -50,10 +55,8 @@ export class UaDetectionGuard implements CanActivate {
 
     // Mark suspicious requests for logging
     if (result.isSuspicious) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (request as any).isSuspiciousUa = true;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (request as any).uaCheckReason = result.reason;
+      request.isSuspiciousUa = true;
+      request.uaCheckReason = result.reason;
     }
 
     return true;

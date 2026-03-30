@@ -24,6 +24,7 @@ import {
     CreateIpRuleDto,
     DisableScopeDto,
     IpRuleListQueryDto,
+    IpRuleScope,
     TestBlocklistDto,
     UpdateBlocklistDto,
 } from '../dto/security.dto';
@@ -201,8 +202,7 @@ export class SecurityController {
   @RequirePermissions({ resource: 'security.ip_rules', action: 'read' })
   @ApiOperation({ summary: 'Check IP access' })
   async checkIpAccess(@Body() dto: CheckIpDto) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.ipAccessService.checkAccess(dto.ip, dto.scope as any);
+    return this.ipAccessService.checkAccess(dto.ip, dto.scope ?? IpRuleScope.GLOBAL);
   }
 
   @Delete('ip-access-rules/:id')
