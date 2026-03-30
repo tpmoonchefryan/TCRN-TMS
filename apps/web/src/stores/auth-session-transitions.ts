@@ -4,17 +4,20 @@ import { apiClient } from '@/lib/api/core';
 import { createAuthenticatedSessionState } from './auth-session-state';
 import type { AuthUser } from './auth-store.types';
 
+export interface AuthenticatedSessionTransitionInput {
+  accessToken: string | null;
+  user: AuthUser | null | undefined;
+  tenantCode: string | null | undefined;
+  tenantId?: string | null;
+}
+
 export const createPendingTenantAuthState = (tenantCode: string) => ({
   tenantCode,
   isAcTenant: tenantCode.toUpperCase() === 'AC',
   isLoading: false,
 });
 
-export const createAuthenticatedSessionTransition = (params: {
-  accessToken: string | null;
-  user: AuthUser | null | undefined;
-  tenantCode: string | null | undefined;
-  tenantId?: string | null;
+export const createAuthenticatedSessionTransition = (params: AuthenticatedSessionTransitionInput & {
   setAccessToken?: (token: string | null) => void;
 }) => {
   const {

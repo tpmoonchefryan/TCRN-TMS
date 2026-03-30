@@ -12,6 +12,14 @@ export interface PermissionScope {
   scopeId?: string;
 }
 
+export interface AuthLoginResult {
+  success: boolean;
+  totpRequired?: boolean;
+  passwordResetRequired?: boolean;
+  passwordResetReason?: string;
+  sessionToken?: string;
+}
+
 export interface AuthState {
   user: AuthUser | null;
   tenantCode: string | null;
@@ -32,13 +40,7 @@ export interface AuthState {
     login: string,
     password: string,
     tenantCode: string
-  ) => Promise<{
-    success: boolean;
-    totpRequired?: boolean;
-    passwordResetRequired?: boolean;
-    passwordResetReason?: string;
-    sessionToken?: string;
-  }>;
+  ) => Promise<AuthLoginResult>;
   verifyTotp: (sessionToken: string, code: string) => Promise<boolean>;
   resetPassword: (sessionToken: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;

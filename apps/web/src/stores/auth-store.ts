@@ -3,13 +3,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
-import { authApi } from '@/lib/api/modules/auth';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
 import {
   fetchAccessibleTalentsForSession,
   fetchPermissionSnapshotForSession,
 } from './auth-session-bootstrap-tasks';
+import {
+  runLoginSessionCommand,
+  runLogoutSessionCommand,
+  runResetPasswordSessionCommand,
+  runVerifyTotpSessionCommand,
+} from './auth-session-commands';
 import {
   createClearedSessionState,
   mergeCurrentUserProfile as mergeStoredUserProfile,
@@ -167,134 +172,59 @@ export const useAuthStore = create<AuthState>()(
         login: async (login: string, password: string, tenantCode: string) => {
           set({ isLoading: true, error: null });
 
-          try {
-            const response = await authApi.login(login, password, tenantCode);
-
-            if (response.success && response.data) {
-              const data = response.data;
-
-              // Case 1: Password Reset Required
-              if (data.passwordResetRequired) {
-                set(createPendingTenantAuthState(tenantCode));
-                return {
-                  success: true,
-                  passwordResetRequired: true,
-                  passwordResetReason: data.reason,
-                  sessionToken: data.sessionToken,
-                };
-              }
-
-              // Case 2: TOTP Required
-              if (data.totpRequired) {
-                set(createPendingTenantAuthState(tenantCode));
-                return {
-                  success: true,
-                  totpRequired: true,
-                  sessionToken: data.sessionToken,
-                };
-              }
-
-              // Case 3: Login Success (No TOTP, No Password Reset)
-              if (data.accessToken) {
-                completeAuthenticatedSession({
-                  accessToken: data.accessToken,
-                  user: data.user,
-                  tenantCode,
-                  tenantId: data.tenantId,
-                });
-
-                return { success: true };
-              }
-            }
-
-            set({
-              error: response.error?.message || 'Login failed',
-              isLoading: false,
-            });
-            return { success: false };
-          } catch (error: unknown) {
-            set({
-              error: (error as Error).message || 'Login failed',
-              isLoading: false,
-            });
-            return { success: false };
-          }
+          return runLoginSessionCommand({
+            login,
+            password,
+            tenantCode,
+            setPendingTenantAuth: (nextTenantCode) =>
+              set(createPendingTenantAuthState(nextTenantCode)),
+            completeAuthenticatedSession,
+            setFailure: (error) =>
+              set({
+                error,
+                isLoading: false,
+              }),
+          });
         },
 
         verifyTotp: async (sessionToken: string, code: string) => {
           set({ isLoading: true, error: null });
-          try {
-            const response = await authApi.verifyTotp(sessionToken, code);
-            if (response.success && response.data) {
-              const { accessToken, user, tenantId: responseTenantId } = response.data;
-              completeAuthenticatedSession({
-                accessToken: accessToken || null,
-                user,
-                tenantCode: get().tenantCode,
-                tenantId: responseTenantId,
-              });
-
-              return true;
-            }
-            set({
-              error: response.error?.message || 'Verification failed',
-              isLoading: false,
-            });
-            return false;
-          } catch (error: unknown) {
-            set({
-              error: (error as Error).message || 'Verification failed',
-              isLoading: false,
-            });
-            return false;
-          }
+          return runVerifyTotpSessionCommand({
+            sessionToken,
+            code,
+            tenantCode: get().tenantCode,
+            completeAuthenticatedSession,
+            setFailure: (error) =>
+              set({
+                error,
+                isLoading: false,
+              }),
+          });
         },
 
         resetPassword: async (sessionToken: string, newPassword: string) => {
           set({ isLoading: true, error: null });
-          try {
-            const response = await authApi.resetPassword(sessionToken, newPassword, newPassword);
-            if (response.success && response.data) {
-              const { accessToken, user, tenantId: responseTenantId } = response.data;
-              if (accessToken) {
-                completeAuthenticatedSession({
-                  accessToken,
-                  user,
-                  tenantCode: get().tenantCode,
-                  tenantId: responseTenantId,
-                });
-
-                return true;
-              }
-            }
-            set({
-              error: response.error?.message || 'Password reset failed',
-              isLoading: false,
-            });
-            return false;
-          } catch (error: unknown) {
-            set({
-              error: (error as Error).message || 'Password reset failed',
-              isLoading: false,
-            });
-            return false;
-          }
+          return runResetPasswordSessionCommand({
+            sessionToken,
+            newPassword,
+            tenantCode: get().tenantCode,
+            completeAuthenticatedSession,
+            setFailure: (error) =>
+              set({
+                error,
+                isLoading: false,
+              }),
+          });
         },
 
-        logout: async () => {
-          try {
-            await authApi.logout();
-          } catch {
-            // Ignore logout errors
-          }
-
-          apiClient.setAccessToken(null);
-
-          // Reset talent store
-          useTalentStore.getState().reset();
-
-          set(createClearedSessionState());
-        },
+        logout: async () =>
+          runLogoutSessionCommand({
+            clearAuthenticatedState: () => {
+              apiClient.setAccessToken(null);
+              useTalentStore.getState().reset();
+              set(createClearedSessionState());
+            },
+          }),
 
         refreshSession: async () => {
           const { refreshPromise, tenantCode } = get();
