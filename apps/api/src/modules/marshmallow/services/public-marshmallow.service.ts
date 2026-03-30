@@ -17,6 +17,7 @@ import {
     PublicMessagesQueryDto,
     SubmitMessageDto,
 } from '../dto/marshmallow.dto';
+import { extractBilibiliImagesFromModules } from '../utils/bilibili-dynamic-images';
 import { CaptchaContext, CaptchaService } from './captcha.service';
 import { MarshmallowRateLimitService } from './marshmallow-rate-limit.service';
 import { MarshmallowReactionService } from './marshmallow-reaction.service';
@@ -903,7 +904,10 @@ export class PublicMarshmallowService {
 
         if (data?.code === 0 && data?.data?.item) {
              const item = data.data.item;
-             const images = this.extractImagesFromModules(item.modules);
+             const images = extractBilibiliImagesFromModules(
+                 item.modules,
+                 (imageUrl) => this.normalizeBilibiliUrl(imageUrl),
+             );
              if (images.length > 0) return images;
         }
         
@@ -915,52 +919,6 @@ export class PublicMarshmallowService {
         this.logger.warn(`Error fetching Bilibili API for ${dynamicId}: ${error}, trying fallback scraping...`);
         return this.resolveBilibiliImagesFromPage(dynamicId);
     }
-  }
-
-  /**
-   * extracting images from API modules structure
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private extractImagesFromModules(modules: any): string[] {
-      const images: string[] = [];
-      if (!modules) return [];
-      
-      if (Array.isArray(modules)) {
-          for (const mod of modules) {
-               const major = mod.module_dynamic?.major;
-               if (major) {
-                    // Opus
-                    if (major.opus?.pics) {
-                        for (const pic of major.opus.pics) {
-                            if (pic.url) images.push(this.normalizeBilibiliUrl(pic.url));
-                        }
-                    }
-                    // Draw
-                    if (major.draw?.items) {
-                        for (const d of major.draw.items) {
-                            if (d.src) images.push(this.normalizeBilibiliUrl(d.src));
-                        }
-                    }
-                    // Article
-                    if (major.article?.covers) {
-                        for (const cover of major.article.covers) {
-                            images.push(this.normalizeBilibiliUrl(cover));
-                        }
-                    }
-                    // Archive (Video cover)
-                    if (major.archive?.cover) {
-                        images.push(this.normalizeBilibiliUrl(major.archive.cover));
-                    }
-               }
-               // Also check module_content (Strategy 1) for simple layout
-               if (mod.module_content?.pics) {
-                   for (const pic of mod.module_content.pics) {
-                       if (pic.url) images.push(this.normalizeBilibiliUrl(pic.url));
-                   }
-               }
-          }
-      }
-      return images;
   }
 
   /**
@@ -994,7 +952,10 @@ export class PublicMarshmallowService {
           const state = JSON.parse(stateMatch[1]);
           const modules = state.detail?.modules;
           
-          const images = this.extractImagesFromModules(modules);
+          const images = extractBilibiliImagesFromModules(
+              modules,
+              (imageUrl) => this.normalizeBilibiliUrl(imageUrl),
+          );
           if (images.length > 0) return images;
           
           // Strategy 3: Regex match on the entire state string (Fallthrough)

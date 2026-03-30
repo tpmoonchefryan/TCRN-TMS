@@ -5,6 +5,7 @@ import { ErrorCodes } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { HomepageContent, ThemeConfig } from '../dto/homepage.dto';
+import { getHomepageComponentCount } from '../utils/public-schedule';
 
 export interface PublicHomepageData {
   talent: {
@@ -115,10 +116,20 @@ export class PublicHomepageService {
           return null;
         }
 
-        this.logger.debug(`[getPublishedHomepage] Version content keys: ${Object.keys(version.content || {}).join(', ')}`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.logger.debug(`[getPublishedHomepage] Version content.components length: ${(version.content as any)?.components?.length ?? 'N/A'}`);
-        this.logger.debug(`[getPublishedHomepage] Version theme keys: ${Object.keys(version.theme || {}).join(', ')}`);
+        const contentRecord =
+          typeof version.content === 'object' && version.content !== null ? version.content : {};
+        const themeRecord =
+          typeof version.theme === 'object' && version.theme !== null ? version.theme : {};
+
+        this.logger.debug(
+          `[getPublishedHomepage] Version content keys: ${Object.keys(contentRecord).join(', ')}`,
+        );
+        this.logger.debug(
+          `[getPublishedHomepage] Version content.components length: ${getHomepageComponentCount(version.content) ?? 'N/A'}`,
+        );
+        this.logger.debug(
+          `[getPublishedHomepage] Version theme keys: ${Object.keys(themeRecord).join(', ')}`,
+        );
 
         const result = {
           talent: {

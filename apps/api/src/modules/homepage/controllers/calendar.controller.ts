@@ -8,8 +8,8 @@ import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { Public } from '../../../common/decorators';
 import { UaCheckMode } from '../../security/guards/ua-detection.guard';
-import { ComponentInstance, HomepageContent, SCHEDULE_COMPONENT_TYPE } from '../dto/homepage.dto';
 import { PublicHomepageService } from '../services/public-homepage.service';
+import { getVisibleScheduleComponentProps } from '../utils/public-schedule';
 
 @ApiTags('Public - Homepage')
 @Controller('public/homepage')
@@ -38,18 +38,8 @@ export class CalendarController {
 
     // Parse content to find Schedule components
     // Content structure is { components: [...] }
-    const content = data.content as HomepageContent;
-    let componentTimezone: string | null = null;
-    let scheduleComponents: ComponentInstance[] = [];
-
-    if (content?.components && Array.isArray(content.components)) {
-      scheduleComponents = content.components.filter(
-        (c: ComponentInstance) => c.type === SCHEDULE_COMPONENT_TYPE && c.visible !== false
-      );
-      if (scheduleComponents.length > 0) {
-        componentTimezone = (scheduleComponents[0].props as { timezone?: string })?.timezone || null;
-      }
-    }
+    const scheduleComponents = getVisibleScheduleComponentProps(data.content);
+    const componentTimezone = scheduleComponents[0]?.timezone ?? null;
 
     const calendar = ical({
       name: calendarName,
@@ -58,80 +48,80 @@ export class CalendarController {
       timezone: componentTimezone || data.talent.timezone || 'UTC', // Prefer component timezone
     });
 
-      for (const comp of scheduleComponents) {
-        const props = comp.props as Record<string, unknown>;
-        const weekOfStr = typeof props.weekOf === 'string' ? props.weekOf : undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const events = (Array.isArray(props.events) ? props.events : []) as any[];
+    for (const component of scheduleComponents) {
+      const weekOfStr = component.weekOf;
+      const events = component.events;
 
-        if (events.length === 0) continue;
+      if (events.length === 0) continue;
 
-        // Determine the start of the week
-        // If weekOf is present, use it. Otherwise, assume current week.
-        let weekStart: Date;
-        if (weekOfStr && isValid(parseISO(weekOfStr))) {
-          weekStart = parseISO(weekOfStr);
-        } else {
-            // Fallback to current week monday if no date specified
-           weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-        }
-
-        const dayMap: Record<string, number> = {
-            mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6
-        };
-
-        // Event Type Helpers
-        const getEventTypeLabel = (type: string, l: string) => {
-           const typeMap: Record<string, Record<string, string>> = {
-               game: { zh: '游戏', en: 'GAME', ja: 'ゲーム' },
-               chat: { zh: '杂谈', en: 'CHAT', ja: '雑談' },
-               singing: { zh: '歌回', en: 'SINGING', ja: '歌枠' },
-               collab: { zh: '联动', en: 'COLLAB', ja: 'コラボ' },
-               other: { zh: '其他', en: 'OTHER', ja: 'その他' },
-           };
-           const normalizedType = type?.toLowerCase() || 'other';
-           return typeMap[normalizedType]?.[l] || typeMap['other'][l];
-        };
-
-        const getStreamerLabel = (l: string) => {
-            if (l === 'en') return 'Streamer';
-            if (l === 'ja') return '配信者';
-            return '主播';
-        };
-
-        const getTypeLabel = (l: string) => {
-             if (l === 'en') return 'Type';
-             if (l === 'ja') return 'タイプ';
-             return '类型';
-        };
-
-        for (const event of events) {
-            if (!event.day || !event.time || !event.title) continue;
-            
-            const dayIndex = dayMap[event.day.toLowerCase()];
-            if (dayIndex === undefined) continue;
-
-            // Calculate event date
-            const params = event.time.split(':');
-            if (params.length < 2) continue;
-            const hours = parseInt(params[0], 10);
-            const minutes = parseInt(params[1], 10);
-
-            let eventDate = addDays(weekStart, dayIndex);
-            eventDate = setHours(eventDate, hours);
-            eventDate = setMinutes(eventDate, minutes);
-
-            const typeLabel = getEventTypeLabel(event.type, targetLang);
-            const prefix = `[${typeLabel}]`;
-
-            calendar.createEvent({
-                start: eventDate,
-                end: addHours(eventDate, 1),
-                summary: `${prefix} ${event.title}`,
-                description: `${getTypeLabel(targetLang)}: ${typeLabel}\n${getStreamerLabel(targetLang)}: ${talentName}`,
-            });
-        }
+      // Determine the start of the week
+      // If weekOf is present, use it. Otherwise, assume current week.
+      let weekStart: Date;
+      if (weekOfStr && isValid(parseISO(weekOfStr))) {
+        weekStart = parseISO(weekOfStr);
+      } else {
+        // Fallback to current week monday if no date specified
+        weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
       }
+
+      const dayMap = {
+        mon: 0,
+        tue: 1,
+        wed: 2,
+        thu: 3,
+        fri: 4,
+        sat: 5,
+        sun: 6,
+      };
+
+      const getEventTypeLabel = (type: string, locale: string) => {
+        const typeMap: Record<string, Record<string, string>> = {
+          game: { zh: '游戏', en: 'GAME', ja: 'ゲーム' },
+          chat: { zh: '杂谈', en: 'CHAT', ja: '雑談' },
+          singing: { zh: '歌回', en: 'SINGING', ja: '歌枠' },
+          collab: { zh: '联动', en: 'COLLAB', ja: 'コラボ' },
+          other: { zh: '其他', en: 'OTHER', ja: 'その他' },
+        };
+        return typeMap[type]?.[locale] || typeMap.other[locale];
+      };
+
+      const getStreamerLabel = (locale: string) => {
+        if (locale === 'en') return 'Streamer';
+        if (locale === 'ja') return '配信者';
+        return '主播';
+      };
+
+      const getTypeLabel = (locale: string) => {
+        if (locale === 'en') return 'Type';
+        if (locale === 'ja') return 'タイプ';
+        return '类型';
+      };
+
+      for (const event of events) {
+        const dayIndex = dayMap[event.day];
+        if (dayIndex === undefined) continue;
+
+        // Calculate event date
+        const params = event.time.split(':');
+        if (params.length < 2) continue;
+        const hours = parseInt(params[0], 10);
+        const minutes = parseInt(params[1], 10);
+
+        let eventDate = addDays(weekStart, dayIndex);
+        eventDate = setHours(eventDate, hours);
+        eventDate = setMinutes(eventDate, minutes);
+
+        const typeLabel = getEventTypeLabel(event.type, targetLang);
+        const prefix = `[${typeLabel}]`;
+
+        calendar.createEvent({
+          start: eventDate,
+          end: addHours(eventDate, 1),
+          summary: `${prefix} ${event.title}`,
+          description: `${getTypeLabel(targetLang)}: ${typeLabel}\n${getStreamerLabel(targetLang)}: ${talentName}`,
+        });
+      }
+    }
 
     res.set({
       'Content-Type': 'text/calendar; charset=utf-8',
