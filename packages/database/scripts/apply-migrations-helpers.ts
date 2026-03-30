@@ -31,9 +31,7 @@ function readDollarQuoteDelimiter(sql: string, start: number): string | null {
 }
 
 function isCommentOnlyStatement(statement: string): boolean {
-  return statement
-    .split('\n')
-    .every((line) => line.trim().startsWith('--') || line.trim() === '');
+  return statement.split('\n').every((line) => line.trim().startsWith('--') || line.trim() === '');
 }
 
 export interface TenantMigrationExecutionSummary {
@@ -63,27 +61,43 @@ export const TENANT_MIGRATION_SKIP_REASONS = [
   'create_exists',
   'alter_table_add_exists',
   'alter_type_add_value_exists',
+  'drop_table_missing',
+  'drop_index_missing',
   'drop_missing',
+  'alter_table_drop_constraint_missing',
+  'alter_table_drop_column_missing',
   'alter_table_drop_or_rename_missing',
   'alter_index_rename_missing',
   'alter_type_drop_or_rename_missing',
 ] as const;
 
-export type TenantMigrationSkipReason =
-  (typeof TENANT_MIGRATION_SKIP_REASONS)[number];
+export type TenantMigrationSkipReason = (typeof TENANT_MIGRATION_SKIP_REASONS)[number];
 
-export type TenantMigrationSkipReasonCounts = Partial<
-  Record<TenantMigrationSkipReason, number>
->;
+export type TenantMigrationSkipReasonCounts = Partial<Record<TenantMigrationSkipReason, number>>;
 
-const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<
-  TenantMigrationSkipReason,
-  string
-> = {
+export const TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS = [
+  'drop_table_missing',
+  'drop_index_missing',
+  'drop_missing',
+  'alter_table_drop_constraint_missing',
+  'alter_table_drop_column_missing',
+  'alter_table_drop_or_rename_missing',
+  'alter_index_rename_missing',
+  'alter_type_drop_or_rename_missing',
+] as const;
+
+export type TenantMigrationDriftWatchSkipReason =
+  (typeof TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS)[number];
+
+const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<TenantMigrationSkipReason, string> = {
   create_exists: 'create/already_exists',
   alter_table_add_exists: 'alter_table_add/already_exists',
   alter_type_add_value_exists: 'alter_type_add_value/already_exists',
+  drop_table_missing: 'drop_table/does_not_exist',
+  drop_index_missing: 'drop_index/does_not_exist',
   drop_missing: 'drop/does_not_exist',
+  alter_table_drop_constraint_missing: 'alter_table_drop_constraint/does_not_exist',
+  alter_table_drop_column_missing: 'alter_table_drop_column/does_not_exist',
   alter_table_drop_or_rename_missing: 'alter_table_drop_or_rename/does_not_exist',
   alter_index_rename_missing: 'alter_index_rename/does_not_exist',
   alter_type_drop_or_rename_missing: 'alter_type_drop_or_rename/does_not_exist',
@@ -128,6 +142,27 @@ export function formatTenantMigrationSkipReasonCounts(
   }).join(', ');
 }
 
+export function countTenantMigrationSkips(
+  counts: TenantMigrationSkipReasonCounts,
+  reasons: readonly TenantMigrationSkipReason[] = TENANT_MIGRATION_SKIP_REASONS
+): number {
+  return reasons.reduce((total, reason) => total + (counts[reason] ?? 0), 0);
+}
+
+export function formatTenantMigrationDriftWatchSkipReasonCounts(
+  counts: TenantMigrationSkipReasonCounts
+): string {
+  return TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS.flatMap((reason) => {
+    const amount = counts[reason];
+
+    if (!amount) {
+      return [];
+    }
+
+    return [`${TENANT_MIGRATION_SKIP_REASON_LABELS[reason]}=${amount}`];
+  }).join(', ');
+}
+
 export function splitSqlStatements(sql: string): string[] {
   const statements: string[] = [];
   let current = '';
@@ -155,9 +190,9 @@ export function splitSqlStatements(sql: string): string[] {
     if (inSingleQuotedString) {
       current += currentChar;
 
-      if (currentChar === '\'') {
-        if (sql[i + 1] === '\'') {
-          current += '\'';
+      if (currentChar === "'") {
+        if (sql[i + 1] === "'") {
+          current += "'";
           i += 2;
           continue;
         }
@@ -194,7 +229,7 @@ export function splitSqlStatements(sql: string): string[] {
       continue;
     }
 
-    if (currentChar === '\'') {
+    if (currentChar === "'") {
       current += currentChar;
       inSingleQuotedString = true;
       i += 1;
@@ -286,8 +321,24 @@ export function classifyIgnorableTenantMigrationError(
   }
 
   if (normalizedMessage.includes('does not exist')) {
+    if (/^DROP TABLE\b/.test(normalizedStatement)) {
+      return 'drop_table_missing';
+    }
+
+    if (/^DROP INDEX\b/.test(normalizedStatement)) {
+      return 'drop_index_missing';
+    }
+
     if (normalizedStatement.startsWith('DROP ')) {
       return 'drop_missing';
+    }
+
+    if (/^ALTER TABLE\b.*\bDROP CONSTRAINT\b/.test(normalizedStatement)) {
+      return 'alter_table_drop_constraint_missing';
+    }
+
+    if (/^ALTER TABLE\b.*\bDROP COLUMN\b/.test(normalizedStatement)) {
+      return 'alter_table_drop_column_missing';
     }
 
     if (/^ALTER TABLE\b.*\b(DROP|RENAME)\b/.test(normalizedStatement)) {
@@ -308,23 +359,15 @@ export function classifyIgnorableTenantMigrationError(
   return null;
 }
 
-export function isIgnorableTenantMigrationError(
-  statement: string,
-  message: string
-): boolean {
+export function isIgnorableTenantMigrationError(statement: string, message: string): boolean {
   return classifyIgnorableTenantMigrationError(statement, message) !== null;
 }
 
 export async function executeTenantMigrationStatements(
-  options: ExecuteTenantMigrationStatementsOptions,
+  options: ExecuteTenantMigrationStatementsOptions
 ): Promise<TenantMigrationExecutionSummary> {
-  const {
-    statements,
-    targetSchema,
-    migrationName,
-    executeStatement,
-    onNonIgnorableError,
-  } = options;
+  const { statements, targetSchema, migrationName, executeStatement, onNonIgnorableError } =
+    options;
 
   let success = 0;
   let skipped = 0;

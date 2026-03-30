@@ -1,16 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Script to manually apply SQL migrations to all tenant schemas
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import { PrismaClient } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import {
+  countTenantMigrationSkips,
   executeTenantMigrationStatements,
   formatStatementPreview,
+  formatTenantMigrationDriftWatchSkipReasonCounts,
   formatTenantMigrationSkipReasonCounts,
   mergeTenantMigrationSkipReasonCounts,
   splitSqlStatements,
+  TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS,
   type TenantMigrationExecutionSummary,
   type TenantMigrationSkipReasonCounts,
 } from './apply-migrations-helpers';
@@ -29,7 +32,7 @@ async function getAllTenantSchemas(): Promise<string[]> {
       CASE WHEN schema_name = 'tenant_template' THEN 0 ELSE 1 END,
       schema_name
   `;
-  return schemas.map(s => s.schema_name);
+  return schemas.map((s) => s.schema_name);
 }
 
 /**
@@ -54,7 +57,7 @@ async function applyMigrationToSchema(
     onNonIgnorableError: ({ message, statementPreview }) => {
       const truncatedMessage = formatStatementPreview(message, 100);
       console.error(
-        `      Error in ${migrationName} for ${targetSchema}: ${truncatedMessage} [statement: ${statementPreview}]`,
+        `      Error in ${migrationName} for ${targetSchema}: ${truncatedMessage} [statement: ${statementPreview}]`
       );
     },
   });
@@ -68,10 +71,11 @@ async function applyMigrations() {
   console.log(`Found ${schemas.length} tenant schema(s): ${schemas.join(', ')}\n`);
 
   const migrationsDir = path.join(__dirname, '../prisma/migrations');
-  
+
   // Get all migration directories
-  const migrations = fs.readdirSync(migrationsDir)
-    .filter(f => fs.statSync(path.join(migrationsDir, f)).isDirectory())
+  const migrations = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => fs.statSync(path.join(migrationsDir, f)).isDirectory())
     .sort();
 
   console.log(`Found ${migrations.length} migration(s)\n`);
@@ -83,20 +87,20 @@ async function applyMigrations() {
 
   for (const migration of migrations) {
     const migrationPath = path.join(migrationsDir, migration, 'migration.sql');
-    
+
     if (!fs.existsSync(migrationPath)) {
       console.log(`  Skipping ${migration} (no migration.sql found)`);
       continue;
     }
 
     console.log(`📌 Applying: ${migration}`);
-    
+
     const sql = fs.readFileSync(migrationPath, 'utf-8');
     let migrationSuccess = 0;
     let migrationSkipped = 0;
     let migrationErrors = 0;
     const migrationSkippedByReason: TenantMigrationSkipReasonCounts = {};
-    
+
     // Apply to each schema
     for (const schema of schemas) {
       const result = await applyMigrationToSchema(sql, schema, migration);
@@ -108,23 +112,38 @@ async function applyMigrations() {
       migrationErrors += result.errors;
       mergeTenantMigrationSkipReasonCounts(totalSkippedByReason, result.skippedByReason);
       mergeTenantMigrationSkipReasonCounts(migrationSkippedByReason, result.skippedByReason);
-      
+
       if (result.errors > 0) {
-        console.log(`    ${schema}: ${result.success} applied, ${result.skipped} skipped, ${result.errors} errors`);
+        console.log(
+          `    ${schema}: ${result.success} applied, ${result.skipped} skipped, ${result.errors} errors`
+        );
       }
     }
 
     if (migrationSkipped > 0) {
       console.log(
         `    Skip summary: ${migrationSkipped} skipped (${formatTenantMigrationSkipReasonCounts(
-          migrationSkippedByReason,
-        )})`,
+          migrationSkippedByReason
+        )})`
       );
+
+      const migrationDriftWatchSkipped = countTenantMigrationSkips(
+        migrationSkippedByReason,
+        TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS
+      );
+
+      if (migrationDriftWatchSkipped > 0) {
+        console.log(
+          `    Drift-watch summary: ${migrationDriftWatchSkipped} potentially drift-sensitive skips (${formatTenantMigrationDriftWatchSkipReasonCounts(
+            migrationSkippedByReason
+          )})`
+        );
+      }
     }
 
     if (migrationErrors > 0) {
       console.log(
-        `    Migration totals: ${migrationSuccess} applied, ${migrationSkipped} skipped, ${migrationErrors} errors`,
+        `    Migration totals: ${migrationSuccess} applied, ${migrationSkipped} skipped, ${migrationErrors} errors`
       );
     }
 
@@ -137,8 +156,21 @@ async function applyMigrations() {
   console.log(`   - Statements skipped (ignorable replay conflicts): ${totalSkipped}`);
   if (totalSkipped > 0) {
     console.log(
-      `   - Skipped by reason: ${formatTenantMigrationSkipReasonCounts(totalSkippedByReason)}`,
+      `   - Skipped by reason: ${formatTenantMigrationSkipReasonCounts(totalSkippedByReason)}`
     );
+
+    const totalDriftWatchSkipped = countTenantMigrationSkips(
+      totalSkippedByReason,
+      TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS
+    );
+
+    if (totalDriftWatchSkipped > 0) {
+      console.log(
+        `   - Drift-watch skips: ${totalDriftWatchSkipped} (${formatTenantMigrationDriftWatchSkipReasonCounts(
+          totalSkippedByReason
+        )})`
+      );
+    }
   }
   if (totalErrors > 0) {
     console.log(`   - Errors: ${totalErrors}`);

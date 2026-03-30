@@ -1,4 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// sort-imports-ignore
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';

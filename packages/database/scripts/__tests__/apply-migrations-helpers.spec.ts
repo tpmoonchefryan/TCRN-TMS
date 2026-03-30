@@ -1,11 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// sort-imports-ignore
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
   classifyIgnorableTenantMigrationError,
+  countTenantMigrationSkips,
   executeTenantMigrationStatements,
   formatStatementPreview,
+  formatTenantMigrationDriftWatchSkipReasonCounts,
   formatTenantMigrationSkipReasonCounts,
   getErrorMessage,
   isIgnorableTenantMigrationError,
@@ -110,6 +113,38 @@ describe('isIgnorableTenantMigrationError', () => {
 
   it('keeps drop/rename replay conflicts ignorable', () => {
     assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'DROP TABLE tenant_template.legacy_export_job;',
+        'table "legacy_export_job" does not exist'
+      ),
+      'drop_table_missing'
+    );
+
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'DROP INDEX tenant_template.foo_idx;',
+        'index "tenant_template.foo_idx" does not exist'
+      ),
+      'drop_index_missing'
+    );
+
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'ALTER TABLE tenant_template.policy DROP CONSTRAINT policy_resource_id_action_effect_key;',
+        'constraint "policy_resource_id_action_effect_key" of relation "policy" does not exist'
+      ),
+      'alter_table_drop_constraint_missing'
+    );
+
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'ALTER TABLE tenant_template.export_job DROP COLUMN legacy_file_path;',
+        'column "legacy_file_path" of relation "export_job" does not exist'
+      ),
+      'alter_table_drop_column_missing'
+    );
+
+    assert.equal(
       isIgnorableTenantMigrationError(
         'ALTER INDEX tenant_template.idx_old RENAME TO idx_new;',
         'relation "tenant_template.idx_old" does not exist'
@@ -175,9 +210,9 @@ describe('formatStatementPreview', () => {
     assert.equal(
       formatStatementPreview(
         'ALTER   TABLE tenant_template.customer_profile\nADD COLUMN example TEXT;',
-        40,
+        40
       ),
-      'ALTER TABLE tenant_template.customer_...',
+      'ALTER TABLE tenant_template.customer_...'
     );
   });
 });
@@ -186,11 +221,47 @@ describe('formatTenantMigrationSkipReasonCounts', () => {
   it('formats skip reasons in stable order', () => {
     assert.equal(
       formatTenantMigrationSkipReasonCounts({
-        drop_missing: 2,
+        drop_index_missing: 2,
         create_exists: 3,
         alter_index_rename_missing: 1,
       }),
-      'create/already_exists=3, drop/does_not_exist=2, alter_index_rename/does_not_exist=1'
+      'create/already_exists=3, drop_index/does_not_exist=2, alter_index_rename/does_not_exist=1'
+    );
+  });
+});
+
+describe('formatTenantMigrationDriftWatchSkipReasonCounts', () => {
+  it('formats drift-watch skip reasons in stable order', () => {
+    assert.equal(
+      formatTenantMigrationDriftWatchSkipReasonCounts({
+        drop_table_missing: 1,
+        create_exists: 99,
+        alter_table_drop_constraint_missing: 3,
+      }),
+      'drop_table/does_not_exist=1, alter_table_drop_constraint/does_not_exist=3'
+    );
+  });
+});
+
+describe('countTenantMigrationSkips', () => {
+  it('counts all reasons or a selected subset', () => {
+    assert.equal(
+      countTenantMigrationSkips({
+        create_exists: 2,
+        alter_table_drop_column_missing: 3,
+      }),
+      5
+    );
+
+    assert.equal(
+      countTenantMigrationSkips(
+        {
+          create_exists: 2,
+          alter_table_drop_column_missing: 3,
+        },
+        ['alter_table_drop_column_missing']
+      ),
+      3
     );
   });
 });
@@ -247,9 +318,7 @@ describe('executeTenantMigrationStatements', () => {
     }> = [];
 
     const result = await executeTenantMigrationStatements({
-      statements: [
-        "INSERT INTO tenant_template.role (code) VALUES ('ADMIN');",
-      ],
+      statements: ["INSERT INTO tenant_template.role (code) VALUES ('ADMIN');"],
       targetSchema: 'tenant_prod',
       migrationName: '20260330_role_backfill',
       executeStatement: async () => {
@@ -285,7 +354,7 @@ describe('executeTenantMigrationStatements', () => {
     const result = await executeTenantMigrationStatements({
       statements: [
         'CREATE INDEX foo_idx ON tenant_template.foo(id);',
-        'ALTER INDEX tenant_template.idx_old RENAME TO idx_new;',
+        'DROP INDEX tenant_template.idx_old;',
       ],
       targetSchema: 'tenant_test',
       migrationName: '20260330_multi_skip',
@@ -294,7 +363,7 @@ describe('executeTenantMigrationStatements', () => {
           throw new Error('relation "foo_idx" already exists');
         }
 
-        throw new Error('relation "tenant_template.idx_old" does not exist');
+        throw new Error('index "tenant_template.idx_old" does not exist');
       },
     });
 
@@ -304,7 +373,7 @@ describe('executeTenantMigrationStatements', () => {
       errors: 0,
       skippedByReason: {
         create_exists: 1,
-        alter_index_rename_missing: 1,
+        drop_index_missing: 1,
       },
     });
   });
