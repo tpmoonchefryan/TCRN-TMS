@@ -3,7 +3,6 @@
 //
 // This script generates SQL that can restore the exact role and role_policy rows
 // for selected historical-role retirement candidates.
-
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,12 +13,16 @@ import {
   type HistoricalRoleNormalizationPlanSummary,
   planHistoricalRoleNormalization,
 } from './plan-historical-role-normalization';
-import { buildExecutionPlan, type CliOptions as RetirementCliOptions } from './retire-historical-roles';
+import {
+  buildExecutionPlan,
+  type CliOptions as RetirementCliOptions,
+} from './retire-historical-roles';
 
 export interface CliOptions {
   schemas: string[];
   roles: string[];
   json: boolean;
+  sql: boolean;
 }
 
 interface RoleRow {
@@ -69,10 +72,11 @@ export interface RollbackExportSummary {
   exports: SchemaRollbackExport[];
 }
 
-function parseCliArgs(argv: string[]): CliOptions {
+export function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   const roles: string[] = [];
   let json = false;
+  let sql = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -110,7 +114,16 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--sql') {
+      sql = true;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  if (json && sql) {
+    throw new Error('Choose at most one output flag: --json or --sql.');
   }
 
   if (schemas.length === 0) {
@@ -125,6 +138,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     schemas: [...new Set(schemas)],
     roles: [...new Set(roles)],
     json,
+    sql,
   };
 }
 
@@ -160,7 +174,7 @@ function sqlLiteral(value: boolean | Date | number | string | null): string {
 function buildRollbackSql(
   schemaName: string,
   role: RoleRow,
-  rolePolicies: RolePolicyRow[],
+  rolePolicies: RolePolicyRow[]
 ): string {
   const statements: string[] = [
     `-- Rollback export for ${schemaName}:${role.code}`,
@@ -200,7 +214,7 @@ function buildRollbackSql(
           sqlLiteral(rolePolicy.effect),
           sqlLiteral(rolePolicy.created_at),
         ].join(', ') +
-        ') ON CONFLICT (role_id, policy_id) DO NOTHING;',
+        ') ON CONFLICT (role_id, policy_id) DO NOTHING;'
     );
   }
 
@@ -209,9 +223,7 @@ function buildRollbackSql(
   return `${statements.join('\n')}\n`;
 }
 
-function getCandidateRole(
-  plan: HistoricalRoleNormalizationPlan,
-): HistoricalRoleNormalizationPlan {
+function getCandidateRole(plan: HistoricalRoleNormalizationPlan): HistoricalRoleNormalizationPlan {
   if (!plan.roleId) {
     throw new Error(`Role ${plan.roleCode} is missing roleId and cannot be exported.`);
   }
@@ -222,7 +234,7 @@ function getCandidateRole(
 async function exportRole(
   prisma: PrismaClient,
   schemaName: string,
-  rolePlan: HistoricalRoleNormalizationPlan,
+  rolePlan: HistoricalRoleNormalizationPlan
 ): Promise<RollbackRoleExport> {
   const candidate = getCandidateRole(rolePlan);
 
@@ -245,7 +257,7 @@ async function exportRole(
       FROM "${schemaName}".role
       WHERE id = CAST($1 AS uuid)
     `,
-    candidate.roleId,
+    candidate.roleId
   );
 
   if (roleRows.length === 0) {
@@ -270,7 +282,7 @@ async function exportRole(
       WHERE rp.role_id = CAST($1 AS uuid)
       ORDER BY res.code, p.action, rp.id
     `,
-    candidate.roleId,
+    candidate.roleId
   );
 
   return {
@@ -284,7 +296,7 @@ async function exportRole(
 
 export async function exportRollbackSummary(
   prisma: PrismaClient,
-  options: CliOptions,
+  options: CliOptions
 ): Promise<RollbackExportSummary> {
   const plannerSummary: HistoricalRoleNormalizationPlanSummary =
     await planHistoricalRoleNormalization(prisma, {
@@ -296,27 +308,27 @@ export async function exportRollbackSummary(
 
   if (executionPlan.skipped.length > 0) {
     throw new Error(
-      `Rollback export refused because some schemas were skipped: ${executionPlan.skipped.map((item) => `${item.schemaName} (${item.reason})`).join(', ')}`,
+      `Rollback export refused because some schemas were skipped: ${executionPlan.skipped.map((item) => `${item.schemaName} (${item.reason})`).join(', ')}`
     );
   }
 
   const blockedEntries = executionPlan.plans.flatMap((plan) =>
-    plan.blocked.map((rolePlan) => `${plan.schemaName}:${rolePlan.roleCode}[${rolePlan.decision}]`),
+    plan.blocked.map((rolePlan) => `${plan.schemaName}:${rolePlan.roleCode}[${rolePlan.decision}]`)
   );
 
   if (blockedEntries.length > 0) {
     throw new Error(
-      `Rollback export refused because selected roles are not retirement candidates: ${blockedEntries.join(', ')}`,
+      `Rollback export refused because selected roles are not retirement candidates: ${blockedEntries.join(', ')}`
     );
   }
 
   const absentEntries = executionPlan.plans.flatMap((plan) =>
-    plan.absent.map((roleCode) => `${plan.schemaName}:${roleCode}`),
+    plan.absent.map((roleCode) => `${plan.schemaName}:${roleCode}`)
   );
 
   if (absentEntries.length > 0) {
     throw new Error(
-      `Rollback export refused because selected roles are already absent: ${absentEntries.join(', ')}`,
+      `Rollback export refused because selected roles are already absent: ${absentEntries.join(', ')}`
     );
   }
 
@@ -344,16 +356,55 @@ export async function exportRollbackSummary(
   };
 }
 
-function printSummary(summary: RollbackExportSummary): void {
+export function formatRollbackExportSql(summary: RollbackExportSummary): string {
+  const statements: string[] = [
+    '-- Historical role retirement rollback export',
+    `-- Schemas: ${summary.filters.schemas.join(', ')}`,
+    `-- Roles: ${summary.filters.roles.join(', ')}`,
+  ];
+
   for (const schemaExport of summary.exports) {
-    console.log(`\nSchema: ${schemaExport.schemaName}`);
+    for (const roleExport of schemaExport.roles) {
+      statements.push('', roleExport.sql.trimEnd());
+    }
+  }
+
+  return `${statements.join('\n')}\n`;
+}
+
+export function formatRollbackExportSummary(summary: RollbackExportSummary): string {
+  const lines: string[] = [];
+
+  for (const schemaExport of summary.exports) {
+    if (lines.length > 0) {
+      lines.push('');
+    }
+
+    lines.push(`Schema: ${schemaExport.schemaName}`);
 
     for (const roleExport of schemaExport.roles) {
-      console.log(
-        `- ${roleExport.roleCode}: rolePolicies=${roleExport.rolePolicies.length} roleId=${roleExport.roleId}`,
+      lines.push(
+        `- ${roleExport.roleCode}: rolePolicies=${roleExport.rolePolicies.length} roleId=${roleExport.roleId}`
       );
     }
   }
+
+  return `${lines.join('\n')}\n`;
+}
+
+export function renderRollbackExportOutput(
+  summary: RollbackExportSummary,
+  options: Pick<CliOptions, 'json' | 'sql'>
+): string {
+  if (options.json) {
+    return `${JSON.stringify(summary, null, 2)}\n`;
+  }
+
+  if (options.sql) {
+    return formatRollbackExportSql(summary);
+  }
+
+  return formatRollbackExportSummary(summary);
 }
 
 async function main(): Promise<void> {
@@ -362,13 +413,7 @@ async function main(): Promise<void> {
 
   try {
     const summary = await exportRollbackSummary(prisma, options);
-
-    if (options.json) {
-      console.log(JSON.stringify(summary, null, 2));
-      return;
-    }
-
-    printSummary(summary);
+    process.stdout.write(renderRollbackExportOutput(summary, options));
   } finally {
     await prisma.$disconnect();
   }
