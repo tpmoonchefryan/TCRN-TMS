@@ -2,12 +2,12 @@
 
 'use client';
 
-import { Key, Loader2, Mail, User } from 'lucide-react';
+import { Key, Loader2, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { AvatarUpload } from '@/components/ui/avatar-upload';
+import { CurrentUserProfileContent } from '@/components/auth/current-user-profile-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,15 +23,10 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { getApiResponseMessage, getThrownErrorMessage } from '@/lib/api/error-utils';
 import { userApi } from '@/lib/api/modules/user';
-import { useAuthStore } from '@/stores/auth-store';
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
-  const { user, mergeCurrentUserProfile, setCurrentUserAvatar } = useAuthStore();
-
-  const [displayName, setDisplayName] = useState(user?.display_name || '');
-  const [isSaving, setIsSaving] = useState(false);
 
   // Password change state
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -47,12 +42,6 @@ export default function ProfilePage() {
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [emailSent, setEmailSent] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      setDisplayName(user.display_name || '');
-    }
-  }, [user]);
 
   // Password change handler
   const handleChangePassword = async () => {
@@ -120,11 +109,6 @@ export default function ProfilePage() {
       return;
     }
 
-    if (newEmail === user?.email) {
-      setEmailError(t('emailSameAsCurrent') || 'New email must be different from current email');
-      return;
-    }
-
     setIsChangingEmail(true);
     try {
       const response = await userApi.requestEmailChange(newEmail);
@@ -154,293 +138,218 @@ export default function ProfilePage() {
     setEmailSent(false);
   };
 
-  const handleSaveProfile = async () => {
-    setIsSaving(true);
-    try {
-      const response = await userApi.updateProfile({ displayName });
-      if (response.success && response.data) {
-        mergeCurrentUserProfile(response.data);
-        toast.success(t('saveSuccess'));
-      }
-    } catch (error) {
-      toast.error(getThrownErrorMessage(error, t('saveFailed') || 'Failed to save profile'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAvatarChange = (avatarUrl: string | null) => {
-    setCurrentUserAvatar(avatarUrl);
-  };
-
-  if (!user) {
-    return null;
-  }
-
   return (
-    <div className="container max-w-2xl py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
-      {/* Avatar Section */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">{t('avatar')}</CardTitle>
-          <CardDescription>{t('avatarDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AvatarUpload
-            currentAvatarUrl={user.avatar_url}
-            email={user.email}
-            displayName={user.display_name || user.username}
-            onAvatarChange={handleAvatarChange}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Profile Info Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('accountInfo')}</CardTitle>
-          <CardDescription>{t('accountInfoDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Username (read-only) */}
-          <div className="space-y-2">
-            <Label htmlFor="username" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {t('username')}
-            </Label>
-            <Input id="username" value={user.username} disabled className="bg-muted" />
-            <p className="text-muted-foreground text-xs">{t('usernameHint')}</p>
-          </div>
-
-          {/* Email (read-only) */}
-          <div className="space-y-2">
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              {t('email')}
-            </Label>
-            <Input id="email" value={user.email} disabled className="bg-muted" />
-          </div>
-
-          <Separator />
-
-          {/* Display Name */}
-          <div className="space-y-2">
-            <Label htmlFor="displayName">{t('displayName')}</Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder={t('displayNamePlaceholder')}
-            />
-            <p className="text-muted-foreground text-xs">{t('displayNameHint')}</p>
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={handleSaveProfile} disabled={isSaving}>
-              {isSaving ? tCommon('saving') : tCommon('save')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Settings Section */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-lg">{t('security') || 'Security'}</CardTitle>
-          <CardDescription>
-            {t('securityDescription') || 'Manage your account security settings'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Password */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                <Key className="text-primary h-5 w-5" />
+    <CurrentUserProfileContent>
+      {(user) => (
+        <>
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg">{t('security') || 'Security'}</CardTitle>
+              <CardDescription>
+                {t('securityDescription') || 'Manage your account security settings'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                    <Key className="text-primary h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{t('password') || 'Password'}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {t('passwordHint') || 'Keep your account secure by using a strong password'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetPasswordDialog();
+                    setShowPasswordDialog(true);
+                  }}
+                >
+                  {t('changePassword') || 'Change Password'}
+                </Button>
               </div>
-              <div>
-                <p className="font-medium">{t('password') || 'Password'}</p>
-                <p className="text-muted-foreground text-sm">
-                  {t('passwordHint') || 'Keep your account secure by using a strong password'}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                resetPasswordDialog();
-                setShowPasswordDialog(true);
-              }}
-            >
-              {t('changePassword') || 'Change Password'}
-            </Button>
-          </div>
 
-          <Separator />
+              <Separator />
 
-          {/* Email */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                <Mail className="text-primary h-5 w-5" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                    <Mail className="text-primary h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{t('emailAddress') || 'Email Address'}</p>
+                    <p className="text-muted-foreground text-sm">{user.email}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetEmailDialog();
+                    setShowEmailDialog(true);
+                  }}
+                >
+                  {t('changeEmail') || 'Change Email'}
+                </Button>
               </div>
-              <div>
-                <p className="font-medium">{t('emailAddress') || 'Email Address'}</p>
-                <p className="text-muted-foreground text-sm">{user.email}</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                resetEmailDialog();
-                setShowEmailDialog(true);
-              }}
-            >
-              {t('changeEmail') || 'Change Email'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Password Change Dialog */}
-      <Dialog
-        open={showPasswordDialog}
-        onOpenChange={(open) => {
-          if (!open) resetPasswordDialog();
-          setShowPasswordDialog(open);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('changePassword') || 'Change Password'}</DialogTitle>
-            <DialogDescription>
-              {t('changePasswordDescription') || 'Enter your current password and choose a new one'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">{t('currentPassword') || 'Current Password'}</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••••••"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">{t('newPassword') || 'New Password'}</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••••••"
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('passwordRequirements') ||
-                  'At least 12 characters with uppercase, lowercase, number, and special character'}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('confirmPassword') || 'Confirm Password'}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••••••"
-              />
-            </div>
-            {passwordError && <p className="text-destructive text-sm">{passwordError}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              {tCommon('cancel')}
-            </Button>
-            <Button onClick={handleChangePassword} disabled={isChangingPassword}>
-              {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('changePassword') || 'Change Password'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Email Change Dialog */}
-      <Dialog
-        open={showEmailDialog}
-        onOpenChange={(open) => {
-          if (!open) resetEmailDialog();
-          setShowEmailDialog(open);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('changeEmail') || 'Change Email'}</DialogTitle>
-            <DialogDescription>
-              {t('changeEmailDescription') ||
-                'Enter your new email address. We will send a verification link to confirm the change.'}
-            </DialogDescription>
-          </DialogHeader>
-          {emailSent ? (
-            <div className="py-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium">
-                {t('emailVerificationSent') || 'Verification Email Sent'}
-              </h3>
-              <p className="text-muted-foreground mt-2 text-sm">
-                {t('emailVerificationSentDescription') ||
-                  'Please check your new email inbox and click the verification link to complete the change.'}
-              </p>
-              <Button className="mt-4" onClick={() => setShowEmailDialog(false)}>
-                {tCommon('close') || 'Close'}
-              </Button>
-            </div>
-          ) : (
-            <>
+          <Dialog
+            open={showPasswordDialog}
+            onOpenChange={(open) => {
+              if (!open) resetPasswordDialog();
+              setShowPasswordDialog(open);
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('changePassword') || 'Change Password'}</DialogTitle>
+                <DialogDescription>
+                  {t('changePasswordDescription') ||
+                    'Enter your current password and choose a new one'}
+                </DialogDescription>
+              </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentEmail">{t('currentEmail') || 'Current Email'}</Label>
+                  <Label htmlFor="currentPassword">
+                    {t('currentPassword') || 'Current Password'}
+                  </Label>
                   <Input
-                    id="currentEmail"
-                    type="email"
-                    value={user.email}
-                    disabled
-                    className="bg-muted"
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••••••"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newEmail">{t('newEmail') || 'New Email'}</Label>
+                  <Label htmlFor="newPassword">{t('newPassword') || 'New Password'}</Label>
                   <Input
-                    id="newEmail"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="your.new.email@example.com"
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    {t('passwordRequirements') ||
+                      'At least 12 characters with uppercase, lowercase, number, and special character'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">
+                    {t('confirmPassword') || 'Confirm Password'}
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••••••"
                   />
                 </div>
-                {emailError && <p className="text-destructive text-sm">{emailError}</p>}
+                {passwordError && <p className="text-destructive text-sm">{passwordError}</p>}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+                <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
                   {tCommon('cancel')}
                 </Button>
-                <Button onClick={handleRequestEmailChange} disabled={isChangingEmail}>
-                  {isChangingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('sendVerification') || 'Send Verification'}
+                <Button onClick={handleChangePassword} disabled={isChangingPassword}>
+                  {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('changePassword') || 'Change Password'}
                 </Button>
               </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={showEmailDialog}
+            onOpenChange={(open) => {
+              if (!open) resetEmailDialog();
+              setShowEmailDialog(open);
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('changeEmail') || 'Change Email'}</DialogTitle>
+                <DialogDescription>
+                  {t('changeEmailDescription') ||
+                    'Enter your new email address. We will send a verification link to confirm the change.'}
+                </DialogDescription>
+              </DialogHeader>
+              {emailSent ? (
+                <div className="py-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                    <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-medium">
+                    {t('emailVerificationSent') || 'Verification Email Sent'}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-sm">
+                    {t('emailVerificationSentDescription') ||
+                      'Please check your new email inbox and click the verification link to complete the change.'}
+                  </p>
+                  <Button className="mt-4" onClick={() => setShowEmailDialog(false)}>
+                    {tCommon('close') || 'Close'}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentEmail">{t('currentEmail') || 'Current Email'}</Label>
+                      <Input
+                        id="currentEmail"
+                        type="email"
+                        value={user.email}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newEmail">{t('newEmail') || 'New Email'}</Label>
+                      <Input
+                        id="newEmail"
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="your.new.email@example.com"
+                      />
+                    </div>
+                    {emailError && <p className="text-destructive text-sm">{emailError}</p>}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+                      {tCommon('cancel')}
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (newEmail === user.email) {
+                          setEmailError(
+                            t('emailSameAsCurrent') ||
+                              'New email must be different from current email'
+                          );
+                          return;
+                        }
+
+                        await handleRequestEmailChange();
+                      }}
+                      disabled={isChangingEmail}
+                    >
+                      {isChangingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {t('sendVerification') || 'Send Verification'}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </CurrentUserProfileContent>
   );
 }
