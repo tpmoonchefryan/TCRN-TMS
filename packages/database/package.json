@@ -16,8 +16,8 @@
   "scripts": {
     "build": "pnpm db:generate && tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src scripts --ext .ts",
+    "lint:fix": "eslint src scripts --ext .ts --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
