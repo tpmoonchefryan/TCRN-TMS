@@ -46,6 +46,7 @@ jobs:
       skip_reason: ${{ steps.classify.outputs.skip_reason }}
       build_no_cache: ${{ steps.classify.outputs.build_no_cache }}
       rollout_migrations_csv: ${{ steps.classify.outputs.rollout_migrations_csv }}
+      rollout_verification_mode: ${{ steps.classify.outputs.rollout_verification_mode }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +59,32 @@ jobs:
         run: |
           set -euo pipefail
 
+          rollout_migrations_csv=""
+          rollout_verification_mode="uninitialized"
+
+          write_rollout_outputs() {
+            echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
+            echo "rollout_verification_mode=$rollout_verification_mode" >> "$GITHUB_OUTPUT"
+          }
+
+          collect_rollout_migrations_from_changed_files() {
+            local rollout_migrations=()
+            local file=""
+
+            for file in "$@"; do
+              if [[ "$file" =~ ^packages/database/prisma/migrations/([^/]+)/migration\.sql$ ]]; then
+                rollout_migrations+=("${BASH_REMATCH[1]}")
+              fi
+            done
+
+            if [[ "${#rollout_migrations[@]}" -gt 0 ]]; then
+              mapfile -t unique_rollout_migrations < <(printf '%s\n' "${rollout_migrations[@]}" | sort -u)
+              rollout_migrations_csv=$(IFS=,; echo "${unique_rollout_migrations[*]}")
+            else
+              rollout_migrations_csv=""
+            fi
+          }
+
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             raw_rollout_migrations="${{ github.event.inputs.rollout_migrations }}"
             if [[ -n "$raw_rollout_migrations" ]]; then
@@ -68,13 +95,15 @@ jobs:
                   sort -u |
                   paste -sd ',' -
               )
+              rollout_verification_mode="manual_dispatch_explicit"
             else
               rollout_migrations_csv=""
+              rollout_verification_mode="manual_dispatch_no_migrations"
             fi
 
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
-            echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
+            write_rollout_outputs
             if [[ "${{ github.event.inputs.build_mode }}" == "clean" ]]; then
               echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
               echo "skip_reason=manual_dispatch_clean_build" >> "$GITHUB_OUTPUT"
@@ -86,10 +115,40 @@ jobs:
           fi
 
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            current_tag="${GITHUB_REF#refs/tags/}"
+            tag_commit=$(git rev-parse "${GITHUB_REF}^{commit}")
+            main_commit=$(git rev-parse origin/main 2>/dev/null || true)
+
+            if [[ -z "$main_commit" ]]; then
+              rollout_verification_mode="tag_missing_origin_main"
+              echo "Unable to resolve origin/main during tag classification; automated schema rollout verification will be skipped."
+            elif [[ "$tag_commit" != "$main_commit" ]]; then
+              rollout_verification_mode="tag_not_main_head"
+              echo "Tag $current_tag points to $tag_commit, but origin/main is $main_commit; automated schema rollout verification will be skipped because production deploys origin/main."
+            else
+              previous_tag=$(git describe --tags --abbrev=0 --match 'v*' --first-parent "${tag_commit}^" 2>/dev/null || true)
+
+              if [[ -n "$previous_tag" ]]; then
+                mapfile -t changed_files < <(git diff --name-only "$previous_tag" "$tag_commit")
+                collect_rollout_migrations_from_changed_files "${changed_files[@]}"
+
+                if [[ -n "$rollout_migrations_csv" ]]; then
+                  rollout_verification_mode="tag_previous_tag_diff"
+                  echo "Inferred rollout migrations for tag $current_tag from diff $previous_tag..$current_tag."
+                else
+                  rollout_verification_mode="tag_previous_tag_no_migrations"
+                  echo "No migration.sql changes detected between $previous_tag and $current_tag."
+                fi
+              else
+                rollout_verification_mode="tag_no_previous_tag"
+                echo "Unable to locate a previous reachable release tag before $current_tag; automated schema rollout verification will be skipped."
+              fi
+            fi
+
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=--no-cache" >> "$GITHUB_OUTPUT"
-            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
+            write_rollout_outputs
             echo "skip_reason=tag_release" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -98,11 +157,12 @@ jobs:
           after_sha="${GITHUB_SHA}"
 
           if [[ -z "$before_sha" || "$before_sha" == "0000000000000000000000000000000000000000" ]]; then
-            echo "Unable to determine a stable diff base, running full CD."
+            echo "Unable to determine a stable diff base, running full CD without automated schema rollout verification."
+            rollout_verification_mode="unknown_diff_base"
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
-            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
+            write_rollout_outputs
             echo "skip_reason=unknown_diff_base" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -111,22 +171,18 @@ jobs:
 
           if [[ "${#changed_files[@]}" -eq 0 ]]; then
             echo "No changed files detected, running full CD."
+            rollout_verification_mode="no_changed_files"
             echo "should_run_cd=true" >> "$GITHUB_OUTPUT"
             echo "should_deploy_runtime=true" >> "$GITHUB_OUTPUT"
             echo "build_no_cache=" >> "$GITHUB_OUTPUT"
-            echo "rollout_migrations_csv=" >> "$GITHUB_OUTPUT"
+            write_rollout_outputs
             echo "skip_reason=no_changed_files" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           only_docs_like=true
           only_build_test_like=true
-          rollout_migrations=()
           for file in "${changed_files[@]}"; do
-            if [[ "$file" =~ ^packages/database/prisma/migrations/([^/]+)/migration\.sql$ ]]; then
-              rollout_migrations+=("${BASH_REMATCH[1]}")
-            fi
-
             if [[ "$file" =~ ^README(\.zh-CN|\.ja)?\.md$ ]] || [[ "$file" =~ ^docs/ ]] || [[ "$file" =~ ^\.llm/ ]] || [[ "$file" =~ ^\.context/ ]]; then
               continue
             fi
@@ -147,14 +203,14 @@ jobs:
             echo "Runtime-impacting file detected: $file"
           done
 
-          if [[ "${#rollout_migrations[@]}" -gt 0 ]]; then
-            mapfile -t unique_rollout_migrations < <(printf '%s\n' "${rollout_migrations[@]}" | sort -u)
-            rollout_migrations_csv=$(IFS=,; echo "${unique_rollout_migrations[*]}")
+          collect_rollout_migrations_from_changed_files "${changed_files[@]}"
+          if [[ -n "$rollout_migrations_csv" ]]; then
+            rollout_verification_mode="push_diff_migrations"
           else
-            rollout_migrations_csv=""
+            rollout_verification_mode="push_diff_no_migrations"
           fi
 
-          echo "rollout_migrations_csv=$rollout_migrations_csv" >> "$GITHUB_OUTPUT"
+          write_rollout_outputs
 
           if [[ "$only_docs_like" == true ]]; then
             echo "Detected docs/local-rules only change set:"
@@ -291,8 +347,9 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -c "cd /app/packages/database && npx prisma migrate deploy && npx tsx scripts/apply-migrations.ts"
 
             ROLLOUT_MIGRATIONS="${{ needs.classify-changes.outputs.rollout_migrations_csv }}"
+            ROLLOUT_VERIFICATION_MODE="${{ needs.classify-changes.outputs.rollout_verification_mode }}"
             if [ -n "$ROLLOUT_MIGRATIONS" ]; then
-              echo "🔎 Running schema rollout verification for migrations: $ROLLOUT_MIGRATIONS"
+              echo "🔎 Running schema rollout verification ($ROLLOUT_VERIFICATION_MODE) for migrations: $ROLLOUT_MIGRATIONS"
               VERIFY_ARGS="--infer-artifacts-from-migrations --json"
               IFS=',' read -r -a ROLLOUT_MIGRATION_ARRAY <<< "$ROLLOUT_MIGRATIONS"
               for migration in "${ROLLOUT_MIGRATION_ARRAY[@]}"; do
@@ -303,7 +360,29 @@ jobs:
 
               docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api sh -lc "cd /app/packages/database && npx tsx scripts/verify-schema-rollout.ts $VERIFY_ARGS"
             else
-              echo "ℹ️ No migration.sql changes detected in this diff; skipping automated schema rollout verification."
+              case "$ROLLOUT_VERIFICATION_MODE" in
+                manual_dispatch_no_migrations)
+                  echo "ℹ️ Manual dispatch did not provide rollout_migrations; skipping automated schema rollout verification."
+                  ;;
+                tag_missing_origin_main)
+                  echo "ℹ️ Skipping automated schema rollout verification: origin/main could not be resolved during tag classification."
+                  ;;
+                tag_not_main_head)
+                  echo "ℹ️ Skipping automated schema rollout verification: this tag does not point at the current origin/main commit, while production deploys origin/main."
+                  ;;
+                tag_no_previous_tag)
+                  echo "ℹ️ Skipping automated schema rollout verification: no previous reachable release tag was found. Re-run workflow_dispatch with rollout_migrations if this tag includes schema changes."
+                  ;;
+                unknown_diff_base)
+                  echo "ℹ️ Skipping automated schema rollout verification: unable to determine a stable push diff base. Re-run workflow_dispatch with rollout_migrations if this push includes schema changes."
+                  ;;
+                no_changed_files | push_diff_no_migrations | tag_previous_tag_no_migrations)
+                  echo "ℹ️ No migration.sql changes were detected for automated schema rollout verification (mode: $ROLLOUT_VERIFICATION_MODE)."
+                  ;;
+                *)
+                  echo "ℹ️ Automated schema rollout verification skipped (mode: ${ROLLOUT_VERIFICATION_MODE:-unspecified})."
+                  ;;
+              esac
             fi
 
             # Clean up old images and build cache (run in background to avoid SSH timeout)
