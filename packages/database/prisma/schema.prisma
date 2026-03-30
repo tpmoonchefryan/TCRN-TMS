@@ -3,8 +3,7 @@
 // Based on PRD v0.19 and 02-数据库设计与ORM.md
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
