@@ -4,7 +4,6 @@ import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
 import { authApi } from '@/lib/api/modules/auth';
-import { userApi } from '@/lib/api/modules/user';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
 import {
@@ -15,28 +14,45 @@ import {
   createAuthenticatedSessionState,
   createClearedSessionState,
   mergeCurrentUserProfile as mergeStoredUserProfile,
-  mergeVerifiedAuthUser,
   updateCurrentUserAvatar,
 } from './auth-session-state';
+import {
+  refreshAccessTokenForSession,
+  verifyAuthenticatedSessionUser,
+} from './auth-session-verification';
 import type { AuthState, AuthUser, PermissionScope } from './auth-store.types';
 import { useTalentStore } from './talent-store';
-
-const getApiErrorStatusCode = (error: unknown): number | null => {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'statusCode' in error &&
-    typeof (error as { statusCode?: unknown }).statusCode === 'number'
-  ) {
-    return (error as { statusCode: number }).statusCode;
-  }
-
-  return null;
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
+      const verifyAuthenticatedSession = async () => {
+        const verification = await verifyAuthenticatedSessionUser({
+          tenantCode: get().tenantCode,
+          tenantId: get().tenantId,
+          currentUser: get().user,
+        });
+
+        if (verification.status === 'verified') {
+          set({
+            user: verification.user,
+            tenantId: verification.tenantId,
+            isAuthenticated: true,
+          });
+          void get().bootstrapAuthenticatedSession();
+          return true;
+        }
+
+        if (verification.status === 'preserved') {
+          set({ isAuthenticated: true });
+          console.warn(verification.warning);
+          void get().bootstrapAuthenticatedSession();
+          return true;
+        }
+
+        return false;
+      };
+
       return {
         user: null,
         tenantCode: null,
@@ -295,23 +311,20 @@ export const useAuthStore = create<AuthState>()(
           set({ isRefreshing: true });
 
           const promise = (async () => {
-            try {
-              const response = await authApi.refresh(tenantCode || undefined);
+            const refreshed = await refreshAccessTokenForSession({
+              tenantCode,
+            });
 
-              if (response.success && response.data?.accessToken) {
-                apiClient.setAccessToken(response.data.accessToken);
-                set({ isRefreshing: false, isAuthenticated: true, refreshPromise: null });
-                return true;
-              }
-            } catch {
-              // Refresh failed silently
+            if (refreshed) {
+              set({ isRefreshing: false, isAuthenticated: true, refreshPromise: null });
+              return true;
             }
+
             set({
               isRefreshing: false,
               refreshPromise: null,
               ...createClearedSessionState(),
             });
-            apiClient.setAccessToken(null);
             return false;
           })();
 
@@ -320,61 +333,13 @@ export const useAuthStore = create<AuthState>()(
         },
 
         checkAuth: async () => {
-          if (apiClient.getAccessToken()) {
-            try {
-              const meRes = await userApi.me();
-
-              if (meRes.success && meRes.data) {
-                const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
-                const tenantId = meRes.data.tenant?.id || currentTenantId;
-                set({
-                  user: mergeVerifiedAuthUser({
-                    user: meRes.data,
-                    tenantCode,
-                    tenantId,
-                    currentUser,
-                  }),
-                  tenantId,
-                  isAuthenticated: true,
-                });
-                void get().bootstrapAuthenticatedSession();
-                return true;
-              }
-            } catch (error) {
-              if (getApiErrorStatusCode(error) === 0 && get().user) {
-                set({ isAuthenticated: true });
-                console.warn(
-                  'Session verification hit a network error; preserving current in-memory session'
-                );
-                void get().bootstrapAuthenticatedSession();
-                return true;
-              }
-            }
+          if (apiClient.getAccessToken() && (await verifyAuthenticatedSession())) {
+            return true;
           }
 
           const refreshed = await get().refreshSession();
-          if (refreshed) {
-            try {
-              const meRes = await userApi.me();
-              if (meRes.success && meRes.data) {
-                const { tenantCode, tenantId: currentTenantId, user: currentUser } = get();
-                const tenantId = meRes.data.tenant?.id || currentTenantId;
-                set({
-                  user: mergeVerifiedAuthUser({
-                    user: meRes.data,
-                    tenantCode,
-                    tenantId,
-                    currentUser,
-                  }),
-                  tenantId,
-                  isAuthenticated: true,
-                });
-                void get().bootstrapAuthenticatedSession();
-                return true;
-              }
-            } catch {
-              // Ignore me fetch error
-            }
+          if (refreshed && (await verifyAuthenticatedSession())) {
+            return true;
           }
 
           return false;
