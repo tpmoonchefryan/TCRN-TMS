@@ -6,8 +6,9 @@
 // It is intended to be run before any approved prune apply.
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 
 import { auditLegacyRbac, formatCanonicalLabel } from './audit-legacy-rbac';
 import {

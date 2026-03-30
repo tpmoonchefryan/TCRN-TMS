@@ -7,14 +7,15 @@
 // - refuses when any selected schema still contains blocked groups or was skipped
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
 
+import { PrismaClient } from '@prisma/client';
+
 import {
-  planTenantScopeNormalization,
   type CliOptions as PlannerCliOptions,
   type NormalizationPlanSummary,
   type PlannedNormalizationGroup,
+  planTenantScopeNormalization,
 } from './plan-tenant-scope-normalization';
 
 export interface CliOptions {

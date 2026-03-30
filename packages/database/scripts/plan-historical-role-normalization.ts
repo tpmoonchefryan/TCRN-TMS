@@ -6,14 +6,15 @@
 // inactive/unassigned enough to retire or explicitly exclude.
 
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { PrismaClient } from '@prisma/client';
 import { RBAC_ROLE_TEMPLATES } from '@tcrn/shared';
-import { fileURLToPath } from 'node:url';
 
 import {
   auditLegacyRbac,
-  HISTORICAL_ROLE_CODES,
   type CliOptions as LegacyAuditCliOptions,
+  HISTORICAL_ROLE_CODES,
   type HistoricalRoleAudit,
   type LegacyRbacAuditSummary,
   type ResourceGrantEntry,

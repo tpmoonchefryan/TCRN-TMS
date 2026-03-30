@@ -8,13 +8,14 @@
 // - aligns tenant/non-tenant scope handling with the API service
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
-import Redis from 'ioredis';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 import {
   getRbacResourceDefinition,
   isCanonicalPermissionAction,
 } from '@tcrn/shared';
+import Redis from 'ioredis';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 

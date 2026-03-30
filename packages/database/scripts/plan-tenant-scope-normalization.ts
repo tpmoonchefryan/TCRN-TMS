@@ -7,9 +7,10 @@
 //
 // This planner identifies which tenant-scope assignment groups can be safely
 // collapsed into that canonical shape without deleting live access outright.
-import { PrismaClient } from '@prisma/client';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 

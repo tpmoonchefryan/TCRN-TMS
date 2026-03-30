@@ -6,8 +6,9 @@
 // - distinguish current-tenant IDs from other active-tenant IDs and missing IDs
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 

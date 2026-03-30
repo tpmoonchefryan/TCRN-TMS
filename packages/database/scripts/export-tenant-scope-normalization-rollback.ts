@@ -5,18 +5,19 @@
 // `user_role` state for selected tenant-scope groups.
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 
 import {
   buildExecutionPlan,
   type CliOptions as NormalizerCliOptions,
 } from './normalize-tenant-scope-assignments';
 import {
-  planTenantScopeNormalization,
   type AssignmentRow,
   type NormalizationPlanSummary,
   type PlannedNormalizationGroup,
+  planTenantScopeNormalization,
 } from './plan-tenant-scope-normalization';
 
 export interface CliOptions {

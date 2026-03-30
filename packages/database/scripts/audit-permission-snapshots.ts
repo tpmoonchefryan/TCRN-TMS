@@ -7,13 +7,14 @@
 // - provide evidence before tightening internal snapshot calculation paths
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
-import Redis from 'ioredis';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 import {
   getRbacResourceDefinition,
   isCanonicalPermissionAction,
 } from '@tcrn/shared';
+import Redis from 'ioredis';
 
 import { REDIS_URL } from './refresh-permission-snapshots';
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';

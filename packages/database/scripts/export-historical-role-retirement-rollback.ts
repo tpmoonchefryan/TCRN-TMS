@@ -5,15 +5,16 @@
 // for selected historical-role retirement candidates.
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
 
-import { buildExecutionPlan, type CliOptions as RetirementCliOptions } from './retire-historical-roles';
+import { PrismaClient } from '@prisma/client';
+
 import {
-  planHistoricalRoleNormalization,
   type HistoricalRoleNormalizationPlan,
   type HistoricalRoleNormalizationPlanSummary,
+  planHistoricalRoleNormalization,
 } from './plan-historical-role-normalization';
+import { buildExecutionPlan, type CliOptions as RetirementCliOptions } from './retire-historical-roles';
 
 export interface CliOptions {
   schemas: string[];

@@ -4,14 +4,15 @@
 // Goal:
 // - verify expected public Prisma migration records exist
 // - verify required tenant-schema artifacts exist in tenant_template and active tenants
-import { PrismaClient } from '@prisma/client';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PrismaClient } from '@prisma/client';
+
 import {
   type InferredRolloutArtifacts,
-  type RequiredColumn,
   inferRolloutArtifactsFromMigrations,
+  type RequiredColumn,
 } from './verify-schema-rollout-helpers';
 
 interface CliOptions {

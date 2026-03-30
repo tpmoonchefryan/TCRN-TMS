@@ -2,8 +2,9 @@
 // Read-only audit for legacy RBAC resources that still exist in tenant schemas.
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
+
+import { PrismaClient } from '@prisma/client';
 
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
 

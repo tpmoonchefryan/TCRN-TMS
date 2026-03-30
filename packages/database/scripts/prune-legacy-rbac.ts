@@ -5,16 +5,17 @@
 // - requires explicit schema selection
 // - requires explicit legacy resource selection
 // - refuses when any target is unmapped, coverage-blocked, snapshot-blocked, or skipped
-import { PrismaClient } from '@prisma/client';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PrismaClient } from '@prisma/client';
+
 import {
+  auditLegacyRbac,
+  formatCanonicalLabel,
   type LegacyRbacAuditSummary,
   type LegacyTargetAudit,
   type PruneReadiness,
-  auditLegacyRbac,
-  formatCanonicalLabel,
 } from './audit-legacy-rbac';
 import {
   assertHistoricalRoleExclusionsSafe,

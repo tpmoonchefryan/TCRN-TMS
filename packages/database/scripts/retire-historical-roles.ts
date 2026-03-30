@@ -8,14 +8,15 @@
 // - refuses when selected roles are authored, absent, assigned, active, or referenced by delegated_admin
 
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
 
+import { PrismaClient } from '@prisma/client';
+
 import {
-  planHistoricalRoleNormalization,
   type CliOptions as PlannerCliOptions,
   type HistoricalRoleNormalizationPlan,
   type HistoricalRoleNormalizationPlanSummary,
+  planHistoricalRoleNormalization,
 } from './plan-historical-role-normalization';
 
 export interface CliOptions {

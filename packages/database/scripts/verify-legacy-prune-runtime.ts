@@ -9,9 +9,10 @@
 //   that would carry the runtime behavior after prune
 
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
-import { fileURLToPath } from 'node:url';
 
 import {
   auditLegacyRbac,
@@ -24,12 +25,12 @@ import {
   validateHistoricalRoleExclusions,
 } from './historical-role-exclusions';
 import {
-  REDIS_URL,
   calculateEffectivePermissions,
   getScopeChain,
   getSnapshotKey,
   getUserRoleAssignments,
   getUserScopes,
+  REDIS_URL,
   type ScopeDescriptor,
 } from './refresh-permission-snapshots';
 

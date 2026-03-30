@@ -4,9 +4,9 @@
 import { PrismaClient } from '@prisma/client';
 
 import {
-  planHistoricalRoleNormalization,
   type HistoricalRoleNormalizationPlan,
   type HistoricalRoleNormalizationPlanSummary,
+  planHistoricalRoleNormalization,
 } from './plan-historical-role-normalization';
 
 export interface ExclusionValidationOptions {
