@@ -1,7 +1,34 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+function stripLeadingSqlComments(statement: string): string {
+  let remaining = statement.trimStart();
+
+  while (remaining.length > 0) {
+    if (remaining.startsWith('--')) {
+      const nextLineBreak = remaining.indexOf('\n');
+      remaining = nextLineBreak === -1 ? '' : remaining.slice(nextLineBreak + 1).trimStart();
+      continue;
+    }
+
+    if (remaining.startsWith('/*')) {
+      const blockCommentEnd = remaining.indexOf('*/');
+
+      if (blockCommentEnd === -1) {
+        return '';
+      }
+
+      remaining = remaining.slice(blockCommentEnd + 2).trimStart();
+      continue;
+    }
+
+    break;
+  }
+
+  return remaining;
+}
+
 function normalizeStatement(statement: string): string {
-  return statement.replace(/\s+/g, ' ').trim().toUpperCase();
+  return stripLeadingSqlComments(statement).replace(/\s+/g, ' ').trim().toUpperCase();
 }
 
 function readDollarQuoteDelimiter(sql: string, start: number): string | null {
@@ -31,7 +58,7 @@ function readDollarQuoteDelimiter(sql: string, start: number): string | null {
 }
 
 function isCommentOnlyStatement(statement: string): boolean {
-  return statement.split('\n').every((line) => line.trim().startsWith('--') || line.trim() === '');
+  return stripLeadingSqlComments(statement).trim().length === 0;
 }
 
 export interface TenantMigrationExecutionSummary {
@@ -59,6 +86,7 @@ export interface ExecuteTenantMigrationStatementsOptions {
 
 export const TENANT_MIGRATION_SKIP_REASONS = [
   'create_exists',
+  'create_index_target_missing',
   'alter_table_add_exists',
   'alter_type_add_value_exists',
   'drop_table_missing',
@@ -67,6 +95,7 @@ export const TENANT_MIGRATION_SKIP_REASONS = [
   'alter_table_drop_constraint_missing',
   'alter_table_drop_column_missing',
   'alter_table_drop_or_rename_missing',
+  'alter_index_rename_exists',
   'alter_index_rename_missing',
   'alter_type_drop_or_rename_missing',
 ] as const;
@@ -76,12 +105,14 @@ export type TenantMigrationSkipReason = (typeof TENANT_MIGRATION_SKIP_REASONS)[n
 export type TenantMigrationSkipReasonCounts = Partial<Record<TenantMigrationSkipReason, number>>;
 
 export const TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS = [
+  'create_index_target_missing',
   'drop_table_missing',
   'drop_index_missing',
   'drop_missing',
   'alter_table_drop_constraint_missing',
   'alter_table_drop_column_missing',
   'alter_table_drop_or_rename_missing',
+  'alter_index_rename_exists',
   'alter_index_rename_missing',
   'alter_type_drop_or_rename_missing',
 ] as const;
@@ -101,6 +132,7 @@ export interface ApplyMigrationsExitEvaluation {
 
 const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<TenantMigrationSkipReason, string> = {
   create_exists: 'create/already_exists',
+  create_index_target_missing: 'create_index/does_not_exist',
   alter_table_add_exists: 'alter_table_add/already_exists',
   alter_type_add_value_exists: 'alter_type_add_value/already_exists',
   drop_table_missing: 'drop_table/does_not_exist',
@@ -109,6 +141,7 @@ const TENANT_MIGRATION_SKIP_REASON_LABELS: Record<TenantMigrationSkipReason, str
   alter_table_drop_constraint_missing: 'alter_table_drop_constraint/does_not_exist',
   alter_table_drop_column_missing: 'alter_table_drop_column/does_not_exist',
   alter_table_drop_or_rename_missing: 'alter_table_drop_or_rename/does_not_exist',
+  alter_index_rename_exists: 'alter_index_rename/already_exists',
   alter_index_rename_missing: 'alter_index_rename/does_not_exist',
   alter_type_drop_or_rename_missing: 'alter_type_drop_or_rename/does_not_exist',
 };
@@ -224,10 +257,37 @@ export function splitSqlStatements(sql: string): string[] {
   let activeDollarQuoteDelimiter: string | null = null;
   let inSingleQuotedString = false;
   let inDoubleQuotedIdentifier = false;
+  let inLineComment = false;
+  let inBlockComment = false;
   let i = 0;
 
   while (i < sql.length) {
     const currentChar = sql[i];
+
+    if (inLineComment) {
+      current += currentChar;
+      i += 1;
+
+      if (currentChar === '\n') {
+        inLineComment = false;
+      }
+
+      continue;
+    }
+
+    if (inBlockComment) {
+      current += currentChar;
+
+      if (currentChar === '*' && sql[i + 1] === '/') {
+        current += '/';
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+
+      i += 1;
+      continue;
+    }
 
     if (activeDollarQuoteDelimiter) {
       if (sql.startsWith(activeDollarQuoteDelimiter, i)) {
@@ -281,6 +341,20 @@ export function splitSqlStatements(sql: string): string[] {
       current += dollarQuoteDelimiter;
       i += dollarQuoteDelimiter.length;
       activeDollarQuoteDelimiter = dollarQuoteDelimiter;
+      continue;
+    }
+
+    if (currentChar === '-' && sql[i + 1] === '-') {
+      current += '--';
+      i += 2;
+      inLineComment = true;
+      continue;
+    }
+
+    if (currentChar === '/' && sql[i + 1] === '*') {
+      current += '/*';
+      i += 2;
+      inBlockComment = true;
       continue;
     }
 
@@ -364,6 +438,13 @@ export function classifyIgnorableTenantMigrationError(
       return 'create_exists';
     }
 
+    if (
+      /^ALTER INDEX\b.*\bRENAME\b/.test(normalizedStatement) &&
+      normalizedMessage.includes('relation ')
+    ) {
+      return 'alter_index_rename_exists';
+    }
+
     if (/^ALTER TABLE\b.*\bADD\b/.test(normalizedStatement)) {
       return 'alter_table_add_exists';
     }
@@ -376,6 +457,13 @@ export function classifyIgnorableTenantMigrationError(
   }
 
   if (normalizedMessage.includes('does not exist')) {
+    if (
+      /^CREATE(?: UNIQUE)? INDEX\b/.test(normalizedStatement) &&
+      normalizedMessage.includes('column ')
+    ) {
+      return 'create_index_target_missing';
+    }
+
     if (/^DROP TABLE\b/.test(normalizedStatement)) {
       return 'drop_table_missing';
     }

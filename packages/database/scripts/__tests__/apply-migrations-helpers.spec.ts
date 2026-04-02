@@ -78,6 +78,38 @@ describe('splitSqlStatements', () => {
       'SELECT 1;',
     ]);
   });
+
+  it('ignores apostrophes inside line comments when splitting statements', () => {
+    const sql = `-- Default value: 'auto' (Let's Encrypt auto-provisioning)
+ALTER TABLE tenant_template.talent
+  ADD COLUMN IF NOT EXISTS custom_domain_ssl_mode VARCHAR(32) NOT NULL DEFAULT 'auto';
+
+-- Add column to other schemas
+DO $$
+BEGIN
+  PERFORM 1;
+END $$;
+`;
+
+    assert.deepEqual(splitSqlStatements(sql), [
+      "-- Default value: 'auto' (Let's Encrypt auto-provisioning)\nALTER TABLE tenant_template.talent\n  ADD COLUMN IF NOT EXISTS custom_domain_ssl_mode VARCHAR(32) NOT NULL DEFAULT 'auto';",
+      '-- Add column to other schemas\nDO $$\nBEGIN\n  PERFORM 1;\nEND $$;',
+    ]);
+  });
+
+  it('does not split semicolons inside block comments', () => {
+    const sql = `/* comment with ; semicolon */
+CREATE TABLE foo (id INT);
+
+/* another ; comment */
+ALTER TABLE foo ADD COLUMN bar TEXT;
+`;
+
+    assert.deepEqual(splitSqlStatements(sql), [
+      '/* comment with ; semicolon */\nCREATE TABLE foo (id INT);',
+      '/* another ; comment */\nALTER TABLE foo ADD COLUMN bar TEXT;',
+    ]);
+  });
 });
 
 describe('isIgnorableTenantMigrationError', () => {
@@ -179,6 +211,32 @@ describe('isIgnorableTenantMigrationError', () => {
     );
   });
 
+  it('treats proven healthy-replay create-index and rename-target conflicts as ignorable', () => {
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        'CREATE INDEX IF NOT EXISTS idx_homepage_version_is_published ON tenant_template.homepage_version(is_published);',
+        'column "is_published" does not exist'
+      ),
+      'create_index_target_missing'
+    );
+
+    assert.equal(
+      classifyIgnorableTenantMigrationError(
+        '-- RenameIndex\nALTER INDEX "tenant_template"."idx_marshmallow_message_talent_id" RENAME TO "marshmallow_message_talent_id_idx";',
+        'relation "marshmallow_message_talent_id_idx" already exists'
+      ),
+      'alter_index_rename_exists'
+    );
+
+    assert.equal(
+      isIgnorableTenantMigrationError(
+        '-- RenameIndex\nALTER INDEX "tenant_template"."idx_marshmallow_message_talent_id" RENAME TO "marshmallow_message_talent_id_idx";',
+        'relation "marshmallow_message_talent_id_idx" already exists'
+      ),
+      true
+    );
+  });
+
   it('does not ignore duplicate-key data conflicts anymore', () => {
     assert.equal(
       isIgnorableTenantMigrationError(
@@ -201,6 +259,13 @@ describe('isIgnorableTenantMigrationError', () => {
       isIgnorableTenantMigrationError(
         'CREATE TABLE tenant_template.foo (id INT);',
         'permission denied for schema tenant_template'
+      ),
+      false
+    );
+    assert.equal(
+      isIgnorableTenantMigrationError(
+        'CREATE INDEX IF NOT EXISTS foo_idx ON tenant_template.foo(id);',
+        'relation "tenant_template.foo" does not exist'
       ),
       false
     );
@@ -380,6 +445,27 @@ describe('executeTenantMigrationStatements', () => {
     ]);
   });
 
+  it('skips block-comment-only statements', async () => {
+    const executed: string[] = [];
+
+    const result = await executeTenantMigrationStatements({
+      statements: ['/* comment only; still no SQL */', 'CREATE TABLE tenant_template.foo (id INT);'],
+      targetSchema: 'tenant_test',
+      migrationName: '20260330_block_comment_only',
+      executeStatement: async (statement) => {
+        executed.push(statement);
+      },
+    });
+
+    assert.deepEqual(result, {
+      success: 1,
+      skipped: 0,
+      errors: 0,
+      skippedByReason: {},
+    });
+    assert.deepEqual(executed, ['CREATE TABLE tenant_template.foo (id INT);']);
+  });
+
   it('reports non-ignorable errors with schema, migration, and statement preview', async () => {
     const details: Array<{
       migrationName: string;
@@ -445,6 +531,34 @@ describe('executeTenantMigrationStatements', () => {
       skippedByReason: {
         create_exists: 1,
         drop_index_missing: 1,
+      },
+    });
+  });
+
+  it('classifies comment-prefixed rename and missing-column index replay conflicts', async () => {
+    const result = await executeTenantMigrationStatements({
+      statements: [
+        '-- RenameIndex\nALTER INDEX "tenant_template"."idx_marshmallow_message_talent_id" RENAME TO "marshmallow_message_talent_id_idx";',
+        'CREATE INDEX IF NOT EXISTS idx_homepage_version_is_published ON tenant_template.homepage_version(is_published);',
+      ],
+      targetSchema: 'tenant_test',
+      migrationName: '20260330_replay_false_positives',
+      executeStatement: async (statement) => {
+        if (statement.startsWith('-- RenameIndex')) {
+          throw new Error('relation "marshmallow_message_talent_id_idx" already exists');
+        }
+
+        throw new Error('column "is_published" does not exist');
+      },
+    });
+
+    assert.deepEqual(result, {
+      success: 0,
+      skipped: 2,
+      errors: 0,
+      skippedByReason: {
+        create_index_target_missing: 1,
+        alter_index_rename_exists: 1,
       },
     });
   });
