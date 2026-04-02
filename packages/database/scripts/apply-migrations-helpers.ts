@@ -105,14 +105,9 @@ export type TenantMigrationSkipReason = (typeof TENANT_MIGRATION_SKIP_REASONS)[n
 export type TenantMigrationSkipReasonCounts = Partial<Record<TenantMigrationSkipReason, number>>;
 
 export const TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS = [
-  'create_index_target_missing',
   'drop_table_missing',
-  'drop_index_missing',
   'drop_missing',
-  'alter_table_drop_constraint_missing',
-  'alter_table_drop_column_missing',
   'alter_table_drop_or_rename_missing',
-  'alter_index_rename_exists',
   'alter_index_rename_missing',
   'alter_type_drop_or_rename_missing',
 ] as const;

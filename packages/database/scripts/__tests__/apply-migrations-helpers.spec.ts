@@ -302,10 +302,10 @@ describe('formatTenantMigrationDriftWatchSkipReasonCounts', () => {
     assert.equal(
       formatTenantMigrationDriftWatchSkipReasonCounts({
         drop_table_missing: 1,
-        create_exists: 99,
-        alter_table_drop_constraint_missing: 3,
+        create_index_target_missing: 99,
+        alter_index_rename_missing: 3,
       }),
-      'drop_table/does_not_exist=1, alter_table_drop_constraint/does_not_exist=3'
+      'drop_table/does_not_exist=1, alter_index_rename/does_not_exist=3'
     );
   });
 });
@@ -376,6 +376,27 @@ describe('parseApplyMigrationsCliArgs', () => {
 });
 
 describe('evaluateApplyMigrationsExitStatus', () => {
+  it('ignores deterministic final-state replay families in strict mode accounting', () => {
+    assert.deepEqual(
+      evaluateApplyMigrationsExitStatus({
+        totalErrors: 0,
+        totalSkippedByReason: {
+          create_index_target_missing: 5,
+          drop_index_missing: 9,
+          alter_table_drop_constraint_missing: 2,
+          alter_table_drop_column_missing: 13,
+          alter_index_rename_exists: 75,
+        },
+        failOnDriftWatchSkips: true,
+      }),
+      {
+        shouldFail: false,
+        driftWatchSkips: 0,
+        reasons: [],
+      }
+    );
+  });
+
   it('keeps drift-watch skips non-fatal when strict mode is disabled', () => {
     assert.deepEqual(
       evaluateApplyMigrationsExitStatus({
@@ -398,7 +419,7 @@ describe('evaluateApplyMigrationsExitStatus', () => {
       evaluateApplyMigrationsExitStatus({
         totalErrors: 0,
         totalSkippedByReason: {
-          drop_index_missing: 1,
+          drop_table_missing: 1,
           create_exists: 5,
         },
         failOnDriftWatchSkips: true,
