@@ -3,6 +3,8 @@
 
 import { PrismaClient } from '@prisma/client';
 
+import { copyTenantTemplateSeedData } from '../src/tenant-bootstrap';
+
 const prisma = new PrismaClient();
 
 async function createTenantSchema(tenantCode: string) {
@@ -100,6 +102,12 @@ async function createTenantSchema(tenantCode: string) {
       console.log(`    Skipping existing constraint: ${fk.constraint_name}`);
     }
   }
+
+  await copyTenantTemplateSeedData(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
 
   console.log(`  Schema ${schemaName} created successfully`);
 }

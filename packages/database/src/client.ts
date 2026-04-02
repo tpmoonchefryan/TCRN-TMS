@@ -2,6 +2,8 @@
 
 import { PrismaClient } from '@prisma/client';
 
+import { copyTenantTemplateSeedData } from './tenant-bootstrap';
+
 // Global Prisma Client instance for development
 // Prevents multiple instances during hot-reload
 const globalForPrisma = globalThis as unknown as {
@@ -85,28 +87,12 @@ export async function createTenantSchema(tenantId: string): Promise<string> {
       (LIKE tenant_template."${tablename}" INCLUDING ALL)
     `);
   }
-  
-  // Copy seed data for reference tables (resources, platforms, roles, policies, config entities, blocklists)
-  const seedTables = [
-    'resource', 
-    'social_platform', 
-    'role', 
-    'policy', 
-    'role_policy',
-    'pii_service_config',      // PII service configurations
-    'profile_store',           // Profile store configurations
-    'blocklist_entry',         // Blocklist entries for content moderation
-    'external_blocklist_pattern', // External blocklist patterns
-  ];
-  for (const table of seedTables) {
-    if (tables.some((t: { tablename: string }) => t.tablename === table)) {
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "${schemaName}"."${table}"
-        SELECT * FROM tenant_template."${table}"
-        ON CONFLICT DO NOTHING
-      `);
-    }
-  }
+
+  await copyTenantTemplateSeedData(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
   
   return schemaName;
 }

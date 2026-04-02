@@ -6,6 +6,7 @@
  */
 
 export * from './client';
+export * from './tenant-bootstrap';
 
 // Re-export Prisma types for convenience
 export type {
