@@ -67,6 +67,12 @@ interface SchemaConstraintRow {
   definition: string;
 }
 
+interface SchemaIndexRow {
+  tableName: string;
+  indexName: string;
+  definition: string;
+}
+
 export interface MockPrismaClient {
   tenant: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -126,6 +132,22 @@ function rewriteSchemaReference(
     .replace(unquotedSchemaPattern, targetSchemaReference);
 }
 
+function normalizeSchemaDefinition(definition: string, schemaName: string): string {
+  const quotedSchemaPattern = new RegExp(`"${escapeRegExp(schemaName)}"\\.`, 'g');
+  const unquotedSchemaPattern = new RegExp(`\\b${escapeRegExp(schemaName)}\\.`, 'g');
+
+  return definition
+    .replace(quotedSchemaPattern, '"<SCHEMA>".')
+    .replace(unquotedSchemaPattern, '<SCHEMA>.');
+}
+
+function normalizeIndexDefinition(definition: string, schemaName: string): string {
+  return normalizeSchemaDefinition(definition, schemaName).replace(
+    /^CREATE(\s+UNIQUE)?\s+INDEX\s+"?[^"\s]+"?\s+ON\s+/i,
+    (_, uniqueClause: string | undefined) => `CREATE${uniqueClause ?? ''} INDEX <INDEX> ON `
+  );
+}
+
 async function getTemplateForeignKeys(
   prisma: {
     $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
@@ -168,6 +190,117 @@ async function copyTenantFixtureForeignKeys(
     await prisma.$executeRawUnsafe(
       `ALTER TABLE ${quoteIdentifier(schemaName)}.${quoteIdentifier(foreignKey.tableName)} ADD CONSTRAINT ${quoteIdentifier(foreignKey.constraintName)} ${rewriteSchemaReference(foreignKey.definition, 'tenant_template', schemaName)}`
     );
+  }
+}
+
+async function getSchemaIndexes(
+  prisma: {
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
+  },
+  schemaName: string,
+  tableNames: readonly string[],
+): Promise<SchemaIndexRow[]> {
+  if (tableNames.length === 0) {
+    return [];
+  }
+
+  return prisma.$queryRawUnsafe<SchemaIndexRow[]>(
+    `
+      SELECT
+        rel.relname AS "tableName",
+        idx.relname AS "indexName",
+        pg_get_indexdef(ind.indexrelid) AS definition
+      FROM pg_index ind
+      JOIN pg_class idx ON idx.oid = ind.indexrelid
+      JOIN pg_class rel ON rel.oid = ind.indrelid
+      JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+      LEFT JOIN pg_constraint con ON con.conindid = ind.indexrelid
+      WHERE nsp.nspname = $1
+        AND rel.relname = ANY($2::text[])
+        AND con.oid IS NULL
+      ORDER BY rel.relname, idx.relname
+    `,
+    schemaName,
+    tableNames,
+  );
+}
+
+async function alignTenantFixtureIndexNames(
+  prisma: {
+    $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
+  },
+  schemaName: string,
+  tableNames: readonly string[],
+): Promise<void> {
+  const [templateIndexes, targetIndexes] = await Promise.all([
+    getSchemaIndexes(prisma, 'tenant_template', tableNames),
+    getSchemaIndexes(prisma, schemaName, tableNames),
+  ]);
+
+  const templateGroups = new Map<string, SchemaIndexRow[]>();
+  const targetGroups = new Map<string, SchemaIndexRow[]>();
+  const targetNames = new Set(targetIndexes.map((index) => index.indexName));
+
+  for (const templateIndex of templateIndexes) {
+    const signature = `${templateIndex.tableName}|${normalizeIndexDefinition(templateIndex.definition, 'tenant_template')}`;
+    const group = templateGroups.get(signature) ?? [];
+    group.push(templateIndex);
+    templateGroups.set(signature, group);
+  }
+
+  for (const targetIndex of targetIndexes) {
+    const signature = `${targetIndex.tableName}|${normalizeIndexDefinition(targetIndex.definition, schemaName)}`;
+    const group = targetGroups.get(signature) ?? [];
+    group.push(targetIndex);
+    targetGroups.set(signature, group);
+  }
+
+  for (const [signature, templateGroup] of templateGroups) {
+    const targetGroup = targetGroups.get(signature);
+
+    if (!targetGroup || targetGroup.length === 0) {
+      continue;
+    }
+
+    const unmatchedTargets = [...targetGroup].sort((left, right) =>
+      left.indexName.localeCompare(right.indexName)
+    );
+    const unmatchedTemplates: SchemaIndexRow[] = [];
+
+    for (const templateIndex of [...templateGroup].sort((left, right) =>
+      left.indexName.localeCompare(right.indexName)
+    )) {
+      const exactMatchIndex = unmatchedTargets.findIndex(
+        (targetIndex) => targetIndex.indexName === templateIndex.indexName
+      );
+
+      if (exactMatchIndex >= 0) {
+        unmatchedTargets.splice(exactMatchIndex, 1);
+        continue;
+      }
+
+      unmatchedTemplates.push(templateIndex);
+    }
+
+    for (const templateIndex of unmatchedTemplates) {
+      const targetIndex = unmatchedTargets.shift();
+
+      if (!targetIndex) {
+        break;
+      }
+
+      if (targetNames.has(templateIndex.indexName)) {
+        continue;
+      }
+
+      await prisma.$executeRawUnsafe(
+        `ALTER INDEX ${quoteIdentifier(schemaName)}.${quoteIdentifier(targetIndex.indexName)} RENAME TO ${quoteIdentifier(templateIndex.indexName)}`
+      );
+
+      targetNames.delete(targetIndex.indexName);
+      targetNames.add(templateIndex.indexName);
+    }
   }
 }
 
@@ -465,6 +598,11 @@ export async function createTestTenantFixture(
 
     await seedRbacContractIntoSchema(prisma, schemaName);
     await copyTenantFixtureForeignKeys(
+      prisma,
+      schemaName,
+      templateTables.map((item) => item.tablename),
+    );
+    await alignTenantFixtureIndexNames(
       prisma,
       schemaName,
       templateTables.map((item) => item.tablename),

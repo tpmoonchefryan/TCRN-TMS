@@ -44,8 +44,27 @@ async function getForeignKeys(schemaName: string): Promise<
   );
 }
 
+async function getIndexNames(
+  schemaName: string,
+  tableNames: readonly string[]
+): Promise<Array<{ tableName: string; indexName: string }>> {
+  return prisma.$queryRawUnsafe<Array<{ tableName: string; indexName: string }>>(
+    `
+      SELECT
+        tablename AS "tableName",
+        indexname AS "indexName"
+      FROM pg_indexes
+      WHERE schemaname = $1
+        AND tablename = ANY($2::text[])
+      ORDER BY tablename, indexname
+    `,
+    schemaName,
+    tableNames
+  );
+}
+
 describe('createTestTenantFixture integration', () => {
-  it('copies membership lookups and tenant foreign keys from tenant_template', async (t) => {
+  it('copies membership lookups, foreign keys, and non-constraint index names from tenant_template', async (t) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch {
@@ -73,6 +92,8 @@ describe('createTestTenantFixture integration', () => {
       fixtureMembershipLevels,
       templateForeignKeys,
       fixtureForeignKeys,
+      templateIndexes,
+      fixtureIndexes,
     ] = await Promise.all([
       getTableCount('tenant_template', 'social_platform'),
       getTableCount(fixture.schemaName, 'social_platform'),
@@ -84,6 +105,22 @@ describe('createTestTenantFixture integration', () => {
       getTableCount(fixture.schemaName, 'membership_level'),
       getForeignKeys('tenant_template'),
       getForeignKeys(fixture.schemaName),
+      getIndexNames('tenant_template', [
+        'adapter_config',
+        'config_override',
+        'integration_adapter',
+        'marshmallow_reaction',
+        'talent_homepage',
+        'webhook',
+      ]),
+      getIndexNames(fixture.schemaName, [
+        'adapter_config',
+        'config_override',
+        'integration_adapter',
+        'marshmallow_reaction',
+        'talent_homepage',
+        'webhook',
+      ]),
     ]);
 
     assert.equal(fixtureSocialPlatforms, templateSocialPlatforms);
@@ -100,5 +137,6 @@ describe('createTestTenantFixture integration', () => {
         definition: normalizeSchemaDefinition(constraint.definition, 'tenant_template'),
       }))
     );
+    assert.deepEqual(fixtureIndexes, templateIndexes);
   });
 });
