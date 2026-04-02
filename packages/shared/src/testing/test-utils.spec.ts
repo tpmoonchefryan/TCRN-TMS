@@ -21,7 +21,13 @@ describe('createTestTenantFixture', () => {
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error('copy failed'))
       .mockResolvedValue(undefined);
-    const query = vi.fn().mockResolvedValue([{ tablename: 'resource' }]);
+    const query = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM pg_tables')) {
+        return [{ tablename: 'resource' }];
+      }
+
+      return [];
+    });
 
     await expect(
       createTestTenantFixture(
@@ -67,7 +73,13 @@ describe('createTestTenantFixture', () => {
     const update = vi.fn().mockResolvedValue(undefined);
     const deleteFn = vi.fn().mockResolvedValue(undefined);
     const execute = vi.fn().mockResolvedValue(undefined);
-    const query = vi.fn().mockResolvedValue([]);
+    const query = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM pg_tables')) {
+        return [];
+      }
+
+      return [];
+    });
 
     const fixture = await createTestTenantFixture(
       {
@@ -146,7 +158,13 @@ describe('createTestTenantFixture', () => {
 
       return undefined;
     });
-    const query = vi.fn().mockResolvedValue([]);
+    const query = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM pg_tables')) {
+        return [];
+      }
+
+      return [];
+    });
 
     const fixture = await createTestTenantFixture(
       {

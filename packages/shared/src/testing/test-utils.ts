@@ -6,6 +6,21 @@ import {
   RBAC_ROLE_TEMPLATES,
 } from '../rbac/catalog';
 
+const TENANT_FIXTURE_SEED_TABLES = [
+  'resource',
+  'role',
+  'policy',
+  'role_policy',
+  'social_platform',
+  'pii_service_config',
+  'profile_store',
+  'blocklist_entry',
+  'external_blocklist_pattern',
+  'membership_class',
+  'membership_type',
+  'membership_level',
+] as const;
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -46,6 +61,12 @@ interface TestTenantArtifacts {
   schemaName: string;
 }
 
+interface SchemaConstraintRow {
+  tableName: string;
+  constraintName: string;
+  definition: string;
+}
+
 export interface MockPrismaClient {
   tenant: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -82,6 +103,73 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
     })),
   ),
 );
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function quoteIdentifier(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function rewriteSchemaReference(
+  definition: string,
+  sourceSchemaName: string,
+  targetSchemaName: string,
+): string {
+  const quotedSchemaPattern = new RegExp(`"${escapeRegExp(sourceSchemaName)}"\\.`, 'g');
+  const unquotedSchemaPattern = new RegExp(`\\b${escapeRegExp(sourceSchemaName)}\\.`, 'g');
+  const targetSchemaReference = `${quoteIdentifier(targetSchemaName)}.`;
+
+  return definition
+    .replace(quotedSchemaPattern, targetSchemaReference)
+    .replace(unquotedSchemaPattern, targetSchemaReference);
+}
+
+async function getTemplateForeignKeys(
+  prisma: {
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
+  },
+  tableNames: readonly string[],
+): Promise<SchemaConstraintRow[]> {
+  if (tableNames.length === 0) {
+    return [];
+  }
+
+  return prisma.$queryRawUnsafe<SchemaConstraintRow[]>(
+    `
+      SELECT
+        rel.relname AS "tableName",
+        con.conname AS "constraintName",
+        pg_get_constraintdef(con.oid) AS definition
+      FROM pg_constraint con
+      JOIN pg_class rel ON rel.oid = con.conrelid
+      JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+      WHERE nsp.nspname = 'tenant_template'
+        AND rel.relname = ANY($1::text[])
+        AND con.contype = 'f'
+      ORDER BY rel.relname, con.conname
+    `,
+    tableNames,
+  );
+}
+
+async function copyTenantFixtureForeignKeys(
+  prisma: {
+    $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+    $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
+  },
+  schemaName: string,
+  tableNames: readonly string[],
+): Promise<void> {
+  const templateForeignKeys = await getTemplateForeignKeys(prisma, tableNames);
+
+  for (const foreignKey of templateForeignKeys) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE ${quoteIdentifier(schemaName)}.${quoteIdentifier(foreignKey.tableName)} ADD CONSTRAINT ${quoteIdentifier(foreignKey.constraintName)} ${rewriteSchemaReference(foreignKey.definition, 'tenant_template', schemaName)}`
+    );
+  }
+}
 
 async function seedRbacContractIntoSchema(
   prisma: {
@@ -363,19 +451,7 @@ export async function createTestTenantFixture(
       );
     }
 
-    const seedTables = [
-      'resource',
-      'role',
-      'policy',
-      'role_policy',
-      'social_platform',
-      'pii_service_config',
-      'profile_store',
-      'blocklist_entry',
-      'external_blocklist_pattern',
-    ];
-
-    for (const table of seedTables) {
+    for (const table of TENANT_FIXTURE_SEED_TABLES) {
       if (!templateTables.some((item) => item.tablename === table)) {
         continue;
       }
@@ -388,6 +464,11 @@ export async function createTestTenantFixture(
     }
 
     await seedRbacContractIntoSchema(prisma, schemaName);
+    await copyTenantFixtureForeignKeys(
+      prisma,
+      schemaName,
+      templateTables.map((item) => item.tablename),
+    );
   } catch (error) {
     await cleanupTestTenantArtifacts(
       prisma,
