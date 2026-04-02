@@ -122,6 +122,7 @@ export type TenantMigrationDriftWatchSkipReason =
 
 export interface ApplyMigrationsCliOptions {
   failOnDriftWatchSkips: boolean;
+  printSchemaSkipDetails: boolean;
 }
 
 export interface ApplyMigrationsExitEvaluation {
@@ -208,6 +209,7 @@ export function formatTenantMigrationDriftWatchSkipReasonCounts(
 
 export function parseApplyMigrationsCliArgs(argv: string[]): ApplyMigrationsCliOptions {
   let failOnDriftWatchSkips = false;
+  let printSchemaSkipDetails = false;
 
   for (const arg of argv) {
     if (arg === '--') {
@@ -219,10 +221,15 @@ export function parseApplyMigrationsCliArgs(argv: string[]): ApplyMigrationsCliO
       continue;
     }
 
+    if (arg === '--print-schema-skip-details') {
+      printSchemaSkipDetails = true;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
   }
 
-  return { failOnDriftWatchSkips };
+  return { failOnDriftWatchSkips, printSchemaSkipDetails };
 }
 
 export function evaluateApplyMigrationsExitStatus(options: {

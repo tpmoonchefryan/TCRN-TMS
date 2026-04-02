@@ -337,6 +337,33 @@ describe('parseApplyMigrationsCliArgs', () => {
   it('accepts the opt-in drift-watch strict mode flag', () => {
     assert.deepEqual(parseApplyMigrationsCliArgs(['--', '--fail-on-drift-watch-skips']), {
       failOnDriftWatchSkips: true,
+      printSchemaSkipDetails: false,
+    });
+  });
+
+  it('accepts the schema skip detail flag independently or together with strict mode', () => {
+    assert.deepEqual(parseApplyMigrationsCliArgs(['--print-schema-skip-details']), {
+      failOnDriftWatchSkips: false,
+      printSchemaSkipDetails: true,
+    });
+
+    assert.deepEqual(
+      parseApplyMigrationsCliArgs([
+        '--',
+        '--fail-on-drift-watch-skips',
+        '--print-schema-skip-details',
+      ]),
+      {
+        failOnDriftWatchSkips: true,
+        printSchemaSkipDetails: true,
+      }
+    );
+  });
+
+  it('keeps defaults disabled when no flags are provided', () => {
+    assert.deepEqual(parseApplyMigrationsCliArgs([]), {
+      failOnDriftWatchSkips: false,
+      printSchemaSkipDetails: false,
     });
   });
 

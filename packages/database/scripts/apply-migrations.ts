@@ -116,6 +116,25 @@ async function applyMigrations(options: ApplyMigrationsCliOptions) {
       mergeTenantMigrationSkipReasonCounts(totalSkippedByReason, result.skippedByReason);
       mergeTenantMigrationSkipReasonCounts(migrationSkippedByReason, result.skippedByReason);
 
+      const schemaDriftWatchSkipped = countTenantMigrationSkips(
+        result.skippedByReason,
+        TENANT_MIGRATION_DRIFT_WATCH_SKIP_REASONS
+      );
+
+      if (options.printSchemaSkipDetails && result.skipped > 0) {
+        const reasonSummary = formatTenantMigrationSkipReasonCounts(result.skippedByReason);
+
+        console.log(`    ${schema}: ${result.skipped} skipped (${reasonSummary})`);
+
+        if (schemaDriftWatchSkipped > 0) {
+          console.log(
+            `      drift-watch: ${schemaDriftWatchSkipped} (${formatTenantMigrationDriftWatchSkipReasonCounts(
+              result.skippedByReason
+            )})`
+          );
+        }
+      }
+
       if (result.errors > 0) {
         console.log(
           `    ${schema}: ${result.success} applied, ${result.skipped} skipped, ${result.errors} errors`
