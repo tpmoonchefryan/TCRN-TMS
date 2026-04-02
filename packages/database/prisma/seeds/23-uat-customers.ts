@@ -4,6 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
+import { getTenantSocialPlatformMap } from './_tenant-social-platforms';
 
 export interface UatCustomersResult {
   corpCustomers: string[];
@@ -16,6 +17,7 @@ const LAST_NAMES = ['Johnson', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson',
 const JAPANESE_NAMES = ['田中太郎', '佐藤花子', '鈴木一郎', '高橋美咲', '伊藤健太', '渡辺結衣', '山本翔太', '中村愛', '小林大輝', '加藤さくら'];
 const CHINESE_NAMES = ['张伟', '王芳', '李娜', '刘洋', '陈明', '杨静', '黄磊', '周敏', '吴刚', '郑悦'];
 const NICKNAMES = ['CoolGamer', 'StarFan', 'MusicLover', 'ArtEnthusiast', 'TechWizard', 'CreativeSoul', 'HappyViewer', 'LoyalSupporter', 'DailyWatcher', 'ContentCreator'];
+const CORP_PLATFORM_CODES = ['BILIBILI', 'YOUTUBE', 'TWITTER', 'TIKTOK'] as const;
 
 export async function seedUatCustomers(
   prisma: PrismaClient,
@@ -28,19 +30,11 @@ export async function seedUatCustomers(
   const soloCustomers: string[] = [];
   const systemUserId = '00000000-0000-0000-0000-000000000001';
 
-  // Get platform IDs
-  const platforms = await prisma.socialPlatform.findMany({
-    where: { code: { in: ['BILIBILI', 'YOUTUBE', 'TWITTER', 'TIKTOK'] } }
-  });
-  const platformMap: Record<string, string> = {};
-  for (const p of platforms) {
-    platformMap[p.code] = p.id;
-  }
-
   // ==========================================================================
   // UAT_CORP Customers
   // ==========================================================================
   const corpSchema = uatTenants.corpSchemaName;
+  const corpPlatformMap = await getTenantSocialPlatformMap(prisma, corpSchema);
 
   // Get profile store and status IDs
   const corpProfileStore = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -95,10 +89,10 @@ export async function seedUatCustomers(
       corpCustomers.push(customerId);
 
       // Create 2 platform identities per customer
-      const platformCodes = Object.keys(platformMap);
       for (let p = 0; p < 2; p++) {
-        const platformCode = platformCodes[(customerIndex + p) % platformCodes.length];
-        const platformId = platformMap[platformCode];
+        const platformCode =
+          CORP_PLATFORM_CODES[(customerIndex + p) % CORP_PLATFORM_CODES.length];
+        const platformId = corpPlatformMap[platformCode];
         const platformUid = `uat_${platformCode.toLowerCase()}_${customerIndex}_${p}`;
         const platformNickname = `${nickname}_${platformCode}`;
 
@@ -148,6 +142,7 @@ export async function seedUatCustomers(
   // UAT_SOLO Customers
   // ==========================================================================
   const soloSchema = uatTenants.soloSchemaName;
+  const soloPlatformMap = await getTenantSocialPlatformMap(prisma, soloSchema);
 
   // Get profile store for solo tenant
   const soloProfileStore = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -202,7 +197,7 @@ export async function seedUatCustomers(
 
     // Add platform identity
     const platformCode = i % 2 === 0 ? 'BILIBILI' : 'YOUTUBE';
-    const platformId = platformMap[platformCode];
+    const platformId = soloPlatformMap[platformCode];
     await prisma.$executeRawUnsafe(
       `INSERT INTO "${soloSchema}".platform_identity 
        (id, customer_id, platform_id, platform_uid, platform_nickname, is_current, captured_at, updated_at)

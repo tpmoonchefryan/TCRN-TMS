@@ -4,6 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatCustomersResult } from './23-uat-customers';
+import { getTenantSocialPlatformMap } from './_tenant-social-platforms';
 
 export async function seedUatMemberships(
   prisma: PrismaClient,
@@ -18,14 +19,10 @@ export async function seedUatMemberships(
   const membershipClasses = await prisma.membershipClass.findMany();
   const membershipTypes = await prisma.membershipType.findMany();
   const membershipLevels = await prisma.membershipLevel.findMany();
-  const platforms = await prisma.socialPlatform.findMany({
-    where: { code: { in: ['BILIBILI', 'YOUTUBE', 'FANBOX', 'PATREON', 'AFDIAN'] } }
-  });
 
   const classMap: Record<string, string> = {};
   const typeMap: Record<string, string> = {};
   const levelMap: Record<string, string> = {};
-  const platformMap: Record<string, string> = {};
 
   for (const c of membershipClasses) {
     classMap[c.code] = c.id;
@@ -36,14 +33,12 @@ export async function seedUatMemberships(
   for (const l of membershipLevels) {
     levelMap[l.code] = l.id;
   }
-  for (const p of platforms) {
-    platformMap[p.code] = p.id;
-  }
 
   // ==========================================================================
   // UAT_CORP Memberships
   // ==========================================================================
   const corpSchema = uatTenants.corpSchemaName;
+  const corpPlatformMap = await getTenantSocialPlatformMap(prisma, corpSchema);
 
   // Tables are already copied from tenant_template with data, just get the IDs
   const corpMembershipClasses = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
@@ -101,7 +96,7 @@ export async function seedUatMemberships(
       const classId = corpClassMap[config.classCode];
       const typeId = corpTypeMap[config.typeCode];
       const levelId = corpLevelMap[config.levelCode];
-      const platformId = platformMap[config.platformCode];
+      const platformId = corpPlatformMap[config.platformCode];
 
       if (!classId || !typeId || !levelId || !platformId) continue;
 
@@ -147,6 +142,7 @@ export async function seedUatMemberships(
   // UAT_SOLO Memberships
   // ==========================================================================
   const soloSchema = uatTenants.soloSchemaName;
+  const soloPlatformMap = await getTenantSocialPlatformMap(prisma, soloSchema);
 
   // Tables are already copied from tenant_template with data, just get the IDs
   const soloMembershipClasses = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
@@ -179,7 +175,7 @@ export async function seedUatMemberships(
     const classId = soloClassMap[config.classCode];
     const typeId = soloTypeMap[config.typeCode];
     const levelId = soloLevelMap[config.levelCode];
-    const platformId = platformMap[config.platformCode];
+    const platformId = soloPlatformMap[config.platformCode];
 
     if (!classId || !typeId || !levelId || !platformId) continue;
 
