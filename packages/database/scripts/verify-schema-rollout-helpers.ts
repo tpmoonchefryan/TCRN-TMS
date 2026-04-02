@@ -47,7 +47,7 @@ const ALTER_TABLE_REGEX = new RegExp(
   String.raw`ALTER TABLE\s+${TENANT_OBJECT_PATTERN}([\s\S]*?);`,
   'gi'
 );
-const ADD_COLUMN_REGEX = /ADD COLUMN IF NOT EXISTS\s+"?([A-Za-z_][A-Za-z0-9_]*)"?/gi;
+const ADD_COLUMN_REGEX = /ADD COLUMN(?: IF NOT EXISTS)?\s+"?([A-Za-z_][A-Za-z0-9_]*)"?/gi;
 const DROP_COLUMN_REGEX = /DROP COLUMN(?: IF EXISTS)?\s+"?([A-Za-z_][A-Za-z0-9_]*)"?/gi;
 
 type ArtifactKind = 'table' | 'column' | 'index';

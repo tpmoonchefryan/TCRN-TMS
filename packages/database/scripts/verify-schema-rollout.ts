@@ -15,7 +15,7 @@ import {
   type RequiredColumn,
 } from './verify-schema-rollout-helpers';
 
-interface CliOptions {
+export interface CliOptions {
   migrations: string[];
   schemas: string[];
   requiredTables: string[];
@@ -28,7 +28,7 @@ interface CliOptions {
   json: boolean;
 }
 
-interface PublicMigrationVerification {
+export interface PublicMigrationVerification {
   migrationName: string;
   present: boolean;
   finished: boolean;
@@ -40,23 +40,23 @@ interface PublicMigrationVerification {
   reason: string;
 }
 
-interface TableVerification {
+export interface TableVerification {
   tableName: string;
   present: boolean;
 }
 
-interface ColumnVerification {
+export interface ColumnVerification {
   tableName: string;
   columnName: string;
   present: boolean;
 }
 
-interface IndexVerification {
+export interface IndexVerification {
   indexName: string;
   present: boolean;
 }
 
-interface SchemaArtifactVerification {
+export interface SchemaArtifactVerification {
   schemaName: string;
   schemaExists: boolean;
   passed: boolean;
@@ -69,7 +69,7 @@ interface SchemaArtifactVerification {
   absentIndexes: IndexVerification[];
 }
 
-interface RolloutVerificationSummary {
+export interface RolloutVerificationSummary {
   filters: {
     migrations: string[];
     explicitSchemas: string[];
@@ -125,7 +125,7 @@ function uniqueRequiredColumns(values: RequiredColumn[]): RequiredColumn[] {
   );
 }
 
-function parseCliArgs(argv: string[]): CliOptions {
+export function parseCliArgs(argv: string[]): CliOptions {
   const migrations: string[] = [];
   const schemas: string[] = [];
   const requiredTables: string[] = [];
@@ -287,7 +287,7 @@ function parseCliArgs(argv: string[]): CliOptions {
   };
 }
 
-function resolveVerificationTargets(options: CliOptions): {
+export function resolveVerificationTargets(options: CliOptions): {
   resolvedOptions: CliOptions;
   inferredArtifacts: InferredRolloutArtifacts | null;
 } {
@@ -619,7 +619,7 @@ async function verifySchemaArtifacts(
   };
 }
 
-async function verifySchemaRollout(
+export async function verifySchemaRollout(
   prisma: PrismaClient,
   options: CliOptions,
   inferredArtifacts: InferredRolloutArtifacts | null

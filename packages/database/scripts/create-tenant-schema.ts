@@ -3,7 +3,12 @@
 
 import { PrismaClient } from '@prisma/client';
 
-import { copyTenantTemplateSeedData } from '../src/tenant-bootstrap';
+import {
+  alignTenantTemplateConstraintNames,
+  alignTenantTemplateIndexNames,
+  copyTenantTemplateForeignKeys,
+  copyTenantTemplateSeedData,
+} from '../src/tenant-bootstrap';
 
 const prisma = new PrismaClient();
 
@@ -60,50 +65,22 @@ async function createTenantSchema(tenantCode: string) {
     `);
   }
 
-  // 6. Copy constraints and foreign keys
-  // Note: This is a simplified version. In production, you would need to
-  // handle foreign keys more carefully to ensure they reference the new schema
-  const foreignKeys = await prisma.$queryRaw<Array<{
-    constraint_name: string;
-    table_name: string;
-    column_name: string;
-    foreign_table_name: string;
-    foreign_column_name: string;
-  }>>`
-    SELECT 
-      tc.constraint_name,
-      tc.table_name,
-      kcu.column_name,
-      ccu.table_name AS foreign_table_name,
-      ccu.column_name AS foreign_column_name
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu 
-      ON tc.constraint_name = kcu.constraint_name
-      AND tc.table_schema = kcu.table_schema
-    JOIN information_schema.constraint_column_usage ccu
-      ON ccu.constraint_name = tc.constraint_name
-      AND ccu.table_schema = tc.table_schema
-    WHERE tc.constraint_type = 'FOREIGN KEY'
-      AND tc.table_schema = 'tenant_template'
-  `;
-
-  console.log(`  Adding ${foreignKeys.length} foreign key constraints`);
-
-  for (const fk of foreignKeys) {
-    try {
-      await prisma.$executeRawUnsafe(`
-        ALTER TABLE "${schemaName}"."${fk.table_name}"
-        ADD CONSTRAINT "${fk.constraint_name}_${schemaName}"
-        FOREIGN KEY ("${fk.column_name}")
-        REFERENCES "${schemaName}"."${fk.foreign_table_name}"("${fk.foreign_column_name}")
-      `);
-    } catch {
-      // Constraint might already exist from LIKE INCLUDING ALL
-      console.log(`    Skipping existing constraint: ${fk.constraint_name}`);
-    }
-  }
-
   await copyTenantTemplateSeedData(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await copyTenantTemplateForeignKeys(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await alignTenantTemplateConstraintNames(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await alignTenantTemplateIndexNames(
     prisma,
     schemaName,
     tables.map(({ tablename }) => tablename)

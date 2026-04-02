@@ -144,6 +144,23 @@ describe('inferRolloutArtifactsFromSql', () => {
       requiredAbsentIndexes: ['export_job_transient_note_idx'],
     });
   });
+
+  it('treats a plain ADD COLUMN after DROP COLUMN as the final present state', () => {
+    const sql = `
+      ALTER TABLE tenant_template.talent_homepage
+        DROP COLUMN "theme",
+        ADD COLUMN "theme" JSONB NOT NULL DEFAULT '{}';
+    `;
+
+    assert.deepEqual(inferRolloutArtifactsFromSql(sql), {
+      requiredTables: [],
+      requiredColumns: [{ tableName: 'talent_homepage', columnName: 'theme' }],
+      requiredIndexes: [],
+      requiredAbsentTables: [],
+      requiredAbsentColumns: [],
+      requiredAbsentIndexes: [],
+    });
+  });
 });
 
 describe('inferRolloutArtifactsFromMigrations', () => {

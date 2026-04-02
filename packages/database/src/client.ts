@@ -2,7 +2,12 @@
 
 import { PrismaClient } from '@prisma/client';
 
-import { copyTenantTemplateSeedData } from './tenant-bootstrap';
+import {
+  alignTenantTemplateConstraintNames,
+  alignTenantTemplateIndexNames,
+  copyTenantTemplateForeignKeys,
+  copyTenantTemplateSeedData,
+} from './tenant-bootstrap';
 
 // Global Prisma Client instance for development
 // Prevents multiple instances during hot-reload
@@ -89,6 +94,21 @@ export async function createTenantSchema(tenantId: string): Promise<string> {
   }
 
   await copyTenantTemplateSeedData(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await copyTenantTemplateForeignKeys(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await alignTenantTemplateConstraintNames(
+    prisma,
+    schemaName,
+    tables.map(({ tablename }) => tablename)
+  );
+  await alignTenantTemplateIndexNames(
     prisma,
     schemaName,
     tables.map(({ tablename }) => tablename)
