@@ -306,7 +306,7 @@ jobs:
           echo "Reason: ${{ needs.classify-changes.outputs.skip_reason }}"
 
   # =============================================================================
-  # Deploy to Production Server (Main Services)
+  # Deploy to Production Server (Main Services, Manual Dispatch Only)
   # =============================================================================
   deploy-production:
     name: Deploy to Production
@@ -315,10 +315,8 @@ jobs:
     if: |
       needs.classify-changes.outputs.should_run_cd == 'true' &&
       needs.classify-changes.outputs.should_deploy_runtime == 'true' &&
-      (github.ref == 'refs/heads/main' || 
-      startsWith(github.ref, 'refs/tags/v') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production')
-      )
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_target == 'production'
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}
@@ -453,50 +451,6 @@ jobs:
             echo "✅ Deployment verification completed!"
 
   # =============================================================================
-  # Deploy to PII Server (Separated PII Services)
-  # =============================================================================
-  deploy-pii:
-    name: Deploy PII Service
-    runs-on: ubuntu-latest
-    needs: [classify-changes, build-test]
-    if: |
-      needs.classify-changes.outputs.should_run_cd == 'true' &&
-      needs.classify-changes.outputs.should_deploy_runtime == 'true' &&
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.deploy_target == 'pii'
-    environment:
-      name: pii-production
-    steps:
-      - name: Deploy PII Service via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PII_SSH_HOST }}
-          username: ${{ secrets.PII_SSH_USER }}
-          key: ${{ secrets.PII_SSH_KEY }}
-          port: ${{ secrets.PII_SSH_PORT || 22 }}
-          script: |
-            set -e
-            echo "🔐 Starting PII service deployment..."
-            BUILD_NO_CACHE="${{ needs.classify-changes.outputs.build_no_cache }}"
-
-            cd ${{ vars.PII_PROJECT_PATH || '/root/tcrn-tms-pii' }}
-
-            git fetch origin main
-            git reset --hard origin/main
-
-            if [ -n "$BUILD_NO_CACHE" ]; then
-              echo "Using clean Docker rebuild for pii-service."
-            else
-              echo "Using cached Docker rebuild for pii-service."
-            fi
-            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml build ${BUILD_NO_CACHE:+$BUILD_NO_CACHE} pii-service
-            docker compose -f docker-compose.yml -f docker-compose.pii.prod.yml up -d --force-recreate pii-service pii-postgres
-
-            docker image prune -f
-
-            echo "✅ PII service deployment completed!"
-
-  # =============================================================================
   # Optional: Build and Push Docker Images to Registry
   # =============================================================================
   build-images:
@@ -519,8 +473,6 @@ jobs:
             dockerfile: infra/docker/api.Dockerfile
           - name: worker
             dockerfile: infra/docker/worker.Dockerfile
-          - name: pii-service
-            dockerfile: infra/docker/pii-service.Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v4
