@@ -1,0 +1,58 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+#
+# Optional post-deploy schema verification job.
+# Supply ROLLOUT_MIGRATIONS before applying if the release includes schema changes.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tcrn-db-verify-schema-rollout
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-db-verify-schema-rollout
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tcrn-db-verify-schema-rollout
+        app.kubernetes.io/part-of: tcrn-tms
+    spec:
+      restartPolicy: Never
+      # registry-secret-placeholder
+      containers:
+        - name: db-verify-schema-rollout
+          image: ghcr.io/tpmoonchefryan/tcrn-tms/api:replace-me
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ -z "${ROLLOUT_MIGRATIONS:-}" ]; then
+                echo "ROLLOUT_MIGRATIONS is empty; skipping schema rollout verification."
+                exit 0
+              fi
+
+              cd /app/packages/database
+              VERIFY_ARGS="--infer-artifacts-from-migrations --json"
+
+              OLD_IFS="$IFS"
+              IFS=','
+              for migration in $ROLLOUT_MIGRATIONS; do
+                if [ -n "$migration" ]; then
+                  VERIFY_ARGS="$VERIFY_ARGS --migration $migration"
+                fi
+              done
+              IFS="$OLD_IFS"
+
+              npx tsx scripts/verify-schema-rollout.ts $VERIFY_ARGS
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: ROLLOUT_MIGRATIONS
+              value: replace-me-rollout-migrations
+          envFrom:
+            - secretRef:
+                name: tcrn-runtime-env

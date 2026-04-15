@@ -1,0 +1,42 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+#
+# First-install bootstrap job for a fresh production redeploy.
+# This job is intentionally separate from the steady-state API deployment.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tcrn-db-bootstrap
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-db-bootstrap
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tcrn-db-bootstrap
+        app.kubernetes.io/part-of: tcrn-tms
+    spec:
+      restartPolicy: Never
+      # registry-secret-placeholder
+      containers:
+        - name: db-bootstrap
+          image: ghcr.io/tpmoonchefryan/tcrn-tms/api:replace-me
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cd /app/packages/database
+              npx prisma migrate deploy
+              npx tsx scripts/apply-migrations.ts
+              npx tsx prisma/seeds/index.ts
+          env:
+            - name: NODE_ENV
+              value: production
+          envFrom:
+            - secretRef:
+                name: tcrn-runtime-env

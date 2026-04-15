@@ -1,0 +1,8 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tcrn
+  labels:
+    app.kubernetes.io/part-of: tcrn-tms

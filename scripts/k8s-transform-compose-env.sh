@@ -1,0 +1,193 @@
+#!/bin/bash
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# Transform a Compose-oriented production env file into the first-cut K3s runtime env contract.
+
+set -euo pipefail
+
+SOURCE_ENV="${SOURCE_ENV:-${1:-.env.production.example}}"
+OUTPUT_ENV="${OUTPUT_ENV:-${2:-./tmp/k8s-runtime.env}}"
+DB_HOST="${DB_HOST:-}"
+DB_PORT="${DB_PORT:-5432}"
+DATABASE_URL_OVERRIDE="${DATABASE_URL_OVERRIDE:-}"
+REDIS_HOST="${REDIS_HOST:-tcrn-redis.tcrn.svc.cluster.local}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+REDIS_URL_OVERRIDE="${REDIS_URL_OVERRIDE:-}"
+MINIO_ENDPOINT_OUTPUT="${MINIO_ENDPOINT_OUTPUT:-tcrn-minio.tcrn.svc.cluster.local:9000}"
+MINIO_USE_SSL_OUTPUT="${MINIO_USE_SSL_OUTPUT:-}"
+NATS_URL_OUTPUT="${NATS_URL_OUTPUT:-nats://tcrn-nats.tcrn.svc.cluster.local:4222}"
+EXPECTED_PUBLIC_URL="${EXPECTED_PUBLIC_URL:-}"
+EMAIL_CONFIG_ENCRYPTION_KEY_OVERRIDE="${EMAIL_CONFIG_ENCRYPTION_KEY_OVERRIDE:-}"
+
+if [[ ! -f "${SOURCE_ENV}" ]]; then
+  echo "Source env file not found: ${SOURCE_ENV}"
+  exit 1
+fi
+
+mkdir -p "$(dirname "${OUTPUT_ENV}")"
+
+get_env_value() {
+  local wanted_key="$1"
+
+  awk -v wanted_key="${wanted_key}" '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      pos = index(line, "=")
+      if (pos == 0) {
+        next
+      }
+
+      key = substr(line, 1, pos - 1)
+      gsub(/^[[:space:]]+/, "", key)
+      gsub(/[[:space:]]+$/, "", key)
+
+      if (key != wanted_key) {
+        next
+      }
+
+      print substr(line, pos + 1)
+      exit
+    }
+  ' "${SOURCE_ENV}"
+}
+
+require_non_empty_source() {
+  local key="$1"
+  local value
+  value="$(get_env_value "${key}")"
+  if [[ -z "${value}" ]]; then
+    echo "Missing required key in source env: ${key}"
+    exit 1
+  fi
+}
+
+extract_url_path() {
+  local url="$1"
+  local rest path
+  rest="${url#*://}"
+  rest="${rest#*@}"
+  if [[ "${rest}" == */* ]]; then
+    path="/${rest#*/}"
+    path="${path%%\?*}"
+    printf '%s\n' "${path}"
+    return
+  fi
+  printf '/\n'
+}
+
+strip_api_path_if_needed() {
+  local url="$1"
+  local path
+  path="$(extract_url_path "${url}")"
+
+  if [[ "${path}" == "/api" || "${path}" == /api/* ]]; then
+    echo "WARN: NEXT_PUBLIC_API_URL source contains ${path}; normalizing it back to the public origin for first-cut K3s." >&2
+    printf '%s\n' "${url%%/api*}"
+    return
+  fi
+
+  printf '%s\n' "${url}"
+}
+
+write_kv() {
+  local key="$1"
+  local value="$2"
+  printf '%s=%s\n' "${key}" "${value}" >> "${OUTPUT_ENV}"
+}
+
+require_non_empty_source "POSTGRES_PASSWORD"
+require_non_empty_source "REDIS_PASSWORD"
+require_non_empty_source "MINIO_ROOT_PASSWORD"
+require_non_empty_source "JWT_SECRET"
+require_non_empty_source "JWT_REFRESH_SECRET"
+require_non_empty_source "FINGERPRINT_SECRET_KEY"
+require_non_empty_source "NEXT_PUBLIC_APP_URL"
+postgres_user="$(get_env_value "POSTGRES_USER")"
+postgres_password="$(get_env_value "POSTGRES_PASSWORD")"
+postgres_db="$(get_env_value "POSTGRES_DB")"
+redis_password="$(get_env_value "REDIS_PASSWORD")"
+minio_root_user="$(get_env_value "MINIO_ROOT_USER")"
+minio_root_password="$(get_env_value "MINIO_ROOT_PASSWORD")"
+jwt_secret="$(get_env_value "JWT_SECRET")"
+jwt_refresh_secret="$(get_env_value "JWT_REFRESH_SECRET")"
+fingerprint_secret_key="$(get_env_value "FINGERPRINT_SECRET_KEY")"
+next_public_app_url="$(get_env_value "NEXT_PUBLIC_APP_URL")"
+next_public_api_url="$(get_env_value "NEXT_PUBLIC_API_URL")"
+frontend_url="$(get_env_value "FRONTEND_URL")"
+app_url="$(get_env_value "APP_URL")"
+cors_origin="$(get_env_value "CORS_ORIGIN")"
+tencent_ses_secret_id="$(get_env_value "TENCENT_SES_SECRET_ID")"
+tencent_ses_secret_key="$(get_env_value "TENCENT_SES_SECRET_KEY")"
+tencent_ses_from_address="$(get_env_value "TENCENT_SES_FROM_ADDRESS")"
+email_config_encryption_key="$(get_env_value "EMAIL_CONFIG_ENCRYPTION_KEY")"
+next_public_turnstile_site_key="$(get_env_value "NEXT_PUBLIC_TURNSTILE_SITE_KEY")"
+loki_enabled="$(get_env_value "LOKI_ENABLED")"
+loki_push_url="$(get_env_value "LOKI_PUSH_URL")"
+otel_enabled="$(get_env_value "OTEL_ENABLED")"
+otel_exporter_otlp_endpoint="$(get_env_value "OTEL_EXPORTER_OTLP_ENDPOINT")"
+otel_exporter_otlp_metrics_endpoint="$(get_env_value "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")"
+minio_use_ssl="$(get_env_value "MINIO_USE_SSL")"
+
+postgres_user="${postgres_user:-tcrn}"
+postgres_db="${postgres_db:-tcrn_tms}"
+minio_root_user="${minio_root_user:-minioadmin}"
+next_public_api_url="${next_public_api_url:-${next_public_app_url}}"
+next_public_api_url="$(strip_api_path_if_needed "${next_public_api_url}")"
+frontend_url="${frontend_url:-${next_public_app_url}}"
+app_url="${app_url:-${next_public_app_url}}"
+cors_origin="${cors_origin:-${next_public_app_url}}"
+minio_use_ssl="${MINIO_USE_SSL_OUTPUT:-${minio_use_ssl:-false}}"
+loki_enabled="${loki_enabled:-false}"
+otel_enabled="${otel_enabled:-false}"
+email_config_encryption_key="${EMAIL_CONFIG_ENCRYPTION_KEY_OVERRIDE:-${email_config_encryption_key}}"
+
+if [[ -z "${DATABASE_URL_OVERRIDE}" && -z "${DB_HOST}" ]]; then
+  echo "Set DB_HOST or DATABASE_URL_OVERRIDE before transforming for K3s."
+  exit 1
+fi
+
+database_url="${DATABASE_URL_OVERRIDE:-postgresql://${postgres_user}:${postgres_password}@${DB_HOST}:${DB_PORT}/${postgres_db}}"
+redis_url="${REDIS_URL_OVERRIDE:-redis://:${redis_password}@${REDIS_HOST}:${REDIS_PORT}}"
+
+: > "${OUTPUT_ENV}"
+
+cat >> "${OUTPUT_ENV}" <<EOF
+# Generated by scripts/k8s-transform-compose-env.sh
+# Source env: ${SOURCE_ENV}
+# First-cut target: single-node K3s runtime env
+
+EOF
+
+write_kv "NODE_ENV" "production"
+write_kv "NEXT_PUBLIC_API_URL" "${next_public_api_url}"
+write_kv "NEXT_PUBLIC_APP_URL" "${next_public_app_url}"
+write_kv "FRONTEND_URL" "${frontend_url}"
+write_kv "APP_URL" "${app_url}"
+write_kv "CORS_ORIGIN" "${cors_origin}"
+write_kv "DATABASE_URL" "${database_url}"
+write_kv "REDIS_URL" "${redis_url}"
+write_kv "MINIO_ENDPOINT" "${MINIO_ENDPOINT_OUTPUT}"
+write_kv "MINIO_ROOT_USER" "${minio_root_user}"
+write_kv "MINIO_ROOT_PASSWORD" "${minio_root_password}"
+write_kv "MINIO_USE_SSL" "${minio_use_ssl}"
+write_kv "NATS_URL" "${NATS_URL_OUTPUT}"
+write_kv "JWT_SECRET" "${jwt_secret}"
+write_kv "JWT_REFRESH_SECRET" "${jwt_refresh_secret}"
+write_kv "FINGERPRINT_SECRET_KEY" "${fingerprint_secret_key}"
+write_kv "TENCENT_SES_SECRET_ID" "${tencent_ses_secret_id}"
+write_kv "TENCENT_SES_SECRET_KEY" "${tencent_ses_secret_key}"
+write_kv "TENCENT_SES_FROM_ADDRESS" "${tencent_ses_from_address}"
+write_kv "EMAIL_CONFIG_ENCRYPTION_KEY" "${email_config_encryption_key}"
+write_kv "NEXT_PUBLIC_TURNSTILE_SITE_KEY" "${next_public_turnstile_site_key}"
+write_kv "LOKI_ENABLED" "${loki_enabled}"
+write_kv "LOKI_PUSH_URL" "${loki_push_url}"
+write_kv "OTEL_ENABLED" "${otel_enabled}"
+write_kv "OTEL_EXPORTER_OTLP_ENDPOINT" "${otel_exporter_otlp_endpoint}"
+write_kv "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT" "${otel_exporter_otlp_metrics_endpoint}"
+
+if [[ -x "scripts/k8s-audit-runtime-env.sh" ]]; then
+  EXPECTED_PUBLIC_URL="${EXPECTED_PUBLIC_URL}" scripts/k8s-audit-runtime-env.sh "${OUTPUT_ENV}"
+fi
+
+echo "Wrote first-cut K3s runtime env to ${OUTPUT_ENV}"

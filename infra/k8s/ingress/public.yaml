@@ -1,0 +1,61 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+#
+# First-cut public ingress.
+# This intentionally preserves the current single-host production model:
+# - web handles `/`
+# - api handles `/api/v1` and `/api/docs`
+# - web keeps `/api/live-status` and `/api-proxy`
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tcrn-public
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-public
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  ingressClassName: replace-me-ingress-class
+  tls:
+    - hosts:
+        - replace-me.example.com
+      secretName: replace-me-tls-secret
+  rules:
+    - host: replace-me.example.com
+      http:
+        paths:
+          - path: /api/live-status
+            pathType: Prefix
+            backend:
+              service:
+                name: tcrn-web
+                port:
+                  number: 3000
+          - path: /api-proxy
+            pathType: Prefix
+            backend:
+              service:
+                name: tcrn-web
+                port:
+                  number: 3000
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: tcrn-api
+                port:
+                  number: 4000
+          - path: /api/docs
+            pathType: Prefix
+            backend:
+              service:
+                name: tcrn-api
+                port:
+                  number: 4000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tcrn-web
+                port:
+                  number: 3000

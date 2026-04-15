@@ -1,0 +1,111 @@
+# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tcrn-minio-data
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-minio
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcrn-minio
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-minio
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tcrn-minio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tcrn-minio
+        app.kubernetes.io/part-of: tcrn-tms
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - /data
+            - --console-address
+            - :9001
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: api
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-runtime-env
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-runtime-env
+                  key: MINIO_ROOT_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: tcrn-minio-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcrn-minio
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-minio
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  selector:
+    app.kubernetes.io/name: tcrn-minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+  type: ClusterIP
