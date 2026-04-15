@@ -91,7 +91,6 @@ services:
     restart: always
     networks:
       - app-network
-      - pii-network # Needs access to PII service
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-tcrn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tcrn_tms}
@@ -103,8 +102,6 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      # PII Service (External server URL)
-      PII_SERVICE_URL: ${PII_SERVICE_URL}
       # Frontend URL for email links (password reset, verification, etc.)
       FRONTEND_URL: ${NEXT_PUBLIC_APP_URL}
       APP_URL: ${NEXT_PUBLIC_APP_URL}
@@ -149,7 +146,6 @@ services:
     restart: always
     networks:
       - app-network
-      - pii-network
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-tcrn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tcrn_tms}
@@ -161,7 +157,6 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      PII_SERVICE_URL: http://pii-service:5000
       # Email
       TENCENT_SES_SECRET_ID: ${TENCENT_SES_SECRET_ID}
       TENCENT_SES_SECRET_KEY: ${TENCENT_SES_SECRET_KEY}
@@ -191,16 +186,3 @@ services:
   # Ensure Redis has password in production
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
-
-  # =============================================================================
-  # Disable Internal PII Services (Separated Deployment)
-  # =============================================================================
-  
-  # When using this production file, we assume PII services are on a separate server.
-  # We use profiles to disable these services from starting locally.
-  
-  pii-postgres:
-    profiles: ["disabled-in-main-prod"]
-  
-  pii-service:
-    profiles: ["disabled-in-main-prod"]

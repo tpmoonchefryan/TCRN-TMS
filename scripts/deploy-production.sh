@@ -112,9 +112,6 @@ JWT_SECRET=<your-32-char-secret>
 JWT_REFRESH_SECRET=<your-32-char-secret>
 FINGERPRINT_SECRET_KEY=<your-secret-key>
 
-# PII Service (external server)
-PII_SERVICE_URL=http://<pii-server-ip>:5000
-
 # Public URLs
 NEXT_PUBLIC_API_URL=https://api.yourdomain.com
 NEXT_PUBLIC_APP_URL=https://app.yourdomain.com

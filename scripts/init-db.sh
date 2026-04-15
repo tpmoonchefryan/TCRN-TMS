@@ -15,11 +15,8 @@ echo ""
 
 # Configuration
 MAIN_CONTAINER="tcrn-postgres"
-PII_CONTAINER="tcrn-pii-postgres"
 MAIN_DB="tcrn_tms"
-PII_DB="pii_vault"
 MAIN_USER="${POSTGRES_USER:-tcrn}"
-PII_USER="${PII_POSTGRES_USER:-pii_user}"
 
 # Function to check if a container is running
 check_container() {
@@ -68,11 +65,11 @@ if check_container "$MAIN_CONTAINER"; then
     echo -e "   ${GREEN}Container is running${NC}"
 else
     echo -e "   ${RED}Container not running!${NC}"
-    echo "   Starting containers with: docker-compose up -d postgres"
+    echo "   Starting containers with: docker compose up -d postgres"
     
     # Check if docker-compose.yml exists
     if [ -f "docker-compose.yml" ]; then
-        docker-compose up -d postgres
+        docker compose up -d postgres
         sleep 3
         if check_container "$MAIN_CONTAINER"; then
             echo -e "   ${GREEN}Container started successfully${NC}"
@@ -141,26 +138,9 @@ else
     echo "   Run database initialization to create the AC tenant."
 fi
 
-# Step 6: Check PII PostgreSQL container (optional)
+# Step 6: Check Redis
 echo ""
-echo -e "${YELLOW}6. Checking PII PostgreSQL container (${PII_CONTAINER})...${NC}"
-if check_container "$PII_CONTAINER"; then
-    echo -e "   ${GREEN}Container is running${NC}"
-    
-    # Check PII database
-    if docker exec "$PII_CONTAINER" psql -U "$PII_USER" -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "$PII_DB"; then
-        echo -e "   ${GREEN}Database ${PII_DB} exists${NC}"
-    else
-        echo -e "   ${YELLOW}Database ${PII_DB} not found${NC}"
-    fi
-else
-    echo -e "   ${YELLOW}Container not running (optional for local development)${NC}"
-    echo "   To start: docker-compose up -d pii-postgres"
-fi
-
-# Step 7: Check Redis
-echo ""
-echo -e "${YELLOW}7. Checking Redis container (tcrn-redis)...${NC}"
+echo -e "${YELLOW}6. Checking Redis container (tcrn-redis)...${NC}"
 if check_container "tcrn-redis"; then
     echo -e "   ${GREEN}Container is running${NC}"
     
@@ -172,7 +152,7 @@ if check_container "tcrn-redis"; then
     fi
 else
     echo -e "   ${YELLOW}Container not running${NC}"
-    echo "   To start: docker-compose up -d redis"
+    echo "   To start: docker compose up -d redis"
 fi
 
 # Summary
@@ -191,14 +171,11 @@ else
     echo "Run the following commands to initialize:"
     echo ""
     echo "  # 1. Ensure containers are running"
-    echo "  docker-compose up -d postgres redis"
+    echo "  docker compose up -d postgres redis"
     echo ""
     echo "  # 2. Initialize database (migrations + seed)"
     echo "  cd packages/database && pnpm db:init"
     echo ""
-    echo "  # 3. (Optional) Start PII service database"
-    echo "  docker-compose up -d pii-postgres"
-    echo "  cd apps/pii-service && pnpm prisma:push"
 fi
 
 echo ""
