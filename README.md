@@ -38,7 +38,7 @@
 - [Quick Start](#-quick-start)
 - [Production Deployment](#-production-deployment)
 - [Custom Domain Setup](#-custom-domain-setup)
-- [PII Proxy Service Deployment](#-pii-proxy-service-deployment)
+- [External PII Platform Integration](#-external-pii-platform-integration)
 - [API Reference](#-api-reference)
 - [Security](#-security)
 - [License](#-license)
@@ -58,7 +58,7 @@
 
 ### Key Differentiators
 
-- **Privacy-First Architecture**: PII (Personally Identifiable Information) is stored in a separate encrypted microservice
+- **Privacy-First Architecture**: PII flows are delegated to an external TCRN PII Platform instead of a repo-owned runtime
 - **Multi-Tenant Isolation**: Each tenant has its own PostgreSQL schema for complete data isolation
 - **Three-Language Support**: Full UI localization for English, Chinese, and Japanese
 - **VTuber-Specific Features**: Marshmallow (anonymous Q&A), customizable talent homepages, membership tracking
@@ -67,14 +67,14 @@
 
 ## ✨ Feature Highlights
 
-### 🔐 Privacy-First PII Architecture
+### 🔐 Privacy-First PII Boundary
 
-All sensitive customer data (real names, phone numbers, addresses, emails) is stored in an independent PII Proxy Service:
+Sensitive customer fields are handled through an external `TCRN_PII_PLATFORM` integration:
 
-- **Token-Based Access**: Local database only stores `rm_profile_id` tokens
-- **AES-256-GCM Encryption**: Data at rest is encrypted with per-tenant DEKs
-- **mTLS Authentication**: Service-to-service communication secured with mutual TLS
-- **Short-Lived JWTs**: 5-minute access tokens for PII retrieval
+- **Adapter-Gated Capability**: effective `integration_adapter` resolution is the only enablement truth
+- **Write-Through Only**: create/edit flows can send PII server-to-server, but TMS does not read it back
+- **Portal Retrieval**: users view PII in the external platform after SSO and permission checks
+- **Archive Isolation Boundary**: `profileStoreId` remains the talent-level customer archive isolation/sharing boundary
 
 ### 🏢 Multi-Tenant Organization Structure
 
@@ -121,7 +121,7 @@ A complete anonymous question box system inspired by Japanese "Marshmallow" serv
 
 Generate comprehensive **Membership Feedback Reports** with:
 
-- Member profiles with PII (via secure retrieval)
+- Platform-side PII report handoff using `customerId[] + request metadata`
 - Platform identities (YouTube, Bilibili, etc.)
 - Membership status and expiration tracking
 - Async generation with progress tracking
@@ -259,11 +259,11 @@ End-to-end type-safe validation with Zod:
                               │ mTLS                                          │
                               ▼                                               │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
-              │         Isolated PII Environment           │                  │
+              │      External TCRN PII Platform           │                  │
               │  ┌─────────────────┐  ┌─────────────────┐  │                  │
-              │  │  PII Proxy      │  │  PII Database   │  │                  │
-              │  │  Service :5100  │──│  PostgreSQL     │  │                  │
-              │  │  (AES-256-GCM)  │  │  (Encrypted)    │  │                  │
+              │  │  Portal + API   │  │  PII Storage    │  │                  │
+              │  │  (separate      │──│  + Reporting    │  │                  │
+              │  │   project)      │  │  (separate)     │  │                  │
               │  └─────────────────┘  └─────────────────┘  │                  │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
                                     └─────────────────────────────────────────┘
@@ -274,9 +274,10 @@ End-to-end type-safe validation with Zod:
 1. **Web UI** → **API Gateway** (NestJS) for all business operations
 2. **API** validates JWT and checks Redis permission snapshots
 3. Non-PII data stored in tenant-specific PostgreSQL schema
-4. PII retrieval: API issues short-lived JWT → PII Proxy → Encrypted storage
-5. Background jobs processed by BullMQ Workers
-6. Files stored in MinIO with presigned URL downloads
+4. When effective `TCRN_PII_PLATFORM` is active, customer create/edit sends PII write-through payloads with `customerId`
+5. PII viewing happens by portal redirect and SSO on the external platform; TMS does not read PII back
+6. Background jobs processed by BullMQ Workers
+7. Files stored in MinIO with presigned URL downloads
 
 ---
 
@@ -311,9 +312,8 @@ Current runtime status for the infrastructure above:
 - `Grafana Loki` has an optional Compose profile service and real query/push helpers, but the default source of truth is still the tenant PostgreSQL log tables. `/api/v1/logs/search*` reads Loki and returns empty results when `LOKI_ENABLED=false`; the API/worker-side Loki push helpers are not the default producer path today.
 - `Grafana Tempo` and the API-side OpenTelemetry bootstrap are provisioned behind the optional `observability` Compose profile for future rollout; distributed tracing is not enabled by default in the current runtime. To opt in locally, start `docker compose --profile observability up -d loki tempo`, set `OTEL_ENABLED=true`, and point `OTEL_EXPORTER_OTLP_ENDPOINT` at a trace backend such as Tempo. Metrics stay disabled unless `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` is explicitly set to a separate OTLP metrics collector; do not point that metrics endpoint at Tempo.
 - `Prometheus` is a reserved roadmap item and is not part of the current default Compose deployment.
-- `PII health check` is a scheduled worker dependency probe. Unless `ENABLE_SCHEDULED_JOBS=false`, the worker enqueues `pii-health-check` every 60 seconds for configured PII endpoints. Treat it as dependency telemetry, not the primary app liveness signal.
-- If no real external PII service is deployed, or Prometheus is not scraping that service yet, do not page on `pii-health-check` noise or localhost placeholder failures. That state is operator-facing telemetry only.
-- Once a real PII service is deployed and scraped, treat `HighPiiServiceLatency` / `HighPiiErrorRate` as warning-level degradation, and `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` as critical dependency alerts.
+- The repo-owned `pii-health-check` worker probe has been retired with the standalone PII runtime.
+- If you need dependency telemetry for the external `TCRN_PII_PLATFORM`, implement it in that platform or its adapter/operator monitoring, not as a hidden local worker assumption in this repo.
 
 ---
 
@@ -338,8 +338,8 @@ cd tcrn-tms
 pnpm install
 
 # 3. Start infrastructure services
-# Core runtime dependencies plus the local PII helper stack
-docker compose up -d postgres redis minio nats pii-postgres pii-service
+# Core runtime dependencies
+docker compose up -d postgres redis minio nats
 
 # Optional: start local observability services only when working on Loki/Tempo/OTEL paths
 docker compose --profile observability up -d loki tempo
@@ -354,6 +354,9 @@ pnpm db:apply-migrations
 pnpm db:sync-schemas
 pnpm db:seed
 cd ../..
+
+# 5b. Optional: configure an external `TCRN_PII_PLATFORM` adapter in TMS
+# This repository no longer starts or migrates a local standalone PII service.
 
 # 6. Start development servers
 pnpm dev
@@ -438,9 +441,9 @@ MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 32)
 MINIO_ENDPOINT=http://minio:9000
 
-# PII Service (separate server recommended for production)
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
+# External PII Platform
+# Configure `TCRN_PII_PLATFORM` through tenant/subsidiary/talent integration adapters.
+# No repo-owned PII runtime env is required in this repository.
 
 # Application
 NODE_ENV=production
@@ -508,38 +511,61 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 #### Option 2: Kubernetes (Recommended for Production)
 
-Best for: High availability, auto-scaling, enterprise deployments
+Current status:
+
+- the old generic Kubernetes instructions in this section are no longer the production cutover source of truth
+- the active production-first path is now a conservative first cut:
+  - single-node `K3s`
+  - same-host external PostgreSQL
+  - single replica `web/api/worker`
+  - local development still stays on Docker Compose plus local app processes
+
+Do not follow the older in-cluster PostgreSQL / HPA / multi-replica assumptions that previously appeared here for this first-cut production rollout.
+
+Use these files instead:
+
+- `infra/k8s/README.md`
+- `.context/plans/2026-04-11-single-node-k3s-fresh-redeploy-cutover-checklist.md`
+
+Current operator entrypoints for the first cut:
 
 ```bash
-# 1. Apply namespace and secrets
-kubectl create namespace tcrn-tms
-kubectl apply -f infra/k8s/secrets/
+# 1. Read-only cluster preflight
+scripts/k8s-preflight-cluster.sh
 
-# 2. Deploy infrastructure
-kubectl apply -f infra/k8s/postgres/
-kubectl apply -f infra/k8s/redis/
-kubectl apply -f infra/k8s/minio/
-kubectl apply -f infra/k8s/nats/
+# 2. Create runtime secret from the preserved production env file
+scripts/k8s-create-runtime-secret.sh /path/to/production.env
 
-# 3. Wait for infrastructure to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n tcrn-tms --timeout=300s
+# 3. If GHCR images remain private, create the pull secret
+GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
-# 4. Deploy applications
-kubectl apply -f infra/k8s/deployments/
+# 4. Apply the first-cut baseline
+IMAGE_TAG=... \
+APP_HOST=web.prod.tcrn-tms.com \
+TLS_SECRET_NAME=... \
+INGRESS_CLASS_NAME=traefik \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-deploy-production.sh
 
-# 5. Configure ingress
-kubectl apply -f infra/k8s/ingress/
+# 5. Run first-install bootstrap
+IMAGE_TAG=... REGISTRY_SECRET_NAME=ghcr-pull-secret scripts/k8s-run-db-bootstrap.sh
 
-# 6. Run database migrations (one-time job)
-kubectl apply -f infra/k8s/jobs/db-migrate.yaml
+# 6. Optional rollout verification for schema-changing releases
+IMAGE_TAG=... \
+ROLLOUT_MIGRATIONS=20260330000001_add_marshmallow_export_job \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-run-db-verify-schema-rollout.sh
+
+# 7. Post-cutover smoke checks
+APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
 ```
 
-**Kubernetes Features:**
+This path is intentionally conservative. It does not yet claim:
 
-- **Rolling Updates**: Zero-downtime deployments with `maxUnavailable: 0`
-- **Horizontal Pod Autoscaler (HPA)**: Auto-scale based on CPU/memory
-- **Pod Disruption Budget (PDB)**: Maintain minimum replicas during updates
-- **Health Checks**: Readiness and liveness probes on all services
+- multi-node HA
+- HPA
+- multi-replica web
+- in-cluster PostgreSQL for the first cut
 
 ### SSL/TLS Configuration
 
@@ -590,7 +616,8 @@ server {
 - [ ] MinIO with HTTPS
 - [ ] JWT secrets generated (min 32 characters)
 - [ ] Fingerprint key configured
-- [ ] PII Service URL configured (see next section)
+- [ ] External `TCRN_PII_PLATFORM` adapter activated at the intended scope
+- [ ] External portal and SSO reachability verified
 - [ ] Email service credentials configured
 - [ ] Backup strategy implemented
 - [ ] Monitoring and alerting configured
@@ -716,277 +743,45 @@ Customer-side steps:
 
 ---
 
-## 🔒 PII Proxy Service Deployment
+## 🔒 External PII Platform Integration
 
-The PII Proxy Service must be deployed on a **separate server** from the main application for security compliance.
+TCRN TMS no longer ships a repo-owned standalone PII runtime. Sensitive fields are handled by an externally deployed `TCRN_PII_PLATFORM`, operated as a separate project and integrated back into TMS.
 
-Current rollout boundary:
+### Canonical Rules
 
-- The default local and production Compose stacks do **not** enable a separate PII server by default. Treat this section as an opt-in deployment guide, not as an already-active runtime capability.
-- Main application operator responsibilities: `PII_SERVICE_URL`, client-side mTLS certificate paths, scheduled worker behavior, and keeping tenant-local `profile_store` / `pii_service_config` references pointed only at real endpoints.
-- PII server operator responsibilities: firewall/VPN reachability, `JWT_SECRET` parity with the main application, server-side mTLS certificates, encrypted storage, and optional Prometheus scraping once observability is enabled.
+- Effective `integration_adapter` resolution with code `TCRN_PII_PLATFORM` is the only enablement truth.
+- `profileStoreId` stays in TMS as the customer archive isolation/sharing boundary between talents.
+- TMS owns non-PII customer core data and cross-system `customerId`.
+- The external platform owns sensitive-field storage, portal viewing, and PII report generation.
 
-### Architecture Overview
+### Runtime Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    MAIN APPLICATION SERVER                          │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐               │
-│  │   Web UI    │   │   API       │   │   Worker    │               │
-│  └─────────────┘   └──────┬──────┘   └──────┬──────┘               │
-│                           │                  │                      │
-│                           │   JWT + mTLS     │                      │
-└───────────────────────────┼──────────────────┼──────────────────────┘
-                            │                  │
-                            ▼                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    PII PROXY SERVER (Isolated)                      │
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │                    PII Proxy Service                         │   │
-│  │   - JWT Verification                                         │   │
-│  │   - AES-256-GCM Encryption/Decryption                       │   │
-│  │   - Per-Tenant DEK Management                               │   │
-│  │   - Audit Logging                                            │   │
-│  └───────────────────────────┬─────────────────────────────────┘   │
-│                              │                                      │
-│  ┌───────────────────────────▼─────────────────────────────────┐   │
-│  │                    PII Database                              │   │
-│  │   - Encrypted at rest                                        │   │
-│  │   - Network isolated                                         │   │
-│  │   - No direct external access                               │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+1. Deploy and operate the external PII platform outside this repository.
+2. Configure SSO, permissions, and adapter credentials in that platform and in TMS integration settings.
+3. Activate the `TCRN_PII_PLATFORM` adapter at the tenant, subsidiary, or talent scope that should expose PII entry.
+4. Customer create/edit in TMS shows the PII section only when the adapter is effective, then sends overwrite-style write-through payloads keyed by `customerId`.
+5. Customer viewing uses the `Retrieve PII Data` portal redirect flow; TMS does not read PII back into its own UI.
+6. PII report requests hand off `customerId[] + request metadata` to the external platform; report binaries remain on the platform side.
 
-### Server Requirements
+### Operator Checklist
 
-| Component   | Specification                         |
-| ----------- | ------------------------------------- |
-| **OS**      | Ubuntu 22.04 LTS or later             |
-| **CPU**     | 2+ vCPU                               |
-| **RAM**     | 4GB+                                  |
-| **Storage** | 50GB+ SSD (encrypted)                 |
-| **Network** | Private network or VPN to main server |
+- [ ] External PII platform is deployed and reachable from end users
+- [ ] SSO login and permission checks work on the platform portal
+- [ ] The intended TMS scope has an active `TCRN_PII_PLATFORM` adapter
+- [ ] Customer create/edit write-through succeeds with overwrite semantics
+- [ ] `Retrieve PII Data` redirects correctly into the external portal
+- [ ] PII report generation works through platform-side handoff
 
-### Step 1: Prepare the PII Server
+### Local Development Note
 
-```bash
-# SSH into your PII server
-ssh pii-server
+This repository no longer contains:
 
-# Update system
-sudo apt update && sudo apt upgrade -y
+- `apps/pii-service`
+- `docker-compose.pii.prod.yml`
+- `pii-migrate`
+- repo-owned PII Dockerfiles or local PII bootstrap scripts
 
-# Install Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-
-# Install required tools
-sudo apt install -y openssl ufw
-```
-
-### Step 2: Configure Firewall
-
-```bash
-# Allow SSH
-sudo ufw allow ssh
-
-# Allow PII service port (only from main application server)
-sudo ufw allow from MAIN_SERVER_IP to any port 5100
-
-# Enable firewall
-sudo ufw enable
-```
-
-### Step 3: Generate mTLS Certificates
-
-```bash
-# Create certificates directory
-mkdir -p ~/pii-certs && cd ~/pii-certs
-
-# Generate CA certificate
-openssl genrsa -out ca.key 4096
-openssl req -new -x509 -days 3650 -key ca.key -out ca.crt \
-    -subj "/C=US/ST=State/L=City/O=YourOrg/CN=TCRN-TMS-CA"
-
-# Generate server certificate for PII service
-openssl genrsa -out server.key 4096
-openssl req -new -key server.key -out server.csr \
-    -subj "/C=US/ST=State/L=City/O=YourOrg/CN=pii.your-domain.com"
-openssl x509 -req -days 365 -in server.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out server.crt
-
-# Generate client certificate for main application
-openssl genrsa -out client.key 4096
-openssl req -new -key client.key -out client.csr \
-    -subj "/C=US/ST=State/L=City/O=YourOrg/CN=main-app"
-openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out client.crt
-
-# Copy client certificates to main application server
-scp ca.crt client.crt client.key main-server:/path/to/certs/
-```
-
-### Step 4: Deploy PII Service
-
-```bash
-# Create deployment directory
-mkdir -p ~/pii-service && cd ~/pii-service
-
-# Create environment file
-cat > .env << 'EOF'
-# PII Database
-PII_POSTGRES_USER=pii_admin
-PII_POSTGRES_PASSWORD=GENERATE_STRONG_PASSWORD_HERE
-PII_POSTGRES_DB=pii_vault
-PII_DATABASE_URL=postgresql://pii_admin:${PII_POSTGRES_PASSWORD}@pii-postgres:5432/pii_vault
-
-# Encryption
-PII_MASTER_KEY=GENERATE_64_CHAR_HEX_KEY_HERE
-PII_KEY_VERSION=v1
-
-# JWT Verification (must match main application)
-JWT_SECRET=SAME_AS_MAIN_APP_JWT_SECRET
-
-# mTLS
-MTLS_ENABLED=true
-MTLS_CA_CERT=/certs/ca.crt
-MTLS_SERVER_CERT=/certs/server.crt
-MTLS_SERVER_KEY=/certs/server.key
-
-# Server
-PORT=5100
-NODE_ENV=production
-EOF
-
-# Create docker-compose file
-cat > docker-compose.yml << 'EOF'
-version: '3.8'
-
-services:
-  pii-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${PII_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PII_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PII_POSTGRES_DB}
-    volumes:
-      - pii_data:/var/lib/postgresql/data
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PII_POSTGRES_USER} -d ${PII_POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pii-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5100:5100"
-    environment:
-      - DATABASE_URL=${PII_DATABASE_URL}
-      - PII_MASTER_KEY=${PII_MASTER_KEY}
-      - PII_KEY_VERSION=${PII_KEY_VERSION}
-      - JWT_SECRET=${JWT_SECRET}
-      - MTLS_ENABLED=${MTLS_ENABLED}
-      - MTLS_CA_CERT=${MTLS_CA_CERT}
-      - MTLS_SERVER_CERT=${MTLS_SERVER_CERT}
-      - MTLS_SERVER_KEY=${MTLS_SERVER_KEY}
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
-    volumes:
-      - ~/pii-certs:/certs:ro
-    depends_on:
-      pii-postgres:
-        condition: service_healthy
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5100/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-networks:
-  pii-network:
-    driver: bridge
-
-volumes:
-  pii_data:
-EOF
-
-# Copy PII service source code or pull from registry.
-# Option A: Build from source
-git clone https://github.com/tpmoonchefryan/tcrn-tms.git
-cp -r tcrn-tms/apps/pii-service/* .
-
-# Option B: Pull pre-built image
-# Modify docker-compose.yml to use image: your-registry/pii-service:latest
-
-# Deploy
-docker-compose up -d
-
-# Initialize PII database
-docker-compose exec pii-service pnpm db:push
-```
-
-### Step 5: Configure Main Application
-
-On your main application server, update the environment:
-
-```bash
-# Add to .env or .env.local
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
-PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
-PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
-PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
-```
-
-Do not link tenant-local `profile_store` records to placeholder `pii_service_config` endpoints before this step is validated. The worker only probes referenced tenant-local configs, so placeholder links will create real `pii-health-check` noise.
-
-### Step 6: Verify Deployment
-
-```bash
-# On PII server - check service health
-curl -k https://localhost:5100/health
-
-# On main server - test PII connection (with mTLS)
-curl --cacert /path/to/ca.crt \
-     --cert /path/to/client.crt \
-     --key /path/to/client.key \
-     https://pii.your-domain.com:5100/health
-```
-
-### Security Checklist
-
-- [ ] PII server is on a separate physical/virtual machine
-- [ ] Firewall allows only specific IP addresses
-- [ ] mTLS certificates generated and configured
-- [ ] Master encryption key stored securely (consider HashiCorp Vault)
-- [ ] Database encrypted at rest (disk encryption)
-- [ ] No direct internet access to PII database
-- [ ] Audit logging enabled for all PII access
-- [ ] Regular backup of encrypted data
-- [ ] Certificate rotation plan (yearly recommended)
-
-### DEK (Data Encryption Key) Rotation
-
-```bash
-# Generate new DEK for a tenant
-curl -X POST https://pii.your-domain.com:5100/admin/rotate-dek \
-  --cacert /path/to/ca.crt \
-  --cert /path/to/client.crt \
-  --key /path/to/client.key \
-  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"tenantId": "tenant-uuid"}'
-```
+Local development only needs the main TMS runtime. To exercise PII-enabled flows, connect TMS to a real external platform environment and activate the adapter at the correct scope.
 
 ---
 
@@ -1019,7 +814,7 @@ curl -X POST /api/v1/auth/login \
 |                  | `POST /auth/logout`                       | Logout and invalidate tokens   |
 | **Customers**    | `GET /customers`                          | List customers with pagination |
 |                  | `POST /customers`                         | Create customer profile        |
-|                  | `POST /customers/{id}/request-pii-access` | Get PII access token           |
+|                  | `POST /customers/{id}/pii-portal-session` | Create PII portal session      |
 | **Organization** | `GET /organization/tree`                  | Get organization structure     |
 |                  | `POST /subsidiaries`                      | Create subsidiary              |
 |                  | `POST /talents`                           | Create talent                  |

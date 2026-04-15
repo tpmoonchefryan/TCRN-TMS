@@ -1,10 +1,10 @@
 # Security Policy
 
-## Supported Versions
+This file is the public vulnerability disclosure entrypoint for repository visitors and platform discovery.
 
-| Version | Supported |
-| ------- | --------- |
-| 1.x.x | Yes |
+It intentionally stays minimal.
+
+Long-term maintainer notes, operational security details, and module-level security context are maintained in the repository's internal project memory, not duplicated here.
 
 ## Reporting a Vulnerability
 
@@ -44,15 +44,3 @@ Out of scope:
 - social engineering
 - physical security issues
 - vulnerabilities that belong to third-party dependencies only
-
-## Deployment Security Notes
-
-- Never commit `.env` files or production secrets
-- Enable mTLS for PII service communication in production
-- Use strong credentials and TLS for PostgreSQL and Redis
-- Rotate JWT secrets, API keys, and certificate material regularly
-- Keep base images and dependencies updated
-
-## Acknowledgments
-
-We appreciate responsible disclosure from security researchers and contributors.

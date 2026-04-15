@@ -11,8 +11,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "CPU usage high (> 75%)"
-          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'CPU usage high (> 75%)'
+          description: 'Instance {{ $labels.instance }} CPU usage is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalCpuUsage
         expr: |
@@ -21,8 +21,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "CPU usage critical (> 90%)"
-          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'CPU usage critical (> 90%)'
+          description: 'Instance {{ $labels.instance }} CPU usage is {{ $value | printf "%.1f" }}%'
 
       # Memory alerts
       - alert: HighMemoryUsage
@@ -32,8 +32,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Memory usage high (> 80%)"
-          description: "Instance {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Memory usage high (> 80%)'
+          description: 'Instance {{ $labels.instance }} memory usage is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalMemoryUsage
         expr: |
@@ -42,8 +42,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Memory usage critical (> 90%)"
-          description: "Instance {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Memory usage critical (> 90%)'
+          description: 'Instance {{ $labels.instance }} memory usage is {{ $value | printf "%.1f" }}%'
 
       # Disk alerts
       - alert: HighDiskUsage
@@ -53,8 +53,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Disk usage high (> 80%)"
-          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Disk usage high (> 80%)'
+          description: 'Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalDiskUsage
         expr: |
@@ -63,8 +63,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Disk usage critical (> 90%)"
-          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Disk usage critical (> 90%)'
+          description: 'Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | printf "%.1f" }}%'
 
   - name: tcrn-application
     rules:
@@ -78,8 +78,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "HTTP 5xx error rate high (> 1%)"
-          description: "Service {{ $labels.service }} 5xx error rate is {{ $value | printf \"%.2f\" }}%"
+          summary: 'HTTP 5xx error rate high (> 1%)'
+          description: 'Service {{ $labels.service }} 5xx error rate is {{ $value | printf "%.2f" }}%'
 
       - alert: CriticalHttpErrorRate
         expr: |
@@ -90,8 +90,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "HTTP 5xx error rate critical (> 5%)"
-          description: "Service {{ $labels.service }} 5xx error rate is {{ $value | printf \"%.2f\" }}%"
+          summary: 'HTTP 5xx error rate critical (> 5%)'
+          description: 'Service {{ $labels.service }} 5xx error rate is {{ $value | printf "%.2f" }}%'
 
       # API latency
       - alert: HighApiLatencyP95
@@ -101,8 +101,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "API P95 latency high (> 1s)"
-          description: "Service {{ $labels.service }} P95 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'API P95 latency high (> 1s)'
+          description: 'Service {{ $labels.service }} P95 latency is {{ $value | printf "%.2f" }}s'
 
       - alert: CriticalApiLatencyP95
         expr: |
@@ -111,8 +111,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "API P95 latency critical (> 3s)"
-          description: "Service {{ $labels.service }} P95 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'API P95 latency critical (> 3s)'
+          description: 'Service {{ $labels.service }} P95 latency is {{ $value | printf "%.2f" }}s'
 
   - name: tcrn-database
     rules:
@@ -126,8 +126,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL connection usage high (> 80%)"
-          description: "Database {{ $labels.datname }} connection usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'PostgreSQL connection usage high (> 80%)'
+          description: 'Database {{ $labels.datname }} connection usage is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalPostgresConnections
         expr: |
@@ -138,8 +138,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PostgreSQL connection usage critical (> 90%)"
-          description: "Database {{ $labels.datname }} connection usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'PostgreSQL connection usage critical (> 90%)'
+          description: 'Database {{ $labels.datname }} connection usage is {{ $value | printf "%.1f" }}%'
 
       # Redis memory
       - alert: HighRedisMemory
@@ -149,8 +149,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Redis memory usage high (> 70%)"
-          description: "Redis memory usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Redis memory usage high (> 70%)'
+          description: 'Redis memory usage is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalRedisMemory
         expr: |
@@ -159,8 +159,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Redis memory usage critical (> 85%)"
-          description: "Redis memory usage is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Redis memory usage critical (> 85%)'
+          description: 'Redis memory usage is {{ $value | printf "%.1f" }}%'
 
   - name: tcrn-queue
     rules:
@@ -172,8 +172,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Queue backlog high (> 50)"
-          description: "Queue {{ $labels.queue }} has {{ $value }} jobs waiting"
+          summary: 'Queue backlog high (> 50)'
+          description: 'Queue {{ $labels.queue }} has {{ $value }} jobs waiting'
 
       - alert: CriticalQueueBacklog
         expr: |
@@ -182,8 +182,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Queue backlog critical (> 100)"
-          description: "Queue {{ $labels.queue }} has {{ $value }} jobs waiting"
+          summary: 'Queue backlog critical (> 100)'
+          description: 'Queue {{ $labels.queue }} has {{ $value }} jobs waiting'
 
   - name: tcrn-security
     rules:
@@ -197,8 +197,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Login failure rate high (> 10%)"
-          description: "Possible brute force attack, login failure rate is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Login failure rate high (> 10%)'
+          description: 'Possible brute force attack, login failure rate is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalLoginFailureRate
         expr: |
@@ -209,8 +209,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Login failure rate critical (> 30%)"
-          description: "Possible attack in progress, login failure rate is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Login failure rate critical (> 30%)'
+          description: 'Possible attack in progress, login failure rate is {{ $value | printf "%.1f" }}%'
 
       # Certificate expiry
       - alert: CertificateExpiringSoon
@@ -220,8 +220,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Certificate expiring soon (< 30 days)"
-          description: "Certificate will expire in {{ $value | printf \"%.0f\" }} days"
+          summary: 'Certificate expiring soon (< 30 days)'
+          description: 'Certificate will expire in {{ $value | printf "%.0f" }} days'
 
       - alert: CertificateExpiringCritical
         expr: |
@@ -230,8 +230,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Certificate expiring soon (< 7 days)"
-          description: "Certificate will expire in {{ $value | printf \"%.0f\" }} days, renew immediately!"
+          summary: 'Certificate expiring soon (< 7 days)'
+          description: 'Certificate will expire in {{ $value | printf "%.0f" }} days, renew immediately!'
 
   - name: tcrn-report
     rules:
@@ -245,8 +245,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Report job failure rate high (> 5%)"
-          description: "Report job failure rate is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Report job failure rate high (> 5%)'
+          description: 'Report job failure rate is {{ $value | printf "%.1f" }}%'
 
       - alert: CriticalReportFailureRate
         expr: |
@@ -257,8 +257,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Report job failure rate critical (> 10%)"
-          description: "Report job failure rate is {{ $value | printf \"%.1f\" }}%"
+          summary: 'Report job failure rate critical (> 10%)'
+          description: 'Report job failure rate is {{ $value | printf "%.1f" }}%'
 
       # Report generation duration
       - alert: SlowReportGeneration
@@ -268,8 +268,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Report generation P95 slow (> 2min)"
-          description: "Report generation P95 duration is {{ $value | printf \"%.1f\" }}s"
+          summary: 'Report generation P95 slow (> 2min)'
+          description: 'Report generation P95 duration is {{ $value | printf "%.1f" }}s'
 
       - alert: CriticalSlowReportGeneration
         expr: |
@@ -278,8 +278,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Report generation P95 critical (> 5min)"
-          description: "Report generation P95 duration is {{ $value | printf \"%.1f\" }}s"
+          summary: 'Report generation P95 critical (> 5min)'
+          description: 'Report generation P95 duration is {{ $value | printf "%.1f" }}s'
 
       # Report queue stalled
       - alert: ReportQueueStalled
@@ -291,13 +291,13 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Report queue appears stalled"
-          description: "No reports completed in 30 minutes but {{ $value }} jobs waiting"
+          summary: 'Report queue appears stalled'
+          description: 'No reports completed in 30 minutes but {{ $value }} jobs waiting'
 
   - name: tcrn-pii
     rules:
-      # These rules are intended for a real pii-service deployment that is scraped by Prometheus.
-      # Do not page from worker-side pii-health-check noise or localhost placeholder endpoints.
+      # These rules are intended for a real external PII platform deployment that is scraped by Prometheus.
+      # Do not page on placeholder endpoints or assume a worker-side probe exists in this repo.
       # Warning alerts represent dependency degradation; critical alerts represent outage or crypto failure.
       # PII service latency P95
       - alert: HighPiiServiceLatency
@@ -307,8 +307,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PII service P95 latency high (> 5s)"
-          description: "PII service P95 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'PII service P95 latency high (> 5s)'
+          description: 'PII service P95 latency is {{ $value | printf "%.2f" }}s'
 
       - alert: CriticalPiiServiceLatency
         expr: |
@@ -317,8 +317,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PII service P95 latency critical (> 10s)"
-          description: "PII service P95 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'PII service P95 latency critical (> 10s)'
+          description: 'PII service P95 latency is {{ $value | printf "%.2f" }}s'
 
       # PII service error rate
       - alert: HighPiiErrorRate
@@ -330,8 +330,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PII service error rate high (> 1%)"
-          description: "PII service error rate is {{ $value | printf \"%.2f\" }}%"
+          summary: 'PII service error rate high (> 1%)'
+          description: 'PII service error rate is {{ $value | printf "%.2f" }}%'
 
       - alert: CriticalPiiErrorRate
         expr: |
@@ -342,8 +342,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PII service error rate critical (> 5%)"
-          description: "PII service error rate is {{ $value | printf \"%.2f\" }}%"
+          summary: 'PII service error rate critical (> 5%)'
+          description: 'PII service error rate is {{ $value | printf "%.2f" }}%'
 
       # PII service unavailable
       - alert: PiiServiceUnavailable
@@ -353,8 +353,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PII service unavailable"
-          description: "PII service has been down for more than 1 minute"
+          summary: 'PII service unavailable'
+          description: 'PII service has been down for more than 1 minute'
 
       # PII encryption/decryption errors
       - alert: PiiCryptoErrors
@@ -364,8 +364,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PII encryption/decryption errors detected"
-          description: "{{ $value | printf \"%.2f\" }} crypto errors per second"
+          summary: 'PII encryption/decryption errors detected'
+          description: '{{ $value | printf "%.2f" }} crypto errors per second'
 
   - name: tcrn-api-p99
     rules:
@@ -377,8 +377,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "API P99 latency high (> 2s)"
-          description: "Service {{ $labels.service }} P99 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'API P99 latency high (> 2s)'
+          description: 'Service {{ $labels.service }} P99 latency is {{ $value | printf "%.2f" }}s'
 
       - alert: CriticalApiLatencyP99
         expr: |
@@ -387,8 +387,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "API P99 latency critical (> 5s)"
-          description: "Service {{ $labels.service }} P99 latency is {{ $value | printf \"%.2f\" }}s"
+          summary: 'API P99 latency critical (> 5s)'
+          description: 'Service {{ $labels.service }} P99 latency is {{ $value | printf "%.2f" }}s'
 
       # Too many 5xx errors (absolute count)
       - alert: TooMany5xxErrors
@@ -398,5 +398,5 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "5xx error count high (> 5/min)"
-          description: "Service {{ $labels.service }} has {{ $value | printf \"%.1f\" }} 5xx errors per minute"
+          summary: '5xx error count high (> 5/min)'
+          description: 'Service {{ $labels.service }} has {{ $value | printf "%.1f" }} 5xx errors per minute'

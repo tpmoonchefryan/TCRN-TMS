@@ -38,7 +38,7 @@
 - [クイックスタート](#-クイックスタート)
 - [本番環境デプロイ](#-本番環境デプロイ)
 - [カスタムドメイン設定](#-カスタムドメイン設定)
-- [PIIプロキシサービスデプロイ](#-piiプロキシサービスデプロイ)
+- [外部PII Platform連携](#-外部pii-platform連携)
 - [APIリファレンス](#-apiリファレンス)
 - [セキュリティ](#-セキュリティ)
 - [ライセンス](#-ライセンス)
@@ -58,7 +58,7 @@
 
 ### 主な差別化要素
 
-- **プライバシーファーストアーキテクチャ**：PII（個人識別情報）は暗号化された別のマイクロサービスに保存
+- **プライバシーファーストアーキテクチャ**：PII フローは repo-owned runtime ではなく外部 `TCRN_PII_PLATFORM` に委譲
 - **マルチテナント分離**：各テナントは完全なデータ分離のためにPostgreSQLスキーマを持つ
 - **3言語サポート**：英語、中国語、日本語の完全なUIローカライゼーション
 - **VTuber専用機能**：マシュマロ（匿名Q&A）、カスタマイズ可能なタレントホームページ、メンバーシップ追跡
@@ -67,14 +67,14 @@
 
 ## ✨ 機能ハイライト
 
-### 🔐 プライバシーファーストPIIアーキテクチャ
+### 🔐 プライバシーファーストPII境界
 
-すべての機密顧客データ（本名、電話番号、住所、メールアドレス）は独立したPIIプロキシサービスに保存されます：
+機微な顧客フィールドは外部 `TCRN_PII_PLATFORM` 連携で扱います：
 
-- **トークンベースアクセス**：ローカルデータベースには`rm_profile_id`トークンのみを保存
-- **AES-256-GCM暗号化**：保存データはテナント別DEKで暗号化
-- **mTLS認証**：サービス間通信は相互TLSで保護
-- **短期JWT**：PII取得には5分有効のアクセストークンを使用
+- **アダプター有効化が唯一の真実**：effective `integration_adapter` だけが PII 機能の有効化を表します
+- **書き込み専用連携**：作成/編集では server-to-server で PII を送れますが、TMS は読み戻しません
+- **ポータル閲覧**：PII は外部プラットフォーム上で SSO と権限確認後に閲覧します
+- **アーカイブ分離境界**：`profileStoreId` はタレント間の顧客アーカイブ分離/共有境界として維持します
 
 ### 🏢 マルチテナント組織構造
 
@@ -121,7 +121,7 @@
 
 包括的な**メンバーシップフィードバックレポート**を生成：
 
-- PII付きメンバープロファイル（安全な取得経由）
+- `customerId[] + リクエストメタデータ` によるプラットフォーム側 PII レポート handoff
 - プラットフォームアイデンティティ（YouTube、Bilibili等）
 - メンバーシップ状態と期限追跡
 - 進捗追跡付き非同期生成
@@ -259,11 +259,11 @@ Zodによるエンドツーエンドの型安全バリデーション：
                               │ mTLS                                          │
                               ▼                                               │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
-              │         分離されたPII環境                  │                  │
+              │      外部 TCRN PII Platform               │                  │
               │  ┌─────────────────┐  ┌─────────────────┐  │                  │
-              │  │  PIIプロキシ    │  │  PIIデータベース │  │                  │
-              │  │  サービス:5100  │──│  PostgreSQL     │  │                  │
-              │  │  (AES-256-GCM)  │  │  (暗号化)       │  │                  │
+              │  │  Portal + API   │  │  PII Storage    │  │                  │
+              │  │  (別プロジェクト)│──│  + Reporting    │  │                  │
+              │  │                 │  │  (別運用)       │  │                  │
               │  └─────────────────┘  └─────────────────┘  │                  │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
                                     └─────────────────────────────────────────┘
@@ -274,9 +274,10 @@ Zodによるエンドツーエンドの型安全バリデーション：
 1. **Web UI** → **APIゲートウェイ**（NestJS）ですべてのビジネス操作を処理
 2. **API**がJWTを検証し、Redis権限スナップショットをチェック
 3. 非PIIデータはテナント固有のPostgreSQLスキーマに保存
-4. PII取得：APIが短期JWTを発行 → PIIプロキシ → 暗号化ストレージ
-5. バックグラウンドジョブはBullMQワーカーで処理
-6. ファイルはMinIOに保存され、署名付きURLでダウンロード
+4. effective `TCRN_PII_PLATFORM` が有効な場合、顧客作成/編集は `customerId` をキーに書き込み連携します
+5. PII 閲覧はポータルリダイレクトと SSO で行い、TMS は PII を読み戻しません
+6. バックグラウンドジョブはBullMQワーカーで処理
+7. ファイルはMinIOに保存され、署名付きURLでダウンロード
 
 ---
 
@@ -311,9 +312,8 @@ Zodによるエンドツーエンドの型安全バリデーション：
 - `Grafana Loki` には実際の query/push helper がありますが、Compose 上では任意の profile サービスになりました。現在の既定の正本は依然としてテナント PostgreSQL のログテーブルです。`/api/v1/logs/search*` は Loki を参照し、`LOKI_ENABLED=false` の場合は空結果を返します。API / worker 側の Loki push helper は、まだ既定の本番 producer path ではありません。
 - `Grafana Tempo` と API 側の OpenTelemetry 初期化コードは、将来展開に備えた任意の `observability` Compose profile の配下にあります。分散トレーシングは現行ランタイムでデフォルト有効ではありません。ローカルで明示的に有効化する場合は、まず `docker compose --profile observability up -d loki tempo` を実行し、そのうえで `OTEL_ENABLED=true` を設定して `OTEL_EXPORTER_OTLP_ENDPOINT` を Tempo のような trace backend に向けてください。metrics は引き続き既定で無効であり、別個の OTLP metrics collector を指す `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` を明示設定した場合にのみ有効化してください。metrics endpoint を Tempo に直接向けてはいけません。
 - `Prometheus` は現時点ではロードマップ上の予約項目で、現在の既定 Compose デプロイには含まれません。
-- `PII health check` は Worker の定期的な依存先プローブです。`ENABLE_SCHEDULED_JOBS=false` を明示しない限り、worker は設定済み PII endpoint に対して 60 秒ごとに `pii-health-check` を投入します。これはメインアプリの liveness ではなく、依存先テレメトリとして扱ってください。
-- 実際の外部 PII service がまだ未配備、または Prometheus がその service をまだ scrape していない段階では、`pii-health-check` のノイズや localhost placeholder の失敗を当番アラートに昇格させないでください。この状態は operator 向けの依存先テレメトリに留めます。
-- 実際の PII service が配備され Prometheus に scrape された後は、`HighPiiServiceLatency` / `HighPiiErrorRate` を warning レベルの劣化、`CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` を critical レベルの依存先アラートとして扱ってください。
+- repo-owned の `pii-health-check` Worker プローブは standalone PII runtime と一緒に退役しました。
+- 外部 `TCRN_PII_PLATFORM` の依存監視が必要な場合は、このリポジトリに隠れた worker 前提を置かず、プラットフォーム側または adapter / operator 監視で実装してください。
 
 ---
 
@@ -338,8 +338,8 @@ cd tcrn-tms
 pnpm install
 
 # 3. インフラサービスを起動
-# デフォルトではコア依存とローカル PII 補助スタックのみを起動します
-docker compose up -d postgres redis minio nats pii-postgres pii-service
+# デフォルトではコア依存のみを起動します
+docker compose up -d postgres redis minio nats
 
 # 任意: Loki/Tempo/OTEL 経路を触るときだけローカル observability サービスを起動します
 docker compose --profile observability up -d loki tempo
@@ -354,6 +354,9 @@ pnpm db:apply-migrations
 pnpm db:sync-schemas
 pnpm db:seed
 cd ../..
+
+# 5b. PII フローを試す場合は、実在する外部 `TCRN_PII_PLATFORM` adapter を設定してください
+# このリポジトリではローカル standalone PII service を起動・migration しません
 
 # 6. 開発サーバーを起動
 pnpm dev
@@ -438,9 +441,9 @@ MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 32)
 MINIO_ENDPOINT=http://minio:9000
 
-# PIIサービス（本番環境では別サーバー推奨）
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
+# 外部 PII Platform
+# tenant / subsidiary / talent スコープの `TCRN_PII_PLATFORM` integration adapter で設定します
+# このリポジトリに repo-owned PII runtime 用 env は不要です
 
 # アプリケーション
 NODE_ENV=production
@@ -508,38 +511,61 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 #### オプション2：Kubernetes（本番環境推奨）
 
-適用：高可用性、オートスケーリング、エンタープライズデプロイ
+現在の状態:
+
+- この節の古い汎用 Kubernetes 手順は、もう現在の本番 cutover の正本ではありません
+- 現在の production-first path は、より保守的な first cut に収束しています:
+  - 単一ノード `K3s`
+  - 同一ホスト外部 PostgreSQL
+  - 単一レプリカ `web/api/worker`
+  - ローカル開発は引き続き Docker Compose とローカル app process のまま
+
+今回の first-cut 本番再デプロイでは、ここに以前あった in-cluster PostgreSQL / HPA / 複数レプリカ前提を使わないでください。
+
+代わりに、次のファイルを使ってください:
+
+- `infra/k8s/README.md`
+- `.context/plans/2026-04-11-single-node-k3s-fresh-redeploy-cutover-checklist.md`
+
+現在の first-cut operator entrypoints:
 
 ```bash
-# 1. 名前空間とシークレットを適用
-kubectl create namespace tcrn-tms
-kubectl apply -f infra/k8s/secrets/
+# 1. 読み取り専用 cluster preflight
+scripts/k8s-preflight-cluster.sh
 
-# 2. インフラをデプロイ
-kubectl apply -f infra/k8s/postgres/
-kubectl apply -f infra/k8s/redis/
-kubectl apply -f infra/k8s/minio/
-kubectl apply -f infra/k8s/nats/
+# 2. 保持した production env file から runtime secret を作成
+scripts/k8s-create-runtime-secret.sh /path/to/production.env
 
-# 3. インフラの準備を待つ
-kubectl wait --for=condition=ready pod -l app=postgres -n tcrn-tms --timeout=300s
+# 3. GHCR image が private のままなら pull secret を作成
+GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
-# 4. アプリケーションをデプロイ
-kubectl apply -f infra/k8s/deployments/
+# 4. first-cut baseline を apply
+IMAGE_TAG=... \
+APP_HOST=web.prod.tcrn-tms.com \
+TLS_SECRET_NAME=... \
+INGRESS_CLASS_NAME=traefik \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-deploy-production.sh
 
-# 5. Ingressを設定
-kubectl apply -f infra/k8s/ingress/
+# 5. first-install bootstrap を実行
+IMAGE_TAG=... REGISTRY_SECRET_NAME=ghcr-pull-secret scripts/k8s-run-db-bootstrap.sh
 
-# 6. データベースマイグレーションを実行（一度だけ）
-kubectl apply -f infra/k8s/jobs/db-migrate.yaml
+# 6. schema change を含むリリースでは optional rollout verify を実行
+IMAGE_TAG=... \
+ROLLOUT_MIGRATIONS=20260330000001_add_marshmallow_export_job \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-run-db-verify-schema-rollout.sh
+
+# 7. cutover 後の smoke checks
+APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
 ```
 
-**Kubernetes機能：**
+この path は意図的に保守的です。現時点では次を主張しません:
 
-- **ローリングアップデート**：`maxUnavailable: 0`によるゼロダウンタイムデプロイ
-- **水平Podオートスケーラー（HPA）**：CPU/メモリに基づく自動スケーリング
-- **Pod中断バジェット（PDB）**：更新中の最小レプリカ維持
-- **ヘルスチェック**：すべてのサービスにレディネスとライブネスプローブを設定
+- マルチノード HA
+- HPA
+- 複数レプリカ web
+- first cut で PostgreSQL を K3s 内に戻すこと
 
 ### SSL/TLS設定
 
@@ -590,7 +616,8 @@ server {
 - [ ] MinIOのHTTPSを有効化
 - [ ] JWTシークレットを生成（最低32文字）
 - [ ] フィンガープリントキーを設定
-- [ ] PIIサービスURLを設定（次のセクションを参照）
+- [ ] 対象スコープで外部 `TCRN_PII_PLATFORM` adapter が有効
+- [ ] 外部ポータルと SSO の到達性を確認済み
 - [ ] メールサービス認証情報を設定
 - [ ] バックアップ戦略を実装
 - [ ] 監視とアラートを設定
@@ -716,277 +743,45 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 ---
 
-## 🔒 PIIプロキシサービスデプロイ
+## 🔒 外部PII Platform連携
 
-セキュリティコンプライアンスのため、PIIプロキシサービスはメインアプリケーションとは**別のサーバー**にデプロイする必要があります。
+TCRN TMS は repo-owned の standalone PII runtime を同梱しなくなりました。機微フィールドは外部にデプロイされた `TCRN_PII_PLATFORM` が保持し、TMS はそれと連携します。
 
-現在の rollout 境界:
+### Canonical Rules
 
-- デフォルトのローカル/本番 Compose スタックでは、独立した PII サーバーは**有効化されません**。この章は opt-in のデプロイ手順であり、既定で有効なランタイム機能ではありません。
-- メインアプリ運用側の責務: `PII_SERVICE_URL`、クライアント側 mTLS 証明書パス、worker の定期ジョブ挙動、および tenant-local の `profile_store` / `pii_service_config` 参照を実在 endpoint のみに向けること。
-- PII サーバー運用側の責務: firewall / VPN 到達性、メインアプリと一致する `JWT_SECRET`、サーバー側 mTLS 証明書、暗号化ストレージ、そして observability を有効化した後の任意の Prometheus scrape。
+- code=`TCRN_PII_PLATFORM` の effective `integration_adapter` だけが PII 機能有効化の真実です。
+- `profileStoreId` は TMS 内に残し、タレント間の顧客アーカイブ分離/共有境界として使い続けます。
+- TMS は non-PII の顧客コアデータと cross-system `customerId` を保持します。
+- 外部プラットフォームは機微フィールド保管、ポータル閲覧、PII レポート生成を担当します。
 
-### アーキテクチャ概要
+### ランタイムフロー
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    メインアプリケーションサーバー                    │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐               │
-│  │   Web UI    │   │   API       │   │   Worker    │               │
-│  └─────────────┘   └──────┬──────┘   └──────┬──────┘               │
-│                           │                  │                      │
-│                           │   JWT + mTLS     │                      │
-└───────────────────────────┼──────────────────┼──────────────────────┘
-                            │                  │
-                            ▼                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    PIIプロキシサーバー（分離環境）                   │
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │                    PIIプロキシサービス                       │   │
-│  │   - JWT検証                                                  │   │
-│  │   - AES-256-GCM暗号化/復号化                                │   │
-│  │   - テナント別DEK管理                                        │   │
-│  │   - 監査ログ                                                 │   │
-│  └───────────────────────────┬─────────────────────────────────┘   │
-│                              │                                      │
-│  ┌───────────────────────────▼─────────────────────────────────┐   │
-│  │                    PIIデータベース                           │   │
-│  │   - 保存時暗号化                                             │   │
-│  │   - ネットワーク分離                                         │   │
-│  │   - 外部直接アクセス禁止                                     │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+1. このリポジトリの外で外部 PII Platform をデプロイ・運用します。
+2. プラットフォーム側と TMS 側で SSO、権限、adapter 資格情報を設定します。
+3. PII 入力を許可したい tenant / subsidiary / talent スコープで `TCRN_PII_PLATFORM` adapter を有効化します。
+4. TMS の顧客作成/編集は adapter が有効なときだけ PII セクションを表示し、`customerId` をキーに上書き型 write-through を行います。
+5. 顧客の PII 閲覧は `Retrieve PII Data` ポータルリダイレクトで行い、TMS は PII を読み戻しません。
+6. PII レポート要求は `customerId[] + リクエストメタデータ` を外部プラットフォームへ handoff し、バイナリはプラットフォーム側に残します。
 
-### サーバー要件
+### オペレーターチェックリスト
 
-| コンポーネント   | スペック                                            |
-| ---------------- | --------------------------------------------------- |
-| **OS**           | Ubuntu 22.04 LTS以降                                |
-| **CPU**          | 2+ vCPU                                             |
-| **RAM**          | 4GB+                                                |
-| **ストレージ**   | 50GB+ SSD（暗号化）                                 |
-| **ネットワーク** | メインサーバーとのプライベートネットワークまたはVPN |
+- [ ] 外部 PII Platform がデプロイ済みで、エンドユーザーから到達可能
+- [ ] プラットフォームポータルの SSO と権限確認が正常
+- [ ] 対象スコープで `TCRN_PII_PLATFORM` adapter が有効
+- [ ] 顧客作成/編集の write-through が上書きセマンティクスで成功する
+- [ ] `Retrieve PII Data` が外部ポータルへ正しく遷移する
+- [ ] PII レポート生成がプラットフォーム側 handoff で成功する
 
-### ステップ1：PIIサーバーを準備
+### ローカル開発メモ
 
-```bash
-# PIIサーバーにSSH接続
-ssh pii-server
+このリポジトリからは以下を除去しました：
 
-# システムを更新
-sudo apt update && sudo apt upgrade -y
+- `apps/pii-service`
+- `docker-compose.pii.prod.yml`
+- `pii-migrate`
+- repo-owned PII Dockerfile とローカル PII bootstrap スクリプト
 
-# Dockerをインストール
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-
-# 必要なツールをインストール
-sudo apt install -y openssl ufw
-```
-
-### ステップ2：ファイアウォールを設定
-
-```bash
-# SSHを許可
-sudo ufw allow ssh
-
-# PIIサービスポートをメインアプリサーバーからのみ許可
-sudo ufw allow from メインサーバーIP to any port 5100
-
-# ファイアウォールを有効化
-sudo ufw enable
-```
-
-### ステップ3：mTLS証明書を生成
-
-```bash
-# 証明書ディレクトリを作成
-mkdir -p ~/pii-certs && cd ~/pii-certs
-
-# CA証明書を生成
-openssl genrsa -out ca.key 4096
-openssl req -new -x509 -days 3650 -key ca.key -out ca.crt \
-    -subj "/C=JP/ST=Tokyo/L=Tokyo/O=YourOrg/CN=TCRN-TMS-CA"
-
-# PIIサービス用サーバー証明書を生成
-openssl genrsa -out server.key 4096
-openssl req -new -key server.key -out server.csr \
-    -subj "/C=JP/ST=Tokyo/L=Tokyo/O=YourOrg/CN=pii.your-domain.com"
-openssl x509 -req -days 365 -in server.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out server.crt
-
-# メインアプリ用クライアント証明書を生成
-openssl genrsa -out client.key 4096
-openssl req -new -key client.key -out client.csr \
-    -subj "/C=JP/ST=Tokyo/L=Tokyo/O=YourOrg/CN=main-app"
-openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out client.crt
-
-# クライアント証明書をメインアプリサーバーにコピー
-scp ca.crt client.crt client.key main-server:/path/to/certs/
-```
-
-### ステップ4：PIIサービスをデプロイ
-
-```bash
-# デプロイディレクトリを作成
-mkdir -p ~/pii-service && cd ~/pii-service
-
-# 環境変数ファイルを作成
-cat > .env << 'EOF'
-# PIIデータベース
-PII_POSTGRES_USER=pii_admin
-PII_POSTGRES_PASSWORD=ここに強力なパスワードを生成
-PII_POSTGRES_DB=pii_vault
-PII_DATABASE_URL=postgresql://pii_admin:${PII_POSTGRES_PASSWORD}@pii-postgres:5432/pii_vault
-
-# 暗号化
-PII_MASTER_KEY=ここに64文字の16進キーを生成
-PII_KEY_VERSION=v1
-
-# JWT検証（メインアプリと一致させる）
-JWT_SECRET=メインアプリと同じJWTシークレット
-
-# mTLS
-MTLS_ENABLED=true
-MTLS_CA_CERT=/certs/ca.crt
-MTLS_SERVER_CERT=/certs/server.crt
-MTLS_SERVER_KEY=/certs/server.key
-
-# サーバー
-PORT=5100
-NODE_ENV=production
-EOF
-
-# docker-composeファイルを作成
-cat > docker-compose.yml << 'EOF'
-version: '3.8'
-
-services:
-  pii-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${PII_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PII_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PII_POSTGRES_DB}
-    volumes:
-      - pii_data:/var/lib/postgresql/data
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PII_POSTGRES_USER} -d ${PII_POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pii-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5100:5100"
-    environment:
-      - DATABASE_URL=${PII_DATABASE_URL}
-      - PII_MASTER_KEY=${PII_MASTER_KEY}
-      - PII_KEY_VERSION=${PII_KEY_VERSION}
-      - JWT_SECRET=${JWT_SECRET}
-      - MTLS_ENABLED=${MTLS_ENABLED}
-      - MTLS_CA_CERT=${MTLS_CA_CERT}
-      - MTLS_SERVER_CERT=${MTLS_SERVER_CERT}
-      - MTLS_SERVER_KEY=${MTLS_SERVER_KEY}
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
-    volumes:
-      - ~/pii-certs:/certs:ro
-    depends_on:
-      pii-postgres:
-        condition: service_healthy
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5100/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-networks:
-  pii-network:
-    driver: bridge
-
-volumes:
-  pii_data:
-EOF
-
-# PIIサービスソースコードをコピーまたはレジストリからプル
-# オプションA：ソースからビルド
-git clone https://github.com/tpmoonchefryan/tcrn-tms.git
-cp -r tcrn-tms/apps/pii-service/* .
-
-# オプションB：ビルド済みイメージをプル
-# docker-compose.ymlを修正してimage: your-registry/pii-service:latestを使用
-
-# デプロイ
-docker-compose up -d
-
-# PIIデータベースを初期化
-docker-compose exec pii-service pnpm db:push
-```
-
-### ステップ5：メインアプリケーションを設定
-
-メインアプリサーバーで環境変数を更新：
-
-```bash
-# .envまたは.env.localに追加
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
-PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
-PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
-PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
-```
-
-この手順の検証が終わる前に、tenant-local の `profile_store` を placeholder の `pii_service_config` endpoint に結び付けないでください。worker は参照されている tenant-local config だけを probe するため、placeholder の紐付けでも実際の `pii-health-check` ノイズが発生します。
-
-### ステップ6：デプロイを検証
-
-```bash
-# PIIサーバーで - サービスヘルスを確認
-curl -k https://localhost:5100/health
-
-# メインサーバーで - PII接続をテスト（mTLS使用）
-curl --cacert /path/to/ca.crt \
-     --cert /path/to/client.crt \
-     --key /path/to/client.key \
-     https://pii.your-domain.com:5100/health
-```
-
-### セキュリティチェックリスト
-
-- [ ] PIIサーバーは別の物理/仮想マシン上にある
-- [ ] ファイアウォールは特定のIPアドレスのみを許可
-- [ ] mTLS証明書が生成され設定されている
-- [ ] マスター暗号化キーは安全に保存（HashiCorp Vault検討）
-- [ ] データベースは保存時に暗号化（ディスク暗号化）
-- [ ] PIIデータベースへの直接インターネットアクセスなし
-- [ ] すべてのPIIアクセスの監査ログを有効化
-- [ ] 暗号化データの定期バックアップ
-- [ ] 証明書ローテーション計画（年1回推奨）
-
-### DEK（データ暗号化キー）ローテーション
-
-```bash
-# テナント用の新しいDEKを生成
-curl -X POST https://pii.your-domain.com:5100/admin/rotate-dek \
-  --cacert /path/to/ca.crt \
-  --cert /path/to/client.crt \
-  --key /path/to/client.key \
-  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"tenantId": "tenant-uuid"}'
-```
+ローカル開発では TMS 本体のランタイムだけで十分です。PII 対応フローを試す場合は、実在する外部プラットフォーム環境に接続し、正しいスコープで adapter を有効化してください。
 
 ---
 
@@ -1019,7 +814,7 @@ curl -X POST /api/v1/auth/login \
 |                      | `POST /auth/logout`                       | ログアウトしてトークンを無効化       |
 | **顧客**             | `GET /customers`                          | 顧客リストを取得（ページネーション） |
 |                      | `POST /customers`                         | 顧客プロファイルを作成               |
-|                      | `POST /customers/{id}/request-pii-access` | PIIアクセストークンを取得            |
+|                      | `POST /customers/{id}/pii-portal-session` | PIIポータルセッションを作成          |
 | **組織**             | `GET /organization/tree`                  | 組織構造を取得                       |
 |                      | `POST /subsidiaries`                      | サブシディアリを作成                 |
 |                      | `POST /talents`                           | タレントを作成                       |

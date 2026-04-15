@@ -38,7 +38,7 @@
 - [快速开始](#-快速开始)
 - [生产环境部署](#-生产环境部署)
 - [自定义域名配置](#-自定义域名配置)
-- [PII 代理服务部署](#-pii-代理服务部署)
+- [外部 PII Platform 集成](#-外部-pii-platform-集成)
 - [API 参考](#-api-参考)
 - [安全机制](#-安全机制)
 - [许可证](#-许可证)
@@ -58,7 +58,7 @@
 
 ### 核心优势
 
-- **隐私优先架构**：PII（个人身份信息）存储在独立的加密微服务中
+- **隐私优先架构**：PII 流程已外置到独立的 `TCRN_PII_PLATFORM`，不再由本仓库内置运行时承载
 - **多租户隔离**：每个租户拥有独立的 PostgreSQL Schema，实现完全数据隔离
 - **三语言支持**：完整的中文、英文、日文界面本地化
 - **VTuber 专属功能**：棉花糖（匿名问答）、可定制艺人主页、会员追踪
@@ -67,14 +67,14 @@
 
 ## ✨ 功能亮点
 
-### 🔐 隐私优先 PII 架构
+### 🔐 隐私优先 PII 边界
 
-所有敏感客户数据（真实姓名、电话号码、地址、邮箱）存储在独立的 PII 代理服务中：
+敏感客户字段通过外部 `TCRN_PII_PLATFORM` 集成处理：
 
-- **令牌化访问**：本地数据库仅存储 `rm_profile_id` 令牌
-- **AES-256-GCM 加密**：静态数据使用租户独立 DEK 加密
-- **mTLS 认证**：服务间通信采用双向 TLS 认证
-- **短期 JWT**：PII 检索使用 5 分钟有效期的访问令牌
+- **Adapter 控制能力开启**：只有 effective `integration_adapter` 才能表达 PII 能力是否启用
+- **只允许写透，不允许回读**：创建/编辑可以 server-to-server 写入 PII，但 TMS 不把数据读回
+- **门户查看**：用户在外部平台完成 SSO 与权限检查后查看 PII
+- **档案隔离边界保留**：`profileStoreId` 继续作为 talent 之间客户档案隔离/共享边界
 
 ### 🏢 多租户组织架构
 
@@ -121,7 +121,7 @@
 
 生成全面的**会员反馈报表**：
 
-- 包含 PII 的会员档案（通过安全检索）
+- 通过 `customerId[] + 请求元数据` 将 PII 报表请求移交给平台侧生成
 - 平台身份（YouTube、Bilibili 等）
 - 会员状态和到期追踪
 - 异步生成，带进度追踪
@@ -259,11 +259,11 @@ app/(admin)/admin/error.tsx → 管理区域兜底
                               │ mTLS                                          │
                               ▼                                               │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
-              │         隔离的 PII 环境                    │                  │
+              │      外部 TCRN PII Platform               │                  │
               │  ┌─────────────────┐  ┌─────────────────┐  │                  │
-              │  │  PII 代理       │  │  PII 数据库     │  │                  │
-              │  │  服务 :5100     │──│  PostgreSQL     │  │                  │
-              │  │  (AES-256-GCM)  │  │  (加密存储)     │  │                  │
+              │  │  门户 + API     │  │  PII 存储       │  │                  │
+              │  │  （独立项目）   │──│  + 报表生成     │  │                  │
+              │  │                 │  │  （独立运维）   │  │                  │
               │  └─────────────────┘  └─────────────────┘  │                  │
                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                 │
                                     └─────────────────────────────────────────┘
@@ -274,9 +274,10 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 1. **Web UI** → **API 网关**（NestJS）处理所有业务操作
 2. **API** 验证 JWT 并检查 Redis 权限快照
 3. 非 PII 数据存储在租户特定的 PostgreSQL Schema 中
-4. PII 检索：API 签发短期 JWT → PII 代理 → 加密存储
-5. 后台任务由 BullMQ Worker 处理
-6. 文件存储在 MinIO，通过预签名 URL 下载
+4. 当 effective `TCRN_PII_PLATFORM` 启用时，客户创建/编辑会携带 `customerId` 向平台执行写透
+5. PII 查看通过门户跳转 + SSO 完成，TMS 不回读 PII
+6. 后台任务由 BullMQ Worker 处理
+7. 文件存储在 MinIO，通过预签名 URL 下载
 
 ---
 
@@ -311,9 +312,8 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 - `Grafana Loki` 的 Compose 服务当前改为可选 profile 服务，并保留真实 query/push helper；当前默认事实源仍是租户 PostgreSQL 日志表。`/api/v1/logs/search*` 读取 Loki，`LOKI_ENABLED=false` 时会返回空结果；API / worker 侧的 Loki push helper 目前还不是默认生产路径。
 - `Grafana Tempo` 与 API 侧 OpenTelemetry 初始化代码当前属于 `observability` 可选 Compose profile 下的预留能力；分布式追踪默认并未在当前运行时启用。若要在本地显式启用，请先执行 `docker compose --profile observability up -d loki tempo`，再设置 `OTEL_ENABLED=true`，并将 `OTEL_EXPORTER_OTLP_ENDPOINT` 指向 Tempo 这类 trace backend。metrics 仍默认关闭；只有在显式提供独立的 `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`（指向单独的 OTLP metrics collector）时才会启用，不应把该 metrics endpoint 直接指向 Tempo。
 - `Prometheus` 目前仍是路线图中的预留项，不在当前默认 Compose 部署里。
-- `PII health check` 属于 Worker 的周期性依赖探测。除非显式设置 `ENABLE_SCHEDULED_JOBS=false`，worker 会每 60 秒为已配置的 PII endpoint 入队一次 `pii-health-check`。它应被视为依赖健康遥测，而不是主应用存活探针。
-- 如果真实外部 PII 服务尚未部署，或 Prometheus 还未开始抓取该服务，就不要把 `pii-health-check` 噪音或 localhost 占位地址失败升级为值班告警；这类状态只应视为面向运维的依赖遥测。
-- 一旦真实 PII 服务已部署且被 Prometheus 抓取，应把 `HighPiiServiceLatency` / `HighPiiErrorRate` 视为 warning 级退化，把 `CriticalPiiServiceLatency` / `CriticalPiiErrorRate` / `PiiServiceUnavailable` / `PiiCryptoErrors` 视为 critical 级依赖告警。
+- 仓库内置的 `pii-health-check` Worker 探针已随独立 PII runtime 一并退役。
+- 如需对外部 `TCRN_PII_PLATFORM` 做依赖健康监控，应在该平台或其 adapter / operator 监控中实现，而不是继续假定本仓库内置周期探测。
 
 ---
 
@@ -338,8 +338,8 @@ cd tcrn-tms
 pnpm install
 
 # 3. 启动基础设施服务
-# 默认只启动核心运行依赖与本地 PII 辅助栈
-docker compose up -d postgres redis minio nats pii-postgres pii-service
+# 默认只启动核心运行依赖
+docker compose up -d postgres redis minio nats
 
 # 可选：仅在需要调试 Loki/Tempo/OTEL 链路时启动本地观测服务
 docker compose --profile observability up -d loki tempo
@@ -354,6 +354,9 @@ pnpm db:apply-migrations
 pnpm db:sync-schemas
 pnpm db:seed
 cd ../..
+
+# 5b. 如需演练 PII 流程，请在系统内配置真实外部 `TCRN_PII_PLATFORM` adapter
+# 本仓库已不再提供本地独立 PII 服务启动与迁移入口
 
 # 6. 启动开发服务器
 pnpm dev
@@ -438,9 +441,9 @@ MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 32)
 MINIO_ENDPOINT=http://minio:9000
 
-# PII 服务（生产环境建议独立服务器）
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
+# 外部 PII Platform
+# 通过 tenant / subsidiary / talent 级 `TCRN_PII_PLATFORM` integration adapter 配置
+# 本仓库不再需要 repo-owned PII runtime 环境变量
 
 # 应用
 NODE_ENV=production
@@ -508,38 +511,61 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 #### 方式二：Kubernetes（生产环境推荐）
 
-适用于：高可用、自动扩展、企业级部署
+当前状态：
+
+- 本节旧的通用 Kubernetes 指引已不再是当前生产切换的事实来源
+- 当前 active 的 production-first 路径已经收口为更保守的 first cut：
+  - 单机 `K3s`
+  - 同机外置 PostgreSQL
+  - 单副本 `web/api/worker`
+  - 本地开发仍保持 Docker Compose + 本地应用进程
+
+这次 first-cut 生产重部署，不要再沿用这里旧的“in-cluster PostgreSQL / HPA / 多副本默认存在”的假设。
+
+请改以这些文件为准：
+
+- `infra/k8s/README.md`
+- `.context/plans/2026-04-11-single-node-k3s-fresh-redeploy-cutover-checklist.md`
+
+当前 first-cut 的 operator 入口：
 
 ```bash
-# 1. 创建命名空间和密钥
-kubectl create namespace tcrn-tms
-kubectl apply -f infra/k8s/secrets/
+# 1. 只读 cluster 预检
+scripts/k8s-preflight-cluster.sh
 
-# 2. 部署基础设施
-kubectl apply -f infra/k8s/postgres/
-kubectl apply -f infra/k8s/redis/
-kubectl apply -f infra/k8s/minio/
-kubectl apply -f infra/k8s/nats/
+# 2. 用保留的生产 env 文件创建 runtime secret
+scripts/k8s-create-runtime-secret.sh /path/to/production.env
 
-# 3. 等待基础设施就绪
-kubectl wait --for=condition=ready pod -l app=postgres -n tcrn-tms --timeout=300s
+# 3. 若 GHCR 镜像仍是 private，创建 pull secret
+GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
-# 4. 部署应用
-kubectl apply -f infra/k8s/deployments/
+# 4. apply first-cut baseline
+IMAGE_TAG=... \
+APP_HOST=web.prod.tcrn-tms.com \
+TLS_SECRET_NAME=... \
+INGRESS_CLASS_NAME=traefik \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-deploy-production.sh
 
-# 5. 配置 Ingress
-kubectl apply -f infra/k8s/ingress/
+# 5. 执行 first-install bootstrap
+IMAGE_TAG=... REGISTRY_SECRET_NAME=ghcr-pull-secret scripts/k8s-run-db-bootstrap.sh
 
-# 6. 运行数据库迁移（一次性任务）
-kubectl apply -f infra/k8s/jobs/db-migrate.yaml
+# 6. 对含 schema 变更的发布执行 optional rollout verify
+IMAGE_TAG=... \
+ROLLOUT_MIGRATIONS=20260330000001_add_marshmallow_export_job \
+REGISTRY_SECRET_NAME=ghcr-pull-secret \
+scripts/k8s-run-db-verify-schema-rollout.sh
+
+# 7. 切换后 smoke checks
+APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
 ```
 
-**Kubernetes 特性：**
+这条路径是刻意保守的。当前不宣称已经支持：
 
-- **滚动更新**：`maxUnavailable: 0` 实现零停机部署
-- **水平 Pod 自动扩展（HPA）**：基于 CPU/内存自动扩展
-- **Pod 中断预算（PDB）**：更新期间保持最小副本数
-- **健康检查**：所有服务配置就绪和存活探针
+- 多节点 HA
+- HPA
+- 多副本 web
+- first-cut 中把 PostgreSQL 放回 K3s 内部
 
 ### SSL/TLS 配置
 
@@ -590,7 +616,8 @@ server {
 - [ ] MinIO 启用 HTTPS
 - [ ] 生成 JWT 密钥（至少 32 字符）
 - [ ] 配置指纹密钥
-- [ ] 配置 PII 服务 URL（参见下一节）
+- [ ] 已在目标层级启用外部 `TCRN_PII_PLATFORM` adapter
+- [ ] 已验证外部门户与 SSO 可达
 - [ ] 配置邮件服务凭证
 - [ ] 实施备份策略
 - [ ] 配置监控和告警
@@ -716,277 +743,45 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostna
 
 ---
 
-## 🔒 PII 代理服务部署
+## 🔒 外部 PII Platform 集成
 
-出于安全合规要求，PII 代理服务必须部署在与主应用**独立的服务器**上。
+TCRN TMS 已不再提供 repo-owned 独立 PII runtime。敏感字段由外部部署、独立运维的 `TCRN_PII_PLATFORM` 处理，再与 TMS 集成。
 
-当前 rollout 边界：
+### Canonical Rules
 
-- 默认的本地与生产 Compose 栈都**不会**默认启用独立 PII 服务器。应把本节视为按需启用的部署指南，而不是已默认生效的运行能力。
-- 主应用运维侧职责：`PII_SERVICE_URL`、客户端 mTLS 证书路径、worker 定时任务行为，以及确保租户本地 `profile_store` / `pii_service_config` 引用只指向真实 endpoint。
-- PII 服务器运维侧职责：防火墙 / VPN 连通性、与主应用保持一致的 `JWT_SECRET`、服务端 mTLS 证书、加密存储，以及在启用观测后接入可选的 Prometheus 抓取。
+- 只有 code=`TCRN_PII_PLATFORM` 的 effective `integration_adapter` 才是 PII 能力启用真源。
+- `profileStoreId` 继续保留在 TMS 中，作为 talent 之间客户档案隔离/共享边界。
+- TMS 只持有 non-PII 客户主档与跨系统 `customerId`。
+- 外部平台负责敏感字段存储、门户查看和 PII 报表生成。
 
-### 架构概览
+### 运行时流程
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      主应用服务器                                    │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐               │
-│  │   Web UI    │   │   API       │   │   Worker    │               │
-│  └─────────────┘   └──────┬──────┘   └──────┬──────┘               │
-│                           │                  │                      │
-│                           │   JWT + mTLS     │                      │
-└───────────────────────────┼──────────────────┼──────────────────────┘
-                            │                  │
-                            ▼                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    PII 代理服务器（隔离环境）                        │
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │                    PII 代理服务                              │   │
-│  │   - JWT 验证                                                 │   │
-│  │   - AES-256-GCM 加密/解密                                   │   │
-│  │   - 租户独立 DEK 管理                                       │   │
-│  │   - 审计日志                                                 │   │
-│  └───────────────────────────┬─────────────────────────────────┘   │
-│                              │                                      │
-│  ┌───────────────────────────▼─────────────────────────────────┐   │
-│  │                    PII 数据库                                │   │
-│  │   - 静态加密                                                 │   │
-│  │   - 网络隔离                                                 │   │
-│  │   - 禁止直接外部访问                                         │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+1. 在本仓库之外部署并运维外部 PII Platform。
+2. 在平台侧与 TMS 中配置 SSO、权限和 adapter 凭证。
+3. 在需要暴露 PII 入口的 tenant / subsidiary / talent 层级启用 `TCRN_PII_PLATFORM` adapter。
+4. TMS 中的客户创建/编辑仅在 adapter 生效时显示 PII 区块，并以 `customerId` 为键执行覆盖式写透。
+5. 客户查看通过 `Retrieve PII Data` 门户跳转完成；TMS 不再回读 PII。
+6. PII 报表通过 `customerId[] + 请求元数据` 交给平台侧生成；报表二进制不回流 TMS。
 
-### 服务器要求
+### 运维检查清单
 
-| 组件         | 规格                        |
-| ------------ | --------------------------- |
-| **操作系统** | Ubuntu 22.04 LTS 或更高版本 |
-| **CPU**      | 2+ vCPU                     |
-| **内存**     | 4GB+                        |
-| **存储**     | 50GB+ SSD（加密）           |
-| **网络**     | 与主服务器的私有网络或 VPN  |
+- [ ] 外部 PII Platform 已部署，且终端用户可达
+- [ ] 平台门户 SSO 登录与权限校验正常
+- [ ] 目标层级已启用 `TCRN_PII_PLATFORM` adapter
+- [ ] 客户创建/编辑写透成功，并符合覆盖式更新语义
+- [ ] `Retrieve PII Data` 能正确跳转到外部门户
+- [ ] PII 报表可通过平台侧 handoff 正常生成
 
-### 步骤 1：准备 PII 服务器
+### 本地开发说明
 
-```bash
-# SSH 连接到 PII 服务器
-ssh pii-server
+本仓库已不再包含：
 
-# 更新系统
-sudo apt update && sudo apt upgrade -y
+- `apps/pii-service`
+- `docker-compose.pii.prod.yml`
+- `pii-migrate`
+- repo-owned PII Dockerfile 与本地 PII bootstrap 脚本
 
-# 安装 Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-
-# 安装必要工具
-sudo apt install -y openssl ufw
-```
-
-### 步骤 2：配置防火墙
-
-```bash
-# 允许 SSH
-sudo ufw allow ssh
-
-# 仅允许主应用服务器访问 PII 服务端口
-sudo ufw allow from 主服务器IP to any port 5100
-
-# 启用防火墙
-sudo ufw enable
-```
-
-### 步骤 3：生成 mTLS 证书
-
-```bash
-# 创建证书目录
-mkdir -p ~/pii-certs && cd ~/pii-certs
-
-# 生成 CA 证书
-openssl genrsa -out ca.key 4096
-openssl req -new -x509 -days 3650 -key ca.key -out ca.crt \
-    -subj "/C=CN/ST=State/L=City/O=YourOrg/CN=TCRN-TMS-CA"
-
-# 为 PII 服务生成服务器证书
-openssl genrsa -out server.key 4096
-openssl req -new -key server.key -out server.csr \
-    -subj "/C=CN/ST=State/L=City/O=YourOrg/CN=pii.your-domain.com"
-openssl x509 -req -days 365 -in server.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out server.crt
-
-# 为主应用生成客户端证书
-openssl genrsa -out client.key 4096
-openssl req -new -key client.key -out client.csr \
-    -subj "/C=CN/ST=State/L=City/O=YourOrg/CN=main-app"
-openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out client.crt
-
-# 将客户端证书复制到主应用服务器
-scp ca.crt client.crt client.key main-server:/path/to/certs/
-```
-
-### 步骤 4：部署 PII 服务
-
-```bash
-# 创建部署目录
-mkdir -p ~/pii-service && cd ~/pii-service
-
-# 创建环境变量文件
-cat > .env << 'EOF'
-# PII 数据库
-PII_POSTGRES_USER=pii_admin
-PII_POSTGRES_PASSWORD=在此生成强密码
-PII_POSTGRES_DB=pii_vault
-PII_DATABASE_URL=postgresql://pii_admin:${PII_POSTGRES_PASSWORD}@pii-postgres:5432/pii_vault
-
-# 加密
-PII_MASTER_KEY=在此生成64字符十六进制密钥
-PII_KEY_VERSION=v1
-
-# JWT 验证（必须与主应用一致）
-JWT_SECRET=与主应用相同的JWT密钥
-
-# mTLS
-MTLS_ENABLED=true
-MTLS_CA_CERT=/certs/ca.crt
-MTLS_SERVER_CERT=/certs/server.crt
-MTLS_SERVER_KEY=/certs/server.key
-
-# 服务器
-PORT=5100
-NODE_ENV=production
-EOF
-
-# 创建 docker-compose 文件
-cat > docker-compose.yml << 'EOF'
-version: '3.8'
-
-services:
-  pii-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${PII_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PII_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PII_POSTGRES_DB}
-    volumes:
-      - pii_data:/var/lib/postgresql/data
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PII_POSTGRES_USER} -d ${PII_POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pii-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5100:5100"
-    environment:
-      - DATABASE_URL=${PII_DATABASE_URL}
-      - PII_MASTER_KEY=${PII_MASTER_KEY}
-      - PII_KEY_VERSION=${PII_KEY_VERSION}
-      - JWT_SECRET=${JWT_SECRET}
-      - MTLS_ENABLED=${MTLS_ENABLED}
-      - MTLS_CA_CERT=${MTLS_CA_CERT}
-      - MTLS_SERVER_CERT=${MTLS_SERVER_CERT}
-      - MTLS_SERVER_KEY=${MTLS_SERVER_KEY}
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
-    volumes:
-      - ~/pii-certs:/certs:ro
-    depends_on:
-      pii-postgres:
-        condition: service_healthy
-    networks:
-      - pii-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5100/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-networks:
-  pii-network:
-    driver: bridge
-
-volumes:
-  pii_data:
-EOF
-
-# 复制 PII 服务源码或从镜像仓库拉取
-# 方式 A：从源码构建
-git clone https://github.com/tpmoonchefryan/tcrn-tms.git
-cp -r tcrn-tms/apps/pii-service/* .
-
-# 方式 B：拉取预构建镜像
-# 修改 docker-compose.yml 使用 image: your-registry/pii-service:latest
-
-# 部署
-docker-compose up -d
-
-# 初始化 PII 数据库
-docker-compose exec pii-service pnpm db:push
-```
-
-### 步骤 5：配置主应用
-
-在主应用服务器上更新环境变量：
-
-```bash
-# 添加到 .env 或 .env.local
-PII_SERVICE_URL=https://pii.your-domain.com:5100
-PII_SERVICE_MTLS_ENABLED=true
-PII_SERVICE_CA_CERT=/path/to/certs/ca.crt
-PII_SERVICE_CLIENT_CERT=/path/to/certs/client.crt
-PII_SERVICE_CLIENT_KEY=/path/to/certs/client.key
-```
-
-在完成本步骤验证前，不要把租户本地 `profile_store` 记录关联到占位 `pii_service_config` endpoint。worker 只会探测被引用的租户本地配置，因此占位链接会制造真实的 `pii-health-check` 噪音。
-
-### 步骤 6：验证部署
-
-```bash
-# 在 PII 服务器上 - 检查服务健康状态
-curl -k https://localhost:5100/health
-
-# 在主服务器上 - 测试 PII 连接（使用 mTLS）
-curl --cacert /path/to/ca.crt \
-     --cert /path/to/client.crt \
-     --key /path/to/client.key \
-     https://pii.your-domain.com:5100/health
-```
-
-### 安全检查清单
-
-- [ ] PII 服务器位于独立的物理/虚拟机器上
-- [ ] 防火墙仅允许特定 IP 地址
-- [ ] 已生成并配置 mTLS 证书
-- [ ] 主加密密钥安全存储（考虑使用 HashiCorp Vault）
-- [ ] 数据库静态加密（磁盘加密）
-- [ ] PII 数据库无直接互联网访问
-- [ ] 启用所有 PII 访问的审计日志
-- [ ] 定期备份加密数据
-- [ ] 制定证书轮换计划（建议每年）
-
-### DEK（数据加密密钥）轮换
-
-```bash
-# 为租户生成新的 DEK
-curl -X POST https://pii.your-domain.com:5100/admin/rotate-dek \
-  --cacert /path/to/ca.crt \
-  --cert /path/to/client.crt \
-  --key /path/to/client.key \
-  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"tenantId": "tenant-uuid"}'
-```
+本地开发只需要启动 TMS 主运行时。若要演练 PII 功能，请连接真实外部平台环境，并在正确层级启用 adapter。
 
 ---
 
@@ -1019,7 +814,7 @@ curl -X POST /api/v1/auth/login \
 |            | `POST /auth/logout`                       | 登出并使令牌失效     |
 | **客户**   | `GET /customers`                          | 获取客户列表（分页） |
 |            | `POST /customers`                         | 创建客户档案         |
-|            | `POST /customers/{id}/request-pii-access` | 获取 PII 访问令牌    |
+|            | `POST /customers/{id}/pii-portal-session` | 创建 PII 门户会话    |
 | **组织**   | `GET /organization/tree`                  | 获取组织结构         |
 |            | `POST /subsidiaries`                      | 创建分级目录         |
 |            | `POST /talents`                           | 创建艺人             |
