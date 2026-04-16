@@ -123,6 +123,7 @@ tech_readme.md
 .agents/*
 .gitignore
 .cursor/*
+.gemini/*
 
 # Upgrade documentation (temporary)
 UPGRADE-*.md
