@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { cn } from '@/lib/utils';
 
-import { defaultProps, RichTextProps } from './schema';
+import { defaultProps, LEGACY_RICH_TEXT_DEFAULT_CONTENT, RichTextProps } from './schema';
 
 interface RichTextRendererProps extends Partial<RichTextProps> {
   className?: string;
@@ -14,7 +15,12 @@ interface RichTextRendererProps extends Partial<RichTextProps> {
 }
 
 export const RichText: React.FC<RichTextRendererProps> = (props) => {
-  const contentHtml = props.contentHtml ?? props.content ?? props.text ?? defaultProps.contentHtml;
+  const t = useTranslations('homepageComponentEditor');
+  const rawContentHtml = props.contentHtml ?? props.content ?? props.text ?? defaultProps.contentHtml;
+  const contentHtml =
+    rawContentHtml && rawContentHtml !== LEGACY_RICH_TEXT_DEFAULT_CONTENT
+      ? rawContentHtml
+      : (t.raw('richTextDefaultContent') as string);
   const textAlign = props.textAlign ?? defaultProps.textAlign;
   const className = props.className;
 

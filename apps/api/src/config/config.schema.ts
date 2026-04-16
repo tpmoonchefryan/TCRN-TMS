@@ -33,10 +33,6 @@ export const configValidationSchema = Joi.object({
   JWT_ACCESS_TTL: Joi.number().default(900), // 15 minutes
   JWT_REFRESH_TTL: Joi.number().default(43200), // 12 hours
 
-  // PII Service (PRD §11.6)
-  PII_JWT_TTL: Joi.number().default(300), // 5 minutes
-  PII_SERVICE_URL: Joi.string().optional(),
-
   // MinIO
   MINIO_ENDPOINT: Joi.string().default('localhost:9000'),
   MINIO_ROOT_USER: Joi.string().default('minioadmin'),

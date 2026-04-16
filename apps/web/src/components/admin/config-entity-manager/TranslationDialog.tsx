@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
-import { useEffect,useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,22 +36,24 @@ interface TranslationDialogProps {
   includeDescription?: boolean;
 }
 
-const languages = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-];
-
 export function TranslationDialog({
   open,
   onOpenChange,
   data,
   onSave,
-  title = 'Edit Translations',
+  title,
   includeDescription = true,
 }: TranslationDialogProps) {
+  const t = useTranslations('translationDialog');
+  const tCommon = useTranslations('common');
   const [formData, setFormData] = useState<TranslationData>(data);
   const [activeTab, setActiveTab] = useState('en');
+
+  const languages = [
+    { code: 'en', label: tCommon('english'), flag: '🇺🇸' },
+    { code: 'zh', label: tCommon('chinese'), flag: '🇨🇳' },
+    { code: 'ja', label: tCommon('japanese'), flag: '🇯🇵' },
+  ] as const;
 
   useEffect(() => {
     setFormData(data);
@@ -70,11 +73,11 @@ export function TranslationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{title ?? t('title')}</DialogTitle>
           <DialogDescription>
-            Edit translations for all supported languages. English is required, others will fallback to English if empty.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +95,7 @@ export function TranslationDialog({
             <TabsContent key={lang.code} value={lang.code} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor={`name-${lang.code}`}>
-                  Name {lang.code === 'en' && <span className="text-destructive">*</span>}
+                  {t('nameLabel')} {lang.code === 'en' && <span className="text-destructive">*</span>}
                 </Label>
                 <Input
                   id={`name-${lang.code}`}
@@ -103,14 +106,14 @@ export function TranslationDialog({
                       e.target.value
                     )
                   }
-                  placeholder={lang.code === 'en' ? 'Required' : `Optional (fallback to English)`}
+                  placeholder={lang.code === 'en' ? t('requiredPlaceholder') : t('optionalFallback')}
                   required={lang.code === 'en'}
                 />
               </div>
 
               {includeDescription && (
                 <div className="space-y-2">
-                  <Label htmlFor={`desc-${lang.code}`}>Description</Label>
+                  <Label htmlFor={`desc-${lang.code}`}>{tCommon('description')}</Label>
                   <Textarea
                     id={`desc-${lang.code}`}
                     value={formData[`description${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}` as keyof TranslationData] || ''}
@@ -120,7 +123,7 @@ export function TranslationDialog({
                         e.target.value
                       )
                     }
-                    placeholder={`Optional description in ${lang.label}`}
+                    placeholder={t('descriptionPlaceholder', { language: lang.label })}
                     rows={3}
                   />
                 </div>
@@ -131,10 +134,10 @@ export function TranslationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSave} disabled={!formData.nameEn}>
-            Save Translations
+            {t('saveTranslations')}
           </Button>
         </DialogFooter>
       </DialogContent>

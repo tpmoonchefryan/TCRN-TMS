@@ -1,20 +1,28 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-import { defaultProps, ProfileCardProps } from './schema';
+import { defaultProps, LEGACY_PROFILE_CARD_DEFAULTS, ProfileCardProps } from './schema';
 
 interface ProfileCardRendererProps extends Partial<ProfileCardProps> {
   className?: string;
 }
 
 export const ProfileCard: React.FC<ProfileCardRendererProps> = (props) => {
+  const t = useTranslations('homepageComponentEditor');
   const avatarUrl = props.avatarUrl ?? defaultProps.avatarUrl;
-  const displayName = props.displayName ?? defaultProps.displayName;
-  const bio = props.bio ?? defaultProps.bio;
+  const displayName =
+    props.displayName && props.displayName !== LEGACY_PROFILE_CARD_DEFAULTS.displayName
+      ? props.displayName
+      : t('profileCardDefaultName');
+  const bio =
+    props.bio && props.bio !== LEGACY_PROFILE_CARD_DEFAULTS.bio
+      ? props.bio
+      : t('profileCardDefaultBio');
   const avatarShape = props.avatarShape ?? defaultProps.avatarShape;
   const nameFontSize = props.nameFontSize ?? defaultProps.nameFontSize;
   const bioMaxLines = props.bioMaxLines ?? defaultProps.bioMaxLines;

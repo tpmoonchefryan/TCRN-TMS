@@ -38,7 +38,7 @@ export interface HomepageContent {
 }
 
 // =============================================================================
-// Theme Types (DTOs - Hybrid: camelCase for Core, snake_case for New Features)
+// Theme Types (DTOs use canonical camelCase API naming)
 // =============================================================================
 
 export enum ThemePreset {

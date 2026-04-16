@@ -1,8 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 import {
   type CreateSystemRoleInput,
+  ErrorCodes,
   type RbacRolePolicyEffect,
   resolveRbacPermission,
   type RolePermissionInput,
@@ -125,6 +126,14 @@ export class SystemRoleService {
   }
 
   async update(id: string, updateDto: UpdateSystemRoleInput) {
+    const existing = await this.findOne(id);
+    if (!existing) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'System role not found',
+      });
+    }
+
     const { permissions, ...roleData } = updateDto;
 
     return this.db.getPrisma().$transaction(async (tx) => {
@@ -161,6 +170,13 @@ export class SystemRoleService {
         },
       },
     });
+
+    if (!role) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'System role not found',
+      });
+    }
 
     if (role && role._count.userRoles > 0) {
       throw new BadRequestException('Cannot delete role that is assigned to users');

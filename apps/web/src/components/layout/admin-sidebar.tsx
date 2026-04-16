@@ -114,12 +114,6 @@ export function AdminSidebar() {
             isActive={pathname?.includes('/admin/consumers')}
           />
           <NavItem
-            href="/admin/customers"
-            icon={<Users size={18} />}
-            label={t('acCustomers')}
-            isActive={pathname?.includes('/admin/customers')}
-          />
-          <NavItem
             href="/admin/users"
             icon={<Users size={18} />}
             label={t('userManagement')}

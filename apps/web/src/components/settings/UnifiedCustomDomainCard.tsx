@@ -12,7 +12,7 @@ import {
   Loader2,
   MessageSquareHeart,
   Plus,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,7 +26,7 @@ import { Label } from '@/components/ui/label';
 import { platformConfigApi, talentDomainApi } from '@/lib/api/modules/configuration';
 
 import { DnsSetupGuide } from './DnsSetupGuide';
-import { type SslMode,SslModeSelector } from './SslModeSelector';
+import { type SslMode, SslModeSelector } from './SslModeSelector';
 
 interface UnifiedCustomDomainCardProps {
   talentId: string;
@@ -43,6 +43,15 @@ interface DomainConfig {
   marshmallowCustomPath: string | null;
 }
 
+const normalizePublicPathInput = (value: string): string =>
+  value.toLowerCase().trim().replace(/[^a-z0-9\-_]/g, '');
+
+const resolveHomepagePath = (value: string | null | undefined, talentCode: string): string =>
+  normalizePublicPathInput(value || talentCode);
+
+const resolveMarshmallowPath = (value: string | null | undefined): string =>
+  normalizePublicPathInput(value || 'ask');
+
 export function UnifiedCustomDomainCard({
   talentId,
   talentCode,
@@ -50,23 +59,22 @@ export function UnifiedCustomDomainCard({
 }: UnifiedCustomDomainCardProps) {
   const t = useTranslations('talentSettings');
   const tc = useTranslations('common');
+  const tForms = useTranslations('forms');
 
   const [config, setConfig] = useState<DomainConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // Editable state
   const [domainInput, setDomainInput] = useState('');
-  const [homepagePath, setHomepagePath] = useState('/');
-  const [marshmallowPath, setMarshmallowPath] = useState('/ask');
+  const [homepagePath, setHomepagePath] = useState(resolveHomepagePath(null, talentCode));
+  const [marshmallowPath, setMarshmallowPath] = useState(resolveMarshmallowPath(null));
   const [isEditing, setIsEditing] = useState(false);
   const [showDnsInstructions, setShowDnsInstructions] = useState(false);
   const [platformBaseDomain, setPlatformBaseDomain] = useState<string>('proxy.tcrn.app');
   const [sslMode, setSslMode] = useState<SslMode>('auto');
   const [isSavingSslMode, setIsSavingSslMode] = useState(false);
 
-  // Fetch config
   const fetchConfig = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -75,50 +83,43 @@ export function UnifiedCustomDomainCard({
         const data = response.data as DomainConfig & { customDomainSslMode?: SslMode };
         setConfig({ ...data, customDomainSslMode: data.customDomainSslMode || 'auto' });
         setDomainInput(data.customDomain || '');
-        setHomepagePath(data.homepageCustomPath || '/');
-        setMarshmallowPath(data.marshmallowCustomPath || '/ask');
+        setHomepagePath(resolveHomepagePath(data.homepageCustomPath, talentCode));
+        setMarshmallowPath(resolveMarshmallowPath(data.marshmallowCustomPath));
         setSslMode(data.customDomainSslMode || 'auto');
-        // Show DNS instructions if domain set but not verified
-        if (data.customDomain && !data.customDomainVerified) {
-          setShowDnsInstructions(true);
-        }
+        setShowDnsInstructions(Boolean(data.customDomain && !data.customDomainVerified));
       }
     } catch {
       toast.error(tc('error'));
     } finally {
       setIsLoading(false);
     }
-  }, [talentId, tc]);
+  }, [talentCode, talentId, tc]);
 
   useEffect(() => {
-    fetchConfig();
-    // Fetch platform base domain for CNAME target
-    platformConfigApi.get<{ domain?: string }>('system.baseDomain').then((res) => {
-      if (res.success && res.data?.value) {
-        const domainConfig = res.data.value;
-        if (domainConfig.domain) {
-          setPlatformBaseDomain(`proxy.${domainConfig.domain}`);
+    void fetchConfig();
+
+    void platformConfigApi
+      .get<{ domain?: string }>('system.baseDomain')
+      .then((res) => {
+        if (res.success && res.data?.value?.domain) {
+          setPlatformBaseDomain(`proxy.${res.data.value.domain}`);
         }
-      }
-    }).catch(() => {
-      // Use default if fetch fails
-    });
+      })
+      .catch(() => {
+        // Keep fallback domain.
+      });
   }, [fetchConfig]);
 
-  // Save domain
   const handleSaveDomain = async () => {
     setIsSaving(true);
     try {
-      const response = await talentDomainApi.setDomain(
-        talentId,
-        domainInput.trim() || null
-      );
+      const response = await talentDomainApi.setDomain(talentId, domainInput.trim() || null);
       if (response.success) {
         toast.success(t('domainSaved'));
         if (response.data?.token) {
           setShowDnsInstructions(true);
         }
-        fetchConfig();
+        await fetchConfig();
         onDomainChange?.();
         setIsEditing(false);
       }
@@ -129,7 +130,6 @@ export function UnifiedCustomDomainCard({
     }
   };
 
-  // Verify domain
   const handleVerifyDomain = async () => {
     setIsVerifying(true);
     try {
@@ -138,7 +138,7 @@ export function UnifiedCustomDomainCard({
         if (response.data.verified) {
           toast.success(t('domainVerified'));
           setShowDnsInstructions(false);
-          fetchConfig();
+          await fetchConfig();
           onDomainChange?.();
         } else {
           toast.error(response.data.message || t('verificationFailed'));
@@ -151,7 +151,6 @@ export function UnifiedCustomDomainCard({
     }
   };
 
-  // Remove domain
   const handleRemoveDomain = async () => {
     setIsSaving(true);
     try {
@@ -160,7 +159,7 @@ export function UnifiedCustomDomainCard({
         toast.success(t('domainRemoved'));
         setDomainInput('');
         setShowDnsInstructions(false);
-        fetchConfig();
+        await fetchConfig();
         onDomainChange?.();
         setIsEditing(false);
       }
@@ -171,17 +170,17 @@ export function UnifiedCustomDomainCard({
     }
   };
 
-  // Save paths
   const handleSavePaths = async () => {
     setIsSaving(true);
     try {
       const response = await talentDomainApi.updatePaths(talentId, {
-        homepageCustomPath: homepagePath,
-        marshmallowCustomPath: marshmallowPath,
+        homepageCustomPath: normalizePublicPathInput(homepagePath),
+        marshmallowCustomPath: normalizePublicPathInput(marshmallowPath),
       });
       if (response.success) {
         toast.success(t('pathsSaved'));
-        fetchConfig();
+        await fetchConfig();
+        onDomainChange?.();
       }
     } catch (error: unknown) {
       toast.error((error as Error)?.message || tc('error'));
@@ -190,13 +189,15 @@ export function UnifiedCustomDomainCard({
     }
   };
 
-  // Copy to clipboard
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(t('copiedToClipboard'));
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t('copiedToClipboard'));
+    } catch {
+      toast.error(tc('error'));
+    }
   };
 
-  // Handle SSL mode change
   const handleSslModeChange = async (newMode: SslMode) => {
     setSslMode(newMode);
     setIsSavingSslMode(true);
@@ -204,11 +205,10 @@ export function UnifiedCustomDomainCard({
       const response = await talentDomainApi.updateSslMode(talentId, newMode);
       if (response.success) {
         toast.success(t('sslMode.saved'));
-        fetchConfig();
+        await fetchConfig();
       }
     } catch (error: unknown) {
       toast.error((error as Error)?.message || tc('error'));
-      // Revert on error
       setSslMode(config?.customDomainSslMode || 'auto');
     } finally {
       setIsSavingSslMode(false);
@@ -225,7 +225,10 @@ export function UnifiedCustomDomainCard({
     );
   }
 
-  // txtRecord is computed inside DnsSetupGuide component
+  const originalHomepagePath = resolveHomepagePath(config?.homepageCustomPath, talentCode);
+  const originalMarshmallowPath = resolveMarshmallowPath(config?.marshmallowCustomPath);
+  const homepageInternalUrl = `/p/${homepagePath}`;
+  const marshmallowInternalUrl = `/m/${marshmallowPath}`;
 
   return (
     <Card>
@@ -237,24 +240,27 @@ export function UnifiedCustomDomainCard({
         <CardDescription>{t('unifiedCustomDomainDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Current Domain Status */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">{t('currentDomain')}</Label>
-            {config?.customDomain && (
+            {config?.customDomain ? (
               <Badge variant={config.customDomainVerified ? 'default' : 'secondary'}>
                 {config.customDomainVerified ? (
-                  <><CheckCircle2 size={12} className="mr-1" /> {t('verified')}</>
+                  <>
+                    <CheckCircle2 size={12} className="mr-1" /> {t('verified')}
+                  </>
                 ) : (
-                  <><AlertCircle size={12} className="mr-1" /> {t('pendingVerification')}</>
+                  <>
+                    <AlertCircle size={12} className="mr-1" /> {t('pendingVerification')}
+                  </>
                 )}
               </Badge>
-            )}
+            ) : null}
           </div>
 
           {config?.customDomain && !isEditing ? (
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-sm">
+              <div className="flex-1 rounded-md bg-muted px-3 py-2 font-mono text-sm">
                 {config.customDomain}
               </div>
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
@@ -263,7 +269,7 @@ export function UnifiedCustomDomainCard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(`https://${config.customDomain}`)}
+                onClick={() => void copyToClipboard(`https://${config.customDomain}`)}
               >
                 <Copy size={14} />
               </Button>
@@ -273,27 +279,29 @@ export function UnifiedCustomDomainCard({
               <Input
                 value={domainInput}
                 onChange={(e) => setDomainInput(e.target.value)}
-                placeholder="example.com"
+                placeholder={tForms('placeholders.domain')}
                 className="flex-1"
               />
-              <Button
-                onClick={handleSaveDomain}
-                disabled={isSaving || !domainInput.trim()}
-              >
-                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <><Plus size={14} className="mr-1" /> {tc('save')}</>}
+              <Button onClick={handleSaveDomain} disabled={isSaving || !domainInput.trim()}>
+                {isSaving ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <>
+                    <Plus size={14} className="mr-1" /> {tc('save')}
+                  </>
+                )}
               </Button>
-              {isEditing && (
+              {isEditing ? (
                 <Button variant="ghost" onClick={() => setIsEditing(false)}>
                   {tc('cancel')}
                 </Button>
-              )}
+              ) : null}
             </div>
           )}
         </div>
 
-        {/* DNS Verification Instructions - Using new DnsSetupGuide component */}
-        {showDnsInstructions && config?.customDomain && !config.customDomainVerified && (
-          <div className="pt-4 border-t">
+        {showDnsInstructions && config?.customDomain && !config.customDomainVerified ? (
+          <div className="border-t pt-4">
             <DnsSetupGuide
               domain={config.customDomain}
               verificationToken={config.customDomainVerificationToken || ''}
@@ -313,64 +321,62 @@ export function UnifiedCustomDomainCard({
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* Service Path Configuration (only shown when domain is verified) */}
-        {config?.customDomain && config.customDomainVerified && (
-          <div className="space-y-4 pt-4 border-t">
+        {config?.customDomain && config.customDomainVerified ? (
+          <div className="space-y-4 border-t pt-4">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">{t('servicePathConfig')}</Label>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(`https://${config.customDomain}`)}
+                onClick={() => window.open(`https://${config.customDomain}`, '_blank')}
               >
                 <ExternalLink size={14} className="mr-1" /> {t('visitSite')}
               </Button>
             </div>
 
             <div className="grid gap-4">
-              {/* Homepage Path */}
-              <div className="flex items-center gap-4 p-3 border rounded-lg">
-                <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded">
+              <div className="flex items-center gap-4 rounded-lg border p-3">
+                <div className="rounded bg-pink-100 p-2 dark:bg-pink-900/30">
                   <Globe size={18} className="text-pink-500" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <div className="font-medium text-sm">{t('homepagePath')}</div>
+                  <div className="font-medium text-sm">{t('homepage')}</div>
                   <div className="text-xs text-muted-foreground">
-                    https://{config.customDomain}{homepagePath}
+                    https://{config.customDomain}
                   </div>
                 </div>
-                <Input
-                  value={homepagePath}
-                  onChange={(e) => setHomepagePath(e.target.value)}
-                  className="w-24 font-mono text-sm"
-                  placeholder="/"
-                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void copyToClipboard(`https://${config.customDomain}`)}
+                >
+                  <Copy size={14} />
+                </Button>
               </div>
 
-              {/* Marshmallow Path */}
-              <div className="flex items-center gap-4 p-3 border rounded-lg">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded">
+              <div className="flex items-center gap-4 rounded-lg border p-3">
+                <div className="rounded bg-purple-100 p-2 dark:bg-purple-900/30">
                   <MessageSquareHeart size={18} className="text-purple-500" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <div className="font-medium text-sm">{t('marshmallowPath')}</div>
+                  <div className="font-medium text-sm">{t('marshmallow')}</div>
                   <div className="text-xs text-muted-foreground">
-                    https://{config.customDomain}{marshmallowPath}
+                    https://{config.customDomain}/ask
                   </div>
                 </div>
-                <Input
-                  value={marshmallowPath}
-                  onChange={(e) => setMarshmallowPath(e.target.value)}
-                  className="w-24 font-mono text-sm"
-                  placeholder="/ask"
-                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void copyToClipboard(`https://${config.customDomain}/ask`)}
+                >
+                  <Copy size={14} />
+                </Button>
               </div>
             </div>
 
-            {/* SSL Mode Selector */}
-            <div className="pt-4 border-t">
+            <div className="border-t pt-4">
               <SslModeSelector
                 value={sslMode}
                 onChange={handleSslModeChange}
@@ -378,15 +384,6 @@ export function UnifiedCustomDomainCard({
               />
             </div>
 
-            {/* Save Paths Button */}
-            {(homepagePath !== config.homepageCustomPath || marshmallowPath !== config.marshmallowCustomPath) && (
-              <Button onClick={handleSavePaths} disabled={isSaving} className="w-full">
-                {isSaving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
-                {t('savePathConfig')}
-              </Button>
-            )}
-
-            {/* Remove Domain */}
             <div className="pt-2">
               <Button
                 variant="ghost"
@@ -399,68 +396,64 @@ export function UnifiedCustomDomainCard({
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* System URLs - Editable Path Segment */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-4">
+        <div className="rounded-lg bg-slate-50 p-4 space-y-4 dark:bg-slate-900">
           <Label className="text-sm font-medium">{t('systemUrls')}</Label>
           <p className="text-xs text-muted-foreground">{t('systemUrlsInfo')}</p>
-          
-          {/* Homepage Path - fixed /p/ prefix, editable path segment */}
+
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Globe size={16} className="text-blue-500" />
-              <span className="text-sm font-medium">Homepage</span>
+              <span className="text-sm font-medium">{t('homepage')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-sm text-muted-foreground font-mono">/p/</span>
+              <span className="font-mono text-sm text-muted-foreground">/p/</span>
               <Input
-                value={homepagePath.replace(/^\//, '')}
-                onChange={(e) => setHomepagePath(e.target.value.toLowerCase().replace(/[^a-z0-9\-_]/g, ''))}
-                placeholder={talentCode.toLowerCase()}
-                className="flex-1 font-mono text-sm h-8"
+                value={homepagePath}
+                onChange={(e) => setHomepagePath(normalizePublicPathInput(e.target.value))}
+                placeholder={originalHomepagePath}
+                className="h-8 flex-1 font-mono text-sm"
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => copyToClipboard(`/p/${homepagePath.replace(/^\//, '') || talentCode.toLowerCase()}`)}
+                onClick={() => void copyToClipboard(homepageInternalUrl)}
               >
                 <Copy size={14} />
               </Button>
             </div>
           </div>
 
-          {/* Marshmallow Path - fixed /m/ prefix, editable path segment */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <MessageSquareHeart size={16} className="text-pink-500" />
-              <span className="text-sm font-medium">Marshmallow</span>
+              <span className="text-sm font-medium">{t('marshmallow')}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-sm text-muted-foreground font-mono">/m/</span>
+              <span className="font-mono text-sm text-muted-foreground">/m/</span>
               <Input
-                value={marshmallowPath.replace(/^\//, '')}
-                onChange={(e) => setMarshmallowPath(e.target.value.toLowerCase().replace(/[^a-z0-9\-_]/g, ''))}
-                placeholder={talentCode.toLowerCase()}
-                className="flex-1 font-mono text-sm h-8"
+                value={marshmallowPath}
+                onChange={(e) => setMarshmallowPath(normalizePublicPathInput(e.target.value))}
+                placeholder={originalMarshmallowPath}
+                className="h-8 flex-1 font-mono text-sm"
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => copyToClipboard(`/m/${marshmallowPath.replace(/^\//, '') || talentCode.toLowerCase()}`)}
+                onClick={() => void copyToClipboard(marshmallowInternalUrl)}
               >
                 <Copy size={14} />
               </Button>
             </div>
           </div>
 
-          {/* Save Paths Button */}
-          {config && (homepagePath !== (config.homepageCustomPath || '') || marshmallowPath !== (config.marshmallowCustomPath || '')) && (
+          {homepagePath !== originalHomepagePath || marshmallowPath !== originalMarshmallowPath ? (
             <Button onClick={handleSavePaths} disabled={isSaving} size="sm" className="w-full">
-              {isSaving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+              {isSaving ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
               {t('savePathConfig')}
             </Button>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

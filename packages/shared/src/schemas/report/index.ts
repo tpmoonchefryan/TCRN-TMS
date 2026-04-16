@@ -32,6 +32,7 @@ export const MfrFilterCriteriaSchema = z.object({
   includeExpired: z.boolean().optional(),
   includeInactive: z.boolean().optional(),
 });
+export type MfrFilterCriteria = z.infer<typeof MfrFilterCriteriaSchema>;
 
 // ============================================================================
 // Request Schemas
@@ -48,6 +49,28 @@ export const CreateMfrJobSchema = z.object({
   format: ReportFormatSchema.optional().default('xlsx'),
 });
 
+export const LocalReportJobCreateResponseSchema = z.object({
+  deliveryMode: z.literal('tms_job'),
+  jobId: z.string(),
+  status: ReportJobStatusSchema,
+  estimatedRows: z.number().int().min(0),
+  createdAt: z.string(),
+});
+
+export const PiiPlatformReportCreateResponseSchema = z.object({
+  deliveryMode: z.literal('pii_platform_portal'),
+  requestId: z.string(),
+  redirectUrl: z.string().url(),
+  expiresAt: z.string(),
+  estimatedRows: z.number().int().min(0),
+  customerCount: z.number().int().min(0),
+});
+
+export const ReportCreateResponseSchema = z.discriminatedUnion('deliveryMode', [
+  LocalReportJobCreateResponseSchema,
+  PiiPlatformReportCreateResponseSchema,
+]);
+
 export const ReportJobListQuerySchema = z.object({
   talentId: z.string().uuid('Invalid talent ID'),
   status: z.string().optional(),
@@ -59,4 +82,7 @@ export const ReportJobListQuerySchema = z.object({
 
 export type MfrSearchRequestInput = z.infer<typeof MfrSearchRequestSchema>;
 export type CreateMfrJobInput = z.infer<typeof CreateMfrJobSchema>;
+export type LocalReportJobCreateResponse = z.infer<typeof LocalReportJobCreateResponseSchema>;
+export type PiiPlatformReportCreateResponse = z.infer<typeof PiiPlatformReportCreateResponseSchema>;
+export type ReportCreateResponse = z.infer<typeof ReportCreateResponseSchema>;
 export type ReportJobListQueryInput = z.infer<typeof ReportJobListQuerySchema>;

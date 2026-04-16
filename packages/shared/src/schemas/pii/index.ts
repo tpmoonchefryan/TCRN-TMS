@@ -64,7 +64,6 @@ export const CreateProfileStoreSchema = z.object({
   descriptionEn: z.string().optional(),
   descriptionZh: z.string().optional(),
   descriptionJa: z.string().optional(),
-  piiServiceConfigCode: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
 
@@ -75,7 +74,6 @@ export const UpdateProfileStoreSchema = z.object({
   descriptionEn: z.string().optional(),
   descriptionZh: z.string().optional(),
   descriptionJa: z.string().optional(),
-  piiServiceConfigCode: z.string().optional(),
   isDefault: z.boolean().optional(),
   isActive: z.boolean().optional(),
   version: z.number().int(),

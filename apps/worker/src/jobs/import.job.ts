@@ -77,7 +77,7 @@ interface CustomerCsvRow {
   tags?: string;
   source?: string;
   notes?: string;
-  // PII fields (optional, sent to PII service)
+  // Retired PII columns kept only for fail-close validation
   real_name?: string;
   email?: string;
   phone?: string;
@@ -116,6 +116,28 @@ interface LookupData {
   businessSegments: Map<string, string>;
   consumers: Map<string, string>;
 }
+
+const INDIVIDUAL_PII_IMPORT_FIELDS: Array<keyof CustomerCsvRow> = [
+  'real_name',
+  'given_name',
+  'family_name',
+  'gender',
+  'birth_date',
+  'phone',
+  'phone_type',
+  'phone_number',
+  'email',
+  'email_type',
+  'email_address',
+  'address',
+];
+
+const COMPANY_CONTACT_PII_IMPORT_FIELDS: Array<keyof CustomerCsvRow> = [
+  'contact_name',
+  'contact_phone',
+  'contact_email',
+  'contact_department',
+];
 
 function quoteIdentifier(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
@@ -435,6 +457,19 @@ function validateRow(
     errors.push('company_legal_name is required for company import');
   }
 
+  const prohibitedFields = [
+    ...(resolvedProfileType === 'individual'
+      ? findProvidedImportFields(row, INDIVIDUAL_PII_IMPORT_FIELDS)
+      : []),
+    ...findProvidedImportFields(row, COMPANY_CONTACT_PII_IMPORT_FIELDS),
+  ];
+
+  if (prohibitedFields.length > 0) {
+    errors.push(
+      `PII import columns are retired from TMS and must be handled by TCRN PII Platform: ${prohibitedFields.join(', ')}`,
+    );
+  }
+
   // Platform validation
   if (row.platform_code && !lookupData.platforms.has(row.platform_code)) {
     errors.push(`Invalid platform_code: ${row.platform_code}`);
@@ -499,37 +534,19 @@ function validateRow(
   };
 }
 
-/**
- * Generate masked name for search
- * Format: "姓 + * + 名最后一字", e.g., "张*三"
- */
-function generateSearchHintName(realName?: string): string | null {
-  if (!realName) return null;
-  const name = realName.trim();
-  if (name.length === 0) return null;
-  if (name.length === 1) return `${name}*`;
-  if (name.length === 2) return `${name.charAt(0)}*${name.charAt(1)}`;
-  return `${name.charAt(0)}*${name.charAt(name.length - 1)}`;
+function findProvidedImportFields(
+  row: CustomerCsvRow,
+  keys: Array<keyof CustomerCsvRow>,
+): string[] {
+  return keys.filter((key) => hasMeaningfulValue(row[key])).map((key) => key.toString());
 }
 
-/**
- * Generate phone last 4 digits for search
- */
-function generateSearchHintPhoneLast4(phone?: string): string | null {
-  if (!phone) return null;
-  const cleaned = phone.replace(/\D/g, '');
-  return cleaned.length >= 4 ? cleaned.slice(-4) : null;
-}
-
-function firstDelimitedValue(value?: string): string | undefined {
-  if (!value) {
-    return undefined;
+function hasMeaningfulValue(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
   }
 
-  return value
-    .split('|')
-    .map((part) => part.trim())
-    .find(Boolean);
+  return value !== undefined && value !== null;
 }
 
 /**
@@ -550,18 +567,10 @@ async function processCustomerCreate(
   }
 ) {
   const customerId = uuidv4();
-  const rmProfileId = uuidv4(); // PII token
   const profileType = row.profile_type || options.defaultProfileType || 'individual';
   const statusId = row.status_code
     ? (options.lookupData.customerStatuses.get(row.status_code) ?? null)
     : null;
-  const derivedRealName = row.real_name || [row.family_name, row.given_name].filter(Boolean).join('') || undefined;
-  const derivedEmail = row.email || firstDelimitedValue(row.email_address);
-  const derivedPhone = row.phone || firstDelimitedValue(row.phone_number);
-
-  // Generate search hints for individual profiles
-  const searchHintName = profileType === 'individual' ? generateSearchHintName(derivedRealName) : null;
-  const searchHintPhoneLast4 = profileType === 'individual' ? generateSearchHintPhoneLast4(derivedPhone) : null;
 
   // Create customer profile
   await prisma.$executeRawUnsafe(
@@ -571,7 +580,6 @@ async function processCustomerCreate(
         talent_id,
         profile_store_id,
         origin_talent_id,
-        rm_profile_id,
         profile_type,
         nickname,
         primary_language,
@@ -588,25 +596,23 @@ async function processCustomerCreate(
         $2::uuid,
         $3::uuid,
         $4::uuid,
-        $5::uuid,
+        $5,
         $6,
         $7,
-        $8,
-        $9::uuid,
-        $10::text[],
+        $8::uuid,
+        $9::text[],
+        $10,
         $11,
-        $12,
         NOW(),
         NOW(),
-        $13::uuid,
-        $14::uuid
+        $12::uuid,
+        $13::uuid
       )
     `,
     customerId,
     options.talentId,
     options.profileStoreId,
     options.talentId,
-    rmProfileId,
     profileType,
     row.nickname,
     row.primary_language || null,
@@ -684,13 +690,6 @@ async function processCustomerCreate(
         options.userId,
       );
     }
-  }
-
-  // Note: In actual implementation, searchHintName and searchHintPhoneLast4 would be 
-  // stored directly on CustomerProfile or in a separate indexed view.
-  // The CustomerIndividual table is not present in the current schema.
-  if (profileType === 'individual' && (searchHintName || searchHintPhoneLast4)) {
-    logger.info(`Search hints for ${customerId}: name=${searchHintName}, phone=${searchHintPhoneLast4}`);
   }
 
   // Create platform identity if provided
@@ -773,18 +772,6 @@ async function processCustomerCreate(
         options.userId,
       );
     }
-  }
-
-  // TODO: Send PII data to PII service
-  if (derivedRealName || derivedEmail || derivedPhone || row.address) {
-    // const piiService = new PiiService();
-    // await piiService.storePii(rmProfileId, {
-    //   realName: derivedRealName,
-    //   email: derivedEmail,
-    //   phone: derivedPhone,
-    //   address: row.address,
-    // });
-    logger.info(`PII data for ${customerId} would be sent to PII service`);
   }
 }
 

@@ -39,8 +39,8 @@ describe('Multi-Tenant Isolation Tests', () => {
   let tokenB: string;
   let expiredTokenA: string;
 
-  let customerA: { id: string; nickname: string; rmProfileId: string };
-  let customerB: { id: string; nickname: string; rmProfileId: string };
+  let customerA: { id: string; nickname: string };
+  let customerB: { id: string; nickname: string };
   let subsidiaryA: { id: string; code: string };
   let subsidiaryB: { id: string; code: string };
   let talentA: { id: string; code: string; homepagePath: string };
@@ -56,12 +56,21 @@ describe('Multi-Tenant Isolation Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .set('X-Tenant-ID', tenantId);
 
+  const customerCollectionPath = (talentId: string) =>
+    `/api/v1/talents/${talentId}/customers`;
+
+  const customerDetailPath = (talentId: string, customerId: string) =>
+    `${customerCollectionPath(talentId)}/${customerId}`;
+
+  const individualCustomerPath = (talentId: string, customerId: string) =>
+    `${customerCollectionPath(talentId)}/individuals/${customerId}`;
+
   const listCustomers = (token: string, tenantId: string, talentId: string) =>
     withAuth(
-      request(app.getHttpServer()).get('/api/v1/customers'),
+      request(app.getHttpServer()).get(customerCollectionPath(talentId)),
       token,
       tenantId,
-    ).query({ talentId });
+    );
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -140,6 +149,7 @@ describe('Multi-Tenant Isolation Tests', () => {
       displayName: 'Isolation Talent A',
       homepagePath: `tenant-a-${Date.now()}`,
       createdBy: userA.id,
+      lifecycleStatus: 'published',
     });
     talentB = await createTestTalentInTenant(prisma, tenantB, subsidiaryB.id, {
       code: `TAL_B_${Date.now().toString(36).toUpperCase()}`,
@@ -147,6 +157,7 @@ describe('Multi-Tenant Isolation Tests', () => {
       displayName: 'Isolation Talent B',
       homepagePath: `tenant-b-${Date.now()}`,
       createdBy: userB.id,
+      lifecycleStatus: 'published',
     });
 
     const talentAProfileStore = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
@@ -282,11 +293,10 @@ describe('Multi-Tenant Isolation Tests', () => {
 
     it('returns 404 when tenant A requests tenant B customer detail', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get(`/api/v1/customers/${customerB.id}`),
+        request(app.getHttpServer()).get(customerDetailPath(talentA.id, customerB.id)),
         tokenA,
         tenantA.tenant.id,
       )
-        .set('X-Talent-Id', talentB.id)
         .expect(404);
 
       expect(response.body.error.code).toBe('RES_NOT_FOUND');
@@ -294,11 +304,10 @@ describe('Multi-Tenant Isolation Tests', () => {
 
     it('returns 404 when tenant A tries to update tenant B customer', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).patch(`/api/v1/customers/individuals/${customerB.id}`),
+        request(app.getHttpServer()).patch(individualCustomerPath(talentA.id, customerB.id)),
         tokenA,
         tenantA.tenant.id,
       )
-        .set('X-Talent-Id', talentB.id)
         .send({
           nickname: 'cross-tenant-update',
           version: 1,
@@ -343,15 +352,14 @@ describe('Multi-Tenant Isolation Tests', () => {
   });
 
   describe('PII isolation', () => {
-    it('returns 404 when tenant A requests PII access token for tenant B customer', async () => {
+    it('returns 404 when tenant A requests a PII portal session for tenant B customer', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).post(
-          `/api/v1/customers/individuals/${customerB.id}/request-pii-access`,
+          `${individualCustomerPath(talentA.id, customerB.id)}/pii-portal-session`,
         ),
         tokenA,
         tenantA.tenant.id,
       )
-        .set('X-Talent-Id', talentB.id)
         .expect(404);
 
       expect(response.body.error.code).toBe('RES_NOT_FOUND');
@@ -359,40 +367,40 @@ describe('Multi-Tenant Isolation Tests', () => {
   });
 
   describe('Report job isolation', () => {
-    it('returns 404 when tenant A requests tenant B report job', async () => {
+    it('returns 400 when tenant A requests tenant B report job', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/reports/mfr/jobs/${reportJobBId}`),
         tokenA,
         tenantA.tenant.id,
       )
-        .query({ talent_id: talentB.id })
-        .expect(404);
+        .query({ talent_id: talentA.id })
+        .expect(400);
 
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
 
-    it('returns 404 when tenant A requests tenant B report download URL', async () => {
+    it('returns 400 when tenant A requests tenant B report download URL', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/reports/mfr/jobs/${reportJobBId}/download`),
         tokenA,
         tenantA.tenant.id,
       )
-        .query({ talent_id: talentB.id })
-        .expect(404);
+        .query({ talent_id: talentA.id })
+        .expect(400);
 
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
 
-    it('returns 404 when tenant A tries to cancel tenant B report job', async () => {
+    it('returns 400 when tenant A tries to cancel tenant B report job', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).delete(`/api/v1/reports/mfr/jobs/${reportJobBId}`),
         tokenA,
         tenantA.tenant.id,
       )
-        .query({ talent_id: talentB.id })
-        .expect(404);
+        .query({ talent_id: talentA.id })
+        .expect(400);
 
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
     });
   });
 
@@ -432,7 +440,7 @@ describe('Multi-Tenant Isolation Tests', () => {
   });
 
   describe('Marshmallow isolation', () => {
-    it('returns 404 when tenant A tries to update tenant B marshmallow config', async () => {
+    it('returns 403 when tenant A tries to update tenant B marshmallow config', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).patch(`/api/v1/talents/${talentB.id}/marshmallow/config`),
         tokenA,
@@ -442,32 +450,31 @@ describe('Multi-Tenant Isolation Tests', () => {
           version: 1,
           isEnabled: false,
         })
-        .expect(404);
+        .expect(403);
 
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('TALENT_NOT_PUBLISHED');
     });
 
-    it('returns 404 when tenant A tries to approve tenant B marshmallow message', async () => {
+    it('returns 403 when tenant A tries to approve tenant B marshmallow message', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).post(
           `/api/v1/talents/${talentB.id}/marshmallow/messages/${marshmallowMessageBId}/approve`,
         ),
         tokenA,
         tenantA.tenant.id,
-      ).expect(404);
+      ).expect(403);
 
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('TALENT_NOT_PUBLISHED');
     });
   });
 
   describe('Token validation', () => {
     it('rejects expired access tokens', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/customers'),
+        request(app.getHttpServer()).get(customerCollectionPath(talentA.id)),
         expiredTokenA,
         tenantA.tenant.id,
       )
-        .query({ talentId: talentA.id })
         .expect(401);
 
       expect(response.body.error.code).toBe('AUTH_TOKEN_EXPIRED');

@@ -14,8 +14,6 @@ import { importJobProcessor } from './jobs/import.job';
 import { processLogCleanup } from './jobs/log-cleanup.job';
 import { processIntegrationLog, processTechEventLog } from './jobs/log-processor.job';
 import { membershipRenewalJobProcessor } from './jobs/membership-renewal.job';
-import { piiCleanupJobProcessor } from './jobs/pii-cleanup.job';
-import { piiHealthCheckJobProcessor } from './jobs/pii-health-check.job';
 import { reportJobProcessor } from './jobs/report.job';
 import { workerLogger as logger } from './logger';
 import { QUEUE_NAMES } from './queues';
@@ -148,28 +146,12 @@ export const WORKER_GROUPS: readonly WorkerGroupDefinition[] = [
         initializedMessage: 'Membership renewal worker initialized',
       },
       {
-        queueName: QUEUE_NAMES.PII_CLEANUP,
-        processor: piiCleanupJobProcessor as WorkerProcessor,
-        options: {
-          concurrency: 1,
-        },
-        initializedMessage: 'PII cleanup worker initialized',
-      },
-      {
         queueName: QUEUE_NAMES.LOG_CLEANUP,
         processor: processLogCleanup as WorkerProcessor,
         options: {
           concurrency: 1,
         },
         initializedMessage: 'Log cleanup worker initialized',
-      },
-      {
-        queueName: QUEUE_NAMES.PII_HEALTH_CHECK,
-        processor: piiHealthCheckJobProcessor as WorkerProcessor,
-        options: {
-          concurrency: 1,
-        },
-        initializedMessage: 'PII health check worker initialized',
       },
     ],
   },

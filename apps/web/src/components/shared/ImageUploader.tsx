@@ -1,12 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ImagePlus, Loader2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { getThrownErrorMessage } from '@/lib/api/error-utils';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import { cn } from '@/lib/utils';
 
 interface ImageUploaderProps {
@@ -26,6 +27,8 @@ export function ImageUploader({
   className,
   maxSizeMB = 5,
 }: ImageUploaderProps) {
+  const t = useTranslations('imageUploader');
+  const te = useTranslations('errors');
   const [isUploading, setIsUploading] = useState(false);
 
   const onDrop = useCallback(
@@ -36,7 +39,7 @@ export function ImageUploader({
       if (!file) return;
 
       if (file.size > maxSizeMB * 1024 * 1024) {
-        toast.error(`File size exceeds ${maxSizeMB}MB limit`);
+        toast.error(t('fileSizeExceeded', { size: maxSizeMB }));
         return;
       }
 
@@ -44,14 +47,14 @@ export function ImageUploader({
       try {
         const url = await onUpload(file);
         onChange(url);
-        toast.success('Image uploaded successfully');
+        toast.success(t('uploadSuccess'));
       } catch (error) {
-        toast.error(getThrownErrorMessage(error, 'Upload failed'));
+        toast.error(getTranslatedApiErrorMessage(error, te, t('uploadFailed')));
       } finally {
         setIsUploading(false);
       }
     },
-    [disabled, maxSizeMB, onUpload, onChange]
+    [disabled, maxSizeMB, onUpload, onChange, t, te]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -68,7 +71,7 @@ export function ImageUploader({
       <div className={cn("relative group w-32 h-32", className)}>
         <img
           src={value}
-          alt="Uploaded image"
+          alt={t('altUploadedImage')}
           className="w-full h-full object-cover rounded-full border-2 border-border"
         />
         {!disabled && (
@@ -105,7 +108,7 @@ export function ImageUploader({
         <ImagePlus className="h-8 w-8 text-muted-foreground" />
       )}
       <div className="mt-2 text-xs text-muted-foreground font-medium text-center px-2">
-        {isUploading ? 'Uploading...' : 'Upload'}
+        {isUploading ? t('uploading') : t('upload')}
       </div>
     </div>
   );

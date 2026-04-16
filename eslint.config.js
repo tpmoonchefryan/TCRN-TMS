@@ -152,6 +152,31 @@ export default [
     },
   },
 
+  {
+    files: ['apps/web/src/domains/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/components/ui',
+              message:
+                'Import platform UI through "@/platform/ui" inside canonical domain code.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@/components/ui/*'],
+              message:
+                'Import platform UI through "@/platform/ui" inside canonical domain code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // NestJS 特定配置
   {
     files: ['apps/api/**/*.ts', 'apps/pii-service/**/*.ts'],

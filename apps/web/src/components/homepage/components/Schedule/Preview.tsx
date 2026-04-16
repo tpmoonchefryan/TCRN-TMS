@@ -27,14 +27,24 @@ export interface ScheduleProps {
   timezone?: string;
 }
 
-export const defaultProps: ScheduleProps = {
+const LEGACY_SCHEDULE_DEFAULTS = {
   title: 'Weekly Schedule',
-  weekOf: '2026-01-26',
   events: [
     { day: 'mon', time: '20:00', title: 'Chatting Stream', type: 'chat' },
     { day: 'wed', time: '21:00', title: 'Minecraft', type: 'game' },
     { day: 'fri', time: '20:00', title: 'Karaoke', type: 'singing' },
     { day: 'sat', time: '14:00', title: 'Collab w/ Friends', type: 'collab' },
+  ],
+} as const satisfies Pick<ScheduleProps, 'title' | 'events'>;
+
+export const defaultProps: ScheduleProps = {
+  title: '',
+  weekOf: '2026-01-26',
+  events: [
+    { day: 'mon', time: '20:00', title: '', type: 'chat' },
+    { day: 'wed', time: '21:00', title: '', type: 'game' },
+    { day: 'fri', time: '20:00', title: '', type: 'singing' },
+    { day: 'sat', time: '14:00', title: '', type: 'collab' },
   ],
 };
 
@@ -51,7 +61,8 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
   
   const [copied, setCopied] = useState(false);
-  const displayTitle = (title && title !== 'Weekly Schedule') ? title : t('defaultScheduleTitle');
+  const displayTitle =
+    title && title !== LEGACY_SCHEDULE_DEFAULTS.title ? title : t('defaultScheduleTitle');
 
   const locale = useLocale();
 
@@ -68,6 +79,18 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
     navigator.clipboard.writeText(subscribeUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getEventTitle = (event: ScheduleEvent) => {
+    const isLegacySample = LEGACY_SCHEDULE_DEFAULTS.events.some(
+      (legacyEvent) =>
+        legacyEvent.day === event.day &&
+        legacyEvent.time === event.time &&
+        legacyEvent.type === event.type &&
+        legacyEvent.title === event.title
+    );
+
+    return event.title && !isLegacySample ? event.title : t(event.type);
   };
 
   return (
@@ -125,7 +148,7 @@ export function Schedule({ title = 'Weekly Schedule', events = [], weekOf, homep
                 {dayEvents.length > 0 ? (
                   dayEvents.map((event, i) => (
                     <div key={i} className={cn("rounded-md px-2 py-1 flex justify-between items-center", TYPE_COLORS[event.type])}>
-                      <span>{event.title}</span>
+                      <span>{getEventTitle(event)}</span>
                       <span className="font-mono text-xs opacity-75">{event.time}</span>
                     </div>
                   ))

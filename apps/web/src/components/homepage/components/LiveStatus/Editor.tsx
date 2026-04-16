@@ -19,6 +19,10 @@ interface LiveStatusEditorProps {
 
 export function LiveStatusEditor({ props, onChange }: LiveStatusEditorProps) {
   const t = useTranslations('homepageComponentEditor');
+  const tForms = useTranslations('forms');
+  const tLive = useTranslations('homepageComponentEditor.liveStatus');
+  const channelIdLabel = props.platform === 'bilibili' ? tLive('roomIdLabel') : tLive('channelIdLabel');
+  const channelIdPlaceholder = props.platform === 'bilibili' ? tLive('roomIdPlaceholder') : tLive('channelIdPlaceholder');
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -54,11 +58,11 @@ export function LiveStatusEditor({ props, onChange }: LiveStatusEditorProps) {
 
       <div className="space-y-2">
         <Label>
-          {props.platform === 'bilibili' ? 'Room ID' : 'Channel ID'} <span className="text-xs text-muted-foreground">(Required for Auto-Fetch)</span>
+          {channelIdLabel} <span className="text-xs text-muted-foreground">({tLive('requiredForAutoFetch')})</span>
         </Label>
         <Input 
           value={props.channelId || ''} 
-          placeholder={props.platform === 'bilibili' ? 'e.g. 123456' : 'e.g. UC123...'}
+          placeholder={channelIdPlaceholder}
           onChange={(e) => onChange({ ...props, channelId: e.target.value })} 
         />
       </div>
@@ -75,14 +79,15 @@ export function LiveStatusEditor({ props, onChange }: LiveStatusEditorProps) {
         <Label>{t('streamUrl')}</Label>
         <Input 
           value={props.streamUrl} 
+          placeholder={tForms('placeholders.url')}
           onChange={(e) => onChange({ ...props, streamUrl: e.target.value })} 
         />
       </div>
 
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
         <div className="space-y-0.5">
-          <Label className="text-base">Manual Mode</Label>
-          <p className="text-xs text-muted-foreground">Override auto-fetched data</p>
+          <Label className="text-base">{tLive('manualMode')}</Label>
+          <p className="text-xs text-muted-foreground">{tLive('manualModeHint')}</p>
         </div>
         <Switch 
           checked={props.isLive}

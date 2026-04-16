@@ -3,6 +3,7 @@
 'use client';
 
 import { Copy, Edit, Loader2, Lock, MoreHorizontal, Plus, Search } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
 
 import {
@@ -73,6 +74,7 @@ export function TalentConfigEntitiesTab({
   tc,
   tTalent,
 }: TalentConfigEntitiesTabProps) {
+  const locale = useLocale() as 'en' | 'zh' | 'ja';
   const filteredEntities = useMemo(
     () => filterConfigEntities(configEntities, selectedEntityType, entitySearch),
     [configEntities, selectedEntityType, entitySearch]
@@ -81,6 +83,24 @@ export function TalentConfigEntitiesTab({
   const selectedEntityTypeInfo = CONFIG_ENTITY_TYPES.find(
     (type) => type.code === selectedEntityType
   );
+  const getEntityName = (type: (typeof CONFIG_ENTITY_TYPES)[number]) => {
+    if (locale === 'zh') {
+      return type.nameZh;
+    }
+    if (locale === 'ja') {
+      return type.nameJa;
+    }
+    return type.name;
+  };
+  const getEntityDescription = (type: (typeof CONFIG_ENTITY_TYPES)[number]) => {
+    if (locale === 'zh') {
+      return type.descriptionZh;
+    }
+    if (locale === 'ja') {
+      return type.descriptionJa;
+    }
+    return type.description;
+  };
 
   return (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-300px)] min-h-[500px]">
@@ -105,10 +125,10 @@ export function TalentConfigEntitiesTab({
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">{type.icon}</span>
-                      <div>
-                        <p className="font-medium text-sm">{type.name}</p>
-                        <p className="text-xs text-muted-foreground">{type.nameZh}</p>
+                    <span className="text-lg">{type.icon}</span>
+                    <div>
+                        <p className="font-medium text-sm">{getEntityName(type)}</p>
+                        <p className="text-xs text-muted-foreground">{type.code}</p>
                       </div>
                     </div>
                     <Badge variant="secondary" className="text-xs">
@@ -128,9 +148,11 @@ export function TalentConfigEntitiesTab({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-lg">{selectedEntityTypeInfo?.icon}</span>
-                {selectedEntityTypeInfo?.name}
+                {selectedEntityTypeInfo ? getEntityName(selectedEntityTypeInfo) : null}
               </CardTitle>
-              <CardDescription>{selectedEntityTypeInfo?.description}</CardDescription>
+              <CardDescription>
+                {selectedEntityTypeInfo ? getEntityDescription(selectedEntityTypeInfo) : null}
+              </CardDescription>
             </div>
             <Button>
               <Plus size={16} className="mr-2" />
@@ -162,11 +184,11 @@ export function TalentConfigEntitiesTab({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="w-[100px]">Source</TableHead>
-                    <TableHead className="w-[80px]">Status</TableHead>
-                    <TableHead className="w-[100px]">Force Use</TableHead>
+                    <TableHead className="w-[120px]">{tc('code')}</TableHead>
+                    <TableHead>{tc('name')}</TableHead>
+                    <TableHead className="w-[100px]">{tc('source')}</TableHead>
+                    <TableHead className="w-[80px]">{tc('status')}</TableHead>
+                    <TableHead className="w-[100px]">{tc('forceUse')}</TableHead>
                     <TableHead className="w-[80px]"></TableHead>
                   </TableRow>
                 </TableHeader>

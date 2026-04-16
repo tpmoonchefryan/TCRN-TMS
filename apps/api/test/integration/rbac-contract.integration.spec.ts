@@ -138,6 +138,7 @@ describe('RBAC Contract Integration', () => {
       displayName: 'RBAC Contract Talent',
       homepagePath: `rbac-${Date.now()}`,
       createdBy: contentManager.id,
+      lifecycleStatus: 'published',
     });
 
     talentId = talent.id;
@@ -196,7 +197,7 @@ describe('RBAC Contract Integration', () => {
       .send({
         format: 'csv',
       })
-      .expect(201);
+      .expect(202);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.jobId).toBeDefined();

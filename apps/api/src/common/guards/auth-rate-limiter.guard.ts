@@ -14,8 +14,6 @@ import { Request } from 'express';
 import Redis from 'ioredis';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 
-import { TechEventLogService } from '../../modules/log/services/tech-event-log.service';
-
 /**
  * Auth Rate Limiter Guard
  * Specialized rate limiting for authentication endpoints with:
@@ -32,7 +30,6 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly techEventLogService: TechEventLogService,
   ) {}
 
   async onModuleInit() {
@@ -204,19 +201,8 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
     path: string,
     reason: string,
   ): Promise<void> {
-    try {
-      await this.techEventLogService.warn(
-        'SECURITY_AUTH_RATE_LIMIT_BLOCKED',
-        `Auth request blocked: ${reason}`,
-        {
-          ip,
-          path,
-          reason,
-          source: 'AuthRateLimiterGuard',
-        },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to log blocked request: ${error}`);
-    }
+    this.logger.warn(
+      `Auth request blocked: ${reason} (ip=${ip}, path=${path})`,
+    );
   }
 }

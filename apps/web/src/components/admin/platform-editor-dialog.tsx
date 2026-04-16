@@ -177,7 +177,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
               <Label htmlFor="code">{t('platformCode')} *</Label>
               <Input
                 id="code"
-                placeholder="YOUTUBE"
+                placeholder={tPlatform('codePlaceholder')}
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
                 disabled={isSubmitting || isEditing}
@@ -189,7 +189,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
               <Label htmlFor="displayName">{tPlatform('displayName')} *</Label>
               <Input
                 id="displayName"
-                placeholder="YouTube"
+                placeholder={tPlatform('displayNamePlaceholder')}
                 value={formData.displayName}
                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                 disabled={isSubmitting}
@@ -205,7 +205,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
                 <Label htmlFor="nameEn" className="text-xs">{tPlatform('english')} *</Label>
                 <Input
                   id="nameEn"
-                  placeholder="YouTube"
+                  placeholder={tPlatform('englishNamePlaceholder')}
                   value={formData.nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                   disabled={isSubmitting}
@@ -215,7 +215,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
                 <Label htmlFor="nameZh" className="text-xs">{tPlatform('chinese')}</Label>
                 <Input
                   id="nameZh"
-                  placeholder="油管"
+                  placeholder={tPlatform('chineseNamePlaceholder')}
                   value={formData.nameZh}
                   onChange={(e) => setFormData({ ...formData, nameZh: e.target.value })}
                   disabled={isSubmitting}
@@ -225,7 +225,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
                 <Label htmlFor="nameJa" className="text-xs">{tPlatform('japanese')}</Label>
                 <Input
                   id="nameJa"
-                  placeholder="ユーチューブ"
+                  placeholder={tPlatform('japaneseNamePlaceholder')}
                   value={formData.nameJa}
                   onChange={(e) => setFormData({ ...formData, nameJa: e.target.value })}
                   disabled={isSubmitting}
@@ -240,7 +240,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
               <Label htmlFor="iconUrl">{tPlatform('iconUrl')}</Label>
               <Input
                 id="iconUrl"
-                placeholder="https://example.com/youtube-icon.png"
+                placeholder={tPlatform('iconUrlPlaceholder')}
                 value={formData.iconUrl}
                 onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
                 disabled={isSubmitting}
@@ -251,7 +251,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
               <Label htmlFor="baseUrl">{tPlatform('baseUrl')}</Label>
               <Input
                 id="baseUrl"
-                placeholder="https://www.youtube.com"
+                placeholder={tPlatform('baseUrlPlaceholder')}
                 value={formData.baseUrl}
                 onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
                 disabled={isSubmitting}
@@ -262,7 +262,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
               <Label htmlFor="profileUrlTemplate">{tPlatform('profileUrlTemplate')}</Label>
               <Input
                 id="profileUrlTemplate"
-                placeholder="https://www.youtube.com/channel/{id}"
+                placeholder={tPlatform('profileUrlTemplatePlaceholder')}
                 value={formData.profileUrlTemplate}
                 onChange={(e) => setFormData({ ...formData, profileUrlTemplate: e.target.value })}
                 disabled={isSubmitting}
@@ -289,7 +289,7 @@ export function PlatformEditorDialog({ open, onOpenChange, platform, onSuccess }
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   disabled={isSubmitting}
                   className="flex-1"
-                  placeholder="#8b5cf6"
+                  placeholder={tPlatform('brandColorPlaceholder')}
                 />
               </div>
             </div>

@@ -11,7 +11,7 @@ import {
     Plus,
     Search,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -85,14 +85,14 @@ export interface CustomDialogField {
   refEntityType?: string;
 }
 
-function formatOwnerLevel(ownerType?: ScopeType | null): string {
+function normalizeOwnerType(ownerType?: ScopeType | null): ScopeType {
   switch (ownerType) {
     case 'subsidiary':
-      return 'Subsidiary';
+      return 'subsidiary';
     case 'talent':
-      return 'Talent';
+      return 'talent';
     default:
-      return 'Tenant';
+      return 'tenant';
   }
 }
 
@@ -119,8 +119,30 @@ export function ConfigEntityPanel({
   customFetcher,
   entityTypes,
 }: ConfigEntityPanelProps) {
+  const locale = useLocale() as 'en' | 'zh' | 'ja';
   const t = useTranslations('settingsPage');
   const tc = useTranslations('common');
+  const tForms = useTranslations('forms');
+
+  const getEntityTypeLabel = (type: (typeof CONFIG_ENTITY_TYPES)[number]) => {
+    if (locale === 'zh') {
+      return type.nameZh;
+    }
+    if (locale === 'ja') {
+      return type.nameJa;
+    }
+    return type.name;
+  };
+
+  const getEntityTypeDescription = (type: (typeof CONFIG_ENTITY_TYPES)[number]) => {
+    if (locale === 'zh') {
+      return type.descriptionZh;
+    }
+    if (locale === 'ja') {
+      return type.descriptionJa;
+    }
+    return type.description;
+  };
 
   // Filter entity types based on prop
   const filteredEntityTypes = useMemo(() => {
@@ -178,13 +200,13 @@ export function ConfigEntityPanel({
             nameZh: item.nameZh ?? '',
             nameJa: item.nameJa ?? '',
             ownerType: (item.ownerType as ScopeType | undefined) ?? 'tenant',
-            ownerLevel: formatOwnerLevel(item.ownerType as ScopeType | null | undefined),
+            ownerLevel: normalizeOwnerType(item.ownerType as ScopeType | null | undefined),
             isActive: item.isActive,
             isForceUse: item.isForceUse ?? false,
             isSystem: item.isSystem ?? false,
             sortOrder: item.sortOrder,
             inheritedFrom: item.isInherited
-              ? formatOwnerLevel(item.ownerType as ScopeType | null | undefined)
+              ? normalizeOwnerType(item.ownerType as ScopeType | null | undefined)
               : undefined,
           })),
         }));
@@ -351,17 +373,18 @@ export function ConfigEntityPanel({
     return entities.filter(e =>
       e.code.toLowerCase().includes(search) ||
       e.nameEn.toLowerCase().includes(search) ||
-      e.nameZh.includes(search)
+      e.nameZh.includes(search) ||
+      e.nameJa.includes(search)
     );
   }, [selectedEntityType, entitySearch, configEntities]);
 
-  const selectedEntityTypeInfo = CONFIG_ENTITY_TYPES.find(t => t.code === selectedEntityType);
+  const selectedEntityTypeInfo = filteredEntityTypes.find(type => type.code === selectedEntityType);
 
   // Source badge helper
   const getSourceBadge = (entity: ConfigEntity) => {
-    if (entity.inheritedFrom === 'Tenant') {
+    if (entity.inheritedFrom === 'tenant') {
       return <Badge variant="secondary" className="text-xs">{tc('tenant')}</Badge>;
-    } else if (entity.inheritedFrom === 'Subsidiary') {
+    } else if (entity.inheritedFrom === 'subsidiary') {
       return <Badge className="bg-amber-500 text-xs">{tc('subsidiary')}</Badge>;
     } else {
       return <Badge className="bg-pink-500 text-xs">{tc('local')}</Badge>;
@@ -466,7 +489,7 @@ export function ConfigEntityPanel({
         return (
           <Select value={String(value || '')} onValueChange={onChange} disabled={isLoading}>
             <SelectTrigger>
-              <SelectValue placeholder={isLoading ? 'Loading...' : (field.placeholder || tc('select'))} />
+              <SelectValue placeholder={isLoading ? tc('loading') : (field.placeholder || tc('select'))} />
             </SelectTrigger>
             <SelectContent>
               {options.map((opt) => (
@@ -512,7 +535,7 @@ export function ConfigEntityPanel({
         <CardContent className="p-2">
           <ScrollArea className="h-[calc(100vh-420px)]">
             <div className="space-y-1">
-              {CONFIG_ENTITY_TYPES.map((type) => {
+              {filteredEntityTypes.map((type) => {
                 const count = (configEntities[type.code] || []).length;
                 return (
                   <button
@@ -528,8 +551,8 @@ export function ConfigEntityPanel({
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{type.icon}</span>
                       <div>
-                        <p className="font-medium text-sm">{type.name}</p>
-                        <p className="text-xs text-muted-foreground">{type.nameZh}</p>
+                        <p className="font-medium text-sm">{getEntityTypeLabel(type)}</p>
+                        <p className="text-xs text-muted-foreground">{type.code}</p>
                       </div>
                     </div>
                     <Badge variant="secondary" className="text-xs">
@@ -550,9 +573,11 @@ export function ConfigEntityPanel({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-lg">{selectedEntityTypeInfo?.icon}</span>
-                {selectedEntityTypeInfo?.name}
+                {selectedEntityTypeInfo ? getEntityTypeLabel(selectedEntityTypeInfo) : null}
               </CardTitle>
-              <CardDescription>{selectedEntityTypeInfo?.description}</CardDescription>
+              <CardDescription>
+                {selectedEntityTypeInfo ? getEntityTypeDescription(selectedEntityTypeInfo) : null}
+              </CardDescription>
             </div>
             {canEdit && (
               <Button onClick={() => setShowAddDialog(true)}>
@@ -699,7 +724,9 @@ export function ConfigEntityPanel({
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{tc('edit')} {selectedEntityTypeInfo?.name}</DialogTitle>
+            <DialogTitle>
+              {tc('edit')} {selectedEntityTypeInfo ? getEntityTypeLabel(selectedEntityTypeInfo) : ''}
+            </DialogTitle>
             <DialogDescription>
               {editingEntity?.code}
             </DialogDescription>
@@ -755,7 +782,7 @@ export function ConfigEntityPanel({
           <DialogHeader>
             <DialogTitle>{t('addRecord')}</DialogTitle>
             <DialogDescription>
-              {selectedEntityTypeInfo?.name} - {selectedEntityTypeInfo?.nameZh}
+              {selectedEntityTypeInfo ? getEntityTypeDescription(selectedEntityTypeInfo) : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -764,7 +791,7 @@ export function ConfigEntityPanel({
               <Input
                 value={String(newEntity.code || '')}
                 onChange={(e) => setNewEntity({ ...newEntity, code: e.target.value })}
-                placeholder="ENTITY_CODE"
+                placeholder={tForms('placeholders.code')}
               />
             </div>
             <div className="space-y-2">

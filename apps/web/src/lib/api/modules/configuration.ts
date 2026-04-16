@@ -297,21 +297,12 @@ export const tenantApi = {
     apiClient.post<TenantActivationResponse>(`/api/v1/tenants/${id}/deactivate`, { reason }),
 };
 
-export interface ProfileStorePiiServiceConfigSummary {
-  id: string;
-  code: string | null;
-  name: string | null;
-  isHealthy: boolean;
-  apiUrl?: string | null;
-}
-
 export interface ProfileStoreSummaryRecord {
   id: string;
   code: string;
   name: string;
   nameZh: string | null;
   nameJa: string | null;
-  piiServiceConfig: ProfileStorePiiServiceConfigSummary | null;
   talentCount: number;
   customerCount: number;
   isDefault: boolean;
@@ -335,7 +326,6 @@ export interface ProfileStoreCreatePayload {
   descriptionEn?: string;
   descriptionZh?: string;
   descriptionJa?: string;
-  piiServiceConfigCode?: string;
   isDefault?: boolean;
 }
 
@@ -354,7 +344,6 @@ export interface ProfileStoreUpdatePayload {
   descriptionEn?: string;
   descriptionZh?: string;
   descriptionJa?: string;
-  piiServiceConfigCode?: string;
   isDefault?: boolean;
   isActive?: boolean;
   version: number;
@@ -365,85 +354,6 @@ export interface ProfileStoreUpdateResponse {
   code: string;
   version: number;
   updatedAt: string;
-}
-
-export interface PiiServiceConfigSummaryRecord {
-  id: string;
-  code: string;
-  name: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  apiUrl: string;
-  authType: 'mtls' | 'api_key';
-  isHealthy: boolean;
-  lastHealthCheckAt: string | null;
-  isActive: boolean;
-  profileStoreCount: number;
-  createdAt: string;
-  version: number;
-}
-
-export interface PiiServiceConfigDetailRecord extends PiiServiceConfigSummaryRecord {
-  description: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
-  healthCheckUrl: string | null;
-  healthCheckIntervalSec: number;
-  updatedAt: string;
-}
-
-export interface PiiServiceConfigCreatePayload {
-  code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  apiUrl: string;
-  authType: 'mtls' | 'api_key';
-  apiKey?: string;
-  mtlsClientCert?: string;
-  mtlsClientKey?: string;
-  mtlsCaCert?: string;
-  healthCheckUrl?: string;
-  healthCheckIntervalSec?: number;
-}
-
-export interface PiiServiceConfigCreateResponse {
-  id: string;
-  code: string;
-  name: string;
-  createdAt: string;
-}
-
-export interface PiiServiceConfigUpdatePayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  apiUrl?: string;
-  authType?: 'mtls' | 'api_key';
-  apiKey?: string;
-  healthCheckUrl?: string;
-  healthCheckIntervalSec?: number;
-  isActive?: boolean;
-  version: number;
-}
-
-export interface PiiServiceConfigUpdateResponse {
-  id: string;
-  code: string;
-  version: number;
-  updatedAt: string;
-}
-
-export interface PiiServiceConfigConnectionTestResponse {
-  status: string;
-  latencyMs: number;
-  testedAt: string;
 }
 
 export const configEntityApi = {
@@ -495,22 +405,6 @@ export const profileStoreApi = {
     apiClient.patch<ProfileStoreUpdateResponse>(`/api/v1/profile-stores/${id}`, data),
 };
 
-export const piiServiceConfigApi = {
-  list: (params?: { page?: number; pageSize?: number; includeInactive?: boolean }) =>
-    apiClient.get<PagedItemsPayload<PiiServiceConfigSummaryRecord>>('/api/v1/pii-service-configs', params),
-
-  get: (id: string) => apiClient.get<PiiServiceConfigDetailRecord>(`/api/v1/pii-service-configs/${id}`),
-
-  create: (data: PiiServiceConfigCreatePayload) =>
-    apiClient.post<PiiServiceConfigCreateResponse>('/api/v1/pii-service-configs', data),
-
-  update: (id: string, data: PiiServiceConfigUpdatePayload) =>
-    apiClient.patch<PiiServiceConfigUpdateResponse>(`/api/v1/pii-service-configs/${id}`, data),
-
-  testConnection: (id: string) =>
-    apiClient.post<PiiServiceConfigConnectionTestResponse>(`/api/v1/pii-service-configs/${id}/test`, {}),
-};
-
 export const dictionaryApi = {
   listTypes: () => apiClient.get<DictionaryTypeSummaryRecord[]>('/api/v1/system-dictionary'),
 
@@ -526,13 +420,13 @@ export const dictionaryApi = {
     apiClient.post<SystemDictionaryTypeRecord>('/api/v1/system-dictionary', data),
 
   updateType: (typeCode: string, data: DictionaryTypeUpdatePayload) =>
-    apiClient.put<SystemDictionaryTypeRecord>(`/api/v1/system-dictionary/${typeCode}`, data),
+    apiClient.patch<SystemDictionaryTypeRecord>(`/api/v1/system-dictionary/${typeCode}`, data),
 
   createItem: (typeCode: string, data: DictionaryItemCreatePayload) =>
     apiClient.post<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items`, data),
 
   updateItem: (typeCode: string, itemId: string, data: DictionaryItemUpdatePayload) =>
-    apiClient.put<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
+    apiClient.patch<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`, data),
 
   deactivateItem: (typeCode: string, itemId: string, _version: number) =>
     apiClient.delete<SystemDictionaryItemMutationRecord>(`/api/v1/system-dictionary/${typeCode}/items/${itemId}`),
@@ -584,9 +478,6 @@ export const configurationEntityApi = {
     id: string,
     data: ConfigurationEntityMutationPayload & { version: number },
   ) => apiClient.patch<T>(`/api/v1/configuration-entity/${entityType}/${id}`, data),
-
-  delete: (entityType: string, id: string) =>
-    apiClient.delete<{ message: string }>(`/api/v1/configuration-entity/${entityType}/${id}`),
 
   getMembershipTypesByClass: <T extends ConfigurationEntityRecord = ConfigurationEntityRecord>(
     classId: string,
@@ -800,15 +691,6 @@ export interface SubsidiaryUpdatePayload {
   version: number;
 }
 
-export interface SubsidiaryMoveResponse {
-  id: string;
-  parentId: string | null;
-  path: string;
-  depth: number;
-  affectedChildren: number;
-  version: number;
-}
-
 export interface SubsidiaryActivationResponse {
   id: string;
   isActive: boolean;
@@ -828,9 +710,6 @@ export const subsidiaryApi = {
 
   update: (id: string, data: SubsidiaryUpdatePayload) =>
     apiClient.patch<SubsidiaryRecord>(`/api/v1/subsidiaries/${id}`, data),
-
-  move: (id: string, data: { newParentId?: string | null; version: number }) =>
-    apiClient.post<SubsidiaryMoveResponse>(`/api/v1/subsidiaries/${id}/move`, data),
 
   deactivate: (id: string, version: number) =>
     apiClient.post<SubsidiaryActivationResponse>(`/api/v1/subsidiaries/${id}/deactivate`, { version }),
@@ -852,28 +731,28 @@ export const settingsApi = {
   getTenantSettings: () => apiClient.get<ScopeSettingsResponse>('/api/v1/organization/settings'),
 
   updateTenantSettings: (settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>('/api/v1/organization/settings', { settings, version }),
+    apiClient.patch<ScopeSettingsResponse>('/api/v1/organization/settings', { settings, version }),
 
   getSubsidiarySettings: (id: string) =>
     apiClient.get<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`),
 
   updateSubsidiarySettings: (id: string, settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, {
+    apiClient.patch<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings`, {
       settings,
       version,
     }),
 
   resetSubsidiarySetting: (id: string, field: string) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings/reset`, { field }),
+    apiClient.patch<ScopeSettingsResponse>(`/api/v1/subsidiaries/${id}/settings/reset`, { field }),
 
   getTalentSettings: (id: string) =>
     apiClient.get<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`),
 
   updateTalentSettings: (id: string, settings: Record<string, unknown>, version: number) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`, { settings, version }),
+    apiClient.patch<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings`, { settings, version }),
 
   resetTalentSetting: (id: string, field: string) =>
-    apiClient.put<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings/reset`, { field }),
+    apiClient.patch<ScopeSettingsResponse>(`/api/v1/talents/${id}/settings/reset`, { field }),
 };
 
 
@@ -951,7 +830,7 @@ export const platformConfigApi = {
     apiClient.get<PlatformConfigEntry<TValue>>(`/api/v1/platform/config/${key}`),
 
   set: <TValue = unknown>(key: string, value: TValue) =>
-    apiClient.put<PlatformConfigEntry<TValue>>(`/api/v1/platform/config/${key}`, { value }),
+    apiClient.patch<PlatformConfigEntry<TValue>>(`/api/v1/platform/config/${key}`, { value }),
 };
 
 export interface EmailConfigResponse {
@@ -1008,7 +887,7 @@ export const emailConfigApi = {
   get: () => apiClient.get<EmailConfigResponse>('/api/v1/email/config'),
 
   save: (config: SaveEmailConfigPayload) =>
-    apiClient.put<EmailConfigResponse>('/api/v1/email/config', config),
+    apiClient.patch<EmailConfigResponse>('/api/v1/email/config', config),
 
   testConnection: () => apiClient.post<EmailTestResult>('/api/v1/email/config/test-connection', {}),
 

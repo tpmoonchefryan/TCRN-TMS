@@ -32,7 +32,8 @@ function createSubsidiarySidebarNode(subsidiary: SubsidiaryInfo): SidebarTreeNod
 
 export function buildSidebarTree(
   organizationTree: SubsidiaryInfo[],
-  tenantId: string | null
+  tenantId: string | null,
+  tenantName = 'Tenant',
 ): SidebarTreeNode[] {
   if (organizationTree.length === 0) {
     return [];
@@ -41,7 +42,7 @@ export function buildSidebarTree(
   return [
     {
       id: tenantId || 'current-tenant',
-      name: 'Current Tenant',
+      name: tenantName,
       type: 'tenant',
       children: organizationTree.map(createSubsidiarySidebarNode),
     },

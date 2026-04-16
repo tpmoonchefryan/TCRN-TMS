@@ -11,10 +11,11 @@ interface PublicFooterProps {
 
 export function PublicFooter({ path }: PublicFooterProps) {
   const t = useTranslations('legal');
+  const tc = useTranslations('common');
 
   return (
     <footer className="py-8 text-center text-xs text-slate-400">
-      <p>Powered by <span className="font-semibold text-slate-500">TCRN TMS</span></p>
+      <p>{t('poweredBy')} <span className="font-semibold text-slate-500">{tc('appName')}</span></p>
       <p className="mt-1">
         <Link href={`/m/${path}/terms`} className="hover:underline">{t('termsOfService')}</Link>
         {' • '}

@@ -28,10 +28,6 @@ vi.mock('../../logger', () => ({
   workerLogger: mockLogger,
 }));
 
-vi.mock('../../services/pii-client', () => ({
-  getPiiClient: vi.fn(),
-}));
-
 import { getEmailConfig } from '../email.job';
 
 const ALGORITHM = 'aes-256-gcm';

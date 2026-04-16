@@ -6,6 +6,7 @@ import {
   type OrganizationTreeSubsidiaryRecord,
 } from '@/lib/api/modules/organization';
 import { permissionApi } from '@/lib/api/modules/permission';
+import { getBusinessSelectableTalents } from '@/lib/talent-lifecycle-routing';
 
 import type { SessionBootstrapTaskResult } from './auth-session-bootstrap';
 import type { PermissionScope } from './auth-store.types';
@@ -78,8 +79,18 @@ export const fetchAccessibleTalentsForSession = async (params: {
         talentStore.setCurrentTenant(tenantId, getTenantCode() || '');
       }
 
-      if (allTalents.length === 1 && !talentStore.currentTalent) {
-        talentStore.setCurrentTalent(allTalents[0]);
+      const businessSelectableTalents = getBusinessSelectableTalents(allTalents);
+      const reconciledCurrentTalent = talentStore.currentTalent
+        ? businessSelectableTalents.find((talent) => talent.id === talentStore.currentTalent?.id) ??
+          null
+        : null;
+
+      if (talentStore.currentTalent?.id !== reconciledCurrentTalent?.id) {
+        talentStore.setCurrentTalent(reconciledCurrentTalent);
+      }
+
+      if (businessSelectableTalents.length === 1 && !reconciledCurrentTalent) {
+        talentStore.setCurrentTalent(businessSelectableTalents[0]);
       }
 
       return { success: true };

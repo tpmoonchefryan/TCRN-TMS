@@ -194,8 +194,8 @@ describe('importJobProcessor', () => {
         sql.includes('INSERT INTO "tenant_test"."customer_company_info"'),
     );
 
-    expect(customerProfileInsert?.[6]).toBe('company');
-    expect(customerProfileInsert?.[7]).toBe('ACME');
+    expect(customerProfileInsert?.[5]).toBe('company');
+    expect(customerProfileInsert?.[6]).toBe('ACME');
     expect(companyInfoInsert?.[2]).toBe('ACME Corporation');
     expect(companyInfoInsert?.[7]).toBe('segment-1');
   });
@@ -232,16 +232,57 @@ describe('importJobProcessor', () => {
         sql.includes('INSERT INTO "tenant_test"."customer_external_id"'),
     );
 
-    expect(customerProfileInsert?.[6]).toBe('individual');
-    expect(customerProfileInsert?.[7]).toBe('Template User');
-    expect(customerProfileInsert?.[8]).toBe('zh');
-    expect(customerProfileInsert?.[9]).toBe('status-1');
-    expect(customerProfileInsert?.[10]).toEqual(['tag-a']);
-    expect(customerProfileInsert?.[12]).toBe('notes here');
+    expect(customerProfileInsert?.[5]).toBe('individual');
+    expect(customerProfileInsert?.[6]).toBe('Template User');
+    expect(customerProfileInsert?.[7]).toBe('zh');
+    expect(customerProfileInsert?.[8]).toBe('status-1');
+    expect(customerProfileInsert?.[9]).toEqual(['tag-a']);
+    expect(customerProfileInsert?.[11]).toBe('notes here');
     expect(externalIdInsert?.[2]).toBe('profile-store-1');
     expect(externalIdInsert?.[3]).toBe('consumer-1');
     expect(externalIdInsert?.[4]).toBe('EXT001');
     expect(externalIdInsert?.[5]).toBe('user-1');
+  });
+
+  it('fails closed when deprecated individual PII columns are present in the import row', async () => {
+    mockMinioClient.getObject.mockResolvedValueOnce(
+      Readable.from([
+        'nickname,given_name,email_address\n',
+        'Template User,Taro,taro@example.com\n',
+      ]),
+    );
+
+    const result = await importJobProcessor(mockJob);
+
+    expect(result).toMatchObject({
+      totalRows: 1,
+      successRows: 0,
+      failedRows: 1,
+    });
+    expect(result.errors[0]?.message).toContain(
+      'PII import columns are retired from TMS and must be handled by TCRN PII Platform',
+    );
+    expect(result.errors[0]?.message).toContain('given_name');
+    expect(result.errors[0]?.message).toContain('email_address');
+  });
+
+  it('fails closed when deprecated company contact columns are present in the import row', async () => {
+    mockJob.data.defaultProfileType = 'company';
+    mockMinioClient.getObject.mockResolvedValueOnce(
+      Readable.from([
+        'nickname,company_legal_name,contact_email\n',
+        'ACME,ACME Corporation,ops@acme.example.com\n',
+      ]),
+    );
+
+    const result = await importJobProcessor(mockJob);
+
+    expect(result).toMatchObject({
+      totalRows: 1,
+      successRows: 0,
+      failedRows: 1,
+    });
+    expect(result.errors[0]?.message).toContain('contact_email');
   });
 
   it('updates an existing customer when processing customer_update jobs', async () => {

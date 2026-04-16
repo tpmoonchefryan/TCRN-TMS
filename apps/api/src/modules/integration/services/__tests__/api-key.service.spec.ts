@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
 import { ChangeLogService, TechEventLogService } from '../../../log';
@@ -14,20 +14,20 @@ describe('ApiKeyService', () => {
   let mockTechEventLogService: Partial<TechEventLogService>;
   let mockPrisma: {
     consumer: {
-      findFirst: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
+    $queryRawUnsafe: ReturnType<typeof vi.fn>;
     $transaction: ReturnType<typeof vi.fn>;
   };
 
-  const mockConsumer = {
+  const mockValidatedConsumer = {
     id: 'consumer-123',
     code: 'TEST_CONSUMER',
-    nameEn: 'Test Consumer',
-    apiKeyHash: 'hashed_key',
-    apiKeyPrefix: 'tcrn_xxxx',
-    isActive: true,
+    allowedIps: ['10.0.0.1'],
+    tenantId: 'tenant-123',
+    tenantSchema: 'tenant_test',
   };
 
   const mockContext = {
@@ -41,11 +41,15 @@ describe('ApiKeyService', () => {
 
     mockPrisma = {
       consumer: {
-        findFirst: vi.fn().mockResolvedValue(mockConsumer),
-        findUnique: vi.fn().mockResolvedValue(mockConsumer),
-        update: vi.fn().mockResolvedValue(mockConsumer),
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'consumer-123',
+          code: 'TEST_CONSUMER',
+        }),
+        update: vi.fn().mockResolvedValue(undefined),
       },
-      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+      $queryRawUnsafe: vi.fn(),
+      $transaction: vi.fn().mockImplementation((callback) => callback(mockPrisma)),
     };
 
     mockDatabaseService = {
@@ -114,14 +118,18 @@ describe('ApiKeyService', () => {
       expect(result).toBeNull();
     });
 
-    it('should return consumer for valid key', async () => {
-      const result = await service.validateApiKey('tcrn_validkey123');
+    it('should return consumer for valid key with explicit tenant schema', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockValidatedConsumer]);
 
-      expect(result?.id).toBe('consumer-123');
+      const result = await service.validateApiKey('tcrn_validkey123', 'tenant_test');
+
+      expect(result).toEqual(mockValidatedConsumer);
     });
 
-    it('should return null when consumer not found', async () => {
-      mockPrisma.consumer.findFirst.mockResolvedValue(null);
+    it('should return null when consumer is not found across active tenants', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([{ schemaName: 'tenant_test' }])
+        .mockResolvedValueOnce([]);
 
       const result = await service.validateApiKey('tcrn_unknownkey');
 
@@ -130,15 +138,30 @@ describe('ApiKeyService', () => {
   });
 
   describe('regenerateKey', () => {
-    it('should regenerate API key for existing consumer', async () => {
+    it('should regenerate API key for existing consumer in tenant schema', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        { id: 'consumer-123', code: 'TEST_CONSUMER' },
+      ]);
+
       const result = await service.regenerateKey('consumer-123', mockContext);
 
       expect(result).toBeDefined();
+      expect(result.apiKey.startsWith('tcrn_')).toBe(true);
+      expect(result.apiKeyPrefix).toHaveLength(8);
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
+    });
+
+    it('should fall back to prisma consumer mutation without tenant schema', async () => {
+      const result = await service.regenerateKey('consumer-123', {
+        userId: 'user-123',
+      });
+
+      expect(result.apiKey.startsWith('tcrn_')).toBe(true);
       expect(mockPrisma.consumer.update).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException for non-existent consumer', async () => {
-      mockPrisma.consumer.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException for non-existent tenant consumer', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(
         service.regenerateKey('invalid-consumer', mockContext),
@@ -146,6 +169,10 @@ describe('ApiKeyService', () => {
     });
 
     it('should log key regeneration', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        { id: 'consumer-123', code: 'TEST_CONSUMER' },
+      ]);
+
       await service.regenerateKey('consumer-123', mockContext);
 
       expect(mockTechEventLogService.log).toHaveBeenCalled();

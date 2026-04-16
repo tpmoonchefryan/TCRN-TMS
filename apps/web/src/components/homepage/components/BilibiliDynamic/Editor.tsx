@@ -3,26 +3,32 @@ import React from 'react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { BilibiliCardStyle, BilibiliDynamicProps, BilibiliFilterType } from './Preview';
 
-export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDynamicProps, onChange: (props: Partial<BilibiliDynamicProps>) => void }) => {
+export const BilibiliDynamicEditor = ({
+  props,
+  onChange,
+}: {
+  props: BilibiliDynamicProps;
+  onChange: (props: Partial<BilibiliDynamicProps>) => void;
+}) => {
   const t = useTranslations('homepageEditor.bilibili');
   const tEditor = useTranslations('homepageComponentEditor');
-  const { 
-    uid = '', 
-    title = '', 
-    maxItems = 5, 
-    filterType = 'all', 
-    cardStyle = 'standard' 
-  } = props;
+  const { uid = '', title = '', maxItems = 5, filterType = 'all', cardStyle = 'standard' } = props;
   const { editingLocale, content, selectedComponentId } = useEditorStore();
-  
+
   // Get full component to access raw values for other locales
-  const component = content.components.find(c => c.id === selectedComponentId);
+  const component = content.components.find((c) => c.id === selectedComponentId);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ uid: e.target.value });
@@ -57,28 +63,18 @@ export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDyna
       {/* Title Field with i18n support */}
       <div className="space-y-2">
         <Label>{t('title')}</Label>
-        <Input 
-            value={title} 
-            onChange={handleTitleChange} 
-            placeholder={t('defaultTitle')} 
-        />
+        <Input value={title} onChange={handleTitleChange} placeholder={t('defaultTitle')} />
         {editingLocale !== 'default' && (
-             <p className="text-xs text-muted-foreground break-all">
-                Reference: {getPlaceholderHint()}
-             </p>
+          <p className="text-muted-foreground break-all text-xs">
+            {t('referenceLabel')}: {getPlaceholderHint()}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
         <Label>{t('uid')}</Label>
-        <Input 
-          value={uid} 
-          onChange={handleChange} 
-          placeholder="e.g. 401742377" 
-        />
-        <p className="text-xs text-muted-foreground">
-          {t('hint')}
-        </p>
+        <Input value={uid} onChange={handleChange} placeholder={t('uidPlaceholder')} />
+        <p className="text-muted-foreground text-xs">{t('hint')}</p>
       </div>
 
       {/* Max Items */}
@@ -100,8 +96,8 @@ export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDyna
       {/* Filter Type */}
       <div className="space-y-2">
         <Label>{t('filterType')}</Label>
-        <Select 
-          value={filterType} 
+        <Select
+          value={filterType}
           onValueChange={(v: BilibiliFilterType) => onChange({ filterType: v })}
         >
           <SelectTrigger>
@@ -120,8 +116,8 @@ export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDyna
       {/* Card Style */}
       <div className="space-y-2">
         <Label>{t('cardStyle')}</Label>
-        <Select 
-          value={cardStyle} 
+        <Select
+          value={cardStyle}
           onValueChange={(v: BilibiliCardStyle) => onChange({ cardStyle: v })}
         >
           <SelectTrigger>
@@ -136,10 +132,10 @@ export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDyna
       </div>
 
       {/* Advanced Options */}
-      <div className="border-t pt-4 mt-4 space-y-4">
+      <div className="mt-4 space-y-4 border-t pt-4">
         <div className="space-y-2">
           <Label>{tEditor('refreshInterval')}</Label>
-          <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
             <Input
               type="number"
               min={0}
@@ -151,16 +147,16 @@ export const BilibiliDynamicEditor = ({ props, onChange }: { props: BilibiliDyna
               }}
               className="w-20"
             />
-            <span className="text-sm text-muted-foreground">{tEditor('minutes')}</span>
+            <span className="text-muted-foreground text-sm">{tEditor('minutes')}</span>
           </div>
-          <p className="text-xs text-muted-foreground">{tEditor('refreshIntervalHint')}</p>
+          <p className="text-muted-foreground text-xs">{tEditor('refreshIntervalHint')}</p>
         </div>
 
         <div className="flex items-center justify-between">
           <Label>{tEditor('showHeader')}</Label>
-          <Switch 
-            checked={props.showHeader ?? true} 
-            onCheckedChange={(checked) => onChange({ showHeader: checked })} 
+          <Switch
+            checked={props.showHeader ?? true}
+            onCheckedChange={(checked) => onChange({ showHeader: checked })}
           />
         </div>
       </div>

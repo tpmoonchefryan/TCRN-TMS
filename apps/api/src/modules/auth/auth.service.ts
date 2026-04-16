@@ -372,7 +372,7 @@ export class AuthService {
         preferred_language, totp_secret, is_totp_enabled,
         force_reset, password_changed_at
       FROM "${tenantSchema}".system_user
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, payload.sub);
 
     if (users.length === 0 || !users[0].totp_secret) {

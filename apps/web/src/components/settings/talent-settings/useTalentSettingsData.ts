@@ -11,6 +11,7 @@ import {
   DICTIONARY_TYPES,
   type DictionaryRecord,
 } from '@/components/shared/constants';
+import { getTranslatedApiErrorMessage } from '@/lib/api/error-utils';
 import { configEntityApi, dictionaryApi } from '@/lib/api/modules/configuration';
 import { talentApi } from '@/lib/api/modules/talent';
 
@@ -19,36 +20,45 @@ import {
   mapDictionaryRecords,
   mapTalentApiResponseToTalentData,
 } from './mappers';
-import type { TalentData, TalentSettingsTab } from './types';
+import type { TalentData, TalentReadiness, TalentSettingsTab } from './types';
 
 interface UseTalentSettingsDataOptions {
   talentId: string;
   subsidiaryId?: string;
   tc: (key: string) => string;
+  te: (key: string) => string;
+  activeTab?: TalentSettingsTab;
+  selectedEntityType?: string;
+  entitySearch?: string;
+  selectedDictType?: string;
+  dictSearch?: string;
 }
 
 export function useTalentSettingsData({
   talentId,
   subsidiaryId,
   tc,
+  te,
+  activeTab = 'details',
+  selectedEntityType = CONFIG_ENTITY_TYPES[0].code,
+  entitySearch = '',
+  selectedDictType = DICTIONARY_TYPES[0].code,
+  dictSearch = '',
 }: UseTalentSettingsDataOptions) {
-  const [activeTab, setActiveTab] = useState<TalentSettingsTab>('details');
   const [talent, setTalent] = useState<TalentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [publishReadiness, setPublishReadiness] = useState<TalentReadiness | null>(null);
+  const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
+  const [isLifecycleMutating, setIsLifecycleMutating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [configEntities, setConfigEntities] = useState<Record<string, ConfigEntity[]>>({});
-  const [selectedEntityType, setSelectedEntityType] = useState<string>(
-    CONFIG_ENTITY_TYPES[0].code
-  );
-  const [entitySearch, setEntitySearch] = useState('');
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   const [dictionaryRecords, setDictionaryRecords] = useState<Record<string, DictionaryRecord[]>>(
     {}
   );
-  const [selectedDictType, setSelectedDictType] = useState<string>(DICTIONARY_TYPES[0].code);
-  const [dictSearch, setDictSearch] = useState('');
   const [isLoadingDict, setIsLoadingDict] = useState(false);
   const [dictCounts, setDictCounts] = useState<Record<string, number>>({});
 
@@ -60,12 +70,30 @@ export function useTalentSettingsData({
         const mappedTalent = mapTalentApiResponseToTalentData(response.data, subsidiaryId);
         setTalent(mappedTalent);
       }
-    } catch {
-      toast.error(tc('error'));
+    } catch (error) {
+      toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
     } finally {
       setIsLoading(false);
     }
-  }, [talentId, subsidiaryId, tc]);
+  }, [subsidiaryId, talentId, te]);
+
+  const fetchPublishReadiness = useCallback(async () => {
+    setIsLoadingReadiness(true);
+    try {
+      const response = await talentApi.getPublishReadiness(talentId);
+      if (response.success && response.data) {
+        setPublishReadiness(response.data);
+      }
+    } catch {
+      setPublishReadiness(null);
+    } finally {
+      setIsLoadingReadiness(false);
+    }
+  }, [talentId]);
+
+  const refreshTalentContext = useCallback(async () => {
+    await Promise.all([fetchTalent(), fetchPublishReadiness()]);
+  }, [fetchPublishReadiness, fetchTalent]);
 
   const fetchConfigEntities = useCallback(
     async (entityType: string) => {
@@ -118,6 +146,10 @@ export function useTalentSettingsData({
   }, [fetchTalent]);
 
   useEffect(() => {
+    void fetchPublishReadiness();
+  }, [fetchPublishReadiness]);
+
+  useEffect(() => {
     if (activeTab === 'config') {
       void fetchConfigEntities(selectedEntityType);
     }
@@ -138,41 +170,115 @@ export function useTalentSettingsData({
     try {
       await talentApi.update(talentId, {
         displayName: talent.displayName,
+        avatarUrl: talent.avatarUrl ?? undefined,
         homepagePath: talent.homepagePath,
         timezone: talent.timezone,
         settings: talent.settings,
         version: talent.version,
       });
       toast.success(tc('success'));
-      await fetchTalent();
-    } catch {
-      toast.error(tc('error'));
+      await refreshTalentContext();
+    } catch (error) {
+      toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
     } finally {
       setIsSaving(false);
     }
-  }, [fetchTalent, talent, talentId, tc]);
+  }, [refreshTalentContext, talent, talentId, tc, te]);
+
+  const runLifecycleAction = useCallback(
+    async (action: 'publish' | 'disable' | 'reEnable') => {
+      if (!talent) {
+        return false;
+      }
+
+      setIsLifecycleMutating(true);
+      try {
+        const response = await (
+          action === 'publish'
+            ? talentApi.publish(talentId, { version: talent.version })
+            : action === 'disable'
+              ? talentApi.disable(talentId, { version: talent.version })
+              : talentApi.reEnable(talentId, { version: talent.version })
+        );
+        const lifecycleData = response.data;
+
+        if (response.success && lifecycleData) {
+          setTalent((current) =>
+            current
+              ? {
+                  ...current,
+                  lifecycleStatus: lifecycleData.lifecycleStatus,
+                  publishedAt: lifecycleData.publishedAt,
+                  isActive: lifecycleData.isActive,
+                  version: lifecycleData.version,
+                }
+              : current
+          );
+          toast.success(tc('success'));
+          await refreshTalentContext();
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
+        return false;
+      } finally {
+        setIsLifecycleMutating(false);
+      }
+    },
+    [refreshTalentContext, talent, talentId, tc, te]
+  );
+
+  const deleteTalent = useCallback(async () => {
+    if (!talent || talent.lifecycleStatus !== 'draft') {
+      return false;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await talentApi.delete(talentId, talent.version);
+
+      if (response.success && response.data?.deleted) {
+        toast.success(tc('success'));
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      toast.error(getTranslatedApiErrorMessage(error, te, te('generic')));
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [talent, talentId, tc, te]);
 
   return {
     activeTab,
     configEntities,
+    deleteTalent,
     dictCounts,
     dictSearch,
     dictionaryRecords,
     entitySearch,
     fetchTalent,
+    fetchPublishReadiness,
     isLoading,
     isLoadingConfig,
     isLoadingDict,
+    isLoadingReadiness,
+    isDeleting,
+    isLifecycleMutating,
     isSaving,
+    publishReadiness,
+    publishTalent: () => runLifecycleAction('publish'),
+    disableTalent: () => runLifecycleAction('disable'),
+    reEnableTalent: () => runLifecycleAction('reEnable'),
+    refreshTalentContext,
     saveTalent,
     selectedDictType,
     selectedEntityType,
-    setActiveTab,
-    setDictSearch,
-    setSelectedDictType,
-    setSelectedEntityType,
     setTalent,
-    setEntitySearch,
     talent,
   };
 }

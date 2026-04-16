@@ -15,6 +15,7 @@ import {
   Settings,
   XCircle,
 } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -40,8 +41,10 @@ import {
 } from '@/components/ui/table';
 import {
   type IntegrationAdapterListItemRecord,
+  type IntegrationAdapterScope,
   integrationApi,
 } from '@/lib/api/modules/integration';
+import { getQueryString, replaceQueryState } from '@/platform/routing/query-state';
 
 import { AdapterConfigDialog } from './AdapterConfigDialog';
 import { AdapterDialog } from './AdapterDialog';
@@ -54,33 +57,61 @@ interface AdapterManagerProps {
   ownerId?: string;
 }
 
+function toAdapterScope(
+  ownerType: AdapterManagerProps['ownerType'],
+  ownerId: string | undefined,
+): IntegrationAdapterScope {
+  if (ownerType === 'subsidiary' && ownerId) {
+    return { ownerType: 'subsidiary', subsidiaryId: ownerId };
+  }
+
+  if (ownerType === 'talent' && ownerId) {
+    return { ownerType: 'talent', talentId: ownerId };
+  }
+
+  return { ownerType: 'tenant' };
+}
+
 export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManagerProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('integrationManagement');
   const tCommon = useTranslations('common');
 
   const [adapters, setAdapters] = useState<Adapter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = getQueryString(searchParams, 'search');
+  const [searchInput, setSearchInput] = useState(searchQuery);
   
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editAdapter, setEditAdapter] = useState<Adapter | null>(null);
   const [configAdapter, setConfigAdapter] = useState<Adapter | null>(null);
 
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  const replaceAdapterQuery = useCallback(
+    (updates: Record<string, string | number | null | undefined>) => {
+      replaceQueryState({
+        router,
+        pathname,
+        searchParams,
+        updates,
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
   const fetchAdapters = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await integrationApi.listAdapters(
-        ownerId
-          ? {
-              scopeType: ownerType,
-              scopeId: ownerId,
-              includeInherited: true,
-              includeDisabled: false,
-              ownerOnly: false,
-            }
-          : undefined,
-      );
+      const response = await integrationApi.listAdapters(toAdapterScope(ownerType, ownerId), {
+        includeInherited: ownerType !== 'tenant',
+        includeDisabled: false,
+      });
       if (response.success && response.data) {
         setAdapters(response.data);
       }
@@ -93,8 +124,23 @@ export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManager
   }, [ownerId, ownerType, tCommon]);
 
   useEffect(() => {
-    fetchAdapters();
+    void fetchAdapters();
   }, [fetchAdapters]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nextSearch = searchInput.trim();
+      if (nextSearch === searchQuery) {
+        return;
+      }
+
+      replaceAdapterQuery({
+        search: nextSearch || null,
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [replaceAdapterQuery, searchInput, searchQuery]);
 
   const handleDeactivate = async (adapter: Adapter) => {
     try {
@@ -157,8 +203,8 @@ export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManager
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <Input
               placeholder={t('searchAdapters')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -247,6 +293,7 @@ export function AdapterManager({ ownerType = 'tenant', ownerId }: AdapterManager
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 opacity-0 group-hover:opacity-100"
+                          aria-label={tCommon('openMenu')}
                         >
                           <MoreHorizontal size={16} />
                         </Button>

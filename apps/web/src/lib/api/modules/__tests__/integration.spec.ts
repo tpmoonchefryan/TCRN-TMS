@@ -6,7 +6,6 @@ import { integrationApi } from '@/lib/api/modules/integration';
 const mockGet = vi.fn();
 const mockPost = vi.fn();
 const mockPatch = vi.fn();
-const mockPut = vi.fn();
 const mockDelete = vi.fn();
 
 vi.mock('@/lib/api/core', () => ({
@@ -14,7 +13,6 @@ vi.mock('@/lib/api/core', () => ({
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
     patch: (...args: unknown[]) => mockPatch(...args),
-    put: (...args: unknown[]) => mockPut(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
   },
 }));
@@ -95,30 +93,73 @@ describe('integrationApi', () => {
     );
   });
 
-  it('passes adapter queries and config updates through current integration endpoints', async () => {
+  it('routes adapter operations through tenant-root and explicit owner-root paths', async () => {
     mockGet.mockResolvedValue({ success: true, data: [] });
-    mockPut.mockResolvedValue({ success: true, data: { updatedCount: 1, adapterVersion: 3 } });
+    mockPost.mockResolvedValue({ success: true, data: { id: 'adapter-1' } });
+    mockPatch.mockResolvedValue({ success: true, data: { updatedCount: 1, adapterVersion: 3 } });
 
-    await integrationApi.listAdapters({
-      scopeType: 'subsidiary',
-      scopeId: 'scope-1',
-      includeInherited: false,
+    await integrationApi.listAdapters(undefined, {
+      includeInherited: true,
       includeDisabled: false,
-      ownerOnly: false,
     });
+    await integrationApi.listAdapters(
+      { ownerType: 'subsidiary', subsidiaryId: 'scope-1' },
+      { includeInherited: false, includeDisabled: false },
+    );
+    await integrationApi.resolveEffectiveAdapter(
+      { ownerType: 'talent', talentId: 'talent-1' },
+      'TCRN_PII_PLATFORM',
+    );
+    await integrationApi.createAdapter(
+      { ownerType: 'talent', talentId: 'talent-1' },
+      {
+        platformId: 'platform-1',
+        code: 'YOUTUBE',
+        nameEn: 'YouTube',
+        adapterType: 'oauth',
+        inherit: true,
+      },
+    );
+    await integrationApi.disableAdapter({ ownerType: 'subsidiary', subsidiaryId: 'scope-1' }, 'adapter-1');
     await integrationApi.updateAdapterConfigs('adapter-1', {
       configs: [{ configKey: 'client_id', configValue: 'abc' }],
       adapterVersion: 2,
     });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/integration/adapters', {
-      scopeType: 'subsidiary',
-      scopeId: 'scope-1',
-      includeInherited: false,
+    expect(mockGet).toHaveBeenNthCalledWith(1, '/api/v1/integration/adapters', {
+      includeInherited: true,
       includeDisabled: false,
-      ownerOnly: false,
     });
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/integration/adapters/adapter-1/configs', {
+    expect(mockGet).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/subsidiaries/scope-1/integration/adapters',
+      {
+        includeInherited: false,
+        includeDisabled: false,
+      },
+    );
+    expect(mockGet).toHaveBeenNthCalledWith(
+      3,
+      '/api/v1/talents/talent-1/integration/adapters/effective/TCRN_PII_PLATFORM',
+      undefined,
+    );
+    expect(mockPost).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/talents/talent-1/integration/adapters',
+      {
+        platformId: 'platform-1',
+        code: 'YOUTUBE',
+        nameEn: 'YouTube',
+        adapterType: 'oauth',
+        inherit: true,
+      },
+    );
+    expect(mockPost).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/subsidiaries/scope-1/integration/adapters/adapter-1/disable',
+      {},
+    );
+    expect(mockPatch).toHaveBeenCalledWith('/api/v1/integration/adapters/adapter-1/configs', {
       configs: [{ configKey: 'client_id', configValue: 'abc' }],
       adapterVersion: 2,
     });

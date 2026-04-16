@@ -4,7 +4,7 @@
 
 import { Loader2, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -27,7 +27,7 @@ import { configurationEntityApi, type ConfigurationEntityRecord } from '@/lib/ap
 import { externalIdApi, type ExternalIdRecord } from '@/lib/api/modules/customer';
 
 import {
-  DEFAULT_CONSUMER_OPTIONS,
+  buildDefaultConsumerOptions,
   type DialogConsumerOption,
   mapConsumerOptions,
 } from './dialog-option-mappers';
@@ -60,6 +60,16 @@ export function ExternalIdDialog({
   const [consumerCode, setConsumerCode] = useState('');
   const [externalId, setExternalId] = useState('');
 
+  const fallbackConsumers = useMemo(
+    () =>
+      buildDefaultConsumerOptions({
+        legacyCrm: t('fallbackConsumers.legacyCrm'),
+        discordBot: t('fallbackConsumers.discordBot'),
+        billingSystem: t('fallbackConsumers.billingSystem'),
+      }),
+    [t],
+  );
+
   // Load consumers and existing external IDs
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -76,11 +86,11 @@ export function ExternalIdDialog({
         setExistingIds(externalIdResponse.data);
       }
     } catch {
-      setConsumers(DEFAULT_CONSUMER_OPTIONS);
+      setConsumers(fallbackConsumers);
     } finally {
       setIsLoading(false);
     }
-  }, [customerId, talentId]);
+  }, [customerId, fallbackConsumers, talentId]);
 
   useEffect(() => {
     if (open) {

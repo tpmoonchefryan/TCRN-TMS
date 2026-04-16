@@ -7,7 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { JwtAuthGuard, PermissionGuard } from './common/guards';
+import { JwtAuthGuard, PermissionGuard, PublishedTalentAccessGuard } from './common/guards';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { configValidationSchema } from './config/config.schema';
@@ -138,6 +138,10 @@ import { TenantMiddleware, TenantModule } from './modules/tenant';
     {
       provide: APP_GUARD,
       useClass: PermissionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PublishedTalentAccessGuard,
     },
     // Global interceptors
     {

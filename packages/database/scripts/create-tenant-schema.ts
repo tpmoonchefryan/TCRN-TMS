@@ -8,7 +8,7 @@ import {
   alignTenantTemplateIndexNames,
   copyTenantTemplateForeignKeys,
   copyTenantTemplateSeedData,
-} from '../src/tenant-bootstrap';
+} from '../src/platform/tenancy/template-bootstrap';
 
 const prisma = new PrismaClient();
 

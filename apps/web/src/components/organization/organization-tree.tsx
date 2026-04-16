@@ -14,6 +14,7 @@ import {
     ToggleLeft,
     ToggleRight,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -116,6 +117,8 @@ function TreeNodeItem({
   accessibilityStateMap = {},
   onAccessibilityChange,
 }: TreeNodeItemProps) {
+  const tNav = useTranslations('navigation');
+  const tOrg = useTranslations('organizationTree');
   // Get this node's accessibility state from the map
   const accessibilityState = accessibilityStateMap[node.id];
   const [isExpanded, setIsExpanded] = useState(level < 2);
@@ -226,7 +229,7 @@ function TreeNodeItem({
                   ? 'text-green-600'
                   : 'text-slate-400'
               )}
-              title={accessibilityState?.enabled ? 'Can access this level' : 'No access to this level'}
+              title={accessibilityState?.enabled ? tOrg('accessEnabled') : tOrg('accessDisabled')}
             >
               {accessibilityState?.enabled ? (
                 <ToggleRight size={16} />
@@ -245,18 +248,18 @@ function TreeNodeItem({
                     ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
                     : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-600'
                 )}
-                title={accessibilityState.includeSubunits 
-                  ? 'Includes all subunits' 
-                  : 'This level only'
+                title={accessibilityState.includeSubunits
+                  ? tOrg('includesSubunits')
+                  : tOrg('thisLevelOnly')
                 }
               >
                 {accessibilityState.includeSubunits ? (
                   <>
                     <ChevronDown size={10} />
-                    <span>Incl. Sub</span>
+                    <span>{tOrg('includesSubunitsShort')}</span>
                   </>
                 ) : (
-                  <span>Only</span>
+                  <span>{tOrg('onlyShort')}</span>
                 )}
               </button>
             )}
@@ -268,7 +271,7 @@ function TreeNodeItem({
           <button
             onClick={handleSettingsClick}
             className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-            title="Settings"
+            title={tNav('settings')}
           >
             <Settings size={14} className="text-slate-400" />
           </button>
@@ -316,6 +319,7 @@ export function OrganizationTree({
   compact = false,
   className,
 }: OrganizationTreeProps) {
+  const tNav = useTranslations('navigation');
   // Build tree structure
   const treeData: TreeNode = {
     id: tenantId,
@@ -358,7 +362,7 @@ export function OrganizationTree({
       {!compact && (
         <div className="flex items-center gap-2 mb-3 pb-3 border-b">
           <Building2 size={18} className="text-blue-500" />
-          <h3 className="font-semibold">Organization Structure</h3>
+          <h3 className="font-semibold">{tNav('organizationStructure')}</h3>
         </div>
       )}
 

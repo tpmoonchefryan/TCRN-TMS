@@ -21,9 +21,11 @@ export interface BilibiliDynamicProps {
   showHeader?: boolean;
 }
 
+const LEGACY_BILIBILI_DEFAULT_TITLE = 'Bilibili Dynamics';
+
 export const defaultProps: BilibiliDynamicProps = {
   uid: '401742377', 
-  title: 'Bilibili Dynamics',
+  title: '',
   maxItems: 5,
   filterType: 'all',
   cardStyle: 'standard',
@@ -33,10 +35,11 @@ export const defaultProps: BilibiliDynamicProps = {
 
 export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicProps) {
   const t = useTranslations('homepageEditor.bilibili');
+  const tc = useTranslations('common');
   
   // Use prop title, or fallback to translated default title if prop is missing/empty 
   // OR if prop is the hardcoded default "Bilibili Dynamics" (legacy support)
-  const displayTitle = (title && title !== 'Bilibili Dynamics') ? title : t('defaultTitle');
+  const displayTitle = title && title !== LEGACY_BILIBILI_DEFAULT_TITLE ? title : t('defaultTitle');
 
 
   const [dynamics, setDynamics] = React.useState<DynamicItem[]>([]);
@@ -99,7 +102,7 @@ export function BilibiliDynamic({ uid = '401742377', title }: BilibiliDynamicPro
         </div>
         <Button variant="ghost" size="sm" onClick={() => window.open(visitUrl, '_blank')} className="h-6 px-2 text-xs text-muted-foreground hover:text-[#fb7299]">
           <ExternalLink size={14} className="mr-1"/>
-          All
+          {tc('all')}
         </Button>
       </div>
 
@@ -227,9 +230,9 @@ function BilibiliCard({ item }: { item: DynamicItem }) {
             {/* Media Thumbnail */}
             {hasImage && (
                 <div className="relative aspect-video bg-muted overflow-hidden">
-                    <img 
-                       src={item.images[0]} 
-                       alt="Thumbnail" 
+                    <img
+                       src={item.images[0]}
+                       alt={item.title || t('defaultTitle')}
                        className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
                        referrerPolicy="no-referrer"
                        loading="lazy"

@@ -31,7 +31,10 @@ describe('talent settings mappers', () => {
           avatarUrl: null,
           homepagePath: null,
           timezone: 'UTC',
-          isActive: true,
+          lifecycleStatus: 'draft',
+          publishedAt: null,
+          publishedBy: null,
+          isActive: false,
           version: 1,
           settings: {
             inheritTimezone: false,
@@ -58,6 +61,8 @@ describe('talent settings mappers', () => {
       path: '/AC/',
       homepagePath: 'ac',
       timezone: 'UTC',
+      lifecycleStatus: 'draft',
+      publishedAt: null,
       customerCount: 42,
       settings: {
         inheritTimezone: false,

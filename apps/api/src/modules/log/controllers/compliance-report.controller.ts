@@ -1,11 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards';
 import { ComplianceReportService, ComplianceReportSummary } from '../services/compliance-report.service';
+import {
+  COMPLIANCE_REPORT_SUMMARY_SCHEMA,
+  LOG_FORBIDDEN_SCHEMA,
+  LOG_UNAUTHORIZED_SCHEMA,
+} from './log-swagger.schemas';
 
 @ApiTags('Compliance')
 @ApiBearerAuth()
@@ -33,6 +38,9 @@ export class ComplianceReportController {
     description: 'Report end date (ISO 8601)',
     example: '2026-01-31T23:59:59Z',
   })
+  @ApiResponse({ status: 200, description: 'Returns the compliance report summary', schema: COMPLIANCE_REPORT_SUMMARY_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to generate compliance reports', schema: LOG_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to generate compliance reports', schema: LOG_FORBIDDEN_SCHEMA })
   @RequirePermissions({ resource: 'compliance.report', action: 'read' })
   async generateReport(
     @CurrentUser() user: AuthenticatedUser,

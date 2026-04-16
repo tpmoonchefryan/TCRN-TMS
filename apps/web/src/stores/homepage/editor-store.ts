@@ -33,7 +33,7 @@ interface EditorState {
   dbVersion: number;
   
   // i18n
-  editingLocale: string; // 'default' or locale code (e.g. 'zh', 'ja')
+  editingLocale: 'default' | 'en' | 'zh' | 'ja';
 
   // Actions
   init: (content?: HomepageContent, theme?: ThemeConfig) => void;
@@ -49,7 +49,7 @@ interface EditorState {
   setTheme: (theme: Partial<ThemeConfig>) => void;
   setThemePreset: (presetName: string) => void;
   setPreviewDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
-  setEditingLocale: (locale: string) => void;
+  setEditingLocale: (locale: 'default' | 'en' | 'zh' | 'ja') => void;
   setSaveStatus: (status: 'saved' | 'saving' | 'unsaved' | 'offline') => void;
   
   // Undo/Redo
@@ -177,7 +177,7 @@ export const useEditorStore = create<EditorState>()(
         });
       } catch {
         set((state) => {
-          state.error = 'Failed to load homepage data';
+          state.error = 'loadHomepageFailed';
           state.isLoading = false;
         });
       }
@@ -268,7 +268,7 @@ export const useEditorStore = create<EditorState>()(
         console.error('[DEBUG] saveDraft failed', error);
         set((state) => {
           state.saveStatus = 'unsaved'; // Revert to unsaved on error
-          state.error = 'Failed to save draft';
+          state.error = 'saveDraftFailed';
         });
       }
     },
@@ -293,7 +293,7 @@ export const useEditorStore = create<EditorState>()(
       } catch {
         set((state) => {
           state.isPublishing = false;
-          state.error = 'Failed to publish homepage';
+          state.error = 'publishHomepageFailed';
         });
         return false;
       }
@@ -332,7 +332,7 @@ export const useEditorStore = create<EditorState>()(
             state.isSaving = false;
          });
        } catch {
-           set((state) => { state.isSaving = false; state.error = 'Failed to update settings'; });
+           set((state) => { state.isSaving = false; state.error = 'updateSettingsFailed'; });
        }
     },
 

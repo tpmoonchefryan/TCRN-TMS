@@ -24,7 +24,6 @@ export const CONFIG_ENTITY_RESOURCE_MAP: Record<ConfigEntityType, RbacResourceCo
   consent: 'config.dictionary',
   consumer: 'integration.consumer',
   'blocklist-entry': 'security.blocklist',
-  'pii-service-config': 'config.pii_service',
   'profile-store': 'config.profile_store',
 };
 

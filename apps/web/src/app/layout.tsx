@@ -8,17 +8,20 @@ import '@fontsource-variable/noto-sans-sc';
 
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Toaster } from 'sonner';
 
 import { StagingBanner } from '@/components/staging-banner';
 
-export const metadata: Metadata = {
-  title: 'TCRN TMS - Talent Management System',
-  description:
-    'Talent Management System for VTuber/VUP - Customer management and interaction platform',
-  keywords: ['VTuber', 'VUP', 'CRM', 'Talent Management', 'TCRN'],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('runtimeMessages.metadata');
+
+  return {
+    title: t('title'),
+    description: t('description'),
+    keywords: ['VTuber', 'VUP', 'CRM', 'Talent Management', 'TCRN'],
+  };
+}
 
 export default async function RootLayout({
   children,

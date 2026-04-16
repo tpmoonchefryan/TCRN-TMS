@@ -7,7 +7,7 @@ import {
     Loader2,
     Search,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ export function DictionaryPanel({
   showCounts = true,
   searchable = true,
 }: DictionaryPanelProps) {
+  const locale = useLocale() as 'en' | 'zh' | 'ja';
   const t = useTranslations('settingsPage');
   const tc = useTranslations('common');
 
@@ -97,6 +98,16 @@ export function DictionaryPanel({
 
   const selectedDictInfo = DICTIONARY_TYPES.find(t => t.code === selectedDictType);
 
+  const getDictionaryLabel = (dictType: typeof DICTIONARY_TYPES[number]) => {
+    if (locale === 'zh') {
+      return dictType.nameZh;
+    }
+    if (locale === 'ja') {
+      return dictType.nameJa;
+    }
+    return dictType.name;
+  };
+
   return (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-300px)] min-h-[500px]">
       {/* Left Panel - Dictionary Types */}
@@ -122,12 +133,12 @@ export function DictionaryPanel({
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{type.icon}</span>
-                    <div>
-                      <p className="font-medium text-sm">{type.name}</p>
-                      <p className="text-xs text-muted-foreground">{type.nameZh}</p>
+                      <span className="text-lg">{type.icon}</span>
+                      <div>
+                      <p className="font-medium text-sm">{getDictionaryLabel(type)}</p>
+                      <p className="text-xs text-muted-foreground">{type.code}</p>
+                      </div>
                     </div>
-                  </div>
                   {showCounts && (
                     <Badge variant="secondary" className="text-xs">
                       {dictCounts[type.code] ?? '-'}
@@ -147,7 +158,7 @@ export function DictionaryPanel({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-lg">{selectedDictInfo?.icon}</span>
-                {selectedDictInfo?.name}
+                {selectedDictInfo ? getDictionaryLabel(selectedDictInfo) : null}
               </CardTitle>
               <CardDescription>
                 {t('systemDictReadOnly')}

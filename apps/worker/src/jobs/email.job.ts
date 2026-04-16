@@ -17,7 +17,6 @@ import * as nodemailer from 'nodemailer';
 import * as tencentcloud from 'tencentcloud-sdk-nodejs-ses';
 
 import { workerLogger as logger } from '../logger';
-import { getPiiClient } from '../services/pii-client';
 
 const SesClient = tencentcloud.ses.v20201002.Client;
 
@@ -25,8 +24,7 @@ const SesClient = tencentcloud.ses.v20201002.Client;
 interface EmailJobData {
   tenantSchema: string;
   templateCode: string;
-  recipientPiiId: string;
-  recipientEmail?: string;
+  recipientEmail: string;
   locale: string;
   variables: Record<string, string>;
 }
@@ -172,29 +170,18 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
 }
 
 /**
- * Get email address from PII service or use direct email
+ * Get email address from explicit payload only
  */
 async function getRecipientEmail(
-  recipientPiiId: string,
   recipientEmail?: string,
 ): Promise<string> {
-  // Use direct email if provided
   if (recipientEmail) {
     return recipientEmail;
   }
 
-  // Get email from PII service
-  const piiClient = getPiiClient();
-  if (!piiClient) {
-    throw new Error('PII client not available');
-  }
-
-  const profile = await piiClient.getProfile(recipientPiiId);
-  if (!profile?.emails?.length) {
-    throw new Error(`No email found for PII profile: ${recipientPiiId}`);
-  }
-
-  return profile.emails[0];
+  throw new Error(
+    'Recipient email must be provided explicitly. Worker-side PII lookup has been retired.',
+  );
 }
 
 /**
@@ -387,7 +374,7 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
   job: Job<EmailJobData, EmailJobResult>,
 ) => {
   const startTime = Date.now();
-  const { tenantSchema, templateCode, recipientPiiId, recipientEmail, locale, variables } = job.data;
+  const { tenantSchema, templateCode, recipientEmail, locale, variables } = job.data;
 
   logger.info(`[EmailJob] Processing job ${job.id} (template: ${templateCode})`);
 
@@ -395,7 +382,7 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
 
   try {
     // 1. Get recipient email
-    email = await getRecipientEmail(recipientPiiId, recipientEmail);
+    email = await getRecipientEmail(recipientEmail);
     
     // 2. Render template
     const rendered = await renderTemplate(templateCode, locale, variables);

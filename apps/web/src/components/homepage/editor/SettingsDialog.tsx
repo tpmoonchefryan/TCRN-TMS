@@ -17,26 +17,23 @@ interface SettingsDialogProps {
 export function SettingsDialog({ open, onOpenChange, talentId, onSave }: SettingsDialogProps) {
   const t = useTranslations('homepageEditor');
   const { settings, updateSettings, isSaving, load, isLoading, dbVersion } = useEditorStore();
-  
+
   const [localSettings, setLocalSettings] = useState({
-    homepagePath: '',
     seoTitle: '',
     seoDescription: '',
     ogImageUrl: '',
     analyticsId: '',
   });
 
-  // Load data when dialog opens if not already loaded
   useEffect(() => {
     if (open && talentId && (!settings || dbVersion === 0)) {
-      load(talentId);
+      void load(talentId);
     }
-  }, [open, talentId, settings, dbVersion, load]);
+  }, [dbVersion, load, open, settings, talentId]);
 
   useEffect(() => {
     if (open && settings) {
       setLocalSettings({
-        homepagePath: settings.homepagePath || '',
         seoTitle: settings.seoTitle || '',
         seoDescription: settings.seoDescription || '',
         ogImageUrl: settings.ogImageUrl || '',
@@ -58,7 +55,7 @@ export function SettingsDialog({ open, onOpenChange, talentId, onSave }: Setting
           <DialogTitle>{t('pageSettings')}</DialogTitle>
           <DialogDescription>{t('pageSettingsDesc')}</DialogDescription>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -66,63 +63,42 @@ export function SettingsDialog({ open, onOpenChange, talentId, onSave }: Setting
         ) : (
           <>
             <div className="space-y-4 py-4">
-              {/* Custom Path */}
-              <div className="space-y-2">
-                <Label>{t('customPath')}</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">tcrn.com/p/</span>
-                  <Input 
-                    value={localSettings.homepagePath} 
-                    onChange={(e) => {
-                      const value = e.target.value.toLowerCase().replace(/[^a-z0-9\-_]/g, '');
-                      setLocalSettings(prev => ({ ...prev, homepagePath: value }));
-                    }}
-                    placeholder="username" 
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">{t('pathHint')}</p>
-              </div>
-              
-              <div className="border-t my-4" />
-              
-              {/* SEO Section */}
-              <h4 className="font-medium text-sm">SEO</h4>
+              <h4 className="font-medium text-sm">{t('seoSection')}</h4>
               <div className="space-y-2">
                 <Label>{t('metaTitle')}</Label>
-                <Input 
+                <Input
                   value={localSettings.seoTitle}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, seoTitle: e.target.value }))}
-                  placeholder="My Official Homepage" 
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, seoTitle: e.target.value }))}
+                  placeholder={t('metaTitlePlaceholder')}
                 />
               </div>
               <div className="space-y-2">
                 <Label>{t('metaDescription')}</Label>
-                <Input 
+                <Input
                   value={localSettings.seoDescription}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, seoDescription: e.target.value }))}
-                  placeholder="Description for search engines..." 
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, seoDescription: e.target.value }))}
+                  placeholder={t('metaDescriptionPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
                 <Label>{t('ogImageUrl')}</Label>
-                <Input 
+                <Input
                   value={localSettings.ogImageUrl}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, ogImageUrl: e.target.value }))}
-                  placeholder="https://example.com/og-image.jpg" 
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, ogImageUrl: e.target.value }))}
+                  placeholder={t('ogImageUrlPlaceholder')}
                 />
                 <p className="text-xs text-muted-foreground">{t('ogImageUrlHint')}</p>
               </div>
-              
+
               <div className="border-t my-4" />
-              
-              {/* Analytics Section */}
-              <h4 className="font-medium text-sm">Analytics</h4>
+
+              <h4 className="font-medium text-sm">{t('analyticsSection')}</h4>
               <div className="space-y-2">
                 <Label>{t('analyticsId')}</Label>
-                <Input 
+                <Input
                   value={localSettings.analyticsId}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, analyticsId: e.target.value }))}
-                  placeholder="G-XXXXXXXXXX" 
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, analyticsId: e.target.value }))}
+                  placeholder={t('analyticsIdPlaceholder')}
                 />
                 <p className="text-xs text-muted-foreground">{t('analyticsIdHint')}</p>
               </div>

@@ -4,6 +4,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { createTenantSchema, getTenantSchemaName, Prisma, prisma, PrismaClient,setTenantSchema, withTenantContext } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { TenantReadService } from './application/tenant-read.service';
+import { TenantReadRepository } from './infrastructure/tenant-read.repository';
+
 type Tenant = Awaited<ReturnType<PrismaClient['tenant']['findFirst']>>;
 
 /**
@@ -22,43 +25,31 @@ export interface TenantContext {
  */
 @Injectable()
 export class TenantService {
+  constructor(
+    private readonly tenantReadService: TenantReadService = new TenantReadService(
+      new TenantReadRepository(),
+    ),
+  ) {}
+
   /**
    * Get tenant by code (case-insensitive)
    */
   async getTenantByCode(code: string) {
-    // First try exact match
-    const tenant = await prisma.tenant.findUnique({
-      where: { code },
-    });
-    if (tenant) return tenant;
-
-    // Try case-insensitive match
-    return prisma.tenant.findFirst({
-      where: {
-        code: {
-          equals: code,
-          mode: 'insensitive',
-        },
-      },
-    });
+    return this.tenantReadService.getTenantByCode(code);
   }
 
   /**
    * Get tenant by ID
    */
   async getTenantById(id: string) {
-    return prisma.tenant.findUnique({
-      where: { id },
-    });
+    return this.tenantReadService.getTenantById(id);
   }
 
   /**
    * Get tenant by schema name
    */
   async getTenantBySchemaName(schemaName: string) {
-    return prisma.tenant.findUnique({
-      where: { schemaName },
-    });
+    return this.tenantReadService.getTenantBySchemaName(schemaName);
   }
 
   /**
@@ -149,10 +140,7 @@ export class TenantService {
    * List all active tenants
    */
   async listActiveTenants(): Promise<Tenant[]> {
-    return prisma.tenant.findMany({
-      where: { isActive: true },
-      orderBy: { code: 'asc' },
-    });
+    return this.tenantReadService.listActiveTenants();
   }
 
   /**
@@ -186,13 +174,6 @@ export class TenantService {
     tenantId: string,
     requestedTenantId: string
   ): Promise<boolean> {
-    // Users can only access their own tenant
-    if (tenantId !== requestedTenantId) {
-      return false;
-    }
-
-    // Check if tenant is active
-    const tenant = await this.getTenantById(tenantId);
-    return tenant?.isActive === true;
+    return this.tenantReadService.validateTenantAccess(tenantId, requestedTenantId);
   }
 }

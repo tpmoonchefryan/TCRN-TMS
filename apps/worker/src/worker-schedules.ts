@@ -3,14 +3,10 @@ import { PrismaClient } from '@tcrn/database';
 import { CronJob } from 'cron';
 
 import { scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
-import { schedulePiiCleanupJob } from './jobs/pii-cleanup.job';
-import { setupPiiHealthCheckCron } from './jobs/pii-health-check.job';
 import { workerLogger as logger } from './logger';
 import {
   logCleanupQueue,
   membershipRenewalQueue,
-  piiCleanupQueue,
-  piiHealthCheckQueue,
 } from './queues';
 
 export interface ActiveTenant {
@@ -84,22 +80,6 @@ export function createMembershipRenewalHandler(
   };
 }
 
-export function createPiiCleanupHandler(
-  eventLogger: ScheduledJobLogger = logger
-): () => Promise<void> {
-  return async () => {
-    eventLogger.info('Triggering scheduled PII orphan cleanup');
-
-    try {
-      await schedulePiiCleanupJob(piiCleanupQueue);
-      eventLogger.info('PII cleanup job scheduled');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      eventLogger.error(`Failed to schedule PII cleanup: ${errorMessage}`);
-    }
-  };
-}
-
 export function createLogCleanupHandler(
   prisma: PrismaClient,
   eventLogger: ScheduledJobLogger = logger,
@@ -148,7 +128,6 @@ export function createScheduledCronJobs(
       start,
       TOKYO_TIMEZONE
     ),
-    new CronJob('0 3 * * 0', createPiiCleanupHandler(eventLogger), null, start, TOKYO_TIMEZONE),
     new CronJob(
       '0 4 * * *',
       createLogCleanupHandler(prisma, eventLogger, nowProvider),
@@ -159,7 +138,6 @@ export function createScheduledCronJobs(
   ];
 
   eventLogger.info('Membership renewal cron scheduled (daily at 2:00 AM JST)');
-  eventLogger.info('PII cleanup cron scheduled (weekly on Sunday at 3:00 AM JST)');
   eventLogger.info('Log cleanup cron scheduled (daily at 4:00 AM JST)');
 
   return cronJobs;
@@ -172,14 +150,6 @@ export async function setupScheduledJobsRuntime(
 
   const prisma = new PrismaClient();
   const cronJobs = createScheduledCronJobs(prisma, eventLogger);
-
-  try {
-    await setupPiiHealthCheckCron(piiHealthCheckQueue, 60);
-    eventLogger.info('PII health check recurring job scheduled (every 60 seconds)');
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    eventLogger.error(`Failed to setup PII health check cron: ${errorMessage}`);
-  }
 
   eventLogger.info('Scheduled jobs initialized');
 

@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -39,12 +39,6 @@ interface ConfigEntityFormProps {
   isLoading?: boolean;
 }
 
-const languages = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-];
-
 export function ConfigEntityForm({
   open,
   onOpenChange,
@@ -55,11 +49,44 @@ export function ConfigEntityForm({
   isLoading = false,
 }: ConfigEntityFormProps) {
   const t = useTranslations('configEntityForm');
+  const tCommon = useTranslations('common');
+  const tForms = useTranslations('forms');
+  const locale = useLocale() as 'en' | 'zh' | 'ja';
   const config = ENTITY_TYPE_CONFIGS[entityType];
   const isEditing = !!entity;
 
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [activeTab, setActiveTab] = useState('basic');
+
+  const languages = [
+    { code: 'en', label: tCommon('english'), flag: '🇺🇸' },
+    { code: 'zh', label: tCommon('chinese'), flag: '🇨🇳' },
+    { code: 'ja', label: tCommon('japanese'), flag: '🇯🇵' },
+  ] as const;
+
+  const localizeText = (english: string, chinese?: string, japanese?: string) => {
+    if (locale === 'zh') {
+      return chinese ?? english;
+    }
+    if (locale === 'ja') {
+      return japanese ?? english;
+    }
+    return english;
+  };
+
+  const configLabel = localizeText(config.label, config.labelZh, config.labelJa);
+  const configDescription = localizeText(config.description, config.descriptionZh, config.descriptionJa);
+
+  const getFieldLabel = (field: ExtraFieldConfig) =>
+    localizeText(field.label, field.labelZh, field.labelJa);
+
+  const getFieldPlaceholder = (field: ExtraFieldConfig) =>
+    field.placeholder
+      ? localizeText(field.placeholder, field.placeholderZh, field.placeholderJa)
+      : undefined;
+
+  const getOptionLabel = (option: NonNullable<ExtraFieldConfig['options']>[number]) =>
+    localizeText(option.label, option.labelZh, option.labelJa);
 
   useEffect(() => {
     if (entity) {
@@ -117,17 +144,18 @@ export function ConfigEntityForm({
       case 'select':
         // Check if this is a parent reference field
         if (config.hasParent && field.name === config.parentFieldName) {
+          const fieldLabel = getFieldLabel(field);
           return (
             <div key={field.name} className="space-y-2">
               <Label htmlFor={field.name}>
-                {field.label} {field.required && <span className="text-destructive">*</span>}
+                {fieldLabel} {field.required && <span className="text-destructive">*</span>}
               </Label>
               <Select
                 value={value as string || ''}
                 onValueChange={(v) => updateField(field.name, v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={`Select ${field.label}`} />
+                  <SelectValue placeholder={t('selectPlaceholder', { label: fieldLabel })} />
                 </SelectTrigger>
                 <SelectContent>
                   {parentOptions.map((option) => (
@@ -142,22 +170,23 @@ export function ConfigEntityForm({
         }
 
         // Regular select with predefined options
+        const fieldLabel = getFieldLabel(field);
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label} {field.required && <span className="text-destructive">*</span>}
+              {fieldLabel} {field.required && <span className="text-destructive">*</span>}
             </Label>
             <Select
               value={value as string || ''}
               onValueChange={(v) => updateField(field.name, v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder={`Select ${field.label}`} />
+                <SelectValue placeholder={t('selectPlaceholder', { label: fieldLabel })} />
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {getOptionLabel(option)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,7 +197,7 @@ export function ConfigEntityForm({
       case 'boolean':
         return (
           <div key={field.name} className="flex items-center justify-between">
-            <Label htmlFor={field.name}>{field.label}</Label>
+            <Label htmlFor={field.name}>{getFieldLabel(field)}</Label>
             <Switch
               id={field.name}
               checked={value as boolean || false}
@@ -181,14 +210,14 @@ export function ConfigEntityForm({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label} {field.required && <span className="text-destructive">*</span>}
+              {getFieldLabel(field)} {field.required && <span className="text-destructive">*</span>}
             </Label>
             <Input
               id={field.name}
               type="number"
               value={value as number || 0}
               onChange={(e) => updateField(field.name, parseInt(e.target.value) || 0)}
-              placeholder={field.placeholder}
+              placeholder={getFieldPlaceholder(field)}
             />
           </div>
         );
@@ -196,7 +225,7 @@ export function ConfigEntityForm({
       case 'color':
         return (
           <div key={field.name} className="space-y-2">
-            <Label htmlFor={field.name}>{field.label}</Label>
+            <Label htmlFor={field.name}>{getFieldLabel(field)}</Label>
             <div className="flex items-center gap-2">
               <Input
                 id={field.name}
@@ -208,7 +237,7 @@ export function ConfigEntityForm({
               <Input
                 value={value as string || ''}
                 onChange={(e) => updateField(field.name, e.target.value)}
-                placeholder="#000000"
+                placeholder={getFieldPlaceholder(field) ?? '#000000'}
                 className="flex-1"
               />
             </div>
@@ -219,13 +248,13 @@ export function ConfigEntityForm({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label} {field.required && <span className="text-destructive">*</span>}
+              {getFieldLabel(field)} {field.required && <span className="text-destructive">*</span>}
             </Label>
             <Textarea
               id={field.name}
               value={value as string || ''}
               onChange={(e) => updateField(field.name, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={getFieldPlaceholder(field)}
               rows={3}
             />
           </div>
@@ -237,14 +266,14 @@ export function ConfigEntityForm({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label} {field.required && <span className="text-destructive">*</span>}
+              {getFieldLabel(field)} {field.required && <span className="text-destructive">*</span>}
             </Label>
             <Input
               id={field.name}
               type={field.type === 'url' ? 'url' : 'text'}
               value={value as string || ''}
               onChange={(e) => updateField(field.name, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={getFieldPlaceholder(field)}
             />
           </div>
         );
@@ -257,9 +286,9 @@ export function ConfigEntityForm({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {isEditing ? `Edit ${config.label}` : `Create ${config.label}`}
+              {isEditing ? t('edit', { label: configLabel }) : t('createEntity', { label: configLabel })}
             </DialogTitle>
-            <DialogDescription>{config.description}</DialogDescription>
+            <DialogDescription>{configDescription}</DialogDescription>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
@@ -280,7 +309,7 @@ export function ConfigEntityForm({
                   id="code"
                   value={formData.code as string || ''}
                   onChange={(e) => updateField('code', e.target.value.toUpperCase())}
-                  placeholder="UNIQUE_CODE"
+                  placeholder={tForms('placeholders.code')}
                   disabled={isEditing}
                   pattern="^[A-Z0-9_]{3,32}$"
                   required
@@ -298,7 +327,7 @@ export function ConfigEntityForm({
                   id="nameEn"
                   value={formData.nameEn as string || ''}
                   onChange={(e) => updateField('nameEn', e.target.value)}
-                  placeholder="English name"
+                  placeholder={t('nameEnglish')}
                   required
                 />
               </div>

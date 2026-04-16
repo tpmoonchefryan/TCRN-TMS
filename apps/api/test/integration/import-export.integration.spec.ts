@@ -39,12 +39,30 @@ describe('Import/Export Integration Tests', () => {
   let tenantFixture: TenantFixture;
   let testUser: TestUser;
   let accessToken: string;
+  let subsidiaryId: string;
   let talentId: string;
+  let importJobId: string | undefined;
   let exportJobId: string | undefined;
   let marshmallowExportJobId: string | undefined;
   const createdExportQueueJobIds = new Set<string>();
   const createdImportQueueJobIds = new Set<string>();
   const createdImportObjectNames = new Set<string>();
+
+  const publishTalent = async (targetTalentId: string) => {
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantFixture.schemaName}".talent
+        SET lifecycle_status = 'published',
+            published_at = COALESCE(published_at, NOW()),
+            published_by = COALESCE(published_by, $2::uuid),
+            updated_at = NOW(),
+            updated_by = $2::uuid
+        WHERE id = $1::uuid
+      `,
+      targetTalentId,
+      testUser.id,
+    );
+  };
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
     req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
@@ -86,7 +104,7 @@ describe('Import/Export Integration Tests', () => {
       .send({
         format: 'csv',
       })
-      .expect(201);
+      .expect(202);
 
     createdExportQueueJobIds.add(response.body.data.jobId);
     return response;
@@ -191,7 +209,8 @@ describe('Import/Export Integration Tests', () => {
       nameEn: 'Import Export Test Subsidiary',
       createdBy: testUser.id,
     });
-    const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
+    subsidiaryId = subsidiary.id;
+    const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiaryId, {
       code: `TAL_IE_${Date.now().toString(36).toUpperCase()}`,
       nameEn: 'Import Export Test Talent',
       displayName: 'Import Export Test Talent',
@@ -200,6 +219,7 @@ describe('Import/Export Integration Tests', () => {
     });
 
     talentId = talent.id;
+    await publishTalent(talentId);
 
     const tokenService = moduleFixture.get(TokenService);
     accessToken = tokenService.generateAccessToken({
@@ -227,20 +247,28 @@ describe('Import/Export Integration Tests', () => {
   });
 
   describe('Import Jobs', () => {
+    const missingImportJobId = '550e8400-e29b-41d4-a716-446655440098';
+
     it('should return a stable error when no file is uploaded', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
+        request(app.getHttpServer()).post(
+          `/api/v1/talents/${talentId}/imports/customers/individuals`
+        ),
+        false,
       )
-        .field('talentId', talentId)
-        .expect(201);
+        .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('No file uploaded');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe('No file uploaded');
     });
 
     it('should return the individual import template', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers/individuals/template')
+        request(app.getHttpServer()).get(
+          `/api/v1/talents/${talentId}/imports/customers/individuals/template`
+        ),
+        false,
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
@@ -253,7 +281,10 @@ describe('Import/Export Integration Tests', () => {
 
     it('should return the company import template with only currently supported columns', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/imports/customers/companies/template')
+        request(app.getHttpServer()).get(
+          `/api/v1/talents/${talentId}/imports/customers/companies/template`
+        ),
+        false,
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
@@ -273,9 +304,11 @@ describe('Import/Export Integration Tests', () => {
       ].join('\n');
 
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
+        request(app.getHttpServer()).post(
+          `/api/v1/talents/${talentId}/imports/customers/individuals`
+        ),
+        false,
       )
-        .field('talentId', talentId)
         .field('consumerCode', 'CRM_SYSTEM')
         .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import.csv')
         .expect(201);
@@ -284,7 +317,7 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.data.id).toBeDefined();
       expect(response.body.data.status).toBe(ImportJobStatus.PENDING);
 
-      const importJobId = response.body.data.id as string;
+      importJobId = response.body.data.id as string;
       const objectName = `${tenantFixture.schemaName}/${importJobId}.csv`;
       createdImportQueueJobIds.add(importJobId);
       createdImportObjectNames.add(objectName);
@@ -316,9 +349,11 @@ describe('Import/Export Integration Tests', () => {
       ].join('\n');
 
       const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/imports/customers/individuals')
+        request(app.getHttpServer()).post(
+          `/api/v1/talents/${talentId}/imports/customers/individuals`
+        ),
+        false,
       )
-        .field('talentId', talentId)
         .field('consumerCode', 'CRM_SYSTEM')
         .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import_invalid_headers.csv')
         .expect(400);
@@ -332,7 +367,10 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should list import jobs for the current talent profile store', async () => {
-      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/imports/customers'))
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/imports/customers`),
+        false,
+      )
         .query({ page: 1, pageSize: 10 })
         .expect(200);
 
@@ -342,7 +380,10 @@ describe('Import/Export Integration Tests', () => {
     });
 
     it('should filter import jobs by status', async () => {
-      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/imports/customers'))
+      const response = await withAuth(
+        request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/imports/customers`),
+        false,
+      )
         .query({ status: ImportJobStatus.PENDING })
         .expect(200);
 
@@ -350,26 +391,49 @@ describe('Import/Export Integration Tests', () => {
       expect(Array.isArray(response.body.data.items)).toBe(true);
     });
 
-    it('should return 404 for a non-existent import job', async () => {
+    it('should return the created import job by id', async () => {
+      expect(importJobId).toBeDefined();
+
       const response = await withAuth(
         request(app.getHttpServer()).get(
-          '/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'
-        )
-      ).expect(404);
+          `/api/v1/talents/${talentId}/imports/customers/individual_import/${importJobId}`
+        ),
+        false,
+      ).expect(200);
 
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.id).toBe(importJobId);
+      expect(response.body.data.status).toBe(ImportJobStatus.PENDING);
     });
 
-    it('should return 404 when cancelling a non-existent import job', async () => {
+    it('should reject a non-existent import job before controller lookup when no direct job owner can be resolved', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).delete(
-          '/api/v1/imports/customers/individual_import/00000000-0000-0000-0000-000000000000'
-        )
-      ).expect(404);
+        request(app.getHttpServer()).get(
+          `/api/v1/talents/${talentId}/imports/customers/individual_import/${missingImportJobId}`
+        ),
+        false,
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe(
+        'Unable to resolve talent scope from the requested job.'
+      );
+    });
+
+    it('should reject cancelling a non-existent import job before controller lookup when no direct job owner can be resolved', async () => {
+      const response = await withAuth(
+        request(app.getHttpServer()).delete(
+          `/api/v1/talents/${talentId}/imports/customers/individual_import/${missingImportJobId}`
+        ),
+        false,
+      ).expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe(
+        'Unable to resolve talent scope from the requested job.'
+      );
     });
   });
 
@@ -464,10 +528,13 @@ describe('Import/Export Integration Tests', () => {
       const detailResponse = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/exports/${marshmallowJobId}`),
         false
-      ).expect(404);
+      ).expect(400);
 
       expect(detailResponse.body.success).toBe(false);
-      expect(detailResponse.body.error.code).toBe('RES_NOT_FOUND');
+      expect(detailResponse.body.error.code).toBe('VALIDATION_FAILED');
+      expect(detailResponse.body.error.message).toBe(
+        'Unable to resolve talent scope from the requested job.'
+      );
     });
 
     it('should return the correct dedicated marshmallow downloadUrl when a marshmallow export job is completed', async () => {
@@ -487,6 +554,30 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.data.downloadUrl).toBe(
         `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
       );
+    });
+
+    it('should not resolve a marshmallow export job under a different talent scope', async () => {
+      const createResponse = await createMarshmallowExportJob();
+      const jobId = createResponse.body.data.jobId as string;
+      const anotherTalent = await createTestTalentInTenant(prisma, tenantFixture, subsidiaryId, {
+        code: `TAL_MAR_SCOPE_${Date.now().toString(36).toUpperCase()}`,
+        nameEn: 'Other Marshmallow Talent',
+        displayName: 'Other Marshmallow Talent',
+        homepagePath: `marshmallow-scope-${Date.now()}`,
+        createdBy: testUser.id,
+      });
+
+      await publishTalent(anotherTalent.id);
+
+      const response = await withAuth(
+        request(app.getHttpServer()).get(
+          `/api/v1/talents/${anotherTalent.id}/marshmallow/export/${jobId}`
+        ),
+        false
+      ).expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('RES_NOT_FOUND');
     });
 
     it('should filter export jobs by status', async () => {
@@ -512,30 +603,39 @@ describe('Import/Export Integration Tests', () => {
       expect(response.body.data.id).toBe(jobId);
     });
 
-    it('should return 404 for a non-existent export job', async () => {
+    const missingGenericExportJobId = '550e8400-e29b-41d4-a716-446655440099';
+
+    it('should reject a non-existent export job before controller lookup when no direct talent carrier is available', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/exports/00000000-0000-0000-0000-000000000000'),
+        request(app.getHttpServer()).get(`/api/v1/exports/${missingGenericExportJobId}`),
         false
-      ).expect(404);
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe(
+        'Unable to resolve talent scope from the requested job.'
+      );
     });
 
-    it('should return 404 for downloading a non-existent export job', async () => {
+    it('should reject downloading a non-existent export job before controller lookup when no direct talent carrier is available', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get(
-          '/api/v1/exports/00000000-0000-0000-0000-000000000000/download'
-        ),
+        request(app.getHttpServer()).get(`/api/v1/exports/${missingGenericExportJobId}/download`),
         false
-      ).expect(404);
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('RES_NOT_FOUND');
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toBe(
+        'Unable to resolve talent scope from the requested job.'
+      );
     });
 
     it('should cancel a pending export job', async () => {
-      const jobId = await ensureExportJob();
+      const createResponse = await createExportJob();
+      const jobId = createResponse.body.data.id as string;
+
+      await removeExportQueueJobsByDataJobIds([jobId]);
 
       const response = await withAuth(
         request(app.getHttpServer()).delete(`/api/v1/exports/${jobId}`),

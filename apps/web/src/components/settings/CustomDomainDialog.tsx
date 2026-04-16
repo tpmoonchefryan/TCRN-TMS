@@ -69,7 +69,7 @@ export function CustomDomainDialog({
     // Basic domain validation
     const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
     if (!domainRegex.test(domain.trim())) {
-      toast.error(t('invalidDomain') || 'Invalid domain format');
+      toast.error(t('invalidDomain'));
       return;
     }
 
@@ -80,7 +80,7 @@ export function CustomDomainDialog({
         setLocalToken(result.token);
         setLocalVerified(false);
       }
-      toast.success(t('domainSaved') || 'Domain saved');
+      toast.success(t('domainSaved'));
     } catch {
       toast.error(tCommon('error'));
     } finally {
@@ -113,7 +113,7 @@ export function CustomDomainDialog({
       setDomain('');
       setLocalToken(null);
       setLocalVerified(false);
-      toast.success(t('domainRemoved') || 'Domain removed');
+      toast.success(t('domainRemoved'));
       onOpenChange(false);
     } catch {
       toast.error(tCommon('error'));
@@ -216,7 +216,7 @@ export function CustomDomainDialog({
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  {t('saveToGetToken') || 'Save the domain first to get the verification token.'}
+                  {t('saveToGetToken')}
                 </p>
               )}
             </div>

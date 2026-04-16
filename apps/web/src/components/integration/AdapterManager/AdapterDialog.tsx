@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
+  type IntegrationAdapterScope,
   integrationApi,
   type IntegrationPlatformRecord,
 } from '@/lib/api/modules/integration';
@@ -58,6 +59,21 @@ interface AdapterDialogProps {
   ownerType?: 'tenant' | 'subsidiary' | 'talent';
   ownerId?: string;
   onSuccess: () => void;
+}
+
+function toAdapterScope(
+  ownerType: AdapterDialogProps['ownerType'],
+  ownerId: string | undefined,
+): IntegrationAdapterScope {
+  if (ownerType === 'subsidiary' && ownerId) {
+    return { ownerType: 'subsidiary', subsidiaryId: ownerId };
+  }
+
+  if (ownerType === 'talent' && ownerId) {
+    return { ownerType: 'talent', talentId: ownerId };
+  }
+
+  return { ownerType: 'tenant' };
 }
 
 export function AdapterDialog({
@@ -159,7 +175,7 @@ export function AdapterDialog({
           onSuccess();
         }
       } else {
-        const response = await integrationApi.createAdapter({
+        const response = await integrationApi.createAdapter(toAdapterScope(ownerType, ownerId), {
           platformId: formData.platformId,
           code: formData.code.toUpperCase().replace(/\s+/g, '_'),
           nameEn: formData.nameEn,
@@ -167,8 +183,6 @@ export function AdapterDialog({
           nameJa: formData.nameJa || undefined,
           adapterType: formData.adapterType,
           inherit: formData.inherit,
-          ownerType,
-          ownerId: ownerId || undefined,
         });
         if (response.success) {
           toast.success(tToast('success.created'));

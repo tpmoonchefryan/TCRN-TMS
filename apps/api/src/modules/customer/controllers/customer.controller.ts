@@ -4,19 +4,25 @@ import {
     Body,
     Controller,
     Get,
-    Headers,
+    HttpCode,
     Param,
     ParseUUIDPipe,
     Patch,
     Post,
     Query,
     Req,
+    Res,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
-import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
+import {
+    AuthenticatedUser,
+    CurrentUser,
+    RequirePermissions,
+    RequirePublishedTalentAccess,
+} from '../../../common/decorators';
 import {
     BatchOperationDto,
     CreateCompanyCustomerDto,
@@ -31,9 +37,28 @@ import { BatchOperationService } from '../services/batch-operation.service';
 import { CompanyCustomerService } from '../services/company-customer.service';
 import { CustomerProfileService } from '../services/customer-profile.service';
 import { IndividualCustomerService } from '../services/individual-customer.service';
+import {
+  CUSTOMER_ACTIVATION_SCHEMA,
+  CUSTOMER_BAD_REQUEST_SCHEMA,
+  CUSTOMER_BATCH_QUEUED_SCHEMA,
+  CUSTOMER_BATCH_RESULT_SCHEMA,
+  CUSTOMER_COMPANY_CREATE_SCHEMA,
+  CUSTOMER_CONFLICT_SCHEMA,
+  CUSTOMER_DETAIL_SCHEMA,
+  CUSTOMER_FORBIDDEN_SCHEMA,
+  CUSTOMER_INDIVIDUAL_CREATE_SCHEMA,
+  CUSTOMER_LIST_SCHEMA,
+  CUSTOMER_NOT_FOUND_SCHEMA,
+  CUSTOMER_PII_PORTAL_SESSION_SCHEMA,
+  CUSTOMER_PII_UPDATE_SCHEMA,
+  CUSTOMER_UNAUTHORIZED_SCHEMA,
+  CUSTOMER_UPDATE_SCHEMA,
+} from './customer-swagger.schemas';
 
 @ApiTags('Customer - Profiles')
-@Controller('customers')
+@ApiBearerAuth()
+@RequirePublishedTalentAccess()
+@Controller('talents/:talentId/customers')
 export class CustomerController {
   constructor(
     private readonly customerProfileService: CustomerProfileService,
@@ -54,45 +79,22 @@ export class CustomerController {
 Supports filtering by profile type, status, tags, membership status, and date range.
 Results include both individual and company customers.`,
   })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
   @ApiResponse({ 
     status: 200, 
     description: 'Returns paginated customer list',
-    schema: {
-      example: {
-        success: true,
-        data: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            nickname: 'John Doe',
-            profileType: 'individual',
-            statusCode: 'active',
-            tags: ['VIP', 'Premium'],
-            isActive: true,
-            createdAt: '2024-01-15T10:30:00Z',
-          },
-        ],
-        meta: {
-          pagination: {
-            page: 1,
-            pageSize: 20,
-            totalCount: 150,
-            totalPages: 8,
-            hasNext: true,
-            hasPrev: false,
-          },
-        },
-      },
-    },
+    schema: CUSTOMER_LIST_SCHEMA,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 401, description: 'Unauthorized', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions', schema: CUSTOMER_FORBIDDEN_SCHEMA })
   async list(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Query() query: CustomerListQueryDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    const result = await this.customerProfileService.findMany(query, context);
+    const result = await this.customerProfileService.findMany(talentId, query, context);
     return {
       success: true,
       data: result.items,
@@ -103,19 +105,23 @@ Results include both individual and company customers.`,
   /**
    * Get customer detail
    */
-  @Get(':id')
+  @Get(':customerId')
   @RequirePermissions({ resource: 'customer.profile', action: 'read' })
   @ApiOperation({ summary: 'Get customer detail' })
-  @ApiResponse({ status: 200, description: 'Returns customer detail' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Returns customer detail', schema: CUSTOMER_DETAIL_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to read customer detail', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to read customer detail', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async getById(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.customerProfileService.findById(id, talentId, context);
+    return this.customerProfileService.findById(customerId, talentId, context);
   }
 
   /**
@@ -124,70 +130,118 @@ Results include both individual and company customers.`,
   @Post('individuals')
   @RequirePermissions({ resource: 'customer.profile', action: 'create' })
   @ApiOperation({ summary: 'Create individual customer' })
-  @ApiResponse({ status: 201, description: 'Customer created' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 201, description: 'Customer created', schema: CUSTOMER_INDIVIDUAL_CREATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Individual-customer payload is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to create individual customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to create individual customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Talent or customer dependency was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async createIndividual(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: CreateIndividualCustomerDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.individualCustomerService.create(dto, context);
+    return this.individualCustomerService.create(talentId, dto, context);
   }
 
   /**
    * Update individual customer (non-PII fields)
    */
-  @Patch('individuals/:id')
+  @Patch('individuals/:customerId')
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Update individual customer' })
-  @ApiResponse({ status: 200, description: 'Customer updated' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Customer updated', schema: CUSTOMER_UPDATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Individual-customer update is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to update individual customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to update individual customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or talent was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  @ApiResponse({ status: 409, description: 'Individual-customer update conflicted with current stored version', schema: CUSTOMER_CONFLICT_SCHEMA })
   async updateIndividual(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() dto: UpdateIndividualCustomerDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.individualCustomerService.update(id, talentId, dto, context);
+    return this.individualCustomerService.update(customerId, talentId, dto, context);
   }
 
   /**
-   * Request PII access token
+   * Create a PII portal session
    */
-  @Post('individuals/:id/request-pii-access')
+  @Post('individuals/:customerId/pii-portal-session')
+  @HttpCode(200)
   @RequirePermissions({ resource: 'customer.profile', action: 'read' })
-  @ApiOperation({ summary: 'Request PII access token' })
-  @ApiResponse({ status: 200, description: 'Returns PII access token' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
-  async requestPiiAccess(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+  @ApiOperation({ summary: 'Create PII portal session' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Returns one-time PII portal redirect data', schema: CUSTOMER_PII_PORTAL_SESSION_SCHEMA })
+  @ApiResponse({ status: 400, description: 'PII portal session request is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to create a PII portal session', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to create a PII portal session', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or talent was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  async createPiiPortalSession(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.individualCustomerService.requestPiiAccess(id, talentId, context);
+    return this.individualCustomerService.createPiiPortalSession(customerId, talentId, context);
+  }
+
+  /**
+   * Create a company-customer PII portal session
+   */
+  @Post('companies/:customerId/pii-portal-session')
+  @HttpCode(200)
+  @RequirePermissions({ resource: 'customer.profile', action: 'read' })
+  @ApiOperation({ summary: 'Create company-customer PII portal session' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Returns one-time PII portal redirect data', schema: CUSTOMER_PII_PORTAL_SESSION_SCHEMA })
+  @ApiResponse({ status: 400, description: 'PII portal session request is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to create a PII portal session', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to create a PII portal session', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or talent was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  async createCompanyPiiPortalSession(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    const context = this.buildContext(user, req);
+    return this.companyCustomerService.createPiiPortalSession(customerId, talentId, context);
   }
 
   /**
    * Update individual customer PII
    */
-  @Patch('individuals/:id/pii')
+  @Patch('individuals/:customerId/pii')
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Update individual customer PII' })
-  @ApiResponse({ status: 200, description: 'PII update submitted' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'PII update submitted', schema: CUSTOMER_PII_UPDATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'PII update payload is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to update customer PII', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to update customer PII', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or talent was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  @ApiResponse({ status: 409, description: 'Customer PII update conflicted with current stored version', schema: CUSTOMER_CONFLICT_SCHEMA })
   async updateIndividualPii(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() dto: UpdateIndividualPiiDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.individualCustomerService.updatePii(id, talentId, dto, context);
+    return this.individualCustomerService.updatePii(customerId, talentId, dto, context);
   }
 
   /**
@@ -196,53 +250,72 @@ Results include both individual and company customers.`,
   @Post('companies')
   @RequirePermissions({ resource: 'customer.profile', action: 'create' })
   @ApiOperation({ summary: 'Create company customer' })
-  @ApiResponse({ status: 201, description: 'Company created' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 201, description: 'Company created', schema: CUSTOMER_COMPANY_CREATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Company-customer payload is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to create company customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to create company customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Talent or customer dependency was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async createCompany(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: CreateCompanyCustomerDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.companyCustomerService.create(dto, context);
+    return this.companyCustomerService.create(talentId, dto, context);
   }
 
   /**
    * Update company customer
    */
-  @Patch('companies/:id')
+  @Patch('companies/:customerId')
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Update company customer' })
-  @ApiResponse({ status: 200, description: 'Company updated' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Company updated', schema: CUSTOMER_UPDATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Company-customer update is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to update company customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to update company customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or talent was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  @ApiResponse({ status: 409, description: 'Company-customer update conflicted with current stored version', schema: CUSTOMER_CONFLICT_SCHEMA })
   async updateCompany(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() dto: UpdateCompanyCustomerDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.companyCustomerService.update(id, talentId, dto, context);
+    return this.companyCustomerService.update(customerId, talentId, dto, context);
   }
 
   /**
    * Deactivate customer
    */
-  @Post(':id/deactivate')
+  @Post(':customerId/deactivate')
+  @HttpCode(200)
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Deactivate customer' })
-  @ApiResponse({ status: 200, description: 'Customer deactivated' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Customer deactivated', schema: CUSTOMER_ACTIVATION_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Deactivate request is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to deactivate customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to deactivate customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
+  @ApiResponse({ status: 409, description: 'Deactivate request conflicted with current stored version', schema: CUSTOMER_CONFLICT_SCHEMA })
   async deactivate(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() dto: DeactivateCustomerDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
     return this.customerProfileService.deactivate(
-      id,
+      customerId,
       talentId,
       dto.reasonCode,
       dto.version,
@@ -253,19 +326,24 @@ Results include both individual and company customers.`,
   /**
    * Reactivate customer
    */
-  @Post(':id/reactivate')
+  @Post(':customerId/reactivate')
+  @HttpCode(200)
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Reactivate customer' })
-  @ApiResponse({ status: 200, description: 'Customer reactivated' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Customer reactivated', schema: CUSTOMER_ACTIVATION_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to reactivate customers', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to reactivate customers', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async reactivate(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
     const context = this.buildContext(user, req);
-    return this.customerProfileService.reactivate(id, talentId, context);
+    return this.customerProfileService.reactivate(customerId, talentId, context);
   }
 
   // ==========================================================================
@@ -278,17 +356,30 @@ Results include both individual and company customers.`,
   @Post('batch')
   @RequirePermissions({ resource: 'customer.profile', action: 'update' })
   @ApiOperation({ summary: 'Execute batch operation on customers' })
-  @ApiResponse({ status: 200, description: 'Batch operation completed' })
-  @ApiResponse({ status: 202, description: 'Batch operation queued for async processing' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Batch operation completed', schema: CUSTOMER_BATCH_RESULT_SCHEMA })
+  @ApiResponse({ status: 202, description: 'Batch operation queued for async processing', schema: CUSTOMER_BATCH_QUEUED_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Batch operation request is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to execute customer batch operations', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to execute customer batch operations', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or membership dependency was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async batchOperation(
-    @Headers('x-talent-id') talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: BatchOperationDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const context = this.buildContext(user, req);
-    return this.batchOperationService.executeBatch(talentId, dto, context);
+    const result = await this.batchOperationService.executeBatch(talentId, dto, context);
+
+    if ('jobId' in result) {
+      res.status(202);
+    } else {
+      res.status(200);
+    }
+
+    return result;
   }
 
   /**

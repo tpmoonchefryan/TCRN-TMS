@@ -64,7 +64,7 @@ export function AdminHeader() {
     router.refresh();
   };
 
-  const displayName = user?.display_name || user?.username || 'AC Administrator';
+  const displayName = user?.displayName || user?.username || tAdmin('platformAdministrator');
   const email = user?.email || '';
   const avatarSeed = user?.username || 'admin';
   const currentLang = LANGUAGES.find(l => l.code === preferredLanguage) || LANGUAGES[0];

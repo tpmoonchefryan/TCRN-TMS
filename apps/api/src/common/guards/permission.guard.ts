@@ -63,9 +63,7 @@ export class PermissionGuard implements CanActivate {
       });
     }
 
-    // Extract scope from request (params or query)
-    const scopeType = (request.params.scopeType || request.query.scopeType) as ScopeType | undefined;
-    const scopeId = (request.params.scopeId || request.query.scopeId) as string | undefined;
+    const { scopeType, scopeId } = this.resolveRequestScope(request);
 
     // Check each required permission
     for (const perm of requiredPermissions) {
@@ -92,5 +90,62 @@ export class PermissionGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private resolveRequestScope(
+    request: Request,
+  ): { scopeType?: ScopeType; scopeId?: string | null } {
+    const params = request.params as Record<string, string | undefined>;
+    const query = request.query as Record<string, unknown>;
+
+    // Canonical private owner-path params must win over legacy query carriers.
+    if (params.talentId) {
+      return {
+        scopeType: 'talent',
+        scopeId: params.talentId,
+      };
+    }
+
+    if (params.subsidiaryId) {
+      return {
+        scopeType: 'subsidiary',
+        scopeId: params.subsidiaryId,
+      };
+    }
+
+    const explicitScopeType = this.getSingleValue(params.scopeType) ?? this.getSingleValue(query.scopeType);
+    const explicitScopeId = this.getSingleValue(params.scopeId) ?? this.getSingleValue(query.scopeId);
+
+    if (explicitScopeType === 'tenant') {
+      return {
+        scopeType: 'tenant',
+        scopeId: null,
+      };
+    }
+
+    if (
+      (explicitScopeType === 'subsidiary' || explicitScopeType === 'talent') &&
+      explicitScopeId
+    ) {
+      return {
+        scopeType: explicitScopeType,
+        scopeId: explicitScopeId,
+      };
+    }
+
+    return {};
+  }
+
+  private getSingleValue(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      const firstValue = value[0];
+      return typeof firstValue === 'string' ? firstValue : undefined;
+    }
+
+    return undefined;
   }
 }

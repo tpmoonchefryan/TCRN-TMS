@@ -3,38 +3,57 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
+import {
+  createTestTenantFixture,
+  createTestUserInTenant,
+  type TenantFixture,
+  type TestUser,
+} from '@tcrn/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '@/modules/database/database.service';
 import { ChangeLogService } from '@/modules/log/services/change-log.service';
+import { BlocklistReadService } from '@/modules/security/application/blocklist-read.service';
+import { BlocklistWriteService } from '@/modules/security/application/blocklist-write.service';
 import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '@/modules/security/dto/security.dto';
+import { BlocklistReadRepository } from '@/modules/security/infrastructure/blocklist-read.repository';
+import { BlocklistWriteRepository } from '@/modules/security/infrastructure/blocklist-write.repository';
 import { BlocklistService } from '@/modules/security/services/blocklist.service';
 import { BlocklistMatcherService } from '@/modules/security/services/blocklist-matcher.service';
-
-const TEST_SCHEMA = 'tenant_test';
 
 describe('BlocklistService', () => {
   let service: BlocklistService;
   let module: TestingModule;
+  let tenantFixture: TenantFixture;
+  let testUser: TestUser;
   let createdEntryId: string | null = null;
-
-  const mockContext = {
-    tenantId: 'tenant-test',
-    userId: '00000000-0000-0000-0000-000000000001',
-    tenantSchema: TEST_SCHEMA,
+  let mockContext: {
+    tenantId: string;
+    userId: string;
+    tenantSchema: string;
   };
 
   beforeAll(async () => {
-    // Create real service with mocked dependencies that don't need DB
+    tenantFixture = await createTestTenantFixture(prisma, 'blocklist');
+    testUser = await createTestUserInTenant(
+      prisma,
+      tenantFixture,
+      `blocklist_admin_${Date.now()}`,
+      ['ADMIN'],
+    );
+    mockContext = {
+      tenantId: tenantFixture.tenant.id,
+      userId: testUser.id,
+      tenantSchema: tenantFixture.schemaName,
+    };
+
     module = await Test.createTestingModule({
       providers: [
-        {
-          provide: BlocklistService,
-          useFactory: (db: DatabaseService, cl: ChangeLogService, matcher: BlocklistMatcherService) => {
-            return new BlocklistService(db, cl, matcher);
-          },
-          inject: [DatabaseService, ChangeLogService, BlocklistMatcherService],
-        },
+        BlocklistService,
+        BlocklistReadRepository,
+        BlocklistWriteRepository,
+        BlocklistReadService,
+        BlocklistWriteService,
         {
           provide: DatabaseService,
           useValue: {
@@ -70,16 +89,16 @@ describe('BlocklistService', () => {
   });
 
   afterAll(async () => {
-    // Cleanup any created entries
     if (createdEntryId) {
       try {
         await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".blocklist_entry WHERE id = $1::uuid
+          DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
         `, createdEntryId);
       } catch {
         // Ignore cleanup errors
       }
     }
+    await tenantFixture?.cleanup();
     await module?.close();
   });
 
@@ -89,7 +108,7 @@ describe('BlocklistService', () => {
 
   describe('findMany', () => {
     it('should list blocklist entries with pagination', async () => {
-      const result = await service.findMany(TEST_SCHEMA, { page: 1, pageSize: 20 });
+      const result = await service.findMany(tenantFixture.schemaName, { page: 1, pageSize: 20 });
 
       expect(result).toHaveProperty('items');
       expect(result).toHaveProperty('total');
@@ -98,14 +117,14 @@ describe('BlocklistService', () => {
     });
 
     it('should filter by scopeType tenant', async () => {
-      const result = await service.findMany(TEST_SCHEMA, { scopeType: 'tenant' });
+      const result = await service.findMany(tenantFixture.schemaName, { scopeType: 'tenant' });
 
       expect(result).toHaveProperty('items');
       // All returned items should have tenant owner type or be inherited
     });
 
     it('should filter by category', async () => {
-      const result = await service.findMany(TEST_SCHEMA, { category: 'profanity' });
+      const result = await service.findMany(tenantFixture.schemaName, { category: 'profanity' });
 
       expect(result).toHaveProperty('items');
       result.items.forEach(item => {
@@ -114,7 +133,7 @@ describe('BlocklistService', () => {
     });
 
     it('should filter by patternType', async () => {
-      const result = await service.findMany(TEST_SCHEMA, { patternType: BlocklistPatternType.KEYWORD });
+      const result = await service.findMany(tenantFixture.schemaName, { patternType: BlocklistPatternType.KEYWORD });
 
       expect(result).toHaveProperty('items');
       result.items.forEach(item => {
@@ -123,7 +142,7 @@ describe('BlocklistService', () => {
     });
 
     it('should return items ordered by severity and createdAt', async () => {
-      const result = await service.findMany(TEST_SCHEMA, {});
+      const result = await service.findMany(tenantFixture.schemaName, {});
 
       expect(result).toHaveProperty('items');
       // Should not throw and should return valid structure
@@ -133,7 +152,10 @@ describe('BlocklistService', () => {
   describe('findById', () => {
     it('should throw NotFoundException for non-existent entry', async () => {
       await expect(
-        service.findById('00000000-0000-0000-0000-000000000000'),
+        service.findById(
+          tenantFixture.schemaName,
+          '00000000-0000-0000-0000-000000000000',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -195,7 +217,7 @@ describe('BlocklistService', () => {
       // Cleanup immediately
       if (result.id) {
         await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".blocklist_entry WHERE id = $1::uuid
+          DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
         `, result.id);
       }
 
@@ -233,7 +255,7 @@ describe('BlocklistService', () => {
       } finally {
         // Cleanup
         await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".blocklist_entry WHERE id = $1::uuid
+          DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
         `, created.id);
       }
     });
@@ -262,7 +284,7 @@ describe('BlocklistService', () => {
         ).rejects.toThrow(BadRequestException);
       } finally {
         await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".blocklist_entry WHERE id = $1::uuid
+          DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
         `, created.id);
       }
     });
@@ -291,7 +313,7 @@ describe('BlocklistService', () => {
       } finally {
         // Hard delete for cleanup
         await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".blocklist_entry WHERE id = $1::uuid
+          DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
         `, created.id);
       }
     });

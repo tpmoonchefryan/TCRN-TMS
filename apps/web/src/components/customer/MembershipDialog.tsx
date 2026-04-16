@@ -4,7 +4,7 @@
 
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -34,7 +34,7 @@ import type { CustomerMembershipRecord } from '@/lib/api/modules/customer';
 import { membershipApi } from '@/lib/api/modules/customer';
 
 import {
-  DEFAULT_MEMBERSHIP_CLASSES,
+  buildDefaultMembershipClasses,
   DEFAULT_PLATFORM_OPTIONS,
   type DialogMembershipClass,
   type DialogPlatformOption,
@@ -80,6 +80,17 @@ export function MembershipDialog({
   const [note, setNote] = useState('');
 
   const isEdit = !!membership;
+  const fallbackMembershipClasses = useMemo(
+    () =>
+      buildDefaultMembershipClasses({
+        subscription: t('fallbackMembership.subscription'),
+        channelMembership: t('fallbackMembership.channelMembership'),
+        tier1: t('fallbackMembership.tier1'),
+        tier2: t('fallbackMembership.tier2'),
+        tier3: t('fallbackMembership.tier3'),
+      }),
+    [t],
+  );
 
   // Get types for selected class
   const selectedClass = membershipClasses.find((c) => c.code === selectedClassCode);
@@ -108,11 +119,11 @@ export function MembershipDialog({
         if (membershipTreeResponse.success && membershipTreeResponse.data?.length) {
           setMembershipClasses(mapMembershipTree(membershipTreeResponse.data));
         } else {
-          setMembershipClasses(DEFAULT_MEMBERSHIP_CLASSES);
+          setMembershipClasses(fallbackMembershipClasses);
         }
       } catch {
         setPlatforms(DEFAULT_PLATFORM_OPTIONS);
-        setMembershipClasses(DEFAULT_MEMBERSHIP_CLASSES);
+        setMembershipClasses(fallbackMembershipClasses);
       }
 
       setIsLoading(false);
@@ -121,7 +132,7 @@ export function MembershipDialog({
     if (open) {
       loadData();
     }
-  }, [open]);
+  }, [fallbackMembershipClasses, open]);
 
   // Initialize form when editing
   useEffect(() => {

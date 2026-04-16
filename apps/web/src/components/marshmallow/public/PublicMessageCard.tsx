@@ -110,7 +110,7 @@ export const PublicMessageCard = memo(function PublicMessageCard({
     try {
       const response = await publicApi.toggleMarshmallowReaction(message.id, emoji, fingerprint);
       if (!response.success || !response.data) {
-        throw new Error('Failed to react');
+        throw new Error(t('reactionFailed'));
       }
       
       // Update with server response
@@ -139,10 +139,10 @@ export const PublicMessageCard = memo(function PublicMessageCard({
     const url = `${window.location.origin}/m/${path}#${message.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard');
+      toast.success(t('linkCopied'));
     } catch {
       // Fallback for older browsers
-      toast.error('Failed to copy link');
+      toast.error(t('linkCopyFailed'));
     }
   };
 
@@ -187,7 +187,7 @@ export const PublicMessageCard = memo(function PublicMessageCard({
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in shadow-sm">
                         <img 
                             src={img || ''} 
-                            alt={`Attachment ${index}`}
+                            alt={t('attachmentAlt', { index: index + 1 })}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
                             referrerPolicy="no-referrer"
@@ -207,7 +207,7 @@ export const PublicMessageCard = memo(function PublicMessageCard({
                 {previewImage && (
                     <img 
                         src={previewImage} 
-                        alt="Preview" 
+                        alt={t('previewAlt')}
                         className="max-h-[90vh] max-w-full object-contain rounded-lg shadow-2xl"
                         referrerPolicy="no-referrer"
                     />
@@ -256,7 +256,7 @@ export const PublicMessageCard = memo(function PublicMessageCard({
                     {avatarUrl ? (
                       <img 
                         src={avatarUrl} 
-                        alt={author || 'Reply author'} 
+                        alt={author || t('replyAuthorAlt')}
                         className="shrink-0 w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
@@ -268,7 +268,7 @@ export const PublicMessageCard = memo(function PublicMessageCard({
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-bold text-slate-700">{t('answer')}</span>
                         {author && (
-                          <span className="text-xs text-slate-500">by {author}</span>
+                          <span className="text-xs text-slate-500">{t('answeredBy', { name: author })}</span>
                         )}
                         {time && (
                           <span className="text-xs text-slate-400">

@@ -2,21 +2,16 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { CustomerProfileService } from './customer-profile.service';
+import { mapCustomerProfileDetailItem } from '../domain/customer-profile-read.policy';
 
-describe('CustomerProfileService formatDetailItem', () => {
-  it('keeps company contact fields in the detail response', () => {
-    const service = new CustomerProfileService({} as never, {} as never, {} as never);
-
-    const formatted = (service as unknown as {
-      formatDetailItem: (item: Record<string, unknown>) => Record<string, unknown>;
-    }).formatDetailItem({
+describe('mapCustomerProfileDetailItem', () => {
+  it('does not expose company contact fields in the detail response', () => {
+    const formatted = mapCustomerProfileDetailItem({
       id: 'customer-1',
       talentId: 'talent-1',
       profileStoreId: 'store-1',
       originTalentId: 'origin-1',
       lastModifiedTalentId: null,
-      rmProfileId: 'rm-1',
       profileType: 'company',
       nickname: 'Acme',
       primaryLanguage: 'en',
@@ -43,10 +38,6 @@ describe('CustomerProfileService formatDetailItem', () => {
         vatId: 'VAT-1',
         establishmentDate: new Date('2020-01-01T00:00:00.000Z'),
         website: 'https://acme.example.com',
-        contactName: 'Alice',
-        contactPhone: '+1-555-0100',
-        contactEmail: 'alice@acme.example.com',
-        contactDepartment: 'Partnerships',
         businessSegment: {
           id: 'segment-1',
           code: 'ENT',
@@ -58,12 +49,12 @@ describe('CustomerProfileService formatDetailItem', () => {
       accessLogs: [],
     });
 
-    expect(formatted.company).toMatchObject({
+    expect('company' in formatted && formatted.company).toMatchObject({
       companyLegalName: 'Acme Corp',
-      contactName: 'Alice',
-      contactPhone: '+1-555-0100',
-      contactEmail: 'alice@acme.example.com',
-      contactDepartment: 'Partnerships',
     });
+    expect('company' in formatted && formatted.company).not.toHaveProperty('contactName');
+    expect('company' in formatted && formatted.company).not.toHaveProperty('contactPhone');
+    expect('company' in formatted && formatted.company).not.toHaveProperty('contactEmail');
+    expect('company' in formatted && formatted.company).not.toHaveProperty('contactDepartment');
   });
 });

@@ -25,7 +25,7 @@ describe('useCurrentUserProfile', () => {
       id: 'user-1',
       username: 'admin',
       email: 'admin@example.com',
-      display_name: 'Original Name',
+      displayName: 'Original Name',
     },
     mergeCurrentUserProfile,
     setCurrentUserAvatar,
@@ -38,7 +38,7 @@ describe('useCurrentUserProfile', () => {
         id: 'user-1',
         username: 'admin',
         email: 'admin@example.com',
-        display_name: 'Original Name',
+        displayName: 'Original Name',
       },
       mergeCurrentUserProfile,
       setCurrentUserAvatar,
@@ -55,7 +55,7 @@ describe('useCurrentUserProfile', () => {
       ...authState,
       user: {
         ...authState.user,
-        display_name: 'Updated From Store',
+        displayName: 'Updated From Store',
       },
     };
     mockUseAuthStore.mockImplementation(() => authState);
@@ -72,7 +72,7 @@ describe('useCurrentUserProfile', () => {
         id: 'user-1',
         username: 'admin',
         email: 'updated@example.com',
-        display_name: 'Updated Name',
+        displayName: 'Updated Name',
       },
     });
 
@@ -95,7 +95,7 @@ describe('useCurrentUserProfile', () => {
       id: 'user-1',
       username: 'admin',
       email: 'updated@example.com',
-      display_name: 'Updated Name',
+      displayName: 'Updated Name',
     });
     expect(saveResult).toEqual({ success: true });
     expect(result.current.isSaving).toBe(false);

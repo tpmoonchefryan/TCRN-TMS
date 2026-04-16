@@ -1,212 +1,123 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { NotFoundException } from '@nestjs/common';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RequestContext } from '@tcrn/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService } from '../../../log';
+import { MembershipRecordApplicationService } from '../../application/membership-record.service';
 import { MembershipRecordService } from '../membership-record.service';
 
-// Skip tests that require complex internal method mocking
-describe.skip('MembershipRecordService', () => {
-  let service: MembershipRecordService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockPrisma: {
-    membershipRecord: {
-      findMany: ReturnType<typeof vi.fn>;
-      findUnique: ReturnType<typeof vi.fn>;
-      findFirst: ReturnType<typeof vi.fn>;
-      count: ReturnType<typeof vi.fn>;
-      create: ReturnType<typeof vi.fn>;
-      update: ReturnType<typeof vi.fn>;
-      delete: ReturnType<typeof vi.fn>;
-    };
-    customerProfile: {
-      findUnique: ReturnType<typeof vi.fn>;
-    };
-    socialPlatform: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    membershipClass: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    membershipType: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    membershipLevel: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    $transaction: ReturnType<typeof vi.fn>;
-  };
-
-  const mockMembershipRecord = {
-    id: 'membership-123',
-    customerId: 'customer-123',
-    platformId: 'platform-123',
-    classId: 'class-123',
-    typeId: 'type-123',
-    levelId: 'level-123',
-    membershipNo: 'MEM001',
-    validFrom: new Date(),
-    validTo: null,
-    isExpired: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    platform: { id: 'platform-123', code: 'YOUTUBE', displayName: 'YouTube' },
-    membershipClass: { id: 'class-123', code: 'STANDARD' },
-    membershipType: { id: 'type-123', code: 'MONTHLY' },
-    membershipLevel: { id: 'level-123', code: 'GOLD' },
-  };
-
-  const mockCustomer = {
-    id: 'customer-123',
-    talentId: 'talent-123',
-    isActive: true,
-  };
-
-  const mockContext = {
-    tenantId: 'tenant-123',
-    userId: 'user-123',
+describe('MembershipRecordService', () => {
+  const context: RequestContext = {
+    tenantId: 'tenant-1',
     tenantSchema: 'tenant_test',
+    userId: 'user-1',
+    userName: 'Tester',
+    ipAddress: '127.0.0.1',
+    userAgent: 'Vitest',
+    requestId: 'req-1',
   };
+
+  const mockApplicationService = {
+    findByCustomer: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    getSummary: vi.fn(),
+  } as unknown as MembershipRecordApplicationService;
+
+  const service = new MembershipRecordService(mockApplicationService);
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
 
-    mockPrisma = {
-      membershipRecord: {
-        findMany: vi.fn().mockResolvedValue([mockMembershipRecord]),
-        findUnique: vi.fn().mockResolvedValue(mockMembershipRecord),
-        findFirst: vi.fn().mockResolvedValue(mockMembershipRecord),
-        count: vi.fn().mockResolvedValue(1),
-        create: vi.fn().mockResolvedValue(mockMembershipRecord),
-        update: vi.fn().mockResolvedValue(mockMembershipRecord),
-        delete: vi.fn().mockResolvedValue(mockMembershipRecord),
+  it('delegates list and create calls to the application service', async () => {
+    vi.mocked(mockApplicationService.findByCustomer).mockResolvedValue({
+      items: [],
+      meta: {
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          totalItems: 0,
+          totalPages: 0,
+        },
+        summary: {
+          activeCount: 0,
+          expiredCount: 0,
+          totalCount: 0,
+        },
       },
-      customerProfile: {
-        findUnique: vi.fn().mockResolvedValue(mockCustomer),
-      },
-      socialPlatform: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'platform-123', code: 'YOUTUBE' }),
-      },
-      membershipClass: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'class-123', code: 'STANDARD' }),
-      },
-      membershipType: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'type-123', code: 'MONTHLY' }),
+    });
+    vi.mocked(mockApplicationService.create).mockResolvedValue({
+      id: 'membership-1',
+      platform: {
+        code: 'YOUTUBE',
+        name: 'YouTube',
       },
       membershipLevel: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'level-123', code: 'GOLD' }),
+        code: 'GOLD',
+        name: 'Gold',
       },
-      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
-    };
+      validFrom: new Date('2026-04-14T00:00:00.000Z'),
+      validTo: null,
+      autoRenew: false,
+      createdAt: new Date('2026-04-14T00:00:00.000Z'),
+    });
 
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-      buildPagination: vi.fn().mockReturnValue({ skip: 0, take: 20 }),
-    };
-
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-    };
-
-    service = new MembershipRecordService(
-      mockDatabaseService as DatabaseService,
-      mockChangeLogService as ChangeLogService,
-    );
+    await expect(
+      service.findByCustomer('customer-1', 'talent-1', {}, context),
+    ).resolves.toMatchObject({ items: [] });
+    await expect(
+      service.create(
+        'customer-1',
+        'talent-1',
+        {
+          platformCode: 'YOUTUBE',
+          membershipLevelCode: 'GOLD',
+          validFrom: '2026-04-14T00:00:00.000Z',
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ id: 'membership-1' });
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe('findByCustomer', () => {
-    it('should list membership records for a customer', async () => {
-      const result = await service.findByCustomer('customer-123', 'talent-123', {}, mockContext);
-
-      expect(result.items.length).toBe(1);
-      expect(result.meta.summary.totalCount).toBeGreaterThanOrEqual(1);
+  it('delegates update and summary calls to the application service', async () => {
+    vi.mocked(mockApplicationService.update).mockResolvedValue({
+      id: 'membership-1',
+      validTo: null,
+      autoRenew: true,
+      note: 'VIP',
+      updatedAt: new Date('2026-04-14T00:05:00.000Z'),
     });
-
-    it('should filter by platform code', async () => {
-      await service.findByCustomer('customer-123', 'talent-123', {
+    vi.mocked(mockApplicationService.getSummary).mockResolvedValue({
+      highestLevel: {
         platformCode: 'YOUTUBE',
-      }, mockContext);
-
-      const findManyCall = mockPrisma.membershipRecord.findMany.mock.calls[0][0];
-      expect(findManyCall.where.platform).toEqual({ code: 'YOUTUBE' });
+        platformName: 'YouTube',
+        levelCode: 'GOLD',
+        levelName: 'Gold',
+        color: '#ffcc00',
+      },
+      activeCount: 1,
+      totalCount: 2,
     });
 
-    it('should filter active memberships', async () => {
-      await service.findByCustomer('customer-123', 'talent-123', {
-        isActive: true,
-      }, mockContext);
-
-      const findManyCall = mockPrisma.membershipRecord.findMany.mock.calls[0][0];
-      expect(findManyCall.where.isExpired).toBe(false);
-    });
-
-    it('should include expired memberships when requested', async () => {
-      await service.findByCustomer('customer-123', 'talent-123', {
-        includeExpired: true,
-      }, mockContext);
-
-      const findManyCall = mockPrisma.membershipRecord.findMany.mock.calls[0][0];
-      expect(findManyCall.where.isExpired).toBeUndefined();
-    });
-
-    it('should sort by validFrom by default', async () => {
-      await service.findByCustomer('customer-123', 'talent-123', {}, mockContext);
-
-      const findManyCall = mockPrisma.membershipRecord.findMany.mock.calls[0][0];
-      expect(findManyCall.orderBy.validFrom).toBe('desc');
-    });
-  });
-
-  describe('create', () => {
-    it('should create membership record', async () => {
-      const dto = {
-        platformCode: 'YOUTUBE',
-        classCode: 'STANDARD',
-        typeCode: 'MONTHLY',
-        membershipLevelCode: 'GOLD',
-        membershipNo: 'MEM002',
-        validFrom: new Date().toISOString(),
-      };
-
-      const result = await service.create('customer-123', 'talent-123', dto, mockContext);
-
-      expect(result.id).toBe('membership-123');
-      expect(mockPrisma.membershipRecord.create).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException when platform not found', async () => {
-      mockPrisma.socialPlatform.findFirst.mockResolvedValue(null);
-
-      const dto = {
-        platformCode: 'INVALID',
-        classCode: 'STANDARD',
-        membershipLevelCode: 'GOLD',
-        validFrom: new Date().toISOString(),
-      };
-
-      await expect(
-        service.create('customer-123', 'talent-123', dto, mockContext),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should log creation in change log', async () => {
-      const dto = {
-        platformCode: 'YOUTUBE',
-        classCode: 'STANDARD',
-        membershipLevelCode: 'GOLD',
-        validFrom: new Date().toISOString(),
-      };
-
-      await service.create('customer-123', 'talent-123', dto, mockContext);
-
-      expect(mockChangeLogService.create).toHaveBeenCalled();
+    await expect(
+      service.update(
+        'customer-1',
+        'record-1',
+        'talent-1',
+        {
+          autoRenew: true,
+          note: 'VIP',
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ id: 'membership-1' });
+    await expect(
+      service.getSummary('customer-1', context),
+    ).resolves.toMatchObject({
+      highestLevel: { levelCode: 'GOLD' },
+      activeCount: 1,
+      totalCount: 2,
     });
   });
 });

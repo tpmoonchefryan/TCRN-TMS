@@ -3,6 +3,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import type { TalentLifecycleStatus } from '@/lib/api/modules/talent';
+import { getBusinessSelectableTalents as filterBusinessSelectableTalents } from '@/lib/talent-lifecycle-routing';
+
 // Simplified Talent info for UI purposes
 export interface TalentInfo {
   id: string;
@@ -13,6 +16,8 @@ export interface TalentInfo {
   subsidiaryName?: string;
   path: string;
   homepagePath?: string | null;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt?: string | null;
 }
 
 // Subsidiary info for organization tree
@@ -71,6 +76,7 @@ export interface TalentState {
   setFetchError: (error: string | null) => void;
   
   // Computed helpers
+  getBusinessSelectableTalents: () => TalentInfo[];
   hasTalentAccess: () => boolean;
   hasMultipleTalents: () => boolean;
   switchToTalent: (talentId: string) => boolean;
@@ -103,11 +109,31 @@ export const useTalentStore = create<TalentState>()(
       },
 
       setCurrentTalent: (talent: TalentInfo | null) => {
-        set({ currentTalent: talent });
+        if (!talent) {
+          set({ currentTalent: null });
+          return;
+        }
+
+        const businessSelectableTalent = filterBusinessSelectableTalents(
+          get().accessibleTalents
+        ).find((candidate) => candidate.id === talent.id);
+
+        if (businessSelectableTalent) {
+          set({ currentTalent: businessSelectableTalent });
+        }
       },
 
       setAccessibleTalents: (talents: TalentInfo[]) => {
-        set({ accessibleTalents: talents });
+        const currentTalent = get().currentTalent;
+        const businessSelectableTalents = filterBusinessSelectableTalents(talents);
+        const nextCurrentTalent = currentTalent
+          ? businessSelectableTalents.find((talent) => talent.id === currentTalent.id) ?? null
+          : null;
+
+        set({
+          accessibleTalents: talents,
+          currentTalent: nextCurrentTalent,
+        });
       },
 
       setOrganizationTree: (tree: SubsidiaryInfo[]) => {
@@ -138,19 +164,22 @@ export const useTalentStore = create<TalentState>()(
         set({ fetchError: error });
       },
 
+      getBusinessSelectableTalents: () => {
+        return filterBusinessSelectableTalents(get().accessibleTalents);
+      },
+
       hasTalentAccess: () => {
-        const { accessibleTalents } = get();
-        return accessibleTalents.length > 0;
+        return get().getBusinessSelectableTalents().length > 0;
       },
 
       hasMultipleTalents: () => {
-        const { accessibleTalents } = get();
-        return accessibleTalents.length > 1;
+        return get().getBusinessSelectableTalents().length > 1;
       },
 
       switchToTalent: (talentId: string) => {
-        const { accessibleTalents } = get();
-        const talent = accessibleTalents.find(t => t.id === talentId);
+        const talent = get()
+          .getBusinessSelectableTalents()
+          .find((candidate) => candidate.id === talentId);
         if (talent) {
           set({ currentTalent: talent, uiMode: 'business' });
           return true;

@@ -26,7 +26,7 @@ export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
     const newEvent: ScheduleEvent = {
       day: 'mon',
       time: '20:00',
-      title: 'New Event',
+      title: t('newEvent'),
       type: 'game',
     };
     onChange({ ...props, events: [...(props.events || []), newEvent] });
@@ -71,12 +71,12 @@ export function ScheduleEditor({ props, onChange }: ScheduleEditorProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="UTC">UTC</SelectItem>
-            <SelectItem value="Asia/Shanghai">Asia/Shanghai (UTC+8)</SelectItem>
-            <SelectItem value="Asia/Tokyo">Asia/Tokyo (UTC+9)</SelectItem>
-            <SelectItem value="America/Los_Angeles">America/Los_Angeles (UTC-8/7)</SelectItem>
-            <SelectItem value="America/New_York">America/New_York (UTC-5/4)</SelectItem>
-            <SelectItem value="Europe/London">Europe/London (UTC+0/1)</SelectItem>
+            <SelectItem value="UTC">{t('timezoneUtc')}</SelectItem>
+            <SelectItem value="Asia/Shanghai">{t('timezoneShanghai')}</SelectItem>
+            <SelectItem value="Asia/Tokyo">{t('timezoneTokyo')}</SelectItem>
+            <SelectItem value="America/Los_Angeles">{t('timezoneLosAngeles')}</SelectItem>
+            <SelectItem value="America/New_York">{t('timezoneNewYork')}</SelectItem>
+            <SelectItem value="Europe/London">{t('timezoneLondon')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

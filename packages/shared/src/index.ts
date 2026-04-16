@@ -1,21 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import * as adminSchema from './types/admin/schema';
-import * as customerSchema from './types/customer/schema';
 import * as integrationSchema from './types/integration/schema';
-import * as logsSchema from './types/logs/schema';
-import * as marshmallowSchema from './types/marshmallow/schema';
-import * as reportSchema from './types/report/schema';
-import * as securitySchema from './types/security/schema';
 
 export {
-    adminSchema,
-    customerSchema,
-    integrationSchema,
-    logsSchema,
-    marshmallowSchema,
-    reportSchema,
-    securitySchema
+    integrationSchema
 };
 
 // Core exports (canonical sources)
@@ -63,6 +51,17 @@ export type {
 
 // Log module types (Loki integration)
 export type {
+    LocalReportJobCreateResponse,
+    MfrFilterCriteria,
+    PiiPlatformReportCreateResponse,
+    ReportCreateResponse,
+    ReportDefinition,
+    ReportFormat,
+    ReportJobStatus,
+    ReportType,
+} from './domains/reporting-dataflow';
+export { AVAILABLE_REPORTS } from './domains/reporting-dataflow';
+export type {
     Address, CustomerAccessLog, CustomerCompany, CustomerIndividual, CustomerProfile, CustomerProfileBase, Email, ImportJob, MembershipRecord, MembershipSummary, PhoneNumber, PiiData, PlatformIdentity,
     PlatformIdentityHistory, TalentSummary
 } from './types/customer/schema';
@@ -79,10 +78,6 @@ export {
     PERSONAL_INFO_FIELDS as LOG_PERSONAL_INFO_FIELDS, LogSeverity as LogSeverityEnum, TechEventScope as TechEventScopeEnum, TechEventType as TechEventTypeEnum
 } from './types/log-types';
 export { DEFAULT_CONFIG as DEFAULT_MARSHMALLOW_CONFIG } from './types/marshmallow/schema';
-export type {
-    MfrFilterCriteria, ReportDefinition, ReportJobStatus, ReportType
-} from './types/report/schema';
-export { AVAILABLE_REPORTS } from './types/report/schema';
 
 // Testing utilities
 export * from './testing';

@@ -100,9 +100,6 @@ export interface PiiData {
 export interface CustomerIndividual extends CustomerProfileBase {
   profile_type: 'individual';
   individual: {
-    rm_profile_id: string;
-    search_hint_name?: string; // "张*三"
-    search_hint_phone_last4?: string; // "5678"
     pii_loaded: boolean;
     pii_data?: PiiData; // Only present if loaded
   };

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 import { buildSidebarTree, getSidebarHref, type SidebarTreeNode } from '@/components/layout/sidebar-tree';
@@ -89,13 +90,19 @@ const TreeNode = ({ node, level = 0 }: TreeNodeProps) => {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const tNav = useTranslations('navigation');
+  const tCommon = useTranslations('common');
+  const tAdmin = useTranslations('adminConsole.sidebar');
   const { hasPermission } = usePermission();
   const { tenantCode, user, tenantId } = useAuthStore();
   const { organizationTree } = useTalentStore();
   const [isLoading] = useState(false);
 
   // Convert organizationTree to sidebar tree format
-  const treeData = useMemo(() => buildSidebarTree(organizationTree, tenantId), [organizationTree, tenantId]);
+  const treeData = useMemo(
+    () => buildSidebarTree(organizationTree, tenantId, tCommon('tenant')),
+    [organizationTree, tenantId, tCommon],
+  );
 
   // Check for AC Tenant Access
   const isAcAdmin = tenantCode === 'AC' || user?.email?.includes('admin');
@@ -107,14 +114,14 @@ export function Sidebar() {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-pink-400 rounded-lg flex items-center justify-center text-white">
             T
           </div>
-          <span>TCRN TMS</span>
+          <span>{tCommon('appName')}</span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1 p-4 h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
         <div className="mb-6">
           <h3 className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Main
+            {tNav('main')}
           </h3>
           <Link href="/dashboard" className={cn(
             "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 mx-2",
@@ -123,7 +130,7 @@ export function Sidebar() {
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           )}>
             <LayoutDashboard size={18} />
-            Dashboard
+            {tNav('dashboard')}
           </Link>
           
           {hasPermission('customer.profile', ActionType.READ) && (
@@ -134,7 +141,7 @@ export function Sidebar() {
                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             )}>
               <Users size={18} />
-              Customers
+              {tNav('customers')}
             </Link>
           )}
           
@@ -146,7 +153,7 @@ export function Sidebar() {
                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             )}>
               <PieChart size={18} />
-              Reports
+              {tNav('reports')}
             </Link>
           )}
         </div>
@@ -154,7 +161,7 @@ export function Sidebar() {
         <div className="mb-6">
           <div className="flex items-center justify-between px-4 mb-2">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Organization
+              {tNav('organization')}
             </h3>
             {isLoading && <Loader2 size={12} className="animate-spin text-primary" />}
           </div>
@@ -169,7 +176,7 @@ export function Sidebar() {
           {isAcAdmin && (
             <div className="mb-6 animate-fade-in">
               <h3 className="px-4 text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">
-                Platform Admin
+                {tAdmin('platformAdmin')}
               </h3>
               <Link href="/dashboard/admin/tenants" className={cn(
                 "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 mx-2",
@@ -178,7 +185,7 @@ export function Sidebar() {
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               )}>
                 <Building size={18} />
-                Tenants
+                {tAdmin('tenants')}
               </Link>
               <Link href="/dashboard/admin/consumers" className={cn(
                 "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 mx-2",
@@ -187,22 +194,13 @@ export function Sidebar() {
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               )}>
                 <ShieldAlert size={18} />
-                Consumers (API Keys)
-              </Link>
-              <Link href="/dashboard/admin/customers" className={cn(
-                "flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 mx-2",
-                pathname.includes('/admin/customers')
-                  ? "bg-purple-50 text-purple-700" 
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-              )}>
-                <Users size={18} />
-                AC Customers
+                {tAdmin('apiConsumers')}
               </Link>
             </div>
           )}
 
           <h3 className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            System
+            {tAdmin('system')}
           </h3>
 
           <Link href="/dashboard/settings" className={cn(
@@ -212,7 +210,7 @@ export function Sidebar() {
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           )}>
             <Settings size={18} />
-            Settings
+            {tNav('settings')}
           </Link>
 
           {/* 

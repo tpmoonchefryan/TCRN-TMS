@@ -524,7 +524,13 @@ export function generateTestTenantCode(suffix: string = ''): string {
  * Generate schema name from tenant code
  */
 export function generateSchemaName(tenantCode: string): string {
-  return `tenant_${tenantCode.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)}`;
+  const normalizedCode = tenantCode
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return `tenant_${normalizedCode}`.substring(0, 63);
 }
 
 /**
@@ -711,14 +717,12 @@ export async function createTestCustomerInTenant(
   overrides: Partial<{
     nickname: string;
     profileType: string;
-    rmProfileId: string;
     talentId: string;
     profileStoreId: string;
     createdBy: string;
   }> = {}
-): Promise<{ id: string; nickname: string; rmProfileId: string }> {
+): Promise<{ id: string; nickname: string }> {
   const customerId = crypto.randomUUID();
-  const rmProfileId = overrides.rmProfileId || crypto.randomUUID();
 
   const createdBy = overrides.createdBy || (
     await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
@@ -752,15 +756,14 @@ export async function createTestCustomerInTenant(
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".customer_profile
     (
-      id, talent_id, profile_store_id, origin_talent_id, rm_profile_id, profile_type,
+      id, talent_id, profile_store_id, origin_talent_id, profile_type,
       nickname, tags, is_active, created_at, updated_at, created_by, updated_by
     )
-    VALUES ($1::uuid, $2::uuid, $3::uuid, $2::uuid, $4::uuid, $5, $6, '{}', true, NOW(), NOW(), $7::uuid, $7::uuid)
+    VALUES ($1::uuid, $2::uuid, $3::uuid, $2::uuid, $4, $5, '{}', true, NOW(), NOW(), $6::uuid, $6::uuid)
   `, 
     customerId, 
     talent.id,
     talent.profileStoreId,
-    rmProfileId,
     overrides.profileType || 'individual',
     overrides.nickname || 'Test Customer',
     createdBy,
@@ -769,7 +772,6 @@ export async function createTestCustomerInTenant(
   return {
     id: customerId,
     nickname: overrides.nickname || 'Test Customer',
-    rmProfileId,
   };
 }
 
@@ -829,6 +831,8 @@ export async function createTestTalentInTenant(
     displayName: string;
     profileStoreId: string;
     createdBy: string;
+    lifecycleStatus: 'draft' | 'published' | 'disabled';
+    publishedBy: string;
   }> = {}
 ): Promise<{ id: string; code: string; homepagePath: string }> {
   const talentId = crypto.randomUUID();
@@ -870,14 +874,23 @@ export async function createTestTalentInTenant(
     throw new Error(`No active profile store found in ${tenantFixture.schemaName}`);
   }
 
+  const lifecycleStatus = overrides.lifecycleStatus ?? 'draft';
+  const publishedBy = lifecycleStatus === 'draft'
+    ? null
+    : overrides.publishedBy || createdBy;
+  const publishedAt = lifecycleStatus === 'draft'
+    ? null
+    : new Date().toISOString();
+
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".talent 
     (
       id, code, path, name_en, display_name, subsidiary_id, profile_store_id,
-      homepage_path, is_active, created_at, updated_at, created_by, updated_by
+      homepage_path, lifecycle_status, published_at, published_by,
+      is_active, created_at, updated_at, created_by, updated_by
     )
-    VALUES ($1::uuid, $2, $3, $4, $5, $6::uuid, $7::uuid, $8, true, NOW(), NOW(), $9::uuid, $9::uuid)
-  `, talentId, code, `${subsidiaryPath}${code}/`, overrides.nameEn || 'Test Talent', overrides.displayName || overrides.nameEn || 'Test Talent', subsidiaryId, profileStoreId, homepagePath, createdBy);
+    VALUES ($1::uuid, $2, $3, $4, $5, $6::uuid, $7::uuid, $8, $9, $10::timestamptz, $11::uuid, true, NOW(), NOW(), $12::uuid, $12::uuid)
+  `, talentId, code, `${subsidiaryPath}${code}/`, overrides.nameEn || 'Test Talent', overrides.displayName || overrides.nameEn || 'Test Talent', subsidiaryId, profileStoreId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
 
   return { id: talentId, code, homepagePath };
 }
@@ -1081,7 +1094,6 @@ export interface MfrTestData {
   customers: Array<{
     id: string;
     nickname: string;
-    rmProfileId: string;
   }>;
   memberships: Array<{
     customerId: string;
@@ -1105,7 +1117,6 @@ export function createMfrTestData(count: number = 10): MfrTestData {
     customers.push({
       id: customerId,
       nickname: `Test Customer ${i + 1}`,
-      rmProfileId: crypto.randomUUID(),
     });
 
     // Add 1-3 memberships per customer

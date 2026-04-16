@@ -3,7 +3,6 @@
 
 import { PrismaClient } from '@prisma/client';
 
-import { getDefaultPiiSeedConfig } from './_pii-seed-config';
 import { UatTenantResult } from './20-uat-tenant';
 
 export interface UatOrganizationResult {
@@ -11,72 +10,23 @@ export interface UatOrganizationResult {
   talents: Record<string, string>;
 }
 
-async function upsertTenantDefaultPiiConfig(
-  prisma: PrismaClient,
-  schema: string,
-  systemUserId: string,
-): Promise<string | null> {
-  const defaultPiiSeedConfig = getDefaultPiiSeedConfig();
-  if (!defaultPiiSeedConfig) {
-    await prisma.$executeRawUnsafe(
-      `UPDATE "${schema}".pii_service_config
-       SET is_active = false,
-           is_healthy = false,
-           updated_at = now(),
-           updated_by = $1::uuid
-       WHERE code = 'DEFAULT_PII'`,
-      systemUserId,
-    );
-    return null;
-  }
-
-  const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${schema}".pii_service_config
-     (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja, 
-      api_url, auth_type, health_check_url, health_check_interval_sec, is_healthy, is_active, 
-      created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), 'DEFAULT_PII', 'Default PII Service', '默认PII服务', 'デフォルトPIIサービス',
-      'Default PII service configured from environment', '从环境变量配置的默认PII服务', '環境変数から設定されたデフォルトPIIサービス',
-      $1, 'mtls', $2, 60, false, true,
-      now(), now(), $3::uuid, $3::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET
-       name_en = EXCLUDED.name_en,
-       description_en = EXCLUDED.description_en,
-       description_zh = EXCLUDED.description_zh,
-       description_ja = EXCLUDED.description_ja,
-       api_url = EXCLUDED.api_url,
-       health_check_url = EXCLUDED.health_check_url,
-       is_active = true,
-       is_healthy = false,
-       updated_at = now(),
-       updated_by = EXCLUDED.updated_by
-     RETURNING id`,
-    defaultPiiSeedConfig.apiUrl,
-    defaultPiiSeedConfig.healthCheckUrl,
-    systemUserId,
-  );
-
-  return result[0]?.id ?? null;
-}
-
 async function upsertTenantDefaultProfileStore(
   prisma: PrismaClient,
   schema: string,
-  piiConfigId: string | null,
   systemUserId: string,
 ): Promise<string> {
   const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `INSERT INTO "${schema}".profile_store
      (id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
-      pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
+     pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version)
      VALUES (gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
-      'Default profile store for customer PII data', '客户PII数据的默认存储', '顧客PIIデータのデフォルトストア',
+      'Default customer archive boundary', '默认客户档案边界', 'デフォルト顧客アーカイブ境界',
       $1::uuid, true, true, now(), now(), $2::uuid, $2::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET 
        name_en = EXCLUDED.name_en,
        pii_service_config_id = EXCLUDED.pii_service_config_id
      RETURNING id`,
-    piiConfigId,
+    null,
     systemUserId,
   );
 
@@ -98,14 +48,9 @@ export async function seedUatOrganization(
   // ==========================================================================
   const corpSchema = uatTenants.corpSchemaName;
 
-  // First, create a PII Service Config for the tenant
-  const corpPiiConfigId = await upsertTenantDefaultPiiConfig(prisma, corpSchema, systemUserId);
-
-  // Then, create a profile store linked to the PII Service Config
   const corpProfileStoreId = await upsertTenantDefaultProfileStore(
     prisma,
     corpSchema,
-    corpPiiConfigId,
     systemUserId,
   );
 
@@ -175,14 +120,9 @@ export async function seedUatOrganization(
   // ==========================================================================
   const soloSchema = uatTenants.soloSchemaName;
 
-  // First, create a PII Service Config for the solo tenant
-  const soloPiiConfigId = await upsertTenantDefaultPiiConfig(prisma, soloSchema, systemUserId);
-
-  // Create profile store for solo tenant linked to PII Service Config
   const soloProfileStoreId = await upsertTenantDefaultProfileStore(
     prisma,
     soloSchema,
-    soloPiiConfigId,
     systemUserId,
   );
 

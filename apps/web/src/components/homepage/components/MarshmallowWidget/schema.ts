@@ -16,12 +16,18 @@ export const MarshmallowWidgetSchema = z.object({
 
 export type MarshmallowWidgetProps = z.infer<typeof MarshmallowWidgetSchema>;
 
+export const LEGACY_MARSHMALLOW_WIDGET_DEFAULTS = {
+  title: 'Marshmallow',
+  description: 'Anonymous messages are welcome!',
+  buttonText: 'Send Message',
+} as const;
+
 export const defaultProps: MarshmallowWidgetProps = {
   homepagePath: '',
   displayMode: 'card',
   showRecentCount: 0,
   showSubmitButton: true,
-  title: 'Marshmallow',
-  description: 'Anonymous messages are welcome!',
-  buttonText: 'Send Message',
+  title: '',
+  description: '',
+  buttonText: '',
 };

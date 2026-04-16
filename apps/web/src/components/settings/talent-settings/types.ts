@@ -3,7 +3,10 @@
 import type {
   TalentExternalPageDomainConfig,
   TalentExternalPagesDomain,
+  TalentLifecycleIssue,
+  TalentLifecycleStatus,
   TalentProfileStoreSummary,
+  TalentPublishReadiness,
 } from '@/lib/api/modules/talent';
 
 export type TalentSettingsTab =
@@ -17,6 +20,8 @@ export type TalentSettingsTab =
 export type ExternalPageDomainConfig = TalentExternalPageDomainConfig;
 
 export type ProfileStoreInfo = TalentProfileStoreSummary;
+export type TalentReadiness = TalentPublishReadiness;
+export type TalentReadinessIssue = TalentLifecycleIssue;
 
 export interface TalentData {
   id: string;
@@ -29,6 +34,8 @@ export interface TalentData {
   profileStore: TalentProfileStoreSummary | null;
   homepagePath: string;
   timezone: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
   isActive: boolean;
   createdAt: string;
   customerCount: number;

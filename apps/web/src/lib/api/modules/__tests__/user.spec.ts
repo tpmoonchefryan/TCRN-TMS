@@ -64,21 +64,21 @@ describe('userApi', () => {
       username: 'admin',
       email: 'admin@example.com',
       phone: '+81-90-0000-0000',
-      display_name: 'System Admin',
-      avatar_url: 'https://example.com/avatar.png',
-      preferred_language: 'zh',
-      is_totp_enabled: true,
-      force_reset: false,
-      last_login_at: '2026-03-29T10:00:00.000Z',
-      password_changed_at: '2026-03-01T00:00:00.000Z',
-      password_expires_at: '2026-06-01T00:00:00.000Z',
-      created_at: '2026-01-01T00:00:00.000Z',
-      tenant_code: undefined,
+      displayName: 'System Admin',
+      avatarUrl: 'https://example.com/avatar.png',
+      preferredLanguage: 'zh',
+      totpEnabled: true,
+      forceReset: false,
+      lastLoginAt: '2026-03-29T10:00:00.000Z',
+      passwordChangedAt: '2026-03-01T00:00:00.000Z',
+      passwordExpiresAt: '2026-06-01T00:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      tenantCode: undefined,
       tenant: undefined,
     });
     expect(updateResponse.data).toMatchObject({
-      display_name: 'Updated Admin',
-      preferred_language: 'ja',
+      displayName: 'Updated Admin',
+      preferredLanguage: 'ja',
     });
   });
 

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { IsIn, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class SendEmailDto {
   @IsString()
@@ -9,13 +9,8 @@ export class SendEmailDto {
   @IsString()
   templateCode!: string;
 
-  @IsOptional()
-  @IsString()
-  recipientPiiId?: string;
-
-  @IsOptional()
-  @IsString()
-  recipientEmail?: string;
+  @IsEmail()
+  recipientEmail!: string;
 
   @IsOptional()
   @IsIn(['en', 'zh', 'ja'])

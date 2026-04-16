@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import type { ApiResponse } from '../core';
 import { apiClient } from '../core';
+import type { TalentLifecycleStatus } from './talent';
 
 export interface OrganizationTreeQuery {
   search?: string;
@@ -17,6 +18,9 @@ export interface OrganizationTreeTalentRecord {
   subsidiaryName?: string;
   path: string;
   homepagePath?: string | null;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt?: string | null;
+  isActive: boolean;
 }
 
 export interface OrganizationTreeSubsidiaryRecord {

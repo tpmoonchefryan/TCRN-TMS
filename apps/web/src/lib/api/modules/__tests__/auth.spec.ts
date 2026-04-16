@@ -63,13 +63,13 @@ describe('authApi', () => {
         id: 'user-1',
         username: 'admin',
         email: 'admin@example.com',
-        display_name: 'System Admin',
-        avatar_url: 'https://example.com/avatar.png',
-        preferred_language: 'ja',
-        is_totp_enabled: true,
-        force_reset: false,
-        password_expires_at: '2026-04-01T00:00:00.000Z',
-        tenant_code: 'AC',
+        displayName: 'System Admin',
+        avatarUrl: 'https://example.com/avatar.png',
+        preferredLanguage: 'ja',
+        totpEnabled: true,
+        forceReset: false,
+        passwordExpiresAt: '2026-04-01T00:00:00.000Z',
+        tenantCode: 'AC',
         tenant: {
           id: 'tenant-1',
           name: 'Tenant One',
@@ -155,11 +155,11 @@ describe('authApi', () => {
       newPasswordConfirm: 'NewPassword123!',
     });
     expect(totpResponse.data?.user).toMatchObject({
-      display_name: 'Admin',
+      displayName: 'Admin',
       tenant: { id: 'tenant-1', name: 'Tenant One' },
     });
     expect(resetResponse.data?.user).toMatchObject({
-      display_name: 'Admin',
+      displayName: 'Admin',
       tenant: { id: 'tenant-1', name: 'Tenant One' },
     });
   });

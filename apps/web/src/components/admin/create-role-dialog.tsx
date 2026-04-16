@@ -34,6 +34,7 @@ interface CreateRoleDialogProps {
 export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDialogProps) {
   const tRole = useTranslations('adminConsole.roles');
   const tCommon = useTranslations('common');
+  const tForms = useTranslations('forms');
   const tPermission = useTranslations('roleManagement');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -49,7 +50,7 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
     
     // Basic validation
     if (!formData.code || !formData.nameEn) {
-      toast.error(tCommon('description')); 
+      toast.error(tCommon('requiredFields'));
       return;
     }
 
@@ -96,7 +97,7 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
                   id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
-                  placeholder="e.g. PLATFORM_ADMIN"
+                  placeholder={tForms('placeholders.code')}
                   required
                   disabled={isLoading}
                 />
@@ -107,7 +108,7 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
                   id="nameEn"
                   value={formData.nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                  placeholder="e.g. Platform Administrator"
+                  placeholder={tForms('placeholders.name')}
                   required
                   disabled={isLoading}
                 />
@@ -119,14 +120,14 @@ export function CreateRoleDialog({ open, onOpenChange, onSuccess }: CreateRoleDi
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the role's responsibilities"
+                placeholder={tForms('placeholders.description')}
                 disabled={isLoading}
               />
             </div>
           </div>
 
           <div className="border-t pt-4">
-            <Label className="text-base mb-4 block">Permissions</Label>
+            <Label className="text-base mb-4 block">{tPermission('permissions')}</Label>
             <p className="text-sm text-muted-foreground mb-4">{tPermission('selectPermissionsThreeState')}</p>
             <ScrollArea className="h-[40vh]">
               <PermissionSelector 

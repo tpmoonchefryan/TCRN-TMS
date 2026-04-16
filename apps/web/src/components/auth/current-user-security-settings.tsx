@@ -24,6 +24,7 @@ import { useCurrentUserSecurity } from '@/hooks/use-current-user-security';
 export function CurrentUserSecuritySettings() {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const tPlaceholders = useTranslations('forms.placeholders');
   const {
     user,
     showPasswordDialog,
@@ -48,13 +49,13 @@ export function CurrentUserSecuritySettings() {
     closeEmailDialog,
     requestEmailChange,
   } = useCurrentUserSecurity({
-    allFieldsRequired: t('allFieldsRequired') || 'All fields are required',
-    passwordMismatch: t('passwordMismatch') || 'Passwords do not match',
-    passwordTooShort: t('passwordTooShort') || 'Password must be at least 12 characters',
-    passwordChangeFailed: t('passwordChangeFailed') || 'Failed to change password',
-    invalidEmail: t('invalidEmail') || 'Invalid email format',
-    emailSameAsCurrent: t('emailSameAsCurrent') || 'New email must be different from current email',
-    emailChangeFailed: t('emailChangeFailed') || 'Failed to request email change',
+    allFieldsRequired: t('allFieldsRequired'),
+    passwordMismatch: t('passwordMismatch'),
+    passwordTooShort: t('passwordTooShort'),
+    passwordChangeFailed: t('passwordChangeFailed'),
+    invalidEmail: t('invalidEmail'),
+    emailSameAsCurrent: t('emailSameAsCurrent'),
+    emailChangeFailed: t('emailChangeFailed'),
   });
 
   if (!user) {
@@ -65,7 +66,7 @@ export function CurrentUserSecuritySettings() {
     const result = await changePassword();
 
     if (result.success) {
-      toast.success(t('passwordChanged') || 'Password changed successfully');
+      toast.success(t('passwordChanged'));
     }
   };
 
@@ -73,9 +74,9 @@ export function CurrentUserSecuritySettings() {
     <>
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-lg">{t('security') || 'Security'}</CardTitle>
+          <CardTitle className="text-lg">{t('security')}</CardTitle>
           <CardDescription>
-            {t('securityDescription') || 'Manage your account security settings'}
+            {t('securityDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -85,14 +86,14 @@ export function CurrentUserSecuritySettings() {
                 <Key className="text-primary h-5 w-5" />
               </div>
               <div>
-                <p className="font-medium">{t('password') || 'Password'}</p>
+                <p className="font-medium">{t('password')}</p>
                 <p className="text-muted-foreground text-sm">
-                  {t('passwordHint') || 'Keep your account secure by using a strong password'}
+                  {t('passwordHint')}
                 </p>
               </div>
             </div>
             <Button variant="outline" onClick={openPasswordDialog}>
-              {t('changePassword') || 'Change Password'}
+              {t('changePassword')}
             </Button>
           </div>
 
@@ -104,12 +105,12 @@ export function CurrentUserSecuritySettings() {
                 <Mail className="text-primary h-5 w-5" />
               </div>
               <div>
-                <p className="font-medium">{t('emailAddress') || 'Email Address'}</p>
+                <p className="font-medium">{t('emailAddress')}</p>
                 <p className="text-muted-foreground text-sm">{user.email}</p>
               </div>
             </div>
             <Button variant="outline" onClick={openEmailDialog}>
-              {t('changeEmail') || 'Change Email'}
+              {t('changeEmail')}
             </Button>
           </div>
         </CardContent>
@@ -118,14 +119,14 @@ export function CurrentUserSecuritySettings() {
       <Dialog open={showPasswordDialog} onOpenChange={closePasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('changePassword') || 'Change Password'}</DialogTitle>
+            <DialogTitle>{t('changePassword')}</DialogTitle>
             <DialogDescription>
-              {t('changePasswordDescription') || 'Enter your current password and choose a new one'}
+              {t('changePasswordDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">{t('currentPassword') || 'Current Password'}</Label>
+              <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
               <Input
                 id="currentPassword"
                 type="password"
@@ -135,7 +136,7 @@ export function CurrentUserSecuritySettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newPassword">{t('newPassword') || 'New Password'}</Label>
+              <Label htmlFor="newPassword">{t('newPassword')}</Label>
               <Input
                 id="newPassword"
                 type="password"
@@ -144,12 +145,11 @@ export function CurrentUserSecuritySettings() {
                 placeholder="••••••••••••"
               />
               <p className="text-muted-foreground text-xs">
-                {t('passwordRequirements') ||
-                  'At least 12 characters with uppercase, lowercase, number, and special character'}
+                {t('passwordRequirements')}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('confirmPassword') || 'Confirm Password'}</Label>
+              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -166,7 +166,7 @@ export function CurrentUserSecuritySettings() {
             </Button>
             <Button onClick={handleChangePassword} disabled={isChangingPassword}>
               {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('changePassword') || 'Change Password'}
+              {t('changePassword')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -175,10 +175,9 @@ export function CurrentUserSecuritySettings() {
       <Dialog open={showEmailDialog} onOpenChange={closeEmailDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('changeEmail') || 'Change Email'}</DialogTitle>
+            <DialogTitle>{t('changeEmail')}</DialogTitle>
             <DialogDescription>
-              {t('changeEmailDescription') ||
-                'Enter your new email address. We will send a verification link to confirm the change.'}
+              {t('changeEmailDescription')}
             </DialogDescription>
           </DialogHeader>
           {emailSent ? (
@@ -187,21 +186,20 @@ export function CurrentUserSecuritySettings() {
                 <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="mt-4 text-lg font-medium">
-                {t('emailVerificationSent') || 'Verification Email Sent'}
+                {t('emailVerificationSent')}
               </h3>
               <p className="text-muted-foreground mt-2 text-sm">
-                {t('emailVerificationSentDescription') ||
-                  'Please check your new email inbox and click the verification link to complete the change.'}
+                {t('emailVerificationSentDescription')}
               </p>
               <Button className="mt-4" onClick={() => closeEmailDialog(false)}>
-                {tCommon('close') || 'Close'}
+                {tCommon('close')}
               </Button>
             </div>
           ) : (
             <>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentEmail">{t('currentEmail') || 'Current Email'}</Label>
+                  <Label htmlFor="currentEmail">{t('currentEmail')}</Label>
                   <Input
                     id="currentEmail"
                     type="email"
@@ -211,13 +209,13 @@ export function CurrentUserSecuritySettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newEmail">{t('newEmail') || 'New Email'}</Label>
+                  <Label htmlFor="newEmail">{t('newEmail')}</Label>
                   <Input
                     id="newEmail"
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="your.new.email@example.com"
+                    placeholder={tPlaceholders('newEmail')}
                   />
                 </div>
                 {emailError && <p className="text-destructive text-sm">{emailError}</p>}
@@ -228,7 +226,7 @@ export function CurrentUserSecuritySettings() {
                 </Button>
                 <Button onClick={requestEmailChange} disabled={isChangingEmail}>
                   {isChangingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('sendVerification') || 'Send Verification'}
+                  {t('sendVerification')}
                 </Button>
               </DialogFooter>
             </>

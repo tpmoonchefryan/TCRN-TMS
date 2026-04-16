@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -41,9 +42,13 @@ export function ConfigEntityList({
   entityType,
   scopeType = 'tenant',
   scopeId,
-  locale = 'en',
+  locale,
   onEntitySelect,
 }: ConfigEntityListProps) {
+  const intlLocale = useLocale() as 'en' | 'zh' | 'ja';
+  const resolvedLocale = locale ?? intlLocale;
+  const t = useTranslations('configEntityList');
+  const tc = useTranslations('common');
   const config = ENTITY_TYPE_CONFIGS[entityType];
 
   const [entities, setEntities] = useState<ConfigEntity[]>([]);
@@ -171,7 +176,7 @@ export function ConfigEntityList({
   };
 
   const getLabel = () => {
-    switch (locale) {
+    switch (resolvedLocale) {
       case 'zh':
         return config.labelZh;
       case 'ja':
@@ -182,7 +187,7 @@ export function ConfigEntityList({
   };
 
   const getDescription = () => {
-    switch (locale) {
+    switch (resolvedLocale) {
       case 'zh':
         return config.descriptionZh;
       case 'ja':
@@ -202,14 +207,14 @@ export function ConfigEntityList({
             <CardTitle>{getLabel()}</CardTitle>
             <CardDescription>{getDescription()}</CardDescription>
           </div>
-          <Button onClick={handleCreate}>Create New</Button>
+          <Button onClick={handleCreate}>{t('createNew')}</Button>
         </div>
       </CardHeader>
       <CardContent>
         {/* Filters */}
         <div className="flex items-center gap-4 mb-4">
           <Input
-            placeholder="Search by code or name..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -224,7 +229,7 @@ export function ConfigEntityList({
               onCheckedChange={setIncludeInherited}
             />
             <label htmlFor="includeInherited" className="text-sm">
-              Show inherited
+              {t('showInherited')}
             </label>
           </div>
           <div className="flex items-center gap-2">
@@ -234,7 +239,7 @@ export function ConfigEntityList({
               onCheckedChange={setIncludeInactive}
             />
             <label htmlFor="includeInactive" className="text-sm">
-              Show inactive
+              {t('showInactive')}
             </label>
           </div>
         </div>
@@ -244,24 +249,24 @@ export function ConfigEntityList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Scope</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{tc('code')}</TableHead>
+                <TableHead>{tc('name')}</TableHead>
+                <TableHead>{tc('status')}</TableHead>
+                <TableHead>{t('scope')}</TableHead>
+                <TableHead className="text-right">{tc('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
-                    Loading...
+                    {tc('loading')}
                   </TableCell>
                 </TableRow>
               ) : entities.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No {getLabel().toLowerCase()} found
+                    {t('empty', { label: getLabel() })}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -284,7 +289,7 @@ export function ConfigEntityList({
                     </TableCell>
                     <TableCell>
                       <Badge variant={entity.isActive ? 'default' : 'secondary'}>
-                        {entity.isActive ? 'Active' : 'Inactive'}
+                        {entity.isActive ? tc('active') : tc('inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -295,39 +300,39 @@ export function ConfigEntityList({
                         isDisabledHere={entity.isDisabledHere}
                         canDisable={entity.canDisable}
                         ownerType={entity.ownerType}
-                        locale={locale}
+                        locale={resolvedLocale}
                       />
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
-                            Actions
+                            {tc('actions')}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {!entity.isInherited && (
                             <>
                               <DropdownMenuItem onClick={() => handleEdit(entity)}>
-                                Edit
+                                {tc('edit')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleToggleActive(entity)}
                                 disabled={entity.isSystem}
                               >
-                                {entity.isActive ? 'Deactivate' : 'Reactivate'}
+                                {entity.isActive ? t('deactivate') : t('reactivate')}
                               </DropdownMenuItem>
                             </>
                           )}
                           {entity.isInherited && entity.canDisable && (
                             <DropdownMenuItem onClick={() => handleToggleDisable(entity)}>
-                              {entity.isDisabledHere ? 'Enable' : 'Disable'} in current scope
+                              {entity.isDisabledHere ? t('enableInCurrentScope') : t('disableInCurrentScope')}
                             </DropdownMenuItem>
                           )}
                           {entity.isInherited && !entity.canDisable && (
                             <DropdownMenuItem disabled>
-                              Inherited (cannot modify)
+                              {t('inheritedCannotModify')}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -344,8 +349,11 @@ export function ConfigEntityList({
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-muted-foreground">
-              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of{' '}
-              {totalCount} items
+              {t('showingRange', {
+                start: (page - 1) * pageSize + 1,
+                end: Math.min(page * pageSize, totalCount),
+                total: totalCount,
+              })}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -354,10 +362,10 @@ export function ConfigEntityList({
                 onClick={() => setPage((p) => p - 1)}
                 disabled={page === 1}
               >
-                Previous
+                {tc('previous')}
               </Button>
               <span className="text-sm">
-                Page {page} of {totalPages}
+                {t('pageOf', { page, totalPages })}
               </span>
               <Button
                 variant="outline"
@@ -365,7 +373,7 @@ export function ConfigEntityList({
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page === totalPages}
               >
-                Next
+                {tc('next')}
               </Button>
             </div>
           </div>

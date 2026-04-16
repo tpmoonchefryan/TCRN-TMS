@@ -50,32 +50,46 @@ export const DEFAULT_PLATFORM_OPTIONS: DialogPlatformOption[] = [
   { id: '5', code: 'TIKTOK', displayName: 'TikTok' },
 ];
 
-export const DEFAULT_CONSUMER_OPTIONS: DialogConsumerOption[] = [
-  { id: '1', code: 'LEGACY_CRM', nameEn: 'Legacy CRM' },
-  { id: '2', code: 'DISCORD_BOT', nameEn: 'Discord Bot' },
-  { id: '3', code: 'BILLING', nameEn: 'Billing System' },
-];
+export function buildDefaultConsumerOptions(labels: {
+  legacyCrm: string;
+  discordBot: string;
+  billingSystem: string;
+}): DialogConsumerOption[] {
+  return [
+    { id: '1', code: 'LEGACY_CRM', nameEn: labels.legacyCrm },
+    { id: '2', code: 'DISCORD_BOT', nameEn: labels.discordBot },
+    { id: '3', code: 'BILLING', nameEn: labels.billingSystem },
+  ];
+}
 
-export const DEFAULT_MEMBERSHIP_CLASSES: DialogMembershipClass[] = [
-  {
-    id: '1',
-    code: 'SUBSCRIPTION',
-    name: 'Subscription',
-    types: [
-      {
-        id: '1',
-        code: 'CHANNEL_MEMBERSHIP',
-        name: 'Channel Membership',
-        classId: '1',
-        levels: [
-          { id: '1', code: 'TIER1', name: 'Tier 1', rank: 1, color: '#10b981', typeId: '1' },
-          { id: '2', code: 'TIER2', name: 'Tier 2', rank: 2, color: '#3b82f6', typeId: '1' },
-          { id: '3', code: 'TIER3', name: 'Tier 3', rank: 3, color: '#8b5cf6', typeId: '1' },
-        ],
-      },
-    ],
-  },
-];
+export function buildDefaultMembershipClasses(labels: {
+  subscription: string;
+  channelMembership: string;
+  tier1: string;
+  tier2: string;
+  tier3: string;
+}): DialogMembershipClass[] {
+  return [
+    {
+      id: '1',
+      code: 'SUBSCRIPTION',
+      name: labels.subscription,
+      types: [
+        {
+          id: '1',
+          code: 'CHANNEL_MEMBERSHIP',
+          name: labels.channelMembership,
+          classId: '1',
+          levels: [
+            { id: '1', code: 'TIER1', name: labels.tier1, rank: 1, color: '#10b981', typeId: '1' },
+            { id: '2', code: 'TIER2', name: labels.tier2, rank: 2, color: '#3b82f6', typeId: '1' },
+            { id: '3', code: 'TIER3', name: labels.tier3, rank: 3, color: '#8b5cf6', typeId: '1' },
+          ],
+        },
+      ],
+    },
+  ];
+}
 
 const getExtraDisplayName = (extraData: Record<string, unknown> | null): string | null => {
   const displayName = extraData?.displayName;

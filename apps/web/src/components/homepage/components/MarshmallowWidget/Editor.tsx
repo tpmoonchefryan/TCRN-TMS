@@ -36,7 +36,7 @@ export const MarshmallowWidgetEditor: React.FC<MarshmallowWidgetEditorProps> = (
           <Input 
             value={props.homepagePath} 
             onChange={(e) => onChange({ homepagePath: e.target.value })}
-            placeholder="path"
+            placeholder={t('pathPlaceholder')}
             className="flex-1"
           />
         </div>

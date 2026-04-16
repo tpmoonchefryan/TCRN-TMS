@@ -1,12 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { marshmallowApi, publicApi, reportApi } from '@/lib/api/modules/content';
+import { homepageApi, marshmallowApi, publicApi, reportApi } from '@/lib/api/modules/content';
 
 const mockBuildApiUrl = vi.fn((pathname: string) => `http://localhost:4000${pathname}`);
 const mockGet = vi.fn();
 const mockGetAccessToken = vi.fn();
 const mockPost = vi.fn();
+const mockPatch = vi.fn();
 const mockDelete = vi.fn();
 const fetchMock = vi.fn();
 
@@ -15,8 +16,7 @@ vi.mock('@/lib/api/core', () => ({
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
-    patch: vi.fn(),
-    put: vi.fn(),
+    patch: (...args: unknown[]) => mockPatch(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
     getAccessToken: (...args: unknown[]) => mockGetAccessToken(...args),
   },
@@ -227,5 +227,32 @@ describe('publicApi', () => {
       reaction: '❤️',
       fingerprint: 'fp-1',
     });
+  });
+});
+
+describe('homepageApi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses PATCH for homepage draft saves while leaving publish actions command-style', async () => {
+    mockPatch.mockResolvedValue({ success: true, data: { versionNumber: 2 } });
+    mockPost.mockResolvedValue({ success: true, data: { isPublished: true } });
+
+    await homepageApi.saveDraft('talent-1', {
+      content: {
+        version: '1.0.0',
+        components: [],
+      },
+    });
+    await homepageApi.publish('talent-1');
+
+    expect(mockPatch).toHaveBeenCalledWith('/api/v1/talents/talent-1/homepage/draft', {
+      content: {
+        version: '1.0.0',
+        components: [],
+      },
+    });
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/talents/talent-1/homepage/publish', {});
   });
 });

@@ -183,6 +183,9 @@ model Talent {
   marshmallowPath String? @unique @map("marshmallow_path") @db.VarChar(128)
   timezone       String   @default("UTC") @db.VarChar(64)
   isActive       Boolean  @default(true) @map("is_active")
+  lifecycleStatus String  @default("draft") @map("lifecycle_status") @db.VarChar(16)
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz
+  publishedBy    String?  @map("published_by") @db.Uuid
   settings       Json     @default("{}") @db.JsonB
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -218,6 +221,7 @@ model Talent {
   @@index([path])
   @@index([homepagePath])
   @@index([marshmallowPath])
+  @@index([lifecycleStatus])
   @@index([customDomain])
   @@map("talent")
   @@schema("tenant_template")
@@ -512,7 +516,6 @@ model CustomerProfile {
   profileStoreId       String    @map("profile_store_id") @db.Uuid
   originTalentId       String    @map("origin_talent_id") @db.Uuid
   lastModifiedTalentId String?   @map("last_modified_talent_id") @db.Uuid
-  rmProfileId          String    @unique @map("rm_profile_id") @db.Uuid // PII link token
   profileType          String    @map("profile_type") @db.VarChar(16) // 'individual', 'company'
   nickname             String    @db.VarChar(128)
   primaryLanguage      String?   @map("primary_language") @db.VarChar(5)

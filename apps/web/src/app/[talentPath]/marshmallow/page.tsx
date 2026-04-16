@@ -1,12 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { permanentRedirect } from 'next/navigation';
+import { LegacyTalentMarshmallowRedirectScreen } from '@/domains/marshmallow/screens/LegacyTalentMarshmallowRedirectScreen';
 
 export default async function LegacyTalentMarshmallowPage({
   params,
 }: {
   params: Promise<{ talentPath: string }>;
 }) {
-  const { talentPath } = await params;
-  permanentRedirect(`/m/${encodeURIComponent(talentPath)}`);
+  return LegacyTalentMarshmallowRedirectScreen({ params });
 }

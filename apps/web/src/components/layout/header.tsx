@@ -50,11 +50,7 @@ const LANGUAGES = [
   { code: 'ja', name: '日本語', flag: '🇯🇵' },
 ];
 
-const DEFAULT_MODULES = [
-  { code: 'customers', name: 'Customer Management' },
-  { code: 'homepage', name: 'Homepage Management' },
-  { code: 'marshmallow', name: 'Marshmallow' },
-];
+const DEFAULT_MODULE_CODES = ['customers', 'homepage', 'marshmallow'] as const;
 
 export function Header() {
   const pathname = usePathname();
@@ -62,6 +58,7 @@ export function Header() {
   const locale = useLocale();
   const t = useTranslations('header');
   const tCommon = useTranslations('common');
+  const tNav = useTranslations('navigation');
   const { user, logout, tenantCode } = useAuthStore();
   
   const [preferenceOpen, setPreferenceOpen] = useState(false);
@@ -98,10 +95,10 @@ export function Header() {
     router.refresh();
   };
 
-  const displayName = user?.display_name || user?.username || 'User';
+  const displayName = user?.displayName || user?.username || t('guestUser');
   const email = user?.email || '';
   const avatarUrl = getAvatarUrl({
-    avatarUrl: user?.avatar_url,
+    avatarUrl: user?.avatarUrl,
     email: user?.email,
     size: 36,
   });
@@ -155,7 +152,7 @@ export function Header() {
               <button className="flex items-center gap-3 pl-2 outline-none hover:opacity-80 transition-opacity">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-slate-700">{displayName}</p>
-                  <p className="text-xs text-slate-400">{tenantCode || 'Unknown Tenant'}</p>
+                  <p className="text-xs text-slate-400">{tenantCode || t('unknownTenant')}</p>
                 </div>
                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-pink-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
                   <NextImage 
@@ -275,9 +272,9 @@ export function Header() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEFAULT_MODULES.map(mod => (
-                    <SelectItem key={mod.code} value={mod.code}>
-                      {mod.name}
+                  {DEFAULT_MODULE_CODES.map((moduleCode) => (
+                    <SelectItem key={moduleCode} value={moduleCode}>
+                      {tNav(moduleCode)}
                     </SelectItem>
                   ))}
                 </SelectContent>

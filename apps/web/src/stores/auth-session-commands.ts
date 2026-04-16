@@ -1,11 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { getThrownErrorMessage } from '@/lib/api/error-utils';
 import { authApi } from '@/lib/api/modules/auth';
 
 import type { AuthenticatedSessionTransitionInput } from './auth-session-transitions';
 import type { AuthLoginResult } from './auth-store.types';
-
-const getThrownErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error ? error.message : fallback;
 
 export const runLoginSessionCommand = async (params: {
   login: string;

@@ -5,6 +5,7 @@ import type { RequestContext } from '@tcrn/shared';
 import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
+import { ReportFormat, ReportType } from '../../dto/report.dto';
 import { MfrReportService } from '../mfr-report.service';
 import { ReportJobService } from '../report-job.service';
 
@@ -32,15 +33,14 @@ describe('MfrReportService', () => {
   };
 
   const mockMembershipRecord = {
-    id: 'membership-123',
-    customer_id: 'customer-123',
-    customer_nickname: 'Test Customer',
+    nickname: 'Test Customer',
+    platform_display_name: 'YouTube',
     level_name_en: 'Gold',
     level_name_zh: '金卡会员',
-    platform_name: 'YouTube',
     valid_from: new Date(),
     valid_to: null,
-    created_at: new Date(),
+    status_name_zh: null,
+    status_name_en: null,
   };
 
   beforeEach(() => {
@@ -77,7 +77,19 @@ describe('MfrReportService', () => {
       const result = await service.search('talent-123', {}, 20, mockContext);
 
       expect(result.totalCount).toBe(10);
-      expect(result.preview).toBeDefined();
+      expect(result.preview).toEqual([{
+        nickname: 'Test Customer',
+        platformName: 'YouTube',
+        membershipLevelName: '金卡会员',
+        validFrom: mockMembershipRecord.valid_from.toISOString().split('T')[0],
+        validTo: null,
+        statusName: '',
+      }]);
+      expect(result.filterSummary).toEqual({
+        platforms: [],
+        dateRange: null,
+        includeExpired: false,
+      });
     });
 
     it('should throw NotFoundException when talent not found', async () => {
@@ -112,6 +124,28 @@ describe('MfrReportService', () => {
 
       // Verify query was called with LIMIT 5
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+    });
+  });
+
+  describe('createJob', () => {
+    it('delegates job creation with the counted row estimate', async () => {
+      mockPrisma.$queryRawUnsafe.mockReset().mockResolvedValueOnce([{ count: BigInt(12) }]);
+
+      await service.createJob(
+        'talent-123',
+        { platformCodes: ['YOUTUBE'] },
+        ReportFormat.CSV,
+        mockContext,
+      );
+
+      expect(mockReportJobService.create).toHaveBeenCalledWith(
+        ReportType.MFR,
+        'talent-123',
+        { platformCodes: ['YOUTUBE'] },
+        ReportFormat.CSV,
+        12,
+        mockContext,
+      );
     });
   });
 });

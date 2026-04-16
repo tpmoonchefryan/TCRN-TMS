@@ -2,7 +2,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTestTenantFixture } from './test-utils';
+import { createTestTenantFixture, generateSchemaName } from './test-utils';
 
 describe('createTestTenantFixture', () => {
   it('rolls back tenant metadata when fixture bootstrap fails after schema creation', async () => {
@@ -185,5 +185,22 @@ describe('createTestTenantFixture', () => {
 
     expect(update).toHaveBeenCalledTimes(1);
     expect(deleteFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('generateSchemaName', () => {
+  it('preserves entropy beyond the first 20 characters to avoid repeated schema collisions', () => {
+    const first = generateSchemaName('TEST_DOMAINLOOKUP_MNVKFR_A1B2');
+    const second = generateSchemaName('TEST_DOMAINLOOKUP_MNVKFR_Z9Y8');
+
+    expect(first).toBe('tenant_test_domainlookup_mnvkfr_a1b2');
+    expect(second).toBe('tenant_test_domainlookup_mnvkfr_z9y8');
+    expect(first).not.toBe(second);
+  });
+
+  it('stays within postgres identifier limits', () => {
+    const schemaName = generateSchemaName(`TEST_${'X'.repeat(100)}`);
+
+    expect(schemaName.length).toBeLessThanOrEqual(63);
   });
 });

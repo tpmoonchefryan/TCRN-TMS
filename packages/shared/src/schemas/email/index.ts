@@ -112,13 +112,9 @@ export type UpdateEmailTemplateInput = z.infer<typeof UpdateEmailTemplateSchema>
 export const SendEmailSchema = z.object({
   tenantSchema: z.string().min(1, 'Tenant schema is required'),
   templateCode: z.string().min(1, 'Template code is required'),
-  recipientPiiId: z.string().optional(),
-  recipientEmail: z.string().email().optional(),
+  recipientEmail: z.string().email(),
   locale: EmailLocaleSchema.optional(),
   variables: z.record(z.string(), z.string()).optional(),
-}).refine(
-  (data) => data.recipientPiiId || data.recipientEmail,
-  { message: 'Either recipientPiiId or recipientEmail is required' }
-);
+});
 
 export type SendEmailInput = z.infer<typeof SendEmailSchema>;

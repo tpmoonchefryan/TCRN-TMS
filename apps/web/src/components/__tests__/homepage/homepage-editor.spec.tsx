@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -106,9 +106,6 @@ describe('HomepageEditor Component', () => {
     mockEditorStore.canRedo.mockReturnValue(false);
     mockEditorStore.error = null;
 
-    // Mock window.confirm and window.alert
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(window, 'open').mockImplementation(() => null);
 
     // Mock fetch for revalidation
@@ -157,8 +154,7 @@ describe('HomepageEditor Component', () => {
       const user = userEvent.setup();
       render(<HomepageEditor talentId="talent-1" />);
 
-      // Find back button (first button with ArrowLeft icon)
-      const backButton = screen.getAllByRole('button')[0];
+      const backButton = screen.getByRole('button', { name: 'back' });
       await user.click(backButton);
 
       expect(mockRouterBack).toHaveBeenCalled();
@@ -259,17 +255,23 @@ describe('HomepageEditor Component', () => {
       const publishButton = screen.getByRole('button', { name: /publish/i });
       await user.click(publishButton);
 
-      expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to publish?');
+      const confirmDialog = screen.getByRole('dialog');
+      expect(within(confirmDialog).getByText('Are you sure you want to publish?')).toBeInTheDocument();
+
+      const confirmPublishButton = within(confirmDialog).getByRole('button', { name: /publish/i });
+      await user.click(confirmPublishButton);
+
       expect(mockEditorStore.publish).toHaveBeenCalledWith('talent-1');
     });
 
     it('should not call publish when user cancels confirmation', async () => {
       const user = userEvent.setup();
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
       render(<HomepageEditor talentId="talent-1" />);
 
       const publishButton = screen.getByRole('button', { name: /publish/i });
       await user.click(publishButton);
+
+      await user.click(screen.getByRole('button', { name: 'cancel' }));
 
       expect(mockEditorStore.publish).not.toHaveBeenCalled();
     });

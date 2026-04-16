@@ -11,8 +11,6 @@ export const QUEUE_NAMES = {
   MEMBERSHIP_RENEWAL: 'membership-renewal',
   LOG: 'log',
   LOG_CLEANUP: 'log-cleanup',
-  PII_CLEANUP: 'pii-cleanup',
-  PII_HEALTH_CHECK: 'pii-health-check',
   EXPORT: 'export',
   MARSHMALLOW_EXPORT: 'marshmallow-export',
   EMAIL: 'email',
@@ -24,8 +22,6 @@ let reportQueue: Queue;
 let membershipRenewalQueue: Queue;
 let logQueue: Queue;
 let logCleanupQueue: Queue;
-let piiCleanupQueue: Queue;
-let piiHealthCheckQueue: Queue;
 let exportQueue: Queue;
 let marshmallowExportQueue: Queue;
 let emailQueue: Queue;
@@ -129,40 +125,6 @@ export async function setupQueues(connection: ConnectionOptions): Promise<void> 
     },
   });
 
-  // PII cleanup queue (PRD §11 - Orphan PII cleanup)
-  piiCleanupQueue = new Queue(QUEUE_NAMES.PII_CLEANUP, {
-    connection,
-    defaultJobOptions: {
-      attempts: 2,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
-      },
-      removeOnComplete: {
-        age: 30 * 24 * 3600, // Keep for 30 days
-        count: 20,
-      },
-      removeOnFail: {
-        age: 30 * 24 * 3600,
-      },
-    },
-  });
-
-  // PII health check queue (PRD §11 - PII service health monitoring)
-  piiHealthCheckQueue = new Queue(QUEUE_NAMES.PII_HEALTH_CHECK, {
-    connection,
-    defaultJobOptions: {
-      attempts: 1, // No retry for health checks
-      removeOnComplete: {
-        age: 24 * 3600, // Keep for 24 hours
-        count: 100,
-      },
-      removeOnFail: {
-        age: 24 * 3600,
-      },
-    },
-  });
-
   // Export queue (marshmallow, customer export, etc.)
   exportQueue = new Queue(QUEUE_NAMES.EXPORT, {
     connection,
@@ -231,7 +193,5 @@ export {
   logQueue,
   marshmallowExportQueue,
   membershipRenewalQueue,
-  piiCleanupQueue,
-  piiHealthCheckQueue,
   reportQueue,
 };

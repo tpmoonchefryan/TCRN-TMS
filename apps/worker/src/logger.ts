@@ -89,6 +89,4 @@ export const importLogger = createLogger('ImportJob');
 export const permissionLogger = createLogger('PermissionJob');
 export const membershipRenewalLogger = createLogger('MembershipRenewalJob');
 export const logLogger = createLogger('LogJob');
-export const piiCleanupLogger = createLogger('PiiCleanupJob');
-export const piiHealthCheckLogger = createLogger('PiiHealthCheckJob');
 export const workerLogger = createLogger('Worker');

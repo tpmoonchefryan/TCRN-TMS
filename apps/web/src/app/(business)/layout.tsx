@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { SessionBootstrapAlert } from '@/components/auth/session-bootstrap-alert';
@@ -13,6 +12,11 @@ import { Header } from '@/components/layout/header';
 import { Watermark } from '@/components/security/Watermark';
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { TalentSelectModal } from '@/components/talent/talent-select-modal';
+import {
+  buildOrganizationStructureUrl,
+  getBusinessSelectableTalents,
+  resolveBusinessWorkspaceEntry,
+} from '@/lib/talent-lifecycle-routing';
 import { isStaging } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTalentStore } from '@/stores/talent-store';
@@ -22,22 +26,26 @@ export default function BusinessLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, _hasHydrated: authHydrated, tenantId } = useAuthStore();
   const {
     currentTalent,
     accessibleTalents,
     _hasHydrated: talentHydrated,
     setCurrentTalent,
-    hasTalentAccess,
-    isLoading: talentLoading,
     hasFetched,
     fetchError,
   } = useTalentStore();
 
   const [showTalentModal, setShowTalentModal] = useState(false);
-  const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const businessSelectableTalents = useMemo(
+    () => getBusinessSelectableTalents(accessibleTalents),
+    [accessibleTalents]
+  );
+  const search = searchParams?.toString() ?? '';
 
   // Ensure consistent SSR/CSR - both render loading initially
   useEffect(() => {
@@ -50,56 +58,57 @@ export default function BusinessLayout({
 
   // Auth check handled by AuthGuard
 
-  // Check if we need to show talent selection modal
+  // Enforce the lifecycle-aware business entry rules. Utility routes such as /profile and /logs
+  // are allowed to render without a published talent, while publish-gated routes are not.
   useEffect(() => {
-    // Wait for:
-    // 1. Both stores hydrated
-    // 2. User authenticated
-    // 3. Talent data actually fetched (not just "not loading")
     if (!talentHydrated || !authHydrated || !isAuthenticated || !hasFetched) {
       return;
     }
-    
-    // Only check access once to prevent loops
-    if (hasCheckedAccess) {
-      return;
-    }
-    setHasCheckedAccess(true);
 
     if (fetchError) {
-      if (tenantId) {
-        router.push(`/tenant/${tenantId}/organization-structure`);
+      setShowTalentModal(false);
+      router.replace(tenantId ? buildOrganizationStructureUrl(tenantId) : '/profile');
+      return;
+    }
+
+    const decision = resolveBusinessWorkspaceEntry({
+      tenantId,
+      pathname,
+      search,
+      accessibleTalents,
+      currentTalent,
+    });
+
+    if (decision.type === 'allow') {
+      setShowTalentModal(false);
+      return;
+    }
+
+    if (decision.type === 'auto-select') {
+      setShowTalentModal(false);
+      if (currentTalent?.id !== decision.talent.id) {
+        setCurrentTalent(decision.talent);
       }
       return;
     }
 
-    // No talents - redirect to management
-    if (!hasTalentAccess()) {
-      if (tenantId) {
-        router.push(`/tenant/${tenantId}/organization-structure`);
-      }
-      return;
-    }
-
-    // Multiple talents, none selected - show modal
-    if (accessibleTalents.length > 1 && !currentTalent) {
+    if (decision.type === 'show-modal') {
       setShowTalentModal(true);
+      return;
     }
 
-    // Single talent - auto-select
-    if (accessibleTalents.length === 1 && !currentTalent) {
-      setCurrentTalent(accessibleTalents[0]);
-    }
+    setShowTalentModal(false);
+    router.replace(decision.href);
   }, [
     talentHydrated,
     authHydrated,
     isAuthenticated,
     hasFetched,
     fetchError,
-    hasCheckedAccess,
     accessibleTalents,
     currentTalent,
-    hasTalentAccess,
+    pathname,
+    search,
     setCurrentTalent,
     tenantId,
     router,
@@ -107,7 +116,7 @@ export default function BusinessLayout({
 
   // Show loading state during SSR and initial client render for hydration match
   // Also show loading if auth store hasn't hydrated yet
-  if (!isClient || !authHydrated) {
+  if (!isClient || !authHydrated || !talentHydrated || (isAuthenticated && !hasFetched)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -133,7 +142,7 @@ export default function BusinessLayout({
         {/* Talent Selection Modal */}
         <TalentSelectModal
           open={showTalentModal}
-          talents={accessibleTalents}
+          talents={businessSelectableTalents}
           onSelect={(talent) => {
             setCurrentTalent(talent);
             setShowTalentModal(false);

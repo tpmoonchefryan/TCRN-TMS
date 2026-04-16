@@ -55,7 +55,6 @@ interface SamplingRule {
  * - Error responses: 100% (captured in span processor)
  * - Slow requests (>2s): 100% (captured in span processor)
  * - Auth endpoints: 10%
- * - PII service calls: 10%
  * - Report operations: 50%
  * - External pages (homepage/marshmallow): 0.5%
  * - Other API endpoints: 1%
@@ -67,13 +66,6 @@ export class TcrnSampler implements Sampler {
       pattern: /^\/api\/v1\/auth\/.*/,
       rate: 0.1,
       description: 'auth',
-    },
-
-    // PII service calls - 10% sampling
-    {
-      pattern: /^\/pii-service\/.*/,
-      rate: 0.1,
-      description: 'pii',
     },
 
     // Report operations - 50% sampling

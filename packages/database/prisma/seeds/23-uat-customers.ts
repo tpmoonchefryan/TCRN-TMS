@@ -77,8 +77,8 @@ export async function seedUatCustomers(
       // Create customer profile
       const customerResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
         `INSERT INTO "${corpSchema}".customer_profile 
-         (id, talent_id, profile_store_id, origin_talent_id, rm_profile_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
-         VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, gen_random_uuid(), 'individual', $3, 'en', $4::uuid, $5, $6, 'uat_seed', true, now(), now(), $7::uuid, $7::uuid, 1)
+         (id, talent_id, profile_store_id, origin_talent_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
+         VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, 'individual', $3, 'en', $4::uuid, $5, $6, 'uat_seed', true, now(), now(), $7::uuid, $7::uuid, 1)
          RETURNING id`,
         talentId, corpProfileStoreId, nickname, statusMap[status] || null, 
         `UAT customer ${customerIndex + 1}`, 
@@ -125,8 +125,8 @@ export async function seedUatCustomers(
 
     const customerResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${corpSchema}".customer_profile 
-       (id, talent_id, profile_store_id, origin_talent_id, rm_profile_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, gen_random_uuid(), 'company', $3, 'en', $4::uuid, $5, $6, 'uat_seed', true, now(), now(), $7::uuid, $7::uuid, 1)
+       (id, talent_id, profile_store_id, origin_talent_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, 'company', $3, 'en', $4::uuid, $5, $6, 'uat_seed', true, now(), now(), $7::uuid, $7::uuid, 1)
        RETURNING id`,
       talentId, corpProfileStoreId, nickname, statusMap['ACTIVE'],
       `Business partner: ${companyName}`,
@@ -184,8 +184,8 @@ export async function seedUatCustomers(
 
     const customerResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${soloSchema}".customer_profile 
-       (id, talent_id, profile_store_id, origin_talent_id, rm_profile_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, gen_random_uuid(), 'individual', $3, $4, $5::uuid, $6, $7, 'uat_seed', true, now(), now(), $8::uuid, $8::uuid, 1)
+       (id, talent_id, profile_store_id, origin_talent_id, profile_type, nickname, primary_language, status_id, notes, tags, source, is_active, created_at, updated_at, created_by, updated_by, version)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $1::uuid, 'individual', $3, $4, $5::uuid, $6, $7, 'uat_seed', true, now(), now(), $8::uuid, $8::uuid, 1)
        RETURNING id`,
       soloTalentId, soloProfileStoreId, nickname, language, soloStatusMap[status] || null,
       `Solo fan ${i + 1}`,

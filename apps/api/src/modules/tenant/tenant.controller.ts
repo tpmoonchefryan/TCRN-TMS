@@ -1,20 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-    BadRequestException,
-    Body,
-    Controller,
-    ForbiddenException,
-    Get,
-    HttpCode,
-    HttpStatus,
-    NotFoundException,
-    Param,
-    Patch,
-    Post,
-    Query
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -31,7 +32,7 @@ import { paginated, success } from '../../common/response.util';
 import { TenantService } from './tenant.service';
 
 // DTOs
-class AdminUserDto {
+export class AdminUserDto {
   @ApiProperty({ description: 'Admin username', example: 'admin', minLength: 3 })
   @IsString()
   @MinLength(3)
@@ -52,7 +53,7 @@ class AdminUserDto {
   displayName?: string;
 }
 
-class TenantSettingsDto {
+export class TenantSettingsDto {
   @ApiPropertyOptional({ description: 'Maximum talents allowed', example: 100, minimum: 1 })
   @IsOptional()
   @IsInt()
@@ -71,7 +72,7 @@ class TenantSettingsDto {
   features?: string[];
 }
 
-class CreateTenantDto {
+export class CreateTenantDto {
   @ApiProperty({ description: 'Tenant code (uppercase)', example: 'ACME_CORP', pattern: '^[A-Z0-9_]{3,32}$' })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/, { message: 'Code must be 3-32 uppercase letters, numbers, or underscores' })
@@ -94,7 +95,7 @@ class CreateTenantDto {
   adminUser: AdminUserDto;
 }
 
-class UpdateTenantDto {
+export class UpdateTenantDto {
   @ApiPropertyOptional({ description: 'Updated tenant name', example: 'Acme Corp Inc.' })
   @IsOptional()
   @IsString()
@@ -113,7 +114,7 @@ class UpdateTenantDto {
   version?: number;
 }
 
-class ListTenantsQueryDto {
+export class ListTenantsQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @IsInt()
@@ -149,6 +150,259 @@ class ListTenantsQueryDto {
   @IsString()
   sort?: string;
 }
+
+export class DeactivateTenantDto {
+  @ApiPropertyOptional({ description: 'Operator note explaining why the tenant is being deactivated', example: 'UAT tenant retired' })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: dataSchema,
+  },
+  required: ['success', 'data'],
+  example: {
+    success: true,
+    data: exampleData,
+  },
+});
+
+const createErrorEnvelopeSchema = (code: string, message: string) => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: code },
+        message: { type: 'string', example: message },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: { code, message },
+  },
+});
+
+const TENANT_STATS_SCHEMA = {
+  type: 'object',
+  properties: {
+    subsidiaryCount: { type: 'integer', example: 3 },
+    talentCount: { type: 'integer', example: 12 },
+    userCount: { type: 'integer', example: 8 },
+  },
+  required: ['subsidiaryCount', 'talentCount', 'userCount'],
+};
+
+const TENANT_ITEM_SCHEMA = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440400' },
+    code: { type: 'string', example: 'ACME_CORP' },
+    name: { type: 'string', example: 'Acme Corporation' },
+    schemaName: { type: 'string', example: 'tenant_acme_corp' },
+    tier: { type: 'string', enum: ['ac', 'standard'], example: 'standard' },
+    isActive: { type: 'boolean', example: true },
+    settings: { type: 'object', additionalProperties: true },
+    stats: TENANT_STATS_SCHEMA,
+    createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
+    updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+  },
+  required: ['id', 'code', 'name', 'schemaName', 'tier', 'isActive', 'settings', 'stats', 'createdAt', 'updatedAt'],
+};
+
+const TENANT_LIST_SUCCESS_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: { type: 'array', items: TENANT_ITEM_SCHEMA },
+    meta: {
+      type: 'object',
+      properties: {
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer', example: 1 },
+            pageSize: { type: 'integer', example: 20 },
+            totalCount: { type: 'integer', example: 1 },
+            totalPages: { type: 'integer', example: 1 },
+            hasNext: { type: 'boolean', example: false },
+            hasPrev: { type: 'boolean', example: false },
+          },
+          required: ['page', 'pageSize', 'totalCount', 'totalPages', 'hasNext', 'hasPrev'],
+        },
+      },
+      required: ['pagination'],
+    },
+  },
+  required: ['success', 'data', 'meta'],
+  example: {
+    success: true,
+    data: [
+      {
+        id: '550e8400-e29b-41d4-a716-446655440400',
+        code: 'ACME_CORP',
+        name: 'Acme Corporation',
+        schemaName: 'tenant_acme_corp',
+        tier: 'standard',
+        isActive: true,
+        settings: { maxTalents: 100 },
+        stats: { subsidiaryCount: 3, talentCount: 12, userCount: 8 },
+        createdAt: '2026-04-13T08:00:00.000Z',
+        updatedAt: '2026-04-13T09:00:00.000Z',
+      },
+    ],
+    meta: {
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        totalCount: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    },
+  },
+};
+
+const TENANT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  TENANT_ITEM_SCHEMA,
+  {
+    id: '550e8400-e29b-41d4-a716-446655440400',
+    code: 'ACME_CORP',
+    name: 'Acme Corporation',
+    schemaName: 'tenant_acme_corp',
+    tier: 'standard',
+    isActive: true,
+    settings: { maxTalents: 100 },
+    stats: { subsidiaryCount: 3, talentCount: 12, userCount: 8 },
+    createdAt: '2026-04-13T08:00:00.000Z',
+    updatedAt: '2026-04-13T09:00:00.000Z',
+  },
+);
+
+const TENANT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440400' },
+      code: { type: 'string', example: 'ACME_CORP' },
+      name: { type: 'string', example: 'Acme Corporation' },
+      schemaName: { type: 'string', example: 'tenant_acme_corp' },
+      tier: { type: 'string', enum: ['ac', 'standard'], example: 'standard' },
+      isActive: { type: 'boolean', example: true },
+      adminUser: {
+        type: 'object',
+        properties: {
+          username: { type: 'string', example: 'admin' },
+          email: { type: 'string', example: 'admin@example.com' },
+        },
+        required: ['username', 'email'],
+      },
+      createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
+    },
+    required: ['id', 'code', 'name', 'schemaName', 'tier', 'isActive', 'adminUser', 'createdAt'],
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440400',
+    code: 'ACME_CORP',
+    name: 'Acme Corporation',
+    schemaName: 'tenant_acme_corp',
+    tier: 'standard',
+    isActive: true,
+    adminUser: {
+      username: 'admin',
+      email: 'admin@example.com',
+    },
+    createdAt: '2026-04-13T08:00:00.000Z',
+  },
+);
+
+const TENANT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440400' },
+      code: { type: 'string', example: 'ACME_CORP' },
+      name: { type: 'string', example: 'Acme Corp Inc.' },
+      isActive: { type: 'boolean', example: true },
+      settings: { type: 'object', additionalProperties: true },
+      updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:20:00.000Z' },
+    },
+    required: ['id', 'code', 'name', 'isActive', 'settings', 'updatedAt'],
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440400',
+    code: 'ACME_CORP',
+    name: 'Acme Corp Inc.',
+    isActive: true,
+    settings: { maxTalents: 150 },
+    updatedAt: '2026-04-13T09:20:00.000Z',
+  },
+);
+
+const TENANT_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440400' },
+      isActive: { type: 'boolean', example: true },
+      activatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
+    },
+    required: ['id', 'isActive', 'activatedAt'],
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440400',
+    isActive: true,
+    activatedAt: '2026-04-13T09:30:00.000Z',
+  },
+);
+
+const TENANT_DEACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440400' },
+      isActive: { type: 'boolean', example: false },
+      deactivatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:35:00.000Z' },
+      reason: { type: 'string', nullable: true, example: 'UAT tenant retired' },
+    },
+    required: ['id', 'isActive', 'deactivatedAt', 'reason'],
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440400',
+    isActive: false,
+    deactivatedAt: '2026-04-13T09:35:00.000Z',
+    reason: 'UAT tenant retired',
+  },
+);
+
+const TENANT_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.CODE_ALREADY_EXISTS,
+  'Tenant code already exists',
+);
+
+const TENANT_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
+  'AUTH_UNAUTHORIZED',
+  'Authentication required',
+);
+
+const TENANT_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.PERM_ACCESS_DENIED,
+  'Only AC tenant administrators can access this resource',
+);
+
+const TENANT_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.TENANT_NOT_FOUND,
+  'Tenant not found',
+);
 
 const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
   role.permissions.flatMap((permission) =>
@@ -293,6 +547,21 @@ export class TenantController {
    */
   @Get()
   @ApiOperation({ summary: 'List tenants (AC only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated tenants for AC operators',
+    schema: TENANT_LIST_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list tenants',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can list tenants',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
   async listTenants(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListTenantsQueryDto,
@@ -363,6 +632,26 @@ export class TenantController {
    */
   @Post()
   @ApiOperation({ summary: 'Create tenant (AC only)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Creates a tenant and its initial admin user',
+    schema: TENANT_CREATE_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Tenant payload is invalid or the tenant code already exists',
+    schema: TENANT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create tenants',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can create tenants',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
   async createTenant(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateTenantDto,
@@ -443,18 +732,43 @@ export class TenantController {
   }
 
   /**
-   * GET /api/v1/tenants/:id
+   * GET /api/v1/tenants/:tenantId
    * Get tenant details (AC only)
    */
-  @Get(':id')
+  @Get(':tenantId')
   @ApiOperation({ summary: 'Get tenant details (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns tenant detail',
+    schema: TENANT_DETAIL_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read tenant detail',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can read tenant detail',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: TENANT_NOT_FOUND_SCHEMA,
+  })
   async getTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
   ) {
     await this.verifyAcAccess(user);
 
-    const tenant = await this.tenantService.getTenantById(id);
+    const tenant = await this.tenantService.getTenantById(tenantId);
     if (!tenant) {
       throw new NotFoundException({
         code: ErrorCodes.TENANT_NOT_FOUND,
@@ -482,19 +796,44 @@ export class TenantController {
   }
 
   /**
-   * PATCH /api/v1/tenants/:id
+   * PATCH /api/v1/tenants/:tenantId
    * Update tenant (AC only)
    */
-  @Patch(':id')
+  @Patch(':tenantId')
   @ApiOperation({ summary: 'Update tenant (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the updated tenant',
+    schema: TENANT_UPDATE_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update tenants',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can update tenants',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: TENANT_NOT_FOUND_SCHEMA,
+  })
   async updateTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
     @Body() dto: UpdateTenantDto,
   ) {
     await this.verifyAcAccess(user);
 
-    const tenant = await this.tenantService.getTenantById(id);
+    const tenant = await this.tenantService.getTenantById(tenantId);
     if (!tenant) {
       throw new NotFoundException({
         code: ErrorCodes.TENANT_NOT_FOUND,
@@ -504,7 +843,7 @@ export class TenantController {
 
     // Update tenant
     const updated = await prisma.tenant.update({
-      where: { id },
+      where: { id: tenantId },
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.settings && { 
@@ -524,19 +863,44 @@ export class TenantController {
   }
 
   /**
-   * POST /api/v1/tenants/:id/activate
+   * POST /api/v1/tenants/:tenantId/activate
    * Activate tenant (AC only)
    */
-  @Post(':id/activate')
+  @Post(':tenantId/activate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activate tenant (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Activates the tenant',
+    schema: TENANT_ACTIVATION_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to activate tenants',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can activate tenants',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: TENANT_NOT_FOUND_SCHEMA,
+  })
   async activateTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
   ) {
     await this.verifyAcAccess(user);
 
-    const tenant = await this.tenantService.setTenantActive(id, true);
+    const tenant = await this.tenantService.setTenantActive(tenantId, true);
     if (!tenant) {
       throw new NotFoundException({
         code: ErrorCodes.TENANT_NOT_FOUND,
@@ -552,20 +916,45 @@ export class TenantController {
   }
 
   /**
-   * POST /api/v1/tenants/:id/deactivate
+   * POST /api/v1/tenants/:tenantId/deactivate
    * Deactivate tenant (AC only)
    */
-  @Post(':id/deactivate')
+  @Post(':tenantId/deactivate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate tenant (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deactivates the tenant',
+    schema: TENANT_DEACTIVATION_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to deactivate tenants',
+    schema: TENANT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can deactivate tenants',
+    schema: TENANT_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: TENANT_NOT_FOUND_SCHEMA,
+  })
   async deactivateTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-    @Body() body: { reason?: string },
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Body() body: DeactivateTenantDto,
   ) {
     await this.verifyAcAccess(user);
 
-    const tenant = await this.tenantService.setTenantActive(id, false);
+    const tenant = await this.tenantService.setTenantActive(tenantId, false);
     if (!tenant) {
       throw new NotFoundException({
         code: ErrorCodes.TENANT_NOT_FOUND,

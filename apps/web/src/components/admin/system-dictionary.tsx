@@ -129,11 +129,11 @@ export function SystemDictionary() {
         setDictionaryTypes(response.data);
       }
     } catch (error: unknown) {
-      toast.error('Failed to fetch dictionary types', { description: getErrorMessage(error) });
+      toast.error(t('fetchTypesFailed'), { description: getErrorMessage(error) });
     } finally {
       setIsLoadingTypes(false);
     }
-  }, []);
+  }, [t]);
 
   // Fetch dictionary items from API
   const fetchItems = useCallback(async (typeCode: string, options?: { search?: string; showInactive?: boolean }) => {
@@ -149,13 +149,13 @@ export function SystemDictionary() {
         setTotalItems(response.meta?.pagination?.totalCount || response.data.length);
       }
     } catch (error: unknown) {
-      toast.error('Failed to fetch items', { description: getErrorMessage(error) });
+      toast.error(t('fetchItemsFailed'), { description: getErrorMessage(error) });
       setItems([]);
       setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
-  }, [isAcTenant]);
+  }, [isAcTenant, t]);
 
   // Load dictionary types on mount
   useEffect(() => {
@@ -226,7 +226,7 @@ export function SystemDictionary() {
 
   const handleSaveItem = async () => {
     if (!selectedType || !newItem.code || !newItem.nameEn) {
-      toast.error('Code and English name are required');
+      toast.error(t('codeAndEnglishRequired'));
       return;
     }
 
@@ -236,7 +236,7 @@ export function SystemDictionary() {
       try {
         extraData = JSON.parse(newItem.extraData);
       } catch {
-        toast.error('Invalid JSON in Extra Data field');
+        toast.error(t('invalidExtraData'));
         return;
       }
     }
@@ -255,7 +255,7 @@ export function SystemDictionary() {
           extraData,
           version: editingItem.version,
         });
-        toast.success('Updated successfully');
+        toast.success(t('updatedSuccessfully'));
       } else {
         // Create new
         await dictionaryApi.createItem(selectedType, {
@@ -269,27 +269,27 @@ export function SystemDictionary() {
           sortOrder: newItem.sortOrder,
           extraData,
         });
-        toast.success('Created successfully');
+        toast.success(t('createdSuccessfully'));
       }
       setShowAddDialog(false);
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
     } catch (error: unknown) {
-      toast.error('Operation failed', { description: getErrorMessage(error) });
+      toast.error(t('operationFailed'), { description: getErrorMessage(error) });
     }
   };
 
   const handleDeactivate = async (item: SystemDictionaryItemRecord) => {
     if (!selectedType) return;
-    if (!confirm(`Are you sure you want to deactivate "${item.nameEn}"?`)) {
+    if (!confirm(t('confirmDeactivate', { name: item.nameEn }))) {
       return;
     }
 
     try {
       await dictionaryApi.deactivateItem(selectedType, item.id, item.version);
-      toast.success('Deactivated successfully');
+      toast.success(t('deactivatedSuccessfully'));
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
     } catch (error: unknown) {
-      toast.error('Failed to deactivate', { description: getErrorMessage(error) });
+      toast.error(t('deactivateFailed'), { description: getErrorMessage(error) });
     }
   };
 
@@ -298,10 +298,10 @@ export function SystemDictionary() {
 
     try {
       await dictionaryApi.reactivateItem(selectedType, item.id, item.version);
-      toast.success('Reactivated successfully');
+      toast.success(t('reactivatedSuccessfully'));
       fetchItems(selectedType, { search: searchQuery, showInactive: includeInactive });
     } catch (error: unknown) {
-      toast.error('Failed to reactivate', { description: getErrorMessage(error) });
+      toast.error(t('reactivateFailed'), { description: getErrorMessage(error) });
     }
   };
 
@@ -323,18 +323,18 @@ export function SystemDictionary() {
             <div>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <BookOpen size={18} className="text-purple-600" />
-                {t('systemDictionaries') || 'System Dictionaries'}
+                {t('systemDictionaries')}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {isAcTenant
-                  ? (t('acTenantDesc') || 'Platform-level reference data. You can edit these as an AC administrator.')
-                  : (t('generalTenantDesc') || 'System-wide reference data. Read-only for standard tenants.')}
+                  ? t('acTenantDesc')
+                  : t('generalTenantDesc')}
               </p>
             </div>
             {isAcTenant && (
               <Badge variant="default" className="bg-purple-600">
                 <Edit size={12} className="mr-1" />
-                {t('editableLabel') || 'AC Editable'}
+                {t('editableLabel')}
               </Badge>
             )}
           </div>
@@ -365,7 +365,7 @@ export function SystemDictionary() {
                             <Lock size={12} className="text-muted-foreground" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">{type.count} items</p>
+                        <p className="text-xs text-slate-400 mt-1">{t('itemsCount', { count: type.count })}</p>
                         {type.description && (
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{type.description}</p>
                         )}
@@ -389,9 +389,9 @@ export function SystemDictionary() {
       {/* Left Panel - Type List */}
       <Card className="col-span-3">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t('types') || 'Types'}</CardTitle>
+          <CardTitle className="text-base">{t('types')}</CardTitle>
           <CardDescription className="text-xs">
-            {t('selectType') || 'Select a type to view'}
+            {t('selectType')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-2">
@@ -419,7 +419,7 @@ export function SystemDictionary() {
                       <TypeIcon size={16} className={selectedType === type.type && isAcTenant ? 'text-purple-600' : 'text-slate-400'} />
                       <div>
                         <p className="font-medium text-sm">{type.name}</p>
-                        <p className="text-xs text-muted-foreground">{type.count} items</p>
+                        <p className="text-xs text-muted-foreground">{t('itemsCount', { count: type.count })}</p>
                       </div>
                     </div>
                   </button>
@@ -441,7 +441,7 @@ export function SystemDictionary() {
               </CardTitle>
               <CardDescription>
                 {selectedTypeInfo?.description}
-                {!isAcTenant && ' - ' + (t('readOnlyMessage') || 'Read-only system data')}
+                {!isAcTenant && ` - ${t('readOnlyMessage')}`}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -453,13 +453,13 @@ export function SystemDictionary() {
                   </Button>
                   <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={handleAdd}>
                     <Plus size={14} className="mr-2" />
-                    {t('addRecord') || 'Add Record'}
+                    {t('addRecord')}
                   </Button>
                 </>
               ) : (
                 <Badge variant="outline">
                   <Lock size={12} className="mr-1" />
-                  {t('readOnlyLabel') || 'Read Only'}
+                  {t('readOnlyLabel')}
                 </Badge>
               )}
             </div>
@@ -480,7 +480,7 @@ export function SystemDictionary() {
                 size="sm"
                 onClick={() => setIncludeInactive(!includeInactive)}
               >
-                {includeInactive ? (t('hideInactive') || 'Hide Inactive') : (t('showInactive') || 'Show Inactive')}
+                {includeInactive ? t('hideInactive') : t('showInactive')}
               </Button>
             )}
           </div>
@@ -490,16 +490,16 @@ export function SystemDictionary() {
             {isLoading ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Loader2 size={48} className="mx-auto mb-4 text-purple-400 animate-spin" />
-                <p>{t('loading') || 'Loading...'}</p>
+                <p>{t('loading')}</p>
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <IconComponent size={48} className="mx-auto mb-4 opacity-30" />
-                <p>{searchQuery ? (t('noSearchResults') || 'No results found') : (t('noRecords') || 'No records')}</p>
+                <p>{searchQuery ? t('noSearchResults') : t('noRecords')}</p>
                 {isAcTenant && !searchQuery && (
                   <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleAdd}>
                     <Plus size={14} className="mr-2" />
-                    {t('addFirstRecord') || 'Add First Record'}
+                    {t('addFirstRecord')}
                   </Button>
                 )}
               </div>
@@ -507,11 +507,11 @@ export function SystemDictionary() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[150px]">{t('tableCode') || 'Code'}</TableHead>
-                    <TableHead>{t('tableEnglish') || 'English'}</TableHead>
-                    <TableHead>{t('tableChinese') || 'Chinese'}</TableHead>
-                    <TableHead>{t('tableJapanese') || 'Japanese'}</TableHead>
-                    <TableHead className="w-[80px]">{t('tableSort') || 'Sort'}</TableHead>
+                    <TableHead className="w-[150px]">{t('tableCode')}</TableHead>
+                    <TableHead>{t('tableEnglish')}</TableHead>
+                    <TableHead>{t('tableChinese')}</TableHead>
+                    <TableHead>{t('tableJapanese')}</TableHead>
+                    <TableHead className="w-[80px]">{t('tableSort')}</TableHead>
                     <TableHead className="w-[80px]">{tCommon('status')}</TableHead>
                     {isAcTenant && <TableHead className="w-[80px]"></TableHead>}
                   </TableRow>
@@ -553,12 +553,12 @@ export function SystemDictionary() {
                                   onClick={() => handleDeactivate(item)}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  {t('deactivate') || 'Deactivate'}
+                                  {t('deactivate')}
                                 </DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem onClick={() => handleReactivate(item)}>
                                   <RefreshCw className="mr-2 h-4 w-4" />
-                                  {t('reactivate') || 'Reactivate'}
+                                  {t('reactivate')}
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
@@ -572,7 +572,7 @@ export function SystemDictionary() {
             )}
           </ScrollArea>
           <div className="mt-2 text-xs text-muted-foreground">
-            {t('totalItems', { count: totalItems }) || `Total: ${totalItems} items`}
+            {t('totalItems', { count: totalItems })}
           </div>
         </CardContent>
       </Card>
@@ -583,84 +583,84 @@ export function SystemDictionary() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                {editingItem ? (t('editRecord') || 'Edit Record') : (t('addRecord') || 'Add Record')}
+                {editingItem ? t('editRecord') : t('addRecord')}
               </DialogTitle>
               <DialogDescription>
                 {editingItem
-                  ? (t('editRecordDesc') || 'Update the record details')
-                  : (t('addRecordDesc') || 'Create a new record')}
+                  ? t('editRecordDesc')
+                  : t('addRecordDesc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-2">
-                <Label>{t('tableCode') || 'Code'} *</Label>
+                <Label>{t('tableCode')} *</Label>
                 <Input
                   value={newItem.code}
                   onChange={(e) => setNewItem({ ...newItem, code: e.target.value })}
-                  placeholder="e.g., MY_CODE"
+                  placeholder={t('codePlaceholder')}
                   disabled={!!editingItem}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {t('codeHint') || 'Uppercase letters, numbers, and underscores only'}
+                  {t('codeHint')}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('tableEnglish') || 'English Name'} *</Label>
+                  <Label>{t('tableEnglish')} *</Label>
                   <Input
                     value={newItem.nameEn}
                     onChange={(e) => setNewItem({ ...newItem, nameEn: e.target.value })}
-                    placeholder="English name"
+                    placeholder={t('englishNamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('tableSort') || 'Sort Order'}</Label>
+                  <Label>{t('tableSort')}</Label>
                   <Input
                     type="number"
                     value={newItem.sortOrder}
                     onChange={(e) => setNewItem({ ...newItem, sortOrder: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
+                    placeholder={t('sortPlaceholder')}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('tableChinese') || 'Chinese Name'}</Label>
+                  <Label>{t('tableChinese')}</Label>
                   <Input
                     value={newItem.nameZh}
                     onChange={(e) => setNewItem({ ...newItem, nameZh: e.target.value })}
-                    placeholder="中文名称"
+                    placeholder={t('chineseNamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('tableJapanese') || 'Japanese Name'}</Label>
+                  <Label>{t('tableJapanese')}</Label>
                   <Input
                     value={newItem.nameJa}
                     onChange={(e) => setNewItem({ ...newItem, nameJa: e.target.value })}
-                    placeholder="日本語名"
+                    placeholder={t('japaneseNamePlaceholder')}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t('descriptionEn') || 'Description (English)'}</Label>
+                <Label>{t('descriptionEn')}</Label>
                 <Textarea
                   value={newItem.descriptionEn}
                   onChange={(e) => setNewItem({ ...newItem, descriptionEn: e.target.value })}
-                  placeholder="Description in English"
+                  placeholder={t('descriptionEnPlaceholder')}
                   rows={2}
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('extraData') || 'Extra Data (JSON)'}</Label>
+                <Label>{t('extraData')}</Label>
                 <Textarea
                   value={newItem.extraData}
                   onChange={(e) => setNewItem({ ...newItem, extraData: e.target.value })}
-                  placeholder='{"key": "value"}'
+                  placeholder={t('extraDataPlaceholder')}
                   rows={3}
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {t('extraDataHint') || 'Optional JSON data for additional properties (e.g., symbol, offset)'}
+                  {t('extraDataHint')}
                 </p>
               </div>
             </div>
@@ -669,7 +669,7 @@ export function SystemDictionary() {
                 {tCommon('cancel')}
               </Button>
               <Button onClick={handleSaveItem} className="bg-purple-600 hover:bg-purple-700">
-                {editingItem ? tCommon('save') : (t('create') || 'Create')}
+                {editingItem ? tCommon('save') : t('create')}
               </Button>
             </DialogFooter>
           </DialogContent>

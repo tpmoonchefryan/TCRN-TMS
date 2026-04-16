@@ -28,6 +28,7 @@ interface LinkButtonEditorProps {
 
 export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onChange }) => {
   const t = useTranslations('homepageComponentEditor');
+  const tForms = useTranslations('forms');
   
   return (
     <div className="space-y-4">
@@ -45,7 +46,7 @@ export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onCha
         <Input 
           value={props.url} 
           onChange={(e) => onChange({ url: e.target.value })}
-          placeholder="https://..."
+          placeholder={tForms('placeholders.url')}
         />
       </div>
 
@@ -118,7 +119,7 @@ export const LinkButtonEditor: React.FC<LinkButtonEditorProps> = ({ props, onCha
           <Input 
             value={props.customColor || ''} 
             onChange={(e) => onChange({ customColor: e.target.value })}
-            placeholder="#3b82f6"
+            placeholder={tForms('placeholders.color')}
             className="flex-1"
           />
         </div>

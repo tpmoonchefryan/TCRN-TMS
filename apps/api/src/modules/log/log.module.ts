@@ -3,6 +3,7 @@
 import { forwardRef,Global, Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth';
+import { LokiQueryApplicationService } from './application/loki-query.service';
 import {
     ChangeLogController,
     ComplianceReportController,
@@ -10,6 +11,7 @@ import {
     LogSearchController,
     TechEventLogController,
 } from './controllers';
+import { LokiQueryGateway } from './infrastructure/loki-query.gateway';
 import {
     ChangeLogQueryService,
     ChangeLogService,
@@ -42,6 +44,8 @@ import {
     IntegrationLogService,
     IntegrationLogQueryService,
     LokiPushService,
+    LokiQueryGateway,
+    LokiQueryApplicationService,
     LokiQueryService,
     ComplianceReportService,
   ],
@@ -54,6 +58,8 @@ import {
     IntegrationLogService,
     IntegrationLogQueryService,
     LokiPushService,
+    LokiQueryGateway,
+    LokiQueryApplicationService,
     LokiQueryService,
     ComplianceReportService,
   ],

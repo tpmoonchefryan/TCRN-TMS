@@ -159,7 +159,7 @@ export function WebhookDialog({
 
     if (isEdit && currentVersion === null) {
       toast.error(tCommon('error'), {
-        description: 'Webhook details are still loading. Please try again.',
+        description: t('webhookDetailsLoading'),
       });
       return;
     }

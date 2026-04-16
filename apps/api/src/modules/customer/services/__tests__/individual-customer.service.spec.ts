@@ -1,306 +1,120 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException } from '@nestjs/common';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RequestContext } from '@tcrn/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService, TechEventLogService } from '../../../log';
-import { PiiClientService, PiiJwtService } from '../../../pii';
+import { IndividualCustomerPiiApplicationService } from '../../application/individual-customer-pii.service';
+import { IndividualCustomerWriteApplicationService } from '../../application/individual-customer-write.service';
 import { IndividualCustomerService } from '../individual-customer.service';
 
 describe('IndividualCustomerService', () => {
-  let service: IndividualCustomerService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockTechEventLogService: Partial<TechEventLogService>;
-  let mockPiiClientService: Partial<PiiClientService>;
-  let mockPiiJwtService: Partial<PiiJwtService>;
-  let mockPrisma: {
-    $queryRawUnsafe: ReturnType<typeof vi.fn>;
-    $executeRawUnsafe: ReturnType<typeof vi.fn>;
-    $transaction: ReturnType<typeof vi.fn>;
-  };
-  let mockTx: {
-    $queryRawUnsafe: ReturnType<typeof vi.fn>;
-    $executeRawUnsafe: ReturnType<typeof vi.fn>;
-  };
-
-  const mockRuntimeConfig = {
-    apiUrl: 'https://pii-api.example.com',
-    piiServiceUrl: 'https://pii-proxy.example.com',
-  };
-
-  const mockCustomer = {
-    id: 'customer-123',
-    profileType: 'individual',
-    profileStoreId: 'store-123',
-    rmProfileId: 'rm-123',
-    version: 1,
-    nickname: 'Test User',
-    primaryLanguage: 'ja',
-    statusId: null,
-    tags: ['vip'],
-    notes: null,
-  };
-
-  const mockContext = {
-    tenantId: 'tenant-123',
+  const context: RequestContext = {
+    tenantId: 'tenant-1',
     tenantSchema: 'tenant_test',
-    userId: 'user-123',
-    userName: 'Test User',
-    requestId: 'req-123',
+    userId: 'user-1',
+    userName: 'Tester',
     ipAddress: '127.0.0.1',
-    userAgent: 'vitest',
+    userAgent: 'Vitest',
+    requestId: 'req-1',
   };
+
+  const mockWriteApplicationService = {
+    create: vi.fn(),
+    update: vi.fn(),
+  } as unknown as IndividualCustomerWriteApplicationService;
+
+  const mockPiiApplicationService = {
+    createPortalSession: vi.fn(),
+    updatePii: vi.fn(),
+  } as unknown as IndividualCustomerPiiApplicationService;
+
+  const service = new IndividualCustomerService(
+    mockWriteApplicationService,
+    mockPiiApplicationService,
+  );
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
 
-    mockTx = {
-      $queryRawUnsafe: vi.fn(),
-      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+  it('delegates create and update to the write application service', async () => {
+    const createDto = {
+      nickname: 'Test User',
     };
-
-    mockPrisma = {
-      $queryRawUnsafe: vi.fn(),
-      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
-      $transaction: vi.fn().mockImplementation(async (callback: (tx: typeof mockTx) => unknown) =>
-        callback(mockTx)),
+    const updateDto = {
+      version: 1,
+      nickname: 'Updated User',
     };
+    vi.mocked(mockWriteApplicationService.create).mockResolvedValue({
+      id: 'customer-1',
+      profileType: 'individual',
+      nickname: 'Test User',
+    } as never);
+    vi.mocked(mockWriteApplicationService.update).mockResolvedValue({
+      id: 'customer-1',
+      nickname: 'Updated User',
+      version: 2,
+    } as never);
 
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-    };
+    await expect(
+      service.create('talent-1', createDto as any, context),
+    ).resolves.toMatchObject({ id: 'customer-1' });
+    await expect(
+      service.update('customer-1', 'talent-1', updateDto as any, context),
+    ).resolves.toMatchObject({ id: 'customer-1', version: 2 });
 
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockTechEventLogService = {
-      log: vi.fn().mockResolvedValue(undefined),
-      piiAccess: vi.fn().mockResolvedValue(undefined),
-      warn: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockPiiClientService = {
-      createProfile: vi.fn().mockResolvedValue({
-        id: 'rm-123',
-        createdAt: '2026-03-28T00:00:00.000Z',
-      }),
-      updateProfile: vi.fn().mockResolvedValue({
-        id: 'rm-123',
-        updatedAt: '2026-03-28T00:00:00.000Z',
-      }),
-      deleteProfile: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockPiiJwtService = {
-      issueAccessToken: vi.fn().mockResolvedValue({
-        token: 'pii-access-token',
-        expiresIn: 300,
-        jti: 'jti-123',
-      }),
-    };
-
-    service = new IndividualCustomerService(
-      mockDatabaseService as DatabaseService,
-      mockChangeLogService as ChangeLogService,
-      mockTechEventLogService as TechEventLogService,
-      mockPiiClientService as PiiClientService,
-      mockPiiJwtService as PiiJwtService,
+    expect(mockWriteApplicationService.create).toHaveBeenCalledWith(
+      'talent-1',
+      createDto,
+      context,
+    );
+    expect(mockWriteApplicationService.update).toHaveBeenCalledWith(
+      'customer-1',
+      'talent-1',
+      updateDto,
+      context,
     );
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  it('delegates pii portal session creation and updates to the pii application service', async () => {
+    const piiDto = {
+      version: 1,
+      pii: {
+        givenName: 'Jane',
+      },
+    };
+    vi.mocked(mockPiiApplicationService.createPortalSession).mockResolvedValue({
+      redirectUrl: 'https://pii-platform.example.com/portal/sessions/session-1',
+      expiresAt: '2026-04-14T08:05:00.000Z',
+    } as never);
+    vi.mocked(mockPiiApplicationService.updatePii).mockResolvedValue({
+      id: 'customer-1',
+      message: 'PII data synchronized to TCRN PII Platform',
+    } as never);
 
-  describe('create', () => {
-    it('fails closed when pii is submitted without an active pii backend', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { id: 'talent-123', profileStoreId: 'store-123' },
-      ]);
-
-      vi.spyOn(service as any, 'resolveEnabledPiiRuntime').mockRejectedValue(
-        new BadRequestException({
-          code: 'VALIDATION_FAILED',
-          message: 'PII is not enabled for this profile store',
-        }),
-      );
-
-      await expect(service.create({
-        talentId: 'talent-123',
-        nickname: 'Test User',
-        pii: {
-          givenName: 'John',
-          familyName: 'Doe',
-        },
-      }, mockContext as any)).rejects.toThrow(BadRequestException);
-
-      expect(mockPiiJwtService.issueAccessToken).not.toHaveBeenCalled();
-      expect(mockPiiClientService.createProfile).not.toHaveBeenCalled();
+    await expect(
+      service.createPiiPortalSession('customer-1', 'talent-1', context),
+    ).resolves.toEqual({
+      redirectUrl: 'https://pii-platform.example.com/portal/sessions/session-1',
+      expiresAt: '2026-04-14T08:05:00.000Z',
+    });
+    await expect(
+      service.updatePii('customer-1', 'talent-1', piiDto as any, context),
+    ).resolves.toEqual({
+      id: 'customer-1',
+      message: 'PII data synchronized to TCRN PII Platform',
     });
 
-    it('creates a remote pii profile before writing the customer record', async () => {
-      const createdAt = new Date('2026-03-28T00:00:00.000Z');
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { id: 'talent-123', profileStoreId: 'store-123' },
-      ]);
-      mockTx.$queryRawUnsafe.mockResolvedValueOnce([
-        { id: 'customer-123', nickname: 'Test User', createdAt },
-      ]);
-
-      vi.spyOn(service as any, 'resolveEnabledPiiRuntime').mockResolvedValue(mockRuntimeConfig);
-
-      const result = await service.create({
-        talentId: 'talent-123',
-        nickname: 'Test User',
-        pii: {
-          givenName: 'John',
-          familyName: 'Doe',
-        },
-      }, mockContext as any);
-
-      expect(mockPiiJwtService.issueAccessToken).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'user-123',
-          tenantId: 'tenant-123',
-          tenantSchema: 'tenant_test',
-          profileStoreId: 'store-123',
-          actions: ['write'],
-          rmProfileId: expect.any(String),
-        }),
-      );
-      expect(mockPiiClientService.createProfile).toHaveBeenCalledWith(
-        mockRuntimeConfig.apiUrl,
-        expect.objectContaining({
-          id: expect.any(String),
-          profileStoreId: 'store-123',
-          givenName: 'John',
-          familyName: 'Doe',
-        }),
-        'pii-access-token',
-        'tenant-123',
-        'tenant_test',
-      );
-      expect(mockChangeLogService.create).toHaveBeenCalled();
-      expect(result.id).toBe('customer-123');
-      expect(result.individual.searchHintName).toBe('D*n');
-    });
-
-    it('attempts remote compensation when customer transaction fails after pii creation', async () => {
-      const dbFailure = new Error('transaction failed');
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { id: 'talent-123', profileStoreId: 'store-123' },
-      ]);
-      mockPrisma.$transaction.mockRejectedValue(dbFailure);
-
-      vi.spyOn(service as any, 'resolveEnabledPiiRuntime').mockResolvedValue(mockRuntimeConfig);
-
-      await expect(service.create({
-        talentId: 'talent-123',
-        nickname: 'Test User',
-        pii: {
-          givenName: 'John',
-        },
-      }, mockContext as any)).rejects.toThrow('transaction failed');
-
-      expect(mockPiiClientService.createProfile).toHaveBeenCalled();
-      expect(mockPiiClientService.deleteProfile).toHaveBeenCalledWith(
-        mockRuntimeConfig.apiUrl,
-        expect.any(String),
-        'pii-access-token',
-        'tenant-123',
-        'tenant_test',
-      );
-    });
-  });
-
-  describe('requestPiiAccess', () => {
-    it('returns a real pii token response using the resolved profile-store config', async () => {
-      vi.spyOn(service as any, 'verifyAccess').mockResolvedValue(mockCustomer);
-      vi.spyOn(service as any, 'resolveEnabledPiiRuntime').mockResolvedValue(mockRuntimeConfig);
-
-      const result = await service.requestPiiAccess(
-        'customer-123',
-        'talent-123',
-        mockContext as any,
-      );
-
-      expect(mockPiiJwtService.issueAccessToken).toHaveBeenCalledWith({
-        userId: 'user-123',
-        tenantId: 'tenant-123',
-        tenantSchema: 'tenant_test',
-        rmProfileId: 'rm-123',
-        profileStoreId: 'store-123',
-        actions: ['read'],
-      });
-      expect(result).toEqual({
-        accessToken: 'pii-access-token',
-        piiProfileId: 'rm-123',
-        expiresIn: 300,
-        piiServiceUrl: 'https://pii-proxy.example.com',
-      });
-    });
-  });
-
-  describe('updatePii', () => {
-    it('updates the remote pii profile with a real write token', async () => {
-      vi.spyOn(service as any, 'verifyAccess').mockResolvedValue(mockCustomer);
-      vi.spyOn(service as any, 'resolveEnabledPiiRuntime').mockResolvedValue(mockRuntimeConfig);
-
-      const result = await service.updatePii(
-        'customer-123',
-        'talent-123',
-        {
-          version: 1,
-          pii: {
-            givenName: 'Jane',
-            familyName: 'Doe',
-            phoneNumbers: [
-              {
-                typeCode: 'mobile',
-                number: '+81-90-1234-5678',
-                isPrimary: true,
-              },
-            ],
-          },
-        },
-        mockContext as any,
-      );
-
-      expect(mockPiiJwtService.issueAccessToken).toHaveBeenCalledWith({
-        userId: 'user-123',
-        tenantId: 'tenant-123',
-        tenantSchema: 'tenant_test',
-        rmProfileId: 'rm-123',
-        profileStoreId: 'store-123',
-        actions: ['write'],
-      });
-      expect(mockPiiClientService.updateProfile).toHaveBeenCalledWith(
-        mockRuntimeConfig.apiUrl,
-        'rm-123',
-        {
-          givenName: 'Jane',
-          familyName: 'Doe',
-          phoneNumbers: [
-            {
-              typeCode: 'mobile',
-              number: '+81-90-1234-5678',
-              isPrimary: true,
-            },
-          ],
-        },
-        'pii-access-token',
-        'tenant-123',
-        'tenant_test',
-      );
-      expect(result).toEqual({
-        id: 'customer-123',
-        searchHintName: 'D*e',
-        searchHintPhoneLast4: '5678',
-        message: 'PII data updated',
-      });
-    });
+    expect(mockPiiApplicationService.createPortalSession).toHaveBeenCalledWith(
+      'customer-1',
+      'talent-1',
+      context,
+    );
+    expect(mockPiiApplicationService.updatePii).toHaveBeenCalledWith(
+      'customer-1',
+      'talent-1',
+      piiDto,
+      context,
+    );
   });
 });

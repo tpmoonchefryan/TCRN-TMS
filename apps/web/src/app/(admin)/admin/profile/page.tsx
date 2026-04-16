@@ -2,8 +2,8 @@
 
 'use client';
 
-import { CurrentUserProfileContent } from '@/components/auth/current-user-profile-content';
+import { AdminProfileScreen } from '@/domains/auth-identity/screens/AdminProfileScreen';
 
 export default function AdminProfilePage() {
-  return <CurrentUserProfileContent />;
+  return <AdminProfileScreen />;
 }

@@ -4,6 +4,7 @@
 'use client';
 
 import { Slot } from '@radix-ui/react-slot';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -181,6 +182,7 @@ interface SidebarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
 
 function SidebarTrigger({ className, ...props }: SidebarTriggerProps) {
   const { expanded, setExpanded } = useSidebar();
+  const tCommon = useTranslations('common');
   
   return (
     <button
@@ -208,7 +210,7 @@ function SidebarTrigger({ className, ...props }: SidebarTriggerProps) {
         <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
         <line x1="9" x2="9" y1="3" y2="21" />
       </svg>
-      <span className="sr-only">Toggle sidebar</span>
+      <span className="sr-only">{tCommon('toggleSidebar')}</span>
     </button>
   );
 }
@@ -220,4 +222,3 @@ export {
     SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
     useSidebar
 };
-

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
     IsArray,
     IsBoolean,
@@ -49,19 +49,41 @@ export enum WebhookEventType {
   IMPORT_FAILED = 'import.failed',
 }
 
+function toBooleanQueryValue(value: unknown): unknown {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+  }
+
+  if (typeof value === 'number') {
+    if (value === 1) {
+      return true;
+    }
+
+    if (value === 0) {
+      return false;
+    }
+  }
+
+  return value;
+}
+
 // =============================================================================
 // Adapter DTOs
 // =============================================================================
 
 export class AdapterListQueryDto {
-  @IsOptional()
-  @IsEnum(OwnerType)
-  scopeType?: OwnerType;
-
-  @IsOptional()
-  @IsUUID()
-  scopeId?: string;
-
   @IsOptional()
   @IsUUID()
   platformId?: string;
@@ -71,19 +93,14 @@ export class AdapterListQueryDto {
   adapterType?: AdapterType;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => toBooleanQueryValue(value))
   @IsBoolean()
   includeInherited?: boolean = true;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => toBooleanQueryValue(value))
   @IsBoolean()
   includeDisabled?: boolean = false;
-
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  ownerOnly?: boolean = false;
 }
 
 export class AdapterConfigItemDto {
@@ -126,14 +143,6 @@ export class CreateAdapterDto {
   inherit?: boolean = true;
 
   @IsOptional()
-  @IsEnum(OwnerType)
-  ownerType?: OwnerType;
-
-  @IsOptional()
-  @IsUUID()
-  ownerId?: string;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AdapterConfigItemDto)
@@ -172,14 +181,6 @@ export class UpdateAdapterConfigsDto {
 
   @IsInt()
   adapterVersion!: number;
-}
-
-export class DisableAdapterDto {
-  @IsEnum(OwnerType)
-  scopeType!: OwnerType;
-
-  @IsUUID()
-  scopeId!: string;
 }
 
 // =============================================================================

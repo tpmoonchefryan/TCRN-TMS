@@ -3,6 +3,12 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
+import {
+  buildOrganizationStructureUrl,
+  buildTalentDetailsUrl,
+  buildTalentSettingsUrl,
+  classifyTalentWorkspaceRoute,
+} from '@/lib/talent-lifecycle-routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { UIMode, useTalentStore } from '@/stores/talent-store';
 
@@ -12,8 +18,9 @@ import { UIMode, useTalentStore } from '@/stores/talent-store';
 export function useUIMode() {
   const router = useRouter();
   const pathname = usePathname();
-  const { uiMode, setUIMode, currentTalent, currentTenantId, hasTalentAccess } = useTalentStore();
+  const { uiMode, setUIMode, currentTenantId, hasTalentAccess } = useTalentStore();
   const { tenantCode } = useAuthStore();
+  const routeType = useMemo(() => classifyTalentWorkspaceRoute(pathname), [pathname]);
 
   // Check if current route is in management mode
   const isManagementRoute = useMemo(() => {
@@ -22,12 +29,8 @@ export function useUIMode() {
 
   // Check if current route is in business mode
   const isBusinessRoute = useMemo(() => {
-    return (
-      pathname?.startsWith('/customers') ||
-      pathname?.startsWith('/homepage') ||
-      pathname?.startsWith('/marshmallow')
-    );
-  }, [pathname]);
+    return routeType !== 'other';
+  }, [routeType]);
 
   // Determine effective UI mode based on route
   const effectiveMode: UIMode = useMemo(() => {
@@ -39,28 +42,20 @@ export function useUIMode() {
   // Switch to business UI
   const switchToBusinessUI = useCallback(() => {
     if (!hasTalentAccess()) {
-      // No talents available - show message
       return false;
     }
 
     setUIMode('business');
-
-    // Navigate to default business page (customers)
-    if (currentTalent) {
-      router.push('/customers');
-      return true;
-    }
-
-    return false;
-  }, [router, setUIMode, currentTalent, hasTalentAccess]);
+    router.push('/customers');
+    return true;
+  }, [router, setUIMode, hasTalentAccess]);
 
   // Switch to management UI
   const switchToManagementUI = useCallback(() => {
     setUIMode('management');
 
-    // Navigate to organization structure (default management page)
     if (currentTenantId) {
-      router.push(`/tenant/${currentTenantId}/organization-structure`);
+      router.push(buildOrganizationStructureUrl(currentTenantId));
       return true;
     }
 
@@ -82,12 +77,14 @@ export function useUIMode() {
           }
           break;
         case 'talent':
-          if (scopeId && subsidiaryId) {
+          if (scopeId) {
             router.push(
-              `/tenant/${currentTenantId}/subsidiary/${subsidiaryId}/talent/${scopeId}/settings`
+              buildTalentSettingsUrl({
+                tenantId: currentTenantId,
+                talentId: scopeId,
+                subsidiaryId,
+              })
             );
-          } else if (scopeId) {
-            router.push(`/tenant/${currentTenantId}/talent/${scopeId}/settings`);
           }
           break;
       }
@@ -105,13 +102,13 @@ export function useUIMode() {
           router.push(`/tenant/${currentTenantId}/subsidiary/${scopeId}/details`);
           break;
         case 'talent':
-          if (subsidiaryId) {
-            router.push(
-              `/tenant/${currentTenantId}/subsidiary/${subsidiaryId}/talent/${scopeId}/details`
-            );
-          } else {
-            router.push(`/tenant/${currentTenantId}/talent/${scopeId}/details`);
-          }
+          router.push(
+            buildTalentDetailsUrl({
+              tenantId: currentTenantId,
+              talentId: scopeId,
+              subsidiaryId,
+            })
+          );
           break;
       }
     },
@@ -121,20 +118,16 @@ export function useUIMode() {
   // Get home URL based on mode and talent availability
   const getHomeUrl = useCallback(() => {
     if (!hasTalentAccess()) {
-      // No talents - management mode is default
-      return currentTenantId
-        ? `/tenant/${currentTenantId}/organization-structure`
-        : '/';
+      return currentTenantId ? buildOrganizationStructureUrl(currentTenantId) : '/profile';
     }
 
-    // Has talents - business mode is home
     return '/customers';
   }, [currentTenantId, hasTalentAccess]);
 
   // Check if user can access business UI
   const canAccessBusinessUI = useMemo(() => {
-    return hasTalentAccess() && currentTalent !== null;
-  }, [hasTalentAccess, currentTalent]);
+    return hasTalentAccess();
+  }, [hasTalentAccess]);
 
   return {
     // Current state
@@ -164,7 +157,7 @@ export function useUIMode() {
  */
 export function useSidebarMode() {
   const { effectiveMode, canAccessBusinessUI, isManagementRoute, isBusinessRoute } = useUIMode();
-  const { currentTalent, hasTalentAccess } = useTalentStore();
+  const { hasTalentAccess } = useTalentStore();
 
   // Determine sidebar type to render
   const sidebarType = useMemo(() => {
@@ -175,8 +168,9 @@ export function useSidebarMode() {
       return 'admin';
     }
 
-    // Business routes show business sidebar
-    if (isBusinessRoute && currentTalent) {
+    // Business and utility routes under the workspace layout keep the business sidebar even if
+    // there is no current published talent selected yet.
+    if (isBusinessRoute) {
       return 'business';
     }
 
@@ -186,12 +180,12 @@ export function useSidebarMode() {
     }
 
     // Default based on talent availability
-    if (hasTalentAccess() && currentTalent) {
+    if (hasTalentAccess()) {
       return 'business';
     }
 
     return 'management';
-  }, [isBusinessRoute, isManagementRoute, currentTalent, hasTalentAccess]);
+  }, [isBusinessRoute, isManagementRoute, hasTalentAccess]);
 
   return {
     sidebarType,

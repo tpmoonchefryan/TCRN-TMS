@@ -28,9 +28,7 @@ describe('WORKER_GROUPS', () => {
       QUEUE_NAMES.MARSHMALLOW_EXPORT,
       QUEUE_NAMES.EMAIL,
       QUEUE_NAMES.MEMBERSHIP_RENEWAL,
-      QUEUE_NAMES.PII_CLEANUP,
       QUEUE_NAMES.LOG_CLEANUP,
-      QUEUE_NAMES.PII_HEALTH_CHECK,
       QUEUE_NAMES.LOG,
     ]);
     expect(new Set(queueNames).size).toBe(queueNames.length);

@@ -11,6 +11,29 @@ import { UaCheckMode } from '../../security/guards/ua-detection.guard';
 import { PublicHomepageService } from '../services/public-homepage.service';
 import { getVisibleScheduleComponentProps } from '../utils/public-schedule';
 
+const PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: 'RES_NOT_FOUND' },
+        message: { type: 'string', example: 'Homepage not found or not published' },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: {
+      code: 'RES_NOT_FOUND',
+      message: 'Homepage not found or not published',
+    },
+  },
+};
+
 @ApiTags('Public - Homepage')
 @Controller('public/homepage')
 export class CalendarController {
@@ -20,8 +43,19 @@ export class CalendarController {
   @Public()
   @UaCheckMode('skip')
   @ApiOperation({ summary: 'Get homepage schedule as iCalendar' })
-  @ApiResponse({ status: 200, description: 'Returns ICS file' })
-  @ApiResponse({ status: 404, description: 'Homepage not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns ICS file',
+    content: {
+      'text/calendar': {
+        schema: {
+          type: 'string',
+          example: 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TCRN//Homepage Calendar//EN\r\nEND:VCALENDAR',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Homepage not found', schema: PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA })
   async getCalendar(
     @Param('path') path: string,
     @Query('lang') lang: string = 'zh',

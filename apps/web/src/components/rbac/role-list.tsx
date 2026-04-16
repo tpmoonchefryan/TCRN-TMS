@@ -3,6 +3,7 @@
 import type { RoleDetail, RoleSummary } from '@tcrn/shared';
 import { MoreHorizontal, Pencil, Shield, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 import {
     Badge,
@@ -24,16 +25,19 @@ interface RoleListProps {
 }
 
 export function RoleList({ roles }: RoleListProps) {
+  const tCommon = useTranslations('common');
+  const tRole = useTranslations('roleManagement');
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Users</TableHead>
-            <TableHead>Last Updated</TableHead>
+            <TableHead>{tCommon('name')}</TableHead>
+            <TableHead>{tCommon('code')}</TableHead>
+            <TableHead>{tCommon('type')}</TableHead>
+            <TableHead>{tCommon('users')}</TableHead>
+            <TableHead>{tCommon('updated')}</TableHead>
             <TableHead className="w-[70px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -56,11 +60,11 @@ export function RoleList({ roles }: RoleListProps) {
               <TableCell>
                 {role.isSystem ? (
                   <Badge variant="secondary" className="gap-1">
-                    <Shield size={10} /> System
+                    <Shield size={10} /> {tCommon('system')}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="gap-1">
-                    Custom
+                    {tCommon('custom')}
                   </Badge>
                 )}
               </TableCell>
@@ -76,7 +80,7 @@ export function RoleList({ roles }: RoleListProps) {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
+                      <span className="sr-only">{tCommon('openMenu')}</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -84,13 +88,13 @@ export function RoleList({ roles }: RoleListProps) {
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/settings/roles/${role.id}`}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit Role
+                        {tRole('editRole')}
                       </Link>
                     </DropdownMenuItem>
                     {!role.isSystem && (
                       <DropdownMenuItem className="text-red-600">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {tCommon('delete')}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>

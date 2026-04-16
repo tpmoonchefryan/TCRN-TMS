@@ -215,7 +215,7 @@ describe('useAuthStore checkAuth', () => {
     useAuthStore.setState({
       user: {
         ...userFromApi('tenant-cached'),
-        display_name: 'Old Name',
+        displayName: 'Old Name',
         roles: [{ code: 'TENANT_ADMIN' }],
         permissions: ['customer.profile:read'],
       },
@@ -227,13 +227,13 @@ describe('useAuthStore checkAuth', () => {
       id: 'user-1',
       username: 'admin',
       email: 'updated@example.com',
-      display_name: 'Updated Name',
+      displayName: 'Updated Name',
     });
 
     expect(useAuthStore.getState().user).toMatchObject({
       id: 'user-1',
       email: 'updated@example.com',
-      display_name: 'Updated Name',
+      displayName: 'Updated Name',
       roles: [{ code: 'TENANT_ADMIN' }],
       permissions: ['customer.profile:read'],
       tenant: {
@@ -247,7 +247,7 @@ describe('useAuthStore checkAuth', () => {
     useAuthStore.setState({
       user: {
         ...userFromApi('tenant-cached'),
-        avatar_url: 'https://example.com/old-avatar.png',
+        avatarUrl: 'https://example.com/old-avatar.png',
         roles: [{ code: 'TENANT_ADMIN' }],
       },
     });
@@ -262,6 +262,6 @@ describe('useAuthStore checkAuth', () => {
         code: 'TENANT_A',
       },
     });
-    expect(useAuthStore.getState().user?.avatar_url).toBeUndefined();
+    expect(useAuthStore.getState().user?.avatarUrl).toBeUndefined();
   });
 });

@@ -81,6 +81,30 @@ describe('auth-session-commands', () => {
     });
   });
 
+  it('surfaces plain-object API login errors through the provided failure callback', async () => {
+    const setFailure = vi.fn();
+
+    await expect(
+      runLoginSessionCommand({
+        login: 'admin',
+        password: 'wrong-password',
+        tenantCode: 'tenant-a',
+        setPendingTenantAuth: vi.fn(),
+        completeAuthenticatedSession: vi.fn(),
+        setFailure,
+        authClient: {
+          login: vi.fn().mockRejectedValue({
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Invalid username or password',
+            statusCode: 401,
+          }),
+        },
+      })
+    ).resolves.toEqual({ success: false });
+
+    expect(setFailure).toHaveBeenCalledWith('Invalid username or password');
+  });
+
   it('reports verification failures through the provided failure callback', async () => {
     const setFailure = vi.fn();
 

@@ -3,6 +3,7 @@
 'use client';
 
 import { BookOpen, Loader2, Lock, Search } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
 
 import {
@@ -50,12 +51,22 @@ export function TalentDictionaryTab({
   tc,
   tTalent,
 }: TalentDictionaryTabProps) {
+  const locale = useLocale() as 'en' | 'zh' | 'ja';
   const filteredDictRecords = useMemo(
     () => filterDictionaryRecords(dictionaryRecords, selectedDictType, dictSearch),
     [dictionaryRecords, selectedDictType, dictSearch]
   );
 
   const selectedDictInfo = DICTIONARY_TYPES.find((type) => type.code === selectedDictType);
+  const getTypeName = (type: (typeof DICTIONARY_TYPES)[number]) => {
+    if (locale === 'zh') {
+      return type.nameZh;
+    }
+    if (locale === 'ja') {
+      return type.nameJa;
+    }
+    return type.name;
+  };
 
   return (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-300px)] min-h-[500px]">
@@ -81,8 +92,8 @@ export function TalentDictionaryTab({
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{type.icon}</span>
                     <div>
-                      <p className="font-medium text-sm">{type.name}</p>
-                      <p className="text-xs text-muted-foreground">{type.nameZh}</p>
+                      <p className="font-medium text-sm">{getTypeName(type)}</p>
+                      <p className="text-xs text-muted-foreground">{type.code}</p>
                     </div>
                   </div>
                   <Badge variant="secondary" className="text-xs">
@@ -101,7 +112,7 @@ export function TalentDictionaryTab({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-lg">{selectedDictInfo?.icon}</span>
-                {selectedDictInfo?.name}
+                {selectedDictInfo ? getTypeName(selectedDictInfo) : null}
               </CardTitle>
               <CardDescription>{tTalent('systemDictReadOnly')}</CardDescription>
             </div>
@@ -134,18 +145,18 @@ export function TalentDictionaryTab({
             ) : filteredDictRecords.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                <p>No records found for this dictionary type.</p>
-                <p className="text-sm mt-1">Try a different search term.</p>
+                <p>{t('noRecordsForType')}</p>
+                <p className="text-sm mt-1">{t('tryDifferentSearch')}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[150px]">Code</TableHead>
-                    <TableHead>English</TableHead>
-                    <TableHead>Chinese</TableHead>
-                    <TableHead>Japanese</TableHead>
-                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[150px]">{tc('code')}</TableHead>
+                    <TableHead>{tc('english')}</TableHead>
+                    <TableHead>{tc('chinese')}</TableHead>
+                    <TableHead>{tc('japanese')}</TableHead>
+                    <TableHead className="w-[80px]">{tc('status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

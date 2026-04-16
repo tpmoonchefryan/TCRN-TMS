@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsEnum,
     IsInt,
     IsOptional,
     IsString,
-    IsUUID,
     Max,
     Min,
 } from 'class-validator';
@@ -26,25 +26,33 @@ export enum ImportJobStatus {
 }
 
 export class CreateImportJobDto {
-  @IsUUID()
-  talentId!: string;
-
+  @ApiPropertyOptional({
+    description: 'Consumer code used to map upstream source records',
+    example: 'CRM',
+  })
   @IsOptional()
   @IsString()
   consumerCode?: string;
 }
 
 export class ImportJobQueryDto {
+  @ApiPropertyOptional({
+    description: 'Filter by import-job status',
+    enum: ImportJobStatus,
+    example: ImportJobStatus.RUNNING,
+  })
   @IsOptional()
   @IsEnum(ImportJobStatus)
   status?: ImportJobStatus;
 
+  @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 50, default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

@@ -19,10 +19,15 @@ export const ProfileCardSchema = z.object({
 
 export type ProfileCardProps = z.infer<typeof ProfileCardSchema>;
 
-export const defaultProps: ProfileCardProps = {
-  avatarUrl: '',
+export const LEGACY_PROFILE_CARD_DEFAULTS = {
   displayName: 'Your Name',
   bio: 'Hello, this is my bio!',
+} as const;
+
+export const defaultProps: ProfileCardProps = {
+  avatarUrl: '',
+  displayName: '',
+  bio: '',
   avatarShape: 'circle',
   nameFontSize: 'large',
   bioMaxLines: 3,

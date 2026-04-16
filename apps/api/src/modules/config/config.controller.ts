@@ -772,19 +772,19 @@ export class ConfigController {
   }
 
   /**
-   * POST /api/v1/configuration-entity/consumer/:id/generate-key
+   * POST /api/v1/configuration-entity/consumer/:consumerId/generate-key
    * Generate a new API key for a consumer
   */
-  @Post('consumer/:id/generate-key')
+  @Post('consumer/:consumerId/generate-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Generate API key for consumer' })
   async generateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('consumerId') consumerId: string,
   ) {
     const result = await this.consumerKeyService.generateApiKey(
-      id,
+      consumerId,
       user.tenantSchema,
       user.id
     );
@@ -797,19 +797,19 @@ export class ConfigController {
   }
 
   /**
-   * POST /api/v1/configuration-entity/consumer/:id/rotate-key
+   * POST /api/v1/configuration-entity/consumer/:consumerId/rotate-key
    * Rotate (regenerate) API key for a consumer
   */
-  @Post('consumer/:id/rotate-key')
+  @Post('consumer/:consumerId/rotate-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Rotate API key for consumer' })
   async rotateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('consumerId') consumerId: string,
   ) {
     const result = await this.consumerKeyService.rotateApiKey(
-      id,
+      consumerId,
       user.tenantSchema,
       user.id
     );
@@ -822,19 +822,19 @@ export class ConfigController {
   }
 
   /**
-   * POST /api/v1/configuration-entity/consumer/:id/revoke-key
+   * POST /api/v1/configuration-entity/consumer/:consumerId/revoke-key
    * Revoke API key for a consumer
   */
-  @Post('consumer/:id/revoke-key')
+  @Post('consumer/:consumerId/revoke-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Revoke API key for consumer' })
   async revokeConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('consumerId') consumerId: string,
   ) {
     await this.consumerKeyService.revokeApiKey(
-      id,
+      consumerId,
       user.tenantSchema,
       user.id
     );

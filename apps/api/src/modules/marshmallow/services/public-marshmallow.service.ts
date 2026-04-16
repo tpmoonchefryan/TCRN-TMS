@@ -95,7 +95,8 @@ export class PublicMarshmallowService {
         }>>(`
           SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
           FROM "${schema}".talent
-          WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
+          WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1))
+            AND lifecycle_status = 'published'
         `, path);
 
         if (talents.length > 0) {
@@ -122,6 +123,13 @@ export class PublicMarshmallowService {
             reactionsEnabled: boolean;
             allowedReactions: string[];
             theme: Record<string, unknown>;
+            avatarUrl: string | null;
+            termsContentEn: string | null;
+            termsContentZh: string | null;
+            termsContentJa: string | null;
+            privacyContentEn: string | null;
+            privacyContentZh: string | null;
+            privacyContentJa: string | null;
           }>>(`
             SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
                    placeholder_text as "placeholderText", thank_you_text as "thankYouText",
@@ -131,7 +139,10 @@ export class PublicMarshmallowService {
                    external_blocklist_enabled as "externalBlocklistEnabled",
                    max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
                    rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
-                   reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme
+                   reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme,
+                   avatar_url as "avatarUrl",
+                   terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
+                   privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa"
             FROM "${schema}".marshmallow_config
             WHERE talent_id = $1::uuid
           `, talent.id);
@@ -508,83 +519,18 @@ export class PublicMarshmallowService {
    * Get config for public page (multi-tenant aware)
    */
   async getConfig(path: string) {
-    const prisma = this.databaseService.getPrisma();
+    const result = await this.findTalentAndConfigByPath(path);
 
-    const tenants = await this.getSearchableTenantSchemas();
-
-    let talent: { id: string; displayName: string; avatarUrl: string | null } | null = null;
-    let tenantSchema: string | null = null;
-
-    // Search for talent across all tenant schemas
-    for (const t of tenants) {
-      const schema = t.schemaName;
-      try {
-        // Search by marshmallow_path or code (for fallback compatibility)
-        const talents = await prisma.$queryRawUnsafe<Array<{
-          id: string;
-          displayName: string;
-          avatarUrl: string | null;
-        }>>(`
-          SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
-          FROM "${schema}".talent
-          WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1)) AND is_active = true
-        `, path);
-
-        if (talents.length > 0) {
-          talent = talents[0];
-          tenantSchema = schema;
-          break;
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Skipping marshmallow schema ${schema} during public config lookup: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-      }
-    }
-
-    if (!talent || !tenantSchema) {
+    if (!result) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Page not found',
       });
     }
 
-    // Get config from the same tenant schema
-    const configs = await prisma.$queryRawUnsafe<Array<{
-      isEnabled: boolean;
-      title: string;
-      welcomeText: string;
-      placeholderText: string;
-      allowAnonymous: boolean;
-      maxMessageLength: number;
-      minMessageLength: number;
-      reactionsEnabled: boolean;
-      allowedReactions: string[];
-      theme: Record<string, unknown>;
-      avatarUrl: string | null;
-      termsContentEn: string | null;
-      termsContentZh: string | null;
-      termsContentJa: string | null;
-      privacyContentEn: string | null;
-      privacyContentZh: string | null;
-      privacyContentJa: string | null;
-    }>>(`
-      SELECT is_enabled as "isEnabled", title, welcome_text as "welcomeText",
-             placeholder_text as "placeholderText", allow_anonymous as "allowAnonymous",
-             max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
-             reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme,
-             avatar_url as "avatarUrl",
-             terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-             privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa"
-      FROM "${tenantSchema}".marshmallow_config
-      WHERE talent_id = $1::uuid
-    `, talent.id);
+    const { talent, config } = result;
 
-    const config = configs[0];
-
-    if (!config || !config.isEnabled) {
+    if (!config.isEnabled) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Marshmallow is not enabled',
@@ -600,6 +546,7 @@ export class PublicMarshmallowService {
       welcomeText: config.welcomeText,
       placeholderText: config.placeholderText,
       allowAnonymous: config.allowAnonymous,
+      captchaMode: config.captchaMode,
       maxMessageLength: config.maxMessageLength,
       minMessageLength: config.minMessageLength,
       reactionsEnabled: config.reactionsEnabled,
@@ -737,7 +684,10 @@ export class PublicMarshmallowService {
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
       JOIN "${context.tenantSchema}".talent t ON c.talent_id = t.id
-      WHERE m.id = $1::uuid AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+      WHERE m.id = $1::uuid
+        AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+        AND c.is_enabled = true
+        AND t.lifecycle_status = 'published'
     `, messageId, path);
 
     if (messages.length === 0) {
@@ -810,7 +760,10 @@ export class PublicMarshmallowService {
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
       JOIN "${context.tenantSchema}".talent t ON c.talent_id = t.id
-      WHERE m.id = $1::uuid AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+      WHERE m.id = $1::uuid
+        AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
+        AND c.is_enabled = true
+        AND t.lifecycle_status = 'published'
     `, messageId, path);
 
     if (messages.length === 0) {

@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import { publicApi, type PublicMarshmallowSsoUser } from '@/lib/api/modules/content';
@@ -33,6 +34,7 @@ interface StreamerModeProviderProps {
 }
 
 export function StreamerModeProvider({ children, ssoToken }: StreamerModeProviderProps) {
+  const t = useTranslations('publicMarshmallow');
   const [user, setUser] = useState<PublicMarshmallowSsoUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,18 +55,18 @@ export function StreamerModeProvider({ children, ssoToken }: StreamerModeProvide
           setUser(response.data.user);
         } else {
           setUser(null);
-          setError('SSO token is invalid or expired');
+          setError(t('streamerTokenInvalidOrExpired'));
         }
       } catch {
         setUser(null);
-        setError('Failed to validate SSO token');
+        setError(t('streamerTokenValidationFailed'));
       } finally {
         setIsLoading(false);
       }
     };
 
     validateToken();
-  }, [ssoToken]);
+  }, [ssoToken, t]);
 
   const value: StreamerModeContextValue = {
     isStreamerMode: !!user,

@@ -40,7 +40,48 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 // In-memory domain mapping cache (use Redis in production)
 const domainCache = new Map<string, { homepagePath: string; marshmallowPath: string; expiry: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const DOMAIN_CACHE_TTL_MS = 30 * 1000;
+const DOMAIN_CACHE_MAX_ENTRIES = 256;
+
+function pruneExpiredDomainCacheEntries(now: number): void {
+  for (const [domain, cached] of domainCache) {
+    if (cached.expiry <= now) {
+      domainCache.delete(domain);
+    }
+  }
+}
+
+function rememberDomainMapping(
+  domain: string,
+  mapping: { homepagePath: string; marshmallowPath: string },
+  now: number,
+): void {
+  pruneExpiredDomainCacheEntries(now);
+
+  if (domainCache.has(domain)) {
+    domainCache.delete(domain);
+  }
+
+  while (domainCache.size >= DOMAIN_CACHE_MAX_ENTRIES) {
+    const oldestDomain = domainCache.keys().next().value;
+
+    if (!oldestDomain) {
+      break;
+    }
+
+    domainCache.delete(oldestDomain);
+  }
+
+  domainCache.set(domain, {
+    homepagePath: mapping.homepagePath,
+    marshmallowPath: mapping.marshmallowPath,
+    expiry: now + DOMAIN_CACHE_TTL_MS,
+  });
+}
+
+export function resetDomainCacheForTests(): void {
+  domainCache.clear();
+}
 
 /**
  * Check if the hostname is a main/development domain that should not be processed
@@ -79,13 +120,21 @@ async function getDomainMapping(domain: string): Promise<{ homepagePath: string;
     return null;
   }
 
+  const now = Date.now();
+
   // Check cache first
   const cached = domainCache.get(domain);
-  if (cached && cached.expiry > Date.now()) {
+  if (cached && cached.expiry > now) {
+    domainCache.delete(domain);
+    domainCache.set(domain, cached);
     return {
       homepagePath: cached.homepagePath,
       marshmallowPath: cached.marshmallowPath,
     };
+  }
+
+  if (cached) {
+    domainCache.delete(domain);
   }
 
   const mapping = await fetchPublicDomainLookup(domain);
@@ -93,12 +142,8 @@ async function getDomainMapping(domain: string): Promise<{ homepagePath: string;
     return null;
   }
 
-  // Cache the result
-  domainCache.set(domain, {
-    homepagePath: mapping.homepagePath,
-    marshmallowPath: mapping.marshmallowPath,
-    expiry: Date.now() + CACHE_TTL,
-  });
+  // Keep the local cache short-lived and bounded until a shared invalidation path exists.
+  rememberDomainMapping(domain, mapping, now);
 
   return mapping;
 }
@@ -125,18 +170,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check for system subdomains (e.g., luna.m.tcrn.app) before main-domain skip.
+  // These hostnames are still under tcrn.app, so a pure "main domain" check would
+  // otherwise short-circuit the intended public rewrite.
+  const subdomainInfo = extractTalentFromSubdomain(hostname);
+  if (subdomainInfo) {
+    const basePath = subdomainInfo.type === 'marshmallow' ? '/m' : '/p';
+    // Use new URL(request.url) to preserve query parameters (e.g., ?sso=xxx)
+    const targetUrl = new URL(request.url);
+    targetUrl.pathname = `${basePath}/${subdomainInfo.talentCode}${pathname}`;
+    return NextResponse.rewrite(targetUrl);
+  }
+
   // === Custom Domain Routing (only for non-main domains) ===
   if (!isMainDomain(hostname)) {
-    // Check for system subdomains (e.g., luna.m.tcrn.app)
-    const subdomainInfo = extractTalentFromSubdomain(hostname);
-    if (subdomainInfo) {
-      const basePath = subdomainInfo.type === 'marshmallow' ? '/m' : '/p';
-      // Use new URL(request.url) to preserve query parameters (e.g., ?sso=xxx)
-      const targetUrl = new URL(request.url);
-      targetUrl.pathname = `${basePath}/${subdomainInfo.talentCode}${pathname}`;
-      return NextResponse.rewrite(targetUrl);
-    }
-
     // Handle custom domains (production only)
     const mapping = await getDomainMapping(hostname);
     if (mapping) {

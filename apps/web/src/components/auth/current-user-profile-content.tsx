@@ -37,7 +37,7 @@ export function CurrentUserProfileContent({ children }: CurrentUserProfileConten
       return;
     }
 
-    toast.error(result.error || t('saveFailed') || 'Failed to save profile');
+    toast.error(result.error || t('saveFailed'));
   };
 
   return (
@@ -54,9 +54,9 @@ export function CurrentUserProfileContent({ children }: CurrentUserProfileConten
         </CardHeader>
         <CardContent>
           <AvatarUpload
-            currentAvatarUrl={user.avatar_url}
+            currentAvatarUrl={user.avatarUrl}
             email={user.email}
-            displayName={user.display_name || user.username}
+            displayName={user.displayName || user.username}
             onAvatarChange={updateAvatar}
           />
         </CardContent>

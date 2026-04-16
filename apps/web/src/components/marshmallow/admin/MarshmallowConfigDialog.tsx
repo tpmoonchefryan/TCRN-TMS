@@ -52,6 +52,7 @@ export function MarshmallowConfigDialog({
   onSave,
 }: MarshmallowConfigDialogProps) {
   const t = useTranslations('marshmallowConfig');
+  const tCommon = useTranslations('common');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [config, setConfig] = useState<MarshmallowConfigResponse | null>(null);
@@ -159,7 +160,7 @@ export function MarshmallowConfigDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="sr-only">Loading...</DialogTitle>
+            <DialogTitle className="sr-only">{tCommon('loading')}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -428,7 +429,7 @@ export function MarshmallowConfigDialog({
                 />
                 <div className="flex-1 text-sm text-muted-foreground">
                   <p>{t('avatarUploadHint')}</p>
-                  <p className="text-xs mt-1 text-muted-foreground/80">Max 5MB. JPG, PNG, GIF, WEBP.</p>
+                  <p className="text-xs mt-1 text-muted-foreground/80">{t('avatarUploadFormats')}</p>
                 </div>
               </div>
             </div>

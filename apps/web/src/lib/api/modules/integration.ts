@@ -14,6 +14,40 @@ import type {
 
 import { apiClient } from '../core';
 
+export type IntegrationAdapterScope =
+  | { ownerType: 'tenant' }
+  | { ownerType: 'subsidiary'; subsidiaryId: string }
+  | { ownerType: 'talent'; talentId: string };
+
+function buildAdapterCollectionPath(scope: IntegrationAdapterScope): string {
+  switch (scope.ownerType) {
+    case 'subsidiary':
+      return `/api/v1/subsidiaries/${scope.subsidiaryId}/integration/adapters`;
+    case 'talent':
+      return `/api/v1/talents/${scope.talentId}/integration/adapters`;
+    case 'tenant':
+    default:
+      return '/api/v1/integration/adapters';
+  }
+}
+
+function buildScopedAdapterActionPath(
+  scope: Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }>,
+  adapterId: string,
+  action: 'disable' | 'enable',
+): string {
+  const basePath = buildAdapterCollectionPath(scope);
+  return `${basePath}/${adapterId}/${action}`;
+}
+
+function buildEffectiveAdapterPath(
+  scope: IntegrationAdapterScope,
+  platformCode: string,
+): string {
+  const basePath = buildAdapterCollectionPath(scope);
+  return `${basePath}/effective/${encodeURIComponent(platformCode)}`;
+}
+
 export interface IntegrationPlatformRecord {
   id: string;
   ownerType?: IntegrationOwnerType | null;
@@ -199,10 +233,15 @@ export interface IntegrationAdapterDetailRecord {
   version: number;
 }
 
-export interface IntegrationScopePayload {
-  scopeType: IntegrationOwnerType;
-  scopeId: string;
+export interface EffectiveIntegrationAdapterRecord extends IntegrationAdapterDetailRecord {
+  isInherited: boolean;
+  resolvedFrom: {
+    ownerType: IntegrationOwnerType;
+    ownerId: string | null;
+  };
 }
+
+const TENANT_ADAPTER_SCOPE: IntegrationAdapterScope = { ownerType: 'tenant' };
 
 export interface UpdateAdapterConfigsPayload {
   configs: Array<{
@@ -227,6 +266,14 @@ export interface RevealAdapterConfigResponse {
 export interface IntegrationActiveStateResponse {
   id: string;
   isActive: boolean;
+}
+
+export interface IntegrationInheritedAdapterOverrideResponse {
+  id: string;
+  code: string;
+  ownerType: Exclude<IntegrationOwnerType, 'tenant'>;
+  ownerId: string;
+  isDisabledHere: boolean;
 }
 
 export interface IntegrationWebhookListItemRecord {
@@ -314,14 +361,27 @@ export const integrationApi = {
       {},
     ),
 
-  listAdapters: (query?: AdapterListQueryInput) =>
-    apiClient.get<IntegrationAdapterListItemRecord[]>('/api/v1/integration/adapters', query),
+  listAdapters: (
+    scope: IntegrationAdapterScope = TENANT_ADAPTER_SCOPE,
+    query?: AdapterListQueryInput,
+  ) => apiClient.get<IntegrationAdapterListItemRecord[]>(buildAdapterCollectionPath(scope), query),
+
+  resolveEffectiveAdapter: (
+    scope: IntegrationAdapterScope = TENANT_ADAPTER_SCOPE,
+    platformCode: string,
+    adapterType?: IntegrationAdapterType,
+  ) => apiClient.get<EffectiveIntegrationAdapterRecord | null>(
+    buildEffectiveAdapterPath(scope, platformCode),
+    adapterType ? { adapterType } : undefined,
+  ),
 
   getAdapter: (id: string) =>
     apiClient.get<IntegrationAdapterDetailRecord>(`/api/v1/integration/adapters/${id}`),
 
-  createAdapter: (data: CreateAdapterInput) =>
-    apiClient.post<IntegrationAdapterDetailRecord>('/api/v1/integration/adapters', data),
+  createAdapter: (
+    scope: IntegrationAdapterScope = TENANT_ADAPTER_SCOPE,
+    data: CreateAdapterInput,
+  ) => apiClient.post<IntegrationAdapterDetailRecord>(buildAdapterCollectionPath(scope), data),
 
   updateAdapter: (id: string, data: UpdateAdapterInput) =>
     apiClient.patch<IntegrationAdapterDetailRecord>(`/api/v1/integration/adapters/${id}`, data),
@@ -332,14 +392,24 @@ export const integrationApi = {
   reactivateAdapter: (id: string) =>
     apiClient.post<IntegrationActiveStateResponse>(`/api/v1/integration/adapters/${id}/reactivate`, {}),
 
-  disableAdapter: (id: string, data: IntegrationScopePayload) =>
-    apiClient.post<IntegrationActiveStateResponse>(`/api/v1/integration/adapters/${id}/disable`, data),
+  disableAdapter: (
+    scope: Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }>,
+    id: string,
+  ) => apiClient.post<IntegrationInheritedAdapterOverrideResponse>(
+    buildScopedAdapterActionPath(scope, id, 'disable'),
+    {},
+  ),
 
-  enableAdapter: (id: string, data: IntegrationScopePayload) =>
-    apiClient.post<IntegrationActiveStateResponse>(`/api/v1/integration/adapters/${id}/enable`, data),
+  enableAdapter: (
+    scope: Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }>,
+    id: string,
+  ) => apiClient.post<IntegrationInheritedAdapterOverrideResponse>(
+    buildScopedAdapterActionPath(scope, id, 'enable'),
+    {},
+  ),
 
   updateAdapterConfigs: (id: string, data: UpdateAdapterConfigsPayload) =>
-    apiClient.put<UpdateAdapterConfigsResponse>(`/api/v1/integration/adapters/${id}/configs`, data),
+    apiClient.patch<UpdateAdapterConfigsResponse>(`/api/v1/integration/adapters/${id}/configs`, data),
 
   revealConfig: (adapterId: string, configKey: string) =>
     apiClient.post<RevealAdapterConfigResponse>(

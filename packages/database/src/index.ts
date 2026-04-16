@@ -5,8 +5,7 @@
  * Prisma Client and database utilities
  */
 
-export * from './client';
-export * from './tenant-bootstrap';
+export * from './platform';
 
 // Re-export Prisma types for convenience
 export type {

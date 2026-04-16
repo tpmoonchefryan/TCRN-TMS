@@ -16,6 +16,7 @@ import {
   Webhook,
   XCircle,
 } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -53,6 +54,7 @@ import {
   integrationApi,
   type IntegrationWebhookListItemRecord,
 } from '@/lib/api/modules/integration';
+import { getQueryString, replaceQueryState } from '@/platform/routing/query-state';
 
 import { WebhookDialog } from './WebhookDialog';
 
@@ -60,18 +62,38 @@ import { WebhookDialog } from './WebhookDialog';
 type WebhookItem = IntegrationWebhookListItemRecord;
 
 export function WebhookManager() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('integrationManagement');
   const tCommon = useTranslations('common');
 
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = getQueryString(searchParams, 'search');
+  const [searchInput, setSearchInput] = useState(searchQuery);
 
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editWebhook, setEditWebhook] = useState<WebhookItem | null>(null);
   const [deleteWebhook, setDeleteWebhook] = useState<WebhookItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  const replaceWebhookQuery = useCallback(
+    (updates: Record<string, string | number | null | undefined>) => {
+      replaceQueryState({
+        router,
+        pathname,
+        searchParams,
+        updates,
+      });
+    },
+    [pathname, router, searchParams],
+  );
 
   const fetchWebhooks = useCallback(async () => {
     setIsLoading(true);
@@ -89,8 +111,23 @@ export function WebhookManager() {
   }, [tCommon]);
 
   useEffect(() => {
-    fetchWebhooks();
+    void fetchWebhooks();
   }, [fetchWebhooks]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nextSearch = searchInput.trim();
+      if (nextSearch === searchQuery) {
+        return;
+      }
+
+      replaceWebhookQuery({
+        search: nextSearch || null,
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [replaceWebhookQuery, searchInput, searchQuery]);
 
   const handleToggleActive = async (webhook: WebhookItem) => {
     try {
@@ -184,8 +221,8 @@ export function WebhookManager() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <Input
               placeholder={t('searchWebhooks')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -266,6 +303,7 @@ export function WebhookManager() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 opacity-0 group-hover:opacity-100"
+                          aria-label={tCommon('openMenu')}
                         >
                           <MoreHorizontal size={16} />
                         </Button>

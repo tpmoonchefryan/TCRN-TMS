@@ -11,7 +11,7 @@ import {
   Shield,
   Sparkles,
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { BlocklistManager } from '@/components/security/BlocklistManager';
@@ -24,8 +24,13 @@ import { TalentFeatureSettingsTab } from '@/components/settings/talent-settings/
 import { TalentSettingsHeader } from '@/components/settings/talent-settings/TalentSettingsHeader';
 import type { TalentSettingsTab } from '@/components/settings/talent-settings/types';
 import { useTalentSettingsData } from '@/components/settings/talent-settings/useTalentSettingsData';
+import {
+  CONFIG_ENTITY_TYPES,
+  DICTIONARY_TYPES,
+} from '@/components/shared/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getQueryString, replaceQueryState } from '@/platform/routing/query-state';
 
 // Props for the shared component
 interface TalentSettingsContentProps {
@@ -35,44 +40,93 @@ interface TalentSettingsContentProps {
 
 export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentProps) {
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('settingsPage');
   const tTalent = useTranslations('talentSettings');
   const tc = useTranslations('common');
+  const te = useTranslations('errors');
   const tForms = useTranslations('forms');
   const tenantId = params.tenantId as string;
   const talentId = params.talentId as string;
+  const rawActiveTab = getQueryString(searchParams, 'tab', 'details');
+  const activeTab: TalentSettingsTab =
+    rawActiveTab === 'config' ||
+    rawActiveTab === 'dictionary' ||
+    rawActiveTab === 'security' ||
+    rawActiveTab === 'settings' ||
+    rawActiveTab === 'scope'
+      ? rawActiveTab
+      : 'details';
+  const defaultEntityType = CONFIG_ENTITY_TYPES[0].code;
+  const defaultDictType = DICTIONARY_TYPES[0].code;
+  const rawSelectedEntityType = getQueryString(searchParams, 'entity', defaultEntityType);
+  const rawSelectedDictType = getQueryString(searchParams, 'dict', defaultDictType);
+  const selectedEntityType = CONFIG_ENTITY_TYPES.some((entry) => entry.code === rawSelectedEntityType)
+    ? rawSelectedEntityType
+    : defaultEntityType;
+  const selectedDictType = DICTIONARY_TYPES.some((entry) => entry.code === rawSelectedDictType)
+    ? rawSelectedDictType
+    : defaultDictType;
+  const entitySearch = getQueryString(searchParams, 'entitySearch');
+  const dictSearch = getQueryString(searchParams, 'dictSearch');
+
+  const replaceTalentSettingsQuery = (
+    updates: Record<string, string | number | null | undefined>,
+  ) => {
+    replaceQueryState({
+      router,
+      pathname,
+      searchParams,
+      updates,
+    });
+  };
 
   const {
-    activeTab,
     configEntities,
+    deleteTalent,
     dictCounts,
-    dictSearch,
     dictionaryRecords,
-    entitySearch,
-    fetchTalent,
     isLoading,
     isLoadingConfig,
     isLoadingDict,
+    isLoadingReadiness,
+    isDeleting,
+    isLifecycleMutating,
     isSaving,
+    publishReadiness,
+    publishTalent,
+    disableTalent,
+    reEnableTalent,
+    refreshTalentContext,
     saveTalent,
-    selectedDictType,
-    selectedEntityType,
-    setActiveTab,
-    setDictSearch,
-    setSelectedDictType,
-    setSelectedEntityType,
     setTalent,
-    setEntitySearch,
     talent,
   } = useTalentSettingsData({
     talentId,
     subsidiaryId,
     tc,
+    te,
+    activeTab,
+    selectedEntityType,
+    entitySearch,
+    selectedDictType,
+    dictSearch,
   });
 
   const handleBack = () => {
     router.push(`/tenant/${tenantId}/organization-structure`);
+  };
+
+  const handleDeleteDraftTalent = async () => {
+    const deleted = await deleteTalent();
+
+    if (deleted) {
+      router.push(`/tenant/${tenantId}/organization-structure`);
+    }
+
+    return deleted;
   };
 
   // Loading state
@@ -86,10 +140,17 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
 
   return (
     <div className="space-y-6">
-      <TalentSettingsHeader talent={talent} onBack={handleBack} t={t} tc={tc} />
+      <TalentSettingsHeader talent={talent} onBack={handleBack} t={t} tTalent={tTalent} />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TalentSettingsTab)}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) =>
+          replaceTalentSettingsQuery({
+            tab: value === 'details' ? null : value,
+          })
+        }
+      >
         <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="details">
             <Sparkles size={14} className="mr-2" />
@@ -105,7 +166,7 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
           </TabsTrigger>
           <TabsTrigger value="security">
             <Shield size={14} className="mr-2" />
-            {t('security') || 'Security'}
+            {t('security')}
           </TabsTrigger>
           <TabsTrigger value="settings">
             <Settings size={14} className="mr-2" />
@@ -113,7 +174,7 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
           </TabsTrigger>
           <TabsTrigger value="scope">
             <Layers size={14} className="mr-2" />
-            {t('scope') || 'Scope'}
+            {t('scope')}
           </TabsTrigger>
         </TabsList>
 
@@ -122,10 +183,20 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
           <TalentDetailsTab
             talentId={talentId}
             talent={talent}
+            publishReadiness={publishReadiness}
+            notice={searchParams.get('notice')}
+            from={searchParams.get('from')}
+            isLoadingReadiness={isLoadingReadiness}
+            isLifecycleMutating={isLifecycleMutating}
+            isDeletingDraft={isDeleting}
             isSaving={isSaving}
             onTalentChange={setTalent}
+            onPublish={publishTalent}
+            onDisable={disableTalent}
+            onReEnable={reEnableTalent}
+            onDeleteDraft={handleDeleteDraftTalent}
             onSave={saveTalent}
-            onDomainChange={fetchTalent}
+            onDomainChange={refreshTalentContext}
             t={t}
             tc={tc}
             tTalent={tTalent}
@@ -140,8 +211,16 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
             selectedEntityType={selectedEntityType}
             entitySearch={entitySearch}
             isLoadingConfig={isLoadingConfig}
-            onSelectedEntityTypeChange={setSelectedEntityType}
-            onEntitySearchChange={setEntitySearch}
+            onSelectedEntityTypeChange={(value) =>
+              replaceTalentSettingsQuery({
+                entity: value === defaultEntityType ? null : value,
+              })
+            }
+            onEntitySearchChange={(value) =>
+              replaceTalentSettingsQuery({
+                entitySearch: value || null,
+              })
+            }
             t={t}
             tc={tc}
             tTalent={tTalent}
@@ -156,8 +235,16 @@ export function TalentSettingsContent({ subsidiaryId }: TalentSettingsContentPro
             selectedDictType={selectedDictType}
             dictSearch={dictSearch}
             isLoadingDict={isLoadingDict}
-            onSelectedDictTypeChange={setSelectedDictType}
-            onDictSearchChange={setDictSearch}
+            onSelectedDictTypeChange={(value) =>
+              replaceTalentSettingsQuery({
+                dict: value === defaultDictType ? null : value,
+              })
+            }
+            onDictSearchChange={(value) =>
+              replaceTalentSettingsQuery({
+                dictSearch: value || null,
+              })
+            }
             t={t}
             tc={tc}
             tTalent={tTalent}

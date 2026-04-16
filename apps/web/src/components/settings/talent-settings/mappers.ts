@@ -55,6 +55,8 @@ export function mapTalentApiResponseToTalentData(
     profileStore: data.profileStore || null,
     homepagePath: data.homepagePath || data.code.toLowerCase(),
     timezone: data.timezone || 'UTC',
+    lifecycleStatus: data.lifecycleStatus,
+    publishedAt: data.publishedAt,
     isActive: data.isActive ?? true,
     createdAt: data.createdAt,
     customerCount: data.stats?.customerCount || 0,

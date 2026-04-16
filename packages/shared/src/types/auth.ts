@@ -17,7 +17,7 @@ export interface JwtPayload {
  * PII Access JWT Payload (PRD §11.6)
  */
 export interface PiiJwtPayload {
-  sub: string; // rm_profile_id
+  sub: string; // external PII platform subject
   userId: string;
   tenantId: string;
   permissions: string[];

@@ -1,201 +1,95 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ConflictException,NotFoundException } from '@nestjs/common';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RequestContext } from '@tcrn/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService } from '../../../log';
+import { CustomerExternalIdApplicationService } from '../../application/customer-external-id.service';
 import { CustomerExternalIdService } from '../external-id.service';
 
-// Skip tests that require complex internal method mocking
-describe.skip('CustomerExternalIdService', () => {
-  let service: CustomerExternalIdService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockPrisma: {
-    customerExternalId: {
-      findMany: ReturnType<typeof vi.fn>;
-      findUnique: ReturnType<typeof vi.fn>;
-      findFirst: ReturnType<typeof vi.fn>;
-      create: ReturnType<typeof vi.fn>;
-      update: ReturnType<typeof vi.fn>;
-      delete: ReturnType<typeof vi.fn>;
-    };
-    customerProfile: {
-      findUnique: ReturnType<typeof vi.fn>;
-    };
-    consumer: {
-      findFirst: ReturnType<typeof vi.fn>;
-    };
-    $queryRawUnsafe: ReturnType<typeof vi.fn>;
-    $executeRawUnsafe: ReturnType<typeof vi.fn>;
-    $transaction: ReturnType<typeof vi.fn>;
-  };
-
-  const mockExternalId = {
-    id: 'extid-123',
-    customerId: 'customer-123',
-    consumerId: 'consumer-123',
-    profileStoreId: 'store-123',
-    externalId: 'EXT-001',
-    createdAt: new Date(),
-    createdBy: 'user-123',
-    consumer: {
-      id: 'consumer-123',
-      code: 'CRM_SYSTEM',
-      nameEn: 'CRM System',
-    },
-  };
-
-  const mockCustomer = {
-    id: 'customer-123',
-    talentId: 'talent-123',
-    profileStoreId: 'store-123',
-    isActive: true,
-  };
-
-  const mockContext = {
-    tenantId: 'tenant-123',
-    userId: 'user-123',
+describe('CustomerExternalIdService', () => {
+  const context: RequestContext = {
+    tenantId: 'tenant-1',
     tenantSchema: 'tenant_test',
+    userId: 'user-1',
+    userName: 'Tester',
+    ipAddress: '127.0.0.1',
+    userAgent: 'Vitest',
+    requestId: 'req-1',
   };
+
+  const mockApplicationService = {
+    findByCustomer: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
+    findCustomerByExternalId: vi.fn(),
+    existsInProfileStore: vi.fn(),
+  } as unknown as CustomerExternalIdApplicationService;
+
+  const service = new CustomerExternalIdService(mockApplicationService);
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
 
-    mockPrisma = {
-      customerExternalId: {
-        findMany: vi.fn().mockResolvedValue([mockExternalId]),
-        findUnique: vi.fn().mockResolvedValue(mockExternalId),
-        findFirst: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue(mockExternalId),
-        update: vi.fn().mockResolvedValue(mockExternalId),
-        delete: vi.fn().mockResolvedValue(mockExternalId),
-      },
-      customerProfile: {
-        findUnique: vi.fn().mockResolvedValue(mockCustomer),
-      },
+  it('delegates create to the application service', async () => {
+    const dto = { consumerCode: 'CRM', externalId: 'EXT-1' };
+    const expected = {
+      id: 'ext-1',
       consumer: {
-        findFirst: vi.fn().mockResolvedValue({
-          id: 'consumer-123',
-          code: 'CRM_SYSTEM',
-          nameEn: 'CRM System',
-        }),
+        id: 'consumer-1',
+        code: 'CRM',
+        name: 'CRM System',
       },
-      $queryRawUnsafe: vi.fn().mockResolvedValue([mockExternalId]),
-      $executeRawUnsafe: vi.fn().mockResolvedValue(1),
-      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
+      externalId: 'EXT-1',
+      createdAt: new Date('2026-04-14T00:00:00.000Z'),
+      createdBy: 'user-1',
     };
+    vi.mocked(mockApplicationService.create).mockResolvedValue(expected);
 
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-    };
+    await expect(
+      service.create('customer-1', 'talent-1', dto, context),
+    ).resolves.toEqual(expected);
 
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-    };
-
-    service = new CustomerExternalIdService(
-      mockDatabaseService as DatabaseService,
+    expect(mockApplicationService.create).toHaveBeenCalledWith(
+      'customer-1',
+      'talent-1',
+      dto,
+      context,
     );
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it('delegates delete to the application service', async () => {
+    vi.mocked(mockApplicationService.delete).mockResolvedValue(undefined);
+
+    await expect(
+      service.delete('customer-1', 'external-id-1', 'talent-1', context),
+    ).resolves.toBeUndefined();
+
+    expect(mockApplicationService.delete).toHaveBeenCalledWith(
+      'customer-1',
+      'external-id-1',
+      'talent-1',
+      context,
+    );
   });
 
-  describe('findByCustomer', () => {
-    it('should list external IDs for a customer', async () => {
-      const result = await service.findByCustomer('customer-123', 'talent-123', mockContext);
-
-      expect(result.length).toBe(1);
-      expect(result[0].externalId).toBe('EXT-001');
-      expect(result[0].consumer.code).toBe('CRM_SYSTEM');
+  it('delegates lookup helpers to the application service', async () => {
+    vi.mocked(mockApplicationService.findCustomerByExternalId).mockResolvedValue({
+      id: 'customer-1',
+      nickname: 'Acme',
+      profileStoreId: 'store-1',
     });
+    vi.mocked(mockApplicationService.existsInProfileStore).mockResolvedValue(true);
 
-    it('should order by createdAt desc', async () => {
-      await service.findByCustomer('customer-123', 'talent-123', mockContext);
-
-      // Service now uses raw SQL
-      expect(mockPrisma.$transaction).toHaveBeenCalled();
+    await expect(
+      service.findCustomerByExternalId('CRM', 'EXT-1', 'store-1', context),
+    ).resolves.toEqual({
+      id: 'customer-1',
+      nickname: 'Acme',
+      profileStoreId: 'store-1',
     });
-  });
-
-  describe('create', () => {
-    it('should create external ID', async () => {
-      const dto = {
-        consumerCode: 'CRM_SYSTEM',
-        externalId: 'EXT-002',
-      };
-
-      const result = await service.create('customer-123', 'talent-123', dto, mockContext);
-
-      expect(result.id).toBe('extid-123');
-      expect(mockPrisma.customerExternalId.create).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException when consumer not found', async () => {
-      mockPrisma.consumer.findFirst.mockResolvedValue(null);
-
-      const dto = {
-        consumerCode: 'INVALID',
-        externalId: 'EXT-001',
-      };
-
-      await expect(
-        service.create('customer-123', 'talent-123', dto, mockContext),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ConflictException when duplicate external ID exists', async () => {
-      mockPrisma.customerExternalId.findFirst.mockResolvedValue(mockExternalId);
-
-      const dto = {
-        consumerCode: 'CRM_SYSTEM',
-        externalId: 'EXT-001',
-      };
-
-      await expect(
-        service.create('customer-123', 'talent-123', dto, mockContext),
-      ).rejects.toThrow(ConflictException);
-    });
-
-    it('should log creation in change log', async () => {
-      const dto = {
-        consumerCode: 'CRM_SYSTEM',
-        externalId: 'EXT-002',
-      };
-
-      await service.create('customer-123', 'talent-123', dto, mockContext);
-
-      expect(mockChangeLogService.create).toHaveBeenCalled();
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete external ID', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([mockExternalId]);
-
-      await service.delete('customer-123', 'extid-123', 'talent-123', mockContext);
-
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException when external ID not found', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
-
-      await expect(
-        service.delete('customer-123', 'invalid-id', 'talent-123', mockContext),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should log deletion in change log', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([mockExternalId]);
-
-      await service.delete('customer-123', 'extid-123', 'talent-123', mockContext);
-
-      // Change log is now written with raw SQL
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
-    });
+    await expect(
+      service.existsInProfileStore('CRM', 'EXT-1', 'store-1', context),
+    ).resolves.toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { apiClient, registerAuthClientHooks } from '@/lib/api/core';
+import { normalizeStoredAuthUser } from '@/lib/api/modules/auth-user-contract';
 
 import { runSessionBootstrap } from './auth-session-bootstrap';
 import {
@@ -272,6 +273,7 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          state.user = normalizeStoredAuthUser(state.user) ?? null;
           state.setHasHydrated(true);
         }
       },

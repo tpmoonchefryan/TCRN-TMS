@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo } from 'react';
 
-import { TalentInfo,useTalentStore } from '@/stores/talent-store';
+import { getBusinessSelectableTalents } from '@/lib/talent-lifecycle-routing';
+import { TalentInfo, useTalentStore } from '@/stores/talent-store';
 
 /**
  * Hook for managing the current talent context in business UI.
@@ -18,6 +19,10 @@ export function useCurrentTalent() {
     hasTalentAccess,
     hasMultipleTalents,
   } = useTalentStore();
+  const businessSelectableTalents = useMemo(
+    () => getBusinessSelectableTalents(accessibleTalents),
+    [accessibleTalents]
+  );
 
   // Switch to a specific talent by ID
   const selectTalent = useCallback(
@@ -43,20 +48,24 @@ export function useCurrentTalent() {
   // Get talent by ID from accessible list
   const getTalentById = useCallback(
     (talentId: string): TalentInfo | undefined => {
-      return accessibleTalents.find((t) => t.id === talentId);
+      return businessSelectableTalents.find((t) => t.id === talentId);
     },
-    [accessibleTalents]
+    [businessSelectableTalents]
   );
 
   // Computed values
   const canSwitch = useMemo(() => hasMultipleTalents(), [hasMultipleTalents]);
   const hasTalents = useMemo(() => hasTalentAccess(), [hasTalentAccess]);
-  const talentCount = useMemo(() => accessibleTalents.length, [accessibleTalents]);
+  const talentCount = useMemo(
+    () => businessSelectableTalents.length,
+    [businessSelectableTalents]
+  );
 
   return {
     // Current state
     currentTalent,
-    accessibleTalents,
+    accessibleTalents: businessSelectableTalents,
+    businessSelectableTalents,
     isLoading,
 
     // Computed
@@ -78,20 +87,24 @@ export function useCurrentTalent() {
  */
 export function useTalentSelection() {
   const { accessibleTalents, currentTalent, setCurrentTalent } = useTalentStore();
+  const businessSelectableTalents = useMemo(
+    () => getBusinessSelectableTalents(accessibleTalents),
+    [accessibleTalents]
+  );
 
   // User needs to select a talent if they have multiple and none is selected
   const needsSelection = useMemo(() => {
-    return accessibleTalents.length > 1 && !currentTalent;
-  }, [accessibleTalents, currentTalent]);
+    return businessSelectableTalents.length > 1 && !currentTalent;
+  }, [businessSelectableTalents, currentTalent]);
 
   // Auto-select if user has only one talent
   const autoSelectIfSingle = useCallback(() => {
-    if (accessibleTalents.length === 1 && !currentTalent) {
-      setCurrentTalent(accessibleTalents[0]);
+    if (businessSelectableTalents.length === 1 && !currentTalent) {
+      setCurrentTalent(businessSelectableTalents[0]);
       return true;
     }
     return false;
-  }, [accessibleTalents, currentTalent, setCurrentTalent]);
+  }, [businessSelectableTalents, currentTalent, setCurrentTalent]);
 
   // Select a talent from the list
   const selectTalent = useCallback(
@@ -105,7 +118,8 @@ export function useTalentSelection() {
     needsSelection,
     autoSelectIfSingle,
     selectTalent,
-    accessibleTalents,
+    accessibleTalents: businessSelectableTalents,
+    businessSelectableTalents,
     currentTalent,
   };
 }

@@ -73,7 +73,7 @@ export const VideoEmbed: React.FC<VideoEmbedProps & { className?: string }> = ({
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          title="Video Player"
+          title={t('videoPlayerTitle')}
           sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts allow-popups" // Added sandbox for safety
         />
       </div>

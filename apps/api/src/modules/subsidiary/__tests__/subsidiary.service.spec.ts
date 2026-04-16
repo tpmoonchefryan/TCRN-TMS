@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { prisma } from '@tcrn/database';
+import { ErrorCodes } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database
@@ -116,6 +117,23 @@ describe('SubsidiaryService', () => {
       await service.list('tenant_test', { isActive: true });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+    });
+  });
+
+  describe('move', () => {
+    it('rejects move because normal product-flow move is retired', async () => {
+      await expect(
+        service.move('subsidiary-123', 'tenant_test', 'parent-456', 1, 'user-1')
+      ).rejects.toMatchObject({
+        response: {
+          code: ErrorCodes.RES_CONFLICT,
+          message:
+            'Subsidiary move has been retired from normal product flow. If structural correction is required, it must be performed via direct database intervention.',
+        },
+      });
+
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
     });
   });
 });

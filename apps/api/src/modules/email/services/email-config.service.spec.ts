@@ -4,148 +4,89 @@ import { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
-import type { SaveEmailConfigDto } from '../dto/email-config.dto';
+import { EmailConfigApplicationService } from '../application/email-config.service';
+import type {
+  DecryptedEmailConfig,
+  EmailConfigResponse,
+  SaveEmailConfigDto,
+} from '../dto/email-config.dto';
 import { EmailConfigService } from './email-config.service';
 
 describe('EmailConfigService', () => {
   let service: EmailConfigService;
-  let mockDatabaseService: Pick<DatabaseService, 'getPrisma'>;
-  let mockConfigService: Pick<ConfigService, 'get'>;
-  let mockPrisma: {
-    globalConfig: {
-      findUnique: ReturnType<typeof vi.fn>;
-      upsert: ReturnType<typeof vi.fn>;
-    };
+
+  const mockEmailConfigApplicationService = {
+    getConfig: vi.fn(),
+    saveConfig: vi.fn(),
+    getDecryptedConfig: vi.fn(),
+    isConfigured: vi.fn(),
   };
 
-  const baseDate = new Date('2026-03-30T00:00:00.000Z');
-  const encryptionKey = '1'.repeat(64);
-
   beforeEach(() => {
-    mockPrisma = {
-      globalConfig: {
-        findUnique: vi.fn(),
-        upsert: vi.fn().mockResolvedValue(undefined),
-      },
-    };
-
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-    };
-
-    mockConfigService = {
-      get: vi.fn((key: string) => {
-        if (key === 'EMAIL_CONFIG_ENCRYPTION_KEY') {
-          return encryptionKey;
-        }
-
-        return undefined;
-      }),
-    };
+    vi.clearAllMocks();
 
     service = new EmailConfigService(
-      mockDatabaseService as DatabaseService,
-      mockConfigService as ConfigService,
+      {} as DatabaseService,
+      {} as ConfigService,
+      mockEmailConfigApplicationService as unknown as EmailConfigApplicationService,
     );
   });
 
-  it('masks stored Tencent SES secrets when returning config', async () => {
-    const cryptoAccess = service as unknown as {
-      encrypt(value: string): string;
-    };
-
-    mockPrisma.globalConfig.findUnique.mockResolvedValue({
-      value: {
-        provider: 'tencent_ses',
-        tencentSes: {
-          secretId: cryptoAccess.encrypt('abcdefghijkl'),
-          secretKey: cryptoAccess.encrypt('qrstuvwxyz12'),
-          region: 'ap-singapore',
-          fromAddress: 'noreply@example.com',
-          fromName: 'TCRN',
-          replyTo: 'reply@example.com',
-        },
-      },
-      updatedAt: baseDate,
-    });
-
-    const result = await service.getConfig();
-
-    expect(result).toEqual({
+  it('delegates read paths to the layered email-config application service', async () => {
+    const response = {
       provider: 'tencent_ses',
       isConfigured: true,
-      lastUpdated: baseDate.toISOString(),
-      tencentSes: {
-        secretId: 'abcd***ijkl',
-        secretKey: 'qrst***yz12',
-        region: 'ap-singapore',
+    } as EmailConfigResponse;
+    const decrypted = {
+      provider: 'smtp',
+      smtp: {
+        host: 'smtp.example.com',
+        port: 465,
+        secure: true,
+        username: 'smtp-user',
+        password: 'plain-password',
         fromAddress: 'noreply@example.com',
         fromName: 'TCRN',
-        replyTo: 'reply@example.com',
       },
-    });
+    } as DecryptedEmailConfig;
+
+    mockEmailConfigApplicationService.getConfig.mockResolvedValue(response);
+    mockEmailConfigApplicationService.getDecryptedConfig.mockResolvedValue(decrypted);
+    mockEmailConfigApplicationService.isConfigured.mockResolvedValue(true);
+
+    await expect(service.getConfig()).resolves.toEqual(response);
+    await expect(service.getDecryptedConfig()).resolves.toEqual(decrypted);
+    await expect(service.isConfigured()).resolves.toBe(true);
+
+    expect(mockEmailConfigApplicationService.getConfig).toHaveBeenCalledTimes(1);
+    expect(mockEmailConfigApplicationService.getDecryptedConfig).toHaveBeenCalledTimes(1);
+    expect(mockEmailConfigApplicationService.isConfigured).toHaveBeenCalledTimes(1);
   });
 
-  it('preserves masked existing secrets when saving config', async () => {
-    const cryptoAccess = service as unknown as {
-      decrypt(value: string): string;
-      encrypt(value: string): string;
-    };
-    const existingSecretId = 'existing-secret-id';
-    const existingSecretKey = 'existing-secret-key';
-    let savedValue: Record<string, unknown> | undefined;
-
-    mockPrisma.globalConfig.findUnique
-      .mockResolvedValueOnce({
-        value: {
-          provider: 'tencent_ses',
-          tencentSes: {
-            secretId: cryptoAccess.encrypt(existingSecretId),
-            secretKey: cryptoAccess.encrypt(existingSecretKey),
-            region: 'ap-hongkong',
-            fromAddress: 'old@example.com',
-            fromName: 'Old Name',
-          },
-        },
-        updatedAt: baseDate,
-      })
-      .mockImplementation(async () => ({
-        value: savedValue,
-        updatedAt: baseDate,
-      }));
-
-    mockPrisma.globalConfig.upsert.mockImplementation(async (args: { update: { value: Record<string, unknown> } }) => {
-      savedValue = args.update.value;
-      return undefined;
-    });
-
+  it('delegates saveConfig to the layered email-config application service', async () => {
     const dto = {
-      provider: 'tencent_ses',
-      tencentSes: {
-        secretId: 'abcd***ijkl',
-        secretKey: 'qrst***yz12',
-        region: 'ap-singapore',
-        fromAddress: 'new@example.com',
-        fromName: 'New Name',
-        replyTo: 'reply@example.com',
+      provider: 'smtp',
+      smtp: {
+        host: 'smtp.example.com',
+        port: 465,
+        secure: true,
+        username: 'smtp-user',
+        password: 'smtp-password',
+        fromAddress: 'noreply@example.com',
+        fromName: 'TCRN',
       },
     } as SaveEmailConfigDto;
 
-    const result = await service.saveConfig(dto);
-    const savedTencentSes = (savedValue?.tencentSes ?? {}) as Record<string, string>;
-
-    expect(savedValue).toMatchObject({
-      provider: 'tencent_ses',
-      tencentSes: {
-        region: 'ap-singapore',
-        fromAddress: 'new@example.com',
-        fromName: 'New Name',
-        replyTo: 'reply@example.com',
-      },
+    mockEmailConfigApplicationService.saveConfig.mockResolvedValue({
+      provider: 'smtp',
+      isConfigured: true,
     });
-    expect(cryptoAccess.decrypt(savedTencentSes.secretId)).toBe(existingSecretId);
-    expect(cryptoAccess.decrypt(savedTencentSes.secretKey)).toBe(existingSecretKey);
-    expect(result.tencentSes?.secretId).toBe('exis***t-id');
-    expect(result.tencentSes?.secretKey).toBe('exis***-key');
+
+    await expect(service.saveConfig(dto)).resolves.toEqual({
+      provider: 'smtp',
+      isConfigured: true,
+    });
+
+    expect(mockEmailConfigApplicationService.saveConfig).toHaveBeenCalledWith(dto);
   });
 });

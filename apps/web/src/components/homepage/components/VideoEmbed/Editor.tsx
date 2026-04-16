@@ -26,6 +26,7 @@ interface VideoEmbedEditorProps {
 
 export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onChange }) => {
   const t = useTranslations('homepageComponentEditor');
+  const tForms = useTranslations('forms');
   
   return (
     <div className="space-y-4">
@@ -57,7 +58,7 @@ export const VideoEmbedEditor: React.FC<VideoEmbedEditorProps> = ({ props, onCha
         <Input 
           value={props.coverUrl || ''} 
           onChange={(e) => onChange({ coverUrl: e.target.value })}
-          placeholder="https://..."
+          placeholder={tForms('placeholders.url')}
         />
         <p className="text-xs text-muted-foreground">
           {t('coverUrlHint')}

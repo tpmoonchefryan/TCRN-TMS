@@ -30,6 +30,7 @@ interface SocialLinksEditorProps {
 
 export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onChange }) => {
   const t = useTranslations('homepageComponentEditor');
+  const tForms = useTranslations('forms');
   
   const addPlatform = () => {
     onChange({
@@ -150,7 +151,7 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
                   <Input 
                     value={platform.label || ''} 
                     onChange={(e) => updatePlatform(idx, 'label', e.target.value)}
-                    placeholder={`${t('label')} (optional)`}
+                    placeholder={`${t('label')} (${tForms('optional')})`}
                     className="h-8"
                   />
                 </div>
@@ -168,7 +169,7 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ props, onC
               <Input 
                 value={platform.url} 
                 onChange={(e) => updatePlatform(idx, 'url', e.target.value)}
-                placeholder="https://..."
+                placeholder={tForms('placeholders.url')}
                 className="h-8"
               />
             </div>

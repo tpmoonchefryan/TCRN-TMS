@@ -39,6 +39,8 @@ const mockTalent = {
   code: 'TALENT_123',
   displayName: 'Test Talent',
   path: 'test-talent',
+  lifecycleStatus: 'published' as const,
+  publishedAt: '2026-04-11T00:00:00.000Z',
 };
 
 const createUploadResponse = (overrides?: Partial<{
@@ -133,6 +135,7 @@ describe('ImportCustomersPage', () => {
     localStorage.clear();
     act(() => {
       useTalentStore.setState(initialTalentState, true);
+      useTalentStore.getState().setAccessibleTalents([mockTalent]);
       useTalentStore.getState().setCurrentTalent(mockTalent);
     });
   });
@@ -191,7 +194,7 @@ describe('ImportCustomersPage', () => {
     await flushPendingWork();
 
     expect(mockUploadIndividual).toHaveBeenCalledWith(file, 'talent-123');
-    expect(mockGetJob).toHaveBeenCalledWith('individuals', 'job-individual');
+    expect(mockGetJob).toHaveBeenCalledWith('individuals', 'job-individual', 'talent-123');
     expect(screen.getByText('processing')).toBeInTheDocument();
 
     await act(async () => {
@@ -260,7 +263,7 @@ describe('ImportCustomersPage', () => {
     await flushPendingWork();
 
     expect(mockUploadCompany).toHaveBeenCalledWith(file, 'talent-123');
-    expect(mockGetJob).toHaveBeenCalledWith('companies', 'job-company');
+    expect(mockGetJob).toHaveBeenCalledWith('companies', 'job-company', 'talent-123');
 
     await act(async () => {
       vi.advanceTimersByTime(2000);
@@ -268,14 +271,14 @@ describe('ImportCustomersPage', () => {
 
     await flushPendingWork();
 
-    expect(screen.getByText('Import Completed with Errors')).toBeInTheDocument();
+    expect(screen.getByText('completeWithErrors')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('downloadErrorReport'));
 
     await flushPendingWork(1);
 
-    expect(mockDownloadErrors).toHaveBeenCalledWith('companies', 'job-company');
-    expect(mockToastSuccess).toHaveBeenCalledWith('Error report downloaded');
+    expect(mockDownloadErrors).toHaveBeenCalledWith('companies', 'job-company', 'talent-123');
+    expect(mockToastSuccess).toHaveBeenCalledWith('errorReportDownloaded');
   });
 
   it('rejects non-csv uploads before calling the import API', async () => {

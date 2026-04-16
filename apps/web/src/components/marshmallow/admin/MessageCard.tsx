@@ -5,16 +5,16 @@
 import type { MarshmallowRejectionReason } from '@tcrn/shared';
 import { formatDistanceToNow } from 'date-fns';
 import {
-    Check,
-    Clock,
-    ExternalLink,
-    MessageCircle,
-    MoreHorizontal,
-    Reply,
-    RotateCcw,
-    ShieldAlert,
-    Star,
-    X
+  Check,
+  Clock,
+  ExternalLink,
+  MessageCircle,
+  MoreHorizontal,
+  Reply,
+  RotateCcw,
+  ShieldAlert,
+  Star,
+  X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { memo, useState } from 'react';
@@ -24,12 +24,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import type { MarshmallowMessageRecord } from '@/lib/api/modules/content';
@@ -48,9 +48,9 @@ interface MessageCardProps {
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export const MessageCard = memo(function MessageCard({ 
-  message, 
-  selected, 
+export const MessageCard = memo(function MessageCard({
+  message,
+  selected,
   onSelect,
   onApprove,
   onReject,
@@ -59,6 +59,7 @@ export const MessageCard = memo(function MessageCard({
   onToggleStar,
 }: MessageCardProps) {
   const t = useTranslations('marshmallowAdmin');
+  const tPublic = useTranslations('publicMarshmallow');
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -71,10 +72,24 @@ export const MessageCard = memo(function MessageCard({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'approved': return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t('approved')}</Badge>;
-      case 'rejected': return <Badge variant="destructive">{t('rejected')}</Badge>;
-      case 'spam': return <Badge variant="destructive" className="bg-red-900">{t('spam')}</Badge>;
-      default: return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">{t('pending')}</Badge>;
+      case 'approved':
+        return (
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t('approved')}</Badge>
+        );
+      case 'rejected':
+        return <Badge variant="destructive">{t('rejected')}</Badge>;
+      case 'spam':
+        return (
+          <Badge variant="destructive" className="bg-red-900">
+            {t('spam')}
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+            {t('pending')}
+          </Badge>
+        );
     }
   };
 
@@ -82,9 +97,7 @@ export const MessageCard = memo(function MessageCard({
   const hasProfanityFlags = message.profanityFlags && message.profanityFlags.length > 0;
   const isAutoRejected = message.status === 'rejected' && hasProfanityFlags;
   const imageUrls = (
-    message.imageUrls && message.imageUrls.length > 0
-      ? message.imageUrls
-      : [message.imageUrl]
+    message.imageUrls && message.imageUrls.length > 0 ? message.imageUrls : [message.imageUrl]
   ).filter((imageUrl): imageUrl is string => typeof imageUrl === 'string' && imageUrl.length > 0);
 
   // Get translated rejection reason
@@ -100,53 +113,57 @@ export const MessageCard = memo(function MessageCard({
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "transition-all duration-200 border-l-4",
-        selected ? "border-primary shadow-md ring-1 ring-primary/20" : "border-transparent hover:border-slate-200",
-        message.status === 'pending' && !selected ? "border-l-yellow-400" : "",
-        message.status === 'spam' && !selected ? "border-l-red-500 bg-red-50/10" : "",
-        !message.isRead && "bg-blue-50/30 dark:bg-blue-900/10"
+        'border-l-4 transition-all duration-200',
+        selected
+          ? 'border-primary ring-primary/20 shadow-md ring-1'
+          : 'border-transparent hover:border-slate-200',
+        message.status === 'pending' && !selected ? 'border-l-yellow-400' : '',
+        message.status === 'spam' && !selected ? 'border-l-red-500 bg-red-50/10' : '',
+        !message.isRead && 'bg-blue-50/30 dark:bg-blue-900/10'
       )}
       onClick={onSelect}
     >
-      <div className="p-4 flex flex-col h-full">
+      <div className="flex h-full flex-col p-4">
         {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="mb-3 flex items-start justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             {getStatusBadge(message.status)}
             {isAutoRejected && (
-              <Badge variant="outline" className="text-xs border-red-300 text-red-600 bg-red-50">
+              <Badge variant="outline" className="border-red-300 bg-red-50 text-xs text-red-600">
                 {t('autoRejected')}
               </Badge>
             )}
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <Clock size={12} />
               {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
             </span>
             {hasProfanityFlags && (
-              <span className="flex items-center gap-1 text-xs text-red-500 font-medium bg-red-50 px-1.5 py-0.5 rounded">
+              <span className="flex items-center gap-1 rounded bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-500">
                 <ShieldAlert size={12} />
                 {t('flagged')}
               </span>
             )}
-      {!message.isRead && (
-              <Badge variant="outline" className="text-xs">{t('unread')}</Badge>
+            {!message.isRead && (
+              <Badge variant="outline" className="text-xs">
+                {t('unread')}
+              </Badge>
             )}
             {message.socialLink && (
-              <a 
-                href={message.socialLink} 
-                target="_blank" 
+              <a
+                href={message.socialLink}
+                target="_blank"
                 rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
               >
                 <ExternalLink size={12} />
                 Bilibili
               </a>
             )}
           </div>
-          
+
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -157,12 +174,12 @@ export const MessageCard = memo(function MessageCard({
                 onToggleStar?.(message.id, message.isStarred);
               }}
             >
-              <Star 
-                size={16} 
-                className={message.isStarred ? "text-yellow-400 fill-yellow-400" : "text-gray-400"} 
+              <Star
+                size={16}
+                className={message.isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}
               />
             </Button>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -175,7 +192,7 @@ export const MessageCard = memo(function MessageCard({
                   {message.isStarred ? t('unstarMessage') : t('starMessage')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-red-600"
                   onClick={() => onReject(message.id, 'manual')}
                 >
@@ -188,51 +205,56 @@ export const MessageCard = memo(function MessageCard({
 
         {/* Content */}
         <div className="flex-1">
-          <p className={cn(
-            "text-sm md:text-base whitespace-pre-wrap leading-relaxed",
-            hasProfanityFlags && "text-red-700 dark:text-red-400"
-          )}>
+          <p
+            className={cn(
+              'whitespace-pre-wrap text-sm leading-relaxed md:text-base',
+              hasProfanityFlags && 'text-red-700 dark:text-red-400'
+            )}
+          >
             {message.content}
           </p>
 
           {/* Image Grid */}
           {imageUrls.length > 0 && (
-             <div className="mt-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                 {imageUrls.map((img, index) => (
-                     <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-slate-100 border border-slate-200 group cursor-zoom-in">
-                         <img 
-                            src={img}
-                            alt={`Attachment ${index}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewImage(img);
-                            }}
-                         />
-                     </div>
-                 ))}
-             </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-5">
+              {imageUrls.map((img, index) => (
+                <div
+                  key={index}
+                  className="group relative aspect-square cursor-zoom-in overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+                >
+                  <img
+                    src={img}
+                    alt={tPublic('attachmentAlt', { index: index + 1 })}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewImage(img);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           )}
 
           <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none flex items-center justify-center">
+            <DialogContent className="flex max-w-4xl items-center justify-center overflow-hidden border-none bg-transparent p-0 shadow-none">
               <DialogTitle className="sr-only">{t('imagePreview')}</DialogTitle>
               {previewImage && (
-                <img 
-                  src={previewImage} 
-                  alt="Preview" 
-                  className="max-h-[90vh] max-w-full object-contain rounded-lg shadow-2xl"
+                <img
+                  src={previewImage}
+                  alt={t('imagePreview')}
+                  className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
                   referrerPolicy="no-referrer"
                 />
               )}
             </DialogContent>
           </Dialog>
-          
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+
+          <div className="text-muted-foreground mt-3 flex items-center gap-2 text-xs">
             <span className="font-medium text-slate-700 dark:text-slate-300">
-              {message.isAnonymous ? t('anonymous') : (message.senderName || t('unknown'))}
+              {message.isAnonymous ? t('anonymous') : message.senderName || t('unknown')}
             </span>
             <span>•</span>
             <span className="font-mono opacity-50">{message.id.slice(0, 8)}</span>
@@ -247,22 +269,29 @@ export const MessageCard = memo(function MessageCard({
 
         {/* Rejection Reason (for rejected messages) */}
         {message.status === 'rejected' && (message.rejectionReason || hasProfanityFlags) && (
-          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm border-l-2 border-red-400">
-            <div className="flex items-center gap-2 mb-1 text-xs text-red-600 dark:text-red-400 font-medium">
+          <div className="mt-4 rounded-lg border-l-2 border-red-400 bg-red-50 p-3 text-sm dark:bg-red-900/20">
+            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400">
               <ShieldAlert size={12} />
               {t('rejectionDetails')}
             </div>
             {message.rejectionReason && (
               <p className="text-red-700 dark:text-red-300">
-                <span className="font-medium">{t('reason')}:</span> {getRejectionReasonLabel(message.rejectionReason)}
+                <span className="font-medium">{t('reason')}:</span>{' '}
+                {getRejectionReasonLabel(message.rejectionReason)}
               </p>
             )}
             {hasProfanityFlags && (
               <div className="mt-1">
-                <span className="font-medium text-red-700 dark:text-red-300">{t('detectedIssues')}:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <span className="font-medium text-red-700 dark:text-red-300">
+                  {t('detectedIssues')}:
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1">
                   {message.profanityFlags.map((flag, i) => (
-                    <Badge key={i} variant="outline" className="text-xs border-red-300 text-red-600">
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="border-red-300 text-xs text-red-600"
+                    >
                       {flag}
                     </Badge>
                   ))}
@@ -274,8 +303,8 @@ export const MessageCard = memo(function MessageCard({
 
         {/* Reply Preview (if exists) */}
         {message.replyContent && (
-          <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm border-l-2 border-primary">
-            <div className="flex items-center gap-2 mb-1 text-xs text-primary font-medium">
+          <div className="border-primary mt-4 rounded-lg border-l-2 bg-slate-50 p-3 text-sm dark:bg-slate-900">
+            <div className="text-primary mb-1 flex items-center gap-2 text-xs font-medium">
               <Reply size={12} />
               {t('replied')}
               {message.repliedBy && (
@@ -287,45 +316,57 @@ export const MessageCard = memo(function MessageCard({
         )}
 
         {/* Action Toolbar */}
-        <div className="mt-4 pt-4 border-t flex items-center justify-between gap-2">
+        <div className="mt-4 flex items-center justify-between gap-2 border-t pt-4">
           <div className="flex gap-2">
             {message.status === 'pending' && (
               <>
-                <Button 
-                  size="sm" 
-                  className="bg-green-600 hover:bg-green-700 text-white gap-1"
-                  onClick={(e) => { e.stopPropagation(); onApprove(message.id); }}
+                <Button
+                  size="sm"
+                  className="gap-1 bg-green-600 text-white hover:bg-green-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onApprove(message.id);
+                  }}
                 >
                   <Check size={16} /> {t('approve')}
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
+                <Button
+                  size="sm"
+                  variant="destructive"
                   className="gap-1"
-                  onClick={(e) => { e.stopPropagation(); onReject(message.id, 'manual'); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReject(message.id, 'manual');
+                  }}
                 >
                   <X size={16} /> {t('reject')}
                 </Button>
               </>
             )}
-            
+
             {message.status === 'rejected' && onUnreject && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 className="gap-1 border-orange-300 text-orange-600 hover:bg-orange-50"
-                onClick={(e) => { e.stopPropagation(); onUnreject(message.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUnreject(message.id);
+                }}
               >
                 <RotateCcw size={16} /> {t('unreject')}
               </Button>
             )}
-            
+
             {message.status === 'approved' && !message.replyContent && !isReplying && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 className="gap-1"
-                onClick={(e) => { e.stopPropagation(); setIsReplying(true); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReplying(true);
+                }}
               >
                 <MessageCircle size={16} /> {t('reply')}
               </Button>
@@ -335,17 +376,24 @@ export const MessageCard = memo(function MessageCard({
 
         {/* Inline Reply Editor */}
         {isReplying && (
-          <div className="mt-4 animate-in fade-in slide-in-from-top-2" onClick={e => e.stopPropagation()}>
-            <Textarea 
-              placeholder={t('replyPlaceholder')} 
-              className="min-h-[100px] mb-2"
+          <div
+            className="animate-in fade-in slide-in-from-top-2 mt-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Textarea
+              placeholder={t('replyPlaceholder')}
+              className="mb-2 min-h-[100px]"
               value={replyText}
-              onChange={e => setReplyText(e.target.value)}
+              onChange={(e) => setReplyText(e.target.value)}
               autoFocus
             />
             <div className="flex justify-end gap-2">
-              <Button size="sm" variant="ghost" onClick={() => setIsReplying(false)}>{t('cancel')}</Button>
-              <Button size="sm" onClick={handleReplySubmit} disabled={!replyText.trim()}>{t('sendReply')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setIsReplying(false)}>
+                {t('cancel')}
+              </Button>
+              <Button size="sm" onClick={handleReplySubmit} disabled={!replyText.trim()}>
+                {t('sendReply')}
+              </Button>
             </div>
           </div>
         )}

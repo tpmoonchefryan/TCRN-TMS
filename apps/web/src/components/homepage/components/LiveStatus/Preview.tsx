@@ -28,13 +28,18 @@ interface FetchedLiveStatus {
   viewers?: string;
 }
 
+const LEGACY_LIVE_STATUS_DEFAULTS = {
+  channelName: 'Moon Chef Ryan Ch.',
+  title: '🔴 [KAROKE] Singing untill I drop! come join!',
+} as const;
+
 export const defaultProps: LiveStatusProps = {
   platform: 'youtube',
-  channelName: 'Moon Chef Ryan Ch.',
+  channelName: '',
   streamUrl: 'https://youtube.com',
   isLive: true,
   viewers: '1,234',
-  title: '🔴 [KAROKE] Singing untill I drop! come join!',
+  title: '',
 };
 
 const BilibiliIcon = ({ size = 24, className }: { size?: number, className?: string }) => (
@@ -113,11 +118,16 @@ export function LiveStatus({
 
   // Derived state
   const isLive = fetchedData ? fetchedData.isLive : isLiveProp;
-  const title = (fetchedData?.title) || titleProp;
+  const title =
+    fetchedData?.title ||
+    (titleProp && titleProp !== LEGACY_LIVE_STATUS_DEFAULTS.title ? titleProp : undefined);
   const viewers = (fetchedData?.viewers) || viewersProp;
   const coverUrl = fetchedData?.coverUrl; 
-  
-  const displayChannelName = fetchedData?.channelName || channelName || (channelId ? `Channel ${channelId}` : '');
+
+  const displayChannelName =
+    fetchedData?.channelName ||
+    (channelName && channelName !== LEGACY_LIVE_STATUS_DEFAULTS.channelName ? channelName : undefined) ||
+    (channelId ? t('channelWithId', { id: channelId }) : t('defaultChannelName'));
 
   let finalStreamUrl = streamUrl;
   if (!finalStreamUrl && channelId) {
@@ -130,11 +140,11 @@ export function LiveStatus({
       {/* Background Cover Image (Live) */}
       {coverUrl && isLive ? (
         <div className="absolute inset-0">
-          <img 
-            src={coverUrl} 
-            alt="Live Cover" 
+          <img
+            src={coverUrl}
+            alt={title || t('defaultTitleLive')}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
         </div>

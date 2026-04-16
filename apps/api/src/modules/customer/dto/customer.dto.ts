@@ -16,6 +16,7 @@ import {
     Max,
     MaxLength,
     Min,
+    ValidateIf,
     ValidateNested,
 } from 'class-validator';
 
@@ -63,10 +64,6 @@ export class PaginationDto {
 // ============================================================================
 
 export class CustomerListQueryDto extends PaginationDto {
-  @ApiProperty({ description: 'Talent ID to filter customers', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @IsUUID()
-  talentId!: string;
-
   @ApiPropertyOptional({ description: 'Filter by profile type', enum: ProfileType, example: ProfileType.INDIVIDUAL })
   @IsOptional()
   @IsEnum(ProfileType)
@@ -240,11 +237,34 @@ export class PiiDataDto {
   addresses?: AddressDto[];
 }
 
-export class CreateIndividualCustomerDto {
-  @ApiProperty({ description: 'Talent ID', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @IsUUID()
-  talentId!: string;
+export class CompanyPiiDataDto {
+  @ApiPropertyOptional({ description: 'Primary contact name', example: 'John Smith', maxLength: 128 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  contactName?: string;
 
+  @ApiPropertyOptional({ description: 'Primary contact phone', example: '+81-3-1234-5678', maxLength: 32 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  contactPhone?: string;
+
+  @ApiPropertyOptional({ description: 'Primary contact email', example: 'contact@acme.com', maxLength: 255 })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== '')
+  @IsEmail()
+  @MaxLength(255)
+  contactEmail?: string;
+
+  @ApiPropertyOptional({ description: 'Contact department', example: 'Sales', maxLength: 128 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  contactDepartment?: string;
+}
+
+export class CreateIndividualCustomerDto {
   @ApiProperty({ description: 'Customer nickname/display name', example: 'John Doe', maxLength: 128 })
   @IsString()
   @MaxLength(128)
@@ -348,10 +368,6 @@ export class UpdateIndividualPiiDto {
 // ============================================================================
 
 export class CreateCompanyCustomerDto {
-  @ApiProperty({ description: 'Talent ID', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @IsUUID()
-  talentId!: string;
-
   @ApiProperty({ description: 'Company nickname/display name', example: 'Acme Corp', maxLength: 128 })
   @IsString()
   @MaxLength(128)
@@ -437,29 +453,11 @@ export class CreateCompanyCustomerDto {
   @MaxLength(512)
   website?: string;
 
-  @ApiPropertyOptional({ description: 'Primary contact name', example: 'John Smith', maxLength: 128 })
+  @ApiPropertyOptional({ description: 'Company contact PII managed by TCRN PII Platform', type: CompanyPiiDataDto })
   @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  contactName?: string;
-
-  @ApiPropertyOptional({ description: 'Primary contact phone', example: '+81-3-1234-5678', maxLength: 32 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(32)
-  contactPhone?: string;
-
-  @ApiPropertyOptional({ description: 'Primary contact email', example: 'contact@acme.com', maxLength: 255 })
-  @IsOptional()
-  @IsEmail()
-  @MaxLength(255)
-  contactEmail?: string;
-
-  @ApiPropertyOptional({ description: 'Contact department', example: 'Sales', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  contactDepartment?: string;
+  @ValidateNested()
+  @Type(() => CompanyPiiDataDto)
+  pii?: CompanyPiiDataDto;
 }
 
 export class UpdateCompanyCustomerDto {
@@ -522,24 +520,9 @@ export class UpdateCompanyCustomerDto {
   website?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  contactName?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(32)
-  contactPhone?: string;
-
-  @IsOptional()
-  @IsEmail()
-  @MaxLength(255)
-  contactEmail?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  contactDepartment?: string;
+  @ValidateNested()
+  @Type(() => CompanyPiiDataDto)
+  pii?: CompanyPiiDataDto;
 
   @IsInt()
   version!: number;

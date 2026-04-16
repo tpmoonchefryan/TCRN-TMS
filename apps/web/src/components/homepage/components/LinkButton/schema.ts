@@ -16,8 +16,10 @@ export const LinkButtonSchema = z.object({
 
 export type LinkButtonProps = z.infer<typeof LinkButtonSchema>;
 
+export const LEGACY_LINK_BUTTON_DEFAULT_LABEL = 'Click Me';
+
 export const defaultProps: LinkButtonProps = {
-  label: 'Click Me',
+  label: '',
   url: '#',
   style: 'solid',
   icon: undefined,

@@ -27,6 +27,9 @@ const translations = {
     talent: 'Talent',
     inheritedFrom: 'Inherited from',
     ownConfig: 'Own configuration',
+    systemPreset: 'System preset configuration',
+    configRequired: 'This configuration is required and cannot be disabled',
+    disabledAtScope: 'This inherited configuration is disabled at current scope',
   },
   zh: {
     inherited: '继承',
@@ -39,6 +42,9 @@ const translations = {
     talent: '艺人',
     inheritedFrom: '继承自',
     ownConfig: '自有配置',
+    systemPreset: '系统预设配置',
+    configRequired: '此配置为必需，不可禁用',
+    disabledAtScope: '此继承配置在当前范围已禁用',
   },
   ja: {
     inherited: '継承',
@@ -51,6 +57,9 @@ const translations = {
     talent: 'タレント',
     inheritedFrom: '継承元',
     ownConfig: '自己設定',
+    systemPreset: 'システムプリセット設定',
+    configRequired: 'この設定は必須であり、無効化できません',
+    disabledAtScope: 'この継承設定は現在のスコープで無効化されています',
   },
 };
 
@@ -78,7 +87,7 @@ export function InheritanceIndicator({
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>System preset configuration</p>
+              <p>{t.systemPreset}</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -91,7 +100,7 @@ export function InheritanceIndicator({
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>This configuration is required and cannot be disabled</p>
+              <p>{t.configRequired}</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -120,7 +129,7 @@ export function InheritanceIndicator({
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>This inherited configuration is disabled at current scope</p>
+              <p>{t.disabledAtScope}</p>
             </TooltipContent>
           </Tooltip>
         )}

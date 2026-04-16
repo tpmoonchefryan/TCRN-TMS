@@ -5,6 +5,7 @@ import type {
   MarshmallowBatchAction,
   MarshmallowMessageStatus as SharedMessageStatus,
   MarshmallowRejectionReason as SharedRejectionReason,
+  ReportCreateResponse as SharedReportCreateResponse,
   ReportJobStatus as SharedReportJobStatus,
   ThemeConfig,
   UpdateHomepageSettingsInput,
@@ -52,12 +53,7 @@ export interface ReportJobListPayload {
   };
 }
 
-export interface ReportJobCreateResponse {
-  jobId: string;
-  status: SharedReportJobStatus;
-  estimatedRows: number;
-  createdAt: string;
-}
+export type ReportJobCreateResponse = SharedReportCreateResponse;
 
 export interface ReportJobStatusResponse {
   id: string;
@@ -398,6 +394,7 @@ export interface PublicMarshmallowConfigResponse {
   welcomeText: string | null;
   placeholderText: string | null;
   allowAnonymous: boolean;
+  captchaMode: 'always' | 'never' | 'auto';
   maxMessageLength: number;
   minMessageLength: number;
   reactionsEnabled: boolean;
@@ -561,7 +558,32 @@ export const marshmallowApi = {
     );
 
     if (!response.ok) {
-      throw new Error('Upload failed');
+      let payload:
+        | {
+            error?: {
+              code?: string;
+              message?: string;
+            };
+            message?: string;
+          }
+        | null = null;
+
+      try {
+        payload = (await response.json()) as {
+          error?: {
+            code?: string;
+            message?: string;
+          };
+          message?: string;
+        };
+      } catch {
+        payload = null;
+      }
+
+      const error = new Error(payload?.error?.message || payload?.message || '');
+      (error as Error & { code: string }).code =
+        payload?.error?.code || 'MARSHMALLOW_AVATAR_UPLOAD_FAILED';
+      throw error;
     }
 
     const result = await response.json();
@@ -637,7 +659,7 @@ export const homepageApi = {
     apiClient.get<HomepageResponse>(`/api/v1/talents/${talentId}/homepage`, { _t: Date.now() }),
 
   saveDraft: (talentId: string, draft: HomepageDraftSavePayload) =>
-    apiClient.put<HomepageDraftSaveResponse>(`/api/v1/talents/${talentId}/homepage/draft`, draft),
+    apiClient.patch<HomepageDraftSaveResponse>(`/api/v1/talents/${talentId}/homepage/draft`, draft),
 
   publish: (talentId: string) =>
     apiClient.post<HomepagePublishResponse>(`/api/v1/talents/${talentId}/homepage/publish`, {}),

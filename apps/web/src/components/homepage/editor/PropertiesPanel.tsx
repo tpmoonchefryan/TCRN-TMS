@@ -29,6 +29,7 @@ function isOptionValue<T extends string>(options: readonly T[], value: string): 
 
 export function PropertiesPanel() {
   const t = useTranslations('homepageEditor');
+  const tc = useTranslations('common');
   const { content, selectedComponentId, updateComponent, theme, setTheme, setThemePreset, editingLocale } = useEditorStore();
   const [activeTab, setActiveTab] = React.useState("theme");
 
@@ -48,6 +49,19 @@ export function PropertiesPanel() {
         ...patch,
       },
     });
+  };
+
+  const getLocaleLabel = (locale: 'default' | 'en' | 'zh' | 'ja') => {
+    switch (locale) {
+      case 'default':
+        return tc('default');
+      case 'en':
+        return tc('english');
+      case 'zh':
+        return tc('chinese');
+      case 'ja':
+        return tc('japanese');
+    }
   };
 
   // Render form based on component type
@@ -77,8 +91,9 @@ export function PropertiesPanel() {
       <div className="space-y-4">
         {editingLocale && editingLocale !== 'default' && (
           <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs px-3 py-2 rounded-md border border-blue-100 dark:border-blue-800">
-            Editing <strong>{editingLocale.toUpperCase()}</strong> localization.
-            <br/>Changes will override default content for this language.
+            {t('editingLocalization', { locale: getLocaleLabel(editingLocale) })}
+            <br />
+            {t('editingLocalizationHint')}
           </div>
         )}
         
@@ -301,7 +316,7 @@ export function PropertiesPanel() {
               <Input 
                 value={theme.decorations.text || ''}
                 onChange={(e) => setTheme({ decorations: { ...theme.decorations, text: e.target.value } })}
-                placeholder="Watermark text"
+                placeholder={t('watermarkTextPlaceholder')}
                 className="h-8 text-xs"
               />
             </div>
@@ -313,11 +328,11 @@ export function PropertiesPanel() {
                 value={theme.decorations.fontFamily || 'system'}
                 onChange={(e) => setTheme({ decorations: { ...theme.decorations, fontFamily: e.target.value } })}
               >
-                <option value="system">System UI</option>
-                <option value="inter">Inter</option>
-                <option value="noto-sans">Noto Sans</option>
-                <option value="outfit">Outfit</option>
-                <option value="space-grotesk">Space Grotesk</option>
+                <option value="system">{t('fontSystemUi')}</option>
+                <option value="inter">{t('fontInter')}</option>
+                <option value="noto-sans">{t('fontNotoSans')}</option>
+                <option value="outfit">{t('fontOutfit')}</option>
+                <option value="space-grotesk">{t('fontSpaceGrotesk')}</option>
               </select>
             </div>
 
@@ -345,9 +360,9 @@ export function PropertiesPanel() {
                     }
                   }}
                 >
-                  <option value="normal">Normal</option>
-                  <option value="bold">Bold</option>
-                  <option value="lighter">Light</option>
+                  <option value="normal">{t('fontWeightNormal')}</option>
+                  <option value="bold">{t('fontWeightBold')}</option>
+                  <option value="lighter">{t('fontWeightLight')}</option>
                 </select>
               </div>
             </div>
@@ -361,7 +376,7 @@ export function PropertiesPanel() {
                    className="flex-1 h-8 text-xs"
                    onClick={() => setTheme({ decorations: { ...theme.decorations, textDecoration: theme.decorations.textDecoration === 'underline' ? 'none' : 'underline' } })}
                  >
-                   Underline
+                   {t('underline')}
                  </Button>
                  <Button
                    variant={theme.decorations.textDecoration === 'line-through' ? 'secondary' : 'outline'}
@@ -369,7 +384,7 @@ export function PropertiesPanel() {
                    className="flex-1 h-8 text-xs"
                    onClick={() => setTheme({ decorations: { ...theme.decorations, textDecoration: theme.decorations.textDecoration === 'line-through' ? 'none' : 'line-through' } })}
                  >
-                   Strikethrough
+                   {t('strikethrough')}
                  </Button>
               </div>
             </div>

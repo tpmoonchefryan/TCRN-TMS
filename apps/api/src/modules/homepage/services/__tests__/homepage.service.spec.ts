@@ -5,19 +5,38 @@ import { ConfigService } from '@nestjs/config';
 import type { RequestContext } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database/database.service';
-import { ChangeLogService } from '../../../log/services/change-log.service';
+import { HomepageAdminService } from '../../application/homepage-admin.service';
+import { HomepageAdminRepository } from '../../infrastructure/homepage-admin.repository';
 import { CdnPurgeService } from '../cdn-purge.service';
-import { HomepageService } from '../homepage.service';
 
 
-describe('HomepageService', () => {
-  let service: HomepageService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockCdnPurgeService: Partial<CdnPurgeService>;
+describe('HomepageAdminService', () => {
+  let service: HomepageAdminService;
+  let mockHomepageAdminRepository: {
+    findTalentById: ReturnType<typeof vi.fn>;
+    findHomepageByTalentId: ReturnType<typeof vi.fn>;
+    createHomepage: ReturnType<typeof vi.fn>;
+    findHomepageVersion: ReturnType<typeof vi.fn>;
+    findSystemUserById: ReturnType<typeof vi.fn>;
+    findHomepageDraftPointer: ReturnType<typeof vi.fn>;
+    findHomepageVersionSummary: ReturnType<typeof vi.fn>;
+    findLatestHomepageVersionNumber: ReturnType<typeof vi.fn>;
+    createDraftVersionAndAssign: ReturnType<typeof vi.fn>;
+    findHomepageVersionByNumber: ReturnType<typeof vi.fn>;
+    findHomepagePublishTarget: ReturnType<typeof vi.fn>;
+    publishHomepageVersion: ReturnType<typeof vi.fn>;
+    markHomepagePublished: ReturnType<typeof vi.fn>;
+    appendHomepagePublishChangeLog: ReturnType<typeof vi.fn>;
+    markHomepageUnpublished: ReturnType<typeof vi.fn>;
+    appendHomepageUnpublishChangeLog: ReturnType<typeof vi.fn>;
+    findHomepageSettings: ReturnType<typeof vi.fn>;
+    findTalentIdByHomepagePath: ReturnType<typeof vi.fn>;
+    updateTalentHomepagePath: ReturnType<typeof vi.fn>;
+    updateHomepageSettings: ReturnType<typeof vi.fn>;
+    appendHomepageSettingsChangeLog: ReturnType<typeof vi.fn>;
+  };
   let mockConfigService: Partial<ConfigService>;
-  let mockPrisma: Record<string, unknown>;
+  let mockCdnPurgeService: Partial<CdnPurgeService>;
 
   const testContext: RequestContext = {
     tenantId: 'tenant-123',
@@ -66,32 +85,42 @@ describe('HomepageService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockPrisma = {
-      $queryRawUnsafe: vi.fn(),
-      $executeRawUnsafe: vi.fn(),
-    };
-
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
-    };
-
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockCdnPurgeService = {
-      purgeHomepage: vi.fn().mockResolvedValue('success'),
+    mockHomepageAdminRepository = {
+      findTalentById: vi.fn(),
+      findHomepageByTalentId: vi.fn(),
+      createHomepage: vi.fn(),
+      findHomepageVersion: vi.fn(),
+      findSystemUserById: vi.fn(),
+      findHomepageDraftPointer: vi.fn(),
+      findHomepageVersionSummary: vi.fn(),
+      findLatestHomepageVersionNumber: vi.fn(),
+      createDraftVersionAndAssign: vi.fn(),
+      findHomepageVersionByNumber: vi.fn(),
+      findHomepagePublishTarget: vi.fn(),
+      publishHomepageVersion: vi.fn(),
+      markHomepagePublished: vi.fn(),
+      appendHomepagePublishChangeLog: vi.fn(),
+      markHomepageUnpublished: vi.fn(),
+      appendHomepageUnpublishChangeLog: vi.fn(),
+      findHomepageSettings: vi.fn(),
+      findTalentIdByHomepagePath: vi.fn(),
+      updateTalentHomepagePath: vi.fn(),
+      updateHomepageSettings: vi.fn(),
+      appendHomepageSettingsChangeLog: vi.fn(),
     };
 
     mockConfigService = {
       get: vi.fn().mockReturnValue('http://localhost:3000'),
     };
 
-    service = new HomepageService(
-      mockDatabaseService as DatabaseService,
-      mockChangeLogService as ChangeLogService,
-      mockCdnPurgeService as CdnPurgeService,
+    mockCdnPurgeService = {
+      purgeHomepage: vi.fn().mockResolvedValue(undefined),
+    };
+
+    service = new HomepageAdminService(
+      mockHomepageAdminRepository as unknown as HomepageAdminRepository,
       mockConfigService as ConfigService,
+      mockCdnPurgeService as CdnPurgeService,
     );
   });
 
@@ -101,10 +130,10 @@ describe('HomepageService', () => {
 
   describe('getOrCreate', () => {
     it('should return existing homepage for talent', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent]) // Talent query
-        .mockResolvedValueOnce([mockHomepage]) // Homepage query
-        .mockResolvedValueOnce([mockVersion]); // Version query
+      mockHomepageAdminRepository.findTalentById.mockResolvedValue(mockTalent);
+      mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue(mockHomepage);
+      mockHomepageAdminRepository.findHomepageVersion.mockResolvedValue(mockVersion);
+      mockHomepageAdminRepository.findSystemUserById.mockResolvedValue(null);
 
       const result = await service.getOrCreate('talent-123', 'tenant_test123');
 
@@ -116,10 +145,9 @@ describe('HomepageService', () => {
     it('should create homepage if not exists', async () => {
       const createdHomepage = { ...mockHomepage, id: 'new-homepage-123', draftVersionId: null, publishedVersionId: null };
 
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent]) // Talent query
-        .mockResolvedValueOnce([]) // Homepage not found
-        .mockResolvedValueOnce([createdHomepage]); // Created homepage (no versions to fetch)
+      mockHomepageAdminRepository.findTalentById.mockResolvedValue(mockTalent);
+      mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue(null);
+      mockHomepageAdminRepository.createHomepage.mockResolvedValue(createdHomepage);
 
       const result = await service.getOrCreate('talent-123', 'tenant_test123');
 
@@ -128,8 +156,7 @@ describe('HomepageService', () => {
     });
 
     it('should throw NotFoundException when talent not found', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([]); // Talent not found
+      mockHomepageAdminRepository.findTalentById.mockResolvedValue(null);
 
       await expect(
         service.getOrCreate('nonexistent', 'tenant_test123'),
@@ -138,10 +165,9 @@ describe('HomepageService', () => {
 
     it('should include homepage URL with path', async () => {
       const homepageWithNoVersions = { ...mockHomepage, draftVersionId: null, publishedVersionId: null };
-      
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([mockTalent])
-        .mockResolvedValueOnce([homepageWithNoVersions]);
+
+      mockHomepageAdminRepository.findTalentById.mockResolvedValue(mockTalent);
+      mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue(homepageWithNoVersions);
 
       const result = await service.getOrCreate('talent-123', 'tenant_test123');
 
@@ -152,11 +178,18 @@ describe('HomepageService', () => {
 
   describe('saveDraft', () => {
     it('should save new draft version', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: null }]) // Homepage query
-        .mockResolvedValueOnce([{ versionNumber: 0 }]) // Last version
-        .mockResolvedValueOnce([{ id: 'new-version', versionNumber: 1, contentHash: 'hash123', createdAt: new Date() }]) // Create version
-        .mockResolvedValueOnce([{ id: 'new-version', versionNumber: 1, contentHash: 'hash123', createdAt: new Date() }]); // Query new version
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(0);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'new-version',
+        versionNumber: 1,
+        contentHash: 'hash123',
+        createdAt: new Date(),
+      });
 
       const result = await service.saveDraft(
         'talent-123',
@@ -172,14 +205,24 @@ describe('HomepageService', () => {
     });
 
     it('should detect unchanged content and skip version creation', async () => {
-      // Mock the hash calculation - we need to match what the service calculates
-      // Since we can't easily predict the hash, we test the "changed" path
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: 'version-123' }])
-        .mockResolvedValueOnce([{ id: 'version-123', versionNumber: 1, contentHash: 'different-hash' }]) // Different hash
-        .mockResolvedValueOnce([{ versionNumber: 1 }]) // Last version query
-        .mockResolvedValueOnce([]) // CTE result
-        .mockResolvedValueOnce([{ id: 'v2', versionNumber: 2, contentHash: 'new-hash', createdAt: new Date() }]); // New version
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: 'version-123',
+      });
+      mockHomepageAdminRepository.findHomepageVersionSummary.mockResolvedValue({
+        id: 'version-123',
+        versionNumber: 1,
+        contentHash: 'different-hash',
+        createdAt: new Date(),
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(1);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v2',
+        versionNumber: 2,
+        contentHash: 'new-hash',
+        createdAt: new Date(),
+      });
 
       const result = await service.saveDraft(
         'talent-123',
@@ -195,8 +238,7 @@ describe('HomepageService', () => {
     });
 
     it('should throw NotFoundException when homepage not found', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([]); // Homepage not found
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue(null);
 
       await expect(
         service.saveDraft('talent-123', { content: { version: '1.0', components: [] } }, testContext),
@@ -207,14 +249,25 @@ describe('HomepageService', () => {
   describe('Content Hash Calculation', () => {
     it('should generate consistent hash for same content', async () => {
       const content = { version: '1.0', components: [] };
-      
-      // Test internal hash consistency by calling saveDraft twice
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: 'v1' }])
-        .mockResolvedValueOnce([{ id: 'v1', versionNumber: 1, contentHash: null }]) // No matching hash
-        .mockResolvedValueOnce([{ versionNumber: 1 }])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'v2', versionNumber: 2, contentHash: 'hash', createdAt: new Date() }]);
+
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: 'v1',
+      });
+      mockHomepageAdminRepository.findHomepageVersionSummary.mockResolvedValue({
+        id: 'v1',
+        versionNumber: 1,
+        contentHash: null,
+        createdAt: new Date(),
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(1);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v2',
+        versionNumber: 2,
+        contentHash: 'hash',
+        createdAt: new Date(),
+      });
 
       const result = await service.saveDraft('talent-123', { content }, testContext);
 
@@ -224,11 +277,18 @@ describe('HomepageService', () => {
 
   describe('Theme Configuration', () => {
     it('should use default theme when not provided', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: null }])
-        .mockResolvedValueOnce([{ versionNumber: 0 }])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'v1', versionNumber: 1, contentHash: 'hash', createdAt: new Date() }]);
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(0);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v1',
+        versionNumber: 1,
+        contentHash: 'hash',
+        createdAt: new Date(),
+      });
 
       // No theme in DTO
       await service.saveDraft(
@@ -237,8 +297,13 @@ describe('HomepageService', () => {
         testContext,
       );
 
-      // Verify that the query was called with default theme
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(mockHomepageAdminRepository.createDraftVersionAndAssign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          theme: expect.objectContaining({
+            preset: expect.any(String),
+          }),
+        }),
+      );
     });
 
     it('should save custom theme when provided', async () => {
@@ -247,11 +312,18 @@ describe('HomepageService', () => {
         colors: { primary: '#FF0000' },
       };
 
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: null }])
-        .mockResolvedValueOnce([{ versionNumber: 0 }])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'v1', versionNumber: 1, contentHash: 'hash', createdAt: new Date() }]);
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(0);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v1',
+        versionNumber: 1,
+        contentHash: 'hash',
+        createdAt: new Date(),
+      });
 
       await service.saveDraft(
         'talent-123',
@@ -259,19 +331,19 @@ describe('HomepageService', () => {
         testContext,
       );
 
-      // The theme should be included in the query
-      const calls = (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mock.calls;
-      const insertCall = calls.find(call => 
-        typeof call[0] === 'string' && call[0].includes('INSERT INTO'),
+      expect(mockHomepageAdminRepository.createDraftVersionAndAssign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          theme: customTheme,
+        }),
       );
-      expect(insertCall).toBeDefined();
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle database errors gracefully', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockRejectedValueOnce(new Error('Database connection failed'));
+    it('should surface repository errors gracefully', async () => {
+      mockHomepageAdminRepository.findTalentById.mockRejectedValueOnce(
+        new Error('Database connection failed'),
+      );
 
       await expect(
         service.getOrCreate('talent-123', 'tenant_test123'),
@@ -281,11 +353,18 @@ describe('HomepageService', () => {
 
   describe('Version Management', () => {
     it('should increment version number correctly', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: null }])
-        .mockResolvedValueOnce([{ versionNumber: 5 }]) // Last version is 5
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'v6', versionNumber: 6, contentHash: 'hash', createdAt: new Date() }]);
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(5);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v6',
+        versionNumber: 6,
+        contentHash: 'hash',
+        createdAt: new Date(),
+      });
 
       const result = await service.saveDraft(
         'talent-123',
@@ -297,11 +376,18 @@ describe('HomepageService', () => {
     });
 
     it('should start at version 1 for new homepage', async () => {
-      (mockPrisma.$queryRawUnsafe as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce([{ id: 'homepage-123', draftVersionId: null }])
-        .mockResolvedValueOnce([]) // No previous versions
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'v1', versionNumber: 1, contentHash: 'hash', createdAt: new Date() }]);
+      mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+      });
+      mockHomepageAdminRepository.findLatestHomepageVersionNumber.mockResolvedValue(0);
+      mockHomepageAdminRepository.createDraftVersionAndAssign.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findHomepageVersionByNumber.mockResolvedValue({
+        id: 'v1',
+        versionNumber: 1,
+        contentHash: 'hash',
+        createdAt: new Date(),
+      });
 
       const result = await service.saveDraft(
         'talent-123',
@@ -310,6 +396,188 @@ describe('HomepageService', () => {
       );
 
       expect(result.draftVersion.versionNumber).toBe(1);
+    });
+  });
+
+  describe('publish', () => {
+    it('should publish the current draft and return purge success', async () => {
+      mockHomepageAdminRepository.findHomepagePublishTarget.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: 'draft-version-1',
+        customDomain: 'demo.example.com',
+        homepagePath: 'test-talent',
+      });
+      mockHomepageAdminRepository.publishHomepageVersion.mockResolvedValue({
+        id: 'draft-version-1',
+        versionNumber: 3,
+      });
+      mockHomepageAdminRepository.markHomepagePublished.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.appendHomepagePublishChangeLog.mockResolvedValue(undefined);
+
+      const result = await service.publish('talent-123', testContext);
+
+      expect(result.publishedVersion.id).toBe('draft-version-1');
+      expect(result.publishedVersion.versionNumber).toBe(3);
+      expect(result.homepageUrl).toBe('http://localhost:3000/p/test-talent');
+      expect(result.cdnPurgeStatus).toBe('success');
+      expect(mockCdnPurgeService.purgeHomepage).toHaveBeenCalledWith(
+        'test-talent',
+        'demo.example.com',
+      );
+    });
+
+    it('should throw NotFoundException when homepage is missing', async () => {
+      mockHomepageAdminRepository.findHomepagePublishTarget.mockResolvedValue(null);
+
+      await expect(service.publish('talent-123', testContext)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should fail closed when no draft exists', async () => {
+      mockHomepageAdminRepository.findHomepagePublishTarget.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: null,
+        customDomain: null,
+        homepagePath: 'test-talent',
+      });
+
+      await expect(service.publish('talent-123', testContext)).rejects.toThrow('No draft');
+    });
+
+    it('should downgrade purge status to failed when CDN purge throws', async () => {
+      mockHomepageAdminRepository.findHomepagePublishTarget.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: 'draft-version-1',
+        customDomain: null,
+        homepagePath: 'test-talent',
+      });
+      mockHomepageAdminRepository.publishHomepageVersion.mockResolvedValue({
+        id: 'draft-version-1',
+        versionNumber: 3,
+      });
+      mockHomepageAdminRepository.markHomepagePublished.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.appendHomepagePublishChangeLog.mockResolvedValue(undefined);
+      vi.mocked(mockCdnPurgeService.purgeHomepage).mockRejectedValue(new Error('purge failed'));
+
+      const result = await service.publish('talent-123', testContext);
+
+      expect(result.cdnPurgeStatus).toBe('failed');
+    });
+  });
+
+  describe('unpublish', () => {
+    it('should unpublish and ignore purge failures', async () => {
+      mockHomepageAdminRepository.findHomepagePublishTarget.mockResolvedValue({
+        id: 'homepage-123',
+        draftVersionId: 'draft-version-1',
+        customDomain: 'demo.example.com',
+        homepagePath: 'test-talent',
+      });
+      mockHomepageAdminRepository.markHomepageUnpublished.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.appendHomepageUnpublishChangeLog.mockResolvedValue(undefined);
+      vi.mocked(mockCdnPurgeService.purgeHomepage).mockRejectedValue(new Error('purge failed'));
+
+      await expect(service.unpublish('talent-123', testContext)).resolves.toBeUndefined();
+      expect(mockHomepageAdminRepository.markHomepageUnpublished).toHaveBeenCalledWith(
+        'tenant_test123',
+        'homepage-123',
+      );
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('should normalize homepage path, persist settings, and return refreshed state', async () => {
+      mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue({
+        id: 'homepage-123',
+        seoTitle: 'Old Title',
+        seoDescription: 'Old Description',
+        ogImageUrl: null,
+        analyticsId: null,
+        version: 1,
+      });
+      mockHomepageAdminRepository.findTalentIdByHomepagePath.mockResolvedValue(null);
+      mockHomepageAdminRepository.updateTalentHomepagePath.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.updateHomepageSettings.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.appendHomepageSettingsChangeLog.mockResolvedValue(undefined);
+      mockHomepageAdminRepository.findTalentById.mockResolvedValue({
+        ...mockTalent,
+        customDomain: null,
+        customDomainVerified: false,
+        homepagePath: 'shiori',
+      });
+      mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue({
+        ...mockHomepage,
+        seoTitle: 'New Title',
+        draftVersionId: null,
+        publishedVersionId: null,
+      });
+
+      const result = await service.updateSettings(
+        'talent-123',
+        {
+          homepagePath: 'VirtuaReal/Shiori',
+          seoTitle: 'New Title',
+          version: 1,
+        },
+        testContext,
+      );
+
+      expect(mockHomepageAdminRepository.updateTalentHomepagePath).toHaveBeenCalledWith(
+        'tenant_test123',
+        'talent-123',
+        'shiori',
+      );
+      expect(mockHomepageAdminRepository.updateHomepageSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          seoTitle: 'New Title',
+        }),
+      );
+      expect(result.homepagePath).toBe('shiori');
+    });
+
+    it('should throw NotFoundException when homepage settings record is missing', async () => {
+      mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue(null);
+
+      await expect(
+        service.updateSettings('talent-123', { version: 1 }, testContext),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should fail on version mismatch', async () => {
+      mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue({
+        id: 'homepage-123',
+        seoTitle: 'Old Title',
+        seoDescription: 'Old Description',
+        ogImageUrl: null,
+        analyticsId: null,
+        version: 2,
+      });
+
+      await expect(
+        service.updateSettings('talent-123', { version: 1 }, testContext),
+      ).rejects.toThrow('Homepage was modified by another user');
+    });
+
+    it('should reject already-taken homepage paths', async () => {
+      mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue({
+        id: 'homepage-123',
+        seoTitle: 'Old Title',
+        seoDescription: 'Old Description',
+        ogImageUrl: null,
+        analyticsId: null,
+        version: 1,
+      });
+      mockHomepageAdminRepository.findTalentIdByHomepagePath.mockResolvedValue('another-talent');
+
+      await expect(
+        service.updateSettings(
+          'talent-123',
+          {
+            homepagePath: 'taken',
+            version: 1,
+          },
+          testContext,
+        ),
+      ).rejects.toThrow('Homepage path already taken');
     });
   });
 });

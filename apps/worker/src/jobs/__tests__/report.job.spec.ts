@@ -123,7 +123,6 @@ describe('reportJobProcessor', () => {
         customer: {
           nickname: 'Customer A',
           profileType: 'individual',
-          rmProfileId: null,
           status: { nameEn: 'Active' },
           tags: ['vip'],
           source: 'manual',
@@ -197,6 +196,22 @@ describe('reportJobProcessor', () => {
       256,
       { 'Content-Type': 'text/csv' },
     );
+  });
+
+  it('fails closed when a report job requests inline pii generation', async () => {
+    mockJob.data.options = {
+      language: 'en',
+      includePii: true,
+    };
+
+    await expect(reportJobProcessor(mockJob)).rejects.toThrow(
+      'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.',
+    );
+
+    expect(mockPrisma.membershipRecord.count).not.toHaveBeenCalled();
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain('error_message = $3');
+    expect(mockMinioClient.putObject).not.toHaveBeenCalled();
   });
 
   it('cleans up the temp file and marks the job failed when MinIO upload throws', async () => {

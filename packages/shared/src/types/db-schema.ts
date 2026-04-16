@@ -183,7 +183,6 @@ export interface CustomerProfile extends SoftDeletableEntity {
   profile_store_id: string;
   origin_talent_id: string;
   last_modified_talent_id?: string;
-  rm_profile_id: string;
   profile_type: ProfileType;
   nickname: string;
   primary_language?: string;

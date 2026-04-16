@@ -1,82 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-// PII Service configuration and Profile Store seed data
+// Profile Store and consumer seed data
 
 import { PrismaClient } from '@prisma/client';
 
-import { getDefaultPiiSeedConfig } from './_pii-seed-config';
-
 export async function seedPiiConfig(prisma: PrismaClient) {
-  console.log('  → Creating PII service configuration...');
+  console.log('  → Creating profile store and consumer defaults...');
 
   // Get admin user
   const adminUser = await prisma.systemUser.findUnique({
     where: { username: 'admin' },
   });
-
-  // =========================================================================
-  // PII Service Config
-  // =========================================================================
-  const defaultPiiSeedConfig = getDefaultPiiSeedConfig();
-  const existingDefaultPiiConfig = await prisma.piiServiceConfig.findUnique({
-    where: { code: 'DEFAULT_PII' },
-    select: { id: true },
-  });
-
-  let piiServiceConfigId: string | null = null;
-
-  if (defaultPiiSeedConfig) {
-    const piiServiceConfig = await prisma.piiServiceConfig.upsert({
-      where: { code: 'DEFAULT_PII' },
-      update: {
-        nameEn: 'Default PII Service',
-        nameZh: '默认PII服务',
-        nameJa: 'デフォルトPIIサービス',
-        descriptionEn: 'Default PII service configured from environment',
-        descriptionZh: '从环境变量配置的默认PII服务',
-        descriptionJa: '環境変数から設定されたデフォルトPIIサービス',
-        apiUrl: defaultPiiSeedConfig.apiUrl,
-        authType: 'mtls',
-        healthCheckUrl: defaultPiiSeedConfig.healthCheckUrl,
-        healthCheckIntervalSec: 60,
-        isHealthy: false,
-        isActive: true,
-        updatedBy: adminUser?.id,
-      },
-      create: {
-        code: 'DEFAULT_PII',
-        nameEn: 'Default PII Service',
-        nameZh: '默认PII服务',
-        nameJa: 'デフォルトPIIサービス',
-        descriptionEn: 'Default PII service configured from environment',
-        descriptionZh: '从环境变量配置的默认PII服务',
-        descriptionJa: '環境変数から設定されたデフォルトPIIサービス',
-        apiUrl: defaultPiiSeedConfig.apiUrl,
-        authType: 'mtls',
-        healthCheckUrl: defaultPiiSeedConfig.healthCheckUrl,
-        healthCheckIntervalSec: 60,
-        isHealthy: false,
-        isActive: true,
-        createdBy: adminUser?.id,
-        updatedBy: adminUser?.id,
-      },
-    });
-
-    piiServiceConfigId = piiServiceConfig.id;
-    console.log(`    ✓ Upserted PII service config: ${piiServiceConfig.code} -> ${defaultPiiSeedConfig.apiUrl}`);
-  } else if (existingDefaultPiiConfig) {
-    await prisma.piiServiceConfig.update({
-      where: { id: existingDefaultPiiConfig.id },
-      data: {
-        isActive: false,
-        isHealthy: false,
-        updatedBy: adminUser?.id,
-      },
-    });
-
-    console.log('    ✓ Deactivated DEFAULT_PII because PII_SERVICE_URL is not configured');
-  } else {
-    console.log('    ✓ Skipped DEFAULT_PII because PII_SERVICE_URL is not configured');
-  }
 
   // =========================================================================
   // Profile Store
@@ -87,10 +20,10 @@ export async function seedPiiConfig(prisma: PrismaClient) {
       nameEn: 'Default Profile Store',
       nameZh: '默认档案存储',
       nameJa: 'デフォルトプロファイルストア',
-      descriptionEn: 'Default profile store for customer PII data',
-      descriptionZh: '客户PII数据的默认存储',
-      descriptionJa: '顧客PIIデータのデフォルトストア',
-      piiServiceConfigId,
+      descriptionEn: 'Default customer archive boundary',
+      descriptionZh: '默认客户档案边界',
+      descriptionJa: 'デフォルト顧客アーカイブ境界',
+      piiServiceConfigId: null,
       isDefault: true,
       isActive: true,
       updatedBy: adminUser?.id,
@@ -100,10 +33,10 @@ export async function seedPiiConfig(prisma: PrismaClient) {
       nameEn: 'Default Profile Store',
       nameZh: '默认档案存储',
       nameJa: 'デフォルトプロファイルストア',
-      descriptionEn: 'Default profile store for customer PII data',
-      descriptionZh: '客户PII数据的默认存储',
-      descriptionJa: '顧客PIIデータのデフォルトストア',
-      piiServiceConfigId,
+      descriptionEn: 'Default customer archive boundary',
+      descriptionZh: '默认客户档案边界',
+      descriptionJa: 'デフォルト顧客アーカイブ境界',
+      piiServiceConfigId: null,
       isDefault: true,
       isActive: true,
       createdBy: adminUser?.id,

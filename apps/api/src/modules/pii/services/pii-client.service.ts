@@ -7,39 +7,13 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import * as fs from 'fs';
 import * as https from 'https';
 
+import type {
+  CustomerPiiPlatformLifecyclePayload,
+  CustomerPiiPlatformPortalSessionPayload,
+  CustomerPiiPlatformWritePayload,
+} from '../../customer/domain/pii-platform.policy';
 import { IntegrationLogService, type OutboundLogDto } from '../../log';
-
-/**
- * PII Profile Data
- */
-export interface PiiProfile {
-  id: string;
-  givenName?: string | null;
-  familyName?: string | null;
-  gender?: string | null;
-  birthDate?: string | null;
-  phoneNumbers?: Array<{
-    typeCode: string;
-    number: string;
-    isPrimary?: boolean;
-  }> | null;
-  emails?: Array<{
-    typeCode: string;
-    address: string;
-    isPrimary?: boolean;
-  }> | null;
-  addresses?: Array<{
-    typeCode: string;
-    countryCode: string;
-    province?: string;
-    city?: string;
-    district?: string;
-    street?: string;
-    postalCode?: string;
-    isPrimary?: boolean;
-  }> | null;
-  updatedAt?: string;
-}
+import type { ReportPiiPlatformRequestPayload } from '../../report/domain/report-pii-platform.policy';
 
 /**
  * Retry configuration
@@ -95,86 +69,31 @@ export class PiiClientService {
     });
   }
 
-  /**
-   * Get a PII profile
-   */
-  async getProfile(
-    piiServiceUrl: string,
-    profileId: string,
-    accessToken: string,
+  async upsertCustomerPii(
+    piiPlatformUrl: string,
+    payload: CustomerPiiPlatformWritePayload,
+    serviceToken: string,
     tenantId: string,
     tenantSchema?: string,
-  ): Promise<PiiProfile> {
+  ): Promise<{ customerId: string; syncedAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
-      const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
+      const url = `${piiPlatformUrl}/api/v1/tms/customers/${payload.customerId}/pii`;
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const response = await this.httpClient!.get(url, {
+        const response = await this.httpClient!.put(url, payload, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'X-Tenant-ID': tenantId,
-          },
-        });
-
-        await this.logOutbound({
-          externalSystem: 'pii-service',
-          endpoint: url,
-          method: 'GET',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
-
-        return response.data.data as PiiProfile;
-      } catch (error) {
-        await this.logError('GET', url, tenantId, error, startTime, tenantSchema);
-        throw error;
-      }
-    });
-  }
-
-  /**
-   * Create a PII profile
-   */
-  async createProfile(
-    piiServiceUrl: string,
-    profile: {
-      id: string;
-      profileStoreId: string;
-      givenName?: string;
-      familyName?: string;
-      gender?: string;
-      birthDate?: string;
-      phoneNumbers?: PiiProfile['phoneNumbers'];
-      emails?: PiiProfile['emails'];
-      addresses?: PiiProfile['addresses'];
-    },
-    accessToken: string,
-    tenantId: string,
-    tenantSchema?: string,
-  ): Promise<{ id: string; createdAt: string }> {
-    return this.executeWithRetry(async () => {
-      const startTime = Date.now();
-      const url = `${piiServiceUrl}/api/v1/profiles`;
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const response = await this.httpClient!.post(url, profile, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${serviceToken}`,
             'X-Tenant-ID': tenantId,
             'Content-Type': 'application/json',
           },
         });
 
         await this.logOutbound({
-          externalSystem: 'pii-service',
+          externalSystem: 'tcrn-pii-platform',
           endpoint: url,
-          method: 'POST',
+          method: 'PUT',
           requestHeaders: { 'X-Tenant-ID': tenantId },
           responseStatus: response.status,
           responseHeaders: response.headers as Record<string, string>,
@@ -184,145 +103,159 @@ export class PiiClientService {
 
         return response.data.data;
       } catch (error) {
-        await this.logError('POST', url, tenantId, error, startTime, tenantSchema);
-        throw error;
-      }
-    });
-  }
-
-  /**
-   * Update a PII profile
-   */
-  async updateProfile(
-    piiServiceUrl: string,
-    profileId: string,
-    updates: Partial<PiiProfile>,
-    accessToken: string,
-    tenantId: string,
-    tenantSchema?: string,
-  ): Promise<{ id: string; updatedAt: string }> {
-    return this.executeWithRetry(async () => {
-      const startTime = Date.now();
-      const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const response = await this.httpClient!.patch(url, updates, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'X-Tenant-ID': tenantId,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        await this.logOutbound({
-          externalSystem: 'pii-service',
-          endpoint: url,
-          method: 'PATCH',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
-
-        return response.data.data;
-      } catch (error) {
-        await this.logError('PATCH', url, tenantId, error, startTime, tenantSchema);
-        throw error;
-      }
-    });
-  }
-
-  /**
-   * Batch get PII profiles
-   */
-  async batchGetProfiles(
-    piiServiceUrl: string,
-    ids: string[],
-    fields: string[] | undefined,
-    accessToken: string,
-    tenantId: string,
-    tenantSchema?: string,
-  ): Promise<{
-    data: Record<string, PiiProfile>;
-    errors: Record<string, { code: string; message: string }>;
-  }> {
-    return this.executeWithRetry(async () => {
-      const startTime = Date.now();
-      const url = `${piiServiceUrl}/api/v1/profiles/batch`;
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const response = await this.httpClient!.post(
+        await this.logError(
+          'PUT',
           url,
-          { ids, fields },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'X-Tenant-ID': tenantId,
-              'Content-Type': 'application/json',
-            },
-          },
+          tenantId,
+          error,
+          startTime,
+          tenantSchema,
+          'tcrn-pii-platform',
         );
+        throw error;
+      }
+    });
+  }
+
+  async createPortalSession(
+    piiPlatformUrl: string,
+    payload: CustomerPiiPlatformPortalSessionPayload,
+    serviceToken: string,
+    tenantId: string,
+    tenantSchema?: string,
+  ): Promise<{ redirectUrl: string; expiresAt: string }> {
+    return this.executeWithRetry(async () => {
+      const startTime = Date.now();
+      const url = `${piiPlatformUrl}/api/v1/tms/portal-sessions`;
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const response = await this.httpClient!.post(url, payload, {
+          headers: {
+            Authorization: `Bearer ${serviceToken}`,
+            'X-Tenant-ID': tenantId,
+            'Content-Type': 'application/json',
+          },
+        });
 
         await this.logOutbound({
-          externalSystem: 'pii-service',
+          externalSystem: 'tcrn-pii-platform',
           endpoint: url,
           method: 'POST',
           requestHeaders: { 'X-Tenant-ID': tenantId },
-          requestBody: { ids_count: ids.length, fields },
           responseStatus: response.status,
           responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
         }, tenantSchema);
 
-        return {
-          data: response.data.data || {},
-          errors: response.data.errors || {},
-        };
+        return response.data.data;
       } catch (error) {
-        await this.logError('POST', url, tenantId, error, startTime, tenantSchema);
+        await this.logError(
+          'POST',
+          url,
+          tenantId,
+          error,
+          startTime,
+          tenantSchema,
+          'tcrn-pii-platform',
+        );
         throw error;
       }
     });
   }
 
-  /**
-   * Delete a PII profile
-   */
-  async deleteProfile(
-    piiServiceUrl: string,
-    profileId: string,
-    accessToken: string,
+  async syncCustomerLifecycle(
+    piiPlatformUrl: string,
+    payload: CustomerPiiPlatformLifecyclePayload,
+    serviceToken: string,
     tenantId: string,
     tenantSchema?: string,
-  ): Promise<void> {
+  ): Promise<{ customerId: string; lifecycleStatus: 'active' | 'inactive'; syncedAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
-      const url = `${piiServiceUrl}/api/v1/profiles/${profileId}`;
+      const url = `${piiPlatformUrl}/api/v1/tms/customers/${payload.customerId}/lifecycle`;
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        await this.httpClient!.delete(url, {
+        const response = await this.httpClient!.put(url, payload, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${serviceToken}`,
             'X-Tenant-ID': tenantId,
+            'Content-Type': 'application/json',
           },
         });
 
         await this.logOutbound({
-          externalSystem: 'pii-service',
+          externalSystem: 'tcrn-pii-platform',
           endpoint: url,
-          method: 'DELETE',
+          method: 'PUT',
           requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: 200,
+          responseStatus: response.status,
+          responseHeaders: response.headers as Record<string, string>,
           latencyMs: Date.now() - startTime,
           success: true,
         }, tenantSchema);
+
+        return response.data.data;
       } catch (error) {
-        await this.logError('DELETE', url, tenantId, error, startTime, tenantSchema);
+        await this.logError(
+          'PUT',
+          url,
+          tenantId,
+          error,
+          startTime,
+          tenantSchema,
+          'tcrn-pii-platform',
+        );
+        throw error;
+      }
+    });
+  }
+
+  async createReportRequest(
+    piiPlatformUrl: string,
+    payload: ReportPiiPlatformRequestPayload,
+    serviceToken: string,
+    tenantId: string,
+    tenantSchema?: string,
+  ): Promise<{ requestId: string; redirectUrl: string; expiresAt: string }> {
+    return this.executeWithRetry(async () => {
+      const startTime = Date.now();
+      const url = `${piiPlatformUrl}/api/v1/tms/report-requests`;
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const response = await this.httpClient!.post(url, payload, {
+          headers: {
+            Authorization: `Bearer ${serviceToken}`,
+            'X-Tenant-ID': tenantId,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        await this.logOutbound({
+          externalSystem: 'tcrn-pii-platform',
+          endpoint: url,
+          method: 'POST',
+          requestHeaders: { 'X-Tenant-ID': tenantId },
+          responseStatus: response.status,
+          responseHeaders: response.headers as Record<string, string>,
+          latencyMs: Date.now() - startTime,
+          success: true,
+        }, tenantSchema);
+
+        return response.data.data;
+      } catch (error) {
+        await this.logError(
+          'POST',
+          url,
+          tenantId,
+          error,
+          startTime,
+          tenantSchema,
+          'tcrn-pii-platform',
+        );
         throw error;
       }
     });
@@ -413,11 +346,12 @@ export class PiiClientService {
     error: unknown,
     startTime: number,
     tenantSchema?: string,
+    externalSystem: string = 'pii-service',
   ): Promise<void> {
     const axiosError = error as AxiosError;
 
     await this.logOutbound({
-      externalSystem: 'pii-service',
+      externalSystem,
       endpoint: url,
       method,
       requestHeaders: { 'X-Tenant-ID': tenantId },

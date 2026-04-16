@@ -46,6 +46,22 @@ describe('Import Runtime Smoke Integration', () => {
   const createdImportQueueJobIds = new Set<string>();
   const createdImportObjectNames = new Set<string>();
 
+  const publishTalent = async (targetTalentId: string) => {
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantFixture.schemaName}".talent
+        SET lifecycle_status = 'published',
+            published_at = COALESCE(published_at, NOW()),
+            published_by = COALESCE(published_by, $2::uuid),
+            updated_at = NOW(),
+            updated_by = $2::uuid
+        WHERE id = $1::uuid
+      `,
+      targetTalentId,
+      testUser.id,
+    );
+  };
+
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
     req
       .set('Authorization', `Bearer ${accessToken}`)
@@ -67,7 +83,9 @@ describe('Import Runtime Smoke Integration', () => {
 
     while (Date.now() < deadline) {
       const response = await withAuth(
-        request(app.getHttpServer()).get(`/api/v1/imports/customers/individual_import/${jobId}`),
+        request(app.getHttpServer()).get(
+          `/api/v1/talents/${talentId}/imports/customers/individual_import/${jobId}`
+        ),
         false,
       ).expect(200);
 
@@ -486,6 +504,7 @@ describe('Import Runtime Smoke Integration', () => {
     });
 
     talentId = talent.id;
+    await publishTalent(talentId);
 
     const talentRows = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
       `
@@ -523,9 +542,9 @@ describe('Import Runtime Smoke Integration', () => {
         // Ignore cleanup drift for already-deleted test objects.
       }
     }
+    await app?.close();
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
-    await app?.close();
   });
 
   it('processes public individual import upload through API, Redis worker, and tenant DB end-to-end', async () => {
@@ -535,9 +554,11 @@ describe('Import Runtime Smoke Integration', () => {
     ].join('\n');
 
     const createResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/imports/customers/individuals'),
+      request(app.getHttpServer()).post(
+        `/api/v1/talents/${talentId}/imports/customers/individuals`
+      ),
+      false,
     )
-      .field('talentId', talentId)
       .attach('file', Buffer.from(csvContent, 'utf8'), 'runtime_individual_import.csv')
       .expect(201);
 

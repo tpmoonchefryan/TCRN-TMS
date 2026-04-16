@@ -73,10 +73,18 @@ export const PiiDataSchema = z.object({
   addresses: z.array(CustomerAddressSchema).optional(),
 });
 
+export const CompanyPiiDataSchema = z.object({
+  contactName: z.string().max(128).optional(),
+  contactPhone: z.string().max(32).optional(),
+  contactEmail: z.string().email('Invalid contact email').max(255).optional().or(z.literal('')),
+  contactDepartment: z.string().max(128).optional(),
+});
+
 export type PhoneNumberInput = z.infer<typeof PhoneNumberSchema>;
 export type EmailItemInput = z.infer<typeof EmailItemSchema>;
 export type CustomerAddressInput = z.infer<typeof CustomerAddressSchema>;
 export type PiiDataInput = z.infer<typeof PiiDataSchema>;
+export type CompanyPiiDataInput = z.infer<typeof CompanyPiiDataSchema>;
 
 // ============================================================================
 // Individual Customer Schemas
@@ -133,10 +141,7 @@ export const CreateCompanyCustomerSchema = z.object({
   establishmentDate: z.string().optional(),
   businessSegmentCode: z.string().optional(),
   website: z.string().url('Invalid website URL').max(512).optional().or(z.literal('')),
-  contactName: z.string().max(128).optional(),
-  contactPhone: z.string().max(32).optional(),
-  contactEmail: z.string().email('Invalid contact email').max(255).optional().or(z.literal('')),
-  contactDepartment: z.string().max(128).optional(),
+  pii: CompanyPiiDataSchema.optional(),
 });
 
 export const UpdateCompanyCustomerSchema = z.object({
@@ -153,10 +158,7 @@ export const UpdateCompanyCustomerSchema = z.object({
   establishmentDate: z.string().optional(),
   businessSegmentCode: z.string().optional(),
   website: z.string().url('Invalid website URL').max(512).optional().or(z.literal('')),
-  contactName: z.string().max(128).optional(),
-  contactPhone: z.string().max(32).optional(),
-  contactEmail: z.string().email('Invalid contact email').max(255).optional().or(z.literal('')),
-  contactDepartment: z.string().max(128).optional(),
+  pii: CompanyPiiDataSchema.optional(),
   version: z.number().int(),
 });
 

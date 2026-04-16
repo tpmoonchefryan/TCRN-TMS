@@ -18,8 +18,8 @@ export interface MusicPlayerProps {
 export const defaultProps: MusicPlayerProps = {
   platform: 'spotify',
   embedValue: '4cOdK2wGLETKBW3PvgPWqT', // Never Gonna Give You Up (Classic)
-  title: 'Starry Sky',
-  artist: 'Moon Chef Ryan',
+  title: '',
+  artist: '',
 };
 
 // Helper: Extract ID or format URL for embed
@@ -134,13 +134,13 @@ export function MusicPlayer({ platform = 'spotify', embedValue }: MusicPlayerPro
          )}
   
         {platform === 'youtube_music' && (
-           <iframe 
-             width="100%" 
+           <iframe
+             width="100%"
              height="200" // Video height
-             src={embedUrl} 
-             title="YouTube video player" 
-             frameBorder="0" 
-             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+             src={embedUrl}
+             title={t('youtubePlayerTitle')}
+             frameBorder="0"
+             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
              allowFullScreen
            />
          )}

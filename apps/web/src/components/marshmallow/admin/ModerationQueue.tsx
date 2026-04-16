@@ -266,7 +266,7 @@ export function ModerationQueue({ messages, onApprove, onReject, onReply }: Mode
               </div>
               <div>
                 <span className="block text-xs uppercase tracking-wider opacity-70">{t('fingerprint')}</span>
-                <span className="font-mono truncate" title="Hash">a1b2c3d4...</span>
+                <span className="font-mono truncate" title={t('fingerprint')}>a1b2c3d4...</span>
               </div>
               <div>
                 <span className="block text-xs uppercase tracking-wider opacity-70">{t('history')}</span>

@@ -4,7 +4,6 @@ import {
     Body,
     Controller,
     Get,
-    Headers,
     Param,
     ParseUUIDPipe,
     Patch,
@@ -12,20 +11,36 @@ import {
     Query,
     Req,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
+import {
+    AuthenticatedUser,
+    CurrentUser,
+    RequirePermissions,
+    RequirePublishedTalentAccess,
+} from '../../../common/decorators';
 import {
     CreateMembershipDto,
     MembershipListQueryDto,
     UpdateMembershipDto,
 } from '../dto/customer.dto';
 import { MembershipRecordService } from '../services/membership-record.service';
+import {
+  CUSTOMER_BAD_REQUEST_SCHEMA,
+  CUSTOMER_FORBIDDEN_SCHEMA,
+  CUSTOMER_NOT_FOUND_SCHEMA,
+  CUSTOMER_UNAUTHORIZED_SCHEMA,
+  CUSTOMER_UPDATE_SCHEMA,
+  MEMBERSHIP_CREATE_SCHEMA,
+  MEMBERSHIP_LIST_SCHEMA,
+} from './customer-swagger.schemas';
 
 @ApiTags('Customer - Memberships')
-@Controller('customers/:customerId/memberships')
+@ApiBearerAuth()
+@RequirePublishedTalentAccess()
+@Controller('talents/:talentId/customers/:customerId/memberships')
 export class MembershipController {
   constructor(
     private readonly membershipRecordService: MembershipRecordService,
@@ -37,11 +52,15 @@ export class MembershipController {
   @Get()
   @RequirePermissions({ resource: 'customer.membership', action: 'read' })
   @ApiOperation({ summary: 'List membership records' })
-  @ApiResponse({ status: 200, description: 'Returns membership records' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Returns membership records', schema: MEMBERSHIP_LIST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to read membership records', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to read membership records', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async list(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('customerId', ParseUUIDPipe) customerId: string,
-    @Headers('x-talent-id') talentId: string,
     @Query() query: MembershipListQueryDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
@@ -56,11 +75,16 @@ export class MembershipController {
   @Post()
   @RequirePermissions({ resource: 'customer.membership', action: 'create' })
   @ApiOperation({ summary: 'Add membership record' })
-  @ApiResponse({ status: 201, description: 'Membership added' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 201, description: 'Membership added', schema: MEMBERSHIP_CREATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Membership payload is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to add membership records', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to add membership records', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Customer or membership dependency was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async create(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('customerId', ParseUUIDPipe) customerId: string,
-    @Headers('x-talent-id') talentId: string,
     @Body() dto: CreateMembershipDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
@@ -75,12 +99,18 @@ export class MembershipController {
   @Patch(':recordId')
   @RequirePermissions({ resource: 'customer.membership', action: 'update' })
   @ApiOperation({ summary: 'Update membership record' })
-  @ApiResponse({ status: 200, description: 'Membership updated' })
-  @ApiHeader({ name: 'X-Talent-Id', required: true, description: 'Current talent ID' })
+  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'recordId', description: 'Membership-record identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiResponse({ status: 200, description: 'Membership updated', schema: CUSTOMER_UPDATE_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Membership update is invalid', schema: CUSTOMER_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to update membership records', schema: CUSTOMER_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to update membership records', schema: CUSTOMER_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Membership record or dependent resource was not found', schema: CUSTOMER_NOT_FOUND_SCHEMA })
   async update(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('customerId', ParseUUIDPipe) customerId: string,
     @Param('recordId', ParseUUIDPipe) recordId: string,
-    @Headers('x-talent-id') talentId: string,
     @Body() dto: UpdateMembershipDto,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,

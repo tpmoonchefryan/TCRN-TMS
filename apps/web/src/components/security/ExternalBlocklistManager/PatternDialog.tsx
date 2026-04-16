@@ -241,14 +241,14 @@ export function PatternDialog({
           {/* Pattern */}
           <div className="space-y-2">
             <Label>{t('form.pattern')} *</Label>
-            <Input
-              {...register('pattern', { required: t('validation.patternRequired') })}
-              placeholder={
-                watch('patternType') === 'domain'
-                  ? 'example.com'
+              <Input
+                {...register('pattern', { required: t('validation.patternRequired') })}
+                placeholder={
+                  watch('patternType') === 'domain'
+                  ? t('form.patternPlaceholderDomain')
                   : watch('patternType') === 'url_regex'
-                  ? 'https?://.*\\.example\\.com/.*'
-                  : 'keyword'
+                  ? t('form.patternPlaceholderUrlRegex')
+                  : t('form.patternPlaceholderKeyword')
               }
               className="font-mono"
             />
@@ -268,7 +268,7 @@ export function PatternDialog({
               <Label>{t('form.nameEn')} *</Label>
               <Input
                 {...register('nameEn', { required: t('validation.nameRequired') })}
-                placeholder="GitHub Links"
+                placeholder={t('form.nameEnPlaceholder')}
               />
               {errors.nameEn && (
                 <p className="text-sm text-red-500">{errors.nameEn.message}</p>
@@ -276,11 +276,11 @@ export function PatternDialog({
             </div>
             <div className="space-y-2">
               <Label>{t('form.nameZh')}</Label>
-              <Input {...register('nameZh')} placeholder="GitHub 链接" />
+              <Input {...register('nameZh')} placeholder={t('form.nameZhPlaceholder')} />
             </div>
             <div className="space-y-2">
               <Label>{t('form.nameJa')}</Label>
-              <Input {...register('nameJa')} placeholder="GitHubリンク" />
+              <Input {...register('nameJa')} placeholder={t('form.nameJaPlaceholder')} />
             </div>
           </div>
 

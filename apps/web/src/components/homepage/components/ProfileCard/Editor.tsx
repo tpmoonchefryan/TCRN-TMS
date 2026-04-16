@@ -31,6 +31,7 @@ interface ProfileCardEditorProps {
 
 export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onChange }) => {
   const t = useTranslations('homepageComponentEditor');
+  const tForms = useTranslations('forms');
 
   const handleUpload = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -75,10 +76,10 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
                 <Input 
                   value={props.avatarUrl || ''} 
                   onChange={(e) => onChange({ avatarUrl: e.target.value })}
-                  placeholder="https://..."
+                  placeholder={tForms('placeholders.url')}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload a local image or paste a URL.
+                  {t('uploadOrPasteImageUrl')}
                 </p>
              </div>
         </div>
@@ -237,7 +238,7 @@ export const ProfileCardEditor: React.FC<ProfileCardEditorProps> = ({ props, onC
           <Input 
             value={props.backgroundUrl || ''} 
             onChange={(e) => onChange({ backgroundUrl: e.target.value })}
-            placeholder="https://..."
+            placeholder={tForms('placeholders.url')}
           />
           <p className="text-xs text-muted-foreground">
             {t('backgroundUrlHint')}

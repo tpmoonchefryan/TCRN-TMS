@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -17,22 +18,28 @@ import {
  * Tencent Cloud SES configuration
  */
 export class TencentSesConfigDto {
+  @ApiProperty({ description: 'Tencent Cloud Secret ID', example: 'AKIDEXAMPLE1234' })
   @IsString()
   secretId!: string;
 
+  @ApiProperty({ description: 'Tencent Cloud Secret Key', example: 'super-secret-key' })
   @IsString()
   secretKey!: string;
 
+  @ApiPropertyOptional({ description: 'Tencent SES region', example: 'ap-hongkong' })
   @IsString()
   @IsOptional()
   region?: string;
 
+  @ApiProperty({ description: 'Sender email address', example: 'noreply@tcrn.app' })
   @IsEmail()
   fromAddress!: string;
 
+  @ApiProperty({ description: 'Sender display name', example: 'TCRN TMS' })
   @IsString()
   fromName!: string;
 
+  @ApiPropertyOptional({ description: 'Optional reply-to address', example: 'support@tcrn.app' })
   @IsString()
   @IsOptional()
   replyTo?: string;
@@ -42,26 +49,33 @@ export class TencentSesConfigDto {
  * SMTP configuration
  */
 export class SmtpConfigDto {
+  @ApiProperty({ description: 'SMTP host', example: 'smtp.example.com' })
   @IsString()
   host!: string;
 
+  @ApiProperty({ description: 'SMTP port', example: 465, minimum: 1, maximum: 65535 })
   @IsNumber()
   @Min(1)
   @Max(65535)
   port!: number;
 
+  @ApiProperty({ description: 'Whether the SMTP transport uses TLS/SSL', example: true })
   @IsBoolean()
   secure!: boolean;
 
+  @ApiProperty({ description: 'SMTP username', example: 'smtp-user' })
   @IsString()
   username!: string;
 
+  @ApiProperty({ description: 'SMTP password', example: 'smtp-password' })
   @IsString()
   password!: string;
 
+  @ApiProperty({ description: 'Sender email address', example: 'noreply@tcrn.app' })
   @IsEmail()
   fromAddress!: string;
 
+  @ApiProperty({ description: 'Sender display name', example: 'TCRN TMS' })
   @IsString()
   fromName!: string;
 }
@@ -75,14 +89,17 @@ export type EmailProvider = 'tencent_ses' | 'smtp';
  * Email configuration DTO for saving
  */
 export class SaveEmailConfigDto {
+  @ApiProperty({ enum: ['tencent_ses', 'smtp'], example: 'smtp' })
   @IsIn(['tencent_ses', 'smtp'])
   provider!: EmailProvider;
 
+  @ApiPropertyOptional({ type: () => TencentSesConfigDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => TencentSesConfigDto)
   tencentSes?: TencentSesConfigDto;
 
+  @ApiPropertyOptional({ type: () => SmtpConfigDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => SmtpConfigDto)
@@ -93,6 +110,7 @@ export class SaveEmailConfigDto {
  * Test email DTO
  */
 export class TestEmailDto {
+  @ApiProperty({ description: 'Destination email address for the test message', example: 'operator@tcrn.app' })
   @IsEmail()
   testEmail!: string;
 }

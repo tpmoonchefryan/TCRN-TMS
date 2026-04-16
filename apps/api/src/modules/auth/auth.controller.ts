@@ -51,6 +51,51 @@ import { SessionService } from './session.service';
 import { TokenService } from './token.service';
 import { TotpService } from './totp.service';
 
+const createAuthErrorEnvelopeSchema = (code: string, message: string) => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: code },
+        message: { type: 'string', example: message },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: { code, message },
+  },
+});
+
+const AUTH_NOT_AUTHENTICATED_SCHEMA = createAuthErrorEnvelopeSchema(
+  'AUTH_UNAUTHORIZED',
+  'Not authenticated',
+);
+
+const AUTH_PROFILE_UPDATE_BAD_REQUEST_SCHEMA = createAuthErrorEnvelopeSchema(
+  ErrorCodes.VALIDATION_FAILED,
+  'No fields to update',
+);
+
+const AUTH_PASSWORD_CHANGE_BAD_REQUEST_SCHEMA = createAuthErrorEnvelopeSchema(
+  ErrorCodes.AUTH_PASSWORD_WEAK,
+  'Password does not meet requirements',
+);
+
+const AUTH_CURRENT_PASSWORD_INVALID_SCHEMA = createAuthErrorEnvelopeSchema(
+  ErrorCodes.AUTH_INVALID_CREDENTIALS,
+  'Current password is incorrect',
+);
+
+const AUTH_TOTP_ALREADY_ENABLED_SCHEMA = createAuthErrorEnvelopeSchema(
+  ErrorCodes.AUTH_TOTP_ALREADY_ENABLED,
+  'TOTP is already enabled',
+);
+
 @ApiTags('Auth')
 @Controller('auth')
 @UseGuards(AuthRateLimiterGuard)
@@ -953,7 +998,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 401, description: 'Not authenticated', schema: AUTH_NOT_AUTHENTICATED_SCHEMA })
   async getCurrentUser(@CurrentUser() user: AuthenticatedUser) {
     const users = await prisma.$queryRawUnsafe<Array<{
       id: string;
@@ -1031,8 +1076,8 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'No fields to update' })
-  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 400, description: 'No fields to update', schema: AUTH_PROFILE_UPDATE_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Not authenticated', schema: AUTH_NOT_AUTHENTICATED_SCHEMA })
   async updateCurrentUser(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateUserProfileDto,
@@ -1100,8 +1145,8 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation failed (passwords don\'t match, weak password, or same as old)' })
-  @ApiResponse({ status: 401, description: 'Current password incorrect' })
+  @ApiResponse({ status: 400, description: 'Validation failed (passwords don\'t match, weak password, or same as old)', schema: AUTH_PASSWORD_CHANGE_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Current password incorrect', schema: AUTH_CURRENT_PASSWORD_INVALID_SCHEMA })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
@@ -1213,7 +1258,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'TOTP already enabled' })
+  @ApiResponse({ status: 400, description: 'TOTP already enabled', schema: AUTH_TOTP_ALREADY_ENABLED_SCHEMA })
   async setupTotp(@CurrentUser() user: AuthenticatedUser) {
     // Check if TOTP is already enabled
     const users = await prisma.$queryRawUnsafe<Array<{ is_totp_enabled: boolean }>>(`

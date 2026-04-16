@@ -31,14 +31,6 @@ import {
 
 type EmailProvider = EmailConfigResponse['provider'];
 
-const TENCENT_SES_REGIONS = [
-  { value: 'ap-hongkong', label: 'Hong Kong (ap-hongkong)' },
-  { value: 'ap-singapore', label: 'Singapore (ap-singapore)' },
-  { value: 'ap-guangzhou', label: 'Guangzhou (ap-guangzhou)' },
-  { value: 'ap-shanghai', label: 'Shanghai (ap-shanghai)' },
-  { value: 'ap-beijing', label: 'Beijing (ap-beijing)' },
-];
-
 function isEmailProvider(value: string): value is EmailProvider {
   return value === 'tencent_ses' || value === 'smtp';
 }
@@ -46,6 +38,13 @@ function isEmailProvider(value: string): value is EmailProvider {
 export function EmailConfigPanel() {
   const t = useTranslations('emailConfig');
   const tCommon = useTranslations('common');
+  const sesRegions = [
+    { value: 'ap-hongkong', label: t('regions.apHongkong') },
+    { value: 'ap-singapore', label: t('regions.apSingapore') },
+    { value: 'ap-guangzhou', label: t('regions.apGuangzhou') },
+    { value: 'ap-shanghai', label: t('regions.apShanghai') },
+    { value: 'ap-beijing', label: t('regions.apBeijing') },
+  ] as const;
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +60,7 @@ export function EmailConfigPanel() {
   const [sesSecretKey, setSesSecretKey] = useState('');
   const [sesRegion, setSesRegion] = useState('ap-hongkong');
   const [sesFromAddress, setSesFromAddress] = useState('');
-  const [sesFromName, setSesFromName] = useState('TCRN TMS');
+  const [sesFromName, setSesFromName] = useState(tCommon('appName'));
   const [sesReplyTo, setSesReplyTo] = useState('');
 
   // SMTP fields
@@ -71,7 +70,7 @@ export function EmailConfigPanel() {
   const [smtpUsername, setSmtpUsername] = useState('');
   const [smtpPassword, setSmtpPassword] = useState('');
   const [smtpFromAddress, setSmtpFromAddress] = useState('');
-  const [smtpFromName, setSmtpFromName] = useState('TCRN TMS');
+  const [smtpFromName, setSmtpFromName] = useState(tCommon('appName'));
 
   // Test email
   const [testEmail, setTestEmail] = useState('');
@@ -92,7 +91,7 @@ export function EmailConfigPanel() {
           setSesSecretKey(config.tencentSes.secretKey || '');
           setSesRegion(config.tencentSes.region || 'ap-hongkong');
           setSesFromAddress(config.tencentSes.fromAddress || '');
-          setSesFromName(config.tencentSes.fromName || 'TCRN TMS');
+          setSesFromName(config.tencentSes.fromName || tCommon('appName'));
           setSesReplyTo(config.tencentSes.replyTo || '');
         }
 
@@ -103,15 +102,15 @@ export function EmailConfigPanel() {
           setSmtpUsername(config.smtp.username || '');
           setSmtpPassword(config.smtp.password || '');
           setSmtpFromAddress(config.smtp.fromAddress || '');
-          setSmtpFromName(config.smtp.fromName || 'TCRN TMS');
+          setSmtpFromName(config.smtp.fromName || tCommon('appName'));
         }
       }
     } catch {
-      toast.error(t('loadError') || 'Failed to load email configuration');
+      toast.error(t('loadError'));
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [t, tCommon]);
 
   useEffect(() => {
     loadConfig();
@@ -128,7 +127,7 @@ export function EmailConfigPanel() {
 
       if (provider === 'tencent_ses') {
         if (!sesSecretId || !sesSecretKey || !sesFromAddress) {
-          toast.error(t('sesRequired') || 'Please fill in all required SES fields');
+          toast.error(t('sesRequired'));
           return;
         }
         config.tencentSes = {
@@ -141,7 +140,7 @@ export function EmailConfigPanel() {
         };
       } else {
         if (!smtpHost || !smtpUsername || !smtpPassword || !smtpFromAddress) {
-          toast.error(t('smtpRequired') || 'Please fill in all required SMTP fields');
+          toast.error(t('smtpRequired'));
           return;
         }
         config.smtp = {
@@ -159,12 +158,12 @@ export function EmailConfigPanel() {
       if (response.success) {
         setIsConfigured(true);
         setLastUpdated(new Date().toISOString());
-        toast.success(t('saveSuccess') || 'Email configuration saved');
+        toast.success(t('saveSuccess'));
       } else {
         throw new Error('Save failed');
       }
     } catch {
-      toast.error(t('saveError') || 'Failed to save email configuration');
+      toast.error(t('saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -178,13 +177,13 @@ export function EmailConfigPanel() {
       if (response.success && response.data) {
         const result: EmailTestResult = response.data;
         if (result.success) {
-          toast.success(result.message || t('connectionSuccess') || 'Connection successful');
+          toast.success(result.message || t('connectionSuccess'));
         } else {
-          toast.error(result.error || result.message || t('connectionFailed') || 'Connection failed');
+          toast.error(result.error || result.message || t('connectionFailed'));
         }
       }
     } catch {
-      toast.error(t('connectionError') || 'Failed to test connection');
+      toast.error(t('connectionError'));
     } finally {
       setIsTestingConnection(false);
     }
@@ -193,13 +192,13 @@ export function EmailConfigPanel() {
   // Send test email
   const handleSendTestEmail = async () => {
     if (!testEmail) {
-      toast.error(t('enterTestEmail') || 'Please enter a test email address');
+      toast.error(t('enterTestEmail'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(testEmail)) {
-      toast.error(t('invalidEmail') || 'Invalid email address');
+      toast.error(t('invalidEmail'));
       return;
     }
 
@@ -209,13 +208,13 @@ export function EmailConfigPanel() {
       if (response.success && response.data) {
         const result: EmailTestResult = response.data;
         if (result.success) {
-          toast.success(result.message || t('testSuccess') || 'Test email sent');
+          toast.success(result.message || t('testSuccess'));
         } else {
-          toast.error(result.error || result.message || t('testFailed') || 'Failed to send test email');
+          toast.error(result.error || result.message || t('testFailed'));
         }
       }
     } catch {
-      toast.error(t('testError') || 'Failed to send test email');
+      toast.error(t('testError'));
     } finally {
       setIsTesting(false);
     }
@@ -237,26 +236,26 @@ export function EmailConfigPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-purple-600" />
-              <CardTitle>{t('title') || 'Email Configuration'}</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
             </div>
             {isConfigured ? (
               <Badge variant="outline" className="border-green-500 text-green-600">
                 <CheckCircle2 className="mr-1 h-3 w-3" />
-                {t('configured') || 'Configured'}
+                {t('configured')}
               </Badge>
             ) : (
               <Badge variant="outline" className="border-orange-500 text-orange-600">
                 <AlertCircle className="mr-1 h-3 w-3" />
-                {t('notConfigured') || 'Not Configured'}
+                {t('notConfigured')}
               </Badge>
             )}
           </div>
           <CardDescription>
-            {t('description') || 'Configure email sending service for system notifications and business emails.'}
+            {t('description')}
           </CardDescription>
           {lastUpdated && (
             <p className="text-xs text-muted-foreground mt-2">
-              {t('lastUpdated') || 'Last updated'}: {new Date(lastUpdated).toLocaleString()}
+              {t('lastUpdated')}: {new Date(lastUpdated).toLocaleString()}
             </p>
           )}
         </CardHeader>
@@ -265,9 +264,9 @@ export function EmailConfigPanel() {
       {/* Provider Selection */}
       <Card className="border-white/50 bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-base">{t('provider') || 'Email Provider'}</CardTitle>
+          <CardTitle className="text-base">{t('provider')}</CardTitle>
           <CardDescription>
-            {t('providerDesc') || 'Select your email sending method.'}
+            {t('providerDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -282,11 +281,11 @@ export function EmailConfigPanel() {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="tencent_ses" className="flex items-center gap-2">
                 <Cloud className="h-4 w-4" />
-                {t('tencentSes') || 'Tencent Cloud SES'}
+                {t('tencentSes')}
               </TabsTrigger>
               <TabsTrigger value="smtp" className="flex items-center gap-2">
                 <Server className="h-4 w-4" />
-                {t('smtp') || 'SMTP'}
+                {t('smtp')}
               </TabsTrigger>
             </TabsList>
 
@@ -294,41 +293,41 @@ export function EmailConfigPanel() {
             <TabsContent value="tencent_ses" className="mt-6 space-y-4">
               <Alert>
                 <Cloud className="h-4 w-4" />
-                <AlertTitle>{t('sesInfo') || 'Tencent Cloud SES'}</AlertTitle>
+                <AlertTitle>{t('sesInfo')}</AlertTitle>
                 <AlertDescription>
-                  {t('sesInfoDesc') || 'Use Tencent Cloud Simple Email Service API for reliable email delivery.'}
+                  {t('sesInfoDesc')}
                 </AlertDescription>
               </Alert>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="secretId">{t('secretId') || 'Secret ID'} *</Label>
+                  <Label htmlFor="secretId">{t('secretId')} *</Label>
                   <Input
                     id="secretId"
                     type="password"
                     value={sesSecretId}
                     onChange={(e) => setSesSecretId(e.target.value)}
-                    placeholder="Enter your Secret ID"
+                    placeholder={t('secretIdPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="secretKey">{t('secretKey') || 'Secret Key'} *</Label>
+                  <Label htmlFor="secretKey">{t('secretKey')} *</Label>
                   <Input
                     id="secretKey"
                     type="password"
                     value={sesSecretKey}
                     onChange={(e) => setSesSecretKey(e.target.value)}
-                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    placeholder={t('secretKeyPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="region">{t('region') || 'Region'}</Label>
+                  <Label htmlFor="region">{t('region')}</Label>
                   <Select value={sesRegion} onValueChange={setSesRegion}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {TENCENT_SES_REGIONS.map((region) => (
+                      {sesRegions.map((region) => (
                         <SelectItem key={region.value} value={region.value}>
                           {region.label}
                         </SelectItem>
@@ -337,32 +336,32 @@ export function EmailConfigPanel() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sesFromAddress">{t('fromAddress') || 'From Address'} *</Label>
+                  <Label htmlFor="sesFromAddress">{t('fromAddress')} *</Label>
                   <Input
                     id="sesFromAddress"
                     type="email"
                     value={sesFromAddress}
                     onChange={(e) => setSesFromAddress(e.target.value)}
-                    placeholder="noreply@yourdomain.com"
+                    placeholder={t('fromAddressPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sesFromName">{t('fromName') || 'From Name'}</Label>
+                  <Label htmlFor="sesFromName">{t('fromName')}</Label>
                   <Input
                     id="sesFromName"
                     value={sesFromName}
                     onChange={(e) => setSesFromName(e.target.value)}
-                    placeholder="TCRN TMS"
+                    placeholder={t('fromNamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sesReplyTo">{t('replyTo') || 'Reply-To Address'}</Label>
+                  <Label htmlFor="sesReplyTo">{t('replyTo')}</Label>
                   <Input
                     id="sesReplyTo"
                     type="email"
                     value={sesReplyTo}
                     onChange={(e) => setSesReplyTo(e.target.value)}
-                    placeholder="support@yourdomain.com"
+                    placeholder={t('replyToPlaceholder')}
                   />
                 </div>
               </div>
@@ -372,24 +371,24 @@ export function EmailConfigPanel() {
             <TabsContent value="smtp" className="mt-6 space-y-4">
               <Alert>
                 <Server className="h-4 w-4" />
-                <AlertTitle>{t('smtpInfo') || 'SMTP'}</AlertTitle>
+                <AlertTitle>{t('smtpInfo')}</AlertTitle>
                 <AlertDescription>
-                  {t('smtpInfoDesc') || 'Connect to any SMTP server to send emails.'}
+                  {t('smtpInfoDesc')}
                 </AlertDescription>
               </Alert>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="smtpHost">{t('smtpHost') || 'SMTP Server'} *</Label>
+                  <Label htmlFor="smtpHost">{t('smtpHost')} *</Label>
                   <Input
                     id="smtpHost"
                     value={smtpHost}
                     onChange={(e) => setSmtpHost(e.target.value)}
-                    placeholder="smtp.example.com"
+                    placeholder={t('smtpHostPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="smtpPort">{t('smtpPort') || 'Port'}</Label>
+                  <Label htmlFor="smtpPort">{t('smtpPort')}</Label>
                   <Input
                     id="smtpPort"
                     type="number"
@@ -404,20 +403,20 @@ export function EmailConfigPanel() {
                     checked={smtpSecure}
                     onCheckedChange={setSmtpSecure}
                   />
-                  <Label htmlFor="smtpSecure">{t('smtpSecure') || 'Use SSL/TLS'}</Label>
+                  <Label htmlFor="smtpSecure">{t('smtpSecure')}</Label>
                 </div>
                 <div />
                 <div className="space-y-2">
-                  <Label htmlFor="smtpUsername">{t('smtpUsername') || 'Username'} *</Label>
+                  <Label htmlFor="smtpUsername">{t('smtpUsername')} *</Label>
                   <Input
                     id="smtpUsername"
                     value={smtpUsername}
                     onChange={(e) => setSmtpUsername(e.target.value)}
-                    placeholder="user@example.com"
+                    placeholder={t('smtpUsernamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="smtpPassword">{t('smtpPassword') || 'Password'} *</Label>
+                  <Label htmlFor="smtpPassword">{t('smtpPassword')} *</Label>
                   <Input
                     id="smtpPassword"
                     type="password"
@@ -427,22 +426,22 @@ export function EmailConfigPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="smtpFromAddress">{t('fromAddress') || 'From Address'} *</Label>
+                  <Label htmlFor="smtpFromAddress">{t('fromAddress')} *</Label>
                   <Input
                     id="smtpFromAddress"
                     type="email"
                     value={smtpFromAddress}
                     onChange={(e) => setSmtpFromAddress(e.target.value)}
-                    placeholder="noreply@yourdomain.com"
+                    placeholder={t('fromAddressPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="smtpFromName">{t('fromName') || 'From Name'}</Label>
+                  <Label htmlFor="smtpFromName">{t('fromName')}</Label>
                   <Input
                     id="smtpFromName"
                     value={smtpFromName}
                     onChange={(e) => setSmtpFromName(e.target.value)}
-                    placeholder="TCRN TMS"
+                    placeholder={t('fromNamePlaceholder')}
                   />
                 </div>
               </div>
@@ -454,9 +453,9 @@ export function EmailConfigPanel() {
       {/* Test Email */}
       <Card className="border-white/50 bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-base">{t('testEmail') || 'Test Email'}</CardTitle>
+          <CardTitle className="text-base">{t('testEmail')}</CardTitle>
           <CardDescription>
-            {t('testEmailDesc') || 'Send a test email to verify your configuration.'}
+            {t('testEmailDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -464,7 +463,7 @@ export function EmailConfigPanel() {
             <Input
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="test@example.com"
+              placeholder={t('testEmailPlaceholder')}
               className="max-w-sm"
             />
             <Button
@@ -477,7 +476,7 @@ export function EmailConfigPanel() {
               ) : (
                 <Server className="mr-2 h-4 w-4" />
               )}
-              {t('testConnection') || 'Test Connection'}
+              {t('testConnection')}
             </Button>
             <Button
               variant="outline"
@@ -489,7 +488,7 @@ export function EmailConfigPanel() {
               ) : (
                 <Send className="mr-2 h-4 w-4" />
               )}
-              {t('sendTestEmail') || 'Send Test Email'}
+              {t('sendTestEmail')}
             </Button>
           </div>
         </CardContent>
@@ -503,7 +502,7 @@ export function EmailConfigPanel() {
           ) : (
             <Save className="mr-2 h-4 w-4" />
           )}
-          {tCommon('saveChanges') || 'Save Changes'}
+          {tCommon('saveChanges')}
         </Button>
       </div>
     </div>

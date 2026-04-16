@@ -3,6 +3,7 @@
 import 'reflect-metadata';
 
 import { ConfigService } from '@nestjs/config';
+import { ErrorCodes } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
@@ -29,14 +30,19 @@ describe('WebhookService', () => {
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
+    $queryRawUnsafe: ReturnType<typeof vi.fn>;
     $transaction: ReturnType<typeof vi.fn>;
   };
 
   const baseDate = new Date('2026-03-30T00:00:00.000Z');
   const mockContext = {
     tenantId: 'tenant-1',
-    tenantSchema: 'tenant_test',
     userId: 'user-1',
+  };
+  const tenantContext = {
+    ...mockContext,
+    tenantSchema: 'tenant_test',
   };
 
   const buildWebhookRecord = (overrides: Record<string, unknown> = {}) => ({
@@ -72,6 +78,8 @@ describe('WebhookService', () => {
         findUnique: vi.fn(),
         update: vi.fn().mockResolvedValue(undefined),
       },
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+      $queryRawUnsafe: vi.fn(),
       $transaction: vi.fn().mockImplementation(async (callback) => callback(mockPrisma)),
     };
 
@@ -119,6 +127,47 @@ describe('WebhookService', () => {
     expect(result.retryPolicy).toEqual({
       maxRetries: 5,
       backoffMs: 2500,
+    });
+  });
+
+  it('uses tenant-schema raw SQL for webhook list reads', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+      buildWebhookRecord({
+        id: 'webhook-tenant-1',
+        code: 'TENANT_WEBHOOK',
+        createdAt: baseDate,
+      }),
+    ]);
+
+    const result = await service.findMany(tenantContext);
+
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledOnce();
+    expect(result).toEqual([
+      {
+        id: 'webhook-tenant-1',
+        code: 'TENANT_WEBHOOK',
+        nameEn: 'Test Webhook',
+        nameZh: null,
+        nameJa: null,
+        url: 'https://example.com/webhook',
+        events: [WebhookEventType.CUSTOMER_CREATED],
+        isActive: true,
+        lastTriggeredAt: null,
+        lastStatus: null,
+        consecutiveFailures: 0,
+        createdAt: baseDate.toISOString(),
+      },
+    ]);
+  });
+
+  it('keeps not-found detail semantics after read extraction', async () => {
+    mockPrisma.webhook.findUnique.mockResolvedValue(null);
+
+    await expect(service.findById('missing-webhook')).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Webhook not found',
+      },
     });
   });
 
@@ -177,6 +226,32 @@ describe('WebhookService', () => {
             maxRetries: 3,
             backoffMs: 2400,
           },
+          updatedBy: 'user-1',
+          version: { increment: 1 },
+        }),
+      }),
+    );
+  });
+
+  it('returns active-state payload when deactivating a webhook', async () => {
+    mockPrisma.webhook.findUnique.mockResolvedValue(
+      buildWebhookRecord({
+        consecutiveFailures: 2,
+      }),
+    );
+
+    const result = await service.deactivate('webhook-1', mockContext);
+
+    expect(result).toEqual({
+      id: 'webhook-1',
+      isActive: false,
+    });
+    expect(mockPrisma.webhook.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isActive: false,
+          disabledAt: expect.any(Date),
+          consecutiveFailures: 2,
           updatedBy: 'user-1',
           version: { increment: 1 },
         }),

@@ -7,21 +7,28 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RateLimiterGuard } from '../../common/guards/rate-limiter.guard';
 import { RateLimiterService } from '../../common/services/rate-limiter.service';
 import { LogModule } from '../log/log.module';
+import { HomepageAdminService } from './application/homepage-admin.service';
+import { HomepageSchedulerApplicationService } from './application/homepage-scheduler.service';
+import { HomepageVersionApplicationService } from './application/homepage-version.service';
 import {
-    CalendarController,
-    DomainLookupController,
-    HomepageController,
-    InternalDomainController,
-    PublicHomepageController,
+  CalendarController,
+  DomainLookupController,
+  HomepageController,
+  InternalDomainController,
+  PublicHomepageController,
 } from './controllers';
+import { HomepageAdminRepository } from './infrastructure/homepage-admin.repository';
+import { HomepageSchedulerRepository } from './infrastructure/homepage-scheduler.repository';
+import { HomepageVersionRepository } from './infrastructure/homepage-version.repository';
+import { PublicHomepageReadRepository } from './infrastructure/public-homepage-read.repository';
 import {
-    CdnPurgeService,
-    DomainLookupService,
-    HomepageService,
-    HomepageVersionService,
-    PublicHomepageService,
+  CdnPurgeService,
+  DomainLookupService,
+  HomepageSchedulerService,
+  HomepageService,
+  HomepageVersionService,
+  PublicHomepageService,
 } from './services';
-import { HomepageSchedulerService } from './services/homepage-scheduler.service';
 
 @Module({
   imports: [HttpModule, LogModule, ScheduleModule.forRoot()],
@@ -36,6 +43,13 @@ import { HomepageSchedulerService } from './services/homepage-scheduler.service'
     HomepageService,
     HomepageVersionService,
     CdnPurgeService,
+    HomepageAdminRepository,
+    HomepageAdminService,
+    HomepageSchedulerRepository,
+    HomepageSchedulerApplicationService,
+    HomepageVersionRepository,
+    HomepageVersionApplicationService,
+    PublicHomepageReadRepository,
     PublicHomepageService,
     DomainLookupService,
     RateLimiterService,

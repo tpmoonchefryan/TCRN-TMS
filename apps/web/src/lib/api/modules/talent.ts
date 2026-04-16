@@ -2,6 +2,8 @@
 
 import { apiClient } from '../core';
 
+export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
+
 export interface TalentSettingsPayload {
   inheritTimezone?: boolean | null;
   homepageEnabled?: boolean | null;
@@ -38,6 +40,22 @@ export interface TalentStatsSummary {
   pendingMessagesCount: number;
 }
 
+export interface TalentLifecycleIssue {
+  code: string;
+  message: string;
+}
+
+export interface TalentPublishReadiness {
+  id: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  targetState: 'published';
+  recommendedAction: 'publish' | 're-enable' | null;
+  canEnterPublishedState: boolean;
+  blockers: TalentLifecycleIssue[];
+  warnings: TalentLifecycleIssue[];
+  version: number;
+}
+
 export interface TalentListItem {
   id: string;
   subsidiaryId: string | null;
@@ -51,6 +69,9 @@ export interface TalentListItem {
   avatarUrl: string | null;
   homepagePath: string | null;
   timezone: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
+  publishedBy: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -85,6 +106,9 @@ export interface TalentCreateResponse {
   avatarUrl: string | null;
   homepagePath: string | null;
   timezone: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
+  publishedBy: string | null;
   isActive: boolean;
   createdAt: string;
   version: number;
@@ -108,6 +132,9 @@ export interface TalentGetResponse {
   avatarUrl: string | null;
   homepagePath: string | null;
   timezone: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
+  publishedBy: string | null;
   isActive: boolean;
   settings: TalentSettingsPayload | null;
   stats: TalentStatsSummary;
@@ -140,26 +167,30 @@ export interface TalentUpdateResponse {
   name: string;
   displayName: string;
   homepagePath: string | null;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
+  publishedBy: string | null;
+  isActive: boolean;
   updatedAt: string;
   version: number;
 }
 
-export interface MoveTalentPayload {
-  newSubsidiaryId?: string | null;
-  version: number;
-}
-
-export interface TalentMoveResponse {
-  id: string;
-  subsidiaryId: string | null;
-  path: string;
+export interface TalentLifecycleMutationPayload {
   version: number;
 }
 
 export interface TalentActivationResponse {
   id: string;
+  lifecycleStatus: TalentLifecycleStatus;
+  publishedAt: string | null;
+  publishedBy: string | null;
   isActive: boolean;
   version: number;
+}
+
+export interface TalentDeleteResponse {
+  id: string;
+  deleted: true;
 }
 
 export const talentApi = {
@@ -176,12 +207,18 @@ export const talentApi = {
   update: (id: string, data: UpdateTalentPayload) =>
     apiClient.patch<TalentUpdateResponse>(`/api/v1/talents/${id}`, data),
 
-  move: (id: string, data: MoveTalentPayload) =>
-    apiClient.post<TalentMoveResponse>(`/api/v1/talents/${id}/move`, data),
+  delete: (id: string, version: number) =>
+    apiClient.delete<TalentDeleteResponse>(`/api/v1/talents/${id}?version=${version}`),
 
-  deactivate: (id: string, version: number) =>
-    apiClient.post<TalentActivationResponse>(`/api/v1/talents/${id}/deactivate`, { version }),
+  getPublishReadiness: (id: string) =>
+    apiClient.get<TalentPublishReadiness>(`/api/v1/talents/${id}/publish-readiness`),
 
-  reactivate: (id: string, version: number) =>
-    apiClient.post<TalentActivationResponse>(`/api/v1/talents/${id}/reactivate`, { version }),
+  publish: (id: string, data: TalentLifecycleMutationPayload) =>
+    apiClient.post<TalentActivationResponse>(`/api/v1/talents/${id}/publish`, data),
+
+  disable: (id: string, data: TalentLifecycleMutationPayload) =>
+    apiClient.post<TalentActivationResponse>(`/api/v1/talents/${id}/disable`, data),
+
+  reEnable: (id: string, data: TalentLifecycleMutationPayload) =>
+    apiClient.post<TalentActivationResponse>(`/api/v1/talents/${id}/re-enable`, data),
 };

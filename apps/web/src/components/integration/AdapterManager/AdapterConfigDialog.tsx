@@ -44,22 +44,29 @@ interface AdapterConfigDialogProps {
   onSuccess: () => void;
 }
 
+interface ConfigDefinition {
+  key: string;
+  labelKey: string;
+  required: boolean;
+  secret: boolean;
+}
+
 // Config key definitions by adapter type
-const CONFIG_DEFINITIONS: Record<string, Array<{ key: string; label: string; required: boolean; secret: boolean }>> = {
+const CONFIG_DEFINITIONS: Record<string, ConfigDefinition[]> = {
   oauth: [
-    { key: 'client_id', label: 'Client ID', required: true, secret: false },
-    { key: 'client_secret', label: 'Client Secret', required: true, secret: true },
-    { key: 'scopes', label: 'Scopes', required: false, secret: false },
-    { key: 'redirect_uri', label: 'Redirect URI', required: false, secret: false },
+    { key: 'client_id', labelKey: 'configFieldLabels.clientId', required: true, secret: false },
+    { key: 'client_secret', labelKey: 'configFieldLabels.clientSecret', required: true, secret: true },
+    { key: 'scopes', labelKey: 'configFieldLabels.scopes', required: false, secret: false },
+    { key: 'redirect_uri', labelKey: 'configFieldLabels.redirectUri', required: false, secret: false },
   ],
   api_key: [
-    { key: 'api_key', label: 'API Key', required: true, secret: true },
-    { key: 'api_secret', label: 'API Secret', required: false, secret: true },
-    { key: 'endpoint_url', label: 'Endpoint URL', required: false, secret: false },
+    { key: 'api_key', labelKey: 'configFieldLabels.apiKey', required: true, secret: true },
+    { key: 'api_secret', labelKey: 'configFieldLabels.apiSecret', required: false, secret: true },
+    { key: 'endpoint_url', labelKey: 'configFieldLabels.endpointUrl', required: false, secret: false },
   ],
   webhook: [
-    { key: 'callback_url', label: 'Callback URL', required: true, secret: false },
-    { key: 'verify_token', label: 'Verify Token', required: false, secret: true },
+    { key: 'callback_url', labelKey: 'configFieldLabels.callbackUrl', required: true, secret: false },
+    { key: 'verify_token', labelKey: 'configFieldLabels.verifyToken', required: false, secret: true },
   ],
 };
 
@@ -200,53 +207,57 @@ export function AdapterConfigDialog({
           </div>
         ) : (
           <div className="space-y-4">
-            {definitions.map((def) => (
-              <div key={def.key} className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  {def.label}
-                  {def.required && <span className="text-destructive">*</span>}
-                  {def.secret && (
-                    <Badge variant="outline" className="text-xs">
-                      <Key size={10} className="mr-1" />
-                      {t('encrypted')}
-                    </Badge>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    type={def.secret && !revealedKeys.has(def.key) ? 'password' : 'text'}
-                    value={configs[def.key] || ''}
-                    onChange={(e) => setConfigs((prev) => ({ ...prev, [def.key]: e.target.value }))}
-                    placeholder={def.secret ? '••••••••' : `Enter ${def.label.toLowerCase()}`}
-                    className="pr-20"
-                  />
-                  {def.secret && configs[def.key] === '******' && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-7 text-xs"
-                      onClick={() => handleReveal(def.key)}
-                      disabled={revealingKey === def.key}
-                    >
-                      {revealingKey === def.key ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : revealedKeys.has(def.key) ? (
-                        <>
-                          <EyeOff size={12} className="mr-1" />
-                          {t('hide')}
-                        </>
-                      ) : (
-                        <>
-                          <Eye size={12} className="mr-1" />
-                          {t('reveal')}
-                        </>
-                      )}
-                    </Button>
-                  )}
+            {definitions.map((def) => {
+              const fieldLabel = t(def.labelKey as never);
+
+              return (
+                <div key={def.key} className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    {fieldLabel}
+                    {def.required && <span className="text-destructive">*</span>}
+                    {def.secret && (
+                      <Badge variant="outline" className="text-xs">
+                        <Key size={10} className="mr-1" />
+                        {t('encrypted')}
+                      </Badge>
+                    )}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={def.secret && !revealedKeys.has(def.key) ? 'password' : 'text'}
+                      value={configs[def.key] || ''}
+                      onChange={(e) => setConfigs((prev) => ({ ...prev, [def.key]: e.target.value }))}
+                      placeholder={def.secret ? '••••••••' : t('placeholderConfigValue', { label: fieldLabel })}
+                      className="pr-20"
+                    />
+                    {def.secret && configs[def.key] === '******' && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 h-7 text-xs"
+                        onClick={() => handleReveal(def.key)}
+                        disabled={revealingKey === def.key}
+                      >
+                        {revealingKey === def.key ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : revealedKeys.has(def.key) ? (
+                          <>
+                            <EyeOff size={12} className="mr-1" />
+                            {t('hide')}
+                          </>
+                        ) : (
+                          <>
+                            <Eye size={12} className="mr-1" />
+                            {t('reveal')}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

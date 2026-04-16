@@ -79,6 +79,7 @@ describe('AuthService', () => {
       generateRefreshToken: vi.fn().mockResolvedValue({ token: 'refresh_token', expiresAt: new Date() }),
       generateTotpSessionToken: vi.fn().mockReturnValue({ token: 'totp_session_token', expiresIn: 300 }),
       generatePasswordResetSessionToken: vi.fn().mockReturnValue({ token: 'reset_session_token', expiresIn: 300 }),
+      verifyTotpSessionToken: vi.fn(),
       verifyAccessToken: vi.fn(),
     };
 
@@ -90,6 +91,7 @@ describe('AuthService', () => {
 
     mockTenantService = {
       getTenantByCode: vi.fn().mockResolvedValue(mockTenant),
+      getTenantById: vi.fn().mockResolvedValue(mockTenant),
     };
 
     mockPermissionSnapshotService = {
@@ -210,6 +212,38 @@ describe('AuthService', () => {
       await expect(
         service.login('TEST', 'testuser', 'password', '127.0.0.1'),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyTotp', () => {
+    it('casts the session subject to uuid when loading the TOTP user record', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockReturnValue({
+        sub: userId,
+        tid: mockTenant.id,
+        tsc: mockTenant.schemaName,
+      });
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          ...mockUser,
+          id: userId,
+          totp_secret: 'secret',
+          is_totp_enabled: true,
+        },
+      ]);
+
+      await expect(
+        service.verifyTotp('session-token', '123456', '127.0.0.1'),
+      ).resolves.toMatchObject({
+        type: 'success',
+        accessToken: 'access_token',
+      });
+
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE id = $1::uuid'),
+        userId,
+      );
     });
   });
 });

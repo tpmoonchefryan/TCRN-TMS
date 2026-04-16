@@ -19,10 +19,49 @@ describe('Domain Lookup Integration Tests', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let tenantFixture: TenantFixture;
-  let customDomain: string;
-  let homepagePath: string;
-  let marshmallowPath: string;
   let createdBy: string;
+  let publishedDomain: string;
+  let publishedHomepagePath: string;
+  let publishedMarshmallowPath: string;
+  let draftDomain: string;
+  let disabledDomain: string;
+
+  const updateTalentPublicRouting = async ({
+    talentId,
+    customDomain,
+    marshmallowPath,
+    lifecycleStatus,
+  }: {
+    talentId: string;
+    customDomain: string;
+    marshmallowPath: string;
+    lifecycleStatus: 'draft' | 'published' | 'disabled';
+  }) => {
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantFixture.schemaName}".talent
+        SET custom_domain = $2,
+            custom_domain_verified = true,
+            marshmallow_path = $3,
+            lifecycle_status = $4,
+            published_at = CASE
+              WHEN $4 IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
+              ELSE NULL
+            END,
+            published_by = CASE
+              WHEN $4 IN ('published', 'disabled') THEN $5::uuid
+              ELSE NULL
+            END,
+            updated_at = NOW()
+        WHERE id = $1::uuid
+      `,
+      talentId,
+      customDomain,
+      marshmallowPath,
+      lifecycleStatus,
+      createdBy,
+    );
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -37,59 +76,85 @@ describe('Domain Lookup Integration Tests', () => {
     const testUser = await createTestUserInTenant(prisma, tenantFixture, 'domainlookup_admin');
     createdBy = testUser.id;
 
-    const talent = await createTestTalentInTenant(prisma, tenantFixture, null, {
+    const publishedTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_DOMAIN_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Domain Lookup Test Talent',
-      displayName: 'Domain Lookup Test Talent',
+      nameEn: 'Published Domain Lookup Test Talent',
+      displayName: 'Published Domain Lookup Test Talent',
       homepagePath: `domain-home-${Date.now()}`,
       createdBy,
     });
+    const draftTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
+      code: `TAL_DOMAIN_DRAFT_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Draft Domain Lookup Test Talent',
+      displayName: 'Draft Domain Lookup Test Talent',
+      homepagePath: `domain-draft-${Date.now()}`,
+      createdBy,
+    });
+    const disabledTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
+      code: `TAL_DOMAIN_DISABLED_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Disabled Domain Lookup Test Talent',
+      displayName: 'Disabled Domain Lookup Test Talent',
+      homepagePath: `domain-disabled-${Date.now()}`,
+      createdBy,
+    });
 
-    customDomain = `lookup-${Date.now()}.example.com`;
-    homepagePath = talent.homepagePath;
-    marshmallowPath = `domain-ask-${Date.now()}`;
+    publishedDomain = `lookup-${Date.now()}.example.com`;
+    publishedHomepagePath = publishedTalent.homepagePath;
+    publishedMarshmallowPath = `domain-ask-${Date.now()}`;
+    draftDomain = `lookup-draft-${Date.now()}.example.com`;
+    disabledDomain = `lookup-disabled-${Date.now()}.example.com`;
 
-    await prisma.$executeRawUnsafe(`
-      UPDATE "${tenantFixture.schemaName}".talent
-      SET custom_domain = $2,
-          custom_domain_verified = true,
-          marshmallow_path = $3,
-          updated_at = NOW()
-      WHERE id = $1::uuid
-    `, talent.id, customDomain, marshmallowPath);
+    await updateTalentPublicRouting({
+      talentId: publishedTalent.id,
+      customDomain: publishedDomain,
+      marshmallowPath: publishedMarshmallowPath,
+      lifecycleStatus: 'published',
+    });
+    await updateTalentPublicRouting({
+      talentId: draftTalent.id,
+      customDomain: draftDomain,
+      marshmallowPath: `draft-ask-${Date.now()}`,
+      lifecycleStatus: 'draft',
+    });
+    await updateTalentPublicRouting({
+      talentId: disabledTalent.id,
+      customDomain: disabledDomain,
+      marshmallowPath: `disabled-ask-${Date.now()}`,
+      lifecycleStatus: 'disabled',
+    });
   });
 
   afterAll(async () => {
+    await app?.close();
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
-    await app?.close();
   });
 
   it('returns homepage and marshmallow paths for the query-based public lookup endpoint', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/public/domain-lookup')
-      .query({ domain: customDomain.toUpperCase() })
+      .query({ domain: publishedDomain.toUpperCase() })
       .expect(200);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
-      path: homepagePath,
+      path: publishedHomepagePath,
       type: 'homepage',
-      homepagePath,
-      marshmallowPath,
+      homepagePath: publishedHomepagePath,
+      marshmallowPath: publishedMarshmallowPath,
     });
   });
 
   it('returns success-wrapped routing data for the path-based public lookup endpoint', async () => {
     const response = await request(app.getHttpServer())
-      .get(`/api/v1/public/domain-lookup/${customDomain.toUpperCase()}`)
+      .get(`/api/v1/public/domain-lookup/${publishedDomain.toUpperCase()}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
-      talentPath: homepagePath,
-      homepagePath,
-      marshmallowPath,
+      talentPath: publishedHomepagePath,
+      homepagePath: publishedHomepagePath,
+      marshmallowPath: publishedMarshmallowPath,
     });
   });
 
@@ -101,5 +166,28 @@ describe('Domain Lookup Integration Tests', () => {
 
     expect(response.body.success).toBe(false);
     expect(response.body.error.code).toBe('RES_NOT_FOUND');
+  });
+
+  it('returns 404 for a draft talent custom domain', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/public/domain-lookup')
+      .query({ domain: draftDomain })
+      .expect(404);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('RES_NOT_FOUND');
+  });
+
+  it('returns 404 for a disabled talent custom domain on both lookup endpoints', async () => {
+    const queryResponse = await request(app.getHttpServer())
+      .get('/api/v1/public/domain-lookup')
+      .query({ domain: disabledDomain })
+      .expect(404);
+    const pathResponse = await request(app.getHttpServer())
+      .get(`/api/v1/public/domain-lookup/${disabledDomain}`)
+      .expect(404);
+
+    expect(queryResponse.body.error.code).toBe('RES_NOT_FOUND');
+    expect(pathResponse.body.error.code).toBe('RES_NOT_FOUND');
   });
 });

@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createLogCleanupHandler,
   createMembershipRenewalHandler,
-  createPiiCleanupHandler,
   createScheduledCronJobs,
   getActiveTenants,
 } from '../worker-schedules';
@@ -13,38 +12,20 @@ import {
 const {
   addLogCleanupJob,
   membershipRenewalQueue,
-  piiCleanupQueue,
-  piiHealthCheckQueue,
   scheduleMembershipRenewalJob,
-  schedulePiiCleanupJob,
-  setupPiiHealthCheckCron,
 } = vi.hoisted(() => ({
   addLogCleanupJob: vi.fn(),
   membershipRenewalQueue: { add: vi.fn() },
-  piiCleanupQueue: { add: vi.fn() },
-  piiHealthCheckQueue: { add: vi.fn() },
   scheduleMembershipRenewalJob: vi.fn(),
-  schedulePiiCleanupJob: vi.fn(),
-  setupPiiHealthCheckCron: vi.fn(),
 }));
 
 vi.mock('../jobs/membership-renewal.job', () => ({
   scheduleMembershipRenewalJob,
 }));
 
-vi.mock('../jobs/pii-cleanup.job', () => ({
-  schedulePiiCleanupJob,
-}));
-
-vi.mock('../jobs/pii-health-check.job', () => ({
-  setupPiiHealthCheckCron,
-}));
-
 vi.mock('../queues', () => ({
   logCleanupQueue: { add: addLogCleanupJob },
   membershipRenewalQueue,
-  piiCleanupQueue,
-  piiHealthCheckQueue,
 }));
 
 function createLogger() {
@@ -143,14 +124,6 @@ describe('scheduled job handlers', () => {
     expect(logger.info).toHaveBeenCalledWith('Scheduled log cleanup for tenant: AC');
   });
 
-  it('schedules the shared PII cleanup job', async () => {
-    const logger = createLogger();
-
-    await createPiiCleanupHandler(logger)();
-
-    expect(schedulePiiCleanupJob).toHaveBeenCalledWith(piiCleanupQueue);
-    expect(logger.info).toHaveBeenCalledWith('PII cleanup job scheduled');
-  });
 });
 
 describe('createScheduledCronJobs', () => {
@@ -158,17 +131,14 @@ describe('createScheduledCronJobs', () => {
     vi.clearAllMocks();
   });
 
-  it('creates the three started cron registrations in Tokyo timezone when requested', () => {
+  it('creates the started cron registrations in Tokyo timezone when requested', () => {
     const logger = createLogger();
     const cronJobs = createScheduledCronJobs(createPrismaMock() as never, logger, false);
 
-    expect(cronJobs).toHaveLength(3);
+    expect(cronJobs).toHaveLength(2);
     expect(cronJobs.every((cronJob) => cronJob instanceof CronJob)).toBe(true);
     expect(logger.info).toHaveBeenCalledWith(
       'Membership renewal cron scheduled (daily at 2:00 AM JST)'
-    );
-    expect(logger.info).toHaveBeenCalledWith(
-      'PII cleanup cron scheduled (weekly on Sunday at 3:00 AM JST)'
     );
     expect(logger.info).toHaveBeenCalledWith('Log cleanup cron scheduled (daily at 4:00 AM JST)');
   });

@@ -3,6 +3,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { publicApi } from '@/lib/api/modules/content';
@@ -29,6 +30,7 @@ export function ReactionBar({
   disabled = false,
   className,
 }: ReactionBarProps) {
+  const t = useTranslations('publicMarshmallow');
   const [counts, setCounts] = useState(initialCounts);
   const [userReactions, setUserReactions] = useState(initialUserReactions);
   const [isReacting, setIsReacting] = useState(false);
@@ -58,7 +60,7 @@ export function ReactionBar({
     try {
       const response = await publicApi.toggleMarshmallowReaction(messageId, emoji, fingerprint);
       if (!response.success || !response.data) {
-        throw new Error('Failed to react');
+        throw new Error(t('reactionFailed'));
       }
 
       // Update with server response

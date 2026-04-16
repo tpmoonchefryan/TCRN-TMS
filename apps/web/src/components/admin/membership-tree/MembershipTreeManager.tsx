@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -85,6 +86,8 @@ export function MembershipTreeManager({
   scopeId,
   locale: _locale = 'en',
 }: MembershipTreeManagerProps) {
+  const t = useTranslations('membershipTree');
+  const tc = useTranslations('common');
   const [tree, setTree] = useState<MembershipClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [includeInactive, _setIncludeInactive] = useState(false);
@@ -246,7 +249,7 @@ export function MembershipTreeManager({
       {level.badgeUrl && (
         <img src={level.badgeUrl} alt="" className="w-4 h-4 mr-1" />
       )}
-      Rank {level.rank}: {level.name}
+      {t('rankValue', { rank: level.rank, name: level.name })}
     </Badge>
   );
 
@@ -255,20 +258,20 @@ export function MembershipTreeManager({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Membership Structure</CardTitle>
+            <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              Manage membership classes, types, and levels in a hierarchical structure
+              {t('description')}
             </CardDescription>
           </div>
-          <Button onClick={handleCreateClass}>Add Class</Button>
+          <Button onClick={handleCreateClass}>{t('addClass')}</Button>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
         ) : tree.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No membership classes defined. Click "Add Class" to create one.
+            {t('empty')}
           </div>
         ) : (
           <Accordion type="multiple" className="space-y-2">
@@ -285,10 +288,10 @@ export function MembershipTreeManager({
                       <Badge variant="secondary" className="font-mono text-xs">
                         {cls.code}
                       </Badge>
-                      {!cls.isActive && <Badge variant="outline">Inactive</Badge>}
+                      {!cls.isActive && <Badge variant="outline">{tc('inactive')}</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{cls.types.length} types</Badge>
+                      <Badge variant="outline">{t('typesCount', { count: cls.types.length })}</Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -296,21 +299,21 @@ export function MembershipTreeManager({
                             size="sm"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            Actions
+                            {tc('actions')}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEdit('class', cls)}>
-                            Edit Class
+                            {t('editClass')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleCreateType(cls.id)}>
-                            Add Type
+                            {t('addType')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => handleToggleActive('class', cls)}
                           >
-                            {cls.isActive ? 'Deactivate' : 'Reactivate'}
+                            {cls.isActive ? t('deactivate') : t('reactivate')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -320,13 +323,13 @@ export function MembershipTreeManager({
                 <AccordionContent className="px-4 pb-4">
                   {cls.types.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
-                      No types defined.{' '}
+                      {t('noTypes')}{' '}
                       <Button
                         variant="link"
                         className="p-0 h-auto"
                         onClick={() => handleCreateType(cls.id)}
                       >
-                        Add one
+                        {t('addOne')}
                       </Button>
                     </div>
                   ) : (
@@ -344,46 +347,46 @@ export function MembershipTreeManager({
                                   {type.code}
                                 </Badge>
                                 {type.externalControl && (
-                                  <Badge variant="outline">External</Badge>
+                                  <Badge variant="outline">{t('external')}</Badge>
                                 )}
-                                {!type.isActive && <Badge variant="outline">Inactive</Badge>}
+                                {!type.isActive && <Badge variant="outline">{tc('inactive')}</Badge>}
                               </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="sm">
-                                    Actions
+                                    {tc('actions')}
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleEdit('type', type)}>
-                                    Edit Type
+                                    {t('editType')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleCreateLevel(type.id)}>
-                                    Add Level
+                                    {t('addLevel')}
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={() => handleToggleActive('type', type)}
                                   >
-                                    {type.isActive ? 'Deactivate' : 'Reactivate'}
+                                    {type.isActive ? t('deactivate') : t('reactivate')}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
                             <CardDescription>
-                              Default renewal: {type.defaultRenewalDays} days
+                              {t('defaultRenewal', { days: type.defaultRenewalDays })}
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="py-2">
                             {type.levels.length === 0 ? (
                               <div className="text-sm text-muted-foreground">
-                                No levels defined.{' '}
+                                {t('noLevels')}{' '}
                                 <Button
                                   variant="link"
                                   className="p-0 h-auto text-sm"
                                   onClick={() => handleCreateLevel(type.id)}
                                 >
-                                  Add one
+                                  {t('addOne')}
                                 </Button>
                               </div>
                             ) : (
@@ -399,12 +402,12 @@ export function MembershipTreeManager({
                                       <DropdownMenuItem
                                         onClick={() => handleEdit('level', level)}
                                       >
-                                        Edit Level
+                                        {t('editLevel')}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleToggleActive('level', level)}
                                       >
-                                        {level.isActive ? 'Deactivate' : 'Reactivate'}
+                                        {level.isActive ? t('deactivate') : t('reactivate')}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>

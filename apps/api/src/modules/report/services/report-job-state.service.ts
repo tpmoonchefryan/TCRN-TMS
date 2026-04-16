@@ -1,33 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-    BadRequestException,
     Injectable,
-    NotFoundException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ErrorCodes, LogSeverity, TechEventScope, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
+import { ReportJobStateApplicationService } from '../application/report-job-state.service';
 import { ReportJobStatus } from '../dto/report.dto';
-
-const STATUS_TRANSITIONS: Record<ReportJobStatus, ReportJobStatus[]> = {
-  [ReportJobStatus.PENDING]: [ReportJobStatus.RUNNING, ReportJobStatus.CANCELLED],
-  [ReportJobStatus.RUNNING]: [ReportJobStatus.SUCCESS, ReportJobStatus.FAILED],
-  [ReportJobStatus.SUCCESS]: [ReportJobStatus.CONSUMED, ReportJobStatus.EXPIRED],
-  [ReportJobStatus.CONSUMED]: [ReportJobStatus.EXPIRED],
-  [ReportJobStatus.EXPIRED]: [],
-  [ReportJobStatus.FAILED]: [ReportJobStatus.RETRYING, ReportJobStatus.CANCELLED],
-  [ReportJobStatus.RETRYING]: [ReportJobStatus.RUNNING, ReportJobStatus.FAILED],
-  [ReportJobStatus.CANCELLED]: [],
-};
+import { ReportJobStateRepository } from '../infrastructure/report-job-state.repository';
 
 @Injectable()
 export class ReportJobStateService {
   constructor(
-    private readonly databaseService: DatabaseService,
-    private readonly techEventLog: TechEventLogService,
+    databaseService: DatabaseService,
+    techEventLog: TechEventLogService,
+    private readonly reportJobStateApplicationService: ReportJobStateApplicationService = new ReportJobStateApplicationService(
+      new ReportJobStateRepository(databaseService),
+      techEventLog,
+    ),
   ) {}
 
   /**
@@ -38,63 +30,11 @@ export class ReportJobStateService {
     targetStatus: ReportJobStatus,
     updates?: Record<string, unknown>,
   ) {
-    const prisma = this.databaseService.getPrisma();
-
-    const job = await prisma.reportJob.findUnique({
-      where: { id: jobId },
-    });
-
-    if (!job) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: `Report job ${jobId} not found`,
-      });
-    }
-
-    const currentStatus = job.status as ReportJobStatus;
-    const allowedTransitions = STATUS_TRANSITIONS[currentStatus];
-
-    if (!allowedTransitions.includes(targetStatus)) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: `Cannot transition from ${currentStatus} to ${targetStatus}`,
-      });
-    }
-
-    const now = new Date();
-    const statusUpdates: Record<string, unknown> = { status: targetStatus };
-
-    // Status-specific updates
-    switch (targetStatus) {
-      case ReportJobStatus.RUNNING:
-        statusUpdates.startedAt = now;
-        break;
-      case ReportJobStatus.SUCCESS:
-        statusUpdates.completedAt = now;
-        statusUpdates.expiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
-        break;
-      case ReportJobStatus.CONSUMED:
-        if (!job.downloadedAt) {
-          statusUpdates.downloadedAt = now;
-        }
-        break;
-      case ReportJobStatus.FAILED:
-        statusUpdates.completedAt = now;
-        break;
-      case ReportJobStatus.RETRYING:
-        statusUpdates.retryCount = job.retryCount + 1;
-        break;
-      case ReportJobStatus.CANCELLED:
-        statusUpdates.completedAt = now;
-        break;
-    }
-
-    const updated = await prisma.reportJob.update({
-      where: { id: jobId },
-      data: { ...statusUpdates, ...updates },
-    });
-
-    return updated;
+    return this.reportJobStateApplicationService.transition(
+      jobId,
+      targetStatus,
+      updates,
+    );
   }
 
   /**
@@ -105,17 +45,11 @@ export class ReportJobStateService {
     processedRows: number,
     totalRows: number,
   ) {
-    const prisma = this.databaseService.getPrisma();
-
-    const percentage = Math.min(Math.round((processedRows / totalRows) * 100), 100);
-
-    await prisma.reportJob.update({
-      where: { id: jobId },
-      data: {
-        processedRows,
-        progressPercentage: percentage,
-      },
-    });
+    await this.reportJobStateApplicationService.updateProgress(
+      jobId,
+      processedRows,
+      totalRows,
+    );
   }
 
   /**
@@ -123,54 +57,13 @@ export class ReportJobStateService {
    */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkAndExpireJobs(): Promise<number> {
-    const prisma = this.databaseService.getPrisma();
-    const now = new Date();
-
-    const result = await prisma.reportJob.updateMany({
-      where: {
-        status: { in: ['success', 'consumed'] },
-        expiresAt: { lt: now },
-      },
-      data: { status: 'expired' },
-    });
-
-    if (result.count > 0) {
-      await this.techEventLog.log({
-        eventType: TechEventType.SCHEDULED_TASK_COMPLETED,
-        scope: TechEventScope.SCHEDULED,
-        severity: LogSeverity.INFO,
-        payload: {
-          task: 'report_expiry_check',
-          expiredCount: result.count,
-        },
-      });
-    }
-
-    return result.count;
+    return this.reportJobStateApplicationService.checkAndExpireJobs();
   }
 
   /**
    * Check if job can be downloaded
    */
   async canDownload(jobId: string): Promise<boolean> {
-    const prisma = this.databaseService.getPrisma();
-
-    const job = await prisma.reportJob.findUnique({
-      where: { id: jobId },
-      select: { status: true, expiresAt: true },
-    });
-
-    if (!job) return false;
-
-    const status = job.status as ReportJobStatus;
-    if (status !== ReportJobStatus.SUCCESS && status !== ReportJobStatus.CONSUMED) {
-      return false;
-    }
-
-    if (job.expiresAt && job.expiresAt < new Date()) {
-      return false;
-    }
-
-    return true;
+    return this.reportJobStateApplicationService.canDownload(jobId);
   }
 }

@@ -1,40 +1,53 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '../../../database';
-import { ChangeLogService } from '../../../log';
+import { TalentCustomDomainService } from '../../../talent';
+import { MarshmallowConfigApplicationService } from '../../application/marshmallow-config.service';
 import { MarshmallowConfigService } from '../marshmallow-config.service';
 
 describe('MarshmallowConfigService', () => {
   let service: MarshmallowConfigService;
-  let mockDatabaseService: Partial<DatabaseService>;
-  let mockChangeLogService: Partial<ChangeLogService>;
-  let mockConfigService: Partial<ConfigService>;
-  let mockPrisma: {
-    marshmallowConfig: {
-      findUnique: ReturnType<typeof vi.fn>;
-      upsert: ReturnType<typeof vi.fn>;
-    };
-    $transaction: ReturnType<typeof vi.fn>;
-    $queryRawUnsafe: ReturnType<typeof vi.fn>;
-    $executeRawUnsafe: ReturnType<typeof vi.fn>;
-  };
+  let mockApplicationService: Partial<MarshmallowConfigApplicationService>;
+  let mockTalentCustomDomainService: Partial<TalentCustomDomainService>;
 
   const mockConfig = {
     id: 'config-123',
     talentId: 'talent-123',
     isEnabled: true,
+    title: null,
+    welcomeText: null,
+    placeholderText: '写下你想说的话...',
+    thankYouText: '感谢你的提问！',
+    allowAnonymous: true,
     captchaMode: 'auto',
-    hourlyLimit: 10,
-    dailyLimit: 100,
+    moderationEnabled: true,
+    autoApprove: false,
     profanityFilterEnabled: true,
     externalBlocklistEnabled: true,
-    autoReplyEnabled: false,
-    welcomeMessage: 'Welcome!',
-    thankYouMessage: 'Thank you!',
+    maxMessageLength: 500,
+    minMessageLength: 1,
+    rateLimitPerIp: 5,
+    rateLimitWindowHours: 1,
+    reactionsEnabled: true,
+    allowedReactions: [],
+    theme: {},
+    avatarUrl: null,
+    termsContentEn: null,
+    termsContentZh: null,
+    termsContentJa: null,
+    privacyContentEn: null,
+    privacyContentZh: null,
+    privacyContentJa: null,
+    stats: {
+      totalMessages: 0,
+      pendingCount: 0,
+      approvedCount: 0,
+      rejectedCount: 0,
+      unreadCount: 0,
+    },
+    marshmallowUrl: 'http://localhost:3000/m/test',
     version: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -49,39 +62,27 @@ describe('MarshmallowConfigService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockPrisma = {
-      marshmallowConfig: {
-        findUnique: vi.fn().mockResolvedValue(mockConfig),
-        upsert: vi.fn().mockResolvedValue(mockConfig),
-      },
-      $transaction: vi.fn().mockImplementation((cb) => cb(mockPrisma)),
-      $queryRawUnsafe: vi.fn(),
-      $executeRawUnsafe: vi.fn(),
-    };
-    
-    // Default behavior for queryRawUnsafe: return mockConfig (as an array)
-    // This covers the "get config" case which is usually the first call
-    // However, since it is called multiple times with different schemas, we might need to be smarter.
-    // For now, let's make it return [mockConfig] by default for simple tests.
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([mockConfig]);
-
-    mockDatabaseService = {
-      getPrisma: vi.fn().mockReturnValue(mockPrisma),
+    mockApplicationService = {
+      getOrCreate: vi.fn().mockResolvedValue(mockConfig),
+      update: vi.fn().mockResolvedValue({ ...mockConfig, isEnabled: false, version: 2 }),
+      findExistingConfig: vi.fn().mockResolvedValue(mockConfig),
     };
 
-    mockChangeLogService = {
-      create: vi.fn().mockResolvedValue(undefined),
-      createDirect: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockConfigService = {
-      get: vi.fn().mockReturnValue('http://localhost:3000'),
+    mockTalentCustomDomainService = {
+      setCustomDomain: vi.fn().mockResolvedValue({
+        customDomain: 'marshmallow.example.com',
+        token: 'token-123',
+        txtRecord: 'tcrn-verify=token-123',
+      }),
+      verifyCustomDomain: vi.fn().mockResolvedValue({
+        verified: true,
+        message: 'Domain verified successfully',
+      }),
     };
 
     service = new MarshmallowConfigService(
-      mockDatabaseService as DatabaseService,
-      mockChangeLogService as ChangeLogService,
-      mockConfigService as ConfigService,
+      mockApplicationService as MarshmallowConfigApplicationService,
+      mockTalentCustomDomainService as TalentCustomDomainService,
     );
   });
 
@@ -90,135 +91,94 @@ describe('MarshmallowConfigService', () => {
   });
 
   describe('getOrCreate', () => {
-    it('should return config for a talent', async () => {
+    it('delegates config reads to the layered application service', async () => {
       const result = await service.getOrCreate('talent-123', 'tenant_test');
 
       expect(result.isEnabled).toBe(true);
       expect(result.captchaMode).toBe('auto');
-    });
-
-    it('should return default config when none exists', async () => {
-      // 1. Get config -> empty
-      // 2. Get talent -> found
-      // 3. Insert -> returns created config
-      // 4. Get stats -> returns stats
-      // 5. Get talent (url) -> returns talent path
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([]) // Config not found
-        .mockResolvedValueOnce([{ id: 'talent-123', settings: {} }]) // Talent found
-        .mockResolvedValueOnce([mockConfig]) // Insert return
-        .mockResolvedValueOnce([{ total: 0n, pending: 0n, approved: 0n, rejected: 0n, unread: 0n }]) // Stats
-        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // Talent URL
-
-      const result = await service.getOrCreate('talent-123', 'tenant_test');
-
-      expect(result).toHaveProperty('isEnabled');
-      expect(result).toHaveProperty('captchaMode');
+      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test',
+      );
     });
   });
 
   describe('update', () => {
-    it('should update config settings', async () => {
+    it('delegates config updates to the layered application service', async () => {
       const dto = {
         version: 1,
         isEnabled: false,
       };
 
-      // Mock sequence for update:
-      // 1. Get config -> found
-      // 2. Update config -> result (void/count) or ignored
-      // 3. Log change -> result
-      // 4. getOrCreate -> calls...
-      //    4.1 Get config -> found (updated)
-      //    4.2 Get stats
-      //    4.3 Get talent URL
-      
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([mockConfig]) // Get current
-        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
-        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
-        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
-
-      await service.update('talent-123', 'tenant_test', dto, mockContext);
-
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
-    });
-
-    it('should log config changes', async () => {
-      const dto = {
-        version: 1,
+      await expect(
+        service.update('talent-123', 'tenant_test', dto, mockContext),
+      ).resolves.toMatchObject({
         isEnabled: false,
-      };
+        version: 2,
+      });
 
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([mockConfig]) // Get current
-        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
-        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
-        .mockResolvedValueOnce([{ homepagePath: 'test' }]); // getOrCreate: Talent URL
-
-      await service.update('talent-123', 'tenant_test', dto, mockContext);
-
-      expect(mockChangeLogService.createDirect).toHaveBeenCalled();
+      expect(mockApplicationService.update).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test',
+        dto,
+        mockContext,
+      );
     });
   });
 
-  describe('validateTalentAccess', () => {
-    it('should pass for valid talent', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([{ id: 'talent-123' }]);
-
-      // This is tested implicitly through getOrCreate
-      const result = await service.getOrCreate('talent-123', 'tenant_test');
-
-      expect(result).toBeDefined();
-    });
-
-    it('should throw NotFoundException for invalid talent', async () => {
-      // 1. Get config -> empty
-      // 2. Get talent -> empty (not found)
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      await expect(service.getOrCreate('invalid-talent', 'tenant_test'))
-        .rejects.toThrow(NotFoundException);
-    });
-  });
   describe('setCustomDomain', () => {
-    it('should set custom domain if valid and unique', async () => {
-      // 1. getOrCreate -> calls...
-      //    1.1 Get config -> found
-      //    1.2 Get stats
-      //    1.3 Get talent URL
-      // 2. Uniqueness check -> empty (unique)
-      // 3. Update -> void
-      
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
-        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
-        .mockResolvedValueOnce([{ homepagePath: 'test' }]) // getOrCreate: Talent URL
-        .mockResolvedValueOnce([]); // Uniqueness check: Not found (OK)
-
-      const response = await service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext);
+    it('delegates marshmallow custom-domain writes to the talent custom-domain owner', async () => {
+      const response = await service.setCustomDomain(
+        'talent-123',
+        'marshmallow.example.com',
+        mockContext,
+      );
 
       expect(response.customDomain).toBe('marshmallow.example.com');
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
+      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test',
+      );
+      expect(mockTalentCustomDomainService.setCustomDomain).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test',
+        'marshmallow.example.com',
+      );
     });
 
-    it('should throw ConflictException if domain is already in use', async () => {
-      // 1. getOrCreate -> calls...
-      //    1.1 Get config -> found
-      //    1.2 Get stats
-      //    1.3 Get talent URL
-      // 2. Uniqueness check -> found (conflict)
-      
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([mockConfig]) // getOrCreate: Get config
-        .mockResolvedValueOnce([{ total: 0n }]) // getOrCreate: Stats
-        .mockResolvedValueOnce([{ homepagePath: 'test' }]) // getOrCreate: Talent URL
-        .mockResolvedValueOnce([{ id: 'other-config-ID' }]); // Uniqueness check: Found (Conflict)
+    it('maps duplicate-domain conflicts back to the marshmallow route contract', async () => {
+      vi.mocked(mockTalentCustomDomainService.setCustomDomain).mockRejectedValueOnce(
+        new BadRequestException({
+          code: 'RES_ALREADY_EXISTS',
+        }),
+      );
 
-      await expect(service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext),
+      ).rejects.toMatchObject({
+        response: {
+          code: 'RES_ALREADY_EXISTS',
+        },
+      });
+    });
+  });
+
+  describe('verifyCustomDomain', () => {
+    it('checks config existence before delegating DNS verification to talent custom-domain ownership', async () => {
+      await expect(
+        service.verifyCustomDomain('talent-123', mockContext),
+      ).resolves.toEqual({
+        verified: true,
+        message: 'Domain verified successfully',
+      });
+
+      expect(mockApplicationService.findExistingConfig).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test',
+      );
+      expect(
+        mockTalentCustomDomainService.verifyCustomDomain,
+      ).toHaveBeenCalledWith('talent-123', 'tenant_test');
     });
   });
 });

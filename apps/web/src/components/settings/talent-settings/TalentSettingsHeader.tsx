@@ -13,14 +13,43 @@ interface TalentSettingsHeaderProps {
   talent: TalentData;
   onBack: () => void;
   t: (key: string) => string;
-  tc: (key: string) => string;
+  tTalent: (key: string) => string;
 }
+
+const getLifecycleBadgeVariant = (
+  lifecycleStatus: TalentData['lifecycleStatus']
+): 'default' | 'secondary' | 'warning' => {
+  switch (lifecycleStatus) {
+    case 'published':
+      return 'default';
+    case 'disabled':
+      return 'secondary';
+    case 'draft':
+    default:
+      return 'warning';
+  }
+};
+
+const getLifecycleLabel = (
+  lifecycleStatus: TalentData['lifecycleStatus'],
+  tTalent: (key: string) => string
+): string => {
+  switch (lifecycleStatus) {
+    case 'published':
+      return tTalent('lifecyclePublished');
+    case 'disabled':
+      return tTalent('lifecycleDisabled');
+    case 'draft':
+    default:
+      return tTalent('lifecycleDraft');
+  }
+};
 
 export function TalentSettingsHeader({
   talent,
   onBack,
   t,
-  tc,
+  tTalent,
 }: TalentSettingsHeaderProps) {
   return (
     <div className="flex items-center gap-4">
@@ -42,8 +71,8 @@ export function TalentSettingsHeader({
         <h1 className="text-2xl font-bold">{talent.displayName}</h1>
         <p className="text-muted-foreground">{t('talentSettings')}</p>
       </div>
-      <Badge variant={talent.isActive ? 'default' : 'secondary'}>
-        {talent.isActive ? tc('active') : tc('inactive')}
+      <Badge variant={getLifecycleBadgeVariant(talent.lifecycleStatus)}>
+        {getLifecycleLabel(talent.lifecycleStatus, tTalent)}
       </Badge>
     </div>
   );

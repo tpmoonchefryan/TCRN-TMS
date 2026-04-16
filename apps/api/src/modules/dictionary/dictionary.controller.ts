@@ -1,19 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import {
-    Body,
-    Controller,
-    Delete,
-    ForbiddenException,
-    Get,
-    NotFoundException,
-    Param,
-    Post,
-    Put,
-    Query,
-    Req,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ErrorCodes } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
@@ -25,7 +27,7 @@ import { DictionaryService } from './dictionary.service';
 // DTOs
 // =====================================================
 
-class GetDictionaryQueryDto {
+export class GetDictionaryQueryDto {
   @ApiPropertyOptional({ description: 'Search keyword', example: 'status' })
   @IsOptional()
   @IsString()
@@ -52,7 +54,7 @@ class GetDictionaryQueryDto {
   pageSize?: number;
 }
 
-class CreateDictionaryTypeDto {
+export class CreateDictionaryTypeDto {
   @ApiProperty({ description: 'Dictionary type code', example: 'CUSTOMER_STATUS', minLength: 2, maxLength: 64 })
   @IsString()
   @MinLength(2)
@@ -99,7 +101,7 @@ class CreateDictionaryTypeDto {
   sortOrder?: number;
 }
 
-class UpdateDictionaryTypeDto {
+export class UpdateDictionaryTypeDto {
   @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
   @IsOptional()
   @IsString()
@@ -145,7 +147,7 @@ class UpdateDictionaryTypeDto {
   version!: number;
 }
 
-class CreateDictionaryItemDto {
+export class CreateDictionaryItemDto {
   @ApiProperty({ description: 'Item code', example: 'ACTIVE', minLength: 1, maxLength: 64 })
   @IsString()
   @MinLength(1)
@@ -197,7 +199,7 @@ class CreateDictionaryItemDto {
   extraData?: Record<string, unknown>;
 }
 
-class UpdateDictionaryItemDto {
+export class UpdateDictionaryItemDto {
   @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
   @IsOptional()
   @IsString()
@@ -248,11 +250,232 @@ class UpdateDictionaryItemDto {
   version!: number;
 }
 
-class DeactivateItemDto {
+export class DeactivateItemDto {
   @ApiProperty({ description: 'Optimistic lock version', example: 1 })
   @IsNumber()
   version!: number;
 }
+
+const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: dataSchema,
+  },
+  required: ['success', 'data'],
+  example: {
+    success: true,
+    data: exampleData,
+  },
+});
+
+const createErrorEnvelopeSchema = (code: string, message: string) => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: code },
+        message: { type: 'string', example: message },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: { code, message },
+  },
+});
+
+const DICTIONARY_TYPE_SCHEMA = {
+  type: 'object',
+  properties: {
+    type: { type: 'string', example: 'CUSTOMER_STATUS' },
+    name: { type: 'string', example: 'Customer Status' },
+    description: { type: 'string', nullable: true, example: 'Customer status codes' },
+    count: { type: 'integer', example: 5 },
+  },
+  required: ['type', 'name', 'description', 'count'],
+};
+
+const DICTIONARY_ITEM_SCHEMA = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440500' },
+    dictionaryCode: { type: 'string', example: 'CUSTOMER_STATUS' },
+    code: { type: 'string', example: 'ACTIVE' },
+    nameEn: { type: 'string', example: 'Active' },
+    nameZh: { type: 'string', nullable: true, example: '活跃' },
+    nameJa: { type: 'string', nullable: true, example: 'アクティブ' },
+    name: { type: 'string', example: 'Active' },
+    descriptionEn: { type: 'string', nullable: true, example: 'Customer is active' },
+    descriptionZh: { type: 'string', nullable: true, example: '客户处于活跃状态' },
+    descriptionJa: { type: 'string', nullable: true, example: '顧客が有効な状態です' },
+    sortOrder: { type: 'integer', example: 0 },
+    isActive: { type: 'boolean', example: true },
+    extraData: { type: 'object', nullable: true, additionalProperties: true, example: { color: '#00FF00' } },
+    createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
+    updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+    version: { type: 'integer', example: 1 },
+  },
+  required: ['id', 'dictionaryCode', 'code', 'nameEn', 'name', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
+};
+
+const DICTIONARY_TYPES_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'array',
+    items: DICTIONARY_TYPE_SCHEMA,
+  },
+  [
+    {
+      type: 'CUSTOMER_STATUS',
+      name: 'Customer Status',
+      description: 'Customer status codes',
+      count: 5,
+    },
+  ],
+);
+
+const DICTIONARY_ITEMS_SUCCESS_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: { type: 'array', items: DICTIONARY_ITEM_SCHEMA },
+    meta: {
+      type: 'object',
+      properties: {
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer', example: 1 },
+            pageSize: { type: 'integer', example: 50 },
+            totalCount: { type: 'integer', example: 1 },
+            totalPages: { type: 'integer', example: 1 },
+            hasNext: { type: 'boolean', example: false },
+            hasPrev: { type: 'boolean', example: false },
+          },
+          required: ['page', 'pageSize', 'totalCount', 'totalPages', 'hasNext', 'hasPrev'],
+        },
+      },
+      required: ['pagination'],
+    },
+  },
+  required: ['success', 'data', 'meta'],
+  example: {
+    success: true,
+    data: [
+      {
+        id: '550e8400-e29b-41d4-a716-446655440500',
+        dictionaryCode: 'CUSTOMER_STATUS',
+        code: 'ACTIVE',
+        nameEn: 'Active',
+        nameZh: '活跃',
+        nameJa: 'アクティブ',
+        name: 'Active',
+        descriptionEn: 'Customer is active',
+        descriptionZh: '客户处于活跃状态',
+        descriptionJa: '顧客が有効な状態です',
+        sortOrder: 0,
+        isActive: true,
+        extraData: { color: '#00FF00' },
+        createdAt: '2026-04-13T08:00:00.000Z',
+        updatedAt: '2026-04-13T09:00:00.000Z',
+        version: 1,
+      },
+    ],
+    meta: {
+      pagination: {
+        page: 1,
+        pageSize: 50,
+        totalCount: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    },
+  },
+};
+
+const DICTIONARY_ITEM_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  DICTIONARY_ITEM_SCHEMA,
+  {
+    id: '550e8400-e29b-41d4-a716-446655440500',
+    dictionaryCode: 'CUSTOMER_STATUS',
+    code: 'ACTIVE',
+    nameEn: 'Active',
+    nameZh: '活跃',
+    nameJa: 'アクティブ',
+    name: 'Active',
+    descriptionEn: 'Customer is active',
+    descriptionZh: '客户处于活跃状态',
+    descriptionJa: '顧客が有効な状態です',
+    sortOrder: 0,
+    isActive: true,
+    extraData: { color: '#00FF00' },
+    createdAt: '2026-04-13T08:00:00.000Z',
+    updatedAt: '2026-04-13T09:00:00.000Z',
+    version: 1,
+  },
+);
+
+const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440510' },
+      code: { type: 'string', example: 'CUSTOMER_STATUS' },
+      nameEn: { type: 'string', example: 'Customer Status' },
+      nameZh: { type: 'string', nullable: true, example: '客户状态' },
+      nameJa: { type: 'string', nullable: true, example: '顧客ステータス' },
+      descriptionEn: { type: 'string', nullable: true, example: 'Customer status codes' },
+      descriptionZh: { type: 'string', nullable: true, example: '客户状态代码' },
+      descriptionJa: { type: 'string', nullable: true, example: '顧客ステータスコード' },
+      sortOrder: { type: 'integer', example: 0 },
+      isActive: { type: 'boolean', example: true },
+      createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
+      updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+      version: { type: 'integer', example: 1 },
+    },
+    required: ['id', 'code', 'nameEn', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440510',
+    code: 'CUSTOMER_STATUS',
+    nameEn: 'Customer Status',
+    nameZh: '客户状态',
+    nameJa: '顧客ステータス',
+    descriptionEn: 'Customer status codes',
+    descriptionZh: '客户状态代码',
+    descriptionJa: '顧客ステータスコード',
+    sortOrder: 0,
+    isActive: true,
+    createdAt: '2026-04-13T08:00:00.000Z',
+    updatedAt: '2026-04-13T09:00:00.000Z',
+    version: 1,
+  },
+);
+
+const DICTIONARY_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.RES_VERSION_MISMATCH,
+  'Data has been modified. Please refresh and try again.',
+);
+
+const DICTIONARY_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
+  'AUTH_UNAUTHORIZED',
+  'Authentication required',
+);
+
+const DICTIONARY_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.PERM_ACCESS_DENIED,
+  'Only AC tenant administrators can access this resource',
+);
+
+const DICTIONARY_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
+  ErrorCodes.RES_NOT_FOUND,
+  'Dictionary resource not found',
+);
 
 // =====================================================
 // Controller
@@ -279,6 +502,16 @@ export class DictionaryController {
    */
   @Get()
   @ApiOperation({ summary: 'List dictionary types' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns dictionary types with localized labels',
+    schema: DICTIONARY_TYPES_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list dictionary types',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
   async listTypes(@Req() req: Request) {
     const language = this.getLanguage(req);
     const types = await this.dictionaryService.getTypes(language);
@@ -291,6 +524,26 @@ export class DictionaryController {
    */
   @Get(':type')
   @ApiOperation({ summary: 'Get dictionary items' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated dictionary items for the requested type',
+    schema: DICTIONARY_ITEMS_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read dictionary items',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary type was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async getByType(
     @Param('type') type: string,
     @Query() query: GetDictionaryQueryDto,
@@ -309,7 +562,7 @@ export class DictionaryController {
 
     if (!result) {
       throw new NotFoundException({
-        code: 'DICTIONARY_NOT_FOUND',
+        code: ErrorCodes.RES_NOT_FOUND,
         message: `Dictionary type '${type}' not found`,
       });
     }
@@ -327,6 +580,31 @@ export class DictionaryController {
    */
   @Get(':type/:code')
   @ApiOperation({ summary: 'Get dictionary item' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'code',
+    description: 'Dictionary item code',
+    schema: { type: 'string' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a single dictionary item',
+    schema: DICTIONARY_ITEM_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read dictionary item detail',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary item was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async getItem(
     @Param('type') type: string,
     @Param('code') code: string,
@@ -337,7 +615,7 @@ export class DictionaryController {
 
     if (!item) {
       throw new NotFoundException({
-        code: 'DICTIONARY_ITEM_NOT_FOUND',
+        code: ErrorCodes.RES_NOT_FOUND,
         message: `Dictionary item '${code}' not found in '${type}'`,
       });
     }
@@ -355,6 +633,26 @@ export class DictionaryController {
    */
   @Post()
   @ApiOperation({ summary: 'Create dictionary type (AC only)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Creates a dictionary type',
+    schema: DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary type payload is invalid or conflicts with an existing code/version constraint',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create dictionary types',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can create dictionary types',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
   async createType(
     @Body() body: CreateDictionaryTypeDto,
     @Req() req: Request,
@@ -365,11 +663,41 @@ export class DictionaryController {
   }
 
   /**
-   * PUT /api/v1/system-dictionary/:type
+   * PATCH /api/v1/system-dictionary/:type
    * Update a dictionary type (AC only)
    */
-  @Put(':type')
+  @Patch(':type')
   @ApiOperation({ summary: 'Update dictionary type (AC only)' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the updated dictionary type',
+    schema: DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary type update is invalid or version-mismatched',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update dictionary types',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can update dictionary types',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary type was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async updateType(
     @Param('type') type: string,
     @Body() body: UpdateDictionaryTypeDto,
@@ -386,6 +714,36 @@ export class DictionaryController {
    */
   @Post(':type/items')
   @ApiOperation({ summary: 'Create dictionary item (AC only)' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Creates a dictionary item',
+    schema: DICTIONARY_ITEM_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary item payload is invalid or conflicts with an existing code/version constraint',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create dictionary items',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can create dictionary items',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary type was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async createItem(
     @Param('type') type: string,
     @Body() body: CreateDictionaryItemDto,
@@ -397,83 +755,188 @@ export class DictionaryController {
   }
 
   /**
-   * PUT /api/v1/system-dictionary/:type/items/:id
+   * PATCH /api/v1/system-dictionary/:type/items/:itemId
    * Update a dictionary item (AC only)
    */
-  @Put(':type/items/:id')
+  @Patch(':type/items/:itemId')
   @ApiOperation({ summary: 'Update dictionary item (AC only)' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'itemId',
+    description: 'Dictionary item identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the updated dictionary item',
+    schema: DICTIONARY_ITEM_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary item update is invalid or version-mismatched',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update dictionary items',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can update dictionary items',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary item was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async updateItem(
     @Param('type') type: string,
-    @Param('id') id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: UpdateDictionaryItemDto,
     @Req() req: Request,
   ) {
     this.ensureAcTenant(req);
     
     // Verify item belongs to this type
-    const item = await this.dictionaryService.getItemById(id);
+    const item = await this.dictionaryService.getItemById(itemId);
     if (!item || item.dictionaryCode !== type) {
       throw new NotFoundException({
-        code: 'DICTIONARY_ITEM_NOT_FOUND',
+        code: ErrorCodes.RES_NOT_FOUND,
         message: `Dictionary item not found`,
       });
     }
 
-    const result = await this.dictionaryService.updateItem(id, body);
+    const result = await this.dictionaryService.updateItem(itemId, body);
     return success(result);
   }
 
   /**
-   * DELETE /api/v1/system-dictionary/:type/items/:id
+   * DELETE /api/v1/system-dictionary/:type/items/:itemId
    * Deactivate a dictionary item (AC only)
    */
-  @Delete(':type/items/:id')
+  @Delete(':type/items/:itemId')
   @ApiOperation({ summary: 'Deactivate dictionary item (AC only)' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'itemId',
+    description: 'Dictionary item identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deactivates a dictionary item',
+    schema: DICTIONARY_ITEM_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary item deactivation is invalid or version-mismatched',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to deactivate dictionary items',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can deactivate dictionary items',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary item was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async deactivateItem(
     @Param('type') type: string,
-    @Param('id') id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: DeactivateItemDto,
     @Req() req: Request,
   ) {
     this.ensureAcTenant(req);
 
     // Verify item belongs to this type
-    const item = await this.dictionaryService.getItemById(id);
+    const item = await this.dictionaryService.getItemById(itemId);
     if (!item || item.dictionaryCode !== type) {
       throw new NotFoundException({
-        code: 'DICTIONARY_ITEM_NOT_FOUND',
+        code: ErrorCodes.RES_NOT_FOUND,
         message: `Dictionary item not found`,
       });
     }
 
-    const result = await this.dictionaryService.deactivateItem(id, body.version);
+    const result = await this.dictionaryService.deactivateItem(itemId, body.version);
     return success(result);
   }
 
   /**
-   * POST /api/v1/system-dictionary/:type/items/:id/reactivate
+   * POST /api/v1/system-dictionary/:type/items/:itemId/reactivate
    * Reactivate a dictionary item (AC only)
    */
-  @Post(':type/items/:id/reactivate')
+  @Post(':type/items/:itemId/reactivate')
   @ApiOperation({ summary: 'Reactivate dictionary item (AC only)' })
+  @ApiParam({
+    name: 'type',
+    description: 'Dictionary type code',
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'itemId',
+    description: 'Dictionary item identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reactivates a dictionary item',
+    schema: DICTIONARY_ITEM_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dictionary item reactivation is invalid or version-mismatched',
+    schema: DICTIONARY_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to reactivate dictionary items',
+    schema: DICTIONARY_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only AC tenant administrators can reactivate dictionary items',
+    schema: DICTIONARY_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Dictionary item was not found',
+    schema: DICTIONARY_NOT_FOUND_SCHEMA,
+  })
   async reactivateItem(
     @Param('type') type: string,
-    @Param('id') id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: DeactivateItemDto,
     @Req() req: Request,
   ) {
     this.ensureAcTenant(req);
 
     // Verify item belongs to this type
-    const item = await this.dictionaryService.getItemById(id);
+    const item = await this.dictionaryService.getItemById(itemId);
     if (!item || item.dictionaryCode !== type) {
       throw new NotFoundException({
-        code: 'DICTIONARY_ITEM_NOT_FOUND',
+        code: ErrorCodes.RES_NOT_FOUND,
         message: `Dictionary item not found`,
       });
     }
 
-    const result = await this.dictionaryService.reactivateItem(id, body.version);
+    const result = await this.dictionaryService.reactivateItem(itemId, body.version);
     return success(result);
   }
 
@@ -488,8 +951,8 @@ export class DictionaryController {
   private ensureAcTenant(req: Request): void {
     if (req.tenantContext?.tier !== 'ac') {
       throw new ForbiddenException({
-        code: 'AC_ONLY_OPERATION',
-        message: 'This operation is only available for AC tenant',
+        code: ErrorCodes.PERM_ACCESS_DENIED,
+        message: 'Only AC tenant administrators can access this resource',
       });
     }
   }

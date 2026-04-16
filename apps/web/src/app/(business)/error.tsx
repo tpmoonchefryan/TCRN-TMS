@@ -3,6 +3,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui';
@@ -13,6 +14,9 @@ interface ErrorProps {
 }
 
 export default function BusinessError({ error, reset }: ErrorProps) {
+  const t = useTranslations('runtimeMessages.businessError');
+  const tCommon = useTranslations('common');
+
   useEffect(() => {
     console.error('Business route error:', error);
   }, [error]);
@@ -21,22 +25,22 @@ export default function BusinessError({ error, reset }: ErrorProps) {
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="text-center max-w-md">
         <div className="text-5xl mb-4">😕</div>
-        <h1 className="text-xl font-bold mb-2">Page Error</h1>
+        <h1 className="text-xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground mb-6 text-sm">
-          Something went wrong loading this page. Please try again.
+          {t('description')}
         </p>
         {error.digest && (
           <p className="text-xs text-muted-foreground mb-4">
-            Error ID: {error.digest}
+            {t('errorIdLabel')} {error.digest}
           </p>
         )}
         <div className="flex gap-3 justify-center">
           <Button onClick={reset} size="sm">
-            Try Again
+            {tCommon('retry')}
           </Button>
           <Link href="/">
             <Button variant="outline" size="sm">
-              Back to Home
+              {t('backToHome')}
             </Button>
           </Link>
         </div>

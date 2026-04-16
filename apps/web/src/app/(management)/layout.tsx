@@ -3,6 +3,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { SessionBootstrapAlert } from '@/components/auth/session-bootstrap-alert';
@@ -19,6 +20,7 @@ export default function ManagementLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const t = useTranslations('runtimeMessages.managementLayout');
   const { isAuthenticated, _hasHydrated: authHydrated, isAcTenant, checkAuth, fetchAccessibleTalents } = useAuthStore();
   const { 
     _hasHydrated: talentHydrated, 
@@ -87,13 +89,13 @@ export default function ManagementLayout({
       const result = await fetchAccessibleTalents();
 
       if (!result.success) {
-        setTreeError(result.error || 'Failed to load organization');
+        setTreeError(result.error || t('failedToLoadOrganization'));
         hasFetchedRef.current = false;
       }
     };
     
     void fetchOrganizationTree();
-  }, [authHydrated, isAuthenticated, isAcTenant, isVerified, isLoadingTree, hasFetched, fetchAccessibleTalents]);
+  }, [authHydrated, isAuthenticated, isAcTenant, isVerified, isLoadingTree, hasFetched, fetchAccessibleTalents, t]);
 
   useEffect(() => {
     setTreeError(fetchError);
@@ -126,7 +128,7 @@ export default function ManagementLayout({
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Redirecting to Admin Console...</p>
+          <p className="text-slate-600">{t('redirectingToAdmin')}</p>
         </div>
       </div>
     );
@@ -138,7 +140,7 @@ export default function ManagementLayout({
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading organization...</p>
+          <p className="text-slate-600">{t('loadingOrganization')}</p>
         </div>
       </div>
     );
@@ -149,7 +151,7 @@ export default function ManagementLayout({
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center text-red-500">
-          <p className="mb-2">Failed to load organization</p>
+          <p className="mb-2">{t('failedToLoadOrganization')}</p>
           <p className="text-sm">{treeError}</p>
         </div>
       </div>

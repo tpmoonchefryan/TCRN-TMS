@@ -20,13 +20,20 @@ import { PrismaClient } from '@tcrn/database';
 describe('Security Integration Tests', () => {
   let app: INestApplication;
   let accessToken: string;
+  let viewerAccessToken: string;
   let prisma: PrismaClient;
   let tenantFixture: TenantFixture;
   let testUser: TestUser;
+  let viewerUser: TestUser;
 
   const withAuth = (req: request.Test) =>
     req
       .set('Authorization', `Bearer ${accessToken}`)
+      .set('X-Tenant-ID', tenantFixture.tenant.id);
+
+  const withViewerAuth = (req: request.Test) =>
+    req
+      .set('Authorization', `Bearer ${viewerAccessToken}`)
       .set('X-Tenant-ID', tenantFixture.tenant.id);
 
   beforeAll(async () => {
@@ -44,6 +51,12 @@ describe('Security Integration Tests', () => {
       `security_user_${Date.now()}`,
       ['ADMIN'],
     );
+    viewerUser = await createTestUserInTenant(
+      prisma,
+      tenantFixture,
+      `security_viewer_${Date.now()}`,
+      ['VIEWER'],
+    );
 
     const tokenService = moduleFixture.get(TokenService);
     accessToken = tokenService.generateAccessToken({
@@ -52,6 +65,13 @@ describe('Security Integration Tests', () => {
       tsc: testUser.schemaName,
       email: testUser.email,
       username: testUser.username,
+    }).token;
+    viewerAccessToken = tokenService.generateAccessToken({
+      sub: viewerUser.id,
+      tid: viewerUser.tenantId,
+      tsc: viewerUser.schemaName,
+      email: viewerUser.email,
+      username: viewerUser.username,
     }).token;
   });
 
@@ -92,7 +112,7 @@ describe('Security Integration Tests', () => {
       const response = await withAuth(
         request(app.getHttpServer()).post('/api/v1/security/fingerprint')
       )
-        .expect(201);
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.fingerprint).toBeDefined();
@@ -104,6 +124,31 @@ describe('Security Integration Tests', () => {
       await request(app.getHttpServer())
         .post('/api/v1/security/fingerprint')
         .expect(401);
+    });
+  });
+
+  describe('Auth vs RBAC boundary', () => {
+    it('allows a viewer to access auth-only technical security endpoints', async () => {
+      const fingerprintResponse = await withViewerAuth(
+        request(app.getHttpServer()).post('/api/v1/security/fingerprint')
+      ).expect(200);
+
+      expect(fingerprintResponse.body.success).toBe(true);
+      expect(fingerprintResponse.body.data.shortFingerprint).toBeDefined();
+
+      const rateLimitResponse = await withViewerAuth(
+        request(app.getHttpServer()).get('/api/v1/rate-limit/stats')
+      ).expect(200);
+
+      expect(rateLimitResponse.body.success).toBe(true);
+      expect(rateLimitResponse.body.data.summary).toBeDefined();
+      expect(rateLimitResponse.body.data.topEndpoints).toBeDefined();
+    });
+
+    it('still rejects a viewer on RBAC-protected security management endpoints', async () => {
+      await withViewerAuth(
+        request(app.getHttpServer()).get('/api/v1/blocklist-entries')
+      ).expect(403);
     });
   });
 
@@ -149,7 +194,7 @@ describe('Security Integration Tests', () => {
           pattern: 'test_spam_word',
           patternType: 'keyword',
         })
-        .expect(201);
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.matched).toBe(true);
@@ -206,7 +251,7 @@ describe('Security Integration Tests', () => {
           ip: '192.168.1.100',
           scope: 'admin',
         })
-        .expect(201);
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.allowed).toBeDefined();

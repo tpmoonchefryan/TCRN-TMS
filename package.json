@@ -50,8 +50,11 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@commitlint/cli": "20.3.1",
     "@commitlint/config-conventional": "20.3.1",
+    "@tcrn/database": "workspace:*",
+    "@tcrn/shared": "workspace:*",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@vitest/coverage-v8": "4.0.17",
     "eslint-plugin-simple-import-sort": "^12.1.1",

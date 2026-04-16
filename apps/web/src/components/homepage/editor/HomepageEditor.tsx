@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 'use client';
@@ -6,18 +5,19 @@
 import { ArrowLeft, Eye, History, Monitor, MoreHorizontal, Redo2, Save, Settings, Smartphone, Tablet, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React from 'react'; // Added for React.useState
+import React from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'; // Added
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ConfirmActionDialog } from '@/platform/ui';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { Canvas } from './Canvas';
 import { ComponentPanel } from './ComponentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
-import { SettingsDialog } from './SettingsDialog'; // Added
-import { VersionHistory } from './VersionHistory'; // Added
+import { SettingsDialog } from './SettingsDialog';
+import { VersionHistory } from './VersionHistory';
 
 interface HomepageEditorProps {
   talentId: string;
@@ -25,13 +25,12 @@ interface HomepageEditorProps {
 
 export function HomepageEditor({ talentId }: HomepageEditorProps) {
   const t = useTranslations('homepageEditor');
+  const tc = useTranslations('common');
   const router = useRouter();
-  const { 
-    content, 
-    theme, 
-    saveStatus, 
-    saveDraft, 
-    publish, 
+  const {
+    saveStatus,
+    saveDraft,
+    publish,
     isPublishing,
     settings,
     undo,
@@ -40,15 +39,35 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
     canRedo,
     error: storeError
   } = useEditorStore();
-  
+  const editingLocale = useEditorStore((state) => state.editingLocale);
+  const previewDevice = useEditorStore((state) => state.previewDevice);
+  const setEditingLocale = useEditorStore((state) => state.setEditingLocale);
+  const setPreviewDevice = useEditorStore((state) => state.setPreviewDevice);
   const [historyOpen, setHistoryOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = React.useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = React.useState(false);
+  const hasUnsavedChanges = saveStatus === 'unsaved';
 
   React.useEffect(() => {
     if (storeError) {
-      toast.error(t('errorMessage', { error: storeError }));
+      toast.error(t(storeError as never));
     }
   }, [storeError, t]);
+
+  React.useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Keyboard shortcuts for undo/redo
   React.useEffect(() => {
@@ -74,26 +93,52 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
     await saveDraft(talentId);
   };
 
-  const handlePublish = async () => {
-    if (confirm(t('confirmPublish'))) {
-       const success = await publish(talentId);
-       if (success) {
-         // Invalidate ISR cache so visitors see the new content immediately
-         const path = settings?.homepagePath;
-         if (path) {
-           try {
-             await fetch('/api-proxy/revalidate', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ path }),
-             });
-           } catch (e) {
-             console.warn('Failed to revalidate cache:', e);
-           }
-         }
-         // Show toast success
-         toast.success(t('publishSuccess'));
-       }
+  const leaveEditor = React.useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const handleBack = React.useCallback(() => {
+    if (hasUnsavedChanges) {
+      setLeaveConfirmOpen(true);
+      return;
+    }
+
+    leaveEditor();
+  }, [hasUnsavedChanges, leaveEditor]);
+
+  const handlePublish = React.useCallback(async () => {
+    setPublishConfirmOpen(false);
+    const success = await publish(talentId);
+    if (!success) {
+      return;
+    }
+
+    const path = settings?.homepagePath;
+    if (path) {
+      try {
+        await fetch('/api-proxy/revalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path }),
+        });
+      } catch (error) {
+        console.warn('Failed to revalidate cache:', error);
+      }
+    }
+
+    toast.success(t('publishSuccess'));
+  }, [publish, settings?.homepagePath, t, talentId]);
+
+  const getEditingLocaleLabel = (locale: 'default' | 'en' | 'zh' | 'ja') => {
+    switch (locale) {
+      case 'default':
+        return tc('default');
+      case 'en':
+        return tc('english');
+      case 'zh':
+        return tc('chinese');
+      case 'ja':
+        return tc('japanese');
     }
   };
 
@@ -102,11 +147,40 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
       {/* Dialogs */}
       <VersionHistory open={historyOpen} onOpenChange={setHistoryOpen} talentId={talentId} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} talentId={talentId} />
+      <ConfirmActionDialog
+        open={leaveConfirmOpen}
+        onOpenChange={setLeaveConfirmOpen}
+        title={t('leaveEditorTitle')}
+        description={t('leaveEditorDescription')}
+        confirmLabel={t('leaveEditorConfirm')}
+        cancelLabel={tc('cancel')}
+        tone="default"
+        onConfirm={() => {
+          setLeaveConfirmOpen(false);
+          leaveEditor();
+        }}
+      />
+      <ConfirmActionDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        title={t('publish')}
+        description={t('confirmPublish')}
+        confirmLabel={t('publish')}
+        cancelLabel={tc('cancel')}
+        isSubmitting={isPublishing}
+        tone="default"
+        onConfirm={handlePublish}
+      />
 
       {/* Header */}
       <header className="h-14 border-b flex items-center justify-between px-4 bg-white dark:bg-slate-950 shrink-0">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            aria-label={tc('back')}
+          >
             <ArrowLeft size={18} />
           </Button>
           <div className="flex flex-col">
@@ -126,24 +200,24 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-2 px-2">
                   <span className="text-xs font-medium">
-                    {useEditorStore(s => s.editingLocale) === 'default' 
-                      ? 'Default' 
-                      : useEditorStore.getState().editingLocale.toUpperCase()}
+                    {editingLocale === 'default'
+                      ? tc('default')
+                      : editingLocale.toUpperCase()}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('default')}>
-                  Default (Original)
+                <DropdownMenuItem onClick={() => setEditingLocale('default')}>
+                  {t('defaultOriginal')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('en')}>
-                  English (EN)
+                <DropdownMenuItem onClick={() => setEditingLocale('en')}>
+                  {getEditingLocaleLabel('en')} (EN)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('zh')}>
-                  Chinese (ZH)
+                <DropdownMenuItem onClick={() => setEditingLocale('zh')}>
+                  {getEditingLocaleLabel('zh')} (ZH)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => useEditorStore.getState().setEditingLocale('ja')}>
-                  Japanese (JA)
+                <DropdownMenuItem onClick={() => setEditingLocale('ja')}>
+                  {getEditingLocaleLabel('ja')} (JA)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -152,29 +226,32 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
           {/* Device Switcher */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 mr-2">
             <Button
-              variant={useEditorStore(s => s.previewDevice) === 'mobile' ? 'default' : 'ghost'}
+              variant={previewDevice === 'mobile' ? 'default' : 'ghost'}
               size="icon"
               className="h-8 w-8"
-              onClick={() => useEditorStore.getState().setPreviewDevice('mobile')}
+              onClick={() => setPreviewDevice('mobile')}
               title={t('mobile')}
+              aria-label={t('mobile')}
             >
               <Smartphone size={14} />
             </Button>
             <Button
-              variant={useEditorStore(s => s.previewDevice) === 'tablet' ? 'default' : 'ghost'}
+              variant={previewDevice === 'tablet' ? 'default' : 'ghost'}
               size="icon"
               className="h-8 w-8"
-              onClick={() => useEditorStore.getState().setPreviewDevice('tablet')}
+              onClick={() => setPreviewDevice('tablet')}
               title={t('tablet')}
+              aria-label={t('tablet')}
             >
               <Tablet size={14} />
             </Button>
             <Button
-              variant={useEditorStore(s => s.previewDevice) === 'desktop' ? 'default' : 'ghost'}
+              variant={previewDevice === 'desktop' ? 'default' : 'ghost'}
               size="icon"
               className="h-8 w-8"
-              onClick={() => useEditorStore.getState().setPreviewDevice('desktop')}
+              onClick={() => setPreviewDevice('desktop')}
               title={t('desktop')}
+              aria-label={t('desktop')}
             >
               <Monitor size={14} />
             </Button>
@@ -189,6 +266,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
               onClick={() => undo()}
               disabled={!canUndo()}
               title={t('undoTitle')}
+              aria-label={t('undoTitle')}
             >
               <Undo2 size={14} />
             </Button>
@@ -199,6 +277,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
               onClick={() => redo()}
               disabled={!canRedo()}
               title={t('redoTitle')}
+              aria-label={t('redoTitle')}
             >
               <Redo2 size={14} />
             </Button>
@@ -225,7 +304,11 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
             {t('save')}
           </Button>
 
-          <Button size="sm" onClick={handlePublish} disabled={isPublishing || saveStatus === 'saving'}>
+          <Button
+            size="sm"
+            onClick={() => setPublishConfirmOpen(true)}
+            disabled={isPublishing || saveStatus === 'saving'}
+          >
             {isPublishing ? (
                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
             ) : (
@@ -236,7 +319,7 @@ export function HomepageEditor({ talentId }: HomepageEditorProps) {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" aria-label={tc('openMenu')}>
                 <MoreHorizontal size={18} />
               </Button>
             </DropdownMenuTrigger>

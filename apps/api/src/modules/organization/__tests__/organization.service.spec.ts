@@ -80,7 +80,8 @@ describe('OrganizationService', () => {
       display_name: 'Talent 1',
       avatar_url: 'https://example.com/avatar1.jpg',
       homepage_path: 't1',
-      is_active: true,
+      lifecycle_status: 'published',
+      published_at: new Date('2026-04-11T00:00:00.000Z'),
     },
     {
       id: 'talent-2',
@@ -92,7 +93,8 @@ describe('OrganizationService', () => {
       display_name: 'Talent 2',
       avatar_url: null,
       homepage_path: null,
-      is_active: true,
+      lifecycle_status: 'draft',
+      published_at: null,
     },
   ];
 

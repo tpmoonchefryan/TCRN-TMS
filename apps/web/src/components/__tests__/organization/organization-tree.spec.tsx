@@ -14,6 +14,8 @@ function createTestTalent(overrides: Partial<TalentInfo> = {}): TalentInfo {
     code: 'T001',
     displayName: 'Test Talent',
     path: '/tenant/talent-1',
+    lifecycleStatus: 'published',
+    publishedAt: '2026-04-11T00:00:00.000Z',
     ...overrides,
   };
 }
@@ -94,13 +96,13 @@ describe('OrganizationTree Component', () => {
     it('should render organization structure header when not compact', () => {
       render(<OrganizationTree {...defaultProps} />);
 
-      expect(screen.getByText('Organization Structure')).toBeInTheDocument();
+      expect(screen.getByText('organizationStructure')).toBeInTheDocument();
     });
 
     it('should not render header in compact mode', () => {
       render(<OrganizationTree {...defaultProps} compact={true} />);
 
-      expect(screen.queryByText('Organization Structure')).not.toBeInTheDocument();
+      expect(screen.queryByText('organizationStructure')).not.toBeInTheDocument();
     });
 
     it('should render subsidiaries under tenant', () => {
@@ -284,7 +286,7 @@ describe('OrganizationTree Component', () => {
       );
 
       // Settings button should not exist
-      expect(screen.queryByTitle('Settings')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('settings')).not.toBeInTheDocument();
     });
 
     it('should show settings button when showSettings is true', () => {
@@ -300,7 +302,7 @@ describe('OrganizationTree Component', () => {
       );
 
       // Settings buttons should exist (one per node)
-      const settingsButtons = screen.getAllByTitle('Settings');
+      const settingsButtons = screen.getAllByTitle('settings');
       expect(settingsButtons.length).toBeGreaterThan(0);
     });
 

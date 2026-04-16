@@ -3,53 +3,114 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
-import type { RequestContext } from '@tcrn/shared';
+import {
+  createTestCustomerInTenant,
+  createTestSubsidiaryInTenant,
+  createTestTalentInTenant,
+  createTestTenantFixture,
+  createTestUserInTenant,
+  type RequestContext,
+  type TenantFixture,
+  type TestUser,
+} from '@tcrn/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '@/modules/database/database.service';
 import { ChangeLogService } from '@/modules/log/services/change-log.service';
 import { TechEventLogService } from '@/modules/log/services/tech-event-log.service';
 import { ProfileType } from '@/modules/customer/dto/customer.dto';
+import { CustomerArchiveAccessService } from '@/modules/customer/application/customer-archive-access.service';
+import { CustomerProfileReadService } from '@/modules/customer/application/customer-profile-read.service';
+import { CustomerPiiPlatformApplicationService } from '@/modules/customer/application/customer-pii-platform.service';
+import { CustomerProfileWriteService } from '@/modules/customer/application/customer-profile-write.service';
+import { CustomerArchiveRepository } from '@/modules/customer/infrastructure/customer-archive.repository';
+import { CustomerProfileReadRepository } from '@/modules/customer/infrastructure/customer-profile-read.repository';
+import { CustomerProfileWriteRepository } from '@/modules/customer/infrastructure/customer-profile-write.repository';
 import { CustomerProfileService } from '@/modules/customer/services/customer-profile.service';
-
-const TEST_SCHEMA = 'tenant_test';
 
 describe('CustomerProfileService', () => {
   let service: CustomerProfileService;
   let module: TestingModule;
-  let testTalentId: string | null = null;
-  const testCustomerId: string | null = null;
-
-  const mockContext: RequestContext = {
-    tenantId: 'tenant-test',
-    tenantSchema: TEST_SCHEMA,
-    userId: '00000000-0000-0000-0000-000000000001',
-    userName: 'Test User',
-    ipAddress: '127.0.0.1',
-    userAgent: 'Test Agent',
-    requestId: 'req-123',
-  };
+  let tenantFixture: TenantFixture;
+  let testUser: TestUser;
+  let testTalentId: string;
+  let testCustomerId: string;
+  let mockContext: RequestContext;
 
   beforeAll(async () => {
-    // Get a real talent with profile store for testing
-    const talents = await prisma.$queryRawUnsafe<{ id: string; profile_store_id: string }[]>(`
-      SELECT id, profile_store_id FROM "${TEST_SCHEMA}".talent 
-      WHERE profile_store_id IS NOT NULL 
-      LIMIT 1
-    `);
-    
-    if (talents.length > 0) {
-      testTalentId = talents[0].id;
-    }
+    tenantFixture = await createTestTenantFixture(prisma, 'customer_profile');
+    testUser = await createTestUserInTenant(
+      prisma,
+      tenantFixture,
+      `customer_profile_user_${Date.now()}`,
+      ['ADMIN'],
+    );
+    const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
+      code: `SUB_CP_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Customer Profile Test Subsidiary',
+      createdBy: testUser.id,
+    });
+    const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
+      code: `TAL_CP_${Date.now().toString(36).toUpperCase()}`,
+      nameEn: 'Customer Profile Test Talent',
+      displayName: 'Customer Profile Test Talent',
+      homepagePath: `customer-profile-${Date.now()}`,
+      createdBy: testUser.id,
+    });
+    const talentRows = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
+      `
+        SELECT profile_store_id as "profileStoreId"
+        FROM "${tenantFixture.schemaName}".talent
+        WHERE id = $1::uuid
+        LIMIT 1
+      `,
+      talent.id,
+    );
+    const customer = await createTestCustomerInTenant(prisma, tenantFixture, {
+      nickname: 'test customer profile',
+      talentId: talent.id,
+      profileStoreId: talentRows[0]?.profileStoreId,
+      createdBy: testUser.id,
+    });
+
+    testTalentId = talent.id;
+    testCustomerId = customer.id;
+    mockContext = {
+      tenantId: tenantFixture.tenant.id,
+      tenantSchema: tenantFixture.schemaName,
+      userId: testUser.id,
+      userName: testUser.username,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Test Agent',
+      requestId: 'req-123',
+    };
 
     module = await Test.createTestingModule({
       providers: [
+        CustomerArchiveRepository,
+        CustomerArchiveAccessService,
+        CustomerProfileReadRepository,
+        CustomerProfileReadService,
+        CustomerProfileWriteRepository,
+        CustomerProfileWriteService,
         {
           provide: CustomerProfileService,
-          useFactory: (db: DatabaseService, cl: ChangeLogService, te: TechEventLogService) => {
-            return new CustomerProfileService(db, cl, te);
+          useFactory: (
+            db: DatabaseService,
+            cl: ChangeLogService,
+            te: TechEventLogService,
+            readService: CustomerProfileReadService,
+            writeService: CustomerProfileWriteService,
+          ) => {
+            return new CustomerProfileService(db, cl, te, readService, writeService);
           },
-          inject: [DatabaseService, ChangeLogService, TechEventLogService],
+          inject: [
+            DatabaseService,
+            ChangeLogService,
+            TechEventLogService,
+            CustomerProfileReadService,
+            CustomerProfileWriteService,
+          ],
         },
         {
           provide: DatabaseService,
@@ -77,6 +138,14 @@ describe('CustomerProfileService', () => {
           provide: TechEventLogService,
           useValue: {
             log: vi.fn().mockResolvedValue(undefined),
+            warn: vi.fn().mockResolvedValue(undefined),
+            piiAccess: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: CustomerPiiPlatformApplicationService,
+          useValue: {
+            syncCustomerLifecycleState: vi.fn().mockResolvedValue(null),
           },
         },
       ],
@@ -86,17 +155,8 @@ describe('CustomerProfileService', () => {
   });
 
   afterAll(async () => {
-    // Cleanup any test customers
-    if (testCustomerId) {
-      try {
-        await prisma.$executeRawUnsafe(`
-          DELETE FROM "${TEST_SCHEMA}".customer_profile WHERE id = $1::uuid
-        `, testCustomerId);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
     await module?.close();
+    await tenantFixture?.cleanup();
   });
 
   beforeEach(() => {
@@ -105,13 +165,9 @@ describe('CustomerProfileService', () => {
 
   describe('findMany', () => {
     it('should return paginated customers', async () => {
-      if (!testTalentId) {
-        console.log('Skipping test: no talent with profile store available');
-        return;
-      }
-
       const result = await service.findMany(
-        { talentId: testTalentId, page: 1, pageSize: 20 },
+        testTalentId,
+        { page: 1, pageSize: 20 },
         mockContext,
       );
 
@@ -123,15 +179,18 @@ describe('CustomerProfileService', () => {
 
     it('should throw NotFoundException when talent not found', async () => {
       await expect(
-        service.findMany({ talentId: '00000000-0000-0000-0000-000000000000' }, mockContext),
+        service.findMany(
+          '00000000-0000-0000-0000-000000000000',
+          {},
+          mockContext,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should filter by profile type', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, profileType: ProfileType.INDIVIDUAL },
+        testTalentId,
+        { profileType: ProfileType.INDIVIDUAL },
         mockContext,
       );
 
@@ -142,10 +201,9 @@ describe('CustomerProfileService', () => {
     });
 
     it('should filter by isActive', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, isActive: true },
+        testTalentId,
+        { isActive: true },
         mockContext,
       );
 
@@ -156,10 +214,9 @@ describe('CustomerProfileService', () => {
     });
 
     it('should support search by term', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, search: 'test' },
+        testTalentId,
+        { search: 'test' },
         mockContext,
       );
 
@@ -170,57 +227,31 @@ describe('CustomerProfileService', () => {
 
   describe('findById', () => {
     it('should throw NotFoundException for non-existent customer', async () => {
-      if (!testTalentId) return;
-
       await expect(
         service.findById('00000000-0000-0000-0000-000000000000', testTalentId, mockContext),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should return customer when found', async () => {
-      if (!testTalentId) return;
-
-      // Find an existing customer first
-      const customers = await prisma.$queryRawUnsafe<{ id: string }[]>(`
-        SELECT id FROM "${TEST_SCHEMA}".customer_profile 
-        WHERE talent_id = $1::uuid 
-        LIMIT 1
-      `, testTalentId);
-
-      if (customers.length === 0) {
-        console.log('Skipping test: no customers for talent');
-        return;
-      }
-
-      const result = await service.findById(customers[0].id, testTalentId, mockContext);
+      const result = await service.findById(testCustomerId, testTalentId, mockContext);
       expect(result).toBeDefined();
-      expect(result.id).toBe(customers[0].id);
+      expect(result.id).toBe(testCustomerId);
     });
   });
 
   describe('deactivate', () => {
     it('should throw NotFoundException for non-existent customer', async () => {
-      if (!testTalentId) return;
-
       await expect(
         service.deactivate('00000000-0000-0000-0000-000000000000', testTalentId, 'OTHER', 1, mockContext),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException on version mismatch', async () => {
-      if (!testTalentId) return;
-
-      // Find an existing customer
       const customers = await prisma.$queryRawUnsafe<{ id: string; version: number }[]>(`
-        SELECT id, version FROM "${TEST_SCHEMA}".customer_profile 
-        WHERE talent_id = $1::uuid AND is_active = true
+        SELECT id, version FROM "${tenantFixture.schemaName}".customer_profile
+        WHERE id = $1::uuid
         LIMIT 1
-      `, testTalentId);
-
-      if (customers.length === 0) {
-        console.log('Skipping test: no active customers for talent');
-        return;
-      }
+      `, testCustomerId);
 
       await expect(
         service.deactivate(customers[0].id, testTalentId, 'OTHER', 999, mockContext),
@@ -230,10 +261,9 @@ describe('CustomerProfileService', () => {
 
   describe('Edge cases', () => {
     it('should handle empty search results', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, search: 'ZZZZZZZZZZNONEXISTENT' },
+        testTalentId,
+        { search: 'ZZZZZZZZZZNONEXISTENT' },
         mockContext,
       );
 
@@ -241,10 +271,9 @@ describe('CustomerProfileService', () => {
     });
 
     it('should handle hasMembership filter', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, hasMembership: true },
+        testTalentId,
+        { hasMembership: true },
         mockContext,
       );
 
@@ -255,10 +284,9 @@ describe('CustomerProfileService', () => {
 
   describe('Sorting', () => {
     it('should sort by createdAt desc by default', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId },
+        testTalentId,
+        {},
         mockContext,
       );
 
@@ -268,10 +296,9 @@ describe('CustomerProfileService', () => {
     });
 
     it('should sort by nickname when specified', async () => {
-      if (!testTalentId) return;
-
       const result = await service.findMany(
-        { talentId: testTalentId, sort: 'nickname', order: 'asc' },
+        testTalentId,
+        { sort: 'nickname', order: 'asc' },
         mockContext,
       );
 

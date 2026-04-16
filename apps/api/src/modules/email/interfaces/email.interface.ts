@@ -3,8 +3,7 @@
 export interface EmailJobData {
   tenantSchema: string;
   templateCode: string;
-  recipientPiiId: string;
-  recipientEmail?: string; // Direct email (for system emails without PII)
+  recipientEmail: string;
   locale: string;
   variables: Record<string, string>;
 }

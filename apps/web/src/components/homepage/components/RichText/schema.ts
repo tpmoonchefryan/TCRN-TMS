@@ -9,7 +9,9 @@ export const RichTextSchema = z.object({
 
 export type RichTextProps = z.infer<typeof RichTextSchema>;
 
+export const LEGACY_RICH_TEXT_DEFAULT_CONTENT = '<p>Edit this text...</p>';
+
 export const defaultProps: RichTextProps = {
-  contentHtml: '<p>Edit this text...</p>',
+  contentHtml: '',
   textAlign: 'left',
 };

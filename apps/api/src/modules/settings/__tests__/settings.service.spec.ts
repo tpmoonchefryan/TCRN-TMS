@@ -1,31 +1,42 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @tcrn/database before importing service
-vi.mock('@tcrn/database', () => ({
-  prisma: {
-    $queryRawUnsafe: vi.fn(),
-    $executeRawUnsafe: vi.fn(),
-  },
-}));
+import { SettingsApplicationService } from '../application/settings-application.service';
+import { SettingsRepository } from '../infrastructure/settings.repository';
 
-import { SettingsService } from '../settings.service';
+describe('SettingsApplicationService', () => {
+  let service: SettingsApplicationService;
+  let mockSettingsRepository: {
+    findTenantBySchema: ReturnType<typeof vi.fn>;
+    findSubsidiaryById: ReturnType<typeof vi.fn>;
+    listSubsidiariesByCodes: ReturnType<typeof vi.fn>;
+    findTalentById: ReturnType<typeof vi.fn>;
+    findScopeSettingsRecord: ReturnType<typeof vi.fn>;
+    updateTenantSettings: ReturnType<typeof vi.fn>;
+    updateTalentSettings: ReturnType<typeof vi.fn>;
+    upsertScopeSettings: ReturnType<typeof vi.fn>;
+  };
 
-const mockPrisma = prisma as unknown as {
-  $queryRawUnsafe: ReturnType<typeof vi.fn>;
-  $executeRawUnsafe: ReturnType<typeof vi.fn>;
-};
-
-describe('SettingsService', () => {
-  let service: SettingsService;
   const testSchema = 'tenant_test123';
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new SettingsService();
+    mockSettingsRepository = {
+      findTenantBySchema: vi.fn(),
+      findSubsidiaryById: vi.fn(),
+      listSubsidiariesByCodes: vi.fn(),
+      findTalentById: vi.fn(),
+      findScopeSettingsRecord: vi.fn(),
+      updateTenantSettings: vi.fn(),
+      updateTalentSettings: vi.fn(),
+      upsertScopeSettings: vi.fn(),
+    };
+
+    service = new SettingsApplicationService(
+      mockSettingsRepository as unknown as SettingsRepository,
+    );
   });
 
   afterEach(() => {
@@ -34,21 +45,23 @@ describe('SettingsService', () => {
 
   describe('getEffectiveSettings', () => {
     it('should return tenant settings with defaults', async () => {
-      // Mock tenant settings query
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { settings: { timezone: 'Asia/Tokyo' } },
-      ]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: { timezone: 'Asia/Tokyo' },
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
-      expect(result).toBeDefined();
       expect(result.scopeType).toBe('tenant');
       expect(result.settings.timezone).toBe('Asia/Tokyo');
-      expect(result.settings.defaultLanguage).toBe('en'); // From defaults
+      expect(result.settings.defaultLanguage).toBe('en');
     });
 
-    it('should return default settings when no custom settings exist', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ settings: {} }]);
+    it('should return default settings when tenant custom settings are empty', async () => {
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
@@ -58,39 +71,62 @@ describe('SettingsService', () => {
     });
 
     it('should track overrides and inherited fields correctly', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { settings: { timezone: 'Asia/Tokyo', currency: 'JPY' } },
-      ]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: { timezone: 'Asia/Tokyo', currency: 'JPY' },
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
-      // Fields that were overridden at this scope
       expect(result.overrides).toContain('timezone');
       expect(result.overrides).toContain('currency');
-      
-      // Fields inherited from default
       expect(result.inheritedFrom.defaultLanguage).toBe('default');
     });
 
     it('should handle talent scope with subsidiary inheritance', async () => {
-      // Mock talent query
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ subsidiary_id: 'sub-123' }]) // Talent subsidiary lookup
-        .mockResolvedValueOnce([{ id: 'sub-123', path: '/DIV_A/', version: 1 }]) // Subsidiary path
-        .mockResolvedValueOnce([{ id: 'sub-123', code: 'DIV_A' }]) // Subsidiaries in path
-        .mockResolvedValueOnce([{ settings: { timezone: 'UTC' } }]) // Tenant settings
-        .mockResolvedValueOnce([{ id: 'sub-123', version: 1 }]) // Subsidiary query
-        .mockResolvedValueOnce([]) // Scope settings for subsidiary (empty)
-        .mockResolvedValueOnce([{ settings: { currency: 'EUR' }, version: 2 }]); // Talent settings
+      mockSettingsRepository.findTalentById
+        .mockResolvedValueOnce({
+          id: 'talent-123',
+          subsidiaryId: 'sub-123',
+          settings: { currency: 'EUR' },
+          version: 2,
+        })
+        .mockResolvedValueOnce({
+          id: 'talent-123',
+          subsidiaryId: 'sub-123',
+          settings: { currency: 'EUR' },
+          version: 2,
+        });
+      mockSettingsRepository.findSubsidiaryById
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        })
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        });
+      mockSettingsRepository.listSubsidiariesByCodes.mockResolvedValue([
+        { id: 'sub-123', code: 'DIV_A' },
+      ]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: { timezone: 'UTC' },
+      });
+      mockSettingsRepository.findScopeSettingsRecord.mockResolvedValue(null);
 
       const result = await service.getEffectiveSettings(testSchema, 'talent', 'talent-123');
 
       expect(result.scopeType).toBe('talent');
       expect(result.scopeId).toBe('talent-123');
+      expect(result.settings.currency).toBe('EUR');
+      expect(result.settings.timezone).toBe('UTC');
     });
 
     it('should throw NotFoundException for non-existent talent', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]); // Talent not found
+      mockSettingsRepository.findTalentById.mockResolvedValue(null);
 
       await expect(
         service.getEffectiveSettings(testSchema, 'talent', 'nonexistent'),
@@ -99,16 +135,21 @@ describe('SettingsService', () => {
   });
 
   describe('updateSettings', () => {
-    beforeEach(() => {
-      // Mock validateScopeExists for tenant
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'tenant-123' }]);
-    });
-
     it('should update tenant settings', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ settings: { timezone: 'UTC' } }]) // Current settings
-        .mockResolvedValueOnce([{ settings: { timezone: 'Asia/Tokyo' } }]); // After update
-      mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'Asia/Tokyo' },
+        });
+      mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
 
       const result = await service.updateSettings(
         testSchema,
@@ -119,14 +160,17 @@ describe('SettingsService', () => {
         'user-123',
       );
 
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
-      expect(result).toBeDefined();
+      expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
+        testSchema,
+        expect.objectContaining({ timezone: 'Asia/Tokyo' }),
+      );
+      expect(result.settings.timezone).toBe('Asia/Tokyo');
     });
 
     it('should throw BadRequestException on version conflict', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { settings: { timezone: 'UTC' }, version: 5 },
-      ]);
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({ id: 'tenant-123', settings: {} })
+        .mockResolvedValueOnce({ id: 'tenant-123', settings: { timezone: 'UTC' } });
 
       await expect(
         service.updateSettings(
@@ -134,17 +178,27 @@ describe('SettingsService', () => {
           'tenant',
           null,
           { timezone: 'Asia/Tokyo' },
-          3, // Wrong version
+          3,
           'user-123',
         ),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should merge new settings with existing', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ settings: { timezone: 'UTC', currency: 'USD' }, version: 1 }])
-        .mockResolvedValueOnce([{ settings: {} }]); // For getEffectiveSettings
-      mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
+    it('should merge new settings with existing tenant settings', async () => {
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC', currency: 'USD' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC', currency: 'USD' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC', currency: 'USD', language: 'ja' },
+        });
+      mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
 
       await service.updateSettings(
         testSchema,
@@ -155,17 +209,18 @@ describe('SettingsService', () => {
         'user-123',
       );
 
-      // Verify the merged settings were saved
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('timezone'),
+      expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
         testSchema,
+        expect.objectContaining({
+          timezone: 'UTC',
+          currency: 'USD',
+          language: 'ja',
+        }),
       );
     });
 
     it('should validate scope exists before updating', async () => {
-      mockPrisma.$queryRawUnsafe.mockReset();
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]); // Tenant not found
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue(null);
 
       await expect(
         service.updateSettings(
@@ -188,16 +243,32 @@ describe('SettingsService', () => {
     });
 
     it('should remove field from subsidiary settings', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ id: 'sub-123', version: 1 }]) // getScopeOwnSettings - subsidiary query
-        .mockResolvedValueOnce([]) // getScopeOwnSettings - scope settings table
-        // getEffectiveSettings chain:
-        .mockResolvedValueOnce([{ id: 'sub-123', path: '/DIV_A/', version: 1 }]) // getSubsidiaryChain - subsidiary
-        .mockResolvedValueOnce([{ id: 'sub-123', code: 'DIV_A' }]) // getSubsidiaryChain - subsidiaries by code
-        .mockResolvedValueOnce([{ settings: { timezone: 'UTC' } }]) // Tenant settings
-        .mockResolvedValueOnce([{ id: 'sub-123', version: 1 }]) // Subsidiary settings check
-        .mockResolvedValueOnce([]); // Scope settings for subsidiary
-      
+      mockSettingsRepository.findSubsidiaryById
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        })
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        });
+      mockSettingsRepository.findScopeSettingsRecord
+        .mockResolvedValueOnce({
+          settings: { timezone: 'Asia/Tokyo' },
+          version: 2,
+        })
+        .mockResolvedValueOnce(null);
+      mockSettingsRepository.upsertScopeSettings.mockResolvedValue(undefined);
+      mockSettingsRepository.listSubsidiariesByCodes.mockResolvedValue([
+        { id: 'sub-123', code: 'DIV_A' },
+      ]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: { timezone: 'UTC' },
+      });
+
       const result = await service.resetToInherited(
         testSchema,
         'subsidiary',
@@ -206,19 +277,34 @@ describe('SettingsService', () => {
         'user-123',
       );
 
-      expect(result).toBeDefined();
+      expect(mockSettingsRepository.upsertScopeSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          settings: {},
+        }),
+      );
+      expect(result.settings.timezone).toBe('UTC');
     });
 
     it('should return current settings if no custom settings exist', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ id: 'sub-123', version: 1 }]) // getScopeOwnSettings - subsidiary query
-        .mockResolvedValueOnce([]) // getScopeOwnSettings - scope settings table (no settings to reset)
-        // getEffectiveSettings chain:
-        .mockResolvedValueOnce([{ id: 'sub-123', path: '/DIV_A/', version: 1 }]) // getSubsidiaryChain - subsidiary
-        .mockResolvedValueOnce([{ id: 'sub-123', code: 'DIV_A' }]) // getSubsidiaryChain - subsidiaries by code
-        .mockResolvedValueOnce([{ settings: {} }]) // Tenant settings
-        .mockResolvedValueOnce([{ id: 'sub-123', version: 1 }]) // Subsidiary settings check
-        .mockResolvedValueOnce([]); // Scope settings for subsidiary
+      mockSettingsRepository.findSubsidiaryById
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        })
+        .mockResolvedValueOnce({
+          id: 'sub-123',
+          path: '/DIV_A/',
+          version: 1,
+        });
+      mockSettingsRepository.findScopeSettingsRecord.mockResolvedValue(null);
+      mockSettingsRepository.listSubsidiariesByCodes.mockResolvedValue([
+        { id: 'sub-123', code: 'DIV_A' },
+      ]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
 
       const result = await service.resetToInherited(
         testSchema,
@@ -229,45 +315,49 @@ describe('SettingsService', () => {
       );
 
       expect(result).toBeDefined();
-      // Should not have called save since there were no settings to reset
+      expect(mockSettingsRepository.upsertScopeSettings).not.toHaveBeenCalled();
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle empty settings object', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ settings: null }]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: null,
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
-      // Should still have default settings
       expect(result.settings.defaultLanguage).toBe('en');
     });
 
     it('should handle deeply nested password policy settings', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { 
-          settings: { 
-            passwordPolicy: { 
-              minLength: 16,
-              requireSpecial: false,
-            } 
-          } 
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {
+          passwordPolicy: {
+            minLength: 16,
+            requireSpecial: false,
+          },
         },
-      ]);
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
-      // Settings should be merged
       expect(result.settings.passwordPolicy).toEqual({
         minLength: 16,
         requireSpecial: false,
       });
     });
 
-    it('should handle subsidiary not found', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ subsidiary_id: 'sub-123' }]) // Talent with subsidiary
-        .mockResolvedValueOnce([]); // Subsidiary not found
+    it('should handle subsidiary not found for talent inheritance chain', async () => {
+      mockSettingsRepository.findTalentById.mockResolvedValue({
+        id: 'talent-123',
+        subsidiaryId: 'sub-123',
+        settings: {},
+        version: 1,
+      });
+      mockSettingsRepository.findSubsidiaryById.mockResolvedValue(null);
 
       await expect(
         service.getEffectiveSettings(testSchema, 'talent', 'talent-123'),
@@ -277,7 +367,10 @@ describe('SettingsService', () => {
 
   describe('Default Settings', () => {
     it('should have all required default fields', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ settings: {} }]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 
@@ -294,7 +387,10 @@ describe('SettingsService', () => {
     });
 
     it('should have correct default values', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ settings: {} }]);
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
 
       const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
 

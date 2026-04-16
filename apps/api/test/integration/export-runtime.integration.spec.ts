@@ -60,6 +60,22 @@ describe('Export Runtime Smoke Integration', () => {
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  const publishTalent = async (targetTalentId: string) => {
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantFixture.schemaName}".talent
+        SET lifecycle_status = 'published',
+            published_at = COALESCE(published_at, NOW()),
+            published_by = COALESCE(published_by, $2::uuid),
+            updated_at = NOW(),
+            updated_by = $2::uuid
+        WHERE id = $1::uuid
+      `,
+      targetTalentId,
+      testUser.id,
+    );
+  };
+
   const waitForExportJobSuccess = async (jobId: string) => {
     const deadline = Date.now() + 20_000;
 
@@ -151,6 +167,8 @@ describe('Export Runtime Smoke Integration', () => {
     });
 
     talentId = talent.id;
+    await publishTalent(talentId);
+
     const talentRows = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
       `
         SELECT profile_store_id as "profileStoreId"

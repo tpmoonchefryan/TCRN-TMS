@@ -7,7 +7,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-import { MarshmallowWidgetProps } from './schema';
+import { LEGACY_MARSHMALLOW_WIDGET_DEFAULTS, MarshmallowWidgetProps } from './schema';
 
 export const MarshmallowWidget: React.FC<MarshmallowWidgetProps & { className?: string }> = ({
   homepagePath,
@@ -25,15 +25,18 @@ export const MarshmallowWidget: React.FC<MarshmallowWidgetProps & { className?: 
   // Link to internal marshmallow page
   const marshmallowUrl = `/m/${homepagePath}`;
 
-  // Default values using i18n if props are missing
-  // Default values using i18n if props are missing or equal to hardcoded defaults
-  const effectiveTitle = title && title !== 'Marshmallow' ? title : t('marshmallowPlaceholder');
+  const effectiveTitle =
+    title && title !== LEGACY_MARSHMALLOW_WIDGET_DEFAULTS.title
+      ? title
+      : t('marshmallowPlaceholder');
   const effectiveDescription =
-    description && description !== 'Anonymous messages are welcome!'
+    description && description !== LEGACY_MARSHMALLOW_WIDGET_DEFAULTS.description
       ? description
       : t('descPlaceholder');
   const effectiveButtonText =
-    buttonText && buttonText !== 'Send Message' ? buttonText : t('buttonTextPlaceholder');
+    buttonText && buttonText !== LEGACY_MARSHMALLOW_WIDGET_DEFAULTS.buttonText
+      ? buttonText
+      : t('buttonTextPlaceholder');
 
   if (displayMode === 'button') {
     return (

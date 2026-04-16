@@ -10,6 +10,7 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Bold, Code, Heading1, Heading2, ImagePlus, Italic, Link as LinkIcon, List, ListOrdered, Redo, Table as TableIcon, Undo } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   placeholder: _placeholder,
   className,
 }) => {
+  const t = useTranslations('tipTapEditor');
   const editor = useEditor({
     immediatelyRender: false, // Fix SSR hydration mismatch in Next.js
     extensions: [
@@ -107,7 +109,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     if (!editor) return;
     
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+    const url = window.prompt(t('urlPrompt'), previousUrl);
 
     if (url === null) return;
     if (url === '') {
@@ -116,16 +118,16 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     }
 
     editor.chain().focus().setLink({ href: url }).run();
-  }, [editor]);
+  }, [editor, t]);
 
   const addImage = useCallback(() => {
     if (!editor) return;
     
-    const url = window.prompt('Image URL');
+    const url = window.prompt(t('imageUrlPrompt'));
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
-  }, [editor]);
+  }, [editor, t]);
 
   const insertTable = useCallback(() => {
     if (!editor) return;
@@ -148,7 +150,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={cn('h-8 w-8 p-0', editor.isActive('bold') && 'bg-accent')}
-          title="Bold"
+          title={t('bold')}
         >
           <Bold className="h-4 w-4" />
         </Button>
@@ -158,7 +160,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={cn('h-8 w-8 p-0', editor.isActive('italic') && 'bg-accent')}
-          title="Italic"
+          title={t('italic')}
         >
           <Italic className="h-4 w-4" />
         </Button>
@@ -169,7 +171,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           className={cn('h-8 w-8 p-0', editor.isActive('heading', { level: 1 }) && 'bg-accent')}
-          title="Heading 1"
+          title={t('heading1')}
         >
           <Heading1 className="h-4 w-4" />
         </Button>
@@ -179,7 +181,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           className={cn('h-8 w-8 p-0', editor.isActive('heading', { level: 2 }) && 'bg-accent')}
-          title="Heading 2"
+          title={t('heading2')}
         >
           <Heading2 className="h-4 w-4" />
         </Button>
@@ -190,7 +192,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={cn('h-8 w-8 p-0', editor.isActive('bulletList') && 'bg-accent')}
-          title="Bullet List"
+          title={t('bulletList')}
         >
           <List className="h-4 w-4" />
         </Button>
@@ -200,7 +202,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={cn('h-8 w-8 p-0', editor.isActive('orderedList') && 'bg-accent')}
-          title="Ordered List"
+          title={t('orderedList')}
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
@@ -211,7 +213,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={setLink}
           className={cn('h-8 w-8 p-0', editor.isActive('link') && 'bg-accent')}
-          title="Link"
+          title={t('link')}
         >
           <LinkIcon className="h-4 w-4" />
         </Button>
@@ -221,7 +223,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={addImage}
           className="h-8 w-8 p-0"
-          title="Insert Image"
+          title={t('insertImage')}
         >
           <ImagePlus className="h-4 w-4" />
         </Button>
@@ -231,7 +233,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           size="sm"
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           className={cn('h-8 w-8 p-0', editor.isActive('codeBlock') && 'bg-accent')}
-          title="Code Block"
+          title={t('codeBlock')}
         >
           <Code className="h-4 w-4" />
         </Button>
@@ -244,40 +246,40 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
               variant="ghost"
               size="sm"
               className={cn('h-8 w-8 p-0', editor.isActive('table') && 'bg-accent')}
-              title="Table"
+              title={t('table')}
             >
               <TableIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={insertTable}>
-              Insert Table (3x3)
+              {t('insertTable')}
             </DropdownMenuItem>
             {editor.isActive('table') && (
               <>
                 <DropdownMenuItem onClick={() => editor.chain().focus().addColumnBefore().run()}>
-                  Add Column Before
+                  {t('addColumnBefore')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => editor.chain().focus().addColumnAfter().run()}>
-                  Add Column After
+                  {t('addColumnAfter')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => editor.chain().focus().deleteColumn().run()}>
-                  Delete Column
+                  {t('deleteColumn')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => editor.chain().focus().addRowBefore().run()}>
-                  Add Row Before
+                  {t('addRowBefore')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()}>
-                  Add Row After
+                  {t('addRowAfter')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => editor.chain().focus().deleteRow().run()}>
-                  Delete Row
+                  {t('deleteRow')}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => editor.chain().focus().deleteTable().run()}
                   className="text-destructive"
                 >
-                  Delete Table
+                  {t('deleteTable')}
                 </DropdownMenuItem>
               </>
             )}
@@ -292,7 +294,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
           className="h-8 w-8 p-0"
-          title="Undo"
+          title={t('undo')}
         >
           <Undo className="h-4 w-4" />
         </Button>
@@ -303,7 +305,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
           className="h-8 w-8 p-0"
-          title="Redo"
+          title={t('redo')}
         >
           <Redo className="h-4 w-4" />
         </Button>

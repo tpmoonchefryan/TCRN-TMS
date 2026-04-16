@@ -25,13 +25,10 @@ export type WebhookEventType = z.infer<typeof WebhookEventTypeSchema>;
 // Adapter Schemas
 // ============================================================================
 export const AdapterListQuerySchema = z.object({
-  scopeType: IntegrationOwnerTypeSchema.optional(),
-  scopeId: z.string().uuid().optional(),
   platformId: z.string().uuid().optional(),
   adapterType: AdapterTypeSchema.optional(),
   includeInherited: z.coerce.boolean().optional().default(true),
   includeDisabled: z.coerce.boolean().optional().default(false),
-  ownerOnly: z.coerce.boolean().optional().default(false),
 });
 
 export const AdapterConfigItemSchema = z.object({
@@ -47,8 +44,6 @@ export const CreateAdapterSchema = z.object({
   nameJa: z.string().max(128).optional(),
   adapterType: AdapterTypeSchema,
   inherit: z.boolean().optional().default(true),
-  ownerType: IntegrationOwnerTypeSchema.optional(),
-  ownerId: z.string().uuid().optional(),
   configs: z.array(AdapterConfigItemSchema).optional(),
 });
 
@@ -63,11 +58,6 @@ export const UpdateAdapterSchema = z.object({
 export const UpdateAdapterConfigsSchema = z.object({
   configs: z.array(AdapterConfigItemSchema),
   adapterVersion: z.number().int(),
-});
-
-export const DisableAdapterSchema = z.object({
-  scopeType: IntegrationOwnerTypeSchema,
-  scopeId: z.string().uuid(),
 });
 
 export type AdapterListQueryInput = z.infer<typeof AdapterListQuerySchema>;

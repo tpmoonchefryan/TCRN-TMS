@@ -1,0 +1,854 @@
+// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+
+'use client';
+
+import {
+  ArrowLeft,
+  BookOpen,
+  Copy,
+  Database,
+  Edit,
+  FolderTree,
+  Layers,
+  Loader2,
+  Lock,
+  MoreHorizontal,
+  Plus,
+  Save,
+  Search,
+  Shield,
+} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+
+import { BlocklistManager } from '@/components/security/BlocklistManager';
+import { ExternalBlocklistManager } from '@/components/security/ExternalBlocklistManager';
+import { HierarchicalSettingsPanel } from '@/components/settings/HierarchicalSettingsPanel';
+import {
+  mapConfigurationEntities,
+  mapDictionaryItems,
+  mapSubsidiaryRecordToSettingsState,
+  settingsManagementApi,
+  type SubsidiarySettingsScreenState,
+} from '@/domains/config-dictionary-settings/api/settings-management.api';
+import {
+  CONFIG_ENTITY_TYPES,
+  ConfigEntity,
+  DICTIONARY_TYPES,
+  DictionaryRecord,
+} from '@/domains/config-dictionary-settings/components/shared-constants';
+import { cn } from '@/lib/utils';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Input,
+  Label,
+  ScrollArea,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/platform/ui';
+
+export function SubsidiarySettingsScreen() {
+  const params = useParams();
+  const router = useRouter();
+  const t = useTranslations('settingsPage');
+  const tc = useTranslations('common');
+  const tSubsidiary = useTranslations('subsidiarySettings');
+  const tenantId = params.tenantId as string;
+  const subsidiaryId = params.subsidiaryId as string;
+
+  const [activeTab, setActiveTab] = useState('details');
+  const [subsidiary, setSubsidiary] = useState<SubsidiarySettingsScreenState | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Config Entity state
+  const [configEntities, setConfigEntities] = useState<Record<string, ConfigEntity[]>>({});
+  const [selectedEntityType, setSelectedEntityType] = useState<string>(CONFIG_ENTITY_TYPES[0].code);
+  const [entitySearch, setEntitySearch] = useState('');
+  const [editingEntity, setEditingEntity] = useState<ConfigEntity | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+
+  // Dictionary state
+  const [dictionaryRecords, setDictionaryRecords] = useState<Record<string, DictionaryRecord[]>>(
+    {}
+  );
+  const [selectedDictType, setSelectedDictType] = useState<string>(DICTIONARY_TYPES[0].code);
+  const [dictSearch, setDictSearch] = useState('');
+  const [isLoadingDict, setIsLoadingDict] = useState(false);
+  const [dictCounts, setDictCounts] = useState<Record<string, number>>({});
+
+  // Fetch subsidiary data
+  const fetchSubsidiary = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await settingsManagementApi.getSubsidiary(subsidiaryId);
+      if (response.success && response.data) {
+        setSubsidiary(mapSubsidiaryRecordToSettingsState(response.data));
+      }
+    } catch {
+      toast.error(tc('error'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [subsidiaryId, tc]);
+
+  // Fetch config entities for selected type
+  const fetchConfigEntities = useCallback(
+    async (entityType: string) => {
+      setIsLoadingConfig(true);
+      try {
+        const response = await settingsManagementApi.listConfigEntities(entityType, {
+          scopeType: 'subsidiary',
+          scopeId: subsidiaryId,
+          includeInherited: true,
+        });
+        if (response.success && response.data) {
+          setConfigEntities((prev) => ({
+            ...prev,
+            [entityType]: mapConfigurationEntities(response.data ?? []),
+          }));
+        }
+      } catch {
+        // Keep empty array on error
+      } finally {
+        setIsLoadingConfig(false);
+      }
+    },
+    [subsidiaryId]
+  );
+
+  // Fetch dictionary records for selected type
+  const fetchDictionaryRecords = useCallback(async (dictType: string) => {
+    setIsLoadingDict(true);
+    try {
+      const response = await settingsManagementApi.listDictionaryItems(dictType);
+      if (response.success && response.data) {
+        const records = mapDictionaryItems(response.data);
+        setDictionaryRecords((prev) => ({
+          ...prev,
+          [dictType]: records,
+        }));
+        setDictCounts((prev) => ({
+          ...prev,
+          [dictType]: records.length,
+        }));
+      }
+    } catch {
+      // Keep empty array on error
+    } finally {
+      setIsLoadingDict(false);
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchSubsidiary();
+  }, [fetchSubsidiary]);
+
+  // Fetch config entities when type changes
+  useEffect(() => {
+    if (activeTab === 'config') {
+      fetchConfigEntities(selectedEntityType);
+    }
+  }, [activeTab, selectedEntityType, fetchConfigEntities]);
+
+  // Fetch dictionary records when type changes
+  useEffect(() => {
+    if (activeTab === 'dictionary') {
+      fetchDictionaryRecords(selectedDictType);
+    }
+  }, [activeTab, selectedDictType, fetchDictionaryRecords]);
+
+  const handleBack = () => {
+    router.push(`/tenant/${tenantId}/organization-structure`);
+  };
+
+  const handleSave = async () => {
+    if (!subsidiary) return;
+    setIsSaving(true);
+    try {
+      await settingsManagementApi.updateSubsidiary(subsidiaryId, {
+        nameEn: subsidiary.displayName,
+        version: subsidiary.version,
+      });
+      toast.success(tc('success'));
+      fetchSubsidiary();
+    } catch {
+      toast.error(tc('error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Config entity handlers
+  const handleToggleActive = async (entityId: string) => {
+    const entity = configEntities[selectedEntityType]?.find((e) => e.id === entityId);
+    if (!entity || entity.inheritedFrom) return;
+
+    try {
+      if (entity.isActive) {
+        await settingsManagementApi.deactivateConfigEntity(selectedEntityType, entityId, 1);
+      } else {
+        await settingsManagementApi.reactivateConfigEntity(selectedEntityType, entityId, 1);
+      }
+      fetchConfigEntities(selectedEntityType);
+    } catch {
+      toast.error(tc('error'));
+    }
+  };
+
+  const handleToggleForceUse = async (entityId: string) => {
+    const entity = configEntities[selectedEntityType]?.find((e) => e.id === entityId);
+    if (!entity || entity.isSystem || entity.inheritedFrom) return;
+
+    try {
+      await settingsManagementApi.updateConfigEntity(selectedEntityType, entityId, {
+        isForceUse: !entity.isForceUse,
+        version: 1,
+      });
+      fetchConfigEntities(selectedEntityType);
+    } catch {
+      toast.error(tc('error'));
+    }
+  };
+
+  const handleEditEntity = (entity: ConfigEntity) => {
+    setEditingEntity({ ...entity });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEntity = async () => {
+    if (!editingEntity) return;
+    try {
+      await settingsManagementApi.updateConfigEntity(selectedEntityType, editingEntity.id, {
+        nameEn: editingEntity.nameEn,
+        nameZh: editingEntity.nameZh,
+        nameJa: editingEntity.nameJa,
+        version: 1,
+      });
+      toast.success(tc('success'));
+      setShowEditDialog(false);
+      setEditingEntity(null);
+      fetchConfigEntities(selectedEntityType);
+    } catch {
+      toast.error(tc('error'));
+    }
+  };
+
+  const handleDuplicateEntity = async (entity: ConfigEntity) => {
+    try {
+      await settingsManagementApi.createConfigEntity(selectedEntityType, {
+        code: `${entity.code}_COPY`,
+        nameEn: `${entity.nameEn} (Copy)`,
+        nameZh: entity.nameZh,
+        nameJa: entity.nameJa,
+        scopeType: 'subsidiary',
+        scopeId: subsidiaryId,
+      });
+      toast.success(tc('success'));
+      fetchConfigEntities(selectedEntityType);
+    } catch {
+      toast.error(tc('error'));
+    }
+  };
+
+  const handleDisableEntity = async (entityId: string) => {
+    const entity = configEntities[selectedEntityType]?.find((e) => e.id === entityId);
+    if (!entity || entity.inheritedFrom || entity.isSystem) return;
+
+    try {
+      await settingsManagementApi.deactivateConfigEntity(selectedEntityType, entityId, 1);
+      fetchConfigEntities(selectedEntityType);
+    } catch {
+      toast.error(tc('error'));
+    }
+  };
+
+  // Filter config entities
+  const filteredEntities = useMemo(() => {
+    const entities = configEntities[selectedEntityType] || [];
+    if (!entitySearch) return entities;
+    const search = entitySearch.toLowerCase();
+    return entities.filter(
+      (e) =>
+        e.code.toLowerCase().includes(search) ||
+        e.nameEn.toLowerCase().includes(search) ||
+        e.nameZh.includes(search)
+    );
+  }, [selectedEntityType, entitySearch, configEntities]);
+
+  // Get selected entity type info
+  const selectedEntityTypeInfo = CONFIG_ENTITY_TYPES.find((t) => t.code === selectedEntityType);
+
+  // Filter dictionary records
+  const filteredDictRecords = useMemo(() => {
+    const records = dictionaryRecords[selectedDictType] || [];
+    if (!dictSearch) return records;
+    const search = dictSearch.toLowerCase();
+    return records.filter(
+      (r) =>
+        r.code.toLowerCase().includes(search) ||
+        r.nameEn.toLowerCase().includes(search) ||
+        r.nameZh.includes(search)
+    );
+  }, [selectedDictType, dictSearch, dictionaryRecords]);
+
+  const selectedDictInfo = DICTIONARY_TYPES.find((t) => t.code === selectedDictType);
+
+  // Loading state
+  if (isLoading || !subsidiary) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft size={20} />
+        </Button>
+        <div className="rounded-lg bg-amber-100 p-3 dark:bg-amber-900/30">
+          <FolderTree size={24} className="text-amber-600" />
+        </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">{subsidiary.displayName}</h1>
+          <p className="text-muted-foreground">{t('subsidiarySettings')}</p>
+        </div>
+        <Badge variant={subsidiary.isActive ? 'default' : 'secondary'}>
+          {subsidiary.isActive ? tc('active') : tc('inactive')}
+        </Badge>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full max-w-3xl grid-cols-6">
+          <TabsTrigger value="details">
+            <FolderTree size={14} className="mr-2" />
+            {t('details')}
+          </TabsTrigger>
+          <TabsTrigger value="config">
+            <Database size={14} className="mr-2" />
+            {t('configEntity')}
+          </TabsTrigger>
+          <TabsTrigger value="dictionary">
+            <BookOpen size={14} className="mr-2" />
+            {t('dictionary')}
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield size={14} className="mr-2" />
+            {t('security')}
+          </TabsTrigger>
+          <TabsTrigger value="scope">
+            <Layers size={14} className="mr-2" />
+            {tSubsidiary('scope')}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Details Tab */}
+        <TabsContent value="details" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('subsidiaryInfo')}</CardTitle>
+              <CardDescription>{t('subsidiaryInfoDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>{t('subsidiaryCode')}</Label>
+                  <Input value={subsidiary.code} disabled />
+                  <p className="text-muted-foreground text-xs">{tc('cannotChange')}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('displayName')}</Label>
+                  <Input
+                    value={subsidiary.displayName}
+                    onChange={(e) => setSubsidiary({ ...subsidiary, displayName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('path')}</Label>
+                  <Input value={subsidiary.path} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label>{tc('status')}</Label>
+                  <Input value={subsidiary.isActive ? tc('active') : tc('inactive')} disabled />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t pt-4 md:grid-cols-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{subsidiary.talentCount}</p>
+                  <p className="text-muted-foreground text-xs">{t('talents')}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{subsidiary.childrenCount}</p>
+                  <p className="text-muted-foreground text-xs">{t('subDirectories')}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">
+                    {
+                      Object.values(configEntities)
+                        .flat()
+                        .filter((e) => e.ownerType === 'subsidiary').length
+                    }
+                  </p>
+                  <p className="text-muted-foreground text-xs">{t('localConfigs')}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">
+                    {
+                      Object.values(configEntities)
+                        .flat()
+                        .filter((e) => e.inheritedFrom).length
+                    }
+                  </p>
+                  <p className="text-muted-foreground text-xs">{t('inheritedConfigs')}</p>
+                </div>
+              </div>
+
+              <p className="text-muted-foreground text-sm">
+                Runtime inheritance and feature behavior are managed through real scoped settings in
+                the `Scope` tab, not standalone subsidiary-only toggles on this endpoint.
+              </p>
+
+              <div className="flex justify-end">
+                <Button onClick={handleSave} disabled={isSaving}>
+                  <Save size={16} className="mr-2" />
+                  {isSaving ? tc('saving') : tc('saveChanges')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Config Entity Tab - Left/Right Split */}
+        <TabsContent value="config" className="mt-6">
+          <div className="grid h-[calc(100vh-300px)] min-h-[500px] grid-cols-12 gap-6">
+            {/* Left Panel - Entity Types */}
+            <Card className="col-span-3">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('entityTypes')}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <ScrollArea className="h-[calc(100vh-420px)]">
+                  <div className="space-y-1">
+                    {CONFIG_ENTITY_TYPES.map((type) => {
+                      const count = (configEntities[type.code] || []).length;
+                      return (
+                        <button
+                          key={type.code}
+                          onClick={() => setSelectedEntityType(type.code)}
+                          className={cn(
+                            'flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors',
+                            selectedEntityType === type.code
+                              ? 'bg-primary/10 text-primary'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">{type.icon}</span>
+                            <div>
+                              <p className="text-sm font-medium">{type.name}</p>
+                              <p className="text-muted-foreground text-xs">{type.nameZh}</p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {count}
+                          </Badge>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Right Panel - Entity Records */}
+            <Card className="col-span-9">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">{selectedEntityTypeInfo?.icon}</span>
+                      {selectedEntityTypeInfo?.name}
+                    </CardTitle>
+                    <CardDescription>{selectedEntityTypeInfo?.description}</CardDescription>
+                  </div>
+                  <Button>
+                    <Plus size={16} className="mr-2" />
+                    {t('addRecord')}
+                  </Button>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search
+                      className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
+                      size={16}
+                    />
+                    <Input
+                      placeholder={t('searchRecords')}
+                      value={entitySearch}
+                      onChange={(e) => setEntitySearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ScrollArea className="h-[calc(100vh-500px)]">
+                  {isLoadingConfig ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[120px]">{tc('code')}</TableHead>
+                          <TableHead>{tc('name')}</TableHead>
+                          <TableHead className="w-[100px]">{tc('source')}</TableHead>
+                          <TableHead className="w-[80px]">{tc('status')}</TableHead>
+                          <TableHead className="w-[100px]">{tc('forceUse')}</TableHead>
+                          <TableHead className="w-[80px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEntities.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-muted-foreground py-8 text-center"
+                            >
+                              {t('noRecordsClickAdd')}
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredEntities.map((entity) => (
+                            <TableRow key={entity.id} className="group">
+                              <TableCell className="font-mono text-sm">
+                                <div className="flex items-center gap-2">
+                                  {entity.code}
+                                  {entity.isSystem && (
+                                    <Lock size={12} className="text-muted-foreground" />
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{entity.nameEn}</p>
+                                  <p className="text-muted-foreground text-xs">{entity.nameZh}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {entity.inheritedFrom ? (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {tc('inherited')}
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-amber-500 text-xs">{tc('local')}</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <button
+                                  onClick={() =>
+                                    !entity.inheritedFrom && handleToggleActive(entity.id)
+                                  }
+                                  disabled={!!entity.inheritedFrom}
+                                  className="cursor-pointer disabled:cursor-not-allowed"
+                                >
+                                  <Badge variant={entity.isActive ? 'default' : 'secondary'}>
+                                    {entity.isActive ? tc('active') : tc('inactive')}
+                                  </Badge>
+                                </button>
+                              </TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={entity.isForceUse}
+                                  disabled={entity.isSystem || !!entity.inheritedFrom}
+                                  onCheckedChange={() => handleToggleForceUse(entity.id)}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {!entity.inheritedFrom ? (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="opacity-0 group-hover:opacity-100"
+                                      >
+                                        <MoreHorizontal size={16} />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditEntity(entity)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        {tc('edit')}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDuplicateEntity(entity)}
+                                      >
+                                        <Copy className="mr-2 h-4 w-4" />
+                                        {tc('duplicate')}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      {!entity.isSystem && entity.isActive && (
+                                        <DropdownMenuItem
+                                          className="text-orange-500"
+                                          onClick={() => handleDisableEntity(entity.id)}
+                                        >
+                                          <Lock className="mr-2 h-4 w-4" />
+                                          {tc('disabled')}
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">
+                                    {tc('inherited')}
+                                  </span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Dictionary Tab - Left/Right Split */}
+        <TabsContent value="dictionary" className="mt-6">
+          <div className="grid h-[calc(100vh-300px)] min-h-[500px] grid-cols-12 gap-6">
+            {/* Left Panel - Dictionary Types */}
+            <Card className="col-span-3">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('dictionaryTypes')}</CardTitle>
+                <CardDescription className="text-xs">{t('inheritedFromTenant')}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-2">
+                <ScrollArea className="h-[calc(100vh-450px)]">
+                  <div className="space-y-1">
+                    {DICTIONARY_TYPES.map((type) => (
+                      <button
+                        key={type.code}
+                        onClick={() => setSelectedDictType(type.code)}
+                        className={cn(
+                          'flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors',
+                          selectedDictType === type.code
+                            ? 'bg-primary/10 text-primary'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">{type.icon}</span>
+                          <div>
+                            <p className="text-sm font-medium">{type.name}</p>
+                            <p className="text-muted-foreground text-xs">{type.nameZh}</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {dictCounts[type.code] ?? '-'}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Right Panel - Dictionary Records */}
+            <Card className="col-span-9">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">{selectedDictInfo?.icon}</span>
+                      {selectedDictInfo?.name}
+                    </CardTitle>
+                    <CardDescription>{t('systemDictionaryInherited')}</CardDescription>
+                  </div>
+                  <Badge variant="outline">
+                    <Lock size={12} className="mr-1" />
+                    {tc('readOnly')}
+                  </Badge>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search
+                      className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
+                      size={16}
+                    />
+                    <Input
+                      placeholder={t('searchDictionary')}
+                      value={dictSearch}
+                      onChange={(e) => setDictSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ScrollArea className="h-[calc(100vh-500px)]">
+                  {isLoadingDict ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+                    </div>
+                  ) : filteredDictRecords.length === 0 ? (
+                    <div className="text-muted-foreground py-12 text-center">
+                      <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-30" />
+                      <p>{t('noRecordsForType')}</p>
+                      <p className="mt-1 text-sm">{tSubsidiary('tryDifferentSearch')}</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[150px]">{tc('code')}</TableHead>
+                          <TableHead>{tSubsidiary('english')}</TableHead>
+                          <TableHead>{tSubsidiary('chinese')}</TableHead>
+                          <TableHead>{tSubsidiary('japanese')}</TableHead>
+                          <TableHead className="w-[80px]">{tc('status')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredDictRecords.map((record) => (
+                          <TableRow key={record.code}>
+                            <TableCell className="font-mono text-sm">{record.code}</TableCell>
+                            <TableCell>{record.nameEn}</TableCell>
+                            <TableCell>{record.nameZh}</TableCell>
+                            <TableCell>{record.nameJa}</TableCell>
+                            <TableCell>
+                              {record.isActive ? (
+                                <Badge variant="default" className="text-xs">
+                                  {tc('active')}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">
+                                  {tc('inactive')}
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security" className="mt-6">
+          <div className="space-y-8">
+            <BlocklistManager scopeType="subsidiary" scopeId={subsidiary.id} />
+            <ExternalBlocklistManager scopeType="subsidiary" scopeId={subsidiary.id} />
+          </div>
+        </TabsContent>
+
+        {/* Scope Settings Tab - Hierarchical Settings with Inheritance */}
+        <TabsContent value="scope" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{tSubsidiary('hierarchicalSettings')}</CardTitle>
+              <CardDescription>{tSubsidiary('hierarchicalSettingsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <HierarchicalSettingsPanel
+                scopeType="subsidiary"
+                scopeId={subsidiaryId}
+                scopeName={subsidiary.displayName}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Entity Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {tc('edit')} {editingEntity?.nameEn}
+            </DialogTitle>
+            <DialogDescription>{selectedEntityTypeInfo?.description}</DialogDescription>
+          </DialogHeader>
+          {editingEntity && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{tc('code')}</Label>
+                <Input value={editingEntity.code} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>{tSubsidiary('englishName')}</Label>
+                <Input
+                  value={editingEntity.nameEn}
+                  onChange={(e) => setEditingEntity({ ...editingEntity, nameEn: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{tSubsidiary('chineseName')}</Label>
+                <Input
+                  value={editingEntity.nameZh}
+                  onChange={(e) => setEditingEntity({ ...editingEntity, nameZh: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{tSubsidiary('japaneseName')}</Label>
+                <Input
+                  value={editingEntity.nameJa}
+                  onChange={(e) => setEditingEntity({ ...editingEntity, nameJa: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              {tc('cancel')}
+            </Button>
+            <Button onClick={handleSaveEntity}>{tc('save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

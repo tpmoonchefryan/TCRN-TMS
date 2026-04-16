@@ -3,7 +3,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { ZodValidationPipe } from 'nestjs-zod';
@@ -11,6 +11,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiLogger } from './common/logger/api-logger';
+import { applyGlobalSwaggerParameters } from './config/swagger-global-parameters';
 // Import modules for Swagger definition grouping
 import { AuthModule } from './modules/auth';
 import { ConfigModule as AppConfigModule } from './modules/config';
@@ -71,13 +72,14 @@ export async function bootstrap(): Promise<void> {
   if (!corsOrigins.includes('http://localhost:4000')) {
     corsOrigins.push('http://localhost:4000');
   }
-  
+
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      // Compatibility-only runtime context headers remain accepted during Batch 1.
       'X-Tenant-ID',
       'X-Talent-Id',
       'X-PII-Access-Reason',
@@ -109,10 +111,10 @@ export async function bootstrap(): Promise<void> {
   const isProduction = configService.get('NODE_ENV') === 'production';
   const swaggerUser = configService.get('SWAGGER_USER');
   const swaggerPassword = configService.get('SWAGGER_PASSWORD');
-  
+
   // Enable Swagger in all environments, but protect with auth in production
   const enableSwagger = !isProduction || (swaggerUser && swaggerPassword);
-  
+
   if (enableSwagger) {
     const {
       buildSwaggerConfig,
@@ -146,7 +148,7 @@ export async function bootstrap(): Promise<void> {
       ],
       extraModels: [],
     });
-    addGlobalHeaders(operationsDoc);
+    applyGlobalSwaggerParameters(operationsDoc);
     // Needed to serve the JSON for the explorer
     SwaggerModule.setup('api/docs/operations', app, operationsDoc, SWAGGER_OPTIONS);
 
@@ -173,7 +175,7 @@ export async function bootstrap(): Promise<void> {
         DelegatedAdminModule,
       ],
     });
-    addGlobalHeaders(configDoc);
+    applyGlobalSwaggerParameters(configDoc);
     SwaggerModule.setup('api/docs/config', app, configDoc, SWAGGER_OPTIONS);
 
     // 3. Public API Definition
@@ -232,43 +234,4 @@ export async function bootstrap(): Promise<void> {
     logger.log(`API Documentation: http://localhost:${port}/api/docs`);
   }
   logger.log(`Environment: ${configService.get('NODE_ENV', 'development')}`);
-}
-
-/**
- * Helper to add global headers to all operations
- */
-function addGlobalHeaders(document: OpenAPIObject) {
-  const paths = Object.keys(document.paths);
-  for (const path of paths) {
-    const methods = Object.keys(document.paths[path]);
-    for (const method of methods) {
-      // Filter out non-method keys like 'summary' or 'description' if any (though path item object mainly has methods)
-      if (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)) {
-        const operation = document.paths[path][method];
-        if (!operation) continue;
-        
-        if (!operation.parameters) {
-          operation.parameters = [];
-        }
-        
-        // Add X-Tenant-ID
-        operation.parameters.push({
-          name: 'X-Tenant-ID',
-          in: 'header',
-          schema: { type: 'string', default: 'tenant_template' },
-          required: false,
-          description: 'Tenant identifier',
-        });
-        
-        // Add X-Talent-Id
-        operation.parameters.push({
-          name: 'X-Talent-Id',
-          in: 'header',
-          schema: { type: 'string' },
-          required: false,
-          description: 'Talent identifier (optional)',
-        });
-      }
-    }
-  }
 }

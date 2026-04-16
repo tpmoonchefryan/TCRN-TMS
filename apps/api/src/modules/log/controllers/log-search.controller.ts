@@ -1,12 +1,118 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ErrorCodes } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { buildCompatibleLogSearchQuery, LokiQueryService } from '../services';
 
+const LOG_SEARCH_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    entries: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          timestamp: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
+          labels: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+            example: {
+              app: 'tcrn-tms',
+              stream: 'integration_log',
+              severity: 'info',
+            },
+          },
+          data: {
+            type: 'object',
+            additionalProperties: true,
+            example: {
+              message: 'Webhook delivered',
+              requestId: 'req_123',
+            },
+          },
+        },
+        required: ['timestamp', 'labels', 'data'],
+      },
+    },
+    stats: {
+      type: 'object',
+      nullable: true,
+      additionalProperties: true,
+    },
+  },
+  required: ['entries'],
+  example: {
+    entries: [
+      {
+        timestamp: '2026-04-13T09:30:00.000Z',
+        labels: {
+          app: 'tcrn-tms',
+          stream: 'integration_log',
+          severity: 'info',
+        },
+        data: {
+          message: 'Webhook delivered',
+          requestId: 'req_123',
+        },
+      },
+    ],
+    stats: {
+      inspectedStreams: 1,
+    },
+  },
+};
+
+const LOG_SEARCH_UNAUTHORIZED_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: 'AUTH_UNAUTHORIZED' },
+        message: { type: 'string', example: 'Authentication required' },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: {
+      code: 'AUTH_UNAUTHORIZED',
+      message: 'Authentication required',
+    },
+  },
+};
+
+const LOG_SEARCH_FORBIDDEN_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: ErrorCodes.PERM_ACCESS_DENIED },
+        message: { type: 'string', example: 'Access denied' },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: {
+      code: ErrorCodes.PERM_ACCESS_DENIED,
+      message: 'Access denied',
+    },
+  },
+};
+
 @ApiTags('System - Logs')
+@ApiBearerAuth()
 @Controller('logs/search')
 export class LogSearchController {
   constructor(private readonly lokiQueryService: LokiQueryService) {}
@@ -35,7 +141,9 @@ export class LogSearchController {
     required: false,
     description: 'Legacy application filter (kept for compatibility only)',
   })
-  @ApiResponse({ status: 200, description: 'Returns matching log entries' })
+  @ApiResponse({ status: 200, description: 'Returns matching log entries', schema: LOG_SEARCH_RESPONSE_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to search logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to search logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
   async search(
     @Query('keyword') keyword?: string,
     @Query('stream') stream?: string,
@@ -65,7 +173,9 @@ export class LogSearchController {
   @Get('change-logs')
   @RequirePermissions({ resource: 'log.change_log', action: 'read' })
   @ApiOperation({ summary: 'Search change logs in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching change logs' })
+  @ApiResponse({ status: 200, description: 'Returns matching change logs', schema: LOG_SEARCH_RESPONSE_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to search change logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to search change logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
   async searchChangeLogs(
     @Query('objectType') objectType?: string,
     @Query('action') action?: string,
@@ -85,7 +195,9 @@ export class LogSearchController {
   @Get('events')
   @RequirePermissions({ resource: 'log.tech_log', action: 'read' })
   @ApiOperation({ summary: 'Search tech events in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching tech events' })
+  @ApiResponse({ status: 200, description: 'Returns matching tech events', schema: LOG_SEARCH_RESPONSE_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to search technical events', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to search technical events', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
   async searchTechEvents(
     @Query('severity') severity?: string,
     @Query('eventType') eventType?: string,
@@ -107,7 +219,9 @@ export class LogSearchController {
   @Get('integrations')
   @RequirePermissions({ resource: 'log.integration_log', action: 'read' })
   @ApiOperation({ summary: 'Search integration logs in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching integration logs' })
+  @ApiResponse({ status: 200, description: 'Returns matching integration logs', schema: LOG_SEARCH_RESPONSE_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to search integration logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to search integration logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
   async searchIntegrationLogs(
     @Query('direction') direction?: string,
     @Query('consumerCode') consumerCode?: string,

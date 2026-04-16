@@ -13,13 +13,13 @@ import {
     Webhook,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { STAGING_BANNER_HEIGHT } from '@/components/staging-banner';
 import { NoTalentMessage, TalentSelectModal } from '@/components/talent/talent-select-modal';
-import { useUIMode } from '@/hooks/use-ui-mode';
+import { getBusinessSelectableTalents } from '@/lib/talent-lifecycle-routing';
 import { cn, isStaging } from '@/lib/utils';
 import { TalentInfo, useTalentStore } from '@/stores/talent-store';
 
@@ -64,10 +64,13 @@ export function ManagementSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const t = useTranslations('navigation');
-  const { switchToBusinessUI, canAccessBusinessUI } = useUIMode();
+  const tc = useTranslations('common');
   const { currentTenantId, hasTalentAccess, currentTalent, accessibleTalents, setCurrentTalent, setUIMode } = useTalentStore();
+  const businessSelectableTalents = useMemo(
+    () => getBusinessSelectableTalents(accessibleTalents),
+    [accessibleTalents]
+  );
   
   // State for talent selection modal
   const [showTalentModal, setShowTalentModal] = useState(false);
@@ -81,16 +84,25 @@ export function ManagementSidebar() {
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
 
   const handleHomeClick = () => {
-    // If user has talent access
-    if (hasTalentAccess()) {
-      if (currentTalent) {
-        // Already has selected talent, go directly
-        switchToBusinessUI();
-        router.push('/customers');
-      } else {
-        // No talent selected, show modal to pick one
-        setShowTalentModal(true);
-      }
+    if (!hasTalentAccess()) {
+      return;
+    }
+
+    if (currentTalent) {
+      setUIMode('business');
+      router.push('/customers');
+      return;
+    }
+
+    if (businessSelectableTalents.length === 1) {
+      setCurrentTalent(businessSelectableTalents[0]);
+      setUIMode('business');
+      router.push('/customers');
+      return;
+    }
+
+    if (businessSelectableTalents.length > 1) {
+      setShowTalentModal(true);
     }
   };
 
@@ -101,7 +113,8 @@ export function ManagementSidebar() {
     router.push('/customers');
   };
 
-  // Button is enabled if user has any talent access
+  // Button is enabled only when the user has at least one published talent that can enter the
+  // business workspace.
   const isButtonEnabled = hasTalentAccess();
 
   return (
@@ -119,7 +132,7 @@ export function ManagementSidebar() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-pink-400 rounded-lg flex items-center justify-center text-white">
               T
             </div>
-            <span>TCRN TMS</span>
+            <span>{tc('appName')}</span>
           </div>
         </div>
 
@@ -207,7 +220,7 @@ export function ManagementSidebar() {
     {/* Talent Selection Modal */}
     <TalentSelectModal
       open={showTalentModal}
-      talents={accessibleTalents}
+      talents={businessSelectableTalents}
       onSelect={handleTalentSelect}
     />
   </>

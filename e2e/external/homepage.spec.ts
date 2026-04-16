@@ -1,64 +1,54 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+import { loadWebSmokeFixtureSync } from '../fixtures/web-smoke-fixture';
+
+const fixture = loadWebSmokeFixtureSync();
+
+async function openAskPage(page: Page) {
+  await page.goto(`/m/${fixture.public.marshmallowPath}/ask`);
+}
 
 test.describe('External Homepage', () => {
   test('visit published talent homepage', async ({ page }) => {
-    await page.goto('/p/test-talent');
+    await page.goto(`/p/${fixture.public.homepagePath}`);
 
-    // Verify basic elements
-    await expect(page.locator('h1')).toContainText('Test Talent');
-    await expect(page.locator('[data-testid="social-links"]')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: fixture.public.displayName }),
+    ).toBeVisible();
+    await expect(page.getByText('Powered by TCRN TMS')).toBeVisible();
   });
 
-  test('unpublished homepage returns 404', async ({ page }) => {
-    const response = await page.goto('/p/unpublished-talent');
+  test('unknown homepage path returns the app not-found surface', async ({ page }) => {
+    const response = await page.goto(`/p/${fixture.public.missingHomepagePath}`);
 
     expect(response?.status()).toBe(404);
-    await expect(page.locator('h1')).toContainText('页面不存在');
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
   });
 
-  test('mobile responsive layout is correct', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/p/test-talent');
+  test('published marshmallow feed renders the configured public copy', async ({ page }) => {
+    await page.goto(`/m/${fixture.public.marshmallowPath}`);
 
-    // Verify mobile layout
-    await expect(page.locator('[data-testid="mobile-menu"]')).toBeVisible();
-    await expect(page.locator('[data-testid="desktop-menu"]')).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: fixture.public.marshmallowTitle }),
+    ).toBeVisible();
+    await expect(page.getByText(fixture.public.welcomeText)).toBeVisible();
   });
 
-  test('homepage loads within acceptable time', async ({ page }) => {
-    const startTime = Date.now();
-    await page.goto('/p/test-talent');
-    const loadTime = Date.now() - startTime;
+  test('submit anonymous message and then hit the configured rate limit', async ({ page }) => {
+    await openAskPage(page);
 
-    // Should load within 3 seconds
-    expect(loadTime).toBeLessThan(3000);
-  });
-});
+    await page.locator('textarea').fill('This is the first public smoke message.');
+    await expect(page.locator('button[type="submit"]')).toBeEnabled();
+    await page.locator('button[type="submit"]').click();
 
-test.describe('External Marshmallow', () => {
-  test('submit anonymous message', async ({ page }) => {
-    await page.goto('/m/test-talent');
+    await expect(page.getByText(fixture.public.thankYouText)).toBeVisible();
 
-    await page.fill('[data-testid="message-input"]', '这是一条测试消息');
-    await page.click('[data-testid="submit-button"]');
+    await openAskPage(page);
+    await page.locator('textarea').fill('This second message should hit the rate limit.');
+    await page.locator('button[type="submit"]').click();
 
-    await expect(page.locator('[data-testid="success-message"]')).toContainText(
-      '感谢'
-    );
-  });
-
-  test('rate limit shows warning', async ({ page }) => {
-    await page.goto('/m/test-talent');
-
-    // Submit multiple messages quickly
-    for (let i = 0; i < 6; i++) {
-      await page.fill('[data-testid="message-input"]', `消息 ${i}`);
-      await page.click('[data-testid="submit-button"]');
-      await page.waitForTimeout(100);
-    }
-
-    await expect(page.locator('[data-testid="rate-limit-warning"]')).toBeVisible();
+    await expect(page.getByText(fixture.public.rateLimitMessage)).toBeVisible();
   });
 });

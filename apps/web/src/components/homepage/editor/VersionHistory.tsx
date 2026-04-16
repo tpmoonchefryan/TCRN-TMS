@@ -5,6 +5,7 @@
 import { ChevronLeft, ChevronRight, Clock, Eye, RotateCcw, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +16,7 @@ import {
   type HomepageVersionListItem,
   type HomepageVersionRecord,
 } from '@/lib/api/modules/content';
+import { ConfirmActionDialog } from '@/platform/ui';
 import { useEditorStore } from '@/stores/homepage/editor-store';
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../ui/sheet';
@@ -33,10 +35,12 @@ const PAGE_SIZE = 5;
 
 export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryProps) {
   const t = useTranslations('homepageEditor');
+  const tc = useTranslations('common');
   const { load } = useEditorStore();
   const [versions, setVersions] = useState<HomepageVersionListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [restoreCandidate, setRestoreCandidate] = useState<HomepageVersionListItem | null>(null);
   
   // Filter and pagination state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -82,17 +86,21 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
     currentPage * PAGE_SIZE
   );
 
-  const handleRestore = async (versionId: string) => {
-    if (!confirm(t('confirmRestore'))) return;
-    
-    setRestoringId(versionId);
+  const handleRestore = async () => {
+    if (!restoreCandidate) {
+      return;
+    }
+
+    setRestoringId(restoreCandidate.id);
     try {
-      await homepageApi.restoreVersion(talentId, versionId);
+      await homepageApi.restoreVersion(talentId, restoreCandidate.id);
       await load(talentId);
-      // Close the sheet after successful restore
+      setRestoreCandidate(null);
       onOpenChange(false);
+      toast.success(t('restoreSuccess'));
     } catch (error) {
       console.error('Failed to restore version', error);
+      toast.error(t('restoreFailed'));
     } finally {
       setRestoringId(null);
     }
@@ -125,8 +133,38 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
     }
   };
 
+  const getStatusLabel = (status: StatusFilter | HomepageVersionListItem['status']) => {
+    switch (status) {
+      case 'all':
+        return t('filterAll');
+      case 'draft':
+        return t('filterDraft');
+      case 'published':
+        return t('filterPublished');
+      case 'archived':
+        return t('filterArchived');
+      default:
+        return status;
+    }
+  };
+
   return (
     <>
+      <ConfirmActionDialog
+        open={!!restoreCandidate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRestoreCandidate(null);
+          }
+        }}
+        title={t('restore')}
+        description={t('confirmRestore')}
+        confirmLabel={t('restore')}
+        cancelLabel={tc('cancel')}
+        isSubmitting={Boolean(restoringId)}
+        tone="default"
+        onConfirm={handleRestore}
+      />
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-[420px]">
           <SheetHeader>
@@ -159,7 +197,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">v{version.versionNumber}</span>
                         <span className={`text-xs px-2 py-0.5 rounded ${getStatusBadgeClass(version.status)}`}>
-                          {version.status}
+                          {getStatusLabel(version.status)}
                         </span>
                       </div>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -169,7 +207,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                        {version.createdBy?.username || 'System'}
+                        {version.createdBy?.username || tc('system')}
                       </span>
                       <div className="flex gap-1">
                         <Button 
@@ -186,7 +224,7 @@ export function VersionHistory({ open, onOpenChange, talentId }: VersionHistoryP
                           variant="ghost" 
                           size="sm" 
                           className="h-8"
-                          onClick={() => handleRestore(version.id)}
+                          onClick={() => setRestoreCandidate(version)}
                           disabled={restoringId === version.id}
                         >
                           <RotateCcw size={14} className={`mr-1 ${restoringId === version.id ? 'animate-spin' : ''}`} />

@@ -22,7 +22,6 @@ export type ConfigEntityType =
   | 'consent'
   | 'consumer'
   | 'blocklist-entry'
-  | 'pii-service-config'
   | 'profile-store';
 
 export interface BaseConfigEntity {
@@ -141,7 +140,6 @@ export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
   'consent': 'consent',
   'consumer': 'consumer',
   'blocklist-entry': 'blocklist_entry',
-  'pii-service-config': 'pii_service_config',
   'profile-store': 'profile_store',
 };
 
@@ -161,7 +159,6 @@ export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'consent': ['consent_version', 'effective_from', 'expires_at', 'content_markdown_en', 'content_markdown_zh', 'content_markdown_ja', 'content_url', 'is_required'],
   'consumer': ['consumer_category', 'contact_name', 'contact_email', 'api_key_hash', 'api_key_prefix', 'allowed_ips', 'rate_limit', 'notes'],
   'blocklist-entry': ['pattern', 'pattern_type', 'action', 'replacement', 'scope', 'severity', 'category', 'match_count', 'last_matched_at'],
-  'pii-service-config': ['api_url', 'auth_type', 'health_check_url', 'health_check_interval_sec', 'is_healthy'],
   'profile-store': ['pii_proxy_url', 'pii_service_config_id', 'is_default'],
 };
 
@@ -194,7 +191,6 @@ export const CONFIG_HAS_DESCRIPTION: Set<ConfigEntityType> = new Set([
   'membership-class',
   'membership-type',
   'membership-level',
-  'pii-service-config',
   'profile-store',
 ]);
 
@@ -238,7 +234,6 @@ export const CONFIG_HAS_SORT_ORDER: Set<ConfigEntityType> = new Set([
   'consent',
   'consumer',
   'blocklist-entry',
-  'pii-service-config',
   'profile-store',
 ]);
 
@@ -258,7 +253,6 @@ export const CONFIG_HAS_CODE: Set<ConfigEntityType> = new Set([
   'membership-level',
   'consent',
   'consumer',
-  'pii-service-config',
   'profile-store',
   // NOTE: blocklist-entry does NOT have code field
 ]);
@@ -278,6 +272,5 @@ export const CONFIG_HAS_AUDIT: Set<ConfigEntityType> = new Set([
   'consent',
   'consumer',
   'blocklist-entry',
-  'pii-service-config',
   'profile-store',
 ]);

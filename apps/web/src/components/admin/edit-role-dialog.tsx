@@ -41,6 +41,7 @@ interface EditRoleDialogProps {
 export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRoleDialogProps) {
   const tRole = useTranslations('adminConsole.roles');
   const tCommon = useTranslations('common');
+  const tForms = useTranslations('forms');
   const tPermission = useTranslations('roleManagement');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -145,7 +146,7 @@ export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRole
                     id="nameEn"
                     value={formData.nameEn}
                     onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                    placeholder="e.g. Platform Administrator"
+                    placeholder={tForms('placeholders.name')}
                     required
                   />
                 </div>
@@ -156,13 +157,13 @@ export function EditRoleDialog({ open, onOpenChange, onSuccess, role }: EditRole
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe the role's responsibilities"
+                  placeholder={tForms('placeholders.description')}
                 />
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <Label className="text-base mb-4 block">Permissions</Label>
+              <Label className="text-base mb-4 block">{tPermission('permissions')}</Label>
               <p className="text-sm text-muted-foreground mb-4">{tPermission('selectPermissionsThreeState')}</p>
               <ScrollArea className="h-[40vh]">
                 <PermissionSelector 

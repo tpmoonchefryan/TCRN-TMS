@@ -2,16 +2,13 @@
 
 'use client';
 
-// Nested talent settings page - uses shared TalentSettingsContent component
-// This page is for talents under a subsidiary (nested path)
-
 import { useParams } from 'next/navigation';
 
-import { TalentSettingsContent } from '@/components/settings/TalentSettingsContent';
+import { TalentSettingsScreen } from '@/domains/config-dictionary-settings/screens/TalentSettingsScreen';
 
 export default function TalentSettingsPage() {
   const params = useParams();
   const subsidiaryId = params.subsidiaryId as string;
 
-  return <TalentSettingsContent subsidiaryId={subsidiaryId} />;
+  return <TalentSettingsScreen subsidiaryId={subsidiaryId} />;
 }

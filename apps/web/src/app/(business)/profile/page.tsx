@@ -2,13 +2,8 @@
 
 'use client';
 
-import { CurrentUserProfileContent } from '@/components/auth/current-user-profile-content';
-import { CurrentUserSecuritySettings } from '@/components/auth/current-user-security-settings';
+import { BusinessProfileScreen } from '@/domains/auth-identity/screens/BusinessProfileScreen';
 
 export default function ProfilePage() {
-  return (
-    <CurrentUserProfileContent>
-      <CurrentUserSecuritySettings />
-    </CurrentUserProfileContent>
-  );
+  return <BusinessProfileScreen />;
 }

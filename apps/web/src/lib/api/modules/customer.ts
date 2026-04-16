@@ -33,22 +33,24 @@ export interface PiiUpdateData {
   addresses?: AddressData[];
 }
 
-export interface PiiAccessTokenData {
-  accessToken: string;
-  piiProfileId: string;
-  piiServiceUrl: string;
-  expiresIn: number;
+export interface CompanyPiiData {
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactDepartment?: string;
+}
+
+export type CustomerProfileType = 'individual' | 'company';
+
+export interface CustomerPiiPortalSessionResponse {
+  redirectUrl: string;
+  expiresAt: string;
 }
 
 export interface CustomerIndividualCreateResponse {
   id: string;
   profileType: 'individual';
   nickname: string;
-  individual: {
-    rmProfileId: string;
-    searchHintName: string | null;
-    searchHintPhoneLast4: string | null;
-  };
   createdAt: string;
 }
 
@@ -66,8 +68,6 @@ export interface CustomerActivationResponse {
 
 export interface CustomerPiiUpdateResponse {
   id: string;
-  searchHintName: string | null;
-  searchHintPhoneLast4: string | null;
   message: string;
 }
 
@@ -154,8 +154,7 @@ export interface CustomerRecentAccessLogEntry {
 }
 
 export interface CustomerIndividualDetailData {
-  rmProfileId: string;
-  piiLoaded: boolean;
+  piiReadbackEnabled: boolean;
 }
 
 export interface CustomerCompanyBusinessSegment {
@@ -171,16 +170,12 @@ export interface CustomerCompanyDetailData {
   vatId: string | null;
   establishmentDate: string | null;
   website: string | null;
-  contactName: string | null;
-  contactPhone: string | null;
-  contactEmail: string | null;
-  contactDepartment: string | null;
   businessSegment: CustomerCompanyBusinessSegment | null;
 }
 
 export interface CustomerDetailBase {
   id: string;
-  profileType: 'individual' | 'company';
+  profileType: CustomerProfileType;
   talentId: string;
   nickname: string;
   primaryLanguage: string | null;
@@ -313,10 +308,53 @@ export interface CustomerMembershipListResponse {
   };
 }
 
+const buildTalentCustomersPath = (talentId: string) => `/api/v1/talents/${talentId}/customers`;
+
+const buildTalentCustomerPath = (talentId: string, customerId: string) =>
+  `${buildTalentCustomersPath(talentId)}/${customerId}`;
+
+const buildTalentCustomerIndividualsPath = (talentId: string, customerId?: string) =>
+  customerId
+    ? `${buildTalentCustomersPath(talentId)}/individuals/${customerId}`
+    : `${buildTalentCustomersPath(talentId)}/individuals`;
+
+const buildTalentCustomerCompaniesPath = (talentId: string, customerId?: string) =>
+  customerId
+    ? `${buildTalentCustomersPath(talentId)}/companies/${customerId}`
+    : `${buildTalentCustomersPath(talentId)}/companies`;
+
+const buildTalentCustomerPiiPortalPath = (
+  talentId: string,
+  customerId: string,
+  profileType: CustomerProfileType,
+) =>
+  profileType === 'company'
+    ? `${buildTalentCustomerCompaniesPath(talentId, customerId)}/pii-portal-session`
+    : `${buildTalentCustomerIndividualsPath(talentId, customerId)}/pii-portal-session`;
+
+const buildPlatformIdentitiesPath = (talentId: string, customerId: string) =>
+  `${buildTalentCustomerPath(talentId, customerId)}/platform-identities`;
+
+const buildMembershipsPath = (talentId: string, customerId: string) =>
+  `${buildTalentCustomerPath(talentId, customerId)}/memberships`;
+
+const buildExternalIdsPath = (talentId: string, customerId: string) =>
+  `${buildTalentCustomerPath(talentId, customerId)}/external-ids`;
+
+const buildCustomerImportPath = (talentId: string) => `/api/v1/talents/${talentId}/imports/customers`;
+
+const buildCustomerImportTypePath = (talentId: string, type: CustomerImportType) =>
+  `${buildCustomerImportPath(talentId)}/${type}`;
+
+const buildCustomerImportJobPath = (
+  talentId: string,
+  type: CustomerImportType,
+  jobId: string,
+) => `${buildCustomerImportTypePath(talentId, type)}/${jobId}`;
+
 export const customerApi = {
   list: (params: CustomerListParams) =>
-    apiClient.get<CustomerListItemResponse[]>('/api/v1/customers', {
-      talentId: params.talentId,
+    apiClient.get<CustomerListItemResponse[]>(buildTalentCustomersPath(params.talentId), {
       page: params.page?.toString(),
       pageSize: params.pageSize?.toString(),
       search: params.search,
@@ -326,26 +364,21 @@ export const customerApi = {
       isActive: params.isActive?.toString(),
     }),
 
-  get: (id: string, talentId?: string) =>
-    apiClient.get<CustomerDetailResponse>(
-      `/api/v1/customers/${id}`,
-      undefined,
-      talentId ? { 'X-Talent-Id': talentId } : undefined,
-    ),
+  get: (id: string, talentId: string) =>
+    apiClient.get<CustomerDetailResponse>(buildTalentCustomerPath(talentId, id)),
 
-  requestPiiAccess: (id: string, talentId: string, accessReason?: string) =>
-    apiClient.post<PiiAccessTokenData>(
-      `/api/v1/customers/individuals/${id}/request-pii-access`,
+  createPiiPortalSession: (
+    id: string,
+    talentId: string,
+    profileType: CustomerProfileType = 'individual',
+  ) =>
+    apiClient.post<CustomerPiiPortalSessionResponse>(
+      buildTalentCustomerPiiPortalPath(talentId, id, profileType),
       {},
-      {
-        'X-Talent-Id': talentId,
-        ...(accessReason ? { 'X-PII-Access-Reason': accessReason } : {}),
-      },
     ),
 
   create: (data: CustomerCreateData) =>
-    apiClient.post<CustomerIndividualCreateResponse>('/api/v1/customers/individuals', {
-      talentId: data.talentId,
+    apiClient.post<CustomerIndividualCreateResponse>(buildTalentCustomerIndividualsPath(data.talentId), {
       nickname: data.nickname,
       primaryLanguage: data.primaryLanguage,
       statusCode: data.statusCode,
@@ -357,44 +390,40 @@ export const customerApi = {
 
   update: (id: string, data: CustomerUpdateData, talentId: string) =>
     apiClient.patch<CustomerProfileMutationResponse>(
-      `/api/v1/customers/individuals/${id}`,
+      buildTalentCustomerIndividualsPath(talentId, id),
       {
         nickname: data.nickname,
         tags: data.tags,
         notes: data.notes,
         version: data.expectedVersion,
       },
-      { 'X-Talent-Id': talentId },
     ),
 
   deactivate: (id: string, reasonCode: string, version: number, talentId: string) =>
     apiClient.post<CustomerActivationResponse>(
-      `/api/v1/customers/${id}/deactivate`,
+      `${buildTalentCustomerPath(talentId, id)}/deactivate`,
       { reasonCode, version },
-      { 'X-Talent-Id': talentId },
     ),
 
   reactivate: (id: string, talentId: string) =>
     apiClient.post<CustomerActivationResponse>(
-      `/api/v1/customers/${id}/reactivate`,
+      `${buildTalentCustomerPath(talentId, id)}/reactivate`,
       {},
-      { 'X-Talent-Id': talentId },
     ),
 
   updatePii: (id: string, pii: PiiUpdateData, version: number, talentId: string) =>
     apiClient.patch<CustomerPiiUpdateResponse>(
-      `/api/v1/customers/individuals/${id}/pii`,
+      `${buildTalentCustomerIndividualsPath(talentId, id)}/pii`,
       { pii, version },
-      { 'X-Talent-Id': talentId },
     ),
 };
 
-export const requestPiiAccessToken = async (
+export const createPiiPortalSession = async (
   customerId: string,
   talentId: string,
-  accessReason?: string,
+  profileType?: CustomerProfileType,
 ) => {
-  return customerApi.requestPiiAccess(customerId, talentId, accessReason);
+  return customerApi.createPiiPortalSession(customerId, talentId, profileType);
 };
 
 export interface CompanyCreateData {
@@ -412,10 +441,7 @@ export interface CompanyCreateData {
   establishmentDate?: string;
   businessSegmentCode?: string;
   website?: string;
-  contactName?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  contactDepartment?: string;
+  pii?: CompanyPiiData;
 }
 
 export interface CompanyUpdateData {
@@ -431,10 +457,7 @@ export interface CompanyUpdateData {
   establishmentDate?: string;
   businessSegmentCode?: string;
   website?: string;
-  contactName?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  contactDepartment?: string;
+  pii?: CompanyPiiData;
   version: number;
 }
 
@@ -447,16 +470,28 @@ export interface CustomerCompanyCreateResponse {
 }
 
 export const companyCustomerApi = {
-  create: (data: CompanyCreateData, talentId: string) =>
-    apiClient.post<CustomerCompanyCreateResponse>('/api/v1/customers/companies', data, {
-      'X-Talent-Id': talentId,
+  create: (data: CompanyCreateData) =>
+    apiClient.post<CustomerCompanyCreateResponse>(buildTalentCustomerCompaniesPath(data.talentId), {
+      nickname: data.nickname,
+      primaryLanguage: data.primaryLanguage,
+      statusCode: data.statusCode,
+      tags: data.tags,
+      source: data.source,
+      notes: data.notes,
+      companyLegalName: data.companyLegalName,
+      companyShortName: data.companyShortName,
+      registrationNumber: data.registrationNumber,
+      vatId: data.vatId,
+      establishmentDate: data.establishmentDate,
+      businessSegmentCode: data.businessSegmentCode,
+      website: data.website,
+      pii: data.pii,
     }),
 
   update: (id: string, data: CompanyUpdateData, talentId: string) =>
     apiClient.patch<CustomerProfileMutationResponse>(
-      `/api/v1/customers/companies/${id}`,
+      buildTalentCustomerCompaniesPath(talentId, id),
       data,
-      { 'X-Talent-Id': talentId },
     ),
 };
 
@@ -503,17 +538,12 @@ export interface CustomerPlatformIdentityUpdateResponse {
 
 export const platformIdentityApi = {
   list: (customerId: string, talentId: string) =>
-    apiClient.get<CustomerPlatformIdentity[]>(
-      `/api/v1/customers/${customerId}/platform-identities`,
-      undefined,
-      { 'X-Talent-Id': talentId },
-    ),
+    apiClient.get<CustomerPlatformIdentity[]>(buildPlatformIdentitiesPath(talentId, customerId)),
 
   create: (customerId: string, data: CreatePlatformIdentityData, talentId: string) =>
     apiClient.post<CustomerPlatformIdentityCreateResponse>(
-      `/api/v1/customers/${customerId}/platform-identities`,
+      buildPlatformIdentitiesPath(talentId, customerId),
       data,
-      { 'X-Talent-Id': talentId },
     ),
 
   update: (
@@ -523,9 +553,8 @@ export const platformIdentityApi = {
     talentId: string,
   ) =>
     apiClient.patch<CustomerPlatformIdentityUpdateResponse>(
-      `/api/v1/customers/${customerId}/platform-identities/${identityId}`,
+      `${buildPlatformIdentitiesPath(talentId, customerId)}/${identityId}`,
       data,
-      { 'X-Talent-Id': talentId },
     ),
 
   history: (
@@ -534,9 +563,8 @@ export const platformIdentityApi = {
     query?: { platformCode?: string; changeType?: string; page?: number; pageSize?: number },
   ) =>
     apiClient.get<CustomerPlatformIdentityHistoryResponse>(
-      `/api/v1/customers/${customerId}/platform-identities/history`,
+      `${buildPlatformIdentitiesPath(talentId, customerId)}/history`,
       query,
-      { 'X-Talent-Id': talentId },
     ),
 };
 
@@ -592,23 +620,20 @@ export const membershipApi = {
     },
   ) =>
     apiClient.get<CustomerMembershipListResponse>(
-      `/api/v1/customers/${customerId}/memberships`,
+      buildMembershipsPath(talentId, customerId),
       query,
-      { 'X-Talent-Id': talentId },
     ),
 
   create: (customerId: string, data: CreateMembershipData, talentId: string) =>
     apiClient.post<CustomerMembershipCreateResponse>(
-      `/api/v1/customers/${customerId}/memberships`,
+      buildMembershipsPath(talentId, customerId),
       data,
-      { 'X-Talent-Id': talentId },
     ),
 
   update: (customerId: string, recordId: string, data: UpdateMembershipData, talentId: string) =>
     apiClient.patch<CustomerMembershipUpdateResponse>(
-      `/api/v1/customers/${customerId}/memberships/${recordId}`,
+      `${buildMembershipsPath(talentId, customerId)}/${recordId}`,
       data,
-      { 'X-Talent-Id': talentId },
     ),
 };
 
@@ -688,27 +713,33 @@ const uploadCustomerImportFile = async (
 ): Promise<ApiResponse<CustomerImportJobCreateResponse>> => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('talentId', talentId);
 
-  const response = await fetch(buildApiUrl(`/api/v1/imports/customers/${type}`), {
+  const response = await fetch(buildApiUrl(buildCustomerImportTypePath(talentId, type)), {
     method: 'POST',
     body: formData,
-    headers: { 'X-Talent-Id': talentId },
     credentials: 'include',
   });
 
   return parseUploadResponse<CustomerImportJobCreateResponse>(response);
 };
 
+const throwCustomerImportError = (code: string): never => {
+  const error = new Error();
+  (error as Error & { code: string }).code = code;
+  throw error;
+};
+
 export const customerImportApi = {
-  downloadIndividualTemplate: async () => {
+  downloadIndividualTemplate: async (talentId: string) => {
     const response = await fetch(
-      buildApiUrl('/api/v1/imports/customers/individuals/template'),
+      buildApiUrl(`${buildCustomerImportTypePath(talentId, 'individuals')}/template`),
       {
         credentials: 'include',
       },
     );
-    if (!response.ok) throw new Error('Failed to download template');
+    if (!response.ok) {
+      throwCustomerImportError('CUSTOMER_IMPORT_TEMPLATE_DOWNLOAD_FAILED');
+    }
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -718,14 +749,16 @@ export const customerImportApi = {
     window.URL.revokeObjectURL(url);
   },
 
-  downloadCompanyTemplate: async () => {
+  downloadCompanyTemplate: async (talentId: string) => {
     const response = await fetch(
-      buildApiUrl('/api/v1/imports/customers/companies/template'),
+      buildApiUrl(`${buildCustomerImportTypePath(talentId, 'companies')}/template`),
       {
         credentials: 'include',
       },
     );
-    if (!response.ok) throw new Error('Failed to download template');
+    if (!response.ok) {
+      throwCustomerImportError('CUSTOMER_IMPORT_TEMPLATE_DOWNLOAD_FAILED');
+    }
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -743,22 +776,22 @@ export const customerImportApi = {
     return uploadCustomerImportFile('companies', file, talentId);
   },
 
-  getJob: (type: CustomerImportType, jobId: string) =>
-    apiClient.get<CustomerImportJobResponse>(`/api/v1/imports/customers/${type}/${jobId}`),
+  getJob: (type: CustomerImportType, jobId: string, talentId: string) =>
+    apiClient.get<CustomerImportJobResponse>(buildCustomerImportJobPath(talentId, type, jobId)),
 
   listJobs: (talentId: string, query?: { status?: string; page?: number; pageSize?: number }) =>
-    apiClient.get<CustomerImportJobListResponse>('/api/v1/imports/customers', query, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.get<CustomerImportJobListResponse>(buildCustomerImportPath(talentId), query),
 
-  downloadErrors: async (type: 'individuals' | 'companies', jobId: string) => {
+  downloadErrors: async (type: 'individuals' | 'companies', jobId: string, talentId: string) => {
     const response = await fetch(
-      buildApiUrl(`/api/v1/imports/customers/${type}/${jobId}/errors`),
+      buildApiUrl(`${buildCustomerImportJobPath(talentId, type, jobId)}/errors`),
       {
         credentials: 'include',
       },
     );
-    if (!response.ok) throw new Error('Failed to download errors');
+    if (!response.ok) {
+      throwCustomerImportError('CUSTOMER_IMPORT_ERRORS_DOWNLOAD_FAILED');
+    }
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -768,8 +801,8 @@ export const customerImportApi = {
     window.URL.revokeObjectURL(url);
   },
 
-  cancel: (type: CustomerImportType, jobId: string) =>
-    apiClient.delete<CustomerImportCancelResponse>(`/api/v1/imports/customers/${type}/${jobId}`),
+  cancel: (type: CustomerImportType, jobId: string, talentId: string) =>
+    apiClient.delete<CustomerImportCancelResponse>(buildCustomerImportJobPath(talentId, type, jobId)),
 };
 
 export interface CreateExternalIdData {
@@ -791,17 +824,13 @@ export interface ExternalIdRecord {
 
 export const externalIdApi = {
   list: (customerId: string, talentId: string) =>
-    apiClient.get<ExternalIdRecord[]>(`/api/v1/customers/${customerId}/external-ids`, undefined, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.get<ExternalIdRecord[]>(buildExternalIdsPath(talentId, customerId)),
 
   create: (customerId: string, data: CreateExternalIdData, talentId: string) =>
-    apiClient.post<ExternalIdRecord>(`/api/v1/customers/${customerId}/external-ids`, data, {
-      'X-Talent-Id': talentId,
-    }),
+    apiClient.post<ExternalIdRecord>(buildExternalIdsPath(talentId, customerId), data),
 
-  delete: (customerId: string, externalIdId: string, _talentId: string) =>
+  delete: (customerId: string, externalIdId: string, talentId: string) =>
     apiClient.delete<{ message: string }>(
-      `/api/v1/customers/${customerId}/external-ids/${externalIdId}`,
+      `${buildExternalIdsPath(talentId, customerId)}/${externalIdId}`,
     ),
 };

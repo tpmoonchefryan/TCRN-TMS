@@ -59,7 +59,7 @@ export const mergeVerifiedAuthUser = (params: {
   mergeAuthUserContext(
     withTenantContext(params.user, {
       id: params.user.tenant?.id ?? params.tenantId ?? params.currentUser?.tenant?.id ?? null,
-      code: params.user.tenant_code ?? params.tenantCode ?? params.currentUser?.tenant_code ?? null,
+      code: params.user.tenantCode ?? params.tenantCode ?? params.currentUser?.tenantCode ?? null,
       name: params.user.tenant?.name ?? params.currentUser?.tenant?.name ?? null,
     }),
     params.currentUser
@@ -77,6 +77,6 @@ export const updateCurrentUserAvatar = (
   currentUser
     ? {
         ...currentUser,
-        avatar_url: avatarUrl ?? undefined,
+        avatarUrl: avatarUrl ?? undefined,
       }
     : null;

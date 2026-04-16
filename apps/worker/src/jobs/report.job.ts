@@ -2,12 +2,9 @@
 // Report Job Processor (PRD §20)
 
 import { Prisma, PrismaClient } from '@tcrn/database';
-import axios, { AxiosInstance } from 'axios';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
 import * as fs from 'fs';
-import * as https from 'https';
-import jwt from 'jsonwebtoken';
 import * as Minio from 'minio';
 import * as os from 'os';
 import * as path from 'path';
@@ -32,157 +29,6 @@ function createMinioClient(): Minio.Client {
 }
 
 const TEMP_REPORTS_BUCKET = 'temp-reports';
-const PII_BATCH_SIZE = 200;
-
-/**
- * Address interface for PII
- */
-interface PiiAddress {
-  typeCode: string;
-  countryCode: string;
-  province?: string;
-  city?: string;
-  district?: string;
-  street?: string;
-  postalCode?: string;
-  isPrimary?: boolean;
-}
-
-/**
- * PII Profile interface
- */
-interface PiiProfile {
-  id: string;
-  givenName?: string | null;
-  familyName?: string | null;
-  phoneNumbers?: Array<{ number: string; isPrimary?: boolean }> | null;
-  emails?: Array<{ address: string; isPrimary?: boolean }> | null;
-  addresses?: PiiAddress[] | null;
-}
-
-/**
- * Sign Service JWT for PII access (PRD §20)
- * Valid for 30 minutes
- */
-function signServiceJwt(
-  jobId: string,
-  tenantId: string,
-  profileStoreId: string,
-  originalUserId: string
-): string {
-  const secret = process.env.PII_JWT_SECRET || process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('PII_JWT_SECRET or JWT_SECRET environment variable is required');
-  }
-  
-  const payload = {
-    sub: 'report-service',
-    tid: tenantId,
-    type: 'report_service',
-    job_id: jobId,
-    original_user_id: originalUserId,
-    psi: profileStoreId,
-    act: ['batch_read'],
-  };
-  
-  return jwt.sign(payload, secret, { expiresIn: '30m' });
-}
-
-/**
- * Create PII HTTP client
- */
-function createPiiClient(): AxiosInstance {
-  const certPath = process.env.PII_CLIENT_CERT_PATH;
-  const keyPath = process.env.PII_CLIENT_KEY_PATH;
-  const caPath = process.env.PII_CA_CERT_PATH;
-  
-  let httpsAgent: https.Agent | undefined;
-  
-  if (certPath && keyPath && caPath) {
-    try {
-      httpsAgent = new https.Agent({
-        cert: fs.readFileSync(certPath),
-        key: fs.readFileSync(keyPath),
-        ca: fs.readFileSync(caPath),
-        rejectUnauthorized: true,
-      });
-    } catch {
-      logger.warn('Failed to load mTLS certificates, using standard HTTPS');
-    }
-  }
-  
-  return axios.create({
-    timeout: 30000,
-    httpsAgent,
-  });
-}
-
-/**
- * Batch get PII profiles from PII service
- */
-async function batchGetPiiProfiles(
-  piiServiceUrl: string,
-  ids: string[],
-  accessToken: string,
-  tenantId: string
-): Promise<Map<string, PiiProfile>> {
-  const client = createPiiClient();
-  const result = new Map<string, PiiProfile>();
-  
-  if (ids.length === 0) {
-    return result;
-  }
-  
-  try {
-    const response = await client.post(
-      `${piiServiceUrl}/api/v1/profiles/batch`,
-      {
-        ids,
-        fields: ['givenName', 'familyName', 'phoneNumbers', 'emails', 'addresses'],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'X-Tenant-ID': tenantId,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    
-    const data = response.data.data || {};
-    for (const [id, profile] of Object.entries(data)) {
-      result.set(id, profile as PiiProfile);
-    }
-    
-    logger.info(`Fetched ${result.size} PII profiles`);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`Failed to fetch PII profiles: ${errorMessage}`);
-    // Don't throw - we'll handle missing PII gracefully
-  }
-  
-  return result;
-}
-
-/**
- * Get PII service URL for a profile store
- */
-async function getPiiServiceUrl(
-  prisma: PrismaClient,
-  profileStoreId: string
-): Promise<string | null> {
-  const result = await prisma.profileStore.findUnique({
-    where: { id: profileStoreId },
-    select: { 
-      piiProxyUrl: true,
-      piiServiceConfig: {
-        select: { apiUrl: true }
-      }
-    },
-  });
-  // Try piiServiceConfig.apiUrl first, then piiProxyUrl, then env var
-  return result?.piiServiceConfig?.apiUrl || result?.piiProxyUrl || process.env.PII_SERVICE_URL || null;
-}
 
 /**
  * Report format options
@@ -248,11 +94,6 @@ interface MfrRow {
   tags: string;
   source: string;
   createdAt: string;
-  // PII fields (optional, require permission)
-  realName?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
 }
 
 interface ReportHeader {
@@ -295,6 +136,12 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
   let tempFilePath: string | null = null;
 
   try {
+    if (options?.includePii) {
+      throw new Error(
+        'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.',
+      );
+    }
+
     // 1. Update job status to processing
     await updateJobStatus(prisma, tenantSchemaName, jobId, 'processing');
 
@@ -336,7 +183,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     logger.info(`Total records to process: ${totalCount}`);
 
     const language = options?.language || 'en';
-    const headers = getHeaders(language, options?.includePii || false);
+    const headers = getHeaders(language);
     tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.${format}`);
     let workbook: ExcelJS.stream.xlsx.WorkbookWriter | null = null;
     let worksheet: ReturnType<ExcelJS.stream.xlsx.WorkbookWriter['addWorksheet']> | null = null;
@@ -370,21 +217,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
       fs.writeFileSync(tempFilePath, `${csvHeader}\n`, 'utf8');
     }
 
-    // 5. Prepare PII access if needed
-    let piiServiceUrl: string | null = null;
-    let serviceJwt: string | null = null;
-    
-    if (options?.includePii && profileStoreId) {
-      piiServiceUrl = await getPiiServiceUrl(prisma, profileStoreId);
-      if (piiServiceUrl) {
-        serviceJwt = signServiceJwt(jobId, tenantId, profileStoreId, job.data.userId);
-        logger.info('PII access configured for report');
-      } else {
-        logger.warn('PII service URL not found, PII fields will be empty');
-      }
-    }
-
-    // 6. Stream data in batches
+    // 5. Stream data in batches
     const batchSize = 1000;
     let processedCount = 0;
 
@@ -407,29 +240,9 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
         orderBy: { createdAt: 'desc' },
       });
 
-      // Batch fetch PII if needed
-      const piiMap = new Map<string, PiiProfile>();
-      if (options?.includePii && piiServiceUrl && serviceJwt) {
-        // Collect rm_profile_ids for PII lookup (rmProfileId is on CustomerProfile)
-        const rmProfileIds = records
-          .filter(r => r.customer.profileType === 'individual' && r.customer.rmProfileId)
-          .map(r => r.customer.rmProfileId);
-        
-        // Fetch in sub-batches of PII_BATCH_SIZE
-        for (let i = 0; i < rmProfileIds.length; i += PII_BATCH_SIZE) {
-          const batch = rmProfileIds.slice(i, i + PII_BATCH_SIZE);
-          const batchResult = await batchGetPiiProfiles(piiServiceUrl, batch, serviceJwt, tenantId);
-          batchResult.forEach((v, k) => piiMap.set(k, v));
-        }
-      }
-
       const csvLines: string[] = [];
 
       for (const record of records) {
-        // Get PII data if available (rmProfileId is on CustomerProfile)
-        const rmProfileId = record.customer.rmProfileId;
-        const pii = rmProfileId ? piiMap.get(rmProfileId) : undefined;
-        
         const row: MfrRow = {
           customerNickname: record.customer.nickname,
           profileType: record.customer.profileType,
@@ -449,27 +262,6 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
           source: record.customer.source || '',
           createdAt: record.createdAt.toISOString().split('T')[0],
         };
-
-        // Add PII fields if permitted
-        if (options?.includePii) {
-          if (pii) {
-            row.realName = [pii.familyName, pii.givenName].filter(Boolean).join('') || '';
-            row.email = pii.emails?.find(e => e.isPrimary)?.address || pii.emails?.[0]?.address || '';
-            row.phone = pii.phoneNumbers?.find(p => p.isPrimary)?.number || pii.phoneNumbers?.[0]?.number || '';
-            // Format primary address
-            const primaryAddress = pii.addresses?.find(a => a.isPrimary) || pii.addresses?.[0];
-            if (primaryAddress) {
-              row.address = formatAddress(primaryAddress);
-            } else {
-              row.address = '';
-            }
-          } else {
-            row.realName = '';
-            row.email = '';
-            row.phone = '';
-            row.address = '';
-          }
-        }
 
         if (format === 'xlsx') {
           if (!worksheet) {
@@ -582,20 +374,6 @@ function getLocalizedName(
 /**
  * Format address into a single string
  */
-function formatAddress(addr: PiiAddress): string {
-  const parts: string[] = [];
-  
-  // Build address string: Country Province City District Street PostalCode
-  if (addr.countryCode) parts.push(addr.countryCode);
-  if (addr.province) parts.push(addr.province);
-  if (addr.city) parts.push(addr.city);
-  if (addr.district) parts.push(addr.district);
-  if (addr.street) parts.push(addr.street);
-  if (addr.postalCode) parts.push(addr.postalCode);
-  
-  return parts.join(' ');
-}
-
 function getHeaderLabel(
   language: string,
   labels: { en: string; zh: string; ja: string },
@@ -611,10 +389,10 @@ function getHeaderLabel(
 }
 
 /**
- * Get headers based on language and PII inclusion
+ * Get headers based on language
  */
-function getHeaders(language: string, includePii: boolean): ReportHeader[] {
-  const baseHeaders: ReportHeader[] = [
+function getHeaders(language: string): ReportHeader[] {
+  return [
     { key: 'customerNickname', width: 20, label: getHeaderLabel(language, { en: 'Nickname', zh: '昵称', ja: 'ニックネーム' }) },
     { key: 'profileType', width: 12, label: getHeaderLabel(language, { en: 'Type', zh: '类型', ja: 'タイプ' }) },
     { key: 'platformName', width: 15, label: getHeaderLabel(language, { en: 'Platform', zh: '平台', ja: 'プラットフォーム' }) },
@@ -631,17 +409,6 @@ function getHeaders(language: string, includePii: boolean): ReportHeader[] {
     { key: 'source', width: 15, label: getHeaderLabel(language, { en: 'Source', zh: '来源', ja: '取得元' }) },
     { key: 'createdAt', width: 12, label: getHeaderLabel(language, { en: 'Created', zh: '创建时间', ja: '作成日' }) },
   ];
-
-  if (includePii) {
-    baseHeaders.push(
-      { key: 'realName', width: 15, label: getHeaderLabel(language, { en: 'Real Name', zh: '真实姓名', ja: '本名' }) },
-      { key: 'email', width: 25, label: getHeaderLabel(language, { en: 'Email', zh: '邮箱', ja: 'メール' }) },
-      { key: 'phone', width: 15, label: getHeaderLabel(language, { en: 'Phone', zh: '电话', ja: '電話' }) },
-      { key: 'address', width: 40, label: getHeaderLabel(language, { en: 'Address', zh: '地址', ja: '住所' }) }
-    );
-  }
-
-  return baseHeaders;
 }
 
 /**

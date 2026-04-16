@@ -10,5 +10,3 @@ export * from './constants';
 // Panels
 export { ConfigEntityPanel } from './ConfigEntityPanel';
 export { DictionaryPanel } from './DictionaryPanel';
-export { SecurityPanel } from './SecurityPanel';
-

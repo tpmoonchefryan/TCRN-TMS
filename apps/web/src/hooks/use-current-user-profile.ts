@@ -13,11 +13,11 @@ export interface SaveCurrentUserProfileResult {
 export function useCurrentUserProfile() {
   const { user, mergeCurrentUserProfile, setCurrentUserAvatar } = useAuthStore();
 
-  const [displayName, setDisplayName] = useState(user?.display_name || '');
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setDisplayName(user?.display_name || '');
+    setDisplayName(user?.displayName || '');
   }, [user]);
 
   const saveProfile = async (): Promise<SaveCurrentUserProfileResult> => {

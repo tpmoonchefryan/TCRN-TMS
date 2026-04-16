@@ -31,6 +31,8 @@ const createTalent = (overrides?: Partial<TalentInfo>): TalentInfo => ({
   code: 'TALENT_1',
   displayName: 'Talent 1',
   path: '/talents/talent-1',
+  lifecycleStatus: 'published',
+  publishedAt: '2026-04-11T00:00:00.000Z',
   ...overrides,
 });
 
@@ -135,6 +137,66 @@ describe('auth-session-bootstrap-tasks', () => {
     expect(talentStore.currentTenantId).toBe('tenant-live');
     expect(talentStore.currentTenantCode).toBe('TENANT_A');
     expect(talentStore.currentTalent).toEqual(directTalent);
+  });
+
+  it('does not auto-select the only talent when it is still draft', async () => {
+    const draftTalent = createTalent({
+      id: 'talent-draft',
+      lifecycleStatus: 'draft',
+      publishedAt: null,
+    });
+    const talentStore = createTalentStore();
+    const organizationClient = {
+      getTree: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          tenantId: 'tenant-live',
+          subsidiaries: [],
+          directTalents: [draftTalent],
+        },
+      }),
+    };
+
+    await expect(
+      fetchAccessibleTalentsForSession({
+        talentStore,
+        getTenantCode: () => 'TENANT_A',
+        organizationClient,
+      })
+    ).resolves.toEqual({ success: true });
+
+    expect(talentStore.accessibleTalents).toEqual([draftTalent]);
+    expect(talentStore.currentTalent).toBeNull();
+  });
+
+  it('clears a persisted draft current talent during bootstrap reconciliation', async () => {
+    const persistedDraftTalent = createTalent({
+      id: 'talent-draft',
+      lifecycleStatus: 'draft',
+      publishedAt: null,
+    });
+    const talentStore = createTalentStore();
+    talentStore.currentTalent = persistedDraftTalent;
+    const organizationClient = {
+      getTree: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          tenantId: 'tenant-live',
+          subsidiaries: [],
+          directTalents: [persistedDraftTalent],
+        },
+      }),
+    };
+
+    await expect(
+      fetchAccessibleTalentsForSession({
+        talentStore,
+        getTenantCode: () => 'TENANT_A',
+        organizationClient,
+      })
+    ).resolves.toEqual({ success: true });
+
+    expect(talentStore.currentTalent).toBeNull();
   });
 
   it('returns the organization error and records it on the talent store', async () => {

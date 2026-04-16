@@ -1,31 +1,37 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosError, AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ProfileType } from '../../../customer/dto/customer.dto';
 import { IntegrationLogService } from '../../../log';
-import { PiiClientService, PiiProfile } from '../pii-client.service';
+import { ReportFormat, ReportType } from '../../../report/dto/report.dto';
+import { PiiClientService } from '../pii-client.service';
 
-// Mock axios with importOriginal to preserve AxiosError
 vi.mock('axios', async (importOriginal) => {
   const actual = await importOriginal<typeof import('axios')>();
   const mockAxios = {
     create: vi.fn(() => mockAxios),
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
     defaults: { headers: { common: {} } },
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
   };
-  return { 
+  return {
     ...actual,
     default: mockAxios,
   };
 });
 
-// Mock fs
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue(Buffer.from('mock-cert')),
 }));
@@ -35,23 +41,10 @@ describe('PiiClientService', () => {
   let mockConfigService: Partial<ConfigService>;
   let mockIntegrationLogService: Partial<IntegrationLogService>;
 
-  const testPiiServiceUrl = 'https://pii.example.com';
-  const testProfileId = 'profile-123';
-  const testAccessToken = 'test-access-token';
+  const testPiiPlatformUrl = 'https://pii.example.com';
   const testTenantId = 'tenant-abc';
   const testTenantSchema = 'tenant_test';
-
-  const mockProfile: PiiProfile = {
-    id: testProfileId,
-    givenName: 'John',
-    familyName: 'Doe',
-    gender: 'male',
-    birthDate: '1990-01-01',
-    phoneNumbers: [{ typeCode: 'mobile', number: '+1234567890', isPrimary: true }],
-    emails: [{ typeCode: 'work', address: 'john@example.com', isPrimary: true }],
-    addresses: [],
-    updatedAt: '2026-01-20T10:00:00Z',
-  };
+  const testAccessToken = 'test-access-token';
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,25 +74,245 @@ describe('PiiClientService', () => {
     vi.restoreAllMocks();
   });
 
-  describe('getProfile', () => {
-    it('should return profile when request succeeds', async () => {
-      (axios.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+  describe('upsertCustomerPii', () => {
+    it('writes customer pii to the external platform', async () => {
+      (axios.put as ReturnType<typeof vi.fn>).mockResolvedValue({
         status: 200,
-        data: { data: mockProfile },
-        headers: { 'x-request-id': 'req-123' },
+        data: {
+          data: {
+            customerId: 'customer-1',
+            syncedAt: '2026-04-15T02:00:00.000Z',
+          },
+        },
+        headers: {},
       });
 
-      const result = await service.getProfile(
-        testPiiServiceUrl,
-        testProfileId,
+      const result = await service.upsertCustomerPii(
+        testPiiPlatformUrl,
+        {
+          customerId: 'customer-1',
+          talentId: 'talent-1',
+          profileType: ProfileType.INDIVIDUAL,
+          pii: {
+            givenName: 'John',
+            familyName: 'Doe',
+          },
+          ownerScope: {
+            ownerType: 'talent',
+            ownerId: 'talent-1',
+          },
+          operator: {
+            id: 'user-1',
+            username: 'operator',
+          },
+          trace: {
+            requestId: 'req-1',
+            tenantId: testTenantId,
+          },
+        },
         testAccessToken,
         testTenantId,
         testTenantSchema,
       );
 
-      expect(result).toEqual(mockProfile);
-      expect(axios.get).toHaveBeenCalledWith(
-        `${testPiiServiceUrl}/api/v1/profiles/${testProfileId}`,
+      expect(result).toEqual({
+        customerId: 'customer-1',
+        syncedAt: '2026-04-15T02:00:00.000Z',
+      });
+      expect(axios.put).toHaveBeenCalledWith(
+        `${testPiiPlatformUrl}/api/v1/tms/customers/customer-1/pii`,
+        expect.objectContaining({
+          customerId: 'customer-1',
+          profileType: 'individual',
+        }),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${testAccessToken}`,
+            'X-Tenant-ID': testTenantId,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('createPortalSession', () => {
+    it('creates a pii portal session', async () => {
+      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+        status: 201,
+        data: {
+          data: {
+            redirectUrl: 'https://pii.example.com/portal/sessions/session-1',
+            expiresAt: '2026-04-15T02:30:00.000Z',
+          },
+        },
+        headers: {},
+      });
+
+      const result = await service.createPortalSession(
+        testPiiPlatformUrl,
+        {
+          customerId: 'customer-1',
+          talentId: 'talent-1',
+          profileType: ProfileType.COMPANY,
+          ownerScope: {
+            ownerType: 'subsidiary',
+            ownerId: 'subsidiary-1',
+          },
+          operator: {
+            id: 'user-1',
+            username: 'operator',
+          },
+          trace: {
+            requestId: 'req-1',
+            tenantId: testTenantId,
+          },
+          purpose: 'customer_view',
+        },
+        testAccessToken,
+        testTenantId,
+        testTenantSchema,
+      );
+
+      expect(result).toEqual({
+        redirectUrl: 'https://pii.example.com/portal/sessions/session-1',
+        expiresAt: '2026-04-15T02:30:00.000Z',
+      });
+      expect(axios.post).toHaveBeenCalledWith(
+        `${testPiiPlatformUrl}/api/v1/tms/portal-sessions`,
+        expect.objectContaining({
+          customerId: 'customer-1',
+          purpose: 'customer_view',
+        }),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${testAccessToken}`,
+          }),
+        }),
+      );
+      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          externalSystem: 'tcrn-pii-platform',
+          method: 'POST',
+          success: true,
+        }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
+        }),
+      );
+    });
+
+    it('logs a failed portal session request', async () => {
+      const mockError = new AxiosError(
+        'Forbidden',
+        '403',
+        {} as InternalAxiosRequestConfig,
+        {},
+        {
+          status: 403,
+          data: { error: 'Forbidden' },
+          headers: new AxiosHeaders(),
+        } as AxiosResponse,
+      );
+      (axios.post as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
+
+      await expect(
+        service.createPortalSession(
+          testPiiPlatformUrl,
+          {
+            customerId: 'customer-1',
+            talentId: 'talent-1',
+            profileType: ProfileType.INDIVIDUAL,
+            ownerScope: {
+              ownerType: 'talent',
+              ownerId: 'talent-1',
+            },
+            operator: {
+              id: 'user-1',
+              username: 'operator',
+            },
+            trace: {
+              requestId: 'req-1',
+              tenantId: testTenantId,
+            },
+            purpose: 'customer_view',
+          },
+          testAccessToken,
+          testTenantId,
+          testTenantSchema,
+        ),
+      ).rejects.toThrow('Forbidden');
+
+      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          externalSystem: 'tcrn-pii-platform',
+          success: false,
+          errorMessage: 'Forbidden',
+        }),
+        expect.objectContaining({
+          tenantSchema: testTenantSchema,
+        }),
+      );
+    });
+  });
+
+  describe('syncCustomerLifecycle', () => {
+    it('synchronizes lifecycle state to the external platform', async () => {
+      (axios.put as ReturnType<typeof vi.fn>).mockResolvedValue({
+        status: 200,
+        data: {
+          data: {
+            customerId: 'customer-1',
+            lifecycleStatus: 'inactive',
+            syncedAt: '2026-04-15T02:10:00.000Z',
+          },
+        },
+        headers: {},
+      });
+
+      const result = await service.syncCustomerLifecycle(
+        testPiiPlatformUrl,
+        {
+          customerId: 'customer-1',
+          talentId: 'talent-1',
+          profileType: ProfileType.INDIVIDUAL,
+          lifecycle: {
+            action: 'deactivate',
+            isActive: false,
+            reasonCode: 'OTHER',
+            occurredAt: '2026-04-15T02:05:00.000Z',
+          },
+          ownerScope: {
+            ownerType: 'talent',
+            ownerId: 'talent-1',
+          },
+          operator: {
+            id: 'user-1',
+            username: 'operator',
+          },
+          trace: {
+            requestId: 'req-1',
+            tenantId: testTenantId,
+          },
+        },
+        testAccessToken,
+        testTenantId,
+        testTenantSchema,
+      );
+
+      expect(result).toEqual({
+        customerId: 'customer-1',
+        lifecycleStatus: 'inactive',
+        syncedAt: '2026-04-15T02:10:00.000Z',
+      });
+      expect(axios.put).toHaveBeenCalledWith(
+        `${testPiiPlatformUrl}/api/v1/tms/customers/customer-1/lifecycle`,
+        expect.objectContaining({
+          lifecycle: expect.objectContaining({
+            action: 'deactivate',
+            isActive: false,
+            reasonCode: 'OTHER',
+          }),
+        }),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${testAccessToken}`,
@@ -109,40 +322,9 @@ describe('PiiClientService', () => {
       );
       expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
         expect.objectContaining({
-          externalSystem: 'pii-service',
-          method: 'GET',
+          externalSystem: 'tcrn-pii-platform',
+          method: 'PUT',
           success: true,
-        }),
-        expect.objectContaining({
-          tenantSchema: testTenantSchema,
-        }),
-      );
-    });
-
-    it('should throw and log error when request fails', async () => {
-      const mockError = new AxiosError(
-        'Not found',
-        '404',
-        {} as InternalAxiosRequestConfig,
-        {},
-        { status: 404, data: { error: 'Not found' }, headers: new AxiosHeaders() } as AxiosResponse,
-      );
-      (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
-
-      await expect(
-        service.getProfile(
-          testPiiServiceUrl,
-          testProfileId,
-          testAccessToken,
-          testTenantId,
-          testTenantSchema,
-        ),
-      ).rejects.toThrow();
-
-      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          errorMessage: 'Not found',
         }),
         expect.objectContaining({
           tenantSchema: testTenantSchema,
@@ -151,276 +333,183 @@ describe('PiiClientService', () => {
     });
   });
 
-  describe('createProfile', () => {
-    it('should create profile and return result', async () => {
+  describe('createReportRequest', () => {
+    it('creates a platform-side pii report request', async () => {
       (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({
         status: 201,
-        data: { data: { id: testProfileId, createdAt: '2026-01-20T10:00:00Z' } },
+        data: {
+          data: {
+            requestId: 'report-request-1',
+            redirectUrl: 'https://pii.example.com/portal/report-requests/report-request-1',
+            expiresAt: '2026-04-15T02:45:00.000Z',
+          },
+        },
         headers: {},
       });
 
-      const newProfile = {
-        id: testProfileId,
-        profileStoreId: 'store-123',
-        givenName: 'Jane',
-        familyName: 'Doe',
-      };
-
-      const result = await service.createProfile(
-        testPiiServiceUrl,
-        newProfile,
+      const result = await service.createReportRequest(
+        testPiiPlatformUrl,
+        {
+          reportType: ReportType.MFR,
+          reportFormat: ReportFormat.XLSX,
+          talentId: 'talent-1',
+          customerIds: ['customer-1', 'customer-2'],
+          requestMetadata: {
+            estimatedRows: 12,
+            filters: {
+              platformCodes: ['youtube'],
+            },
+          },
+          ownerScope: {
+            ownerType: 'talent',
+            ownerId: 'talent-1',
+          },
+          operator: {
+            id: 'user-1',
+            username: 'operator',
+          },
+          trace: {
+            requestId: 'req-1',
+            tenantId: testTenantId,
+          },
+          deliveryMode: 'portal',
+        },
         testAccessToken,
         testTenantId,
         testTenantSchema,
       );
 
-      expect(result).toEqual({ id: testProfileId, createdAt: '2026-01-20T10:00:00Z' });
+      expect(result).toEqual({
+        requestId: 'report-request-1',
+        redirectUrl: 'https://pii.example.com/portal/report-requests/report-request-1',
+        expiresAt: '2026-04-15T02:45:00.000Z',
+      });
       expect(axios.post).toHaveBeenCalledWith(
-        `${testPiiServiceUrl}/api/v1/profiles`,
-        newProfile,
+        `${testPiiPlatformUrl}/api/v1/tms/report-requests`,
         expect.objectContaining({
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-          }),
+          reportType: ReportType.MFR,
+          customerIds: ['customer-1', 'customer-2'],
         }),
-      );
-      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'POST',
-          success: true,
-        }),
-        expect.objectContaining({
-          tenantSchema: testTenantSchema,
-        }),
-      );
-    });
-  });
-
-  describe('updateProfile', () => {
-    it('should update profile and return result', async () => {
-      (axios.patch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        status: 200,
-        data: { data: { id: testProfileId, updatedAt: '2026-01-21T10:00:00Z' } },
-        headers: {},
-      });
-
-      const updates = { givenName: 'Updated Name' };
-
-      const result = await service.updateProfile(
-        testPiiServiceUrl,
-        testProfileId,
-        updates,
-        testAccessToken,
-        testTenantId,
-        testTenantSchema,
-      );
-
-      expect(result).toEqual({ id: testProfileId, updatedAt: '2026-01-21T10:00:00Z' });
-      expect(axios.patch).toHaveBeenCalledWith(
-        `${testPiiServiceUrl}/api/v1/profiles/${testProfileId}`,
-        updates,
         expect.any(Object),
-      );
-      expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'PATCH',
-          success: true,
-        }),
-        expect.objectContaining({
-          tenantSchema: testTenantSchema,
-        }),
-      );
-    });
-  });
-
-  describe('batchGetProfiles', () => {
-    it('should batch get profiles', async () => {
-      const ids = ['profile-1', 'profile-2', 'profile-3'];
-      const mockData = {
-        'profile-1': { id: 'profile-1', givenName: 'User 1' },
-        'profile-2': { id: 'profile-2', givenName: 'User 2' },
-      };
-      const mockErrors = {
-        'profile-3': { code: 'NOT_FOUND', message: 'Profile not found' },
-      };
-
-      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({
-        status: 200,
-        data: { data: mockData, errors: mockErrors },
-        headers: {},
-      });
-
-      const result = await service.batchGetProfiles(
-        testPiiServiceUrl,
-        ids,
-        ['givenName'],
-        testAccessToken,
-        testTenantId,
-      );
-
-      expect(result.data).toEqual(mockData);
-      expect(result.errors).toEqual(mockErrors);
-      expect(axios.post).toHaveBeenCalledWith(
-        `${testPiiServiceUrl}/api/v1/profiles/batch`,
-        { ids, fields: ['givenName'] },
-        expect.any(Object),
-      );
-    });
-
-    it('should handle empty batch result', async () => {
-      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({
-        status: 200,
-        data: {},
-        headers: {},
-      });
-
-      const result = await service.batchGetProfiles(
-        testPiiServiceUrl,
-        ['profile-1'],
-        undefined,
-        testAccessToken,
-        testTenantId,
-      );
-
-      expect(result.data).toEqual({});
-      expect(result.errors).toEqual({});
-    });
-  });
-
-  describe('deleteProfile', () => {
-    it('should delete profile successfully', async () => {
-      (axios.delete as ReturnType<typeof vi.fn>).mockResolvedValue({
-        status: 200,
-        headers: {},
-      });
-
-      await expect(
-        service.deleteProfile(testPiiServiceUrl, testProfileId, testAccessToken, testTenantId),
-      ).resolves.not.toThrow();
-
-      expect(axios.delete).toHaveBeenCalledWith(
-        `${testPiiServiceUrl}/api/v1/profiles/${testProfileId}`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: `Bearer ${testAccessToken}`,
-          }),
-        }),
       );
     });
   });
 
   describe('checkHealth', () => {
-    it('should return healthy status', async () => {
+    it('returns healthy when the endpoint responds', async () => {
       (axios.get as ReturnType<typeof vi.fn>).mockResolvedValue({
         status: 200,
         data: { status: 'healthy' },
       });
 
-      const result = await service.checkHealth(testPiiServiceUrl);
+      const result = await service.checkHealth(testPiiPlatformUrl);
 
       expect(result.status).toBe('healthy');
       expect(result.latencyMs).toBeGreaterThanOrEqual(0);
     });
 
-    it('should return error status when request fails', async () => {
+    it('returns error when the health probe fails', async () => {
       (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Connection failed'));
 
-      const result = await service.checkHealth(testPiiServiceUrl);
+      const result = await service.checkHealth(testPiiPlatformUrl);
 
       expect(result.status).toBe('error');
     });
   });
 
   describe('Retry Logic', () => {
-    it('should retry on retryable error codes', async () => {
+    it('retries portal session creation on retryable transport errors', async () => {
       const timeoutError = new AxiosError('Timeout', 'ETIMEDOUT');
-      (axios.get as ReturnType<typeof vi.fn>)
+      (axios.post as ReturnType<typeof vi.fn>)
         .mockRejectedValueOnce(timeoutError)
         .mockResolvedValueOnce({
-          status: 200,
-          data: { data: mockProfile },
-          headers: {},
-        });
-
-      // Mock sleep to avoid actual delays
-      vi.spyOn(service as unknown as { sleep: (ms: number) => Promise<void> }, 'sleep')
-        .mockResolvedValue(undefined);
-
-      const result = await service.getProfile(
-        testPiiServiceUrl,
-        testProfileId,
-        testAccessToken,
-        testTenantId,
-      );
-
-      expect(result).toEqual(mockProfile);
-      expect(axios.get).toHaveBeenCalledTimes(2);
-    });
-
-    it('should retry on 503 status code', async () => {
-      const serviceUnavailableError = new AxiosError(
-        'Service Unavailable',
-        '503',
-        {} as InternalAxiosRequestConfig,
-        {},
-        { status: 503, data: {}, headers: new AxiosHeaders() } as AxiosResponse,
-      );
-      (axios.get as ReturnType<typeof vi.fn>)
-        .mockRejectedValueOnce(serviceUnavailableError)
-        .mockResolvedValueOnce({
-          status: 200,
-          data: { data: mockProfile },
+          status: 201,
+          data: {
+            data: {
+              redirectUrl: 'https://pii.example.com/portal/sessions/session-1',
+              expiresAt: '2026-04-15T02:30:00.000Z',
+            },
+          },
           headers: {},
         });
 
       vi.spyOn(service as unknown as { sleep: (ms: number) => Promise<void> }, 'sleep')
         .mockResolvedValue(undefined);
 
-      const result = await service.getProfile(
-        testPiiServiceUrl,
-        testProfileId,
+      const result = await service.createPortalSession(
+        testPiiPlatformUrl,
+        {
+          customerId: 'customer-1',
+          talentId: 'talent-1',
+          profileType: ProfileType.INDIVIDUAL,
+          ownerScope: {
+            ownerType: 'talent',
+            ownerId: 'talent-1',
+          },
+          operator: {
+            id: 'user-1',
+            username: 'operator',
+          },
+          trace: {
+            requestId: 'req-1',
+            tenantId: testTenantId,
+          },
+          purpose: 'customer_view',
+        },
         testAccessToken,
         testTenantId,
       );
 
-      expect(result).toEqual(mockProfile);
+      expect(result.redirectUrl).toContain('/portal/sessions/');
+      expect(axios.post).toHaveBeenCalledTimes(2);
     });
 
-    it('should not retry on 404 status code', async () => {
+    it('does not retry portal session creation on 404 errors', async () => {
       const notFoundError = new AxiosError(
         'Not Found',
         '404',
         {} as InternalAxiosRequestConfig,
         {},
-        { status: 404, data: {}, headers: new AxiosHeaders() } as AxiosResponse,
+        {
+          status: 404,
+          data: {},
+          headers: new AxiosHeaders(),
+        } as AxiosResponse,
       );
-      (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(notFoundError);
+      (axios.post as ReturnType<typeof vi.fn>).mockRejectedValue(notFoundError);
 
       await expect(
-        service.getProfile(testPiiServiceUrl, testProfileId, testAccessToken, testTenantId),
+        service.createPortalSession(
+          testPiiPlatformUrl,
+          {
+            customerId: 'customer-1',
+            talentId: 'talent-1',
+            profileType: ProfileType.INDIVIDUAL,
+            ownerScope: {
+              ownerType: 'talent',
+              ownerId: 'talent-1',
+            },
+            operator: {
+              id: 'user-1',
+              username: 'operator',
+            },
+            trace: {
+              requestId: 'req-1',
+              tenantId: testTenantId,
+            },
+            purpose: 'customer_view',
+          },
+          testAccessToken,
+          testTenantId,
+        ),
       ).rejects.toThrow();
 
-      expect(axios.get).toHaveBeenCalledTimes(1);
-    });
-
-    it('should give up after max retries', async () => {
-      const timeoutError = new AxiosError('Timeout', 'ETIMEDOUT');
-      (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(timeoutError);
-
-      vi.spyOn(service as unknown as { sleep: (ms: number) => Promise<void> }, 'sleep')
-        .mockResolvedValue(undefined);
-
-      await expect(
-        service.getProfile(testPiiServiceUrl, testProfileId, testAccessToken, testTenantId),
-      ).rejects.toThrow();
-
-      // Initial attempt + 3 retries = 4 total calls
-      expect(axios.get).toHaveBeenCalledTimes(4);
+      expect(axios.post).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('mTLS Configuration', () => {
-    it('should initialize with mTLS when certificates are configured', () => {
+    it('initializes with mTLS when certificates are configured', () => {
       const mtlsConfigService: Partial<ConfigService> = {
         get: vi.fn((key: string) => {
           const config: Record<string, string> = {
@@ -432,13 +521,11 @@ describe('PiiClientService', () => {
         }),
       };
 
-      // Create new service with mTLS config
       const mtlsService = new PiiClientService(
         mtlsConfigService as ConfigService,
         mockIntegrationLogService as IntegrationLogService,
       );
 
-      // Service should be created without errors
       expect(mtlsService).toBeDefined();
     });
   });

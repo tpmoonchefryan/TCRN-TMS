@@ -17,6 +17,7 @@ describe('sidebar-tree', () => {
               code: 'tal-1',
               displayName: 'Talent 1',
               path: '/sub-1/tal-1',
+              lifecycleStatus: 'published',
             },
           ],
           children: [
@@ -37,7 +38,7 @@ describe('sidebar-tree', () => {
     expect(tree).toEqual([
       {
         id: 'tenant-1',
-        name: 'Current Tenant',
+        name: 'Tenant',
         type: 'tenant',
         children: [
           {

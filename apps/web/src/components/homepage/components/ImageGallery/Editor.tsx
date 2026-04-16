@@ -67,7 +67,7 @@ export const ImageGalleryEditor: React.FC<ImageGalleryEditorProps> = ({ props, o
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="carousel">{t('carousel')}</SelectItem>
-              <SelectItem value="grid">Grid</SelectItem>
+              <SelectItem value="grid">{t('grid')}</SelectItem>
               <SelectItem value="masonry">{t('masonry')}</SelectItem>
             </SelectContent>
           </Select>

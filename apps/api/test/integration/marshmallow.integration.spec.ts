@@ -50,6 +50,28 @@ describe('Marshmallow Integration Tests', () => {
 
   const publicBasePath = () => `/api/v1/public/marshmallow/${marshmallowPath}`;
 
+  const setTalentLifecycle = async (lifecycleStatus: 'published' | 'disabled') => {
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantFixture.schemaName}".talent
+        SET lifecycle_status = $2,
+            published_at = CASE
+              WHEN $2 IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
+              ELSE NULL
+            END,
+            published_by = CASE
+              WHEN $2 IN ('published', 'disabled') THEN $3::uuid
+              ELSE NULL
+            END,
+            updated_at = NOW()
+        WHERE id = $1::uuid
+      `,
+      talentId,
+      lifecycleStatus,
+      testUser.id,
+    );
+  };
+
   const getAdminConfig = () =>
     withAuth(
       request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/config`),
@@ -120,6 +142,8 @@ describe('Marshmallow Integration Tests', () => {
     talentId = talent.id;
     marshmallowPath = talent.code;
 
+    await setTalentLifecycle('published');
+
     const tokenService = moduleFixture.get(TokenService);
     accessToken = tokenService.generateAccessToken({
       sub: testUser.id,
@@ -155,9 +179,9 @@ describe('Marshmallow Integration Tests', () => {
   });
 
   afterAll(async () => {
+    await app?.close();
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
-    await app?.close();
   });
 
   it('should return public config for the configured marshmallow path', async () => {
@@ -298,7 +322,7 @@ describe('Marshmallow Integration Tests', () => {
         reaction: '👍',
         fingerprint: 'reaction-fp',
       })
-      .expect(201);
+      .expect(200);
 
     expect(firstResponse.body.success).toBe(true);
     expect(firstResponse.body.data.added).toBe(true);
@@ -312,7 +336,7 @@ describe('Marshmallow Integration Tests', () => {
         reaction: '👍',
         fingerprint: 'reaction-fp',
       })
-      .expect(201);
+      .expect(200);
 
     expect(secondResponse.body.success).toBe(true);
     expect(secondResponse.body.data.added).toBe(false);
@@ -329,7 +353,7 @@ describe('Marshmallow Integration Tests', () => {
       .send({
         fingerprint: 'mark-read-fp',
       })
-      .expect(201);
+      .expect(200);
 
     expect(firstResponse.body.success).toBe(true);
     expect(firstResponse.body.isRead).toBe(true);
@@ -343,7 +367,7 @@ describe('Marshmallow Integration Tests', () => {
       .send({
         fingerprint: 'mark-read-fp',
       })
-      .expect(201);
+      .expect(200);
 
     expect(secondResponse.body.success).toBe(true);
     expect(secondResponse.body.isRead).toBe(false);
@@ -425,5 +449,25 @@ describe('Marshmallow Integration Tests', () => {
 
     expect(blockedResponse.body.success).toBe(false);
     expect(blockedResponse.body.error.code).toBe('RATE_LIMIT_EXCEEDED');
+  });
+
+  it('should return 404 for public pages after the talent is disabled even when config and messages exist', async () => {
+    await setTalentLifecycle('disabled');
+
+    const configResponse = await withPublicHeaders(
+      request(app.getHttpServer()).get(`${publicBasePath()}/config`),
+      '203.0.113.88',
+    ).expect(404);
+    const messagesResponse = await withPublicHeaders(
+      request(app.getHttpServer()).get(`${publicBasePath()}/messages`),
+      '203.0.113.89',
+    )
+      .query({ fingerprint: 'disabled-public-reader' })
+      .expect(404);
+
+    expect(configResponse.body.success).toBe(false);
+    expect(configResponse.body.error.code).toBe('RES_NOT_FOUND');
+    expect(messagesResponse.body.success).toBe(false);
+    expect(messagesResponse.body.error.code).toBe('RES_NOT_FOUND');
   });
 });

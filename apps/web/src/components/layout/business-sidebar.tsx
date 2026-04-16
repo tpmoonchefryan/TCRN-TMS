@@ -23,6 +23,10 @@ import { TalentSwitcher } from '@/components/talent/talent-switcher';
 import { useCurrentTalent } from '@/hooks/use-current-talent';
 import { useFeatureToggle } from '@/hooks/use-feature-toggle';
 import { useUIMode } from '@/hooks/use-ui-mode';
+import {
+  buildOrganizationStructureUrl,
+  buildTalentSettingsUrl,
+} from '@/lib/talent-lifecycle-routing';
 import { cn, isStaging } from '@/lib/utils';
 
 interface NavItemProps {
@@ -66,6 +70,7 @@ export function BusinessSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('navigation');
+  const tc = useTranslations('common');
   const { switchToManagementUI, currentTenantId } = useUIMode();
   const { currentTalent } = useCurrentTalent();
   const { marshmallowEnabled, homepageEnabled } = useFeatureToggle();
@@ -73,28 +78,23 @@ export function BusinessSidebar() {
   // Calculate top offset for staging banner
   const topOffset = isStaging() ? STAGING_BANNER_HEIGHT : 0;
 
-  // Build talent settings URL based on talent's position in organization
-  const getTalentSettingsUrl = () => {
-    if (!currentTenantId || !currentTalent) return null;
-    
-    if (currentTalent.subsidiaryId) {
-      return `/tenant/${currentTenantId}/subsidiary/${currentTalent.subsidiaryId}/talent/${currentTalent.id}/settings`;
-    }
-    return `/tenant/${currentTenantId}/talent/${currentTalent.id}/settings`;
-  };
-
   const handleTalentSettingsClick = () => {
-    const url = getTalentSettingsUrl();
-    if (url) {
+    if (currentTenantId && currentTalent) {
       switchToManagementUI();
-      router.push(url);
+      router.push(
+        buildTalentSettingsUrl({
+          tenantId: currentTenantId,
+          talentId: currentTalent.id,
+          subsidiaryId: currentTalent.subsidiaryId,
+        })
+      );
     }
   };
 
   const handleConfigClick = () => {
     switchToManagementUI();
     if (currentTenantId) {
-      router.push(`/tenant/${currentTenantId}/organization-structure`);
+      router.push(buildOrganizationStructureUrl(currentTenantId));
     }
   };
 
@@ -112,7 +112,7 @@ export function BusinessSidebar() {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-pink-400 rounded-lg flex items-center justify-center text-white">
             T
           </div>
-          <span>TCRN TMS</span>
+          <span>{tc('appName')}</span>
         </div>
       </div>
 
