@@ -1,11 +1,16 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { PublicMarshmallowScreen } from '@/domains/public-marshmallow/screens/PublicMarshmallowScreen';
 
-import { PublicMarshmallowFeedScreen } from '@/domains/marshmallow/screens/PublicMarshmallowFeedScreen';
-
-export default async function MarshmallowFeedPage({
+export default async function PublicMarshmallowPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ path: string }>;
-}) {
-  return PublicMarshmallowFeedScreen({ params });
+}>) {
+  const { path } = await params;
+
+  return (
+    <PublicMarshmallowScreen
+      path={path}
+      turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
+    />
+  );
 }

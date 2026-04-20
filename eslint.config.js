@@ -23,14 +23,6 @@ export default [
       // Integration tests (not in tsconfig)
       'apps/api/test/**',
       'apps/pii-service/test/**',
-      // Web test files (migrated from .eslintignore)
-      'apps/web/vitest.config.ts',
-      'apps/web/vitest.setup.ts',
-      'apps/web/**/*.spec.ts',
-      'apps/web/**/*.spec.tsx',
-      'apps/web/**/*.test.ts',
-      'apps/web/**/*.test.tsx',
-      'apps/web/src/components/__tests__/**',
     ],
   },
 
@@ -119,64 +111,6 @@ export default [
       '@typescript-eslint/prefer-as-const': 'warn',
     },
   },
-
-  // Next.js 特定配置
-  {
-    files: ['apps/web/**/*.{js,jsx,ts,tsx}'],
-    rules: {
-      'react/react-in-jsx-scope': 'off', // Next.js 不需要
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_|^React$',
-        },
-      ],
-    },
-  },
-
-  {
-    files: ['apps/web/src/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@/lib/api/client',
-              message: 'Import focused API modules instead of the compatibility barrel.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    files: ['apps/web/src/domains/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@/components/ui',
-              message:
-                'Import platform UI through "@/platform/ui" inside canonical domain code.',
-            },
-          ],
-          patterns: [
-            {
-              group: ['@/components/ui/*'],
-              message:
-                'Import platform UI through "@/platform/ui" inside canonical domain code.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
   // NestJS 特定配置
   {
     files: ['apps/api/**/*.ts', 'apps/pii-service/**/*.ts'],

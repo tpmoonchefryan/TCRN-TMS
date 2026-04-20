@@ -1,8 +1,15 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-// Canonical public UI entry for new web code.
-// The underlying primitive implementation still routes through legacy ui code during migration.
-export * from './foundations';
-export * from './patterns';
-export * from './primitives';
-export * from './testing';
+export * from './patterns/AccountDropdownMenu';
+export * from './patterns/ActionDrawer';
+export * from './patterns/AppFrame';
+export * from './patterns/AsyncSubmitButton';
+export * from './patterns/ConfirmActionDialog';
+export * from './patterns/EnvironmentBannerSlot';
+export * from './patterns/FormSection';
+export * from './patterns/LocaleSwitcher';
+export * from './patterns/SettingsLayout';
+export * from './patterns/SidebarNav';
+export * from './patterns/StateView';
+export * from './patterns/TableShell';
+export * from './patterns/TopCommandBar';
+export * from './patterns/TranslationDrawer';
+export * from './primitives/GlassSurface';

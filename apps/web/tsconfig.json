@@ -1,12 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -17,19 +13,10 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ],
+    "plugins": [{ "name": "next" }],
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": false,
@@ -44,6 +31,7 @@
   ],
   "exclude": [
     "node_modules",
-    "debug-db.ts"
+    ".next/types/validator.ts",
+    ".next/dev/types/validator.ts"
   ]
 }
