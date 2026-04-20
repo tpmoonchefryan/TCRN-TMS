@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProfileScreen } from '@/domains/profile/screens/ProfileScreen';
+import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
 const mockUpdateSessionUser = vi.fn();
@@ -210,6 +212,14 @@ function buildProfile(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function renderProfileScreen(props: ComponentProps<typeof ProfileScreen>) {
+  return render(
+    <RuntimeLocaleProvider>
+      <ProfileScreen {...props} />
+    </RuntimeLocaleProvider>,
+  );
+}
+
 describe('ProfileScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
@@ -260,7 +270,7 @@ describe('ProfileScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<ProfileScreen tenantId="tenant-1" />);
+    renderProfileScreen({ tenantId: 'tenant-1' });
 
     expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument();
     expect(document.getElementById('security-controls')).not.toBeInTheDocument();
@@ -327,7 +337,7 @@ describe('ProfileScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<ProfileScreen tenantId="tenant-1" mode="security" />);
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
 
     expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
     expect(document.getElementById('security-controls')).toBeInTheDocument();
@@ -373,7 +383,7 @@ describe('ProfileScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<ProfileScreen tenantId="tenant-1" mode="security" />);
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
 
     expect(await screen.findByText('Device 1')).toBeInTheDocument();
     expect(screen.queryByText('Device 21')).not.toBeInTheDocument();
@@ -416,7 +426,7 @@ describe('ProfileScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<ProfileScreen tenantId="tenant-1" />);
+    renderProfileScreen({ tenantId: 'tenant-1' });
 
     expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument();
 
@@ -445,6 +455,21 @@ describe('ProfileScreen', () => {
       },
     ];
 
+    currentSession = {
+      tenantName: 'Moonshot Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: false,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
         return buildProfile();
@@ -464,7 +489,7 @@ describe('ProfileScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<ProfileScreen tenantId="tenant-1" mode="security" />);
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
 
     expect(await screen.findByText('iPhone Safari')).toBeInTheDocument();
 

@@ -504,8 +504,9 @@ describe('TenantSettingsScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
+    expect(await screen.findByRole('button', { name: /New profile store/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'New profile store' }));
+    fireEvent.click(screen.getByRole('button', { name: /New profile store/i }));
     fireEvent.change(screen.getByLabelText('Store code'), {
       target: { value: 'archive_store' },
     });
@@ -543,7 +544,7 @@ describe('TenantSettingsScreen', () => {
     });
     fireEvent.click(within(createTranslationDrawer).getByRole('button', { name: 'Save' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create profile store' }));
+    fireEvent.click(screen.getByRole('button', { name: /Create profile store/i }));
 
     await waitFor(() => {
       expect(lastCreatedBody).toEqual({
@@ -591,7 +592,7 @@ describe('TenantSettingsScreen', () => {
     });
     fireEvent.click(within(editTranslationDrawer).getByRole('button', { name: 'Save' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save profile store' }));
+    fireEvent.click(screen.getByRole('button', { name: /Save profile store/i }));
 
     await waitFor(() => {
       expect(lastUpdatedBody).toEqual({

@@ -538,7 +538,7 @@ describe('UserManagementScreen', () => {
       target: { value: 'role' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Grant delegation' }));
+    fireEvent.click(screen.getByRole('button', { name: /Grant delegation/i }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(

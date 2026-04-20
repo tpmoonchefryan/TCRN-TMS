@@ -801,7 +801,7 @@ describe('IntegrationManagementScreen', () => {
       target: { value: 'https://new.example.com' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save config changes' }));
+    fireEvent.click(screen.getByRole('button', { name: /Save config changes/i }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(

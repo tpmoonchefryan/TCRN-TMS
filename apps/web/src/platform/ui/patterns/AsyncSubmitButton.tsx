@@ -32,12 +32,18 @@ export const AsyncSubmitButton: React.FC<AsyncSubmitButtonProps> = ({
       aria-busy={isPending}
       {...props}
     >
-      <span className="col-start-1 row-start-1 flex items-center justify-center">
+      <span
+        className="col-start-1 row-start-1 flex items-center justify-center"
+        aria-hidden={isPending}
+      >
         <span className={`${isPending ? 'opacity-0' : 'opacity-100'} ${tokens.motion.transitionQuick} ${tokens.motion.reduced}`}>
           {children}
         </span>
       </span>
-      <span className="col-start-1 row-start-1 flex items-center justify-center">
+      <span
+        className="col-start-1 row-start-1 flex items-center justify-center"
+        aria-hidden={!isPending}
+      >
         <span className={`flex items-center gap-2 ${isPending ? 'opacity-100' : 'opacity-0'} ${tokens.motion.transitionQuick} ${tokens.motion.reduced}`}>
           <svg className="animate-spin motion-reduce:animate-none h-4 w-4 text-current" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

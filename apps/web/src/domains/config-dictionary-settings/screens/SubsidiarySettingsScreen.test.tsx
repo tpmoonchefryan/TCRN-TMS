@@ -333,7 +333,7 @@ describe('SubsidiarySettingsScreen', () => {
     fireEvent.change(screen.getByLabelText('Name (English) *'), {
       target: { value: 'Local Segment' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create record' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Create record/i }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(

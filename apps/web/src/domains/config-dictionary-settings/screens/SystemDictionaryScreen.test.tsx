@@ -433,9 +433,9 @@ describe('SystemDictionaryScreen', () => {
     expect((await screen.findAllByText('Currently active')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Deactivate' })[0]);
-    const deactivateDialog = screen.getByText('Deactivate dictionary item').closest('dialog');
-    expect(deactivateDialog).not.toBeNull();
-    fireEvent.click(within(deactivateDialog as HTMLDialogElement).getByRole('button', { name: 'Deactivate' }));
+    const deactivateDialog = await screen.findByRole('dialog');
+    expect(within(deactivateDialog).getByText('Deactivate dictionary item')).toBeInTheDocument();
+    fireEvent.click(within(deactivateDialog).getByRole('button', { name: 'Deactivate' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -455,9 +455,9 @@ describe('SystemDictionaryScreen', () => {
     expect(await screen.findByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate' }));
-    const reactivateDialog = screen.getByText('Reactivate dictionary item').closest('dialog');
-    expect(reactivateDialog).not.toBeNull();
-    fireEvent.click(within(reactivateDialog as HTMLDialogElement).getByRole('button', { name: 'Reactivate' }));
+    const reactivateDialog = await screen.findByRole('dialog');
+    expect(within(reactivateDialog).getByText('Reactivate dictionary item')).toBeInTheDocument();
+    fireEvent.click(within(reactivateDialog).getByRole('button', { name: 'Reactivate' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(

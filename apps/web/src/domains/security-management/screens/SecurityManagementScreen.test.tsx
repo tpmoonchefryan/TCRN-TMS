@@ -329,7 +329,7 @@ describe('SecurityManagementScreen', () => {
       target: { value: 'badword' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create rule' }));
+    fireEvent.click(screen.getByRole('button', { name: /Create rule/i }));
 
     await waitFor(() => {
       expect(createdPayload).toEqual(
