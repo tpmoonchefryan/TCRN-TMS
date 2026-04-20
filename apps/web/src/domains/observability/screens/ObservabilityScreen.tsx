@@ -25,6 +25,7 @@ import {
 } from '@/domains/observability/screens/observability.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -314,6 +315,10 @@ export function ObservabilityScreen({
   const currentTab = resolveInitialTab(searchParams.get('tab'));
 
   const [activeTab, setActiveTab] = useState<ObservabilityTab>(currentTab);
+  const {
+    displayedValue: displayedTab,
+    transitionClassName: tabTransitionClassName,
+  } = useFadeSwapState(activeTab);
   const [changeFilters, setChangeFilters] = useState<ChangeFilters>({
     objectType: '',
     action: '',
@@ -697,7 +702,8 @@ export function ObservabilityScreen({
         </div>
       </GlassSurface>
 
-      {activeTab === 'change-logs' ? (
+      <div className={tabTransitionClassName}>
+      {displayedTab === 'change-logs' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -824,7 +830,7 @@ export function ObservabilityScreen({
         </>
       ) : null}
 
-      {activeTab === 'tech-events' ? (
+      {displayedTab === 'tech-events' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -955,7 +961,7 @@ export function ObservabilityScreen({
         </>
       ) : null}
 
-      {activeTab === 'integration-logs' ? (
+      {displayedTab === 'integration-logs' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -1108,7 +1114,7 @@ export function ObservabilityScreen({
         </>
       ) : null}
 
-      {activeTab === 'log-search' ? (
+      {displayedTab === 'log-search' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -1252,6 +1258,7 @@ export function ObservabilityScreen({
           </GlassSurface>
         </>
       ) : null}
+      </div>
 
     </div>
   );

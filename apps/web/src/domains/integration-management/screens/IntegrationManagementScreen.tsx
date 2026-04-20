@@ -89,6 +89,7 @@ import {
 } from '@/domains/organization-access/api/organization.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -1074,6 +1075,10 @@ export function IntegrationManagementScreen({
   );
 
   const [activeTab, setActiveTab] = useState<IntegrationTab>(resolvedInitialTab);
+  const {
+    displayedValue: displayedTab,
+    transitionClassName: tabTransitionClassName,
+  } = useFadeSwapState(activeTab);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmDialogState | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
@@ -2959,7 +2964,8 @@ export function IntegrationManagementScreen({
             </div>
           </GlassSurface>
 
-          {activeTab === 'adapters' ? (
+          <div className={tabTransitionClassName}>
+          {displayedTab === 'adapters' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -3410,7 +3416,7 @@ export function IntegrationManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'webhooks' ? (
+      {displayedTab === 'webhooks' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -3752,7 +3758,7 @@ export function IntegrationManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'api-keys' ? (
+      {displayedTab === 'api-keys' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -4134,7 +4140,7 @@ export function IntegrationManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'email' ? (
+      {displayedTab === 'email' ? (
         <>
           {isAcWorkspace ? (
             <GlassSurface className="p-6">
@@ -4757,6 +4763,7 @@ export function IntegrationManagementScreen({
           </GlassSurface>
         </>
       ) : null}
+          </div>
         </>
       ) : (
         <GlassSurface className="p-8">

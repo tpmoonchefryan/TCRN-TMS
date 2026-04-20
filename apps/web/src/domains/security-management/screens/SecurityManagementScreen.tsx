@@ -78,6 +78,7 @@ import {
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -617,6 +618,10 @@ export function SecurityManagementScreen({
   const currentScopeId = searchParams.get('scopeId') || '';
 
   const [activeTab, setActiveTab] = useState<SecurityTab>(currentTab);
+  const {
+    displayedValue: displayedTab,
+    transitionClassName: tabTransitionClassName,
+  } = useFadeSwapState(activeTab);
   const [scopeType, setScopeType] = useState<SecurityScopeType>(currentScopeType);
   const [scopeId, setScopeId] = useState(currentScopeId);
   const [organizationScopesPanel, setOrganizationScopesPanel] =
@@ -1470,7 +1475,8 @@ export function SecurityManagementScreen({
 
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
-      {activeTab === 'blocklist' ? (
+      <div className={tabTransitionClassName}>
+      {displayedTab === 'blocklist' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -1960,7 +1966,7 @@ export function SecurityManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'external-blocklist' ? (
+      {displayedTab === 'external-blocklist' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -2430,7 +2436,7 @@ export function SecurityManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'ip-access' ? (
+      {displayedTab === 'ip-access' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -2661,7 +2667,7 @@ export function SecurityManagementScreen({
         </>
       ) : null}
 
-      {activeTab === 'runtime-signals' ? (
+      {displayedTab === 'runtime-signals' ? (
         <>
           <GlassSurface className="p-6">
             <FormSection
@@ -2863,6 +2869,7 @@ export function SecurityManagementScreen({
           </GlassSurface>
         </>
       ) : null}
+      </div>
 
       <ConfirmActionDialog
         open={dialogState !== null}

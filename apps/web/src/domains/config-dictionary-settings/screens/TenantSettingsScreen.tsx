@@ -41,6 +41,7 @@ import {
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
@@ -300,6 +301,10 @@ export function TenantSettingsScreen({
   const [activeSectionId, setActiveSectionId] = useState<'details' | 'config-entities' | 'settings' | 'dictionary'>(
     'details',
   );
+  const {
+    displayedValue: displayedSectionId,
+    transitionClassName: sectionTransitionClassName,
+  } = useFadeSwapState(activeSectionId);
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
@@ -983,7 +988,8 @@ export function TenantSettingsScreen({
           setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
         }}
       >
-        {activeSectionId === 'details' ? (
+        <div className={sectionTransitionClassName}>
+        {displayedSectionId === 'details' ? (
           <div className="space-y-6">
             <GlassSurface className="p-8">
               <div className="flex flex-wrap items-start justify-between gap-6">
@@ -1070,7 +1076,7 @@ export function TenantSettingsScreen({
           </div>
         ) : null}
 
-        {activeSectionId === 'config-entities' ? (
+        {displayedSectionId === 'config-entities' ? (
           <div className="space-y-6">
             <GlassSurface className="p-6">
               <FormSection
@@ -1494,7 +1500,7 @@ export function TenantSettingsScreen({
           </div>
         ) : null}
 
-        {activeSectionId === 'settings' ? (
+        {displayedSectionId === 'settings' ? (
           <GlassSurface className="p-6">
               <FormSection
                 title={common.settings}
@@ -1580,7 +1586,7 @@ export function TenantSettingsScreen({
           </GlassSurface>
         ) : null}
 
-        {activeSectionId === 'dictionary' ? (
+        {displayedSectionId === 'dictionary' ? (
           <GlassSurface className="p-6">
               <FormSection
               title={common.dictionary}
@@ -1638,6 +1644,7 @@ export function TenantSettingsScreen({
             </FormSection>
           </GlassSurface>
         ) : null}
+        </div>
       </SettingsLayout>
 
       <TranslationManagementDrawer

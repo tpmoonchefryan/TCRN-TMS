@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EnvironmentBannerSlot } from '../patterns/EnvironmentBannerSlot';
@@ -28,16 +28,10 @@ describe('EnvironmentBannerSlot', () => {
   });
 
   it('delays unmount until exit animation completes', async () => {
-    let rerender: any;
-    act(() => {
-      const utils = render(<EnvironmentBannerSlot message="Testing banner" visible={true} />);
-      rerender = utils.rerender;
-    });
+    const { rerender } = render(<EnvironmentBannerSlot message="Testing banner" visible={true} />);
     
     // Trigger hide
-    act(() => {
-      rerender(<EnvironmentBannerSlot message="Testing banner" visible={false} />);
-    });
+    rerender(<EnvironmentBannerSlot message="Testing banner" visible={false} />);
     
     // Should still be in document immediately after due to exit animation
     expect(screen.getByText('Testing banner')).toBeInTheDocument();
@@ -51,20 +45,14 @@ describe('EnvironmentBannerSlot', () => {
   });
 
   it('bypasses exit animation delay when reduced motion is preferred', async () => {
-    window.matchMedia = vi.fn().mockImplementation(_query => ({
+    window.matchMedia = vi.fn().mockImplementation(query => ({
       matches: query === '(prefers-reduced-motion: reduce)',
     }));
     
-    let rerender: any;
-    act(() => {
-      const utils = render(<EnvironmentBannerSlot message="Testing banner" visible={true} />);
-      rerender = utils.rerender;
-    });
+    const { rerender } = render(<EnvironmentBannerSlot message="Testing banner" visible={true} />);
     
     // Trigger hide
-    act(() => {
-      rerender(<EnvironmentBannerSlot message="Testing banner" visible={false} />);
-    });
+    rerender(<EnvironmentBannerSlot message="Testing banner" visible={false} />);
     
     // Should be unmounted immediately
     await act(async () => {

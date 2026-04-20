@@ -64,6 +64,7 @@ import {
 } from '@/platform/routing/workspace-paths';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
 import { ConfirmActionDialog, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
@@ -265,6 +266,10 @@ export function TalentSettingsScreen({
   const urlSection = parseTalentSettingsSection(searchParams.get('section'));
   const urlFocus = parseTalentSettingsFocus(searchParams.get('focus'));
   const [activeSectionId, setActiveSectionId] = useState<TalentSettingsSection>(urlSection);
+  const {
+    displayedValue: displayedSectionId,
+    transitionClassName: sectionTransitionClassName,
+  } = useFadeSwapState(activeSectionId);
   const [activeFocus, setActiveFocus] = useState<TalentSettingsFocus | null>(urlFocus);
   const { request, requestEnvelope, session } = useSession();
   const {
@@ -1326,7 +1331,8 @@ export function TalentSettingsScreen({
           );
         }}
       >
-        {activeSectionId === 'details' ? (
+        <div className={sectionTransitionClassName}>
+        {displayedSectionId === 'details' ? (
           <div className="space-y-6">
             <GlassSurface className="p-8">
               <div className="flex flex-wrap items-start justify-between gap-6">
@@ -1688,7 +1694,7 @@ export function TalentSettingsScreen({
           </div>
         ) : null}
 
-        {activeSectionId === 'config-entities' ? (
+        {displayedSectionId === 'config-entities' ? (
           <GlassSurface className="p-6">
             <FormSection
               title={common.configEntities}
@@ -1711,7 +1717,7 @@ export function TalentSettingsScreen({
           </GlassSurface>
         ) : null}
 
-        {activeSectionId === 'settings' ? (
+        {displayedSectionId === 'settings' ? (
           <GlassSurface className="p-6">
             <FormSection
               title={common.settings}
@@ -2188,7 +2194,7 @@ export function TalentSettingsScreen({
           </GlassSurface>
         ) : null}
 
-        {activeSectionId === 'dictionary' ? (
+        {displayedSectionId === 'dictionary' ? (
           <GlassSurface className="p-6">
             <FormSection
               title={common.dictionary}
@@ -2255,6 +2261,7 @@ export function TalentSettingsScreen({
             </FormSection>
           </GlassSurface>
         ) : null}
+        </div>
       </SettingsLayout>
 
       <ConfirmActionDialog

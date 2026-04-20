@@ -24,6 +24,7 @@ import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/co
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
 
@@ -133,6 +134,10 @@ export function SubsidiarySettingsScreen({
   const [activeSectionId, setActiveSectionId] = useState<'details' | 'config-entities' | 'settings' | 'dictionary'>(
     'details',
   );
+  const {
+    displayedValue: displayedSectionId,
+    transitionClassName: sectionTransitionClassName,
+  } = useFadeSwapState(activeSectionId);
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
@@ -422,7 +427,8 @@ export function SubsidiarySettingsScreen({
         setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
       }}
     >
-      {activeSectionId === 'details' ? (
+      <div className={sectionTransitionClassName}>
+      {displayedSectionId === 'details' ? (
         <div className="space-y-6">
           <GlassSurface className="p-8">
             <div className="flex flex-wrap items-start justify-between gap-6">
@@ -509,7 +515,7 @@ export function SubsidiarySettingsScreen({
         </div>
       ) : null}
 
-      {activeSectionId === 'config-entities' ? (
+      {displayedSectionId === 'config-entities' ? (
         <GlassSurface className="p-6">
           <FormSection
             title={common.configEntities}
@@ -565,7 +571,7 @@ export function SubsidiarySettingsScreen({
         </GlassSurface>
       ) : null}
 
-      {activeSectionId === 'settings' ? (
+      {displayedSectionId === 'settings' ? (
         <div className="space-y-6">
           <GlassSurface className="p-6">
           <FormSection
@@ -709,7 +715,7 @@ export function SubsidiarySettingsScreen({
         </div>
       ) : null}
 
-      {activeSectionId === 'dictionary' ? (
+      {displayedSectionId === 'dictionary' ? (
         <GlassSurface className="p-6">
           <FormSection
             title={common.dictionary}
@@ -805,6 +811,7 @@ export function SubsidiarySettingsScreen({
           </FormSection>
         </GlassSurface>
       ) : null}
+      </div>
     </SettingsLayout>
   );
 }

@@ -37,6 +37,7 @@ import {
   ApiRequestError,
   buildFallbackPagination,
 } from '@/platform/http/api';
+import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
   PAGE_SIZE_OPTIONS,
@@ -375,6 +376,10 @@ export function UserManagementScreen({
   const urlUsersPageSize = parsePageSizeParam(searchParams.get('pageSize'));
 
   const [activeTab, setActiveTab] = useState<ManagementTab>(currentSearchParamsTab);
+  const {
+    displayedValue: displayedTab,
+    transitionClassName: tabTransitionClassName,
+  } = useFadeSwapState(activeTab);
   const [userSearch, setUserSearch] = useState(urlUserSearch);
   const deferredUserSearch = useDeferredValue(userSearch);
   const [userStatusFilter, setUserStatusFilter] = useState<UserStatusFilter>(urlUserStatusFilter);
@@ -851,7 +856,8 @@ export function UserManagementScreen({
         </div>
       </GlassSurface>
 
-      {activeTab === 'users' && (
+      <div className={tabTransitionClassName}>
+      {displayedTab === 'users' && (
         <section className="space-y-4">
           <GlassSurface className="p-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -1062,7 +1068,7 @@ export function UserManagementScreen({
         </section>
       )}
 
-      {activeTab === 'roles' && (
+      {displayedTab === 'roles' && (
         <section className="space-y-4">
           <GlassSurface className="p-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -1212,7 +1218,7 @@ export function UserManagementScreen({
         </section>
       )}
 
-      {activeTab === 'delegation' && (
+      {displayedTab === 'delegation' && (
         <section className="space-y-4">
           <GlassSurface className="p-6">
             <div className="space-y-2">
@@ -1455,6 +1461,7 @@ export function UserManagementScreen({
           )}
         </section>
       )}
+      </div>
 
       <ConfirmActionDialog
         open={dialogState !== null}
