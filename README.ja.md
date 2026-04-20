@@ -190,43 +190,41 @@ Tencent Cloud SESと統合：
 - **プリセットテンプレート**：パスワードリセット、ログイン認証、メンバーシップアラート
 - **現在のサポート境界**：デフォルトランタイムで完全に配線済みの outbound integration はこれだけです。`NATS JetStream` は現時点では内部 async 基盤であり、公式の外部 integration contract ではありません。
 
-### パフォーマンス最適化
+### ランタイム性能
 
-プロダクショングレードのパフォーマンス機能：
+現在の実ランタイムで効いている性能要素：
 
-| 機能               | 実装方法                                           |
-| ------------------ | -------------------------------------------------- |
-| **動的インポート** | 7+ 大型コンポーネントを `dynamic.tsx` で遅延ロード |
-| **リスト仮想化**   | `@tanstack/react-virtual` で長いリストを処理       |
-| **画像最適化**     | `next/image` でリモートパターンを設定              |
-| **メモ化**         | 高頻度コンポーネントに `React.memo` を使用         |
+| 機能                   | 実装方法                                                 |
+| ---------------------- | -------------------------------------------------------- |
+| **非同期ワークロード** | BullMQ worker によるメール、import/export、report 処理   |
+| **権限キャッシュ**     | Redis ベースの permission snapshot と rate limit         |
+| **テナント分離**       | tenant-specific PostgreSQL schemas                       |
+| **ファイル配信**       | MinIO の presigned URL downloads                         |
 
-### アクセシビリティ
+### ブラウザランタイム境界
 
-WCAG 2.1 AA準拠：
+2026-04-16 時点で、このリポジトリはブラウザランタイムを同梱していません：
 
-- **モーション軽減**：システムの `prefers-reduced-motion` 設定を尊重
-- **キーボードナビゲーション**：すべてのインタラクティブ要素で完全なキーボード操作をサポート
-- **スクリーンリーダー**：セマンティックHTMLとARIAラベルを全体で使用
+- **repo-owned UI なし**：`historical browser runtime` は monorepo から削除済み
+- **外部ブラウザアプリ**：ログイン、管理画面、公開ページ UI はリポジトリ外で動かす必要があります
+- **URL 契約**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` はその外部ブラウザランタイムまたは public origin を指します
 
 ### エラーハンドリング
 
-3階層エラーバウンダリアーキテクチャ：
+現在のエラー面は API / worker 中心です：
 
-```
-app/error.tsx              → グローバルフォールバック
-app/(business)/error.tsx   → ビジネスセクションフォールバック
-app/(admin)/admin/error.tsx → 管理セクションフォールバック
-```
+- **API**：Nest の例外処理、request validation、構造化された HTTP response
+- **Worker**：queue retry、失敗ログ、job 単位の可観測性
+- **Database / Delivery**：deployment と rollout verification はブラウザ smoke を前提にしません
 
-### フォームバリデーション
+### Contract バリデーション
 
-Zodによるエンドツーエンドの型安全バリデーション：
+Zod による型安全 validation は、現在も shared/backend 層で有効です：
 
-- **145+ Zodスキーマ**：認証、顧客、マシュマロ、ホームページモジュールをカバー
-- **バックエンド**：`ZodValidationPipe` による自動リクエストバリデーション
-- **フロントエンド**：`useZodForm` フックでフォーム状態を管理
-- **Swagger統合**：ZodスキーマからAPIドキュメントを自動生成
+- **145+ Zod スキーマ**：認証、顧客、マシュマロ、ホームページモジュールをカバー
+- **バックエンド**：`ZodValidationPipe` による自動 request validation
+- **共有契約**：API-facing schema は外部 caller からも再利用可能
+- **Swagger 統合**：Zod schema から API document を自動生成
 
 ---
 
@@ -243,9 +241,9 @@ Zodによるエンドツーエンドの型安全バリデーション：
                │                     │                │                    │  │
                ▼                     ▼                ▼                    ▼  │
         ┌─────────────┐       ┌─────────────┐  ┌─────────────┐     ┌─────────┐│
-        │   Next.js   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
-        │   (Web UI)  │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
-        │   :3000     │       │   :4000     │  │             │     │  :9000  ││
+        │  External   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
+        │ Browser UI  │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
+        │ (out-of-repo)│      │   :4000     │  │             │     │  :9000  ││
         └─────────────┘       └──────┬──────┘  └──────┬──────┘     └─────────┘│
                                      │                │                       │
                               ┌──────┴──────┬─────────┴────┐                  │
@@ -271,7 +269,7 @@ Zodによるエンドツーエンドの型安全バリデーション：
 
 ### データフロー
 
-1. **Web UI** → **APIゲートウェイ**（NestJS）ですべてのビジネス操作を処理
+1. **外部ブラウザランタイム** → **APIゲートウェイ**（NestJS）ですべてのビジネス操作を処理
 2. **API**がJWTを検証し、Redis権限スナップショットをチェック
 3. 非PIIデータはテナント固有のPostgreSQLスキーマに保存
 4. effective `TCRN_PII_PLATFORM` が有効な場合、顧客作成/編集は `customerId` をキーに書き込み連携します
@@ -283,27 +281,23 @@ Zodによるエンドツーエンドの型安全バリデーション：
 
 ## 🛠️ 技術スタック
 
-| レイヤー               | 技術                   | バージョン |
-| ---------------------- | ---------------------- | ---------- |
-| **フロントエンド**     | Next.js                | 16.1.1     |
-|                        | React                  | 19.1.1     |
-|                        | TypeScript             | 5.9.3      |
-|                        | Tailwind CSS           | 3.4.17     |
-|                        | Zustand                | 5.0.5      |
-|                        | TanStack React Virtual | 3.13.18    |
-| **バックエンド**       | NestJS                 | 11.1.6     |
-|                        | Prisma ORM             | 6.14.0     |
-|                        | BullMQ                 | 5.66.5     |
-| **データベース**       | PostgreSQL             | 16         |
-|                        | Redis                  | 7          |
-| **ストレージ**         | MinIO                  | Latest     |
-| **メッセージング**     | NATS JetStream         | 2          |
-| **オブザーバビリティ** | OpenTelemetry          | -          |
-|                        | Prometheus             | -          |
-|                        | Grafana Loki           | 2.9.0      |
-|                        | Grafana Tempo          | -          |
-| **デプロイ**           | Docker                 | -          |
-|                        | Kubernetes             | -          |
+| レイヤー               | 技術               | バージョン |
+| ---------------------- | ------------------ | ---------- |
+| **API Runtime**        | NestJS             | 11.1.6     |
+|                        | TypeScript         | 5.9.3      |
+| **Worker Runtime**     | BullMQ             | 5.66.5     |
+| **契約 / Schema**      | Zod                | 4.x        |
+|                        | Prisma ORM         | 6.14.0     |
+| **データベース**       | PostgreSQL         | 16         |
+|                        | Redis              | 7          |
+| **ストレージ**         | MinIO              | Latest     |
+| **メッセージング**     | NATS JetStream     | 2          |
+| **オブザーバビリティ** | OpenTelemetry      | -          |
+|                        | Prometheus         | -          |
+|                        | Grafana Loki       | 2.9.0      |
+|                        | Grafana Tempo      | -          |
+| **デプロイ**           | Docker             | -          |
+|                        | Kubernetes         | -          |
 
 上記インフラの現在のランタイム状態は次のとおりです。
 
@@ -366,11 +360,12 @@ pnpm dev
 
 | サービス        | URL                            |
 | --------------- | ------------------------------ |
-| Web UI          | http://localhost:3000          |
 | API             | http://localhost:4000          |
 | APIドキュメント | http://localhost:4000/api/docs |
 | MinIOコンソール | http://localhost:9001          |
 | NATSモニター    | http://localhost:8222          |
+
+ローカル開発には repo-owned のブラウザ UI はもう含まれません。外部ブラウザアプリをこの API に接続する場合は、`FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN` を適切に設定してください。
 
 ### デフォルト認証情報
 
@@ -383,10 +378,10 @@ pnpm dev
 
 ### テストと検証の境界
 
-- リポジトリルートの `pnpm test:e2e` は Playwright のブラウザースイートであり、API の Vitest integration runner ではありません。
+- repo-owned の historical browser test suite / ブラウザーテスト経路は `historical browser runtime` と一緒に削除され、ルートに `historical browser E2E validation` はもうありません。
 - ルートの `pnpm test:integration` は実際には `pnpm --filter @tcrn/api test:integration` のエイリアスで、`vitest.integration.config.ts` を使って API integration suite を実行します。
 - ルートの `pnpm test:isolation` は実際には `pnpm --filter @tcrn/api test:isolation` のエイリアスで、同じ Vitest integration 設定で API isolation suite を実行します。
-- schema 変更を含むリリースでは、`db:verify-schema-rollout` を通常のランタイム health check と組み合わせて実行してください。Playwright E2E を direct schema rollout verification の代替にしないでください。
+- schema 変更を含むリリースでは、`db:verify-schema-rollout` を通常のランタイム health check と組み合わせて実行してください。ブラウザ smoke check を direct schema rollout verification の代替にしないでください。
 
 ---
 
@@ -447,8 +442,9 @@ MINIO_ENDPOINT=http://minio:9000
 
 # アプリケーション
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
-NEXT_PUBLIC_APP_URL=https://app.your-domain.com
+FRONTEND_URL=https://app.your-domain.com
+APP_URL=https://app.your-domain.com
+CORS_ORIGIN=https://app.your-domain.com
 
 # メール（Tencent Cloud SES）
 TENCENT_SES_SECRET_ID=your-secret-id
@@ -497,7 +493,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 - そのリリースで証明すべき artifact ごとに、`--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column`、`--require-absent-index` を繰り返して指定してください。
 - `tenant_template` とすべての active tenant schema を横断確認する場合は `--schema` を省略します。単一テナントの追跡確認が必要なときだけ `--schema` を追加してください。
-- このコマンドは Playwright やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
+- このコマンドは historical browser test suite やブラウザ確認とは分離して扱ってください。UI smoke の代替ではなく、database rollout state を直接確認する手順です。
 - tenant migration replay drift を調査するときは、`pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips` で stricter apply を明示的に有効化できます。既定の replay 挙動は変えず、drift-watch skip family を失敗終了コードに昇格させます。
 
 migration SQL から artifact を直接推論する例:
@@ -517,7 +513,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - 現在の production-first path は、より保守的な first cut に収束しています:
   - 単一ノード `K3s`
   - 同一ホスト外部 PostgreSQL
-  - 単一レプリカ `web/api/worker`
+  - 単一レプリカ `api/worker`
   - ローカル開発は引き続き Docker Compose とローカル app process のまま
 
 今回の first-cut 本番再デプロイでは、ここに以前あった in-cluster PostgreSQL / HPA / 複数レプリカ前提を使わないでください。
@@ -541,7 +537,7 @@ GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
 # 4. first-cut baseline を apply
 IMAGE_TAG=... \
-APP_HOST=web.prod.tcrn-tms.com \
+APP_HOST=api.your-domain.com \
 TLS_SECRET_NAME=... \
 INGRESS_CLASS_NAME=traefik \
 REGISTRY_SECRET_NAME=ghcr-pull-secret \
@@ -557,47 +553,28 @@ REGISTRY_SECRET_NAME=ghcr-pull-secret \
 scripts/k8s-run-db-verify-schema-rollout.sh
 
 # 7. cutover 後の smoke checks
-APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
+APP_HOST=api.your-domain.com scripts/k8s-smoke-production.sh
 ```
 
 この path は意図的に保守的です。現時点では次を主張しません:
 
 - マルチノード HA
 - HPA
-- 複数レプリカ web
+- repo-owned ブラウザランタイム
 - first cut で PostgreSQL を K3s 内に戻すこと
 
 ### SSL/TLS設定
 
 ```nginx
-# Nginxリバースプロキシ設定例
-server {
-    listen 443 ssl http2;
-    server_name app.your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
+# API 用 Nginx リバースプロキシ設定例
 server {
     listen 443 ssl http2;
     server_name api.your-domain.com;
 
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
 
     location / {
         proxy_pass http://localhost:4000;
@@ -608,6 +585,8 @@ server {
     }
 }
 ```
+
+ブラウザ UI 側のリバースプロキシは、現在はこのリポジトリ外のランタイム責務です。
 
 ### 環境チェックリスト
 

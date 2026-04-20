@@ -17,30 +17,6 @@ services:
       # Staging-specific credentials should be in .env.staging
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-}
 
-  # Web application
-  web:
-    build:
-      context: .
-      dockerfile: infra/docker/web.Dockerfile
-      args:
-        NODE_ENV: staging
-    container_name: tcrn-web-staging
-    networks:
-      - app-network
-    environment:
-      NODE_ENV: staging
-      NEXT_PUBLIC_APP_ENV: staging
-      NEXT_PUBLIC_API_URL: http://api:4000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - api
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-
   # API application
   api:
     build:
@@ -60,10 +36,10 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      # Frontend URL for email links
-      FRONTEND_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      # External browser runtime URL for email links and public links
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - "4000:4000"
     depends_on:

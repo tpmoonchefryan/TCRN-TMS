@@ -190,42 +190,40 @@ Loki 集成支持跨所有日志的全文搜索。
 - **预置模板**：密码重置、登录验证、会员提醒
 - **当前支持边界**：这是默认运行时中唯一已完整接线的外发集成能力。`NATS JetStream` 目前只是内部异步基础设施，不应被描述为官方对外集成契约。
 
-### 性能优化
+### 运行时性能
 
-生产级性能特性：
+当前真实运行时的性能抓手：
 
-| 特性           | 实现方式                             |
-| -------------- | ------------------------------------ |
-| **动态导入**   | 7+ 大型组件通过 `dynamic.tsx` 懒加载 |
-| **列表虚拟化** | `@tanstack/react-virtual` 处理长列表 |
-| **图片优化**   | `next/image` 配置远程模式            |
-| **记忆化**     | 高频组件使用 `React.memo`            |
+| 特性           | 实现方式                                  |
+| -------------- | ----------------------------------------- |
+| **异步工作流** | BullMQ Worker 承接邮件、导入导出、报表任务 |
+| **权限缓存**   | Redis 权限快照与限流                      |
+| **租户隔离**   | tenant-specific PostgreSQL schemas        |
+| **文件分发**   | MinIO 预签名 URL 下载                     |
 
-### 可访问性
+### 浏览器运行时边界
 
-符合 WCAG 2.1 AA 标准：
+截至 2026-04-16，本仓库已不再内置浏览器端运行时：
 
-- **减少动画**：尊重系统 `prefers-reduced-motion` 偏好设置
-- **键盘导航**：所有交互元素支持完整键盘操作
-- **屏幕阅读器**：全局使用语义化 HTML 和 ARIA 标签
+- **无 repo-owned UI**：`historical browser runtime` 已从 monorepo 移除
+- **外部浏览器应用**：登录、后台和公开页 UI 必须运行在仓库外
+- **URL 契约**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` 指向该外部浏览器运行时或 public origin
 
 ### 错误处理
 
-三级错误边界架构：
+当前错误面以 API / worker 为中心：
 
-```
-app/error.tsx              → 全局兜底
-app/(business)/error.tsx   → 业务区域兜底
-app/(admin)/admin/error.tsx → 管理区域兜底
-```
+- **API**：Nest 异常处理、请求校验与结构化 HTTP 响应
+- **Worker**：队列重试、失败日志与 job 级可观测性
+- **数据库 / 交付**：deployment 与 rollout 校验不再假设浏览器 smoke check 存在
 
-### 表单验证
+### Contract 验证
 
-基于 Zod 的端到端类型安全验证：
+基于 Zod 的端到端类型安全验证，当前仍保留在 shared/backend 层：
 
 - **145+ Zod Schemas**：覆盖认证、客户、棉花糖、主页模块
 - **后端**：`ZodValidationPipe` 自动请求验证
-- **前端**：`useZodForm` hook 管理表单状态
+- **共享契约**：API-facing schemas 可供外部调用方复用
 - **Swagger 集成**：从 Zod schemas 自动生成 API 文档
 
 ---
@@ -243,9 +241,9 @@ app/(admin)/admin/error.tsx → 管理区域兜底
                │                     │                │                    │  │
                ▼                     ▼                ▼                    ▼  │
         ┌─────────────┐       ┌─────────────┐  ┌─────────────┐     ┌─────────┐│
-        │   Next.js   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
-        │   (Web UI)  │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
-        │   :3000     │       │   :4000     │  │             │     │  :9000  ││
+        │ 外部浏览器   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
+        │ Runtime/UI  │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
+        │ （仓库外）   │       │   :4000     │  │             │     │  :9000  ││
         └─────────────┘       └──────┬──────┘  └──────┬──────┘     └─────────┘│
                                      │                │                       │
                               ┌──────┴──────┬─────────┴────┐                  │
@@ -271,7 +269,7 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 
 ### 数据流
 
-1. **Web UI** → **API 网关**（NestJS）处理所有业务操作
+1. **外部浏览器 Runtime** → **API 网关**（NestJS）处理所有业务操作
 2. **API** 验证 JWT 并检查 Redis 权限快照
 3. 非 PII 数据存储在租户特定的 PostgreSQL Schema 中
 4. 当 effective `TCRN_PII_PLATFORM` 启用时，客户创建/编辑会携带 `customerId` 向平台执行写透
@@ -283,27 +281,23 @@ app/(admin)/admin/error.tsx → 管理区域兜底
 
 ## 🛠️ 技术栈
 
-| 层级         | 技术                   | 版本    |
-| ------------ | ---------------------- | ------- |
-| **前端**     | Next.js                | 16.1.1  |
-|              | React                  | 19.1.1  |
-|              | TypeScript             | 5.9.3   |
-|              | Tailwind CSS           | 3.4.17  |
-|              | Zustand                | 5.0.5   |
-|              | TanStack React Virtual | 3.13.18 |
-| **后端**     | NestJS                 | 11.1.6  |
-|              | Prisma ORM             | 6.14.0  |
-|              | BullMQ                 | 5.66.5  |
-| **数据库**   | PostgreSQL             | 16      |
-|              | Redis                  | 7       |
-| **存储**     | MinIO                  | Latest  |
-| **消息**     | NATS JetStream         | 2       |
-| **可观测性** | OpenTelemetry          | -       |
-|              | Prometheus             | -       |
-|              | Grafana Loki           | 2.9.0   |
-|              | Grafana Tempo          | -       |
-| **部署**     | Docker                 | -       |
-|              | Kubernetes             | -       |
+| 层级           | 技术               | 版本    |
+| -------------- | ------------------ | ------- |
+| **API Runtime** | NestJS            | 11.1.6  |
+|                | TypeScript         | 5.9.3   |
+| **Worker**     | BullMQ             | 5.66.5  |
+| **契约 / Schema** | Zod             | 4.x     |
+|                | Prisma ORM         | 6.14.0  |
+| **数据库**     | PostgreSQL         | 16      |
+|                | Redis              | 7       |
+| **存储**       | MinIO              | Latest  |
+| **消息**       | NATS JetStream     | 2       |
+| **可观测性**   | OpenTelemetry      | -       |
+|                | Prometheus         | -       |
+|                | Grafana Loki       | 2.9.0   |
+|                | Grafana Tempo      | -       |
+| **部署**       | Docker             | -       |
+|                | Kubernetes         | -       |
 
 以上基础设施的当前运行状态如下：
 
@@ -366,11 +360,12 @@ pnpm dev
 
 | 服务         | URL                            |
 | ------------ | ------------------------------ |
-| Web 界面     | http://localhost:3000          |
 | API 接口     | http://localhost:4000          |
 | API 文档     | http://localhost:4000/api/docs |
 | MinIO 控制台 | http://localhost:9001          |
 | NATS 监控    | http://localhost:8222          |
+
+本地开发已不再包含 repo-owned 浏览器 UI。若你要让外部浏览器应用接入当前 API，请按需配置 `FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN`。
 
 ### 默认凭证
 
@@ -383,10 +378,10 @@ pnpm dev
 
 ### 测试与验证边界
 
-- 仓库根目录的 `pnpm test:e2e` 运行的是 Playwright 浏览器套件，不是 API 的 Vitest integration runner。
+- repo-owned 的 historical browser test suite / 浏览器测试链路已随 `historical browser runtime` 一起移除，根目录不再提供 `historical browser E2E validation`。
 - 根目录的 `pnpm test:integration` 实际等价于 `pnpm --filter @tcrn/api test:integration`，使用 `vitest.integration.config.ts` 运行 API integration suite。
 - 根目录的 `pnpm test:isolation` 实际等价于 `pnpm --filter @tcrn/api test:isolation`，使用同一套 Vitest integration 配置运行 API isolation suite。
-- 对包含 schema 变更的发布，应把 `db:verify-schema-rollout` 与常规运行时健康检查一起执行，不要把 Playwright E2E 当作 direct schema rollout verification 的替代品。
+- 对包含 schema 变更的发布，应把 `db:verify-schema-rollout` 与常规运行时健康检查一起执行，不要把浏览器 smoke check 当作 direct schema rollout verification 的替代品。
 
 ---
 
@@ -447,8 +442,9 @@ MINIO_ENDPOINT=http://minio:9000
 
 # 应用
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
-NEXT_PUBLIC_APP_URL=https://app.your-domain.com
+FRONTEND_URL=https://app.your-domain.com
+APP_URL=https://app.your-domain.com
+CORS_ORIGIN=https://app.your-domain.com
 
 # 邮件（腾讯云 SES）
 TENCENT_SES_SECRET_ID=your-secret-id
@@ -497,7 +493,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 - 对本次发布必须证明的每个 artifact，重复传入 `--require-table`、`--require-column`、`--require-index`、`--require-absent-table`、`--require-absent-column` 和 `--require-absent-index`。
 - 若要覆盖 `tenant_template` 与全部 active tenant schema 的全量扫描，请省略 `--schema`；只有在需要单租户定点补充证明时才加入 `--schema`。
-- 该命令应与 Playwright 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
+- 该命令应与 historical browser test suite 或浏览器检查分开执行。它是数据库 rollout 状态的直接校验步骤，不是 UI smoke 的替代品。
 - 若在排查 tenant migration replay drift 时需要更严格的 apply 行为，可使用 `pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips`。这不会改变默认 replay 语义，但会把 drift-watch skip family 提升为失败退出码。
 
 直接从 migration SQL 推导 artifact 的示例：
@@ -517,7 +513,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 - 当前 active 的 production-first 路径已经收口为更保守的 first cut：
   - 单机 `K3s`
   - 同机外置 PostgreSQL
-  - 单副本 `web/api/worker`
+  - 单副本 `api/worker`
   - 本地开发仍保持 Docker Compose + 本地应用进程
 
 这次 first-cut 生产重部署，不要再沿用这里旧的“in-cluster PostgreSQL / HPA / 多副本默认存在”的假设。
@@ -541,7 +537,7 @@ GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
 # 4. apply first-cut baseline
 IMAGE_TAG=... \
-APP_HOST=web.prod.tcrn-tms.com \
+APP_HOST=api.your-domain.com \
 TLS_SECRET_NAME=... \
 INGRESS_CLASS_NAME=traefik \
 REGISTRY_SECRET_NAME=ghcr-pull-secret \
@@ -557,47 +553,28 @@ REGISTRY_SECRET_NAME=ghcr-pull-secret \
 scripts/k8s-run-db-verify-schema-rollout.sh
 
 # 7. 切换后 smoke checks
-APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
+APP_HOST=api.your-domain.com scripts/k8s-smoke-production.sh
 ```
 
 这条路径是刻意保守的。当前不宣称已经支持：
 
 - 多节点 HA
 - HPA
-- 多副本 web
+- 任何 repo-owned 浏览器运行时
 - first-cut 中把 PostgreSQL 放回 K3s 内部
 
 ### SSL/TLS 配置
 
 ```nginx
-# Nginx 反向代理配置示例
-server {
-    listen 443 ssl http2;
-    server_name app.your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
+# API 反向代理 Nginx 配置示例
 server {
     listen 443 ssl http2;
     server_name api.your-domain.com;
 
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
 
     location / {
         proxy_pass http://localhost:4000;
@@ -608,6 +585,8 @@ server {
     }
 }
 ```
+
+任何浏览器 UI 的反向代理现在都属于仓库外部运行时，不再由本仓库交付。
 
 ### 环境检查清单
 

@@ -62,34 +62,6 @@ require_non_empty_source() {
   fi
 }
 
-extract_url_path() {
-  local url="$1"
-  local rest path
-  rest="${url#*://}"
-  rest="${rest#*@}"
-  if [[ "${rest}" == */* ]]; then
-    path="/${rest#*/}"
-    path="${path%%\?*}"
-    printf '%s\n' "${path}"
-    return
-  fi
-  printf '/\n'
-}
-
-strip_api_path_if_needed() {
-  local url="$1"
-  local path
-  path="$(extract_url_path "${url}")"
-
-  if [[ "${path}" == "/api" || "${path}" == /api/* ]]; then
-    echo "WARN: NEXT_PUBLIC_API_URL source contains ${path}; normalizing it back to the public origin for first-cut K3s." >&2
-    printf '%s\n' "${url%%/api*}"
-    return
-  fi
-
-  printf '%s\n' "${url}"
-}
-
 write_kv() {
   local key="$1"
   local value="$2"
@@ -102,7 +74,7 @@ require_non_empty_source "MINIO_ROOT_PASSWORD"
 require_non_empty_source "JWT_SECRET"
 require_non_empty_source "JWT_REFRESH_SECRET"
 require_non_empty_source "FINGERPRINT_SECRET_KEY"
-require_non_empty_source "NEXT_PUBLIC_APP_URL"
+require_non_empty_source "APP_URL"
 postgres_user="$(get_env_value "POSTGRES_USER")"
 postgres_password="$(get_env_value "POSTGRES_PASSWORD")"
 postgres_db="$(get_env_value "POSTGRES_DB")"
@@ -112,8 +84,6 @@ minio_root_password="$(get_env_value "MINIO_ROOT_PASSWORD")"
 jwt_secret="$(get_env_value "JWT_SECRET")"
 jwt_refresh_secret="$(get_env_value "JWT_REFRESH_SECRET")"
 fingerprint_secret_key="$(get_env_value "FINGERPRINT_SECRET_KEY")"
-next_public_app_url="$(get_env_value "NEXT_PUBLIC_APP_URL")"
-next_public_api_url="$(get_env_value "NEXT_PUBLIC_API_URL")"
 frontend_url="$(get_env_value "FRONTEND_URL")"
 app_url="$(get_env_value "APP_URL")"
 cors_origin="$(get_env_value "CORS_ORIGIN")"
@@ -121,7 +91,6 @@ tencent_ses_secret_id="$(get_env_value "TENCENT_SES_SECRET_ID")"
 tencent_ses_secret_key="$(get_env_value "TENCENT_SES_SECRET_KEY")"
 tencent_ses_from_address="$(get_env_value "TENCENT_SES_FROM_ADDRESS")"
 email_config_encryption_key="$(get_env_value "EMAIL_CONFIG_ENCRYPTION_KEY")"
-next_public_turnstile_site_key="$(get_env_value "NEXT_PUBLIC_TURNSTILE_SITE_KEY")"
 loki_enabled="$(get_env_value "LOKI_ENABLED")"
 loki_push_url="$(get_env_value "LOKI_PUSH_URL")"
 otel_enabled="$(get_env_value "OTEL_ENABLED")"
@@ -132,11 +101,9 @@ minio_use_ssl="$(get_env_value "MINIO_USE_SSL")"
 postgres_user="${postgres_user:-tcrn}"
 postgres_db="${postgres_db:-tcrn_tms}"
 minio_root_user="${minio_root_user:-minioadmin}"
-next_public_api_url="${next_public_api_url:-${next_public_app_url}}"
-next_public_api_url="$(strip_api_path_if_needed "${next_public_api_url}")"
-frontend_url="${frontend_url:-${next_public_app_url}}"
-app_url="${app_url:-${next_public_app_url}}"
-cors_origin="${cors_origin:-${next_public_app_url}}"
+frontend_url="${frontend_url:-${app_url}}"
+app_url="${app_url:-${frontend_url}}"
+cors_origin="${cors_origin:-${app_url:-${frontend_url}}}"
 minio_use_ssl="${MINIO_USE_SSL_OUTPUT:-${minio_use_ssl:-false}}"
 loki_enabled="${loki_enabled:-false}"
 otel_enabled="${otel_enabled:-false}"
@@ -160,8 +127,6 @@ cat >> "${OUTPUT_ENV}" <<EOF
 EOF
 
 write_kv "NODE_ENV" "production"
-write_kv "NEXT_PUBLIC_API_URL" "${next_public_api_url}"
-write_kv "NEXT_PUBLIC_APP_URL" "${next_public_app_url}"
 write_kv "FRONTEND_URL" "${frontend_url}"
 write_kv "APP_URL" "${app_url}"
 write_kv "CORS_ORIGIN" "${cors_origin}"
@@ -179,7 +144,6 @@ write_kv "TENCENT_SES_SECRET_ID" "${tencent_ses_secret_id}"
 write_kv "TENCENT_SES_SECRET_KEY" "${tencent_ses_secret_key}"
 write_kv "TENCENT_SES_FROM_ADDRESS" "${tencent_ses_from_address}"
 write_kv "EMAIL_CONFIG_ENCRYPTION_KEY" "${email_config_encryption_key}"
-write_kv "NEXT_PUBLIC_TURNSTILE_SITE_KEY" "${next_public_turnstile_site_key}"
 write_kv "LOKI_ENABLED" "${loki_enabled}"
 write_kv "LOKI_PUSH_URL" "${loki_push_url}"
 write_kv "OTEL_ENABLED" "${otel_enabled}"

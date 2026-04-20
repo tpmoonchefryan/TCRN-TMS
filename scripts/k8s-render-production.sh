@@ -10,16 +10,14 @@ TLS_SECRET_NAME="${TLS_SECRET_NAME:-}"
 INGRESS_CLASS_NAME="${INGRESS_CLASS_NAME:-traefik}"
 REGISTRY_SECRET_NAME="${REGISTRY_SECRET_NAME:-}"
 ROLLOUT_MIGRATIONS="${ROLLOUT_MIGRATIONS:-}"
-WEB_TAG="${WEB_TAG:-${IMAGE_TAG:-}}"
 API_TAG="${API_TAG:-${IMAGE_TAG:-}}"
 WORKER_TAG="${WORKER_TAG:-${IMAGE_TAG:-}}"
-WEB_REPO="${WEB_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/web}"
 API_REPO="${API_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/api}"
 WORKER_REPO="${WORKER_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/worker}"
 OUTPUT_DIR="${OUTPUT_DIR:-${1:-./tmp/k8s-rendered}}"
 
-if [[ -z "${WEB_TAG}" || -z "${API_TAG}" || -z "${WORKER_TAG}" ]]; then
-  echo "Set IMAGE_TAG for a shared release tag, or set WEB_TAG/API_TAG/WORKER_TAG explicitly."
+if [[ -z "${API_TAG}" || -z "${WORKER_TAG}" ]]; then
+  echo "Set IMAGE_TAG for a shared release tag, or set API_TAG/WORKER_TAG explicitly."
   exit 1
 fi
 
@@ -32,7 +30,6 @@ render_manifest() {
 
   sed \
     -e "s|namespace: tcrn|namespace: ${NAMESPACE}|g" \
-    -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/web:replace-me|${WEB_REPO}:${WEB_TAG}|g" \
     -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/api:replace-me|${API_REPO}:${API_TAG}|g" \
     -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/worker:replace-me|${WORKER_REPO}:${WORKER_TAG}|g" \
     -e "s|replace-me.example.com|${APP_HOST}|g" \
@@ -63,7 +60,6 @@ render_manifest "infra/k8s/dependencies/redis.yaml" "${OUTPUT_DIR}/dependencies/
 render_manifest "infra/k8s/dependencies/minio.yaml" "${OUTPUT_DIR}/dependencies/minio.yaml"
 render_manifest "infra/k8s/dependencies/nats.yaml" "${OUTPUT_DIR}/dependencies/nats.yaml"
 render_manifest "infra/k8s/deployments/api.yaml" "${OUTPUT_DIR}/deployments/api.yaml"
-render_manifest "infra/k8s/deployments/web.yaml" "${OUTPUT_DIR}/deployments/web.yaml"
 render_manifest "infra/k8s/deployments/worker.yaml" "${OUTPUT_DIR}/deployments/worker.yaml"
 render_manifest "infra/k8s/jobs/db-bootstrap.yaml" "${OUTPUT_DIR}/jobs/db-bootstrap.yaml"
 

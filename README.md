@@ -190,42 +190,40 @@ Integrated with Tencent Cloud SES:
 - **Preset Templates**: Password reset, login verification, membership alerts
 - **Current Support Boundary**: This is the only fully wired outbound integration in the default runtime. `NATS JetStream` exists as internal async infrastructure today, not as the official external integration contract.
 
-### Performance Optimization
+### Runtime Performance
 
-Production-grade performance features:
+Current runtime performance levers:
 
-| Feature                 | Implementation                                    |
-| ----------------------- | ------------------------------------------------- |
-| **Dynamic Imports**     | 7+ large components lazy-loaded via `dynamic.tsx` |
-| **List Virtualization** | `@tanstack/react-virtual` for long lists          |
-| **Image Optimization**  | `next/image` with remote patterns configured      |
-| **Memoization**         | `React.memo` on high-frequency components         |
+| Feature                | Implementation                                       |
+| ---------------------- | ---------------------------------------------------- |
+| **Async Workloads**    | BullMQ workers for email, import/export, and reports |
+| **Permission Caching** | Redis-backed permission snapshots and rate limits    |
+| **Tenant Isolation**   | Tenant-specific PostgreSQL schemas                   |
+| **File Delivery**      | MinIO presigned URL downloads                        |
 
-### Accessibility
+### Browser Runtime Boundary
 
-WCAG 2.1 AA compliant:
+As of 2026-04-16, this repository no longer ships a browser runtime:
 
-- **Reduced Motion**: Respects `prefers-reduced-motion` system preference
-- **Keyboard Navigation**: Full keyboard support for all interactive elements
-- **Screen Readers**: Semantic HTML and ARIA labels throughout
+- **No repo-owned UI**: `historical browser runtime` has been removed from this monorepo
+- **External Browser App**: any login/admin/public UI must live outside this repository
+- **URL Contract**: `FRONTEND_URL`, `APP_URL`, and `CORS_ORIGIN` point to that external browser runtime or public origin
 
 ### Error Handling
 
-Three-tier error boundary architecture:
+Current error surfaces are runtime-centric:
 
-```
-app/error.tsx              → Global fallback
-app/(business)/error.tsx   → Business section fallback
-app/(admin)/admin/error.tsx → Admin section fallback
-```
+- **API**: Nest exception handling, request validation, and structured HTTP responses
+- **Worker**: queue retries, dead-letter/error logging, and job-level failure visibility
+- **Database/Infra**: deployment and rollout checks remain separate from browser smoke assumptions
 
-### Form Validation
+### Contract Validation
 
-End-to-end type-safe validation with Zod:
+End-to-end type-safe validation with Zod remains active in the shared/backend layers:
 
 - **145+ Zod Schemas**: Covering Auth, Customer, Marshmallow, Homepage modules
 - **Backend**: `ZodValidationPipe` for automatic request validation
-- **Frontend**: `useZodForm` hook for form state management
+- **Shared Contracts**: API-facing schemas stay reusable for external callers
 - **Swagger Integration**: Auto-generated API docs from Zod schemas
 
 ---
@@ -243,9 +241,9 @@ End-to-end type-safe validation with Zod:
                │                     │                │                    │  │
                ▼                     ▼                ▼                    ▼  │
         ┌─────────────┐       ┌─────────────┐  ┌─────────────┐     ┌─────────┐│
-        │   Next.js   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
-        │   (Web UI)  │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
-        │   :3000     │       │   :4000     │  │             │     │  :9000  ││
+        │  External   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
+        │  Browser UI │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
+        │ (out-of-repo)│      │   :4000     │  │             │     │  :9000  ││
         └─────────────┘       └──────┬──────┘  └──────┬──────┘     └─────────┘│
                                      │                │                       │
                               ┌──────┴──────┬─────────┴────┐                  │
@@ -271,7 +269,7 @@ End-to-end type-safe validation with Zod:
 
 ### Data Flow
 
-1. **Web UI** → **API Gateway** (NestJS) for all business operations
+1. **External Browser Runtime** → **API Gateway** (NestJS) for all business operations
 2. **API** validates JWT and checks Redis permission snapshots
 3. Non-PII data stored in tenant-specific PostgreSQL schema
 4. When effective `TCRN_PII_PLATFORM` is active, customer create/edit sends PII write-through payloads with `customerId`
@@ -283,27 +281,23 @@ End-to-end type-safe validation with Zod:
 
 ## 🛠️ Tech Stack
 
-| Layer             | Technology             | Version |
-| ----------------- | ---------------------- | ------- |
-| **Frontend**      | Next.js                | 16.1.1  |
-|                   | React                  | 19.1.1  |
-|                   | TypeScript             | 5.9.3   |
-|                   | Tailwind CSS           | 3.4.17  |
-|                   | Zustand                | 5.0.5   |
-|                   | TanStack React Virtual | 3.13.18 |
-| **Backend**       | NestJS                 | 11.1.6  |
-|                   | Prisma ORM             | 6.14.0  |
-|                   | BullMQ                 | 5.66.5  |
-| **Database**      | PostgreSQL             | 16      |
-|                   | Redis                  | 7       |
-| **Storage**       | MinIO                  | Latest  |
-| **Messaging**     | NATS JetStream         | 2       |
-| **Observability** | OpenTelemetry          | -       |
-|                   | Prometheus             | -       |
-|                   | Grafana Loki           | 2.9.0   |
-|                   | Grafana Tempo          | -       |
-| **Deployment**    | Docker                 | -       |
-|                   | Kubernetes             | -       |
+| Layer                  | Technology     | Version |
+| ---------------------- | -------------- | ------- |
+| **API Runtime**        | NestJS         | 11.1.6  |
+|                        | TypeScript     | 5.9.3   |
+| **Worker Runtime**     | BullMQ         | 5.66.5  |
+| **Contracts / Schema** | Zod            | 4.x     |
+|                        | Prisma ORM     | 6.14.0  |
+| **Database**           | PostgreSQL     | 16      |
+|                        | Redis          | 7       |
+| **Storage**            | MinIO          | Latest  |
+| **Messaging**          | NATS JetStream | 2       |
+| **Observability**      | OpenTelemetry  | -       |
+|                        | Prometheus     | -       |
+|                        | Grafana Loki   | 2.9.0   |
+|                        | Grafana Tempo  | -       |
+| **Deployment**         | Docker         | -       |
+|                        | Kubernetes     | -       |
 
 Current runtime status for the infrastructure above:
 
@@ -366,11 +360,12 @@ pnpm dev
 
 | Service       | URL                            |
 | ------------- | ------------------------------ |
-| Web UI        | http://localhost:3000          |
 | API           | http://localhost:4000          |
 | API Docs      | http://localhost:4000/api/docs |
 | MinIO Console | http://localhost:9001          |
 | NATS Monitor  | http://localhost:8222          |
+
+There is no repo-owned browser UI in local development anymore. If you run an external browser app against this API, point it at the API URL above and configure `FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN` accordingly.
 
 ### Default Credentials
 
@@ -383,10 +378,10 @@ pnpm dev
 
 ### Testing And Verification Boundary
 
-- `pnpm test:e2e` at the repo root runs the Playwright browser suite. It is not the API Vitest integration runner.
+- The repo-owned historical browser test suite/browser suite has been removed together with `historical browser runtime`; there is no root `historical browser E2E validation` entry anymore.
 - `pnpm test:integration` at the repo root is an alias for `pnpm --filter @tcrn/api test:integration` and runs the API integration suite with `vitest.integration.config.ts`.
 - `pnpm test:isolation` at the repo root is an alias for `pnpm --filter @tcrn/api test:isolation` and runs the API isolation suite with the same Vitest integration config.
-- For schema-changing releases, run `db:verify-schema-rollout` together with the normal runtime health check; do not treat Playwright E2E as a substitute for direct schema rollout verification.
+- For schema-changing releases, run `db:verify-schema-rollout` together with the normal runtime health check; do not treat browser smoke checks as a substitute for direct schema rollout verification.
 
 ---
 
@@ -447,8 +442,9 @@ MINIO_ENDPOINT=http://minio:9000
 
 # Application
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
-NEXT_PUBLIC_APP_URL=https://app.your-domain.com
+FRONTEND_URL=https://app.your-domain.com
+APP_URL=https://app.your-domain.com
+CORS_ORIGIN=https://app.your-domain.com
 
 # Email (Tencent Cloud SES)
 TENCENT_SES_SECRET_ID=your-secret-id
@@ -497,7 +493,7 @@ pnpm --filter @tcrn/database db:verify-schema-rollout -- \
 
 - Repeat `--require-table`, `--require-column`, `--require-index`, `--require-absent-table`, `--require-absent-column`, and `--require-absent-index` for every artifact that the release must prove.
 - Omit `--schema` for a tenant-wide sweep across `tenant_template` plus every active tenant schema. Add `--schema` only when you need a targeted follow-up proof for one tenant.
-- Keep this command separate from Playwright/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
+- Keep this command separate from historical browser test suite/browser checks. It is the direct verification step for database rollout state, not a UI smoke replacement.
 - When investigating tenant migration replay drift, you can opt into a stricter apply step with `pnpm --filter @tcrn/database db:apply-migrations -- --fail-on-drift-watch-skips`. This keeps the default replay behavior unchanged, but turns drift-watch skip families into a failing exit code.
 
 Example using inferred artifacts directly from migration SQL:
@@ -517,7 +513,7 @@ Current status:
 - the active production-first path is now a conservative first cut:
   - single-node `K3s`
   - same-host external PostgreSQL
-  - single replica `web/api/worker`
+  - single replica `api/worker`
   - local development still stays on Docker Compose plus local app processes
 
 Do not follow the older in-cluster PostgreSQL / HPA / multi-replica assumptions that previously appeared here for this first-cut production rollout.
@@ -541,7 +537,7 @@ GHCR_USERNAME=... GHCR_TOKEN=... scripts/k8s-create-registry-secret.sh
 
 # 4. Apply the first-cut baseline
 IMAGE_TAG=... \
-APP_HOST=web.prod.tcrn-tms.com \
+APP_HOST=api.your-domain.com \
 TLS_SECRET_NAME=... \
 INGRESS_CLASS_NAME=traefik \
 REGISTRY_SECRET_NAME=ghcr-pull-secret \
@@ -557,47 +553,28 @@ REGISTRY_SECRET_NAME=ghcr-pull-secret \
 scripts/k8s-run-db-verify-schema-rollout.sh
 
 # 7. Post-cutover smoke checks
-APP_HOST=web.prod.tcrn-tms.com scripts/k8s-smoke-production.sh
+APP_HOST=api.your-domain.com scripts/k8s-smoke-production.sh
 ```
 
 This path is intentionally conservative. It does not yet claim:
 
 - multi-node HA
 - HPA
-- multi-replica web
+- any repo-owned browser runtime
 - in-cluster PostgreSQL for the first cut
 
 ### SSL/TLS Configuration
 
 ```nginx
-# Example Nginx configuration for reverse proxy
-server {
-    listen 443 ssl http2;
-    server_name app.your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
+# Example Nginx configuration for API reverse proxy
 server {
     listen 443 ssl http2;
     server_name api.your-domain.com;
 
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
 
     location / {
         proxy_pass http://localhost:4000;
@@ -608,6 +585,8 @@ server {
     }
 }
 ```
+
+Any browser UI reverse proxy now belongs to the external browser runtime, not to this repository.
 
 ### Environment Checklist
 

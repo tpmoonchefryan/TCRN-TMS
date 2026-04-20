@@ -345,12 +345,12 @@ jobs:
             # Rebuild and restart services
             echo "🔨 Building and restarting services..."
             if [ -n "$BUILD_NO_CACHE" ]; then
-              echo "Using clean Docker rebuild for web/api/worker."
+              echo "Using clean Docker rebuild for api/worker."
             else
-              echo "Using cached Docker rebuild for web/api/worker."
+              echo "Using cached Docker rebuild for api/worker."
             fi
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_NO_CACHE:+$BUILD_NO_CACHE} web api worker
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate web api worker
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_NO_CACHE:+$BUILD_NO_CACHE} api worker
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate caddy api worker
 
             # Run database migrations (if any)
             echo "📊 Running database migrations..."
@@ -467,8 +467,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: web
-            dockerfile: infra/docker/web.Dockerfile
           - name: api
             dockerfile: infra/docker/api.Dockerfile
           - name: worker
@@ -511,5 +509,3 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}

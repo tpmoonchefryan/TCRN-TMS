@@ -1,5 +1,5 @@
 # © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-# Caddy production configuration for TCRN TMS
+# Caddy production configuration for the API-only TCRN TMS runtime
 # Domain: web.prod.tcrn-tms.com
 
 # Global options
@@ -15,28 +15,17 @@
     }
 }
 
-# =====================================
-# Main application domain
-# =====================================
 web.prod.tcrn-tms.com {
     encode gzip zstd
-    
-    # Special case: Live Status API - handled by Next.js (Web)
-    handle /api/live-status* {
-        reverse_proxy web:3000
-    }
 
-    # API proxy - /api/* routes to NestJS API
     handle /api/* {
         reverse_proxy api:4000
     }
-    
-    # Frontend proxy - everything else to Next.js
+
     handle {
-        reverse_proxy web:3000
+        respond "Repo-owned web runtime removed" 404
     }
-    
-    # Security headers
+
     header {
         -X-Frame-Options
         X-Frame-Options "SAMEORIGIN"
@@ -47,8 +36,6 @@ web.prod.tcrn-tms.com {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         -Server
     }
-    
-    # Logging for this site
     log {
         output file /var/log/caddy/access.log {
             roll_size 10mb
@@ -57,13 +44,8 @@ web.prod.tcrn-tms.com {
     }
 }
 
-# =====================================
-# Health check and HTTP redirect
-# =====================================
 :80 {
     respond /health "OK" 200
-    
-    # Redirect HTTP to HTTPS
     @notHealth not path /health
     redir @notHealth https://{host}{uri} permanent
 }

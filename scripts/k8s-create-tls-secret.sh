@@ -5,7 +5,7 @@
 set -euo pipefail
 
 NAMESPACE="${NAMESPACE:-tcrn}"
-SECRET_NAME="${SECRET_NAME:-tcrn-web-tls}"
+SECRET_NAME="${SECRET_NAME:-tcrn-public-tls}"
 CERT_FILE="${CERT_FILE:-${1:-}}"
 KEY_FILE="${KEY_FILE:-${2:-}}"
 

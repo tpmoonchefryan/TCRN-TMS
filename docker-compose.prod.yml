@@ -26,7 +26,6 @@ services:
     environment:
       ACME_EMAIL: ${ACME_EMAIL:-admin@tcrn-tms.com}
     depends_on:
-      - web
       - api
     deploy:
       resources:
@@ -42,43 +41,6 @@ services:
   # =============================================================================
   # Application Services
   # =============================================================================
-
-  # Next.js Web Application
-  web:
-    build:
-      context: .
-      dockerfile: infra/docker/web.Dockerfile
-      args:
-        NODE_ENV: production
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-    container_name: tcrn-web
-    restart: always
-    networks:
-      - app-network
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_APP_ENV: production
-      # In production Docker network, API is at http://api:4000
-      # But strictly for server-side calls. Client-side calls use NEXT_PUBLIC_API_URL from .env
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-    # No port exposure - accessed via Caddy
-    expose:
-      - "3000"
-    depends_on:
-      - api
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # NestJS API Server
   api:
@@ -102,10 +64,10 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      # Frontend URL for email links (password reset, verification, etc.)
-      FRONTEND_URL: ${NEXT_PUBLIC_APP_URL}
-      APP_URL: ${NEXT_PUBLIC_APP_URL}
-      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL}
+      # External browser runtime URL for email links and public links.
+      FRONTEND_URL: ${FRONTEND_URL:-}
+      APP_URL: ${APP_URL:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
       # Secrets
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}

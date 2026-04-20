@@ -104,7 +104,7 @@ is_loopback_host() {
 is_compose_alias() {
   local host
   host="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
-  [[ "${host}" == "postgres" || "${host}" == "redis" || "${host}" == "minio" || "${host}" == "nats" || "${host}" == "api" || "${host}" == "web" || "${host}" == "caddy" ]]
+  [[ "${host}" == "postgres" || "${host}" == "redis" || "${host}" == "minio" || "${host}" == "nats" || "${host}" == "api" || "${host}" == "caddy" ]]
 }
 
 require_non_empty "DATABASE_URL"
@@ -116,8 +116,6 @@ require_non_empty "NATS_URL"
 require_non_empty "JWT_SECRET"
 require_non_empty "JWT_REFRESH_SECRET"
 require_non_empty "FINGERPRINT_SECRET_KEY"
-require_non_empty "NEXT_PUBLIC_API_URL"
-require_non_empty "NEXT_PUBLIC_APP_URL"
 require_non_empty "FRONTEND_URL"
 require_non_empty "APP_URL"
 require_non_empty "CORS_ORIGIN"
@@ -127,8 +125,6 @@ database_url="$(get_env_value "DATABASE_URL")"
 redis_url="$(get_env_value "REDIS_URL")"
 nats_url="$(get_env_value "NATS_URL")"
 minio_endpoint="$(get_env_value "MINIO_ENDPOINT")"
-next_public_api_url="$(get_env_value "NEXT_PUBLIC_API_URL")"
-next_public_app_url="$(get_env_value "NEXT_PUBLIC_APP_URL")"
 frontend_url="$(get_env_value "FRONTEND_URL")"
 runtime_app_url="$(get_env_value "APP_URL")"
 cors_origin="$(get_env_value "CORS_ORIGIN")"
@@ -176,14 +172,7 @@ if [[ -n "${minio_endpoint}" ]]; then
   fi
 fi
 
-if [[ -n "${next_public_api_url}" ]]; then
-  api_path="$(extract_url_path "${next_public_api_url}")"
-  if [[ "${api_path}" == "/api" || "${api_path}" == /api/* ]]; then
-    add_error "NEXT_PUBLIC_API_URL includes ${api_path}. Keep it on the public origin only; the web client already appends /api/v1 paths."
-  fi
-fi
-
-public_url_keys=("NEXT_PUBLIC_APP_URL" "NEXT_PUBLIC_API_URL" "FRONTEND_URL" "APP_URL")
+public_url_keys=("FRONTEND_URL" "APP_URL" "CORS_ORIGIN")
 for key in "${public_url_keys[@]}"; do
   value="$(get_env_value "${key}")"
   if [[ -n "${value}" && ! "${value}" =~ ^https?:// ]]; then
@@ -191,24 +180,16 @@ for key in "${public_url_keys[@]}"; do
   fi
 done
 
-if [[ -n "${next_public_app_url}" && -n "${frontend_url}" && "${next_public_app_url}" != "${frontend_url}" ]]; then
-  add_warning "NEXT_PUBLIC_APP_URL and FRONTEND_URL differ. First-cut single-host production usually keeps them aligned."
+if [[ -n "${frontend_url}" && -n "${runtime_app_url}" && "${frontend_url}" != "${runtime_app_url}" ]]; then
+  add_warning "FRONTEND_URL and APP_URL differ. Confirm this is intentional."
 fi
 
-if [[ -n "${next_public_app_url}" && -n "${runtime_app_url}" && "${next_public_app_url}" != "${runtime_app_url}" ]]; then
-  add_warning "NEXT_PUBLIC_APP_URL and APP_URL differ. First-cut single-host production usually keeps them aligned."
-fi
-
-if [[ -n "${next_public_app_url}" && -n "${next_public_api_url}" && "${next_public_app_url}" != "${next_public_api_url}" ]]; then
-  add_warning "NEXT_PUBLIC_APP_URL and NEXT_PUBLIC_API_URL differ. Confirm this is intentional; current first-cut routing assumes one public host."
-fi
-
-if [[ -n "${next_public_app_url}" && -n "${cors_origin}" && "${next_public_app_url}" != "${cors_origin}" ]]; then
-  add_warning "NEXT_PUBLIC_APP_URL and CORS_ORIGIN differ. Confirm this is intentional for first-cut single-host production."
+if [[ -n "${runtime_app_url}" && -n "${cors_origin}" && "${runtime_app_url}" != "${cors_origin}" ]]; then
+  add_warning "APP_URL and CORS_ORIGIN differ. Confirm this is intentional."
 fi
 
 if [[ -n "${EXPECTED_PUBLIC_URL}" ]]; then
-  for key in NEXT_PUBLIC_APP_URL NEXT_PUBLIC_API_URL FRONTEND_URL APP_URL; do
+  for key in FRONTEND_URL APP_URL CORS_ORIGIN; do
     value="$(get_env_value "${key}")"
     if [[ -n "${value}" && "${value}" != "${EXPECTED_PUBLIC_URL}" ]]; then
       add_warning "${key} does not match EXPECTED_PUBLIC_URL=${EXPECTED_PUBLIC_URL}."

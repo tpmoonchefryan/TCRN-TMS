@@ -113,8 +113,9 @@ JWT_REFRESH_SECRET=<your-32-char-secret>
 FINGERPRINT_SECRET_KEY=<your-secret-key>
 
 # Public URLs
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-NEXT_PUBLIC_APP_URL=https://app.yourdomain.com
+FRONTEND_URL=https://app.yourdomain.com
+APP_URL=https://app.yourdomain.com
+CORS_ORIGIN=https://app.yourdomain.com
 
 # Email (Tencent SES)
 TENCENT_SES_SECRET_ID=<your-secret-id>
@@ -134,7 +135,7 @@ else
 fi
 run_remote "
     cd ${DEPLOY_PATH}
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_ARGS[*]} web api worker
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml build ${BUILD_ARGS[*]} api worker
 "
 
 # Step 5: Start services
@@ -142,7 +143,7 @@ echo ""
 echo "[5/6] Starting services..."
 run_remote "
     cd ${DEPLOY_PATH}
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d caddy api worker
 "
 
 # Step 6: Run database migrations
@@ -193,8 +194,7 @@ run_remote "
 
 echo ""
 echo "Services should be available at:"
-echo "  - Web:  http://${DEPLOY_HOST}:3000"
-echo "  - API:  http://${DEPLOY_HOST}:4000"
+echo "  - Public API: https://<your configured host>/api/*"
 echo "  - MinIO Console: http://${DEPLOY_HOST}:9001"
 echo ""
 echo "Next steps:"

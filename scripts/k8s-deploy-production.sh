@@ -10,15 +10,13 @@ APP_HOST="${APP_HOST:-}"
 TLS_SECRET_NAME="${TLS_SECRET_NAME:-}"
 INGRESS_CLASS_NAME="${INGRESS_CLASS_NAME:-traefik}"
 REGISTRY_SECRET_NAME="${REGISTRY_SECRET_NAME:-}"
-WEB_TAG="${WEB_TAG:-${IMAGE_TAG:-}}"
 API_TAG="${API_TAG:-${IMAGE_TAG:-}}"
 WORKER_TAG="${WORKER_TAG:-${IMAGE_TAG:-}}"
-WEB_REPO="${WEB_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/web}"
 API_REPO="${API_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/api}"
 WORKER_REPO="${WORKER_REPO:-ghcr.io/tpmoonchefryan/tcrn-tms/worker}"
 
-if [[ -z "${WEB_TAG}" || -z "${API_TAG}" || -z "${WORKER_TAG}" ]]; then
-  echo "Set IMAGE_TAG for a shared release tag, or set WEB_TAG/API_TAG/WORKER_TAG explicitly."
+if [[ -z "${API_TAG}" || -z "${WORKER_TAG}" ]]; then
+  echo "Set IMAGE_TAG for a shared release tag, or set API_TAG/WORKER_TAG explicitly."
   exit 1
 fi
 
@@ -49,7 +47,6 @@ render_manifest() {
 
   sed \
     -e "s|namespace: tcrn|namespace: ${NAMESPACE}|g" \
-    -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/web:replace-me|${WEB_REPO}:${WEB_TAG}|g" \
     -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/api:replace-me|${API_REPO}:${API_TAG}|g" \
     -e "s|ghcr.io/tpmoonchefryan/tcrn-tms/worker:replace-me|${WORKER_REPO}:${WORKER_TAG}|g" \
     -e "s|replace-me.example.com|${APP_HOST}|g" \
@@ -78,14 +75,12 @@ render_manifest infra/k8s/dependencies/redis.yaml "${TMP_DIR}/redis.yaml"
 render_manifest infra/k8s/dependencies/minio.yaml "${TMP_DIR}/minio.yaml"
 render_manifest infra/k8s/dependencies/nats.yaml "${TMP_DIR}/nats.yaml"
 render_manifest infra/k8s/deployments/api.yaml "${TMP_DIR}/api.yaml"
-render_manifest infra/k8s/deployments/web.yaml "${TMP_DIR}/web.yaml"
 render_manifest infra/k8s/deployments/worker.yaml "${TMP_DIR}/worker.yaml"
 
 kubectl apply -f "${TMP_DIR}/redis.yaml"
 kubectl apply -f "${TMP_DIR}/minio.yaml"
 kubectl apply -f "${TMP_DIR}/nats.yaml"
 kubectl apply -f "${TMP_DIR}/api.yaml"
-kubectl apply -f "${TMP_DIR}/web.yaml"
 kubectl apply -f "${TMP_DIR}/worker.yaml"
 
 if [[ -f "infra/k8s/ingress/public.yaml" ]]; then
