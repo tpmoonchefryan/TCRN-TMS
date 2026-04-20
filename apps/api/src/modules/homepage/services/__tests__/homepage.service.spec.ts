@@ -557,6 +557,32 @@ describe('HomepageAdminService', () => {
       ).rejects.toThrow('Homepage was modified by another user');
     });
 
+    it('should not mutate homepage path when version mismatches even if homepagePath is supplied', async () => {
+      mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue({
+        id: 'homepage-123',
+        seoTitle: 'Old Title',
+        seoDescription: 'Old Description',
+        ogImageUrl: null,
+        analyticsId: null,
+        version: 2,
+      });
+
+      await expect(
+        service.updateSettings(
+          'talent-123',
+          {
+            homepagePath: 'next-homepage',
+            version: 1,
+          },
+          testContext,
+        ),
+      ).rejects.toThrow('Homepage was modified by another user');
+
+      expect(mockHomepageAdminRepository.findTalentIdByHomepagePath).not.toHaveBeenCalled();
+      expect(mockHomepageAdminRepository.updateTalentHomepagePath).not.toHaveBeenCalled();
+      expect(mockHomepageAdminRepository.updateHomepageSettings).not.toHaveBeenCalled();
+    });
+
     it('should reject already-taken homepage paths', async () => {
       mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue({
         id: 'homepage-123',

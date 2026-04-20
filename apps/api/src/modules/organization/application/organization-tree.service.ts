@@ -24,12 +24,21 @@ export class OrganizationTreeService {
     tenantSchema: string,
     userId: string,
   ): Promise<OrganizationAccessScopes> {
-    const accesses = await this.organizationTreeRepository.findUserScopeAccesses(
-      tenantSchema,
-      userId,
-    );
+    const [accesses, roleScopeAccesses] = await Promise.all([
+      this.organizationTreeRepository.findUserScopeAccesses(
+        tenantSchema,
+        userId,
+      ),
+      this.organizationTreeRepository.findUserRoleScopeAccesses(
+        tenantSchema,
+        userId,
+      ),
+    ]);
 
-    return buildOrganizationAccessScopes(accesses);
+    return buildOrganizationAccessScopes([
+      ...accesses,
+      ...roleScopeAccesses,
+    ]);
   }
 
   async getTree(

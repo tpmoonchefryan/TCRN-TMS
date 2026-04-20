@@ -64,7 +64,8 @@ export const buildOrganizationAccessScopes = (
   for (const access of accesses) {
     if (access.scope_type === 'tenant') {
       result.tenantAccess = true;
-      result.tenantIncludeSubunits = access.include_subunits;
+      result.tenantIncludeSubunits =
+        result.tenantIncludeSubunits || access.include_subunits;
       continue;
     }
 

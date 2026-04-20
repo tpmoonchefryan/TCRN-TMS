@@ -521,7 +521,7 @@ export class AuthService {
         id, username, email, display_name, avatar_url,
         preferred_language, is_totp_enabled, force_reset, password_changed_at
       FROM "${tenantSchema}".system_user
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, payload.sub);
 
     if (users.length === 0) {

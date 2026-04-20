@@ -60,6 +60,18 @@ const EMAIL_CONFIG_DATA_SCHEMA = {
       nullable: true,
       example: '2026-04-13T08:30:00.000Z',
     },
+    tenantSenderOverrides: {
+      type: 'object',
+      nullable: true,
+      additionalProperties: {
+        type: 'object',
+        properties: {
+          fromAddress: { type: 'string', example: 'noreply@tenant-a.example.com' },
+          fromName: { type: 'string', example: 'Tenant A Support' },
+          replyTo: { type: 'string', nullable: true, example: 'support@tenant-a.example.com' },
+        },
+      },
+    },
   },
   required: ['provider', 'isConfigured'],
 } as const;
@@ -123,6 +135,13 @@ const EMAIL_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(EMAIL_CONFIG_DAT
   },
   isConfigured: true,
   lastUpdated: '2026-04-13T08:30:00.000Z',
+  tenantSenderOverrides: {
+    tenant_acme: {
+      fromAddress: 'noreply@acme.example.com',
+      fromName: 'Acme Support',
+      replyTo: 'support@acme.example.com',
+    },
+  },
 });
 
 const EMAIL_ACTION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(EMAIL_ACTION_RESULT_SCHEMA, {

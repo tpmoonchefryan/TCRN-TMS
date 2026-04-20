@@ -1,5 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
+  FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
+} from '@tcrn/shared';
+
 export interface TalentCustomDomainConfig {
   customDomain: string | null;
   customDomainVerified: boolean;
@@ -31,6 +36,7 @@ export const normalizeCustomDomain = (customDomain: string): string =>
 export const buildVerificationTxtRecord = (token: string): string =>
   `tcrn-verify=${token}`;
 
-export const normalizeCustomDomainPath = (
-  path?: string,
-): string | null => path?.trim().replace(/^\//, '') || null;
+export const buildFixedCustomDomainPaths = (): TalentCustomDomainPaths => ({
+  homepageCustomPath: FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
+  marshmallowCustomPath: FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
+});

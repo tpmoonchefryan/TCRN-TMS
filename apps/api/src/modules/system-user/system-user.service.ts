@@ -24,6 +24,38 @@ export interface SystemUserData {
   updatedAt: Date;
 }
 
+export interface SystemUserRoleAssignmentData {
+  id: string;
+  roleId: string;
+  roleCode: string;
+  roleNameEn: string;
+  roleNameZh: string | null;
+  roleNameJa: string | null;
+  roleIsActive: boolean;
+  scopeType: string;
+  scopeId: string | null;
+  scopeName: string | null;
+  scopePath: string | null;
+  inherit: boolean;
+  grantedAt: Date;
+  expiresAt: Date | null;
+}
+
+export interface SystemUserScopeAccessDetailData {
+  id: string;
+  scopeType: string;
+  scopeId: string | null;
+  scopeName: string | null;
+  scopePath: string | null;
+  includeSubunits: boolean;
+  grantedAt: Date;
+}
+
+export interface SystemUserDetailData extends SystemUserData {
+  roleAssignments: SystemUserRoleAssignmentData[];
+  scopeAccess: SystemUserScopeAccessDetailData[];
+}
+
 /**
  * System User Service
  * Manages system users within a tenant
@@ -117,7 +149,7 @@ export class SystemUserService {
   /**
    * Find user by ID
    */
-  async findById(id: string, tenantSchema: string): Promise<SystemUserData | null> {
+  private async findBaseUserById(id: string, tenantSchema: string): Promise<SystemUserData | null> {
     const results = await prisma.$queryRawUnsafe<SystemUserData[]>(`
       SELECT 
         id, username, email, display_name as "displayName",
@@ -128,7 +160,122 @@ export class SystemUserService {
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
     `, id);
+
     return results[0] || null;
+  }
+
+  async findById(id: string, tenantSchema: string): Promise<SystemUserDetailData | null> {
+    const user = await this.findBaseUserById(id, tenantSchema);
+
+    if (!user) {
+      return null;
+    }
+
+    const roleAssignments = await prisma.$queryRawUnsafe<SystemUserRoleAssignmentData[]>(`
+      SELECT
+        ur.id,
+        r.id as "roleId",
+        r.code as "roleCode",
+        r.name_en as "roleNameEn",
+        r.name_zh as "roleNameZh",
+        r.name_ja as "roleNameJa",
+        r.is_active as "roleIsActive",
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        CASE
+          WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT COALESCE(s.name_zh, s.name_en)
+            FROM "${tenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.display_name
+            FROM "${tenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopeName",
+        CASE
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT s.path
+            FROM "${tenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.path
+            FROM "${tenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopePath",
+        ur.inherit,
+        ur.granted_at as "grantedAt",
+        ur.expires_at as "expiresAt"
+      FROM "${tenantSchema}".user_role ur
+      JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+      WHERE ur.user_id = $1::uuid
+      ORDER BY
+        CASE ur.scope_type
+          WHEN 'tenant' THEN 0
+          WHEN 'subsidiary' THEN 1
+          WHEN 'talent' THEN 2
+          ELSE 3
+        END,
+        ur.granted_at DESC
+    `, id);
+
+    const scopeAccess = await prisma.$queryRawUnsafe<SystemUserScopeAccessDetailData[]>(`
+      SELECT
+        usa.id,
+        usa.scope_type as "scopeType",
+        usa.scope_id as "scopeId",
+        CASE
+          WHEN usa.scope_type = 'tenant' THEN 'Tenant root'
+          WHEN usa.scope_type = 'subsidiary' THEN (
+            SELECT COALESCE(s.name_zh, s.name_en)
+            FROM "${tenantSchema}".subsidiary s
+            WHERE s.id = usa.scope_id
+          )
+          WHEN usa.scope_type = 'talent' THEN (
+            SELECT t.display_name
+            FROM "${tenantSchema}".talent t
+            WHERE t.id = usa.scope_id
+          )
+          ELSE NULL
+        END as "scopeName",
+        CASE
+          WHEN usa.scope_type = 'subsidiary' THEN (
+            SELECT s.path
+            FROM "${tenantSchema}".subsidiary s
+            WHERE s.id = usa.scope_id
+          )
+          WHEN usa.scope_type = 'talent' THEN (
+            SELECT t.path
+            FROM "${tenantSchema}".talent t
+            WHERE t.id = usa.scope_id
+          )
+          ELSE NULL
+        END as "scopePath",
+        usa.include_subunits as "includeSubunits",
+        usa.granted_at as "grantedAt"
+      FROM "${tenantSchema}".user_scope_access usa
+      WHERE usa.user_id = $1::uuid
+      ORDER BY
+        CASE usa.scope_type
+          WHEN 'tenant' THEN 0
+          WHEN 'subsidiary' THEN 1
+          WHEN 'talent' THEN 2
+          ELSE 3
+        END,
+        usa.granted_at DESC
+    `, id);
+
+    return {
+      ...user,
+      roleAssignments,
+      scopeAccess,
+    };
   }
 
   /**
@@ -215,7 +362,7 @@ export class SystemUserService {
       avatarUrl?: string;
     }
   ): Promise<SystemUserData> {
-    const current = await this.findById(id, tenantSchema);
+    const current = await this.findBaseUserById(id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -276,7 +423,7 @@ export class SystemUserService {
       forceReset?: boolean;
     } = {}
   ): Promise<{ tempPassword?: string }> {
-    const current = await this.findById(id, tenantSchema);
+    const current = await this.findBaseUserById(id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -301,7 +448,7 @@ export class SystemUserService {
    * Deactivate user
    */
   async deactivate(id: string, tenantSchema: string): Promise<SystemUserData> {
-    const current = await this.findById(id, tenantSchema);
+    const current = await this.findBaseUserById(id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -318,7 +465,7 @@ export class SystemUserService {
     // Delete permission snapshots
     await this.snapshotService.deleteUserSnapshots(tenantSchema, id);
 
-    const deactivated = await this.findById(id, tenantSchema);
+    const deactivated = await this.findBaseUserById(id, tenantSchema);
     if (!deactivated) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -332,7 +479,7 @@ export class SystemUserService {
    * Reactivate user
    */
   async reactivate(id: string, tenantSchema: string): Promise<SystemUserData> {
-    const current = await this.findById(id, tenantSchema);
+    const current = await this.findBaseUserById(id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -349,7 +496,7 @@ export class SystemUserService {
     // Refresh permission snapshots
     await this.snapshotService.refreshUserSnapshots(tenantSchema, id);
 
-    const reactivated = await this.findById(id, tenantSchema);
+    const reactivated = await this.findBaseUserById(id, tenantSchema);
     if (!reactivated) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -363,7 +510,7 @@ export class SystemUserService {
    * Force enable TOTP for user
    */
   async forceTotp(id: string, tenantSchema: string): Promise<SystemUserData> {
-    const current = await this.findById(id, tenantSchema);
+    const current = await this.findBaseUserById(id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,
@@ -378,7 +525,7 @@ export class SystemUserService {
       WHERE id = $1::uuid
     `, id);
 
-    const updated = await this.findById(id, tenantSchema);
+    const updated = await this.findBaseUserById(id, tenantSchema);
     if (!updated) {
       throw new NotFoundException({
         code: ErrorCodes.USER_NOT_FOUND,

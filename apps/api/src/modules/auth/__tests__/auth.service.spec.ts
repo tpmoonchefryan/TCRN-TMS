@@ -72,6 +72,7 @@ describe('AuthService', () => {
 
     mockTotpService = {
       verify: vi.fn().mockReturnValue(true),
+      verifyRecoveryCode: vi.fn().mockReturnValue(true),
     };
 
     mockTokenService = {
@@ -241,6 +242,58 @@ describe('AuthService', () => {
       });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE id = $1::uuid'),
+        userId,
+      );
+    });
+  });
+
+  describe('verifyRecoveryCode', () => {
+    it('casts recovery-code lookups and user reads to uuid when completing recovery login', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockReturnValue({
+        sub: userId,
+        tid: mockTenant.id,
+        tsc: mockTenant.schemaName,
+      });
+      (mockTotpService.verifyRecoveryCode as ReturnType<typeof vi.fn>).mockImplementation(
+        (input: string, hash: string) => input === 'RECOVERY-123' && hash === 'hash-1',
+      );
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          {
+            id: 'recovery-1',
+            code_hash: 'hash-1',
+            is_used: false,
+          },
+        ])
+        .mockResolvedValueOnce([{ count: BigInt(7) }])
+        .mockResolvedValueOnce([
+          {
+            ...mockUser,
+            id: userId,
+          },
+        ]);
+
+      await expect(
+        service.verifyRecoveryCode('session-token', 'RECOVERY-123', '127.0.0.1'),
+      ).resolves.toMatchObject({
+        type: 'success',
+        recoveryCodesRemaining: 7,
+      });
+
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('WHERE user_id = $1::uuid AND is_used = false'),
+        userId,
+      );
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE id = $1::uuid'),
+        'recovery-1',
+      );
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        3,
         expect.stringContaining('WHERE id = $1::uuid'),
         userId,
       );

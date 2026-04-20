@@ -55,16 +55,18 @@ export class MarshmallowConfigApplicationService {
       });
     }
 
-    const [statsRow, homepagePath] = await Promise.all([
+    const [statsRow, tenantCode, talentRoute] = await Promise.all([
       this.marshmallowConfigRepository.findStatsByConfigId(tenantSchema, config.id),
-      this.marshmallowConfigRepository.findTalentHomepagePath(tenantSchema, talentId),
+      this.marshmallowConfigRepository.findTenantCodeBySchema(tenantSchema),
+      this.marshmallowConfigRepository.findTalentRouteRecord(tenantSchema, talentId),
     ]);
 
     return buildMarshmallowConfigResponse({
       config,
       stats: buildMarshmallowConfigStats(statsRow),
       appUrl: this.configService.get<string>('APP_URL', 'http://localhost:3000'),
-      homepagePath,
+      tenantCode: tenantCode ?? tenantSchema,
+      talentCode: talentRoute?.code ?? talentId,
     });
   }
 

@@ -33,8 +33,8 @@ describe('DomainLookupService', () => {
     const result = await service.lookupDomain('Example.COM.');
 
     expect(result).toEqual({
-      homepagePath: 'demo-home',
-      marshmallowPath: 'demo-mm',
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
       tenantSchema: 'tenant_demo',
       talentId: 'talent-1',
     });

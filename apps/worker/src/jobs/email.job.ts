@@ -56,6 +56,11 @@ interface EmailConfig {
     fromAddress: string;
     fromName: string;
   };
+  tenantSenderOverrides?: Record<string, {
+    fromAddress?: string;
+    fromName?: string;
+    replyTo?: string;
+  }>;
 }
 
 // Encryption configuration
@@ -110,7 +115,7 @@ function decrypt(ciphertext: string): string {
 /**
  * Get email configuration from database or environment
  */
-export async function getEmailConfig(): Promise<EmailConfig | null> {
+export async function getEmailConfig(tenantSchema?: string): Promise<EmailConfig | null> {
   // Try to get from database first
   const config = await prisma.globalConfig.findUnique({
     where: { key: EMAIL_CONFIG_KEY },
@@ -145,7 +150,11 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
       };
     }
 
-    return result;
+    if (stored.tenantSenderOverrides) {
+      result.tenantSenderOverrides = stored.tenantSenderOverrides;
+    }
+
+    return applyTenantSenderOverride(result, tenantSchema);
   }
 
   // Fallback to environment variables
@@ -167,6 +176,32 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
   }
 
   return null;
+}
+
+function applyTenantSenderOverride(config: EmailConfig, tenantSchema?: string): EmailConfig {
+  if (!tenantSchema || !config.tenantSenderOverrides?.[tenantSchema]) {
+    return config;
+  }
+
+  const override = config.tenantSenderOverrides[tenantSchema];
+  const nextConfig: EmailConfig = {
+    ...config,
+    tencentSes: config.tencentSes ? { ...config.tencentSes } : undefined,
+    smtp: config.smtp ? { ...config.smtp } : undefined,
+  };
+
+  if (nextConfig.tencentSes) {
+    nextConfig.tencentSes.fromAddress = override.fromAddress || nextConfig.tencentSes.fromAddress;
+    nextConfig.tencentSes.fromName = override.fromName || nextConfig.tencentSes.fromName;
+    nextConfig.tencentSes.replyTo = override.replyTo || nextConfig.tencentSes.replyTo;
+  }
+
+  if (nextConfig.smtp) {
+    nextConfig.smtp.fromAddress = override.fromAddress || nextConfig.smtp.fromAddress;
+    nextConfig.smtp.fromName = override.fromName || nextConfig.smtp.fromName;
+  }
+
+  return nextConfig;
 }
 
 /**
@@ -317,8 +352,9 @@ async function sendEmail(
   subject: string,
   htmlBody: string,
   textBody?: string,
+  tenantSchema?: string,
 ): Promise<string> {
-  const config = await getEmailConfig();
+  const config = await getEmailConfig(tenantSchema);
 
   // Development mode: log email instead of sending
   if (!config) {
@@ -388,7 +424,7 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
     const rendered = await renderTemplate(templateCode, locale, variables);
     
     // 3. Send email
-    const messageId = await sendEmail(email, rendered.subject, rendered.htmlBody, rendered.textBody);
+    const messageId = await sendEmail(email, rendered.subject, rendered.htmlBody, rendered.textBody, tenantSchema);
     
     const duration = Date.now() - startTime;
     logger.info(`[EmailJob] Job ${job.id} completed in ${duration}ms (messageId: ${messageId})`);

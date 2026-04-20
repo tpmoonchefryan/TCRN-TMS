@@ -39,16 +39,18 @@ export class ProfileStoreApplicationService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
     const includeInactive = query.includeInactive ?? false;
+    const search = query.search?.trim() || undefined;
     const offset = (page - 1) * pageSize;
 
     const [items, total] = await Promise.all([
       this.profileStoreRepository.findMany(
         schema,
         includeInactive,
+        search,
         pageSize,
         offset,
       ),
-      this.profileStoreRepository.countMany(schema, includeInactive),
+      this.profileStoreRepository.countMany(schema, includeInactive, search),
     ]);
 
     const enrichedItems = await Promise.all(
@@ -185,7 +187,7 @@ export class ProfileStoreApplicationService {
     const updated = await this.profileStoreRepository.update(
       schema,
       id,
-      buildProfileStoreUpdateChanges(dto),
+      buildProfileStoreUpdateChanges(dto, existing),
       context.userId ?? '',
     );
 

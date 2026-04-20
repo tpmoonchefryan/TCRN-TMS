@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -26,6 +26,13 @@ import { ConfigService } from './config.service';
 import { OwnerType } from './config.types';
 import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConsumerKeyService } from './consumer-key.service';
+
+function getRequestLanguage(req: Request): string {
+  const rawHeader = req.headers['accept-language'];
+  const header = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+
+  return header?.split(',')[0]?.trim() || 'en';
+}
 
 // DTOs
 class ListConfigQueryDto {
@@ -114,6 +121,16 @@ class CreateConfigDto {
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Locale-keyed name translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'VIP Status', zh_HANS: 'VIP状态', zh_HANT: 'VIP狀態', ja: 'VIPステータス', ko: 'VIP 상태', fr: 'Statut VIP' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Description in English', example: 'Customer VIP status indicator' })
   @IsOptional()
   @IsString()
@@ -128,6 +145,35 @@ class CreateConfigDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed description translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Customer VIP status indicator', zh_HANS: '客户VIP状态指示器', ja: '顧客VIPステータスインジケーター' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed consent content translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Consent content', zh_HANS: '同意内容', ja: '同意内容' },
+  })
+  @IsOptional()
+  @IsObject()
+  contentTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Entity-specific JSON metadata',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  extraData?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Sort order for display', example: 0, minimum: 0 })
   @IsOptional()
@@ -255,6 +301,15 @@ class UpdateConfigDto {
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Locale-keyed name translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Description in English' })
   @IsOptional()
   @IsString()
@@ -269,6 +324,33 @@ class UpdateConfigDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed description translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed consent content translations',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  contentTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Entity-specific JSON metadata',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  extraData?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Sort order', example: 1, minimum: 0 })
   @IsOptional()
@@ -424,7 +506,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
 
     const { data, total } = await this.configService.list(
       validEntityType,
@@ -467,7 +549,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
@@ -503,7 +585,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
 
     const entity = await this.configService.findById(validEntityType, id, user.tenantSchema, language);
     if (!entity) {
@@ -532,7 +614,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
@@ -686,7 +768,7 @@ export class ConfigController {
     @Query() query: { scopeType?: OwnerType; scopeId?: string; includeInactive?: boolean },
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
     
     const tree = await this.configService.getMembershipTree(
       user.tenantSchema,
@@ -714,7 +796,7 @@ export class ConfigController {
     @Query() query: ListConfigQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
 
     const { data, total } = await this.configService.list(
       'membership-type',
@@ -749,7 +831,7 @@ export class ConfigController {
     @Query() query: ListConfigQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestLanguage(req);
 
     const { data, total } = await this.configService.list(
       'membership-level',

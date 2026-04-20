@@ -61,7 +61,7 @@ export class DomainLookupController {
 
   /**
    * Lookup a custom domain and return routing information
-   * Used by the frontend middleware to route custom domain requests
+   * Used by external browser runtimes or edge layers to route custom domain requests
    */
   @Get()
   @Public()

@@ -7,6 +7,7 @@ import {
     Logger,
     NestInterceptor,
 } from '@nestjs/common';
+import { BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { randomUUID } from 'crypto';
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
@@ -19,6 +20,7 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
+      publicConsumerCode?: string;
     }
   }
 }
@@ -35,10 +37,12 @@ export class LoggingInterceptor implements NestInterceptor {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
+    const publicConsumerCode = this.getPublicConsumerCode(request);
 
     // Generate or use existing request ID
     const requestId = (request.headers['x-request-id'] as string) || `req_${randomUUID().replace(/-/g, '').substring(0, 16)}`;
     request.requestId = requestId;
+    request.publicConsumerCode = publicConsumerCode;
     
     // Set response header
     response.setHeader('X-Request-ID', requestId);
@@ -46,10 +50,11 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip } = request;
     const userAgent = request.get('user-agent') || '';
     const startTime = Date.now();
+    const consumerSuffix = publicConsumerCode ? ` - consumer=${publicConsumerCode}` : '';
 
     // Log request
     this.logger.log(
-      `→ ${method} ${url} - ${ip} - ${userAgent.substring(0, 50)}`,
+      `→ ${method} ${url} - ${ip} - ${userAgent.substring(0, 50)}${consumerSuffix}`,
       { requestId },
     );
 
@@ -60,7 +65,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const statusCode = response.statusCode;
           
           this.logger.log(
-            `← ${method} ${url} - ${statusCode} - ${duration}ms`,
+            `← ${method} ${url} - ${statusCode} - ${duration}ms${consumerSuffix}`,
             { requestId },
           );
         },
@@ -68,11 +73,27 @@ export class LoggingInterceptor implements NestInterceptor {
           const duration = Date.now() - startTime;
           
           this.logger.warn(
-            `← ${method} ${url} - ERROR - ${duration}ms`,
+            `← ${method} ${url} - ERROR - ${duration}ms${consumerSuffix}`,
             { requestId },
           );
         },
       }),
     );
+  }
+
+  private getPublicConsumerCode(request: Request): string | undefined {
+    const rawHeader = request.headers[BROWSER_PUBLIC_CONSUMER_HEADER.toLowerCase()];
+    const candidate = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+
+    if (!candidate) {
+      return undefined;
+    }
+
+    const normalized = candidate.trim();
+    if (!/^[a-z0-9._-]{1,64}$/i.test(normalized)) {
+      return undefined;
+    }
+
+    return normalized;
   }
 }

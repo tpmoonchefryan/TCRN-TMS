@@ -6,6 +6,7 @@ import {
     IsBoolean,
     IsEnum,
     IsInt,
+    IsObject,
     IsOptional,
     IsString,
     Max,
@@ -150,6 +151,19 @@ export class CreateExternalBlocklistDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Additional locale values keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: 'Discord 邀請過濾',
+      ko: 'Discord 초대 차단',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Pattern description', example: 'Reject external Discord invite links', maxLength: 1000 })
   @IsOptional()
   @IsString()
@@ -226,6 +240,19 @@ export class UpdateExternalBlocklistDto {
   @IsString()
   @MaxLength(128)
   nameJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Additional locale values keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: 'Discord 邀請過濾',
+      ko: 'Discord 초대 차단',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Pattern description', example: 'Reject external Discord invite links', maxLength: 1000 })
   @IsOptional()
@@ -305,6 +332,7 @@ export interface ExternalBlocklistItem {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  translations: Record<string, string>;
   description: string | null;
   category: string | null;
   severity: string;

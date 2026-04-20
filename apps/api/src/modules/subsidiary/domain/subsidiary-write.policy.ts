@@ -11,6 +11,8 @@ export interface SubsidiaryCreateInput {
   nameEn: string;
   nameZh?: string;
   nameJa?: string;
+  translations?: Record<string, string>;
+  extraData?: Record<string, unknown> | null;
   descriptionEn?: string;
   descriptionZh?: string;
   descriptionJa?: string;
@@ -21,6 +23,8 @@ export interface SubsidiaryUpdateInput {
   nameEn?: string;
   nameZh?: string;
   nameJa?: string;
+  translations?: Record<string, string>;
+  extraData?: Record<string, unknown> | null;
   descriptionEn?: string;
   descriptionZh?: string;
   descriptionJa?: string;

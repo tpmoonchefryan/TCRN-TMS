@@ -11,6 +11,7 @@ import type {
 const SUBSIDIARY_SELECT_FIELDS = `
   id, parent_id as "parentId", code, path, depth,
   name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+  extra_data as "extraData",
   description_en as "descriptionEn", description_zh as "descriptionZh",
   description_ja as "descriptionJa",
   sort_order as "sortOrder", is_active as "isActive",

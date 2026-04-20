@@ -3,6 +3,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import {
   assertSubsidiaryVersion,
   buildSubsidiaryPath,
@@ -25,6 +26,7 @@ export class SubsidiaryWriteApplicationService {
     data: SubsidiaryCreateInput,
     userId: string,
   ) {
+    const translationPayload = buildManagedNameTranslationPayload(data);
     const existing = await this.subsidiaryReadApplicationService.findByCode(
       data.code,
       tenantSchema,
@@ -52,6 +54,10 @@ export class SubsidiaryWriteApplicationService {
       tenantSchema,
       {
         ...data,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh ?? undefined,
+        nameJa: translationPayload.nameJa ?? undefined,
+        extraData: translationPayload.extraData,
         ...buildSubsidiaryPath(data.code, parent),
       },
       userId,
@@ -67,7 +73,20 @@ export class SubsidiaryWriteApplicationService {
     const current = await this.getSubsidiaryOrThrow(id, tenantSchema);
     assertSubsidiaryVersion(current.version, data.version);
 
-    return this.subsidiaryWriteRepository.update(id, tenantSchema, data, userId);
+    const translationPayload = buildManagedNameTranslationPayload(data, current);
+
+    return this.subsidiaryWriteRepository.update(
+      id,
+      tenantSchema,
+      {
+        ...data,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh ?? undefined,
+        nameJa: translationPayload.nameJa ?? undefined,
+        extraData: translationPayload.extraData,
+      },
+      userId,
+    );
   }
 
   async move(

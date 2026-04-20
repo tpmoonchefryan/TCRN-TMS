@@ -8,6 +8,10 @@ import {
   type SubsidiaryData,
   type SubsidiaryListOptions,
 } from './domain/subsidiary-read.policy';
+import {
+  type SubsidiaryCreateInput,
+  type SubsidiaryUpdateInput,
+} from './domain/subsidiary-write.policy';
 import { SubsidiaryReadRepository } from './infrastructure/subsidiary-read.repository';
 import { SubsidiaryWriteRepository } from './infrastructure/subsidiary-write.repository';
 
@@ -58,17 +62,7 @@ export class SubsidiaryService {
    */
   async create(
     tenantSchema: string,
-    data: {
-      parentId?: string | null;
-      code: string;
-      nameEn: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      sortOrder?: number;
-    },
+    data: SubsidiaryCreateInput,
     userId: string
   ): Promise<SubsidiaryData> {
     return this.subsidiaryWriteApplicationService.create(tenantSchema, data, userId);
@@ -80,16 +74,7 @@ export class SubsidiaryService {
   async update(
     id: string,
     tenantSchema: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      sortOrder?: number;
-      version: number;
-    },
+    data: SubsidiaryUpdateInput,
     userId: string
   ): Promise<SubsidiaryData> {
     return this.subsidiaryWriteApplicationService.update(id, tenantSchema, data, userId);

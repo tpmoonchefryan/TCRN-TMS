@@ -21,6 +21,7 @@ import { IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min,
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
+import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
 import { TalentService } from './talent.service';
 
 // DTOs
@@ -66,6 +67,18 @@ export class CreateTalentDto {
   @IsOptional()
   @IsString()
   nameJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed locale map keyed by supported locale codes',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '時乃空',
+      ko: '도키노 소라',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @ApiProperty({ description: 'Primary display name shown in UI', example: 'Sora' })
   @IsString()
@@ -132,6 +145,18 @@ export class UpdateTalentDto {
   @IsOptional()
   @IsString()
   nameJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed locale map keyed by supported locale codes',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '時乃空',
+      ko: '도키노 소라',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Primary display name shown in UI', example: 'Sora' })
   @IsOptional()
@@ -279,7 +304,7 @@ export class UpdateCustomDomainPathsDto {
   @ApiPropertyOptional({
     description: 'Custom path used for homepage traffic on the custom domain',
     nullable: true,
-    example: 'home',
+    example: 'homepage',
   })
   @IsOptional()
   @IsString()
@@ -288,7 +313,7 @@ export class UpdateCustomDomainPathsDto {
   @ApiPropertyOptional({
     description: 'Custom path used for marshmallow traffic on the custom domain',
     nullable: true,
-    example: 'ask',
+    example: 'marshmallow',
   })
   @IsOptional()
   @IsString()
@@ -460,6 +485,15 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           nameEn: { type: 'string', example: 'Default Profile Store' },
           nameZh: { type: 'string', nullable: true, example: '默认客户档案库' },
           nameJa: { type: 'string', nullable: true, example: 'デフォルトプロフィールストア' },
+          translations: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+            example: {
+              en: 'Default Profile Store',
+              zh_HANS: '默认客户档案库',
+              zh_HANT: '預設客戶檔案庫',
+            },
+          },
           isDefault: { type: 'boolean', example: true },
           piiProxyUrl: { type: 'string', nullable: true, example: 'https://pii.internal.tcrn.app' },
         },
@@ -498,6 +532,11 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       nameEn: 'Default Profile Store',
       nameZh: '默认客户档案库',
       nameJa: 'デフォルトプロフィールストア',
+      translations: {
+        en: 'Default Profile Store',
+        zh_HANS: '默认客户档案库',
+        zh_HANT: '預設客戶檔案庫',
+      },
       isDefault: true,
       piiProxyUrl: 'https://pii.internal.tcrn.app',
     },
@@ -734,8 +773,8 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       customDomainVerified: { type: 'boolean', example: true },
       customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
       customDomainSslMode: { type: 'string', example: 'cloudflare' },
-      homepageCustomPath: { type: 'string', nullable: true, example: 'home' },
-      marshmallowCustomPath: { type: 'string', nullable: true, example: 'ask' },
+      homepageCustomPath: { type: 'string', nullable: true, example: 'homepage' },
+      marshmallowCustomPath: { type: 'string', nullable: true, example: 'marshmallow' },
     },
     required: ['customDomain', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'homepageCustomPath', 'marshmallowCustomPath'],
   },
@@ -744,8 +783,8 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     customDomainVerified: true,
     customDomainVerificationToken: 'aabbccddeeff00112233445566778899',
     customDomainSslMode: 'cloudflare',
-    homepageCustomPath: 'home',
-    marshmallowCustomPath: 'ask',
+    homepageCustomPath: 'homepage',
+    marshmallowCustomPath: 'marshmallow',
   },
 );
 
@@ -785,14 +824,14 @@ const TALENT_CUSTOM_DOMAIN_PATHS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'object',
     properties: {
-      homepageCustomPath: { type: 'string', nullable: true, example: 'home' },
-      marshmallowCustomPath: { type: 'string', nullable: true, example: 'ask' },
+      homepageCustomPath: { type: 'string', nullable: true, example: 'homepage' },
+      marshmallowCustomPath: { type: 'string', nullable: true, example: 'marshmallow' },
     },
     required: ['homepageCustomPath', 'marshmallowCustomPath'],
   },
   {
-    homepageCustomPath: 'home',
-    marshmallowCustomPath: 'ask',
+    homepageCustomPath: 'homepage',
+    marshmallowCustomPath: 'marshmallow',
   },
 );
 
@@ -961,27 +1000,32 @@ export class TalentController {
       }
     );
 
-    const enrichedData = data.map((talent) => ({
-      id: talent.id,
-      subsidiaryId: talent.subsidiaryId,
-      code: talent.code,
-      path: talent.path,
-      nameEn: talent.nameEn,
-      nameZh: talent.nameZh,
-      nameJa: talent.nameJa,
-      name: getLocalizedName(talent),
-      displayName: talent.displayName,
-      avatarUrl: talent.avatarUrl,
-      homepagePath: talent.homepagePath,
-      timezone: talent.timezone,
-      lifecycleStatus: talent.lifecycleStatus,
-      publishedAt: talent.publishedAt?.toISOString() ?? null,
-      publishedBy: talent.publishedBy,
-      isActive: talent.isActive,
-      createdAt: talent.createdAt.toISOString(),
-      updatedAt: talent.updatedAt.toISOString(),
-      version: talent.version,
-    }));
+    const enrichedData = data.map((talent) => {
+      const translations = buildManagedNameTranslations(talent);
+
+      return {
+        id: talent.id,
+        subsidiaryId: talent.subsidiaryId,
+        code: talent.code,
+        path: talent.path,
+        nameEn: talent.nameEn,
+        nameZh: talent.nameZh,
+        nameJa: talent.nameJa,
+        translations,
+        name: translations.en || getLocalizedName(talent),
+        displayName: talent.displayName,
+        avatarUrl: talent.avatarUrl,
+        homepagePath: talent.homepagePath,
+        timezone: talent.timezone,
+        lifecycleStatus: talent.lifecycleStatus,
+        publishedAt: talent.publishedAt?.toISOString() ?? null,
+        publishedBy: talent.publishedBy,
+        isActive: talent.isActive,
+        createdAt: talent.createdAt.toISOString(),
+        updatedAt: talent.updatedAt.toISOString(),
+        version: talent.version,
+      };
+    });
 
     return paginated(enrichedData, {
       page: query.page || 1,
@@ -1029,6 +1073,7 @@ export class TalentController {
         nameEn: dto.nameEn,
         nameZh: dto.nameZh,
         nameJa: dto.nameJa,
+        translations: dto.translations,
         displayName: dto.displayName,
         descriptionEn: dto.descriptionEn,
         descriptionZh: dto.descriptionZh,
@@ -1041,13 +1086,18 @@ export class TalentController {
       user.id
     );
 
+    const translations = buildManagedNameTranslations(talent);
+
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
       code: talent.code,
       path: talent.path,
       nameEn: talent.nameEn,
-      name: getLocalizedName(talent),
+      nameZh: talent.nameZh,
+      nameJa: talent.nameJa,
+      translations,
+      name: translations.en || getLocalizedName(talent),
       displayName: talent.displayName,
       avatarUrl: talent.avatarUrl,
       homepagePath: talent.homepagePath,
@@ -1108,6 +1158,9 @@ export class TalentController {
         : null,
     ]);
 
+    const translations = buildManagedNameTranslations(talent);
+    const profileStoreTranslations = profileStore ? buildManagedNameTranslations(profileStore) : null;
+
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
@@ -1118,6 +1171,7 @@ export class TalentController {
         nameEn: profileStore.nameEn,
         nameZh: profileStore.nameZh,
         nameJa: profileStore.nameJa,
+        translations: profileStoreTranslations ?? {},
         isDefault: profileStore.isDefault,
         piiProxyUrl: profileStore.piiProxyUrl,
       } : null,
@@ -1126,7 +1180,8 @@ export class TalentController {
       nameEn: talent.nameEn,
       nameZh: talent.nameZh,
       nameJa: talent.nameJa,
-      name: getLocalizedName(talent),
+      translations,
+      name: translations.en || getLocalizedName(talent),
       displayName: talent.displayName,
       descriptionEn: talent.descriptionEn,
       descriptionZh: talent.descriptionZh,
@@ -1190,12 +1245,15 @@ export class TalentController {
       user.id
     );
 
+    const translations = buildManagedNameTranslations(talent);
+
     return success({
       id: talent.id,
       nameEn: talent.nameEn,
       nameZh: talent.nameZh,
       nameJa: talent.nameJa,
-      name: getLocalizedName(talent),
+      translations,
+      name: translations.en || getLocalizedName(talent),
       displayName: talent.displayName,
       homepagePath: talent.homepagePath,
       lifecycleStatus: talent.lifecycleStatus,
@@ -1664,10 +1722,10 @@ export class TalentController {
 
   /**
    * PATCH /api/v1/talents/:talentId/custom-domain/paths
-   * Update service paths for custom domain
+   * Return the fixed service paths for custom domains.
    */
   @Patch(':talentId/custom-domain/paths')
-  @ApiOperation({ summary: 'Update custom domain service paths' })
+  @ApiOperation({ summary: 'Return fixed custom-domain service paths (compatibility endpoint)' })
   @ApiParam({
     name: 'talentId',
     description: 'Talent identifier',
@@ -1675,7 +1733,7 @@ export class TalentController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Updates homepage and marshmallow custom-domain paths',
+    description: 'Returns the fixed homepage and marshmallow custom-domain paths',
     schema: TALENT_CUSTOM_DOMAIN_PATHS_SUCCESS_SCHEMA,
   })
   @ApiResponse({

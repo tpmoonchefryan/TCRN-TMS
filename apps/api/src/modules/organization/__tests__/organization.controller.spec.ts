@@ -103,7 +103,7 @@ describe('OrganizationController', () => {
       includeTalents: true,
       includeInactive: false,
       search: undefined,
-      language: 'zh',
+      language: 'zh-CN',
       userId: 'user-1',
     });
 
@@ -122,6 +122,7 @@ describe('OrganizationController', () => {
               {
                 id: 'talent-1',
                 code: 'SORA',
+                name: 'Sora',
                 displayName: 'Sora',
                 avatarUrl: 'https://example.com/avatar.png',
                 subsidiaryId: 'sub-1',
@@ -150,6 +151,7 @@ describe('OrganizationController', () => {
           {
             id: 'talent-2',
             code: 'DIRECT',
+            name: 'Direct Talent',
             displayName: 'Direct Talent',
             avatarUrl: null,
             subsidiaryId: null,

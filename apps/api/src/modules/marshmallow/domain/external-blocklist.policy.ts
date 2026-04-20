@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { decorateManagedNameTranslations } from '../../../platform/persistence/managed-name-translations';
 import type { ExternalBlocklistItem } from '../dto/external-blocklist.dto';
 import { OwnerType, PatternType } from '../dto/external-blocklist.dto';
 
@@ -20,6 +21,7 @@ export interface RawExternalBlocklistPatternRecord {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
   severity: string;
@@ -81,25 +83,10 @@ export function isExternalBlocklistInherited(
 export function normalizeExternalBlocklistItem(
   item: RawExternalBlocklistPatternRecord,
 ): ExternalBlocklistItem {
+  const decoratedItem = decorateManagedNameTranslations(item);
+
   return {
-    id: item.id,
-    ownerType: item.ownerType,
-    ownerId: item.ownerId,
-    pattern: item.pattern,
-    patternType: item.patternType,
-    nameEn: item.nameEn,
-    nameZh: item.nameZh,
-    nameJa: item.nameJa,
-    description: item.description,
-    category: item.category,
-    severity: item.severity,
-    action: item.action,
-    replacement: item.replacement,
-    inherit: item.inherit,
-    sortOrder: item.sortOrder,
-    isActive: item.isActive,
-    isForceUse: item.isForceUse,
-    isSystem: item.isSystem,
+    ...decoratedItem,
     createdAt: new Date(item.createdAt).toISOString(),
     updatedAt: new Date(item.updatedAt).toISOString(),
     version: item.version,

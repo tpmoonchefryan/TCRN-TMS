@@ -94,6 +94,31 @@ export class CreateDictionaryTypeDto {
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Localized names keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Customer Status', zh_HANS: '客户状态', fr: 'Statut client' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Localized descriptions keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Customer status codes', zh_HANS: '客户状态代码', fr: 'Codes de statut client' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  extraData?: Record<string, unknown>;
+
   @ApiPropertyOptional({ description: 'Sort order', example: 0, minimum: 0 })
   @IsOptional()
   @IsNumber()
@@ -135,6 +160,29 @@ export class UpdateDictionaryTypeDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Localized names keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Localized descriptions keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
+
+  @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  extraData?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
@@ -187,6 +235,26 @@ export class CreateDictionaryItemDto {
   @IsString()
   descriptionJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Localized names keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Active', zh_HANS: '活跃', zh_HANT: '活躍', fr: 'Actif' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Localized descriptions keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Customer is active', zh_HANS: '客户处于活跃状态', fr: 'Le client est actif' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
   @IsNumber()
@@ -233,6 +301,24 @@ export class UpdateDictionaryItemDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Localized names keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Localized descriptions keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
@@ -300,6 +386,17 @@ const DICTIONARY_TYPE_SCHEMA = {
   required: ['type', 'name', 'description', 'count'],
 };
 
+const TRANSLATION_MAP_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: {
+    en: 'Active',
+    zh_HANS: '活跃',
+    zh_HANT: '活躍',
+    fr: 'Actif',
+  },
+};
+
 const DICTIONARY_ITEM_SCHEMA = {
   type: 'object',
   properties: {
@@ -309,10 +406,12 @@ const DICTIONARY_ITEM_SCHEMA = {
     nameEn: { type: 'string', example: 'Active' },
     nameZh: { type: 'string', nullable: true, example: '活跃' },
     nameJa: { type: 'string', nullable: true, example: 'アクティブ' },
+    translations: TRANSLATION_MAP_SCHEMA,
     name: { type: 'string', example: 'Active' },
     descriptionEn: { type: 'string', nullable: true, example: 'Customer is active' },
     descriptionZh: { type: 'string', nullable: true, example: '客户处于活跃状态' },
     descriptionJa: { type: 'string', nullable: true, example: '顧客が有効な状態です' },
+    descriptionTranslations: TRANSLATION_MAP_SCHEMA,
     sortOrder: { type: 'integer', example: 0 },
     isActive: { type: 'boolean', example: true },
     extraData: { type: 'object', nullable: true, additionalProperties: true, example: { color: '#00FF00' } },
@@ -320,7 +419,7 @@ const DICTIONARY_ITEM_SCHEMA = {
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'dictionaryCode', 'code', 'nameEn', 'name', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
+  required: ['id', 'dictionaryCode', 'code', 'nameEn', 'translations', 'name', 'descriptionTranslations', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
 };
 
 const DICTIONARY_TYPES_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -373,10 +472,12 @@ const DICTIONARY_ITEMS_SUCCESS_SCHEMA = {
         nameEn: 'Active',
         nameZh: '活跃',
         nameJa: 'アクティブ',
+        translations: { en: 'Active', zh_HANS: '活跃', zh_HANT: '活躍', fr: 'Actif' },
         name: 'Active',
         descriptionEn: 'Customer is active',
         descriptionZh: '客户处于活跃状态',
         descriptionJa: '顧客が有効な状態です',
+        descriptionTranslations: { en: 'Customer is active', zh_HANS: '客户处于活跃状态', fr: 'Le client est actif' },
         sortOrder: 0,
         isActive: true,
         extraData: { color: '#00FF00' },
@@ -429,16 +530,19 @@ const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       nameEn: { type: 'string', example: 'Customer Status' },
       nameZh: { type: 'string', nullable: true, example: '客户状态' },
       nameJa: { type: 'string', nullable: true, example: '顧客ステータス' },
+      translations: TRANSLATION_MAP_SCHEMA,
       descriptionEn: { type: 'string', nullable: true, example: 'Customer status codes' },
       descriptionZh: { type: 'string', nullable: true, example: '客户状态代码' },
       descriptionJa: { type: 'string', nullable: true, example: '顧客ステータスコード' },
+      descriptionTranslations: TRANSLATION_MAP_SCHEMA,
+      extraData: { type: 'object', nullable: true, additionalProperties: true, example: { translations: { fr: 'Statut client' } } },
       sortOrder: { type: 'integer', example: 0 },
       isActive: { type: 'boolean', example: true },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
       version: { type: 'integer', example: 1 },
     },
-    required: ['id', 'code', 'nameEn', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
+    required: ['id', 'code', 'nameEn', 'translations', 'descriptionTranslations', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440510',
@@ -446,9 +550,12 @@ const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     nameEn: 'Customer Status',
     nameZh: '客户状态',
     nameJa: '顧客ステータス',
+    translations: { en: 'Customer Status', zh_HANS: '客户状态', fr: 'Statut client' },
     descriptionEn: 'Customer status codes',
     descriptionZh: '客户状态代码',
     descriptionJa: '顧客ステータスコード',
+    descriptionTranslations: { en: 'Customer status codes', zh_HANS: '客户状态代码', fr: 'Codes de statut client' },
+    extraData: { translations: { fr: 'Statut client' } },
     sortOrder: 0,
     isActive: true,
     createdAt: '2026-04-13T08:00:00.000Z',
@@ -945,7 +1052,7 @@ export class DictionaryController {
   // =====================================================
 
   private getLanguage(req: Request): string {
-    return (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    return (req.headers['accept-language'] as string)?.split(',')[0]?.trim() || 'en';
   }
 
   private ensureAcTenant(req: Request): void {

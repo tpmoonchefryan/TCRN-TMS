@@ -83,6 +83,7 @@ export class TalentReadRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           is_default as "isDefault",
           pii_proxy_url as "piiProxyUrl"
          FROM "${tenantSchema}".profile_store

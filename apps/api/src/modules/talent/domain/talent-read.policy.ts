@@ -11,6 +11,7 @@ export interface TalentData {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   displayName: string;
   descriptionEn: string | null;
   descriptionZh: string | null;
@@ -50,6 +51,7 @@ export interface TalentProfileStoreRecord {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   isDefault: boolean;
   piiProxyUrl: string | null;
 }
@@ -93,6 +95,7 @@ export const TALENT_SELECT_FIELDS = `
   name_en as "nameEn",
   name_zh as "nameZh",
   name_ja as "nameJa",
+  extra_data as "extraData",
   display_name as "displayName",
   description_en as "descriptionEn",
   description_zh as "descriptionZh",

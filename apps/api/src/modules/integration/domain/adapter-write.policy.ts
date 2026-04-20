@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { UpdateAdapterDto } from '../dto/integration.dto';
+import { buildNameTranslations } from './name-translation.policy';
 import type { IntegrationAdapterOwnerScope } from './adapter-read.policy';
 
 export interface IntegrationAdapterMutationRecord {
@@ -12,6 +13,7 @@ export interface IntegrationAdapterMutationRecord {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
   isActive: boolean;
@@ -42,6 +44,7 @@ export interface AdapterUpdateMutationPlan {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   inherit: boolean;
   oldValue: Record<string, unknown>;
   newValue: Record<string, unknown>;
@@ -69,6 +72,8 @@ export const hasAdapterVersionMismatch = (
 export const buildAdapterUpdateMutationPlan = (
   adapter: IntegrationAdapterMutationRecord,
   dto: UpdateAdapterDto,
+  nextTranslations: Record<string, string>,
+  nextExtraData: Record<string, unknown> | null,
 ): AdapterUpdateMutationPlan => {
   const oldValue: Record<string, unknown> = {};
   const newValue: Record<string, unknown> = {};
@@ -92,6 +97,11 @@ export const buildAdapterUpdateMutationPlan = (
     newValue.nameJa = nextNameJa;
   }
 
+  if (dto.translations !== undefined) {
+    oldValue.translations = buildNameTranslations(adapter);
+    newValue.translations = nextTranslations;
+  }
+
   if (dto.inherit !== undefined) {
     oldValue.inherit = adapter.inherit;
     newValue.inherit = nextInherit;
@@ -101,6 +111,7 @@ export const buildAdapterUpdateMutationPlan = (
     nameEn: nextNameEn,
     nameZh: nextNameZh,
     nameJa: nextNameJa,
+    extraData: nextExtraData,
     inherit: nextInherit,
     oldValue,
     newValue,

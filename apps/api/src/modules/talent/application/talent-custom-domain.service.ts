@@ -8,9 +8,9 @@ import {
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
+  buildFixedCustomDomainPaths,
   buildVerificationTxtRecord,
   normalizeCustomDomain,
-  normalizeCustomDomainPath,
   type TalentCustomDomainConfig,
   type TalentCustomDomainPaths,
   type TalentCustomDomainSetResult,
@@ -31,6 +31,13 @@ export class TalentCustomDomainService {
     return this.talentCustomDomainRepository.getCustomDomainConfig(
       talentId,
       tenantSchema,
+    ).then((config) =>
+      config
+        ? {
+            ...config,
+            ...buildFixedCustomDomainPaths(),
+          }
+        : null,
     );
   }
 
@@ -151,30 +158,24 @@ export class TalentCustomDomainService {
   async updateServicePaths(
     talentId: string,
     tenantSchema: string,
-    paths: {
+    _paths: {
       homepageCustomPath?: string;
       marshmallowCustomPath?: string;
     },
   ): Promise<TalentCustomDomainPaths> {
-    const result = await this.talentCustomDomainRepository.updateServicePaths(
+    const config = await this.talentCustomDomainRepository.getCustomDomainConfig(
       talentId,
       tenantSchema,
-      {
-        homepageCustomPath: normalizeCustomDomainPath(paths.homepageCustomPath),
-        marshmallowCustomPath: normalizeCustomDomainPath(
-          paths.marshmallowCustomPath,
-        ),
-      },
     );
 
-    if (!result) {
+    if (!config) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Talent not found',
       });
     }
 
-    return result;
+    return buildFixedCustomDomainPaths();
   }
 
   async updateSslMode(

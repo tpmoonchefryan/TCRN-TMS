@@ -59,6 +59,27 @@ export class PublicMarshmallowController {
   /**
    * Get marshmallow config for public page
    */
+  @Get(':tenantCode/:talentCode/config')
+  @Public()
+  @ApiOperation({ summary: 'Get public marshmallow config via canonical shared-domain route' })
+  @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
+  @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
+  @ApiResponse({ status: 200, description: 'Returns config', schema: PUBLIC_MARSHMALLOW_CONFIG_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  async getConfigByCodes(
+    @Param('tenantCode') tenantCode: string,
+    @Param('talentCode') talentCode: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const data = await this.publicService.getConfigByCodes(tenantCode, talentCode);
+
+    res.set({
+      'Cache-Control': 'public, max-age=60, s-maxage=300',
+    });
+
+    return data;
+  }
+
   @Get(':path/config')
   @Public()
   @ApiOperation({ summary: 'Get public marshmallow config' })
@@ -81,6 +102,37 @@ export class PublicMarshmallowController {
   /**
    * Get public messages
    */
+  @Get(':tenantCode/:talentCode/messages')
+  @Public()
+  @ApiOperation({ summary: 'Get public messages via canonical shared-domain route' })
+  @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
+  @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
+  @ApiResponse({ status: 200, description: 'Returns messages', schema: PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Public-marshmallow message query is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  async getMessagesByCodes(
+    @Param('tenantCode') tenantCode: string,
+    @Param('talentCode') talentCode: string,
+    @Query() query: PublicMessagesQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const data = await this.publicService.getMessagesByCodes(tenantCode, talentCode, query);
+
+    if (query._t) {
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      });
+    } else {
+      res.set({
+        'Cache-Control': 'public, max-age=30, s-maxage=60',
+      });
+    }
+
+    return data;
+  }
+
   @Get(':path/messages')
   @Public()
   @ApiOperation({ summary: 'Get public messages' })
@@ -114,6 +166,30 @@ export class PublicMarshmallowController {
   /**
    * Submit message
    */
+  @Post(':tenantCode/:talentCode/submit')
+  @Public()
+  @ApiOperation({ summary: 'Submit marshmallow message via canonical shared-domain route' })
+  @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
+  @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
+  @ApiResponse({ status: 201, description: 'Message submitted', schema: PUBLIC_MARSHMALLOW_SUBMIT_SCHEMA })
+  @ApiResponse({ status: 400, description: 'Public-marshmallow submission is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Public-marshmallow submission is not allowed for this talent', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  async submitMessageByCodes(
+    @Param('tenantCode') tenantCode: string,
+    @Param('talentCode') talentCode: string,
+    @Body() dto: SubmitMessageDto,
+    @Req() req: Request,
+  ) {
+    const ip = this.getClientIp(req);
+    const userAgent = req.headers['user-agent'] ?? '';
+
+    return this.publicService.submitMessageByCodes(tenantCode, talentCode, dto, {
+      ip,
+      userAgent,
+    });
+  }
+
   @Post(':path/submit')
   @Public()
   @ApiOperation({ summary: 'Submit marshmallow message' })

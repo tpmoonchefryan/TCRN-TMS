@@ -24,6 +24,9 @@ export type ConfigEntityType =
   | 'blocklist-entry'
   | 'profile-store';
 
+export type ConfigEntityTranslationMap = Record<string, string>;
+export type ConfigEntityExtraData = Record<string, unknown>;
+
 export interface BaseConfigEntity {
   id: string;
   ownerType: OwnerType;
@@ -35,6 +38,7 @@ export interface BaseConfigEntity {
   descriptionEn: string | null;
   descriptionZh: string | null;
   descriptionJa: string | null;
+  extraData: ConfigEntityExtraData | null;
   sortOrder: number;
   isActive: boolean;
   isForceUse: boolean;
@@ -44,12 +48,16 @@ export interface BaseConfigEntity {
   createdBy: string | null;
   updatedBy: string | null;
   version: number;
+  [key: string]: unknown;
 }
 
 export interface ConfigEntityWithMeta extends BaseConfigEntity {
   // Computed fields
   name: string;
   description: string | null;
+  translations: ConfigEntityTranslationMap;
+  descriptionTranslations: ConfigEntityTranslationMap;
+  contentTranslations?: ConfigEntityTranslationMap;
   ownerName: string | null;
   isInherited: boolean;
   isDisabledHere: boolean;
@@ -176,6 +184,21 @@ export const CONFIG_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set([
   'membership-class',
   'consent',
   'blocklist-entry',
+]);
+
+// Scoped settings entities that persist dynamic locale maps in extra_data.
+// Keep this set aligned with the tenant_template migration for config entity translation maps.
+export const CONFIG_HAS_EXTRA_DATA: Set<ConfigEntityType> = new Set([
+  'channel-category',
+  'business-segment',
+  'communication-type',
+  'address-type',
+  'customer-status',
+  'reason-category',
+  'inactivation-reason',
+  'membership-class',
+  'consent',
+  'consumer',
 ]);
 
 // Entities that have localized description fields (description_en, description_zh, description_ja)

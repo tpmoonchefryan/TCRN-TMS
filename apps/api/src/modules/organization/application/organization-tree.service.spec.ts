@@ -18,6 +18,7 @@ describe('OrganizationTreeService', () => {
     findDirectTalents: vi.fn(),
     countTalentsBySubsidiary: vi.fn(),
     findUserScopeAccesses: vi.fn(),
+    findUserRoleScopeAccesses: vi.fn(),
     findDescendantSubsidiaryIds: vi.fn(),
     findTalentIdsInSubsidiarySubtree: vi.fn(),
     findTalentSubsidiaryIds: vi.fn(),
@@ -138,7 +139,7 @@ describe('OrganizationTreeService', () => {
     );
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { language: 'zh' }),
+      service.getTree(tenant.id, 'tenant_test', { language: 'zh-CN' }),
     ).resolves.toMatchObject({
       tenant: treeTenant,
       tree: [
@@ -156,6 +157,57 @@ describe('OrganizationTreeService', () => {
         },
       ],
       talentsWithoutSubsidiary: [{ id: 'talent-2', displayName: 'Direct Talent' }],
+    });
+  });
+
+  it('falls back to managed extra_data translations when the requested locale is not stored in legacy columns', async () => {
+    vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
+    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue([
+      {
+        ...subsidiaries[0],
+        extra_data: {
+          translations: {
+            zh_HANT: '東京分部',
+          },
+        },
+      },
+    ]);
+    vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
+      { subsidiary_id: 'sub-1', count: BigInt(1) },
+    ]);
+    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue([
+      {
+        ...talents[0],
+        subsidiary_id: 'sub-1',
+        extra_data: {
+          translations: {
+            ko: '소라',
+          },
+        },
+      },
+    ]);
+
+    await expect(
+      service.getTree(tenant.id, 'tenant_test', { language: 'zh_HANT' }),
+    ).resolves.toMatchObject({
+      tree: [
+        {
+          id: 'sub-1',
+          name: '東京分部',
+          talents: [{ id: 'talent-1', name: '空' }],
+        },
+      ],
+    });
+
+    await expect(
+      service.getTree(tenant.id, 'tenant_test', { language: 'ko' }),
+    ).resolves.toMatchObject({
+      tree: [
+        {
+          id: 'sub-1',
+          talents: [{ id: 'talent-1', name: '소라' }],
+        },
+      ],
     });
   });
 
@@ -196,6 +248,7 @@ describe('OrganizationTreeService', () => {
         include_subunits: false,
       },
     ]);
+    vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([]);
     vi.mocked(mockRepository.findTalentSubsidiaryIds).mockResolvedValue([
       { id: 'talent-1', subsidiary_id: 'sub-2' },
     ]);
@@ -240,6 +293,7 @@ describe('OrganizationTreeService', () => {
         include_subunits: true,
       },
     ]);
+    vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([]);
 
     await expect(
       service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' }),
@@ -255,6 +309,64 @@ describe('OrganizationTreeService', () => {
     });
 
     expect(mockRepository.findTalentSubsidiaryIds).not.toHaveBeenCalled();
+  });
+
+  it('falls back to role-derived tenant scope when user_scope_access is empty', async () => {
+    vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
+    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(
+      subsidiaries.slice(0, 2),
+    );
+    vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
+      { subsidiary_id: 'sub-2', count: BigInt(1) },
+    ]);
+    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(
+      talents.slice(0, 2),
+    );
+    vi.mocked(mockRepository.findUserScopeAccesses).mockResolvedValue([]);
+    vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([
+      {
+        scope_type: 'tenant',
+        scope_id: null,
+        include_subunits: true,
+      },
+    ]);
+
+    await expect(
+      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' }),
+    ).resolves.toMatchObject({
+      tenant: treeTenant,
+      tree: [
+        {
+          id: 'sub-1',
+          children: [{ id: 'sub-2', talents: [{ id: 'talent-1' }] }],
+        },
+      ],
+      talentsWithoutSubsidiary: [{ id: 'talent-2' }],
+    });
+  });
+
+  it('does not downgrade tenant includeSubunits when scope access and role scope disagree', async () => {
+    vi.mocked(mockRepository.findUserScopeAccesses).mockResolvedValue([
+      {
+        scope_type: 'tenant',
+        scope_id: null,
+        include_subunits: true,
+      },
+    ]);
+    vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([
+      {
+        scope_type: 'tenant',
+        scope_id: null,
+        include_subunits: false,
+      },
+    ]);
+
+    await expect(
+      service.getUserAccessibleScopes('tenant_test', 'user-1'),
+    ).resolves.toMatchObject({
+      tenantAccess: true,
+      tenantIncludeSubunits: true,
+    });
   });
 
   it('fails closed when the tenant does not exist', async () => {

@@ -43,6 +43,7 @@ const buildRawRecord = (overrides: Record<string, unknown> = {}) => ({
   nameEn: 'Spam Domain',
   nameZh: null,
   nameJa: null,
+  extraData: null,
   description: null,
   category: 'spam',
   severity: 'high',
@@ -138,6 +139,38 @@ describe('ExternalBlocklistService', () => {
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     expect(mockRedisService.del).not.toHaveBeenCalled();
+  });
+
+  it('returns managed translations when create includes additional locale values', async () => {
+    const dto: CreateExternalBlocklistDto = {
+      ownerType: OwnerType.TENANT,
+      pattern: 'spam.com',
+      patternType: PatternType.DOMAIN,
+      nameEn: 'Spam Domain',
+      translations: {
+        zh_HANT: '垃圾網域',
+        ko: '스팸 도메인',
+      },
+    };
+
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      buildRawRecord({
+        extraData: {
+          translations: {
+            zh_HANT: '垃圾網域',
+            ko: '스팸 도메인',
+          },
+        },
+      }),
+    ]);
+
+    const result = await service.create('tenant_test', dto, mockContext);
+
+    expect(result.translations).toEqual({
+      en: 'Spam Domain',
+      zh_HANT: '垃圾網域',
+      ko: '스팸 도메인',
+    });
   });
 
   it('rejects invalid regex updates when an existing url_regex only changes pattern text', async () => {

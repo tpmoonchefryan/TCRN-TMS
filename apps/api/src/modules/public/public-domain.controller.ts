@@ -9,7 +9,7 @@ import { DomainLookupService } from '../homepage/services/domain-lookup.service'
 
 /**
  * Public controller for custom domain lookups.
- * Used by the frontend middleware to route custom domain requests.
+ * Used by external browser runtimes or edge layers to resolve custom domain routing.
  */
 @ApiTags('Public - Domain')
 @Controller('public')
@@ -22,7 +22,7 @@ export class PublicDomainController {
   @Get('domain-lookup/:hostname')
   @ApiOperation({ 
     summary: 'Lookup custom domain configuration',
-    description: 'Returns talent path and service paths for a verified custom domain. Used by frontend middleware for routing.'
+    description: 'Returns talent path and service paths for a verified custom domain. Used by external browser runtimes or edge layers for routing.'
   })
   async lookupDomain(@Param('hostname') hostname: string) {
     const normalizedHost = hostname.toLowerCase().trim();

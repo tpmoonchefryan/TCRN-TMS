@@ -59,6 +59,10 @@ export const buildDecryptedEmailConfig = (
     };
   }
 
+  if (storedConfig.tenantSenderOverrides) {
+    result.tenantSenderOverrides = storedConfig.tenantSenderOverrides;
+  }
+
   return result;
 };
 
@@ -93,6 +97,10 @@ export const buildMaskedEmailConfigResponse = (
       fromAddress: config.smtp.fromAddress,
       fromName: config.smtp.fromName,
     };
+  }
+
+  if (config.tenantSenderOverrides) {
+    response.tenantSenderOverrides = config.tenantSenderOverrides;
   }
 
   return response;
@@ -161,7 +169,40 @@ export const buildStoredEmailConfig = (
     newConfig.smtp = smtp;
   }
 
+  const tenantSenderOverrides = normalizeTenantSenderOverrides(
+    dto.tenantSenderOverrides ?? existingDecrypted?.tenantSenderOverrides,
+  );
+
+  if (tenantSenderOverrides) {
+    newConfig.tenantSenderOverrides = tenantSenderOverrides;
+  }
+
   return newConfig;
+};
+
+const normalizeTenantSenderOverrides = (
+  value: DecryptedEmailConfig['tenantSenderOverrides'] | undefined,
+): DecryptedEmailConfig['tenantSenderOverrides'] | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const entries = Object.entries(value)
+    .map(([tenantSchema, override]) => {
+      const normalized = {
+        fromAddress: override.fromAddress?.trim() || undefined,
+        fromName: override.fromName?.trim() || undefined,
+        replyTo: override.replyTo?.trim() || undefined,
+      };
+
+      return [tenantSchema.trim(), normalized] as const;
+    })
+    .filter((entry) => {
+      const [tenantSchema, override] = entry;
+      return tenantSchema.length > 0 && !!(override.fromAddress || override.fromName || override.replyTo);
+    });
+
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
 export const buildEnvFallbackEmailConfig = (

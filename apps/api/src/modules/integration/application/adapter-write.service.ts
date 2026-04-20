@@ -23,6 +23,7 @@ import {
   isAdapterOwnedByScope,
   isSecretAdapterConfigKey,
 } from '../domain/adapter-write.policy';
+import { buildNameTranslationPayload } from '../domain/name-translation.policy';
 import {
   CreateAdapterDto,
   OwnerType,
@@ -53,6 +54,15 @@ export class AdapterWriteApplicationService {
     scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null },
   ) {
     const tenantSchema = getAdapterTenantSchema(context);
+    const translationPayload = buildNameTranslationPayload(dto);
+
+    if (!translationPayload.nameEn) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Adapter English name is required',
+      });
+    }
+
     const adapterId = await this.adapterWriteRepository.withTransaction(async (prisma) => {
       const platform = await this.adapterWriteRepository.findPlatformById(
         prisma,
@@ -101,9 +111,10 @@ export class AdapterWriteApplicationService {
         ownerId: scope.ownerId,
         platformId: dto.platformId,
         code: dto.code,
-        nameEn: dto.nameEn,
-        nameZh: dto.nameZh ?? null,
-        nameJa: dto.nameJa ?? null,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh,
+        nameJa: translationPayload.nameJa,
+        extraData: translationPayload.extraData,
         adapterType: dto.adapterType,
         inherit: dto.inherit ?? true,
         userId: context.userId ?? null,
@@ -161,11 +172,25 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      const updatePlan = buildAdapterUpdateMutationPlan(adapter, dto);
+      const translationPayload = buildNameTranslationPayload(dto, adapter);
+      if (!translationPayload.nameEn) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'Adapter English name is required',
+        });
+      }
+
+      const updatePlan = buildAdapterUpdateMutationPlan(
+        adapter,
+        dto,
+        translationPayload.translations,
+        translationPayload.extraData,
+      );
       await this.adapterWriteRepository.update(prisma, tenantSchema, id, {
         nameEn: updatePlan.nameEn,
         nameZh: updatePlan.nameZh,
         nameJa: updatePlan.nameJa,
+        extraData: updatePlan.extraData,
         inherit: updatePlan.inherit,
         userId: context.userId ?? null,
       });

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { buildSharedHomepageUrl } from '@tcrn/shared';
 import * as crypto from 'crypto';
 
 import type {
@@ -11,6 +12,7 @@ import type {
 
 export interface HomepageAdminTalentRecord {
   id: string;
+  code: string;
   homepagePath: string | null;
   customDomain: string | null;
   customDomainVerified: boolean;
@@ -61,6 +63,7 @@ export interface HomepageVersionSummaryRecord {
 
 export interface HomepagePublishTargetRecord {
   id: string;
+  talentCode: string;
   draftVersionId: string | null;
   customDomain: string | null;
   homepagePath: string | null;
@@ -112,11 +115,12 @@ export function buildHomepageVersionInfo(params: {
 export function buildHomepageResponse(params: {
   homepage: HomepageAdminRecord;
   talent: HomepageAdminTalentRecord;
+  tenantCode: string;
   publishedVersion: VersionInfo | null;
   draftVersion: VersionInfo | null;
   appUrl: string;
 }): HomepageResponse {
-  const { appUrl, draftVersion, homepage, publishedVersion, talent } = params;
+  const { appUrl, draftVersion, homepage, publishedVersion, talent, tenantCode } = params;
 
   return {
     id: homepage.id,
@@ -131,7 +135,7 @@ export function buildHomepageResponse(params: {
     ogImageUrl: homepage.ogImageUrl,
     analyticsId: homepage.analyticsId,
     homepagePath: talent.homepagePath,
-    homepageUrl: talent.homepagePath ? `${appUrl}/p/${talent.homepagePath}` : '',
+    homepageUrl: buildSharedHomepageUrl(appUrl, tenantCode, talent.code),
     createdAt: homepage.createdAt.toISOString(),
     updatedAt: homepage.updatedAt.toISOString(),
     version: homepage.version,
@@ -141,11 +145,12 @@ export function buildHomepageResponse(params: {
 export function buildHomepagePublishResult(params: {
   publishedVersion: HomepagePublishedVersionRecord;
   publishedAt: Date;
-  homepagePath: string | null;
+  tenantCode: string;
+  talentCode: string;
   appUrl: string;
   cdnPurgeStatus: HomepageCdnPurgeStatus;
 }) {
-  const { appUrl, cdnPurgeStatus, homepagePath, publishedAt, publishedVersion } = params;
+  const { appUrl, cdnPurgeStatus, publishedAt, publishedVersion, talentCode, tenantCode } = params;
 
   return {
     publishedVersion: {
@@ -153,7 +158,7 @@ export function buildHomepagePublishResult(params: {
       versionNumber: publishedVersion.versionNumber,
       publishedAt: publishedAt.toISOString(),
     },
-    homepageUrl: `${appUrl}/p/${homepagePath}`,
+    homepageUrl: buildSharedHomepageUrl(appUrl, tenantCode, talentCode),
     cdnPurgeStatus,
   };
 }

@@ -12,6 +12,7 @@ import type {
 const SUBSIDIARY_SELECT_FIELDS = `
   id, parent_id as "parentId", code, path, depth,
   name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+  extra_data as "extraData",
   description_en as "descriptionEn", description_zh as "descriptionZh",
   description_ja as "descriptionJa",
   sort_order as "sortOrder", is_active as "isActive",
@@ -22,16 +23,20 @@ const SUBSIDIARY_SELECT_FIELDS = `
 export class SubsidiaryWriteRepository {
   async create(
     tenantSchema: string,
-    data: SubsidiaryCreateInput & { path: string; depth: number },
+    data: SubsidiaryCreateInput & {
+      extraData?: Record<string, unknown> | null;
+      path: string;
+      depth: number;
+    },
     userId: string,
   ): Promise<SubsidiaryData> {
     const results = await prisma.$queryRawUnsafe<SubsidiaryData[]>(`
       INSERT INTO "${tenantSchema}".subsidiary
-        (id, parent_id, code, path, depth, name_en, name_zh, name_ja,
+        (id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data,
          description_en, description_zh, description_ja,
          sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
       VALUES
-        (gen_random_uuid(), $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true, now(), now(), $12::uuid, $12::uuid, 1)
+        (gen_random_uuid(), $1::uuid, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, true, now(), now(), $13::uuid, $13::uuid, 1)
       RETURNING
         ${SUBSIDIARY_SELECT_FIELDS}
     `,
@@ -42,6 +47,7 @@ export class SubsidiaryWriteRepository {
     data.nameEn,
     data.nameZh || null,
     data.nameJa || null,
+    data.extraData ? JSON.stringify(data.extraData) : null,
     data.descriptionEn || null,
     data.descriptionZh || null,
     data.descriptionJa || null,
@@ -72,6 +78,10 @@ export class SubsidiaryWriteRepository {
     if (data.nameJa !== undefined) {
       updates.push(`name_ja = $${paramIndex++}`);
       params.push(data.nameJa);
+    }
+    if (data.extraData !== undefined) {
+      updates.push(`extra_data = $${paramIndex++}::jsonb`);
+      params.push(data.extraData ? JSON.stringify(data.extraData) : null);
     }
     if (data.descriptionEn !== undefined) {
       updates.push(`description_en = $${paramIndex++}`);

@@ -93,6 +93,13 @@ describe('EmailConfigApplicationService', () => {
           fromName: 'TCRN',
           replyTo: 'reply@example.com',
         },
+        tenantSenderOverrides: {
+          tenant_acme: {
+            fromAddress: 'noreply@acme.example.com',
+            fromName: 'Acme Support',
+            replyTo: 'support@acme.example.com',
+          },
+        },
       },
       updatedAt: baseDate,
     };
@@ -108,6 +115,13 @@ describe('EmailConfigApplicationService', () => {
         fromAddress: 'noreply@example.com',
         fromName: 'TCRN',
         replyTo: 'reply@example.com',
+      },
+      tenantSenderOverrides: {
+        tenant_acme: {
+          fromAddress: 'noreply@acme.example.com',
+          fromName: 'Acme Support',
+          replyTo: 'support@acme.example.com',
+        },
       },
     });
   });
@@ -137,6 +151,13 @@ describe('EmailConfigApplicationService', () => {
         fromName: 'New Name',
         replyTo: 'reply@example.com',
       },
+      tenantSenderOverrides: {
+        tenant_acme: {
+          fromAddress: 'tenant@example.com',
+          fromName: 'Tenant Sender',
+          replyTo: 'tenant-reply@example.com',
+        },
+      },
     } as SaveEmailConfigDto;
 
     const result = await service.saveConfig(dto);
@@ -150,6 +171,13 @@ describe('EmailConfigApplicationService', () => {
         fromAddress: 'new@example.com',
         fromName: 'New Name',
         replyTo: 'reply@example.com',
+      },
+      tenantSenderOverrides: {
+        tenant_acme: {
+          fromAddress: 'tenant@example.com',
+          fromName: 'Tenant Sender',
+          replyTo: 'tenant-reply@example.com',
+        },
       },
     });
     expect(result.tencentSes?.secretId).toBe('exis***t-id');

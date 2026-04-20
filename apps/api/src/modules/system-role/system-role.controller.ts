@@ -3,7 +3,9 @@ import { Body, Controller, Delete, Get, NotFoundException, Param, ParseUUIDPipe,
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
+import { TenantService } from '../tenant/tenant.service';
 import { CreateSystemRoleZodDto, UpdateSystemRoleZodDto } from './dto/system-role-zod.dto';
 import { SystemRoleService } from './system-role.service';
 
@@ -51,13 +53,23 @@ const SYSTEM_ROLE_SCHEMA = {
     nameEn: { type: 'string', example: 'Export Deny' },
     nameZh: { type: 'string', nullable: true, example: '导出拒绝' },
     nameJa: { type: 'string', nullable: true, example: 'エクスポート拒否' },
+    translations: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      example: {
+        en: 'Export Deny',
+        zh_HANS: '导出拒绝',
+        ja: 'エクスポート拒否',
+        fr: "Refus d'exportation",
+      },
+    },
     description: { type: 'string', nullable: true, example: 'Denies export operations' },
     isSystem: { type: 'boolean', example: true },
     isActive: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
   },
-  required: ['id', 'code', 'nameEn', 'isSystem', 'isActive', 'createdAt', 'updatedAt'],
+  required: ['id', 'code', 'nameEn', 'translations', 'isSystem', 'isActive', 'createdAt', 'updatedAt'],
 } as const;
 
 const SYSTEM_ROLE_DETAIL_SCHEMA = {
@@ -77,7 +89,55 @@ const SYSTEM_ROLE_DETAIL_SCHEMA = {
       },
     },
     permissionCount: { type: 'integer', example: 1 },
+    userCount: { type: 'integer', example: 2 },
+    scopeBindings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          scopeType: { type: 'string', example: 'talent' },
+          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440030' },
+          scopeName: { type: 'string', nullable: true, example: 'Tokino Sora' },
+          scopePath: { type: 'string', nullable: true, example: '/TOKYO/SORA' },
+          assignmentCount: { type: 'integer', example: 2 },
+          userCount: { type: 'integer', example: 2 },
+          inheritedAssignmentCount: { type: 'integer', example: 1 },
+        },
+        required: ['scopeType', 'assignmentCount', 'userCount', 'inheritedAssignmentCount'],
+      },
+    },
+    assignedUsers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          assignmentId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' },
+          userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
+          username: { type: 'string', example: 'john.doe' },
+          email: { type: 'string', example: 'john.doe@example.com' },
+          displayName: { type: 'string', nullable: true, example: 'John Doe' },
+          avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar.jpg' },
+          isActive: { type: 'boolean', example: true },
+          scopeType: { type: 'string', example: 'subsidiary' },
+          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440040' },
+          scopeName: { type: 'string', nullable: true, example: 'Tokyo Branch' },
+          scopePath: { type: 'string', nullable: true, example: '/TOKYO' },
+          inherit: { type: 'boolean', example: false },
+          grantedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:10:00.000Z' },
+          expiresAt: { type: 'string', format: 'date-time', nullable: true, example: null },
+        },
+        required: ['assignmentId', 'userId', 'username', 'email', 'isActive', 'scopeType', 'inherit', 'grantedAt'],
+      },
+    },
   },
+  required: [
+    ...Array.from(SYSTEM_ROLE_SCHEMA.required),
+    'permissions',
+    'permissionCount',
+    'userCount',
+    'scopeBindings',
+    'assignedUsers',
+  ],
 } as const;
 
 const SYSTEM_ROLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_SCHEMA, {
@@ -86,6 +146,12 @@ const SYSTEM_ROLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_SCHEM
   nameEn: 'Export Deny',
   nameZh: '导出拒绝',
   nameJa: 'エクスポート拒否',
+  translations: {
+    en: 'Export Deny',
+    zh_HANS: '导出拒绝',
+    ja: 'エクスポート拒否',
+    fr: "Refus d'exportation",
+  },
   description: 'Denies export operations',
   isSystem: true,
   isActive: true,
@@ -112,6 +178,11 @@ const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       nameEn: 'Export Deny',
       nameZh: '导出拒绝',
       nameJa: 'エクスポート拒否',
+      translations: {
+        en: 'Export Deny',
+        zh_HANS: '导出拒绝',
+        ja: 'エクスポート拒否',
+      },
       description: 'Denies export operations',
       isSystem: true,
       isActive: true,
@@ -129,6 +200,11 @@ const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROL
   nameEn: 'Export Deny',
   nameZh: '导出拒绝',
   nameJa: 'エクスポート拒否',
+  translations: {
+    en: 'Export Deny',
+    zh_HANS: '导出拒绝',
+    ja: 'エクスポート拒否',
+  },
   description: 'Denies export operations',
   isSystem: true,
   isActive: true,
@@ -136,6 +212,36 @@ const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROL
   updatedAt: '2026-04-13T09:00:00.000Z',
   permissions: [{ resource: 'customer.export', action: 'read', effect: 'deny' }],
   permissionCount: 1,
+  userCount: 2,
+  scopeBindings: [
+    {
+      scopeType: 'talent',
+      scopeId: '550e8400-e29b-41d4-a716-446655440030',
+      scopeName: 'Tokino Sora',
+      scopePath: '/TOKYO/SORA',
+      assignmentCount: 2,
+      userCount: 2,
+      inheritedAssignmentCount: 1,
+    },
+  ],
+  assignedUsers: [
+    {
+      assignmentId: '550e8400-e29b-41d4-a716-446655440010',
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      username: 'john.doe',
+      email: 'john.doe@example.com',
+      displayName: 'John Doe',
+      avatarUrl: null,
+      isActive: true,
+      scopeType: 'talent',
+      scopeId: '550e8400-e29b-41d4-a716-446655440030',
+      scopeName: 'Tokino Sora',
+      scopePath: '/TOKYO/SORA',
+      inherit: false,
+      grantedAt: '2026-04-13T09:10:00.000Z',
+      expiresAt: null,
+    },
+  ],
 });
 
 const SYSTEM_ROLE_DELETE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -168,7 +274,10 @@ const SYSTEM_ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 @ApiBearerAuth()
 @Controller('system-roles')
 export class SystemRoleController {
-  constructor(private readonly systemRoleService: SystemRoleService) {}
+  constructor(
+    private readonly systemRoleService: SystemRoleService,
+    private readonly tenantService: TenantService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create system role' })
@@ -205,16 +314,22 @@ export class SystemRoleController {
     schema: SYSTEM_ROLE_UNAUTHORIZED_SCHEMA,
   })
   async findAll(
+    @CurrentUser() user: AuthenticatedUser,
     @Query('isActive') isActive?: string,
     @Query('isSystem') isSystem?: string,
     @Query('search') search?: string,
   ) {
+    const tenant = await this.tenantService.getTenantById(user.tenantId);
     const filters = {
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       isSystem: isSystem === 'true' ? true : isSystem === 'false' ? false : undefined,
       search,
     };
-    const roles = await this.systemRoleService.findAll(filters);
+    const roles = await this.systemRoleService.findAll(
+      filters,
+      user.tenantSchema,
+      tenant?.tier === 'ac' ? 'ac' : 'standard',
+    );
     return success(roles);
   }
 
@@ -240,8 +355,16 @@ export class SystemRoleController {
     description: 'System role was not found',
     schema: SYSTEM_ROLE_NOT_FOUND_SCHEMA,
   })
-  async findOne(@Param('systemRoleId', ParseUUIDPipe) systemRoleId: string) {
-    const role = await this.systemRoleService.findOne(systemRoleId);
+  async findOne(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string,
+  ) {
+    const tenant = await this.tenantService.getTenantById(user.tenantId);
+    const role = await this.systemRoleService.findOne(
+      systemRoleId,
+      user.tenantSchema,
+      tenant?.tier === 'ac' ? 'ac' : 'standard',
+    );
     if (!role) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,

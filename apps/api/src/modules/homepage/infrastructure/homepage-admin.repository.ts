@@ -26,7 +26,7 @@ export class HomepageAdminRepository {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<HomepageAdminTalentRecord[]>(
       `
-        SELECT id, homepage_path as "homepagePath",
+        SELECT id, code, homepage_path as "homepagePath",
                custom_domain as "customDomain", custom_domain_verified as "customDomainVerified"
         FROM "${schema}".talent
         WHERE id = $1::uuid
@@ -237,6 +237,7 @@ export class HomepageAdminRepository {
       `
         SELECT
           h.id,
+          t.code as "talentCode",
           h.draft_version_id as "draftVersionId",
           t.custom_domain as "customDomain",
           t.homepage_path as "homepagePath"
@@ -248,6 +249,21 @@ export class HomepageAdminRepository {
     );
 
     return homepages[0] ?? null;
+  }
+
+  async findTenantCodeBySchema(schema: string): Promise<string | null> {
+    const prisma = this.databaseService.getPrisma();
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        schemaName: schema,
+      },
+      select: {
+        code: true,
+      },
+      take: 1,
+    });
+
+    return tenants[0]?.code ?? null;
   }
 
   async publishHomepageVersion(params: {

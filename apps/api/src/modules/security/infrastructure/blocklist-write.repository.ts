@@ -17,7 +17,7 @@ export class BlocklistWriteRepository {
   async create(
     tx: Prisma.TransactionClient,
     tenantSchema: string,
-    dto: CreateBlocklistDto,
+    dto: CreateBlocklistDto & { extraData: Record<string, unknown> | null },
     userId: string,
   ): Promise<{ id: string }> {
     const entries = await tx.$queryRawUnsafe<Array<{ id: string }>>(
@@ -31,6 +31,7 @@ export class BlocklistWriteRepository {
           name_en,
           name_zh,
           name_ja,
+          extra_data,
           description,
           category,
           severity,
@@ -62,17 +63,18 @@ export class BlocklistWriteRepository {
           $10,
           $11,
           $12,
-          $13::text[],
-          $14,
+          $13,
+          $14::text[],
           $15,
-          true,
           $16,
+          true,
+          $17,
           false,
           0,
           NOW(),
           NOW(),
-          $17::uuid,
-          $17::uuid,
+          $18::uuid,
+          $18::uuid,
           1
         )
         RETURNING id
@@ -84,6 +86,7 @@ export class BlocklistWriteRepository {
       dto.nameEn,
       dto.nameZh ?? null,
       dto.nameJa ?? null,
+      dto.extraData ? JSON.stringify(dto.extraData) : null,
       dto.description ?? null,
       dto.category ?? null,
       dto.severity,
@@ -108,7 +111,10 @@ export class BlocklistWriteRepository {
       `
         SELECT
           id,
+          extra_data as "extraData",
           name_en as "nameEn",
+          name_ja as "nameJa",
+          name_zh as "nameZh",
           version
         FROM "${tenantSchema}".blocklist_entry
         WHERE id = $1::uuid
@@ -133,6 +139,7 @@ export class BlocklistWriteRepository {
       nameEn: { column: 'name_en' },
       nameZh: { column: 'name_zh' },
       nameJa: { column: 'name_ja' },
+      extraData: { column: 'extra_data', cast: '::jsonb' },
       description: { column: 'description' },
       category: { column: 'category' },
       severity: { column: 'severity' },
@@ -153,7 +160,11 @@ export class BlocklistWriteRepository {
         continue;
       }
 
-      params.push(value);
+      params.push(
+        key === 'extraData' && value && typeof value === 'object'
+          ? JSON.stringify(value)
+          : value,
+      );
       assignments.push(
         `${mapping.column} = $${params.length}${mapping.cast ?? ''}`,
       );

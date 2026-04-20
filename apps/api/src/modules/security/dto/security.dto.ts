@@ -7,6 +7,7 @@ import {
     IsBoolean,
     IsEnum,
     IsInt,
+    IsObject,
     IsOptional,
     IsString,
     IsUUID,
@@ -159,6 +160,19 @@ export class CreateBlocklistDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Additional locale values keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '敏感詞過濾',
+      fr: 'Filtre de grossièretés',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -226,6 +240,19 @@ export class UpdateBlocklistDto {
   @IsString()
   @MaxLength(128)
   nameJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Additional locale values keyed by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '敏感詞過濾',
+      fr: 'Filtre de grossièretés',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @IsOptional()
   @IsString()

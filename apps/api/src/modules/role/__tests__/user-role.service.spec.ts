@@ -9,14 +9,22 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
+import { prisma } from '@tcrn/database';
+
 import { DelegatedAdminService } from '../../delegated-admin/delegated-admin.service';
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
+import { TenantService } from '../../tenant/tenant.service';
 import { UserRoleService } from '../user-role.service';
 
 describe('UserRoleService', () => {
+  const mockPrisma = prisma as unknown as {
+    $queryRawUnsafe: ReturnType<typeof vi.fn>;
+    $executeRawUnsafe: ReturnType<typeof vi.fn>;
+  };
   let service: UserRoleService;
   let mockSnapshotService: Partial<PermissionSnapshotService>;
   let mockDelegatedAdminService: Partial<DelegatedAdminService>;
+  let mockTenantService: Partial<TenantService>;
 
   const testSchema = 'tenant_test123';
   const grantorUserId = 'user-123';
@@ -33,9 +41,17 @@ describe('UserRoleService', () => {
       hasDelegationForScope: vi.fn().mockResolvedValue(false),
     };
 
+    mockTenantService = {
+      getTenantBySchemaName: vi.fn().mockResolvedValue({
+        id: 'tenant-1',
+        tier: 'standard',
+      }),
+    };
+
     service = new UserRoleService(
       mockSnapshotService as PermissionSnapshotService,
       mockDelegatedAdminService as DelegatedAdminService,
+      mockTenantService as TenantService,
     );
   });
 
@@ -117,6 +133,34 @@ describe('UserRoleService', () => {
         'subsidiary',
         'sub-123',
       );
+    });
+  });
+
+  describe('assignRole', () => {
+    it('rejects workspace-incompatible roles before writing assignments', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        { id: 'role-1', code: 'PLATFORM_ADMIN' },
+      ]);
+
+      await expect(
+        service.assignRole(
+          'user-2',
+          testSchema,
+          {
+            roleCode: 'PLATFORM_ADMIN',
+            scopeType: 'tenant',
+            inherit: false,
+          },
+          grantorUserId,
+        ),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'PERM_ACCESS_DENIED',
+        }),
+      });
+
+      expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
     });
   });
 });

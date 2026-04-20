@@ -209,7 +209,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     icon: 'ExternalLink',
     category: 'interactive',
     defaultProps: {
-      label: 'Click Me',
+      label: '',
       url: '',
       style: 'primary',
       fullWidth: false,
@@ -236,12 +236,9 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     icon: 'Calendar',
     category: 'interactive',
     defaultProps: {
-      title: 'Weekly Schedule',
-      weekOf: '2026-01-26',
-      events: [
-        { day: 'mon', time: '20:00', title: 'Chatting Stream', type: 'chat' },
-        { day: 'wed', time: '21:00', title: 'Minecraft', type: 'game' },
-      ],
+      title: '',
+      weekOf: '',
+      events: [],
     },
   },
   [COMPONENT_TYPE.MUSIC_PLAYER]: {
@@ -253,9 +250,9 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     category: 'media',
     defaultProps: {
       platform: 'spotify',
-      embedValue: '4cOdK2wGLETKBW3PvgPWqT',
-      title: 'Starry Sky',
-      artist: 'Moon Chef Ryan',
+      embedValue: '',
+      title: '',
+      artist: '',
     },
   },
   [COMPONENT_TYPE.LIVE_STATUS]: {
@@ -267,11 +264,11 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     category: 'core',
     defaultProps: {
       platform: 'youtube',
-      channelName: 'Moon Chef Ryan Ch.',
-      streamUrl: 'https://youtube.com',
-      isLive: true,
-      viewers: '1,234',
-      title: '🔴 [KAROKE] Singing untill I drop! come join!',
+      channelName: '',
+      streamUrl: '',
+      isLive: false,
+      viewers: '',
+      title: '',
     },
   },
   [COMPONENT_TYPE.DIVIDER]: {
@@ -305,8 +302,8 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
     icon: 'Activity',
     category: 'interactive',
     defaultProps: {
-      uid: '401742377',
-      title: 'Bilibili Dynamics',
+      uid: '',
+      title: '',
       maxItems: 5,
       filterType: 'all',
       cardStyle: 'standard',

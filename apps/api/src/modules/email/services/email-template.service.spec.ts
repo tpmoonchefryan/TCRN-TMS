@@ -35,6 +35,19 @@ describe('EmailTemplateService', () => {
     variables: ['name', 'supportEmail'],
     category: 'system',
     isActive: true,
+    extraData: {
+      subjectTranslations: {
+        zh_HANT: '歡迎 {{name}}',
+        fr: 'Bienvenue {{name}}',
+      },
+      bodyHtmlTranslations: {
+        zh_HANT: '<p>您好 {{name}}</p>',
+        fr: '<p>Bonjour {{name}}</p>',
+      },
+      bodyTextTranslations: {
+        fr: 'Bonjour {{name}}',
+      },
+    },
   };
 
   beforeEach(() => {
@@ -60,13 +73,33 @@ describe('EmailTemplateService', () => {
     });
 
     expect(
-      service.renderTemplate(baseTemplate, 'zh', {
+      service.renderTemplate(baseTemplate, 'zh_HANS', {
         name: 'Mio',
       }),
     ).toEqual({
       subject: '欢迎 Mio',
       htmlBody: '<p>你好 Mio</p>',
-      textBody: 'Hello Mio',
+        textBody: 'Hello Mio',
+      });
+
+    expect(
+      service.renderTemplate(baseTemplate, 'fr', {
+        name: 'Marine',
+      }),
+    ).toEqual({
+      subject: 'Bienvenue Marine',
+      htmlBody: '<p>Bonjour Marine</p>',
+      textBody: 'Bonjour Marine',
+    });
+
+    expect(
+      service.renderTemplate(baseTemplate, 'zh_HANT', {
+        name: 'Suisei',
+      }),
+    ).toEqual({
+      subject: '歡迎 Suisei',
+      htmlBody: '<p>您好 Suisei</p>',
+      textBody: 'Hello Suisei',
     });
   });
 

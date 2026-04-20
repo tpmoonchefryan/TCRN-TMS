@@ -60,6 +60,7 @@ class GetChildrenQueryDto {
 interface OrganizationTreeTalentResponse {
   id: string;
   code: string;
+  name: string;
   displayName: string;
   avatarUrl: string | null;
   subsidiaryId: string | null;
@@ -91,6 +92,7 @@ const mapTreeTalent = (
 ): OrganizationTreeTalentResponse => ({
   id: talent.id,
   code: talent.code,
+  name: talent.name,
   displayName: talent.displayName,
   avatarUrl: talent.avatarUrl,
   subsidiaryId: options.subsidiaryId,
@@ -154,11 +156,16 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
+function resolveRequestedLanguage(req: Request) {
+  return (req.headers['accept-language'] as string | undefined)?.split(',')[0]?.trim() || 'en';
+}
+
 const ORGANIZATION_TREE_TALENT_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
     code: { type: 'string', example: 'SORA' },
+    name: { type: 'string', example: 'Tokino Sora' },
     displayName: { type: 'string', example: 'Sora' },
     avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
     subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
@@ -169,7 +176,7 @@ const ORGANIZATION_TREE_TALENT_SCHEMA = {
     publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     isActive: { type: 'boolean', example: true },
   },
-  required: ['id', 'code', 'displayName', 'avatarUrl', 'subsidiaryId', 'path', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive'],
+  required: ['id', 'code', 'name', 'displayName', 'avatarUrl', 'subsidiaryId', 'path', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive'],
 };
 
 const ORGANIZATION_TREE_SUBSIDIARY_SCHEMA: Record<string, unknown> = {
@@ -228,6 +235,7 @@ const ORGANIZATION_TREE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           {
             id: '550e8400-e29b-41d4-a716-446655440300',
             code: 'SORA',
+            name: 'Tokino Sora',
             displayName: 'Sora',
             avatarUrl: 'https://cdn.tcrn.app/avatar/sora.jpg',
             subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
@@ -471,7 +479,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetTreeQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = resolveRequestedLanguage(req);
 
     const tree = await this.organizationService.getTree(
       user.tenantId,
@@ -515,7 +523,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetChildrenQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = resolveRequestedLanguage(req);
 
     const result = await this.organizationService.getRootNodes(
       user.tenantId,
@@ -569,7 +577,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetChildrenQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = resolveRequestedLanguage(req);
 
     const result = await this.organizationService.getChildren(
       user.tenantSchema,
@@ -629,7 +637,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Param('subpath') pathParam: string,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = resolveRequestedLanguage(req);
     const path = '/' + pathParam + (pathParam.endsWith('/') ? '' : '/');
 
     const breadcrumb = await this.organizationService.getBreadcrumb(

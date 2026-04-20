@@ -123,4 +123,38 @@ describe('getEmailConfig', () => {
       },
     });
   });
+
+  it('applies tenant sender overrides for the current email job tenant', async () => {
+    mockPrisma.globalConfig.findUnique.mockResolvedValue({
+      value: {
+        provider: 'tencent_ses',
+        tencentSes: {
+          secretId: encrypt('ses-secret-id', encryptionKey),
+          secretKey: encrypt('ses-secret-key', encryptionKey),
+          region: 'ap-singapore',
+          fromAddress: 'default@example.com',
+          fromName: 'Default Sender',
+          replyTo: 'default-reply@example.com',
+        },
+        tenantSenderOverrides: {
+          tenant_acme: {
+            fromAddress: 'acme@example.com',
+            fromName: 'Acme Sender',
+            replyTo: 'acme-reply@example.com',
+          },
+        },
+      },
+    });
+
+    const result = await getEmailConfig('tenant_acme');
+
+    expect(result?.tencentSes).toEqual({
+      secretId: 'ses-secret-id',
+      secretKey: 'ses-secret-key',
+      region: 'ap-singapore',
+      fromAddress: 'acme@example.com',
+      fromName: 'Acme Sender',
+      replyTo: 'acme-reply@example.com',
+    });
+  });
 });

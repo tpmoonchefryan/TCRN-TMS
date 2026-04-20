@@ -52,6 +52,8 @@ export const RBAC_ROLE_POLICY_EFFECTS = [
 ] as const;
 
 export type RbacRolePolicyEffect = (typeof RBAC_ROLE_POLICY_EFFECTS)[number];
+export type RbacTenantTier = 'ac' | 'standard';
+export type RbacRoleScopeType = 'tenant' | 'subsidiary' | 'talent';
 
 interface LocalizedLabel {
   nameEn: string;
@@ -83,6 +85,11 @@ export interface RbacRoleTemplate extends LocalizedLabel {
   isSystem: boolean;
   permissions: readonly RbacRolePermissionTemplate[];
   aliasOf?: string;
+}
+
+export interface RbacRoleWorkspaceAvailability {
+  tenantTiers: readonly RbacTenantTier[];
+  scopeTypes: readonly RbacRoleScopeType[];
 }
 
 const resource = <
@@ -340,6 +347,66 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
     ],
   },
 ] as const;
+
+const DEFAULT_ROLE_WORKSPACE_AVAILABILITY: RbacRoleWorkspaceAvailability = {
+  tenantTiers: ['ac', 'standard'],
+  scopeTypes: ['tenant', 'subsidiary', 'talent'],
+};
+
+export const RBAC_ROLE_WORKSPACE_AVAILABILITY: Readonly<Record<string, RbacRoleWorkspaceAvailability>> = {
+  PLATFORM_ADMIN: {
+    tenantTiers: ['ac'],
+    scopeTypes: ['tenant'],
+  },
+  ADMIN: {
+    tenantTiers: ['ac', 'standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  TENANT_ADMIN: {
+    tenantTiers: ['ac', 'standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  TALENT_MANAGER: {
+    tenantTiers: ['standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  CONTENT_MANAGER: {
+    tenantTiers: ['standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  CUSTOMER_MANAGER: {
+    tenantTiers: ['standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  VIEWER: {
+    tenantTiers: ['ac', 'standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+  INTEGRATION_MANAGER: {
+    tenantTiers: ['ac', 'standard'],
+    scopeTypes: ['tenant', 'subsidiary', 'talent'],
+  },
+} as const;
+
+export function getRbacRoleWorkspaceAvailability(
+  roleCode: string,
+): RbacRoleWorkspaceAvailability {
+  return RBAC_ROLE_WORKSPACE_AVAILABILITY[roleCode] ?? DEFAULT_ROLE_WORKSPACE_AVAILABILITY;
+}
+
+export function isRbacRoleAvailableForTenantTier(
+  roleCode: string,
+  tenantTier: RbacTenantTier,
+): boolean {
+  return getRbacRoleWorkspaceAvailability(roleCode).tenantTiers.includes(tenantTier);
+}
+
+export function isRbacRoleAvailableForScopeType(
+  roleCode: string,
+  scopeType: RbacRoleScopeType,
+): boolean {
+  return getRbacRoleWorkspaceAvailability(roleCode).scopeTypes.includes(scopeType);
+}
 
 export const RBAC_POLICY_DEFINITIONS: readonly RbacPolicyDefinition[] = (() => {
   const policies = new Map<string, RbacPolicyDefinition>();

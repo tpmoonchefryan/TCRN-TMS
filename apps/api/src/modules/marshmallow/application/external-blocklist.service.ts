@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
+import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import {
   assertValidExternalBlocklistPattern,
   type ExternalBlocklistItemWithMeta,
@@ -129,10 +130,17 @@ export class ExternalBlocklistApplicationService {
     context: RequestContext,
   ): Promise<ExternalBlocklistItem> {
     this.ensureValidPattern(dto.patternType, dto.pattern);
+    const translationPayload = buildManagedNameTranslationPayload(dto);
 
     const item = await this.externalBlocklistRepository.create(
       tenantSchema,
-      dto,
+      {
+        ...dto,
+        extraData: translationPayload.extraData,
+        nameEn: translationPayload.nameEn,
+        nameJa: translationPayload.nameJa,
+        nameZh: translationPayload.nameZh,
+      },
       context.userId ?? null,
     );
 
@@ -171,11 +179,18 @@ export class ExternalBlocklistApplicationService {
         dto.pattern ?? existing.pattern,
       );
     }
+    const translationPayload = buildManagedNameTranslationPayload(dto, existing);
 
     const item = await this.externalBlocklistRepository.update(
       tenantSchema,
       id,
-      dto,
+      {
+        ...dto,
+        extraData: translationPayload.extraData,
+        nameEn: translationPayload.nameEn,
+        nameJa: translationPayload.nameJa,
+        nameZh: translationPayload.nameZh,
+      },
       context.userId ?? null,
     );
 

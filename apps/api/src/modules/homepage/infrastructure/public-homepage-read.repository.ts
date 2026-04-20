@@ -24,6 +24,25 @@ export class PublicHomepageReadRepository {
     return tenants.map((tenant) => tenant.schemaName);
   }
 
+  async findActiveTenantSchemaByCode(tenantCode: string): Promise<string | null> {
+    const prisma = this.databaseService.getPrisma();
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        code: {
+          equals: tenantCode,
+          mode: 'insensitive',
+        },
+        isActive: true,
+      },
+      select: {
+        schemaName: true,
+      },
+      take: 1,
+    });
+
+    return tenants[0]?.schemaName ?? null;
+  }
+
   async findPublishedTalentByPath(
     schema: string,
     path: string,
@@ -32,6 +51,7 @@ export class PublicHomepageReadRepository {
     const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
       SELECT
         id,
+        code,
         display_name as "displayName",
         avatar_url as "avatarUrl",
         homepage_path as "homepagePath",
@@ -45,6 +65,28 @@ export class PublicHomepageReadRepository {
     return talents[0] ?? null;
   }
 
+  async findPublishedTalentByCode(
+    schema: string,
+    talentCode: string,
+  ): Promise<PublicHomepageTalentRecord | null> {
+    const prisma = this.databaseService.getPrisma();
+    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
+      SELECT
+        id,
+        code,
+        display_name as "displayName",
+        avatar_url as "avatarUrl",
+        homepage_path as "homepagePath",
+        timezone
+      FROM "${schema}".talent
+      WHERE LOWER(code) = LOWER($1)
+        AND lifecycle_status = 'published'
+      LIMIT 1
+    `, talentCode);
+
+    return talents[0] ?? null;
+  }
+
   async findPublishedTalentById(
     schema: string,
     talentId: string,
@@ -53,6 +95,7 @@ export class PublicHomepageReadRepository {
     const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
       SELECT
         id,
+        code,
         display_name as "displayName",
         avatar_url as "avatarUrl",
         homepage_path as "homepagePath",

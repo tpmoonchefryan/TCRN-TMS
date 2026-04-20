@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 export interface EmailJobData {
   tenantSchema: string;
   templateCode: string;
@@ -29,4 +31,4 @@ export interface SendEmailParams {
 
 export type EmailCategory = 'system' | 'business';
 
-export type SupportedLocale = 'en' | 'zh' | 'ja';
+export type SupportedLocale = SupportedUiLocale;

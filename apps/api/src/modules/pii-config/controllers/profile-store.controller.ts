@@ -64,6 +64,16 @@ const PROFILE_STORE_ITEM_SCHEMA = {
     name: { type: 'string', example: 'Default Profile Store' },
     nameZh: { type: 'string', nullable: true, example: '默认档案库' },
     nameJa: { type: 'string', nullable: true, example: 'デフォルトプロフィールストア' },
+    translations: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      example: {
+        en: 'Default Profile Store',
+        zh_HANS: '默认档案库',
+        zh_HANT: '預設檔案庫',
+        fr: 'Magasin de profils par défaut',
+      },
+    },
     talentCount: { type: 'integer', example: 3 },
     customerCount: { type: 'integer', example: 1200 },
     isDefault: { type: 'boolean', example: true },
@@ -71,7 +81,7 @@ const PROFILE_STORE_ITEM_SCHEMA = {
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'code', 'name', 'talentCount', 'customerCount', 'isDefault', 'isActive', 'createdAt', 'version'],
+  required: ['id', 'code', 'name', 'translations', 'talentCount', 'customerCount', 'isDefault', 'isActive', 'createdAt', 'version'],
 };
 
 const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
@@ -108,6 +118,12 @@ const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
         name: 'Default Profile Store',
         nameZh: '默认档案库',
         nameJa: 'デフォルトプロフィールストア',
+        translations: {
+          en: 'Default Profile Store',
+          zh_HANS: '默认档案库',
+          zh_HANT: '預設檔案庫',
+          fr: 'Magasin de profils par défaut',
+        },
         talentCount: 3,
         customerCount: 1200,
         isDefault: true,
@@ -137,9 +153,19 @@ const PROFILE_STORE_DETAIL_SCHEMA = createSuccessEnvelopeSchema(
       description: { type: 'string', nullable: true, example: 'Primary customer profile store' },
       descriptionZh: { type: 'string', nullable: true, example: '主要客户档案库' },
       descriptionJa: { type: 'string', nullable: true, example: '主要な顧客プロフィールストア' },
+      descriptionTranslations: {
+        type: 'object',
+        additionalProperties: { type: 'string' },
+        example: {
+          en: 'Primary customer profile store',
+          zh_HANS: '主要客户档案库',
+          zh_HANT: '主要客戶檔案庫',
+          fr: 'Magasin principal des profils clients',
+        },
+      },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     },
-    required: [...(PROFILE_STORE_ITEM_SCHEMA.required as string[]), 'description', 'updatedAt'],
+    required: [...(PROFILE_STORE_ITEM_SCHEMA.required as string[]), 'description', 'descriptionTranslations', 'updatedAt'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440600',
@@ -147,9 +173,21 @@ const PROFILE_STORE_DETAIL_SCHEMA = createSuccessEnvelopeSchema(
     name: 'Default Profile Store',
     nameZh: '默认档案库',
     nameJa: 'デフォルトプロフィールストア',
+    translations: {
+      en: 'Default Profile Store',
+      zh_HANS: '默认档案库',
+      zh_HANT: '預設檔案庫',
+      fr: 'Magasin de profils par défaut',
+    },
     description: 'Primary customer profile store',
     descriptionZh: '主要客户档案库',
     descriptionJa: '主要な顧客プロフィールストア',
+    descriptionTranslations: {
+      en: 'Primary customer profile store',
+      zh_HANS: '主要客户档案库',
+      zh_HANT: '主要客戶檔案庫',
+      fr: 'Magasin principal des profils clients',
+    },
     talentCount: 3,
     customerCount: 1200,
     isDefault: true,

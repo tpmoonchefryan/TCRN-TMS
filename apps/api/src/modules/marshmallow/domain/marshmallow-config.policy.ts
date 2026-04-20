@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { buildSharedMarshmallowUrl } from '@tcrn/shared';
+
 import { CaptchaMode, type UpdateConfigDto } from '../dto/marshmallow.dto';
 
 export const DEFAULT_MARSHMALLOW_CONFIG = {
@@ -74,6 +76,7 @@ export interface MarshmallowConfigStats {
 
 export interface MarshmallowTalentRecord {
   id: string;
+  code: string;
   homepagePath: string | null;
   settings: Record<string, unknown> | null;
 }
@@ -116,9 +119,10 @@ export const buildMarshmallowConfigResponse = (params: {
   config: MarshmallowConfigRecord;
   stats: MarshmallowConfigStats;
   appUrl: string;
-  homepagePath: string | null;
+  tenantCode: string;
+  talentCode: string;
 }) => {
-  const { appUrl, config, homepagePath, stats } = params;
+  const { appUrl, config, stats, talentCode, tenantCode } = params;
 
   return {
     id: config.id,
@@ -149,7 +153,7 @@ export const buildMarshmallowConfigResponse = (params: {
     privacyContentZh: config.privacyContentZh,
     privacyContentJa: config.privacyContentJa,
     stats,
-    marshmallowUrl: `${appUrl}/m/${homepagePath}`,
+    marshmallowUrl: buildSharedMarshmallowUrl(appUrl, tenantCode, talentCode),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),
     version: config.version,

@@ -77,7 +77,7 @@ export class CalendarController {
 
     const calendar = ical({
       name: calendarName,
-      url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://tcrn.app'}/p/${path}`,
+      url: `${process.env.APP_URL || 'https://tcrn.app'}/p/${path}`,
       method: ICalCalendarMethod.PUBLISH,
       timezone: componentTimezone || data.talent.timezone || 'UTC', // Prefer component timezone
     });

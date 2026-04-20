@@ -56,6 +56,7 @@ model SystemDictionary {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -105,6 +106,7 @@ model EmailTemplate {
   nameEn      String   @map("name_en") @db.VarChar(128)
   nameZh      String?  @map("name_zh") @db.VarChar(128)
   nameJa      String?  @map("name_ja") @db.VarChar(128)
+  extraData   Json?    @map("extra_data") @db.JsonB
   subjectEn   String   @map("subject_en") @db.VarChar(255)
   subjectZh   String?  @map("subject_zh") @db.VarChar(255)
   subjectJa   String?  @map("subject_ja") @db.VarChar(255)
@@ -141,6 +143,7 @@ model Subsidiary {
   nameEn        String   @map("name_en") @db.VarChar(255)
   nameZh        String?  @map("name_zh") @db.VarChar(255)
   nameJa        String?  @map("name_ja") @db.VarChar(255)
+  extraData     Json?    @map("extra_data") @db.JsonB
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
@@ -174,6 +177,7 @@ model Talent {
   nameEn         String   @map("name_en") @db.VarChar(255)
   nameZh         String?  @map("name_zh") @db.VarChar(255)
   nameJa         String?  @map("name_ja") @db.VarChar(255)
+  extraData      Json?    @map("extra_data") @db.JsonB
   displayName    String   @map("display_name") @db.VarChar(255)
   descriptionEn  String?  @map("description_en") @db.Text
   descriptionZh  String?  @map("description_zh") @db.Text
@@ -240,7 +244,7 @@ model SystemUser {
   passwordHash      String    @map("password_hash") @db.VarChar(255)
   displayName       String?   @map("display_name") @db.VarChar(128)
   avatarUrl         String?   @map("avatar_url") @db.VarChar(512)
-  preferredLanguage String    @default("en") @map("preferred_language") @db.VarChar(5)
+  preferredLanguage String    @default("en") @map("preferred_language") @db.VarChar(16)
   totpSecret        String?   @map("totp_secret") @db.VarChar(64) // Encrypted
   totpEnabledAt     DateTime? @map("totp_enabled_at") @db.Timestamptz
   isTotpEnabled     Boolean   @default(false) @map("is_totp_enabled")
@@ -302,6 +306,7 @@ model Role {
   nameZh      String?  @map("name_zh") @db.VarChar(128)
   nameJa      String?  @map("name_ja") @db.VarChar(128)
   description String?  @db.Text
+  extraData   Json?    @map("extra_data") @db.JsonB
   isSystem    Boolean  @default(false) @map("is_system")
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -484,6 +489,7 @@ model ProfileStore {
   descriptionEn      String?  @map("description_en") @db.Text
   descriptionZh      String?  @map("description_zh") @db.Text
   descriptionJa      String?  @map("description_ja") @db.Text
+  extraData          Json?    @map("extra_data") @db.JsonB
   piiProxyUrl        String?  @map("pii_proxy_url") @db.VarChar(512) // PII Proxy URL - when empty, PII fields are disabled
   piiServiceConfigId String?  @map("pii_service_config_id") @db.Uuid // Optional PII service config
   isDefault          Boolean  @default(false) @map("is_default")
@@ -750,6 +756,7 @@ model ChannelCategory {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -781,6 +788,7 @@ model BusinessSegment {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -812,6 +820,7 @@ model CommunicationType {
   descriptionEn     String?  @map("description_en") @db.Text
   descriptionZh     String?  @map("description_zh") @db.Text
   descriptionJa     String?  @map("description_ja") @db.Text
+  extraData         Json?    @map("extra_data") @db.JsonB
   sortOrder         Int      @default(0) @map("sort_order")
   isActive          Boolean  @default(true) @map("is_active")
   isForceUse        Boolean  @default(false) @map("is_force_use")
@@ -842,6 +851,7 @@ model AddressType {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -870,6 +880,7 @@ model CustomerStatus {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -899,6 +910,7 @@ model ReasonCategory {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -929,6 +941,7 @@ model InactivationReason {
   descriptionEn    String?  @map("description_en") @db.Text
   descriptionZh    String?  @map("description_zh") @db.Text
   descriptionJa    String?  @map("description_ja") @db.Text
+  extraData        Json?    @map("extra_data") @db.JsonB
   sortOrder        Int      @default(0) @map("sort_order")
   isActive         Boolean  @default(true) @map("is_active")
   isForceUse       Boolean  @default(false) @map("is_force_use")
@@ -959,6 +972,7 @@ model MembershipClass {
   descriptionEn String?  @map("description_en") @db.Text
   descriptionZh String?  @map("description_zh") @db.Text
   descriptionJa String?  @map("description_ja") @db.Text
+  extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   isForceUse    Boolean  @default(false) @map("is_force_use")
@@ -1054,6 +1068,7 @@ model Consent {
   contentMarkdownEn String?   @map("content_markdown_en") @db.Text
   contentMarkdownZh String?   @map("content_markdown_zh") @db.Text
   contentMarkdownJa String?   @map("content_markdown_ja") @db.Text
+  extraData         Json?     @map("extra_data") @db.JsonB
   contentUrl        String?   @map("content_url") @db.VarChar(512)
   effectiveFrom     DateTime  @map("effective_from") @db.Date
   expiresAt         DateTime? @map("expires_at") @db.Date
@@ -1090,6 +1105,7 @@ model Consumer {
   allowedIps       String[] @default([]) @map("allowed_ips") @db.Inet
   rateLimit        Int      @default(1000) @map("rate_limit")
   notes            String?  @db.Text
+  extraData        Json?    @map("extra_data") @db.JsonB
   sortOrder        Int      @default(0) @map("sort_order")
   isActive         Boolean  @default(true) @map("is_active")
   isForceUse       Boolean  @default(false) @map("is_force_use")
@@ -1146,6 +1162,7 @@ model BlocklistEntry {
   nameEn        String    @map("name_en") @db.VarChar(128)
   nameZh        String?   @map("name_zh") @db.VarChar(128)
   nameJa        String?   @map("name_ja") @db.VarChar(128)
+  extraData     Json?     @map("extra_data") @db.JsonB
   description   String?   @db.Text
   category      String?   @db.VarChar(64)
   severity      String    @default("medium") @db.VarChar(16) // 'low', 'medium', 'high'
@@ -1449,6 +1466,7 @@ model ExternalBlocklistPattern {
   nameEn      String   @map("name_en") @db.VarChar(128)
   nameZh      String?  @map("name_zh") @db.VarChar(128)
   nameJa      String?  @map("name_ja") @db.VarChar(128)
+  extraData   Json?    @map("extra_data") @db.JsonB
   description String?  @db.Text
   category    String?  @db.VarChar(64)
   severity    String   @default("medium") @db.VarChar(16)
@@ -1663,6 +1681,7 @@ model IntegrationAdapter {
   nameEn      String   @map("name_en") @db.VarChar(255)
   nameZh      String?  @map("name_zh") @db.VarChar(255)
   nameJa      String?  @map("name_ja") @db.VarChar(255)
+  extraData   Json?    @map("extra_data") @db.JsonB
   adapterType String   @map("adapter_type") @db.VarChar(16) // 'oauth', 'api_key', 'webhook'
   inherit     Boolean  @default(true)
   isActive    Boolean  @default(true) @map("is_active")
@@ -1704,6 +1723,7 @@ model Webhook {
   nameEn              String    @map("name_en") @db.VarChar(255)
   nameZh              String?   @map("name_zh") @db.VarChar(255)
   nameJa              String?   @map("name_ja") @db.VarChar(255)
+  extraData           Json?     @map("extra_data") @db.JsonB
   url                 String    @db.VarChar(512)
   secret              String?   @db.VarChar(255) // Encrypted
   events              String[]  @db.VarChar(64)

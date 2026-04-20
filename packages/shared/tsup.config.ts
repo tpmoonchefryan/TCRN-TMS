@@ -2,7 +2,7 @@
 
 import { defineConfig } from 'tsup';
 
-export default defineConfig({
+export default defineConfig((options) => ({
   entry: [
     'src/index.ts',
     'src/types/index.ts',
@@ -13,6 +13,7 @@ export default defineConfig({
   dts: true,
   splitting: false,
   sourcemap: true,
-  clean: true,
+  // Keep dist intact during watch startup so workspace consumers do not observe a missing-module window.
+  clean: !options.watch,
   treeshake: true,
-});
+}));

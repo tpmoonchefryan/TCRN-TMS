@@ -8,7 +8,10 @@ import type {
 
 export interface BlocklistWriteLookupRow {
   id: string;
+  extraData: Record<string, unknown> | null;
   nameEn: string;
+  nameJa: string | null;
+  nameZh: string | null;
   version: number;
 }
 
@@ -42,6 +45,7 @@ export const buildBlocklistUpdateData = (dto: UpdateBlocklistDto) => {
     'nameEn',
     'nameZh',
     'nameJa',
+    'translations',
     'description',
     'category',
     'severity',

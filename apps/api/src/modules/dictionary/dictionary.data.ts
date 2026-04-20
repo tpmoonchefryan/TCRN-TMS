@@ -98,7 +98,8 @@ export const COUNTRIES: DictionaryItem[] = [
 // Common Languages
 export const LANGUAGES: DictionaryItem[] = [
   { code: 'en', nameEn: 'English', nameZh: '英语', nameJa: '英語' },
-  { code: 'zh', nameEn: 'Chinese', nameZh: '中文', nameJa: '中国語' },
+  { code: 'zh_HANS', nameEn: 'Chinese (Simplified)', nameZh: '简体中文', nameJa: '簡体字中国語' },
+  { code: 'zh_HANT', nameEn: 'Chinese (Traditional)', nameZh: '繁体中文', nameJa: '繁体字中国語' },
   { code: 'ja', nameEn: 'Japanese', nameZh: '日语', nameJa: '日本語' },
   { code: 'ko', nameEn: 'Korean', nameZh: '韩语', nameJa: '韓国語' },
   { code: 'es', nameEn: 'Spanish', nameZh: '西班牙语', nameJa: 'スペイン語' },

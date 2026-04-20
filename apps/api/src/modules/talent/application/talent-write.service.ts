@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import type { TalentData } from '../domain/talent-read.policy';
 import {
   buildTalentDefaultSettings,
@@ -34,6 +35,7 @@ export class TalentWriteService {
     data: TalentCreateInput,
     userId: string,
   ): Promise<TalentData> {
+    const translationPayload = buildManagedNameTranslationPayload(data);
     const hasActiveProfileStore =
       await this.talentWriteRepository.hasActiveProfileStore(
         tenantSchema,
@@ -89,6 +91,10 @@ export class TalentWriteService {
       tenantSchema,
       {
         ...data,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh ?? undefined,
+        nameJa: translationPayload.nameJa ?? undefined,
+        extraData: translationPayload.extraData,
         path: buildTalentPath(data.code, subsidiaryPath),
         settings: buildTalentDefaultSettings(data.settings),
       },
@@ -134,7 +140,20 @@ export class TalentWriteService {
       }
     }
 
-    return this.talentWriteRepository.update(id, tenantSchema, data, userId);
+    const translationPayload = buildManagedNameTranslationPayload(data, current);
+
+    return this.talentWriteRepository.update(
+      id,
+      tenantSchema,
+      {
+        ...data,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh ?? undefined,
+        nameJa: translationPayload.nameJa ?? undefined,
+        extraData: translationPayload.extraData,
+      },
+      userId,
+    );
   }
 
   async delete(

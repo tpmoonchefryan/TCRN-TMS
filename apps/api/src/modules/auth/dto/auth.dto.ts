@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { IsNotEmpty, IsOptional, IsString, Length, Matches, MinLength } from 'class-validator';
 
 /**
@@ -154,11 +155,11 @@ export class UpdateUserProfileDto {
   @ApiPropertyOptional({ 
     description: 'Preferred language for UI',
     example: 'ja',
-    enum: ['en', 'zh', 'ja'],
+    enum: SUPPORTED_UI_LOCALES,
   })
   @IsOptional()
   @IsString()
-  preferredLanguage?: 'en' | 'zh' | 'ja';
+  preferredLanguage?: SupportedUiLocale;
 
   @ApiPropertyOptional({ 
     description: 'URL to user avatar image',
@@ -356,4 +357,3 @@ export class RecoveryCodesResponseDto {
   @ApiProperty({ description: 'Number of remaining unused codes', example: 10 })
   remainingCount: number;
 }
-

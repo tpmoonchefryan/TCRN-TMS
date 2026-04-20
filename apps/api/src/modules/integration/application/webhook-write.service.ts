@@ -8,6 +8,7 @@ import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import { ChangeLogService } from '../../log';
 import { toRetryPolicyInput,type WebhookRecord } from '../domain/webhook.policy';
 import { CreateWebhookDto, UpdateWebhookDto } from '../dto/integration.dto';
+import { buildNameTranslationPayload } from '../domain/name-translation.policy';
 import { WebhookWriteRepository } from '../infrastructure/webhook-write.repository';
 import { AdapterCryptoService } from '../services/adapter-crypto.service';
 import { getWebhookTenantSchema } from './webhook-context.util';
@@ -26,6 +27,14 @@ export class WebhookWriteApplicationService {
   async create(dto: CreateWebhookDto, context: RequestContext) {
     this.assertHttpsUrl(dto.url);
     const tenantSchema = getWebhookTenantSchema(context);
+    const translationPayload = buildNameTranslationPayload(dto);
+
+    if (!translationPayload.nameEn) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Webhook English name is required',
+      });
+    }
 
     const webhookId = await this.webhookWriteRepository.withTransaction(async (prisma) => {
       const existing = await this.webhookWriteRepository.findByCode(prisma, dto.code, tenantSchema);
@@ -39,9 +48,10 @@ export class WebhookWriteApplicationService {
 
       const id = await this.webhookWriteRepository.create(prisma, tenantSchema, {
         code: dto.code,
-        nameEn: dto.nameEn,
-        nameZh: dto.nameZh ?? null,
-        nameJa: dto.nameJa ?? null,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh,
+        nameJa: translationPayload.nameJa,
+        extraData: translationPayload.extraData,
         url: dto.url,
         secret: dto.secret ? this.cryptoService.encrypt(dto.secret) : null,
         events: dto.events,
@@ -84,6 +94,13 @@ export class WebhookWriteApplicationService {
 
     await this.webhookWriteRepository.withTransaction(async (prisma) => {
       const webhook = await this.getWebhookOrThrow(prisma, id, tenantSchema);
+      const translationPayload = buildNameTranslationPayload(dto, webhook);
+      if (!translationPayload.nameEn) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'Webhook English name is required',
+        });
+      }
 
       if (webhook.version !== dto.version) {
         throw new ConflictException({
@@ -93,9 +110,10 @@ export class WebhookWriteApplicationService {
       }
 
       await this.webhookWriteRepository.update(prisma, tenantSchema, id, {
-        nameEn: dto.nameEn ?? webhook.nameEn,
-        nameZh: dto.nameZh ?? webhook.nameZh,
-        nameJa: dto.nameJa ?? webhook.nameJa,
+        nameEn: translationPayload.nameEn,
+        nameZh: translationPayload.nameZh,
+        nameJa: translationPayload.nameJa,
+        extraData: translationPayload.extraData,
         url: dto.url ?? webhook.url,
         secret: this.resolveSecret(dto.secret, webhook.secret),
         events: dto.events ?? webhook.events,

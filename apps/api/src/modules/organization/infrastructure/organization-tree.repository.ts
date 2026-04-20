@@ -26,7 +26,7 @@ export class OrganizationTreeRepository {
     const whereClause = includeInactive ? '1=1' : 'is_active = true';
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
-      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, is_active
+      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}
        ORDER BY depth, sort_order, name_en`,
@@ -102,7 +102,7 @@ export class OrganizationTreeRepository {
     }
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
-      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, is_active
+      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE path = ANY($1::text[])
        ORDER BY depth, sort_order, name_en`,
@@ -125,7 +125,7 @@ export class OrganizationTreeRepository {
     }
 
     return prisma.$queryRawUnsafe<RawTalent[]>(
-      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, display_name, avatar_url, homepage_path,
+      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, extra_data, display_name, avatar_url, homepage_path,
               lifecycle_status, published_at
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
@@ -153,7 +153,7 @@ export class OrganizationTreeRepository {
     }
 
     return prisma.$queryRawUnsafe<RawTalent[]>(
-      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, display_name, avatar_url, homepage_path,
+      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, extra_data, display_name, avatar_url, homepage_path,
               lifecycle_status, published_at
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
@@ -182,6 +182,24 @@ export class OrganizationTreeRepository {
       `SELECT scope_type, scope_id, include_subunits
        FROM "${tenantSchema}".user_scope_access
        WHERE user_id = $1::uuid`,
+      userId,
+    );
+  }
+
+  findUserRoleScopeAccesses(
+    tenantSchema: string,
+    userId: string,
+  ): Promise<RawOrganizationScopeAccess[]> {
+    return prisma.$queryRawUnsafe<RawOrganizationScopeAccess[]>(
+      `SELECT DISTINCT
+          ur.scope_type,
+          ur.scope_id,
+          ur.inherit as include_subunits
+       FROM "${tenantSchema}".user_role ur
+       JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+       WHERE ur.user_id = $1::uuid
+         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+         AND r.is_active = true`,
       userId,
     );
   }

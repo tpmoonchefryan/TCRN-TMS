@@ -58,6 +58,9 @@ export default defineConfig({
     ],
     exclude: ['**/node_modules/**', '**/dist/**'],
     // These suites exercise real integration boundaries and can need local services.
+    // Keep them single-worker to avoid Redis/queue/schema cross-test interference.
+    minWorkers: 1,
+    maxWorkers: 1,
     testTimeout: 30000,
     hookTimeout: 30000,
   },

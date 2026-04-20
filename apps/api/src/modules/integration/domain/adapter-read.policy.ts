@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { type OwnerType } from '../dto/integration.dto';
+import { buildNameTranslations } from './name-translation.policy';
 
 export interface IntegrationAdapterOwnerScope {
   ownerType: OwnerType;
@@ -19,6 +20,7 @@ export interface IntegrationAdapterListRow {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
   isActive: boolean;
@@ -40,6 +42,7 @@ export interface IntegrationAdapterDetailRow {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
   isActive: boolean;
@@ -80,6 +83,7 @@ export const mapIntegrationAdapterListItem = (
   nameEn: adapter.nameEn,
   nameZh: adapter.nameZh,
   nameJa: adapter.nameJa,
+  translations: buildNameTranslations(adapter),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,
@@ -106,6 +110,7 @@ export const mapIntegrationAdapterDetail = (
   nameEn: adapter.nameEn,
   nameZh: adapter.nameZh,
   nameJa: adapter.nameJa,
+  translations: buildNameTranslations(adapter),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,

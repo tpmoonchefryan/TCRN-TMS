@@ -3,6 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 
+import { toNullableJsonInput } from '../../../platform/persistence/managed-name-translations';
 import { DatabaseService } from '../../database';
 import { type WebhookRecord } from '../domain/webhook.policy';
 
@@ -11,6 +12,7 @@ export interface WebhookCreatePersistenceInput {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
   events: string[];
@@ -23,6 +25,7 @@ export interface WebhookUpdatePersistenceInput {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
   events: string[];
@@ -36,6 +39,25 @@ export interface WebhookActiveStatePersistenceInput {
   disabledAt: Date | null;
   consecutiveFailures: number;
   userId: string | null;
+}
+
+function asRecord(
+  value: Prisma.JsonValue | Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData'> & { extraData: Prisma.JsonValue | Record<string, unknown> | null }>(
+  record: T,
+): WebhookRecord {
+  return {
+    ...record,
+    extraData: asRecord(record.extraData),
+  };
 }
 
 @Injectable()
@@ -89,6 +111,7 @@ export class WebhookWriteRepository {
             name_en as "nameEn",
             name_zh as "nameZh",
             name_ja as "nameJa",
+            extra_data as "extraData",
             url,
             secret,
             events,
@@ -114,9 +137,11 @@ export class WebhookWriteRepository {
       return rows[0] ?? null;
     }
 
-    return prisma.webhook.findUnique({
+    const record = await prisma.webhook.findUnique({
       where: { id },
     });
+
+    return record ? mapWebhookRecord(record) : null;
   }
 
   async create(
@@ -133,6 +158,7 @@ export class WebhookWriteRepository {
             name_en,
             name_zh,
             name_ja,
+            extra_data,
             url,
             secret,
             events,
@@ -150,17 +176,18 @@ export class WebhookWriteRepository {
             $2,
             $3,
             $4,
-            $5,
+            $5::jsonb,
             $6,
-            $7::varchar[],
-            $8::jsonb,
+            $7,
+            $8::varchar[],
             $9::jsonb,
+            $10::jsonb,
             true,
             0,
             NOW(),
             NOW(),
-            $10::uuid,
-            $10::uuid
+            $11::uuid,
+            $11::uuid
           )
           RETURNING id
         `,
@@ -168,6 +195,7 @@ export class WebhookWriteRepository {
         input.nameEn,
         input.nameZh,
         input.nameJa,
+        input.extraData ? JSON.stringify(input.extraData) : null,
         input.url,
         input.secret,
         input.events,
@@ -185,6 +213,7 @@ export class WebhookWriteRepository {
         nameEn: input.nameEn,
         nameZh: input.nameZh,
         nameJa: input.nameJa,
+        extraData: toNullableJsonInput(input.extraData),
         url: input.url,
         secret: input.secret,
         events: input.events,
@@ -214,12 +243,13 @@ export class WebhookWriteRepository {
             name_en = $2,
             name_zh = $3,
             name_ja = $4,
-            url = $5,
-            secret = $6,
-            events = $7::varchar[],
-            headers = $8::jsonb,
-            retry_policy = $9::jsonb,
-            updated_by = $10::uuid,
+            extra_data = $5::jsonb,
+            url = $6,
+            secret = $7,
+            events = $8::varchar[],
+            headers = $9::jsonb,
+            retry_policy = $10::jsonb,
+            updated_by = $11::uuid,
             version = version + 1,
             updated_at = NOW()
           WHERE id = $1::uuid
@@ -228,6 +258,7 @@ export class WebhookWriteRepository {
         input.nameEn,
         input.nameZh,
         input.nameJa,
+        input.extraData ? JSON.stringify(input.extraData) : null,
         input.url,
         input.secret,
         input.events,
@@ -245,6 +276,7 @@ export class WebhookWriteRepository {
         nameEn: input.nameEn,
         nameZh: input.nameZh,
         nameJa: input.nameJa,
+        extraData: toNullableJsonInput(input.extraData),
         url: input.url,
         secret: input.secret,
         events: input.events,

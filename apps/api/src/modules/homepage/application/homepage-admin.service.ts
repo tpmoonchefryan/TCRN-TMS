@@ -61,10 +61,13 @@ export class HomepageAdminService {
     ]);
 
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const tenantCode =
+      (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema)) ?? tenantSchema;
 
     return buildHomepageResponse({
       homepage,
       talent,
+      tenantCode,
       publishedVersion,
       draftVersion,
       appUrl,
@@ -216,11 +219,14 @@ export class HomepageAdminService {
     }
 
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const tenantCode =
+      (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema)) ?? tenantSchema;
 
     return buildHomepagePublishResult({
       publishedVersion,
       publishedAt,
-      homepagePath: homepage.homepagePath,
+      tenantCode,
+      talentCode: homepage.talentCode,
       appUrl,
       cdnPurgeStatus,
     });
@@ -267,31 +273,6 @@ export class HomepageAdminService {
     const tenantSchema = context.tenantSchema ?? '';
     const homepage = await this.homepageAdminRepository.findHomepageSettings(tenantSchema, talentId);
 
-    if (dto.homepagePath !== undefined) {
-      const normalizedPath = normalizeHomepagePathInput(dto.homepagePath);
-
-      if (normalizedPath) {
-        const existingTalentId = await this.homepageAdminRepository.findTalentIdByHomepagePath(
-          tenantSchema,
-          normalizedPath,
-          talentId,
-        );
-
-        if (existingTalentId) {
-          throw new ConflictException({
-            code: ErrorCodes.RES_ALREADY_EXISTS,
-            message: 'Homepage path already taken',
-          });
-        }
-      }
-
-      await this.homepageAdminRepository.updateTalentHomepagePath(
-        tenantSchema,
-        talentId,
-        normalizedPath ?? null,
-      );
-    }
-
     if (!homepage) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -304,6 +285,27 @@ export class HomepageAdminService {
         code: ErrorCodes.VERSION_CONFLICT,
         message: `Homepage was modified by another user (DB: ${homepage.version}, Sent: ${dto.version})`,
       });
+    }
+
+    let normalizedHomepagePath: string | null | undefined;
+
+    if (dto.homepagePath !== undefined) {
+      normalizedHomepagePath = normalizeHomepagePathInput(dto.homepagePath);
+
+      if (normalizedHomepagePath) {
+        const existingTalentId = await this.homepageAdminRepository.findTalentIdByHomepagePath(
+          tenantSchema,
+          normalizedHomepagePath,
+          talentId,
+        );
+
+        if (existingTalentId) {
+          throw new ConflictException({
+            code: ErrorCodes.RES_ALREADY_EXISTS,
+            message: 'Homepage path already taken',
+          });
+        }
+      }
     }
 
     const oldValue: Record<string, unknown> = {};
@@ -327,6 +329,14 @@ export class HomepageAdminService {
     }
     if (dto.homepagePath !== undefined) {
       newValue.homepagePath = dto.homepagePath;
+    }
+
+    if (dto.homepagePath !== undefined) {
+      await this.homepageAdminRepository.updateTalentHomepagePath(
+        tenantSchema,
+        talentId,
+        normalizedHomepagePath ?? null,
+      );
     }
 
     await this.homepageAdminRepository.updateHomepageSettings({

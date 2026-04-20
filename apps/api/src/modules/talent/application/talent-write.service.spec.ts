@@ -106,6 +106,7 @@ describe('TalentWriteService', () => {
   it('fails closed on optimistic-lock mismatch during update', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue({
       id: 'talent-123',
+      nameEn: 'Sora',
       version: 1,
       homepagePath: 'sora',
     } as never);
@@ -126,6 +127,7 @@ describe('TalentWriteService', () => {
   it('updates a talent after homepage-path uniqueness validation', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue({
       id: 'talent-123',
+      nameEn: 'Sora',
       version: 1,
       homepagePath: 'sora',
     } as never);

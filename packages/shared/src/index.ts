@@ -10,6 +10,8 @@ export {
     export * from './constants/config';
     export * from './constants/error-codes';
     export * from './constants/event-types';
+    export * from './constants/http';
+    export * from './constants/locale';
     export * from './constants/personal-info-fields';
     export * from './types/api';
     export * from './types/auth';
@@ -36,6 +38,7 @@ export * from './utils/i18n-helper';
 export * from './utils/string';
 
 // Feature schema - direct exports for non-conflicting modules
+export * from './homepage/public-routes';
 export * from './rbac/catalog';
 export * from './types/config';
 export * from './types/homepage/presets';

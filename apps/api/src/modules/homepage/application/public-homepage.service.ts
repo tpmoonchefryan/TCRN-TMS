@@ -78,6 +78,43 @@ export class PublicHomepageService {
     return data;
   }
 
+  async getPublishedHomepageByCodes(
+    tenantCode: string,
+    talentCode: string,
+  ): Promise<PublicHomepageData | null> {
+    const tenantSchema =
+      await this.publicHomepageReadRepository.findActiveTenantSchemaByCode(tenantCode);
+
+    if (!tenantSchema) {
+      return null;
+    }
+
+    const talent =
+      await this.publicHomepageReadRepository.findPublishedTalentByCode(tenantSchema, talentCode);
+
+    if (!talent) {
+      return null;
+    }
+
+    return this.getPublishedHomepageForTalent(tenantSchema, talent);
+  }
+
+  async getPublishedHomepageByCodesOrThrow(
+    tenantCode: string,
+    talentCode: string,
+  ): Promise<PublicHomepageData> {
+    const data = await this.getPublishedHomepageByCodes(tenantCode, talentCode);
+
+    if (!data) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Homepage not found or not published',
+      });
+    }
+
+    return data;
+  }
+
   async getPublishedHomepageByDomain(domain: string): Promise<PublicHomepageData | null> {
     const mapping = await this.domainLookupService.lookupDomain(domain);
 

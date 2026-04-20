@@ -20,11 +20,37 @@ export class ProfileStoreRepository {
   async findMany(
     schema: string,
     includeInactive: boolean,
+    search: string | undefined,
     pageSize: number,
     offset: number,
   ): Promise<ProfileStoreListRow[]> {
     const prisma = this.databaseService.getPrisma();
-    const whereClause = includeInactive ? '1=1' : 'ps.is_active = true';
+    const whereClauses: string[] = [];
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    if (!includeInactive) {
+      whereClauses.push('ps.is_active = true');
+    }
+
+    if (search) {
+      whereClauses.push(
+        `(
+          ps.code ILIKE $${paramIndex}
+          OR ps.name_en ILIKE $${paramIndex}
+          OR COALESCE(ps.name_zh, '') ILIKE $${paramIndex}
+          OR COALESCE(ps.name_ja, '') ILIKE $${paramIndex}
+          OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
+        )`,
+      );
+      params.push(`%${search}%`);
+      paramIndex += 1;
+    }
+
+    const whereClause = whereClauses.length > 0 ? whereClauses.join(' AND ') : '1=1';
+    const limitParamIndex = paramIndex;
+    const offsetParamIndex = paramIndex + 1;
+    params.push(pageSize, offset);
 
     return prisma.$queryRawUnsafe<ProfileStoreListRow[]>(
       `
@@ -34,6 +60,7 @@ export class ProfileStoreRepository {
           ps.name_en as "nameEn",
           ps.name_zh as "nameZh",
           ps.name_ja as "nameJa",
+          ps.extra_data as "extraData",
           ps.is_default as "isDefault",
           ps.is_active as "isActive",
           ps.created_at as "createdAt",
@@ -41,22 +68,47 @@ export class ProfileStoreRepository {
         FROM "${schema}".profile_store ps
         WHERE ${whereClause}
         ORDER BY ps.is_default DESC, ps.created_at DESC
-        LIMIT $1 OFFSET $2
+        LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
       `,
-      pageSize,
-      offset,
+      ...params,
     );
   }
 
-  async countMany(schema: string, includeInactive: boolean): Promise<number> {
+  async countMany(
+    schema: string,
+    includeInactive: boolean,
+    search?: string,
+  ): Promise<number> {
     const prisma = this.databaseService.getPrisma();
-    const whereClause = includeInactive ? '1=1' : 'ps.is_active = true';
+    const whereClauses: string[] = [];
+    const params: unknown[] = [];
+    const paramIndex = 1;
+
+    if (!includeInactive) {
+      whereClauses.push('ps.is_active = true');
+    }
+
+    if (search) {
+      whereClauses.push(
+        `(
+          ps.code ILIKE $${paramIndex}
+          OR ps.name_en ILIKE $${paramIndex}
+          OR COALESCE(ps.name_zh, '') ILIKE $${paramIndex}
+          OR COALESCE(ps.name_ja, '') ILIKE $${paramIndex}
+          OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
+        )`,
+      );
+      params.push(`%${search}%`);
+    }
+
+    const whereClause = whereClauses.length > 0 ? whereClauses.join(' AND ') : '1=1';
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `
         SELECT COUNT(*) as count
         FROM "${schema}".profile_store ps
         WHERE ${whereClause}
       `,
+      ...params,
     );
 
     return Number(result[0]?.count ?? 0);
@@ -109,6 +161,7 @@ export class ProfileStoreRepository {
           ps.description_en as "descriptionEn",
           ps.description_zh as "descriptionZh",
           ps.description_ja as "descriptionJa",
+          ps.extra_data as "extraData",
           ps.is_default as "isDefault",
           ps.is_active as "isActive",
           ps.created_at as "createdAt",
@@ -166,6 +219,7 @@ export class ProfileStoreRepository {
           description_en,
           description_zh,
           description_ja,
+          extra_data,
           is_default,
           is_active,
           sort_order,
@@ -183,13 +237,14 @@ export class ProfileStoreRepository {
           $5,
           $6,
           $7,
-          $8,
+          $8::jsonb,
+          $9,
           true,
           0,
           now(),
           now(),
-          $9::uuid,
-          $9::uuid,
+          $10::uuid,
+          $10::uuid,
           1
         )
         RETURNING
@@ -206,6 +261,7 @@ export class ProfileStoreRepository {
       payload.descriptionEn,
       payload.descriptionZh,
       payload.descriptionJa,
+      payload.extraData ? JSON.stringify(payload.extraData) : null,
       payload.isDefault,
       userId,
     );
@@ -224,6 +280,12 @@ export class ProfileStoreRepository {
           id,
           code,
           name_en as "nameEn",
+          name_zh as "nameZh",
+          name_ja as "nameJa",
+          description_en as "descriptionEn",
+          description_zh as "descriptionZh",
+          description_ja as "descriptionJa",
+          extra_data as "extraData",
           is_active as "isActive",
           is_default as "isDefault",
           version
@@ -252,8 +314,11 @@ export class ProfileStoreRepository {
     let paramIndex = 3;
 
     for (const change of changes) {
-      updates.push(`${this.toSnakeCase(change.field)} = $${paramIndex}`);
-      params.push(change.value);
+      const cast = change.field === 'extraData' ? '::jsonb' : '';
+      updates.push(`${this.toSnakeCase(change.field)} = $${paramIndex}${cast}`);
+      params.push(change.field === 'extraData' && change.value && typeof change.value === 'object'
+        ? JSON.stringify(change.value)
+        : change.value);
       paramIndex++;
     }
 
@@ -266,6 +331,12 @@ export class ProfileStoreRepository {
           id,
           code,
           name_en as "nameEn",
+          name_zh as "nameZh",
+          name_ja as "nameJa",
+          description_en as "descriptionEn",
+          description_zh as "descriptionZh",
+          description_ja as "descriptionJa",
+          extra_data as "extraData",
           is_active as "isActive",
           is_default as "isDefault",
           version,

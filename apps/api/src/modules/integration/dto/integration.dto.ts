@@ -135,6 +135,10 @@ export class CreateAdapterDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @IsEnum(AdapterType)
   adapterType!: AdapterType;
 
@@ -164,6 +168,10 @@ export class UpdateAdapterDto {
   @IsString()
   @MaxLength(128)
   nameJa?: string;
+
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @IsOptional()
   @IsBoolean()
@@ -222,6 +230,10 @@ export class CreateWebhookDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @IsUrl()
   @MaxLength(512)
   url!: string;
@@ -260,6 +272,10 @@ export class UpdateWebhookDto {
   @IsString()
   @MaxLength(128)
   nameJa?: string;
+
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @IsOptional()
   @IsUrl()

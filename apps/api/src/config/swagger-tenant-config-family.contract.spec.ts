@@ -169,6 +169,7 @@ describe('Swagger tenant-root config family contract', () => {
     expect(getDocumentedDtoProperties(SaveEmailConfigDto)).toEqual([
       'provider',
       'smtp',
+      'tenantSenderOverrides',
       'tencentSes',
     ]);
     expect(getDocumentedDtoProperties(TestEmailDto)).toEqual(['testEmail']);

@@ -13,6 +13,48 @@ async function getTableCount(schemaName: string, tableName: string): Promise<num
   return Number(result[0]?.count ?? 0n);
 }
 
+async function getColumnMaxLength(
+  schemaName: string,
+  tableName: string,
+  columnName: string,
+): Promise<number | null> {
+  const result = await prisma.$queryRawUnsafe<Array<{ length: number | null }>>(
+    `
+      SELECT character_maximum_length AS length
+      FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND column_name = $3
+    `,
+    schemaName,
+    tableName,
+    columnName,
+  );
+
+  return result[0]?.length ?? null;
+}
+
+async function getColumnDataType(
+  schemaName: string,
+  tableName: string,
+  columnName: string,
+): Promise<string | null> {
+  const result = await prisma.$queryRawUnsafe<Array<{ dataType: string | null }>>(
+    `
+      SELECT data_type AS "dataType"
+      FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND column_name = $3
+    `,
+    schemaName,
+    tableName,
+    columnName,
+  );
+
+  return result[0]?.dataType ?? null;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -164,5 +206,83 @@ describe('createTenantSchema integration', () => {
         definition: normalizeSchemaDefinition(constraint.definition, 'tenant_template'),
       }))
     );
+  });
+
+  it('keeps preferred_language wide enough for expanded locale codes in template and cloned tenants', async (t) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      t.skip('Database not available');
+      return;
+    }
+
+    const schemaName = await createTenantSchema(randomUUID());
+
+    t.after(async () => {
+      await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    });
+
+    const [templateLength, schemaLength] = await Promise.all([
+      getColumnMaxLength('tenant_template', 'system_user', 'preferred_language'),
+      getColumnMaxLength(schemaName, 'system_user', 'preferred_language'),
+    ]);
+
+    assert.equal(templateLength, 16);
+    assert.equal(schemaLength, 16);
+  });
+
+  it('keeps organization, config, integration, and profile-store extra_data JSONB columns in template and cloned tenants', async (t) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      t.skip('Database not available');
+      return;
+    }
+
+    const schemaName = await createTenantSchema(randomUUID());
+
+    t.after(async () => {
+      await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    });
+
+    const configTables = [
+      'subsidiary',
+      'talent',
+      'channel_category',
+      'business_segment',
+      'communication_type',
+      'address_type',
+      'customer_status',
+      'reason_category',
+      'inactivation_reason',
+      'membership_class',
+      'consent',
+      'consumer',
+      'integration_adapter',
+      'profile_store',
+      'webhook',
+    ] as const;
+
+    for (const tableName of configTables) {
+      const [templateType, schemaType] = await Promise.all([
+        getColumnDataType('tenant_template', tableName, 'extra_data'),
+        getColumnDataType(schemaName, tableName, 'extra_data'),
+      ]);
+
+      assert.equal(templateType, 'jsonb', `${tableName} template extra_data should be jsonb`);
+      assert.equal(schemaType, 'jsonb', `${tableName} cloned tenant extra_data should be jsonb`);
+    }
+  });
+
+  it('keeps email_template extra_data JSONB column in public schema', async (t) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      t.skip('Database not available');
+      return;
+    }
+
+    const columnType = await getColumnDataType('public', 'email_template', 'extra_data');
+    assert.equal(columnType, 'jsonb');
   });
 });

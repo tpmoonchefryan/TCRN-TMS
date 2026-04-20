@@ -10,6 +10,8 @@ export const PiiAuthTypeSchema = z.enum(['mtls', 'api_key']);
 
 export type PiiServiceAuthType = z.infer<typeof PiiAuthTypeSchema>;
 
+const TranslationMapSchema = z.record(z.string(), z.string());
+
 // ============================================================================
 // PII Service Config Schemas
 // ============================================================================
@@ -61,9 +63,11 @@ export const CreateProfileStoreSchema = z.object({
   nameEn: z.string().max(255),
   nameZh: z.string().max(255).optional(),
   nameJa: z.string().max(255).optional(),
+  translations: TranslationMapSchema.optional(),
   descriptionEn: z.string().optional(),
   descriptionZh: z.string().optional(),
   descriptionJa: z.string().optional(),
+  descriptionTranslations: TranslationMapSchema.optional(),
   isDefault: z.boolean().optional(),
 });
 
@@ -71,9 +75,11 @@ export const UpdateProfileStoreSchema = z.object({
   nameEn: z.string().max(255).optional(),
   nameZh: z.string().max(255).optional(),
   nameJa: z.string().max(255).optional(),
+  translations: TranslationMapSchema.optional(),
   descriptionEn: z.string().optional(),
   descriptionZh: z.string().optional(),
   descriptionJa: z.string().optional(),
+  descriptionTranslations: TranslationMapSchema.optional(),
   isDefault: z.boolean().optional(),
   isActive: z.boolean().optional(),
   version: z.number().int(),

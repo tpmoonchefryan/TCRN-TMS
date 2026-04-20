@@ -85,10 +85,14 @@ describe('TalentCustomDomainService', () => {
     });
   });
 
-  it('updates normalized custom-domain paths', async () => {
-    vi.mocked(mockRepository.updateServicePaths).mockResolvedValue({
-      homepageCustomPath: 'homepage',
-      marshmallowCustomPath: 'marshmallow',
+  it('returns fixed custom-domain paths and does not mutate legacy path storage', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      customDomain: 'talent.example.com',
+      customDomainVerified: false,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'auto',
+      homepageCustomPath: 'legacy-home',
+      marshmallowCustomPath: 'legacy-ask',
     });
 
     await expect(
@@ -100,6 +104,7 @@ describe('TalentCustomDomainService', () => {
       homepageCustomPath: 'homepage',
       marshmallowCustomPath: 'marshmallow',
     });
+    expect(mockRepository.updateServicePaths).not.toHaveBeenCalled();
   });
 
   it('fails closed when updating SSL mode for a missing talent', async () => {

@@ -7,6 +7,7 @@ import {
     IsEmail,
     IsIn,
     IsNumber,
+    IsObject,
     IsOptional,
     IsString,
     Max,
@@ -80,6 +81,23 @@ export class SmtpConfigDto {
   fromName!: string;
 }
 
+export class TenantEmailSenderOverrideDto {
+  @ApiPropertyOptional({ description: 'Tenant-specific sender email address', example: 'tenant-a@example.com' })
+  @IsEmail()
+  @IsOptional()
+  fromAddress?: string;
+
+  @ApiPropertyOptional({ description: 'Tenant-specific sender display name', example: 'Tenant A Support' })
+  @IsString()
+  @IsOptional()
+  fromName?: string;
+
+  @ApiPropertyOptional({ description: 'Tenant-specific reply-to address', example: 'tenant-a-support@example.com' })
+  @IsEmail()
+  @IsOptional()
+  replyTo?: string;
+}
+
 /**
  * Email provider type
  */
@@ -104,6 +122,28 @@ export class SaveEmailConfigDto {
   @ValidateNested()
   @Type(() => SmtpConfigDto)
   smtp?: SmtpConfigDto;
+
+  @ApiPropertyOptional({
+    description: 'Tenant-schema keyed sender identity overrides managed by AC administrators',
+    additionalProperties: {
+      type: 'object',
+      properties: {
+        fromAddress: { type: 'string', example: 'tenant-a@example.com' },
+        fromName: { type: 'string', example: 'Tenant A Support' },
+        replyTo: { type: 'string', example: 'tenant-a-support@example.com' },
+      },
+    },
+    example: {
+      tenant_acme: {
+        fromAddress: 'noreply@acme.example.com',
+        fromName: 'Acme Support',
+        replyTo: 'support@acme.example.com',
+      },
+    },
+  })
+  @IsObject()
+  @IsOptional()
+  tenantSenderOverrides?: Record<string, TenantEmailSenderOverrideDto>;
 }
 
 /**
@@ -139,6 +179,11 @@ export interface EmailConfigResponse {
   };
   isConfigured: boolean;
   lastUpdated?: string;
+  tenantSenderOverrides?: Record<string, {
+    fromAddress?: string;
+    fromName?: string;
+    replyTo?: string;
+  }>;
 }
 
 /**
@@ -163,6 +208,11 @@ export interface DecryptedEmailConfig {
     fromAddress: string;
     fromName: string;
   };
+  tenantSenderOverrides?: Record<string, {
+    fromAddress?: string;
+    fromName?: string;
+    replyTo?: string;
+  }>;
 }
 
 /**

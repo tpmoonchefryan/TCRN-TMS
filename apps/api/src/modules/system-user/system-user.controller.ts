@@ -14,7 +14,7 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
@@ -91,10 +91,10 @@ export class CreateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: ['en', 'zh', 'ja'] })
+  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: SUPPORTED_UI_LOCALES })
   @IsOptional()
-  @IsEnum(['en', 'zh', 'ja'])
-  preferredLanguage?: 'en' | 'zh' | 'ja';
+  @IsEnum(SUPPORTED_UI_LOCALES)
+  preferredLanguage?: SupportedUiLocale;
 
   @ApiPropertyOptional({ description: 'Force password reset on first login', example: true, default: false })
   @IsOptional()
@@ -113,10 +113,10 @@ export class UpdateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: ['en', 'zh', 'ja'] })
+  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: SUPPORTED_UI_LOCALES })
   @IsOptional()
-  @IsEnum(['en', 'zh', 'ja'])
-  preferredLanguage?: 'en' | 'zh' | 'ja';
+  @IsEnum(SUPPORTED_UI_LOCALES)
+  preferredLanguage?: SupportedUiLocale;
 
   @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://example.com/avatars/user.jpg' })
   @IsOptional()
@@ -210,8 +210,47 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
     phone: { type: 'string', nullable: true, example: '+81-90-1234-5678' },
     preferredLanguage: { type: 'string', example: 'ja' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
+    roleAssignments: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' },
+          roleId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440020' },
+          roleCode: { type: 'string', example: 'EDITOR' },
+          roleNameEn: { type: 'string', example: 'Editor' },
+          roleNameZh: { type: 'string', nullable: true, example: '编辑' },
+          roleNameJa: { type: 'string', nullable: true, example: '編集者' },
+          roleIsActive: { type: 'boolean', example: true },
+          scopeType: { type: 'string', example: 'talent' },
+          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440030' },
+          scopeName: { type: 'string', nullable: true, example: 'Tokino Sora' },
+          scopePath: { type: 'string', nullable: true, example: '/TOKYO/SORA' },
+          inherit: { type: 'boolean', example: false },
+          grantedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:10:00.000Z' },
+          expiresAt: { type: 'string', format: 'date-time', nullable: true, example: null },
+        },
+        required: ['id', 'roleId', 'roleCode', 'roleNameEn', 'roleIsActive', 'scopeType', 'inherit', 'grantedAt'],
+      },
+    },
+    scopeAccess: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440111' },
+          scopeType: { type: 'string', example: 'subsidiary' },
+          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440040' },
+          scopeName: { type: 'string', nullable: true, example: 'Tokyo Branch' },
+          scopePath: { type: 'string', nullable: true, example: '/TOKYO' },
+          includeSubunits: { type: 'boolean', example: true },
+          grantedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:15:00.000Z' },
+        },
+        required: ['id', 'scopeType', 'includeSubunits', 'grantedAt'],
+      },
+    },
   },
-  required: [...(SYSTEM_USER_ITEM_SCHEMA.required as string[]), 'preferredLanguage', 'updatedAt'],
+  required: [...(SYSTEM_USER_ITEM_SCHEMA.required as string[]), 'preferredLanguage', 'updatedAt', 'roleAssignments', 'scopeAccess'],
 };
 
 const SYSTEM_USER_SCOPE_ACCESS_SCHEMA = {
@@ -293,6 +332,35 @@ const SYSTEM_USER_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_USE
   lastLoginAt: '2026-04-13T09:00:00.000Z',
   createdAt: '2026-04-13T08:00:00.000Z',
   updatedAt: '2026-04-13T09:30:00.000Z',
+  roleAssignments: [
+    {
+      id: '550e8400-e29b-41d4-a716-446655440010',
+      roleId: '550e8400-e29b-41d4-a716-446655440020',
+      roleCode: 'EDITOR',
+      roleNameEn: 'Editor',
+      roleNameZh: '编辑',
+      roleNameJa: '編集者',
+      roleIsActive: true,
+      scopeType: 'talent',
+      scopeId: '550e8400-e29b-41d4-a716-446655440030',
+      scopeName: 'Tokino Sora',
+      scopePath: '/TOKYO/SORA',
+      inherit: false,
+      grantedAt: '2026-04-13T09:10:00.000Z',
+      expiresAt: null,
+    },
+  ],
+  scopeAccess: [
+    {
+      id: '550e8400-e29b-41d4-a716-446655440111',
+      scopeType: 'subsidiary',
+      scopeId: '550e8400-e29b-41d4-a716-446655440040',
+      scopeName: 'Tokyo Branch',
+      scopePath: '/TOKYO',
+      includeSubunits: true,
+      grantedAt: '2026-04-13T09:15:00.000Z',
+    },
+  ],
 });
 
 const SYSTEM_USER_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -572,6 +640,31 @@ export class SystemUserController {
       lastLoginAt: systemUser.lastLoginAt?.toISOString() || null,
       createdAt: systemUser.createdAt.toISOString(),
       updatedAt: systemUser.updatedAt.toISOString(),
+      roleAssignments: systemUser.roleAssignments.map((assignment) => ({
+        id: assignment.id,
+        roleId: assignment.roleId,
+        roleCode: assignment.roleCode,
+        roleNameEn: assignment.roleNameEn,
+        roleNameZh: assignment.roleNameZh,
+        roleNameJa: assignment.roleNameJa,
+        roleIsActive: assignment.roleIsActive,
+        scopeType: assignment.scopeType,
+        scopeId: assignment.scopeId,
+        scopeName: assignment.scopeName,
+        scopePath: assignment.scopePath,
+        inherit: assignment.inherit,
+        grantedAt: assignment.grantedAt.toISOString(),
+        expiresAt: assignment.expiresAt?.toISOString() || null,
+      })),
+      scopeAccess: systemUser.scopeAccess.map((access) => ({
+        id: access.id,
+        scopeType: access.scopeType,
+        scopeId: access.scopeId,
+        scopeName: access.scopeName,
+        scopePath: access.scopePath,
+        includeSubunits: access.includeSubunits,
+        grantedAt: access.grantedAt.toISOString(),
+      })),
     });
   }
 

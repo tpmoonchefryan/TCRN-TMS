@@ -3,6 +3,8 @@
 
 import { z } from 'zod';
 
+const TranslationMapSchema = z.record(z.string(), z.string().max(128));
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -42,6 +44,7 @@ export const CreateAdapterSchema = z.object({
   nameEn: z.string().max(128),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   adapterType: AdapterTypeSchema,
   inherit: z.boolean().optional().default(true),
   configs: z.array(AdapterConfigItemSchema).optional(),
@@ -51,6 +54,7 @@ export const UpdateAdapterSchema = z.object({
   nameEn: z.string().max(128).optional(),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   inherit: z.boolean().optional(),
   version: z.number().int(),
 });
@@ -77,6 +81,7 @@ export const CreateWebhookSchema = z.object({
   nameEn: z.string().max(128),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   url: z.string().url().max(512),
   secret: z.string().max(128).optional(),
   events: z.array(WebhookEventTypeSchema).min(1),
@@ -88,6 +93,7 @@ export const UpdateWebhookSchema = z.object({
   nameEn: z.string().max(128).optional(),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   url: z.string().url().max(512).optional(),
   secret: z.string().max(128).optional(),
   events: z.array(WebhookEventTypeSchema).optional(),

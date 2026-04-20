@@ -91,6 +91,10 @@ describe('BlocklistWriteService', () => {
     nameEn: 'Profanity Filter',
     nameZh: null,
     nameJa: null,
+    extraData: null,
+    translations: {
+      en: 'Profanity Filter',
+    },
     description: null,
     category: 'profanity',
     severity: 'medium',
@@ -158,7 +162,10 @@ describe('BlocklistWriteService', () => {
   it('fails closed on optimistic-lock mismatch during update', async () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
+      extraData: null,
       nameEn: 'Profanity Filter',
+      nameJa: null,
+      nameZh: null,
       version: 1,
     });
 
@@ -177,7 +184,10 @@ describe('BlocklistWriteService', () => {
   it('updates an entry, rebuilds the matcher, and returns the read-model detail', async () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
+      extraData: null,
       nameEn: 'Profanity Filter',
+      nameJa: null,
+      nameZh: null,
       version: 1,
     });
     vi.mocked(mockReadService.findById).mockResolvedValue(detailResponse);
@@ -216,7 +226,10 @@ describe('BlocklistWriteService', () => {
   it('deletes an entry and rebuilds the matcher', async () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
+      extraData: null,
       nameEn: 'Profanity Filter',
+      nameJa: null,
+      nameZh: null,
       version: 1,
     });
 

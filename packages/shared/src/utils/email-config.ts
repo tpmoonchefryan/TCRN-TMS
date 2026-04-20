@@ -27,10 +27,17 @@ export type StoredSmtpConfig = {
   fromName?: string;
 };
 
+export type StoredTenantEmailSenderOverride = {
+  fromAddress?: string;
+  fromName?: string;
+  replyTo?: string;
+};
+
 export type StoredEmailConfig = {
   provider: EmailProvider;
   tencentSes?: StoredTencentSesConfig;
   smtp?: StoredSmtpConfig;
+  tenantSenderOverrides?: Record<string, StoredTenantEmailSenderOverride>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -84,6 +91,35 @@ function normalizeSmtpConfig(value: unknown): StoredSmtpConfig | undefined {
   };
 }
 
+function normalizeTenantSenderOverride(value: unknown): StoredTenantEmailSenderOverride | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const override: StoredTenantEmailSenderOverride = {
+    fromAddress: getString(value.fromAddress),
+    fromName: getString(value.fromName),
+    replyTo: getString(value.replyTo),
+  };
+
+  return override.fromAddress || override.fromName || override.replyTo ? override : undefined;
+}
+
+function normalizeTenantSenderOverrides(value: unknown): Record<string, StoredTenantEmailSenderOverride> | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const entries = Object.entries(value)
+    .map(([schemaName, override]) => [schemaName, normalizeTenantSenderOverride(override)] as const)
+    .filter((entry): entry is readonly [string, StoredTenantEmailSenderOverride] => {
+      const [schemaName, override] = entry;
+      return schemaName.trim().length > 0 && !!override;
+    });
+
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
 export function normalizeStoredEmailConfig(value: unknown): StoredEmailConfig {
   if (!isRecord(value)) {
     return { provider: DEFAULT_EMAIL_PROVIDER };
@@ -93,5 +129,6 @@ export function normalizeStoredEmailConfig(value: unknown): StoredEmailConfig {
     provider: isEmailProvider(value.provider) ? value.provider : DEFAULT_EMAIL_PROVIDER,
     tencentSes: normalizeTencentSesConfig(value.tencentSes),
     smtp: normalizeSmtpConfig(value.smtp),
+    tenantSenderOverrides: normalizeTenantSenderOverrides(value.tenantSenderOverrides),
   };
 }

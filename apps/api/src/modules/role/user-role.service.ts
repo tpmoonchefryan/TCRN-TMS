@@ -2,10 +2,15 @@
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  isRbacRoleAvailableForScopeType,
+  isRbacRoleAvailableForTenantTier,
+} from '@tcrn/shared';
 
 import { DelegatedAdminService, DelegateScopeType } from '../delegated-admin/delegated-admin.service';
 import { PermissionSnapshotService, ScopeType } from '../permission/permission-snapshot.service';
+import { TenantService } from '../tenant/tenant.service';
 
 export interface UserRoleAssignment {
   id: string;
@@ -34,6 +39,7 @@ export class UserRoleService {
   constructor(
     private readonly snapshotService: PermissionSnapshotService,
     private readonly delegatedAdminService: DelegatedAdminService,
+    private readonly tenantService: TenantService,
   ) {}
 
   /**
@@ -189,6 +195,22 @@ export class UserRoleService {
 
     const roleId = roles[0].id;
     const roleCode = roles[0].code;
+    const tenant = await this.tenantService.getTenantBySchemaName(tenantSchema);
+    const tenantTier = tenant?.tier === 'ac' ? 'ac' : 'standard';
+
+    if (!isRbacRoleAvailableForTenantTier(roleCode, tenantTier)) {
+      throw new ForbiddenException({
+        code: ErrorCodes.PERM_ACCESS_DENIED,
+        message: `Role ${roleCode} is not available in the current tenant workspace`,
+      });
+    }
+
+    if (!isRbacRoleAvailableForScopeType(roleCode, data.scopeType)) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FIELD_INVALID,
+        message: `Role ${roleCode} cannot be assigned at ${data.scopeType} scope`,
+      });
+    }
 
     // Validate permission to assign role at this scope
     const canAssign = await this.canAssignRoleAtScope(

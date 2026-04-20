@@ -3,6 +3,7 @@
 import { Prisma } from '@tcrn/database';
 
 import { WebhookEventType } from '../dto/integration.dto';
+import { buildNameTranslations } from './name-translation.policy';
 
 export const DEFAULT_WEBHOOK_RETRY_POLICY = {
   maxRetries: 3,
@@ -20,6 +21,7 @@ export interface WebhookRecord {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
   events: string[];
@@ -43,6 +45,7 @@ export interface WebhookListItem {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  translations: Record<string, string>;
   url: string;
   events: WebhookEventType[];
   isActive: boolean;
@@ -128,6 +131,7 @@ export function mapWebhookListItem(webhook: WebhookRecord): WebhookListItem {
     nameEn: webhook.nameEn,
     nameZh: webhook.nameZh,
     nameJa: webhook.nameJa,
+    translations: buildNameTranslations(webhook),
     url: webhook.url,
     events: webhook.events as WebhookEventType[],
     isActive: webhook.isActive,

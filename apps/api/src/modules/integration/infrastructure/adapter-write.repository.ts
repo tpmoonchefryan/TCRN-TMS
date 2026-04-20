@@ -20,6 +20,7 @@ export interface AdapterCreatePersistenceInput {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
   userId: string | null;
@@ -29,6 +30,7 @@ export interface AdapterUpdatePersistenceInput {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   inherit: boolean;
   userId: string | null;
 }
@@ -140,6 +142,7 @@ export class AdapterWriteRepository {
           name_en,
           name_zh,
           name_ja,
+          extra_data,
           adapter_type,
           inherit,
           is_active,
@@ -156,7 +159,7 @@ export class AdapterWriteRepository {
           $5,
           $6,
           $7,
-          $8,
+          $8::jsonb,
           $9,
           true,
           NOW(),
@@ -173,6 +176,7 @@ export class AdapterWriteRepository {
       input.nameEn,
       input.nameZh,
       input.nameJa,
+      input.extraData ? JSON.stringify(input.extraData) : null,
       input.adapterType,
       input.inherit,
       input.userId,
@@ -237,6 +241,7 @@ export class AdapterWriteRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           adapter_type as "adapterType",
           inherit,
           is_active as "isActive",
@@ -266,8 +271,9 @@ export class AdapterWriteRepository {
           name_en = $2,
           name_zh = $3,
           name_ja = $4,
-          inherit = $5,
-          updated_by = $6::uuid,
+          extra_data = $5::jsonb,
+          inherit = $6,
+          updated_by = $7::uuid,
           version = version + 1,
           updated_at = NOW()
         WHERE id = $1::uuid
@@ -276,6 +282,7 @@ export class AdapterWriteRepository {
       input.nameEn,
       input.nameZh,
       input.nameJa,
+      input.extraData ? JSON.stringify(input.extraData) : null,
       input.inherit,
       input.userId,
     );

@@ -1172,7 +1172,7 @@ export class UserController {
 
     // Get current password hash
     const users = await prisma.$queryRawUnsafe<Array<{ password_hash: string }>>(`
-      SELECT password_hash FROM "${user.tenantSchema}".system_user WHERE id = $1
+      SELECT password_hash FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
     `, user.id);
 
     if (users.length === 0) {
@@ -1211,7 +1211,7 @@ export class UserController {
         password_changed_at = now(),
         force_reset = false,
         updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id, newHash);
 
     // Log security event
@@ -1262,7 +1262,7 @@ export class UserController {
   async setupTotp(@CurrentUser() user: AuthenticatedUser) {
     // Check if TOTP is already enabled
     const users = await prisma.$queryRawUnsafe<Array<{ is_totp_enabled: boolean }>>(`
-      SELECT is_totp_enabled FROM "${user.tenantSchema}".system_user WHERE id = $1
+      SELECT is_totp_enabled FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
     `, user.id);
 
     if (users.length > 0 && users[0].is_totp_enabled) {
@@ -1279,7 +1279,7 @@ export class UserController {
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".system_user
       SET totp_secret = $2, updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id, setupInfo.secret);
 
     return success({
@@ -1309,7 +1309,7 @@ export class UserController {
     }>>(`
       SELECT totp_secret, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     if (users.length === 0 || !users[0].totp_secret) {
@@ -1342,7 +1342,7 @@ export class UserController {
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".system_user
       SET is_totp_enabled = true, totp_enabled_at = now(), updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     // Store recovery codes
@@ -1351,7 +1351,7 @@ export class UserController {
       await prisma.$executeRawUnsafe(`
         INSERT INTO "${user.tenantSchema}".recovery_code 
           (id, user_id, code_hash, is_used, created_at)
-        VALUES (gen_random_uuid(), $1, $2, false, now())
+        VALUES (gen_random_uuid(), $1::uuid, $2, false, now())
       `, user.id, hash);
     }
 
@@ -1393,7 +1393,7 @@ export class UserController {
     }>>(`
       SELECT password_hash, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     if (users.length === 0) {
@@ -1427,12 +1427,12 @@ export class UserController {
         totp_secret = NULL, 
         totp_enabled_at = NULL,
         updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     // Delete recovery codes
     await prisma.$executeRawUnsafe(`
-      DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1
+      DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1::uuid
     `, user.id);
 
     // Log security event
@@ -1471,7 +1471,7 @@ export class UserController {
     }>>(`
       SELECT password_hash, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     if (users.length === 0) {
@@ -1498,7 +1498,7 @@ export class UserController {
 
     // Delete old recovery codes
     await prisma.$executeRawUnsafe(`
-      DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1
+      DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1::uuid
     `, user.id);
 
     // Generate new recovery codes
@@ -1510,7 +1510,7 @@ export class UserController {
       await prisma.$executeRawUnsafe(`
         INSERT INTO "${user.tenantSchema}".recovery_code 
           (id, user_id, code_hash, is_used, created_at)
-        VALUES (gen_random_uuid(), $1, $2, false, now())
+        VALUES (gen_random_uuid(), $1::uuid, $2, false, now())
       `, user.id, hash);
     }
 
@@ -1654,7 +1654,7 @@ export class UserController {
 
     // Get current avatar URL to delete old one later
     const currentUsers = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(`
-      SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1
+      SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
     `, user.id);
     const oldAvatarUrl = currentUsers[0]?.avatar_url;
 
@@ -1677,7 +1677,7 @@ export class UserController {
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".system_user
       SET avatar_url = $2, updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id, avatarUrl);
 
     // Delete old avatar if it was stored in MinIO
@@ -1709,7 +1709,7 @@ export class UserController {
   async deleteAvatar(@CurrentUser() user: AuthenticatedUser) {
     // Get current avatar URL
     const users = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(`
-      SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1
+      SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
     `, user.id);
 
     if (users.length === 0) {
@@ -1738,7 +1738,7 @@ export class UserController {
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".system_user
       SET avatar_url = NULL, updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id);
 
     return success({
@@ -1772,7 +1772,7 @@ export class UserController {
     // Check if email is already in use
     const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
       SELECT id FROM "${user.tenantSchema}".system_user 
-      WHERE email = $1 AND id != $2
+      WHERE email = $1 AND id != $2::uuid
     `, newEmail, user.id);
 
     if (existingUser.length > 0) {
@@ -1789,19 +1789,19 @@ export class UserController {
     // Invalidate any existing requests for this user
     await prisma.$executeRawUnsafe(`
       DELETE FROM "${user.tenantSchema}".email_change_request 
-      WHERE user_id = $1 AND confirmed_at IS NULL
+      WHERE user_id = $1::uuid AND confirmed_at IS NULL
     `, user.id);
 
     // Create new request
     await prisma.$executeRawUnsafe(`
       INSERT INTO "${user.tenantSchema}".email_change_request 
         (id, user_id, new_email, token, expires_at, created_at)
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, now())
+      VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4, now())
     `, user.id, newEmail, token, expiresAt);
 
     // Get user display name and preferred language
     const users = await prisma.$queryRawUnsafe<Array<{ display_name: string | null; username: string; preferred_language: string | null }>>(`
-      SELECT display_name, username, preferred_language FROM "${user.tenantSchema}".system_user WHERE id = $1
+      SELECT display_name, username, preferred_language FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
     `, user.id);
     const userName = users[0]?.display_name || users[0]?.username || 'User';
     const preferredLanguage = users[0]?.preferred_language || 'en';
@@ -1879,7 +1879,7 @@ export class UserController {
     }>>(`
       SELECT id, new_email, expires_at, confirmed_at 
       FROM "${user.tenantSchema}".email_change_request 
-      WHERE token = $1 AND user_id = $2
+      WHERE token = $1 AND user_id = $2::uuid
     `, token, user.id);
 
     if (requests.length === 0) {
@@ -1910,7 +1910,7 @@ export class UserController {
     // Check if email is still available
     const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
       SELECT id FROM "${user.tenantSchema}".system_user 
-      WHERE email = $1 AND id != $2
+      WHERE email = $1 AND id != $2::uuid
     `, request.new_email, user.id);
 
     if (existingUser.length > 0) {
@@ -1924,14 +1924,14 @@ export class UserController {
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".system_user
       SET email = $2, updated_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, user.id, request.new_email);
 
     // Mark request as confirmed
     await prisma.$executeRawUnsafe(`
       UPDATE "${user.tenantSchema}".email_change_request
       SET confirmed_at = now()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, request.id);
 
     // Log security event

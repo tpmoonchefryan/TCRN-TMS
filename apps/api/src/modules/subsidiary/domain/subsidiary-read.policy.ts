@@ -9,6 +9,7 @@ export interface SubsidiaryData {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   descriptionEn: string | null;
   descriptionZh: string | null;
   descriptionJa: string | null;

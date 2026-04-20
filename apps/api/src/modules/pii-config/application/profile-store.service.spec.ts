@@ -68,6 +68,11 @@ describe('ProfileStoreApplicationService', () => {
         nameEn: 'Default Profile Store',
         nameZh: null,
         nameJa: null,
+        extraData: {
+          translations: {
+            fr: 'Magasin de profils par défaut',
+          },
+        },
         isDefault: true,
         isActive: true,
         createdAt: new Date('2026-04-14T00:00:00.000Z'),
@@ -86,6 +91,10 @@ describe('ProfileStoreApplicationService', () => {
           name: 'Default Profile Store',
           nameZh: null,
           nameJa: null,
+          translations: {
+            en: 'Default Profile Store',
+            fr: 'Magasin de profils par défaut',
+          },
           talentCount: 2,
           customerCount: 10,
           isDefault: true,
@@ -103,6 +112,27 @@ describe('ProfileStoreApplicationService', () => {
         },
       },
     });
+
+    expect(mockRepository.findMany).toHaveBeenCalledWith('tenant_test', false, undefined, 20, 0);
+    expect(mockRepository.countMany).toHaveBeenCalledWith('tenant_test', false, undefined);
+  });
+
+  it('passes the normalized search keyword into repository pagination queries', async () => {
+    vi.mocked(mockRepository.findMany).mockResolvedValue([]);
+    vi.mocked(mockRepository.countMany).mockResolvedValue(0);
+
+    await service.findMany(
+      {
+        search: '  archive  ',
+        page: 2,
+        pageSize: 50,
+        includeInactive: true,
+      },
+      context,
+    );
+
+    expect(mockRepository.findMany).toHaveBeenCalledWith('tenant_test', true, 'archive', 50, 50);
+    expect(mockRepository.countMany).toHaveBeenCalledWith('tenant_test', true, 'archive');
   });
 
   it('fails closed when the detail record does not exist', async () => {
@@ -167,10 +197,107 @@ describe('ProfileStoreApplicationService', () => {
         descriptionEn: null,
         descriptionZh: null,
         descriptionJa: null,
+        extraData: null,
         isDefault: true,
       },
       'user-1',
     );
+  });
+
+  it('persists managed translation maps into profile-store payloads and exposes them in detail responses', async () => {
+    vi.mocked(mockRepository.findByCode).mockResolvedValue(null);
+    vi.mocked(mockRepository.create).mockResolvedValue({
+      id: 'store-1',
+      code: 'DEFAULT_STORE',
+      nameEn: 'Default Profile Store',
+      isDefault: false,
+      createdAt: new Date('2026-04-14T00:00:00.000Z'),
+    });
+    vi.mocked(mockChangeLogService.createDirect).mockResolvedValue(undefined as never);
+
+    await service.create(
+      {
+        code: 'DEFAULT_STORE',
+        nameEn: 'Default Profile Store',
+        translations: {
+          fr: 'Magasin de profils par défaut',
+          zh_HANT: '預設檔案庫',
+        },
+        descriptionEn: 'Primary customer profile store',
+        descriptionTranslations: {
+          fr: 'Magasin principal des profils clients',
+        },
+      },
+      context,
+    );
+
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      'tenant_test',
+      {
+        code: 'DEFAULT_STORE',
+        nameEn: 'Default Profile Store',
+        nameZh: null,
+        nameJa: null,
+        descriptionEn: 'Primary customer profile store',
+        descriptionZh: null,
+        descriptionJa: null,
+        extraData: {
+          translations: {
+            fr: 'Magasin de profils par défaut',
+            zh_HANT: '預設檔案庫',
+          },
+          descriptionTranslations: {
+            fr: 'Magasin principal des profils clients',
+          },
+        },
+        isDefault: false,
+      },
+      'user-1',
+    );
+
+    vi.mocked(mockRepository.findById).mockResolvedValue({
+      id: 'store-1',
+      code: 'DEFAULT_STORE',
+      nameEn: 'Default Profile Store',
+      nameZh: '默认档案库',
+      nameJa: 'デフォルトプロフィールストア',
+      descriptionEn: 'Primary customer profile store',
+      descriptionZh: '主要客户档案库',
+      descriptionJa: '主要な顧客プロフィールストア',
+      extraData: {
+        translations: {
+          fr: 'Magasin de profils par défaut',
+          zh_HANT: '預設檔案庫',
+        },
+        descriptionTranslations: {
+          fr: 'Magasin principal des profils clients',
+        },
+      },
+      isDefault: false,
+      isActive: true,
+      createdAt: new Date('2026-04-14T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-14T00:10:00.000Z'),
+      version: 1,
+    });
+    vi.mocked(mockRepository.countTalentByStoreId).mockResolvedValue(2);
+    vi.mocked(mockRepository.countCustomerByStoreId).mockResolvedValue(10);
+
+    await expect(service.findById('store-1', context)).resolves.toMatchObject({
+      id: 'store-1',
+      translations: {
+        en: 'Default Profile Store',
+        zh_HANS: '默认档案库',
+        zh_HANT: '預設檔案庫',
+        ja: 'デフォルトプロフィールストア',
+        fr: 'Magasin de profils par défaut',
+      },
+      descriptionTranslations: {
+        en: 'Primary customer profile store',
+        zh_HANS: '主要客户档案库',
+        ja: '主要な顧客プロフィールストア',
+        fr: 'Magasin principal des profils clients',
+      },
+    });
   });
 
   it('fails closed on optimistic-lock mismatch during update', async () => {
@@ -178,6 +305,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       nameEn: 'Old Name',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 1,
@@ -200,6 +333,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       nameEn: 'Default Profile Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 1,
@@ -223,6 +362,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       nameEn: 'Default Profile Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 1,
@@ -245,6 +390,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-2',
       code: 'SECONDARY_STORE',
       nameEn: 'Secondary Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: false,
       version: 1,
@@ -254,6 +405,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-2',
       code: 'SECONDARY_STORE',
       nameEn: 'Secondary Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 2,
@@ -296,6 +453,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       nameEn: 'Default Profile Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 1,
@@ -304,6 +467,12 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       nameEn: 'Default Profile Store',
+      nameZh: null,
+      nameJa: null,
+      descriptionEn: null,
+      descriptionZh: null,
+      descriptionJa: null,
+      extraData: null,
       isActive: true,
       isDefault: true,
       version: 2,

@@ -160,6 +160,7 @@ export class ExternalBlocklistRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           description,
           category,
           severity,
@@ -200,6 +201,7 @@ export class ExternalBlocklistRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           description,
           category,
           severity,
@@ -237,6 +239,7 @@ export class ExternalBlocklistRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           description,
           category,
           severity,
@@ -261,7 +264,7 @@ export class ExternalBlocklistRepository {
 
   async create(
     tenantSchema: string,
-    dto: CreateExternalBlocklistDto,
+    dto: CreateExternalBlocklistDto & { extraData: Record<string, unknown> | null },
     userId: string | null,
   ): Promise<RawExternalBlocklistPatternRecord> {
     const id = crypto.randomUUID();
@@ -278,6 +281,7 @@ export class ExternalBlocklistRepository {
           name_en,
           name_zh,
           name_ja,
+          extra_data,
           description,
           category,
           severity,
@@ -302,20 +306,21 @@ export class ExternalBlocklistRepository {
           $6,
           $7,
           $8,
-          $9,
+          $9::jsonb,
           $10,
           $11,
           $12,
           $13,
           $14,
           $15,
-          true,
           $16,
+          true,
+          $17,
           false,
-          $17::timestamptz,
-          $17::timestamptz,
-          $18::uuid,
-          $18::uuid,
+          $18::timestamptz,
+          $18::timestamptz,
+          $19::uuid,
+          $19::uuid,
           1
         )
         RETURNING
@@ -327,6 +332,7 @@ export class ExternalBlocklistRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           description,
           category,
           severity,
@@ -349,6 +355,7 @@ export class ExternalBlocklistRepository {
       dto.nameEn,
       dto.nameZh ?? null,
       dto.nameJa ?? null,
+      dto.extraData ? JSON.stringify(dto.extraData) : null,
       dto.description ?? null,
       dto.category ?? null,
       dto.severity ?? 'medium',
@@ -367,7 +374,7 @@ export class ExternalBlocklistRepository {
   async update(
     tenantSchema: string,
     id: string,
-    dto: UpdateExternalBlocklistDto,
+    dto: UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null },
     userId: string | null,
   ): Promise<RawExternalBlocklistPatternRecord | null> {
     const now = new Date().toISOString();
@@ -379,12 +386,13 @@ export class ExternalBlocklistRepository {
     const params: Array<string | number | boolean | null> = [id, now, userId];
     let paramIndex = 4;
 
-    const fields: Array<{ key: keyof UpdateExternalBlocklistDto; column: string }> = [
+    const fields: Array<{ key: keyof (UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null }); column: string }> = [
       { key: 'pattern', column: 'pattern' },
       { key: 'patternType', column: 'pattern_type' },
       { key: 'nameEn', column: 'name_en' },
       { key: 'nameZh', column: 'name_zh' },
       { key: 'nameJa', column: 'name_ja' },
+      { key: 'extraData', column: 'extra_data' },
       { key: 'description', column: 'description' },
       { key: 'category', column: 'category' },
       { key: 'severity', column: 'severity' },
@@ -398,8 +406,15 @@ export class ExternalBlocklistRepository {
 
     for (const { key, column } of fields) {
       if (dto[key] !== undefined) {
-        setClauses.push(`${column} = $${paramIndex++}`);
-        params.push(dto[key] as string | number | boolean | null);
+        const value = dto[key];
+        const nextParamIndex = paramIndex++;
+
+        setClauses.push(`${column} = $${nextParamIndex}${key === 'extraData' ? '::jsonb' : ''}`);
+        params.push(
+          key === 'extraData' && value && typeof value === 'object'
+            ? JSON.stringify(value)
+            : (value as string | number | boolean | null),
+        );
       }
     }
 
@@ -419,6 +434,7 @@ export class ExternalBlocklistRepository {
           name_en as "nameEn",
           name_zh as "nameZh",
           name_ja as "nameJa",
+          extra_data as "extraData",
           description,
           category,
           severity,

@@ -4,10 +4,12 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
-  type EmailTemplateLocalizedContent,
+  decorateEmailTemplate,
+  type EmailTemplateStoredRecord,
   fillPreviewVariables,
   renderEmailTemplate,
 } from '../domain/email-template.policy';
+import { buildEmailTemplateTranslationPayload } from '../domain/email-template-translation.policy';
 import type {
   CreateEmailTemplateDto,
   EmailTemplateQueryDto,
@@ -23,14 +25,17 @@ export class EmailTemplateApplicationService {
   ) {}
 
   async findAll(query?: EmailTemplateQueryDto) {
-    return this.emailTemplateRepository.findMany({
+    const templates = await this.emailTemplateRepository.findMany({
       category: query?.category,
       isActive: query?.isActive,
     });
+
+    return templates.map((template) => decorateEmailTemplate(template));
   }
 
-  findByCode(code: string) {
-    return this.emailTemplateRepository.findByCode(code);
+  async findByCode(code: string) {
+    const template = await this.emailTemplateRepository.findByCode(code);
+    return template ? decorateEmailTemplate(template) : null;
   }
 
   async create(dto: CreateEmailTemplateDto) {
@@ -43,26 +48,68 @@ export class EmailTemplateApplicationService {
       });
     }
 
-    return this.emailTemplateRepository.create(dto);
+    const translationPayload = buildEmailTemplateTranslationPayload(dto);
+    const created = await this.emailTemplateRepository.create({
+      code: dto.code,
+      nameEn: translationPayload.nameEn ?? dto.nameEn,
+      nameZh: translationPayload.nameZh,
+      nameJa: translationPayload.nameJa,
+      subjectEn: translationPayload.subjectEn ?? dto.subjectEn,
+      subjectZh: translationPayload.subjectZh,
+      subjectJa: translationPayload.subjectJa,
+      bodyHtmlEn: translationPayload.bodyHtmlEn ?? dto.bodyHtmlEn,
+      bodyHtmlZh: translationPayload.bodyHtmlZh,
+      bodyHtmlJa: translationPayload.bodyHtmlJa,
+      bodyTextEn: translationPayload.bodyTextEn,
+      bodyTextZh: translationPayload.bodyTextZh,
+      bodyTextJa: translationPayload.bodyTextJa,
+      variables: dto.variables || [],
+      category: dto.category,
+      extraData: translationPayload.extraData,
+    });
+
+    return decorateEmailTemplate(created);
   }
 
   async update(code: string, dto: UpdateEmailTemplateDto) {
-    await this.getTemplateOrThrow(code);
-    return this.emailTemplateRepository.update(code, dto);
+    const current = await this.getTemplateOrThrow(code);
+    const translationPayload = buildEmailTemplateTranslationPayload(dto, current);
+    const updated = await this.emailTemplateRepository.update(code, {
+      nameEn: translationPayload.nameEn ?? current.nameEn,
+      nameZh: translationPayload.nameZh,
+      nameJa: translationPayload.nameJa,
+      subjectEn: translationPayload.subjectEn ?? current.subjectEn,
+      subjectZh: translationPayload.subjectZh,
+      subjectJa: translationPayload.subjectJa,
+      bodyHtmlEn: translationPayload.bodyHtmlEn ?? current.bodyHtmlEn,
+      bodyHtmlZh: translationPayload.bodyHtmlZh,
+      bodyHtmlJa: translationPayload.bodyHtmlJa,
+      bodyTextEn: translationPayload.bodyTextEn,
+      bodyTextZh: translationPayload.bodyTextZh,
+      bodyTextJa: translationPayload.bodyTextJa,
+      variables: dto.variables,
+      category: dto.category,
+      isActive: dto.isActive,
+      extraData: translationPayload.extraData,
+    });
+
+    return decorateEmailTemplate(updated);
   }
 
   async deactivate(code: string) {
     await this.getTemplateOrThrow(code);
-    return this.emailTemplateRepository.update(code, { isActive: false });
+    const updated = await this.emailTemplateRepository.update(code, { isActive: false });
+    return decorateEmailTemplate(updated);
   }
 
   async reactivate(code: string) {
     await this.getTemplateOrThrow(code);
-    return this.emailTemplateRepository.update(code, { isActive: true });
+    const updated = await this.emailTemplateRepository.update(code, { isActive: true });
+    return decorateEmailTemplate(updated);
   }
 
   renderTemplate(
-    template: EmailTemplateLocalizedContent,
+    template: EmailTemplateStoredRecord,
     locale: SupportedLocale,
     variables: Record<string, string>,
   ): RenderedEmail {
@@ -82,7 +129,7 @@ export class EmailTemplateApplicationService {
     );
   }
 
-  private async getTemplateOrThrow(code: string) {
+  private async getTemplateOrThrow(code: string): Promise<EmailTemplateStoredRecord> {
     const template = await this.emailTemplateRepository.findByCode(code);
 
     if (!template) {

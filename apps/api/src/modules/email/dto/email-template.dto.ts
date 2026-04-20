@@ -1,10 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import {
     IsArray,
     IsBoolean,
     IsIn,
+    IsObject,
     IsOptional,
     IsString,
     MaxLength,
@@ -35,6 +37,21 @@ export class CreateEmailTemplateDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed name translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      en: 'Welcome Email',
+      zh_HANS: '欢迎邮件',
+      zh_HANT: '歡迎郵件',
+      fr: 'E-mail de bienvenue',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiProperty({ description: 'Subject in English', example: 'Welcome to TCRN', maxLength: 255 })
   @IsString()
   @MaxLength(255)
@@ -52,6 +69,20 @@ export class CreateEmailTemplateDto {
   @MaxLength(255)
   subjectJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed subject translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      en: 'Welcome to TCRN',
+      zh_HANS: '欢迎来到 TCRN',
+      ko: 'TCRN에 오신 것을 환영합니다',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  subjectTranslations?: Record<string, string>;
+
   @ApiProperty({ description: 'HTML body in English', example: '<p>Hello {{name}}</p>' })
   @IsString()
   bodyHtmlEn!: string;
@@ -65,6 +96,15 @@ export class CreateEmailTemplateDto {
   @IsOptional()
   @IsString()
   bodyHtmlJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed HTML body translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  bodyHtmlTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Plain-text body in English', example: 'Hello {{name}}' })
   @IsOptional()
@@ -80,6 +120,15 @@ export class CreateEmailTemplateDto {
   @IsOptional()
   @IsString()
   bodyTextJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed plain-text body translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  bodyTextTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({
     description: 'Template variables available for rendering',
@@ -115,6 +164,15 @@ export class UpdateEmailTemplateDto {
   @MaxLength(128)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed name translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Subject in English', example: 'Welcome to TCRN', maxLength: 255 })
   @IsOptional()
   @IsString()
@@ -133,6 +191,15 @@ export class UpdateEmailTemplateDto {
   @MaxLength(255)
   subjectJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed subject translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  subjectTranslations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'HTML body in English', example: '<p>Hello {{name}}</p>' })
   @IsOptional()
   @IsString()
@@ -148,6 +215,15 @@ export class UpdateEmailTemplateDto {
   @IsString()
   bodyHtmlJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed HTML body translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  bodyHtmlTranslations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Plain-text body in English', example: 'Hello {{name}}' })
   @IsOptional()
   @IsString()
@@ -162,6 +238,15 @@ export class UpdateEmailTemplateDto {
   @IsOptional()
   @IsString()
   bodyTextJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed plain-text body translations by locale code',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  @IsOptional()
+  @IsObject()
+  bodyTextTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({
     description: 'Template variables available for rendering',
@@ -185,9 +270,9 @@ export class UpdateEmailTemplateDto {
 }
 
 export class PreviewEmailTemplateDto {
-  @ApiPropertyOptional({ description: 'Preview locale', enum: ['en', 'zh', 'ja'], example: 'ja' })
+  @ApiPropertyOptional({ description: 'Preview locale', enum: SUPPORTED_UI_LOCALES, example: 'ja' })
   @IsOptional()
-  @IsIn(['en', 'zh', 'ja'])
+  @IsIn(SUPPORTED_UI_LOCALES)
   locale?: string;
 
   @ApiPropertyOptional({

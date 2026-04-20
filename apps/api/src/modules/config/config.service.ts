@@ -2,7 +2,7 @@
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, normalizeSupportedUiLocale, resolveTrilingualLocaleFamily } from '@tcrn/shared';
 
 import {
     BaseConfigEntity,
@@ -10,6 +10,7 @@ import {
     CONFIG_HAS_AUDIT,
     CONFIG_HAS_CODE,
     CONFIG_HAS_DESCRIPTION,
+    CONFIG_HAS_EXTRA_DATA,
     CONFIG_HAS_SORT_ORDER,
     CONFIG_HAS_SYSTEM_CONTROL,
     CONFIG_SCOPED_ENTITIES,
@@ -18,6 +19,16 @@ import {
     ConfigEntityWithMeta,
     OwnerType,
 } from './config.types';
+
+type TranslationMap = Record<string, string>;
+
+interface ConfigTranslationPayload {
+  descriptionTranslations: TranslationMap;
+  extraData: Record<string, unknown> | null;
+  legacyFields: Record<string, string | null | undefined>;
+  contentTranslations: TranslationMap;
+  translations: TranslationMap;
+}
 
 /**
  * Config Service
@@ -149,9 +160,11 @@ export class ConfigService {
     const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
     
     const codeField = hasCode ? 'code,' : 'NULL as code,';
     const sortOrderField = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
+    const extraDataField = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
     
     const descFields = hasDesc 
       ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
@@ -178,6 +191,7 @@ export class ConfigService {
         id, ${scopeOwnerFields} ${codeField}
         name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
         ${descFields}
+        ${extraDataField}
         ${sortOrderField} is_active as "isActive", ${sysFields}
         created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
         ${extraFieldsSelect}
@@ -196,9 +210,7 @@ export class ConfigService {
     const enrichedData: ConfigEntityWithMeta[] = data
       .filter(item => includeDisabled || !overrides.has(item.id))
       .map(item => ({
-        ...item,
-        name: this.getLocalizedField(item, 'name', language),
-        description: this.getLocalizedField(item, 'description', language),
+        ...this.decorateEntity(entityType, item, language),
         ownerName: null, // Would need a join to get this
         isInherited: item.ownerType !== scopeType || item.ownerId !== scopeId,
         isDisabledHere: overrides.has(item.id),
@@ -234,9 +246,11 @@ export class ConfigService {
     const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
     
     const codeField = hasCode ? 'code,' : 'NULL as code,';
     const sortOrderField = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
+    const extraDataField = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
     
     const descFields = hasDesc 
       ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
@@ -255,6 +269,7 @@ export class ConfigService {
         id, ${scopeOwnerFields} ${codeField}
         name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
         ${descFields}
+        ${extraDataField}
         ${sortOrderField} is_active as "isActive", ${sysFields}
         created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
         ${extraFieldsSelect}
@@ -268,9 +283,7 @@ export class ConfigService {
 
     const item = results[0];
     return {
-      ...item,
-      name: this.getLocalizedField(item, 'name', language),
-      description: this.getLocalizedField(item, 'description', language),
+      ...this.decorateEntity(entityType, item, language),
       ownerName: null,
       isInherited: false,
       isDisabledHere: false,
@@ -289,9 +302,13 @@ export class ConfigService {
       nameEn: string;
       nameZh?: string;
       nameJa?: string;
+      translations?: Record<string, string>;
       descriptionEn?: string;
       descriptionZh?: string;
       descriptionJa?: string;
+      descriptionTranslations?: Record<string, string>;
+      contentTranslations?: Record<string, string>;
+      extraData?: Record<string, unknown>;
       sortOrder?: number;
       isForceUse?: boolean;
       ownerType?: OwnerType;
@@ -306,18 +323,24 @@ export class ConfigService {
     const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
     const hasCode = CONFIG_HAS_CODE.has(entityType);
     const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
+    const translationPayload = this.prepareTranslationPayload(entityType, data);
+    const normalizedData = {
+      ...data,
+      ...translationPayload.legacyFields,
+    };
 
     // Check code uniqueness globally within tenant schema (regardless of scope)
-    if (hasCode && data.code) {
+    if (hasCode && normalizedData.code) {
       const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
         SELECT id FROM "${tenantSchema}".${tableName}
         WHERE code = $1
-      `, data.code);
+      `, normalizedData.code);
 
       if (existing.length > 0) {
         throw new BadRequestException({
           code: ErrorCodes.CODE_ALREADY_EXISTS,
-          message: `Code '${data.code}' already exists`,
+          message: `Code '${normalizedData.code}' already exists`,
         });
       }
     }
@@ -325,20 +348,24 @@ export class ConfigService {
     // Build INSERT - start with minimal fields
     const baseFields = ['id', 'name_en', 'name_zh', 'name_ja', 'is_active', 'created_at', 'updated_at', 'version'];
     const baseValues = ['gen_random_uuid()', '$1', '$2', '$3', 'true', 'now()', 'now()', '1'];
-    const baseParams: (string | number | boolean | null)[] = [data.nameEn, data.nameZh || null, data.nameJa || null];
+    const baseParams: unknown[] = [
+      normalizedData.nameEn,
+      normalizedData.nameZh ?? null,
+      normalizedData.nameJa ?? null,
+    ];
 
     // Add code field if entity supports it
-    if (hasCode && data.code) {
+    if (hasCode && normalizedData.code) {
       baseFields.push('code');
       baseValues.push(`$${baseParams.length + 1}`);
-      baseParams.push(data.code);
+      baseParams.push(normalizedData.code);
     }
 
     // Add sort_order field if entity supports it
     if (hasSortOrder) {
       baseFields.push('sort_order');
       baseValues.push(`$${baseParams.length + 1}`);
-      baseParams.push(data.sortOrder || 0);
+      baseParams.push(normalizedData.sortOrder || 0);
     }
 
     const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
@@ -348,13 +375,23 @@ export class ConfigService {
     if (hasDesc) {
       baseFields.push('description_en', 'description_zh', 'description_ja');
       baseValues.push(`$${baseParams.length + 1}`, `$${baseParams.length + 2}`, `$${baseParams.length + 3}`);
-      baseParams.push(data.descriptionEn || null, data.descriptionZh || null, data.descriptionJa || null);
+      baseParams.push(
+        normalizedData.descriptionEn ?? null,
+        normalizedData.descriptionZh ?? null,
+        normalizedData.descriptionJa ?? null,
+      );
+    }
+
+    if (hasExtraData) {
+      baseFields.push('extra_data');
+      baseValues.push(`$${baseParams.length + 1}::jsonb`);
+      baseParams.push(translationPayload.extraData ? JSON.stringify(translationPayload.extraData) : null);
     }
 
     if (hasSys) {
       baseFields.push('is_force_use', 'is_system');
       baseValues.push(`$${baseParams.length + 1}`, 'false');
-      baseParams.push(data.isForceUse || false);
+      baseParams.push(normalizedData.isForceUse || false);
     }
 
     if (hasAudit) {
@@ -368,18 +405,18 @@ export class ConfigService {
       baseFields.push('owner_id');
       baseValues.push(`$${baseParams.length + 1}`);
       baseValues.push(`$${baseParams.length + 2}::uuid`);
-      baseParams.push(data.ownerType || 'tenant');
-      baseParams.push(data.ownerId || null);
+      baseParams.push(normalizedData.ownerType || 'tenant');
+      baseParams.push(normalizedData.ownerId || null);
     }
 
     // Add extra fields
     let paramIndex = baseParams.length + 1;
     for (const field of extraFields) {
       const camelField = this.snakeToCamel(field);
-      if (data[camelField] !== undefined) {
+      if (normalizedData[camelField] !== undefined) {
         baseFields.push(field);
         baseValues.push(`$${paramIndex++}`);
-        baseParams.push(data[camelField] as string | number | boolean);
+        baseParams.push(normalizedData[camelField]);
       }
     }
 
@@ -393,6 +430,7 @@ export class ConfigService {
     
     const codeFieldReturn = hasCode ? 'code,' : 'NULL as code,';
     const sortOrderFieldReturn = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
+    const extraDataFieldReturn = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
       
     const descFields = hasDesc 
       ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
@@ -413,6 +451,7 @@ export class ConfigService {
         id, ${scopeOwnerFields} ${codeFieldReturn}
         name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
         ${descFields}
+        ${extraDataFieldReturn}
         ${sortOrderFieldReturn} is_active as "isActive", ${sysFields}
         created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
         ${extraFieldsReturn}
@@ -432,9 +471,13 @@ export class ConfigService {
       nameEn?: string;
       nameZh?: string;
       nameJa?: string;
+      translations?: Record<string, string>;
       descriptionEn?: string;
       descriptionZh?: string;
       descriptionJa?: string;
+      descriptionTranslations?: Record<string, string>;
+      contentTranslations?: Record<string, string>;
+      extraData?: Record<string, unknown>;
       sortOrder?: number;
       isForceUse?: boolean;
       version: number;
@@ -465,6 +508,12 @@ export class ConfigService {
     const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
+    const translationPayload = this.prepareTranslationPayload(entityType, data, current);
+    const normalizedData = {
+      ...data,
+      ...translationPayload.legacyFields,
+    };
 
     // Build UPDATE
     const updates: string[] = [];
@@ -500,18 +549,23 @@ export class ConfigService {
     }
 
     for (const [key, dbField] of Object.entries(fieldMappings)) {
-      if (data[key] !== undefined) {
+      if (normalizedData[key] !== undefined) {
         updates.push(`${dbField} = $${paramIndex++}`);
-        params.push(data[key]);
+        params.push(normalizedData[key]);
       }
+    }
+
+    if (hasExtraData) {
+      updates.push(`extra_data = $${paramIndex++}::jsonb`);
+      params.push(translationPayload.extraData ? JSON.stringify(translationPayload.extraData) : null);
     }
 
     // Handle extra fields
     for (const field of extraFields) {
       const camelField = this.snakeToCamel(field);
-      if (data[camelField] !== undefined) {
+      if (normalizedData[camelField] !== undefined) {
         updates.push(`${field} = $${paramIndex++}`);
-        params.push(data[camelField]);
+        params.push(normalizedData[camelField]);
       }
     }
 
@@ -533,6 +587,7 @@ export class ConfigService {
     
     const codeFieldReturn = hasCode ? 'code,' : 'NULL as code,';
     const sortOrderFieldReturn = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
+    const extraDataFieldReturn = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
       
     const descFields = hasDesc 
       ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
@@ -554,6 +609,7 @@ export class ConfigService {
         id, ${scopeOwnerFields} ${codeFieldReturn}
         name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
         ${descFields}
+        ${extraDataFieldReturn}
         ${sortOrderFieldReturn} is_active as "isActive", ${sysFields}
         created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
         ${extraFieldsReturn}
@@ -1014,6 +1070,331 @@ export class ConfigService {
     return new Set(overrides.map(o => o.entityId));
   }
 
+  private decorateEntity(
+    entityType: ConfigEntityType,
+    entity: BaseConfigEntity & Record<string, unknown>,
+    language: string,
+  ): BaseConfigEntity & {
+    contentTranslations?: TranslationMap;
+    description: string | null;
+    descriptionTranslations: TranslationMap;
+    name: string;
+    translations: TranslationMap;
+  } {
+    const translations = this.buildTranslations(entity, entity.extraData);
+    const descriptionTranslations = this.buildDescriptionTranslations(entity, entity.extraData);
+    const contentTranslations = entityType === 'consent'
+      ? this.buildContentTranslations(entity, entity.extraData)
+      : undefined;
+
+    return {
+      ...entity,
+      translations,
+      descriptionTranslations,
+      ...(contentTranslations ? { contentTranslations } : {}),
+      name: this.getLocalizedValue(translations, language, entity.nameEn) ?? entity.nameEn,
+      description: this.getLocalizedValue(descriptionTranslations, language, entity.descriptionEn),
+    };
+  }
+
+  private prepareTranslationPayload(
+    entityType: ConfigEntityType,
+    data: Record<string, unknown>,
+    current?: ConfigEntityWithMeta | null,
+  ): ConfigTranslationPayload {
+    const translations = data.translations !== undefined
+      ? this.normalizeTranslationInput(data.translations)
+      : { ...(current?.translations ?? {}) };
+
+    this.applyLegacyTranslation(translations, 'en', data.nameEn);
+    this.applyLegacyTranslation(translations, 'zh_HANS', data.nameZh);
+    this.applyLegacyTranslation(translations, 'ja', data.nameJa);
+
+    const descriptionTranslations = data.descriptionTranslations !== undefined
+      ? this.normalizeTranslationInput(data.descriptionTranslations)
+      : { ...(current?.descriptionTranslations ?? {}) };
+
+    this.applyLegacyTranslation(descriptionTranslations, 'en', data.descriptionEn);
+    this.applyLegacyTranslation(descriptionTranslations, 'zh_HANS', data.descriptionZh);
+    this.applyLegacyTranslation(descriptionTranslations, 'ja', data.descriptionJa);
+
+    const contentTranslations = data.contentTranslations !== undefined
+      ? this.normalizeTranslationInput(data.contentTranslations)
+      : { ...(current?.contentTranslations ?? {}) };
+
+    if (entityType === 'consent') {
+      this.applyLegacyTranslation(contentTranslations, 'en', data.contentMarkdownEn);
+      this.applyLegacyTranslation(contentTranslations, 'zh_HANS', data.contentMarkdownZh);
+      this.applyLegacyTranslation(contentTranslations, 'ja', data.contentMarkdownJa);
+    }
+
+    const requestedExtraData = this.asRecord(data.extraData);
+    const baseExtraData = requestedExtraData !== null
+      ? requestedExtraData
+      : current?.extraData ?? null;
+
+    return {
+      translations,
+      descriptionTranslations,
+      contentTranslations,
+      extraData: this.mergeExtraData(
+        baseExtraData,
+        translations,
+        descriptionTranslations,
+        contentTranslations,
+        entityType,
+      ),
+      legacyFields: {
+        nameEn: this.pickLegacyValue(data.nameEn, translations.en, current?.nameEn),
+        nameZh: this.pickLegacyValue(data.nameZh, translations.zh_HANS, current?.nameZh),
+        nameJa: this.pickLegacyValue(data.nameJa, translations.ja, current?.nameJa),
+        descriptionEn: this.pickLegacyValue(data.descriptionEn, descriptionTranslations.en, current?.descriptionEn),
+        descriptionZh: this.pickLegacyValue(data.descriptionZh, descriptionTranslations.zh_HANS, current?.descriptionZh),
+        descriptionJa: this.pickLegacyValue(data.descriptionJa, descriptionTranslations.ja, current?.descriptionJa),
+        contentMarkdownEn: entityType === 'consent'
+          ? this.pickLegacyValue(data.contentMarkdownEn, contentTranslations.en, current?.contentMarkdownEn as string | null | undefined)
+          : undefined,
+        contentMarkdownZh: entityType === 'consent'
+          ? this.pickLegacyValue(data.contentMarkdownZh, contentTranslations.zh_HANS, current?.contentMarkdownZh as string | null | undefined)
+          : undefined,
+        contentMarkdownJa: entityType === 'consent'
+          ? this.pickLegacyValue(data.contentMarkdownJa, contentTranslations.ja, current?.contentMarkdownJa as string | null | undefined)
+          : undefined,
+      },
+    };
+  }
+
+  private buildTranslations(
+    entity: { nameEn: string; nameZh?: string | null; nameJa?: string | null },
+    extraData: Record<string, unknown> | null,
+  ): TranslationMap {
+    const extraTranslations = this.readExtraTranslationMap(extraData, 'translations');
+
+    return this.withLegacyTranslations(extraTranslations, {
+      en: entity.nameEn,
+      zh_HANS: entity.nameZh,
+      ja: entity.nameJa,
+    });
+  }
+
+  private buildDescriptionTranslations(
+    entity: { descriptionEn?: string | null; descriptionZh?: string | null; descriptionJa?: string | null },
+    extraData: Record<string, unknown> | null,
+  ): TranslationMap {
+    const extraTranslations = this.readExtraTranslationMap(extraData, 'descriptionTranslations');
+
+    return this.withLegacyTranslations(extraTranslations, {
+      en: entity.descriptionEn,
+      zh_HANS: entity.descriptionZh,
+      ja: entity.descriptionJa,
+    });
+  }
+
+  private buildContentTranslations(
+    entity: Record<string, unknown>,
+    extraData: Record<string, unknown> | null,
+  ): TranslationMap {
+    const extraTranslations = this.readExtraTranslationMap(extraData, 'contentTranslations');
+
+    return this.withLegacyTranslations(extraTranslations, {
+      en: entity.contentMarkdownEn as string | null | undefined,
+      zh_HANS: entity.contentMarkdownZh as string | null | undefined,
+      ja: entity.contentMarkdownJa as string | null | undefined,
+    });
+  }
+
+  private withLegacyTranslations(
+    translations: TranslationMap,
+    legacy: Record<string, string | null | undefined>,
+  ): TranslationMap {
+    const result: TranslationMap = { ...translations };
+
+    Object.entries(legacy).forEach(([locale, value]) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        result[locale] = value.trim();
+      }
+    });
+
+    return result;
+  }
+
+  private readExtraTranslationMap(
+    extraData: Record<string, unknown> | null,
+    key: 'translations' | 'descriptionTranslations' | 'contentTranslations',
+  ): TranslationMap {
+    const candidate = extraData?.[key];
+
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+      return {};
+    }
+
+    return this.normalizeTranslationInput(candidate);
+  }
+
+  private normalizeTranslationInput(input: unknown): TranslationMap {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return {};
+    }
+
+    const result: TranslationMap = {};
+
+    Object.entries(input).forEach(([locale, value]) => {
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      const normalizedLocale = this.normalizeTranslationKey(locale);
+      const trimmedValue = value.trim();
+
+      if (!normalizedLocale || trimmedValue.length === 0) {
+        return;
+      }
+
+      result[normalizedLocale] = trimmedValue;
+    });
+
+    return result;
+  }
+
+  private mergeExtraData(
+    baseExtraData: Record<string, unknown> | null,
+    translations: TranslationMap,
+    descriptionTranslations: TranslationMap,
+    contentTranslations: TranslationMap,
+    entityType: ConfigEntityType,
+  ): Record<string, unknown> | null {
+    const nextExtraData: Record<string, unknown> = {
+      ...(baseExtraData ?? {}),
+    };
+
+    delete nextExtraData.translations;
+    delete nextExtraData.descriptionTranslations;
+    delete nextExtraData.contentTranslations;
+
+    this.assignExtraTranslationMap(nextExtraData, 'translations', translations);
+    this.assignExtraTranslationMap(nextExtraData, 'descriptionTranslations', descriptionTranslations);
+
+    if (entityType === 'consent') {
+      this.assignExtraTranslationMap(nextExtraData, 'contentTranslations', contentTranslations);
+    }
+
+    return Object.keys(nextExtraData).length > 0 ? nextExtraData : null;
+  }
+
+  private assignExtraTranslationMap(
+    extraData: Record<string, unknown>,
+    key: 'translations' | 'descriptionTranslations' | 'contentTranslations',
+    translations: TranslationMap,
+  ): void {
+    const extraTranslations = Object.fromEntries(
+      Object.entries(translations).filter(([locale]) => !['en', 'zh_HANS', 'ja'].includes(locale)),
+    );
+
+    if (Object.keys(extraTranslations).length > 0) {
+      extraData[key] = extraTranslations;
+    }
+  }
+
+  private normalizeTranslationKey(input?: string | null): string | null {
+    if (!input) {
+      return null;
+    }
+
+    const normalizedSupportedLocale = normalizeSupportedUiLocale(input);
+    if (normalizedSupportedLocale) {
+      return normalizedSupportedLocale;
+    }
+
+    const normalized = input.trim().replace(/-/g, '_');
+    if (!normalized) {
+      return null;
+    }
+
+    const [language, ...rest] = normalized.split('_').filter(Boolean);
+    if (!language) {
+      return null;
+    }
+
+    if (rest.length === 0) {
+      return language.toLowerCase();
+    }
+
+    return `${language.toLowerCase()}_${rest.join('_').toUpperCase()}`;
+  }
+
+  private getLocalizedValue(
+    translations: TranslationMap,
+    language: string,
+    fallback: string | null | undefined,
+  ): string | null {
+    const normalizedLocale = this.normalizeTranslationKey(language);
+
+    if (normalizedLocale && translations[normalizedLocale]) {
+      return translations[normalizedLocale];
+    }
+
+    if (normalizedLocale) {
+      const [baseLanguage] = normalizedLocale.split('_');
+      if (baseLanguage && translations[baseLanguage]) {
+        return translations[baseLanguage];
+      }
+    }
+
+    const localeFamily = resolveTrilingualLocaleFamily(language);
+    if (localeFamily === 'zh') {
+      return translations.zh_HANS || translations.zh_HANT || fallback || null;
+    }
+
+    if (localeFamily === 'ja') {
+      return translations.ja || fallback || null;
+    }
+
+    return translations.en || fallback || null;
+  }
+
+  private applyLegacyTranslation(
+    translations: TranslationMap,
+    locale: string,
+    value: unknown,
+  ): void {
+    if (typeof value !== 'string') {
+      return;
+    }
+
+    const normalizedLocale = this.normalizeTranslationKey(locale);
+    const trimmedValue = value.trim();
+
+    if (!normalizedLocale || trimmedValue.length === 0) {
+      return;
+    }
+
+    translations[normalizedLocale] = trimmedValue;
+  }
+
+  private pickLegacyValue(
+    explicitValue: unknown,
+    translationValue: string | undefined,
+    currentValue: string | null | undefined,
+  ): string | null | undefined {
+    if (typeof explicitValue === 'string') {
+      return explicitValue.trim().length > 0 ? explicitValue.trim() : null;
+    }
+
+    if (typeof translationValue === 'string' && translationValue.trim().length > 0) {
+      return translationValue.trim();
+    }
+
+    return currentValue;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    return value as Record<string, unknown>;
+  }
+
   private getLocalizedField(
     entity: Record<string, unknown>,
     field: 'name' | 'description',
@@ -1023,14 +1404,17 @@ export class ConfigService {
     const zhField = `${field}Zh`;
     const jaField = `${field}Ja`;
 
-    switch (language) {
-      case 'zh':
-        return (entity[zhField] as string | null) || (entity[enField] as string | null);
-      case 'ja':
-        return (entity[jaField] as string | null) || (entity[enField] as string | null);
-      default:
-        return entity[enField] as string | null;
+    const localeFamily = resolveTrilingualLocaleFamily(language);
+
+    if (localeFamily === 'zh') {
+      return (entity[zhField] as string | null) || (entity[enField] as string | null);
     }
+
+    if (localeFamily === 'ja') {
+      return (entity[jaField] as string | null) || (entity[enField] as string | null);
+    }
+
+    return entity[enField] as string | null;
   }
 
   private getParentField(entityType: ConfigEntityType): string | null {

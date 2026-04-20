@@ -51,7 +51,7 @@ export class MarshmallowConfigRepository {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<MarshmallowTalentRecord[]>(
       `
-        SELECT id, homepage_path as "homepagePath", settings
+        SELECT id, code, homepage_path as "homepagePath", settings
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid
           AND is_active = true
@@ -60,6 +60,21 @@ export class MarshmallowConfigRepository {
     );
 
     return talents[0] ?? null;
+  }
+
+  async findTenantCodeBySchema(tenantSchema: string): Promise<string | null> {
+    const prisma = this.databaseService.getPrisma();
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        schemaName: tenantSchema,
+      },
+      select: {
+        code: true,
+      },
+      take: 1,
+    });
+
+    return tenants[0]?.code ?? null;
   }
 
   async insertDefaultConfig(params: {
@@ -181,6 +196,23 @@ export class MarshmallowConfigRepository {
     );
 
     return talents[0]?.homepagePath ?? null;
+  }
+
+  async findTalentRouteRecord(
+    tenantSchema: string,
+    talentId: string,
+  ): Promise<Pick<MarshmallowTalentRecord, 'code' | 'homepagePath'> | null> {
+    const prisma = this.databaseService.getPrisma();
+    const talents = await prisma.$queryRawUnsafe<Array<Pick<MarshmallowTalentRecord, 'code' | 'homepagePath'>>>(
+      `
+        SELECT code, homepage_path as "homepagePath"
+        FROM "${tenantSchema}".talent
+        WHERE id = $1::uuid
+      `,
+      talentId,
+    );
+
+    return talents[0] ?? null;
   }
 
   async updateConfigFields(

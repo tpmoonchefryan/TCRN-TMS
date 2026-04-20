@@ -17,6 +17,10 @@ describe('BlocklistService facade', () => {
     nameEn: 'Profanity Filter',
     nameZh: null,
     nameJa: null,
+    extraData: null,
+    translations: {
+      en: 'Profanity Filter',
+    },
     description: null,
     category: 'profanity',
     severity: 'medium',
@@ -74,6 +78,10 @@ describe('BlocklistService facade', () => {
       nameEn: 'Profanity Filter',
       nameZh: null,
       nameJa: null,
+      extraData: null,
+      translations: {
+        en: 'Profanity Filter',
+      },
       description: null,
       category: 'profanity',
       severity: 'medium',

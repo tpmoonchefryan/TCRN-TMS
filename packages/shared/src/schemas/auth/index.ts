@@ -3,6 +3,8 @@
 
 import { z } from 'zod';
 
+import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
+
 // ============================================================================
 // Password Validation
 // ============================================================================
@@ -114,7 +116,7 @@ export type ResetPasswordByTokenInput = z.infer<typeof ResetPasswordByTokenSchem
 export const UpdateUserProfileSchema = z.object({
   displayName: z.string().optional(),
   phone: z.string().optional(),
-  preferredLanguage: z.enum(['en', 'zh', 'ja']).optional(),
+  preferredLanguage: z.enum(SUPPORTED_UI_LOCALES).optional(),
   avatarUrl: z.string().url('Invalid avatar URL').optional().or(z.literal('')),
 });
 

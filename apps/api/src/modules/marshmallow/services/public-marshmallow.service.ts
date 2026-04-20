@@ -75,6 +75,71 @@ export class PublicMarshmallowService {
     `);
   }
 
+  private async getTenantSchemaByCode(tenantCode: string) {
+    const prisma = this.databaseService.getPrisma();
+    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
+      SELECT t.schema_name as "schemaName"
+      FROM public.tenant t
+      WHERE LOWER(t.code) = LOWER($1)
+        AND t.is_active = true
+      LIMIT 1
+    `, tenantCode);
+
+    return tenants[0]?.schemaName ?? null;
+  }
+
+  private async findConfigForTalent(
+    schema: string,
+    talentId: string,
+  ) {
+    const prisma = this.databaseService.getPrisma();
+    const configs = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      isEnabled: boolean;
+      title: string;
+      welcomeText: string;
+      placeholderText: string;
+      thankYouText: string;
+      allowAnonymous: boolean;
+      captchaMode: string;
+      moderationEnabled: boolean;
+      autoApprove: boolean;
+      profanityFilterEnabled: boolean;
+      externalBlocklistEnabled: boolean;
+      maxMessageLength: number;
+      minMessageLength: number;
+      rateLimitPerIp: number;
+      rateLimitWindowHours: number;
+      reactionsEnabled: boolean;
+      allowedReactions: string[];
+      theme: Record<string, unknown>;
+      avatarUrl: string | null;
+      termsContentEn: string | null;
+      termsContentZh: string | null;
+      termsContentJa: string | null;
+      privacyContentEn: string | null;
+      privacyContentZh: string | null;
+      privacyContentJa: string | null;
+    }>>(`
+      SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
+             placeholder_text as "placeholderText", thank_you_text as "thankYouText",
+             allow_anonymous as "allowAnonymous", captcha_mode as "captchaMode",
+             moderation_enabled as "moderationEnabled", auto_approve as "autoApprove",
+             profanity_filter_enabled as "profanityFilterEnabled",
+             external_blocklist_enabled as "externalBlocklistEnabled",
+             max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
+             rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
+             reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme,
+             avatar_url as "avatarUrl",
+             terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
+             privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa"
+      FROM "${schema}".marshmallow_config
+      WHERE talent_id = $1::uuid
+    `, talentId);
+
+    return configs[0] ?? null;
+  }
+
   /**
    * Find talent and config by path (multi-tenant)
    * Searches by marshmallow_path first, then by code as fallback
@@ -101,53 +166,7 @@ export class PublicMarshmallowService {
 
         if (talents.length > 0) {
           const talent = talents[0];
-
-          // Get config from the same tenant schema
-          const configs = await prisma.$queryRawUnsafe<Array<{
-            id: string;
-            isEnabled: boolean;
-            title: string;
-            welcomeText: string;
-            placeholderText: string;
-            thankYouText: string;
-            allowAnonymous: boolean;
-            captchaMode: string;
-            moderationEnabled: boolean;
-            autoApprove: boolean;
-            profanityFilterEnabled: boolean;
-            externalBlocklistEnabled: boolean;
-            maxMessageLength: number;
-            minMessageLength: number;
-            rateLimitPerIp: number;
-            rateLimitWindowHours: number;
-            reactionsEnabled: boolean;
-            allowedReactions: string[];
-            theme: Record<string, unknown>;
-            avatarUrl: string | null;
-            termsContentEn: string | null;
-            termsContentZh: string | null;
-            termsContentJa: string | null;
-            privacyContentEn: string | null;
-            privacyContentZh: string | null;
-            privacyContentJa: string | null;
-          }>>(`
-            SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
-                   placeholder_text as "placeholderText", thank_you_text as "thankYouText",
-                   allow_anonymous as "allowAnonymous", captcha_mode as "captchaMode",
-                   moderation_enabled as "moderationEnabled", auto_approve as "autoApprove",
-                   profanity_filter_enabled as "profanityFilterEnabled",
-                   external_blocklist_enabled as "externalBlocklistEnabled",
-                   max_message_length as "maxMessageLength", min_message_length as "minMessageLength",
-                   rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
-                   reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme,
-                   avatar_url as "avatarUrl",
-                   terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-                   privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa"
-            FROM "${schema}".marshmallow_config
-            WHERE talent_id = $1::uuid
-          `, talent.id);
-
-          const config = configs[0];
+          const config = await this.findConfigForTalent(schema, talent.id);
           if (config) {
             return { talent, config, tenantSchema: schema };
           }
@@ -164,260 +183,49 @@ export class PublicMarshmallowService {
     return null;
   }
 
-  /**
-   * Submit message
-   */
-  async submitMessage(
-    path: string,
-    dto: SubmitMessageDto,
-    context: { ip: string; userAgent: string },
-  ): Promise<{ id: string; status: string; message: string }> {
+  private async findTalentAndConfigByCodes(
+    tenantCode: string,
+    talentCode: string,
+  ) {
     const prisma = this.databaseService.getPrisma();
+    const tenantSchema = await this.getTenantSchemaByCode(tenantCode);
 
-    // 1. Get config by path (multi-tenant)
-    const result = await this.findTalentAndConfigByPath(path);
-
-    if (!result) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Page not found',
-      });
+    if (!tenantSchema) {
+      return null;
     }
 
-    const { talent, config, tenantSchema } = result;
+    const talents = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      displayName: string;
+      avatarUrl: string | null;
+    }>>(`
+      SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
+      FROM "${tenantSchema}".talent
+      WHERE LOWER(code) = LOWER($1)
+        AND lifecycle_status = 'published'
+      LIMIT 1
+    `, talentCode);
 
-    if (!config || !config.isEnabled) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Marshmallow is not enabled',
-      });
+    const talent = talents[0];
+    if (!talent) {
+      return null;
     }
 
-    // 2. Validate message length
-    if (dto.content.length < config.minMessageLength) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: `Message must be at least ${config.minMessageLength} characters`,
-      });
+    const config = await this.findConfigForTalent(tenantSchema, talent.id);
+    if (!config) {
+      return null;
     }
-
-    if (dto.content.length > config.maxMessageLength) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: `Message must be at most ${config.maxMessageLength} characters`,
-      });
-    }
-
-    // 3. Validate anonymous setting
-    if (!config.allowAnonymous && dto.isAnonymous) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Anonymous messages are not allowed',
-      });
-    }
-
-    if (!dto.isAnonymous && !dto.senderName) {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Sender name is required for non-anonymous messages',
-      });
-    }
-
-    // 4. Check rate limit
-    const rateLimitResult = await this.rateLimitService.checkRateLimit(
-      config.id,
-      context.ip,
-      dto.fingerprint,
-      {
-        rateLimitPerIp: config.rateLimitPerIp,
-        rateLimitWindowHours: config.rateLimitWindowHours,
-      },
-    );
-
-    if (!rateLimitResult.allowed) {
-      throw new ForbiddenException({
-        code: 'RATE_LIMIT_EXCEEDED',
-        message: '提交过于频繁，请稍后再试',
-        retryAfter: rateLimitResult.retryAfter,
-      });
-    }
-
-    // 5. Check CAPTCHA
-    const captchaContext: CaptchaContext = {
-      ip: context.ip,
-      fingerprint: dto.fingerprint,
-      userAgent: context.userAgent,
-      honeypotValue: dto.honeypot,  // Pass honeypot value for bot detection
-    };
-
-    const captchaDecision = await this.captchaService.shouldRequireCaptcha(
-      config.captchaMode as CaptchaMode,
-      captchaContext,
-    );
-
-    // If honeypot triggered or blocked trust level, reject immediately
-    if (captchaDecision.forceReject) {
-      await this.techEventLog.log({
-        eventType: TechEventType.SECURITY_EVENT,
-        scope: 'security',
-        severity: LogSeverity.WARN,
-        payload: {
-          type: 'marshmallow_bot_detected',
-          reason: captchaDecision.reason,
-          ip: context.ip,
-          fingerprint: dto.fingerprint,
-        },
-      }, {
-        tenantSchema,
-        ipAddress: context.ip,
-        userAgent: context.userAgent,
-      });
-
-      throw new ForbiddenException({
-        code: 'REQUEST_BLOCKED',
-        message: '请求已被拒绝',
-      });
-    }
-
-    if (captchaDecision.required) {
-      if (!dto.turnstileToken) {
-        throw new ForbiddenException({
-          code: 'CAPTCHA_REQUIRED',
-          message: '请完成人机验证',
-        });
-      }
-
-      const verified = await this.captchaService.verifyTurnstile(
-        dto.turnstileToken,
-        context.ip,
-        dto.fingerprint,  // Pass fingerprint for trust score recording
-      );
-
-      if (!verified) {
-        throw new ForbiddenException({
-          code: 'CAPTCHA_INVALID',
-          message: '人机验证失败，请重试',
-        });
-      }
-    }
-
-    // 6. Profanity filter
-    const filterResult = await this.profanityFilter.filter(dto.content, talent.id, {
-      profanityFilterEnabled: config.profanityFilterEnabled,
-      externalBlocklistEnabled: config.externalBlocklistEnabled,
-    });
-
-    if (filterResult.action === 'reject') {
-      // Record content rejection in trust score
-      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'rejected');
-
-      // Log rejected message
-      await this.techEventLog.log({
-        eventType: TechEventType.SYSTEM_ERROR,
-        scope: 'security',
-        severity: LogSeverity.WARN,
-        payload: {
-          type: 'marshmallow_content_rejected',
-          talentId: talent.id,
-          flags: filterResult.flags,
-          score: filterResult.score,
-          ip: context.ip,
-        },
-      }, {
-        tenantSchema,
-        ipAddress: context.ip,
-        userAgent: context.userAgent,
-      });
-
-      throw new BadRequestException({
-        code: 'CONTENT_REJECTED',
-        message: '您的消息包含不允许的内容，请修改后重试',
-      });
-    }
-
-    // Record content result in trust score
-    if (filterResult.action === 'flag') {
-      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'flagged');
-    } else {
-      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'clean');
-    }
-
-    // 7. Determine initial status
-    let status: string;
-    if (!config.moderationEnabled) {
-      status = 'approved';
-    } else if (config.autoApprove && filterResult.action === 'allow') {
-      status = 'approved';
-    } else {
-      status = 'pending';
-    }
-
-    // 8. Handle Image (Bilibili Link)
-    let imageUrl: string | null = null;
-    let imageUrls: string[] = [];
-    const socialLink: string | null = dto.socialLink || null;
-
-    if (dto.selectedImageUrls && dto.selectedImageUrls.length > 0) {
-        // User explicitly selected images
-        imageUrls = dto.selectedImageUrls;
-        imageUrl = imageUrls[0]; // Backward compatibility
-    } else if (dto.socialLink) {
-        // Legacy behavior: resolve single image if not provided
-        try {
-            const images = await this.resolveBilibiliImages(dto.socialLink);
-            if (images.length > 0) {
-                imageUrls = images;
-                imageUrl = images[0];
-            }
-        } catch (error) {
-             this.logger.warn(`Failed to resolve Bilibili image: ${error}`);
-        }
-    }
-
-    // 9. Create message (using raw SQL for multi-tenant)
-    const messages = await prisma.$queryRawUnsafe<Array<{ id: string; status: string }>>(`
-      INSERT INTO "${tenantSchema}".marshmallow_message (
-        id, config_id, talent_id, content, sender_name, is_anonymous, status,
-        ip_address, user_agent, fingerprint_hash, profanity_flags, image_url, image_urls, social_link, created_at
-      ) VALUES (
-        gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6,
-        $7::inet, $8, $9, $10::varchar(64)[], $11, $12::text[], $13, now()
-      )
-      RETURNING id, status
-    `,
-      config.id,
-      talent.id,
-      filterResult.filteredContent ?? dto.content,
-      dto.isAnonymous ? null : dto.senderName,
-      dto.isAnonymous,
-      status,
-      context.ip,
-      context.userAgent,
-      dto.fingerprint,
-      filterResult.flags || [],
-      imageUrl,
-      imageUrls,
-      socialLink
-    );
-
-    const message = messages[0];
 
     return {
-      id: message.id,
-      status: message.status,
-      message: config.thankYouText ?? '感谢你的提问！',
+      talent,
+      config,
+      tenantSchema,
     };
   }
 
-  /**
-   * Get public messages (multi-tenant aware)
-   */
-  async getMessages(path: string, query: PublicMessagesQueryDto) {
-    const prisma = this.databaseService.getPrisma();
-
-    // Get talent and config by path (multi-tenant)
-    const result = await this.findTalentAndConfigByPath(path);
-
+  private requireEnabledLookupResult(
+    result: Awaited<ReturnType<PublicMarshmallowService['findTalentAndConfigByPath']>>,
+  ) {
     if (!result) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -425,18 +233,84 @@ export class PublicMarshmallowService {
       });
     }
 
-    const { config, tenantSchema } = result;
-
-    if (!config.isEnabled) {
+    if (!result.config.isEnabled) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Marshmallow is not enabled',
       });
     }
 
+    return result;
+  }
+
+  private async requireEnabledLookupByPath(path: string) {
+    return this.requireEnabledLookupResult(await this.findTalentAndConfigByPath(path));
+  }
+
+  private async requireEnabledLookupByCodes(tenantCode: string, talentCode: string) {
+    return this.requireEnabledLookupResult(
+      await this.findTalentAndConfigByCodes(tenantCode, talentCode),
+    );
+  }
+
+  private buildPublicConfigResponse(
+    talent: { displayName: string; avatarUrl: string | null },
+    config: {
+      avatarUrl: string | null;
+      title: string | null;
+      welcomeText: string | null;
+      placeholderText: string | null;
+      allowAnonymous: boolean;
+      captchaMode: string;
+      maxMessageLength: number;
+      minMessageLength: number;
+      reactionsEnabled: boolean;
+      allowedReactions: string[];
+      theme: Record<string, unknown>;
+      termsContentEn: string | null;
+      termsContentZh: string | null;
+      termsContentJa: string | null;
+      privacyContentEn: string | null;
+      privacyContentZh: string | null;
+      privacyContentJa: string | null;
+    },
+  ) {
+    return {
+      talent: {
+        displayName: talent.displayName,
+        avatarUrl: config.avatarUrl || talent.avatarUrl,
+      },
+      title: config.title,
+      welcomeText: config.welcomeText,
+      placeholderText: config.placeholderText,
+      allowAnonymous: config.allowAnonymous,
+      captchaMode: config.captchaMode,
+      maxMessageLength: config.maxMessageLength,
+      minMessageLength: config.minMessageLength,
+      reactionsEnabled: config.reactionsEnabled,
+      allowedReactions: config.allowedReactions,
+      theme: config.theme,
+      terms: {
+        en: config.termsContentEn,
+        zh: config.termsContentZh,
+        ja: config.termsContentJa,
+      },
+      privacy: {
+        en: config.privacyContentEn,
+        zh: config.privacyContentZh,
+        ja: config.privacyContentJa,
+      },
+    };
+  }
+
+  private async getMessagesFromLookup(
+    result: ReturnType<PublicMarshmallowService['requireEnabledLookupResult']>,
+    query: PublicMessagesQueryDto,
+  ) {
+    const prisma = this.databaseService.getPrisma();
+    const { config, tenantSchema } = result;
     const { cursor, limit = 20, fingerprint } = query;
 
-    // Build query with optional cursor
     let cursorCondition = '';
     const params: unknown[] = [config.id, limit + 1];
 
@@ -479,90 +353,310 @@ export class PublicMarshmallowService {
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, -1) : messages;
 
-    // Get user reactions if fingerprint provided
     let userReactions: Record<string, string[]> = {};
     if (fingerprint && items.length > 0) {
       userReactions = await this.reactionService.getUserReactions(
-        items.map((m) => m.id),
+        items.map((message) => message.id),
         fingerprint,
         tenantSchema,
       );
     }
 
     return {
-      messages: items.map((m) => ({
-        id: m.id,
-        content: m.content,
-        senderName: m.senderName,
-        isAnonymous: m.isAnonymous,
-        isRead: m.isRead ?? false,
-        replyContent: m.replyContent,
-        repliedAt: m.repliedAt?.toISOString() ?? null,
-        repliedBy: m.repliedById ? { 
-          id: m.repliedById, 
-          displayName: m.repliedByName || 'Unknown',
-          avatarUrl: m.repliedByAvatar,
-          email: m.repliedByEmail,
-        } : null,
-        reactionCounts: m.reactionCounts ?? {},
-        userReactions: userReactions[m.id] ?? [],
-        createdAt: m.createdAt.toISOString(),
-        imageUrl: m.imageUrl,
-        imageUrls: m.imageUrls,
+      messages: items.map((message) => ({
+        id: message.id,
+        content: message.content,
+        senderName: message.senderName,
+        isAnonymous: message.isAnonymous,
+        isRead: message.isRead ?? false,
+        replyContent: message.replyContent,
+        repliedAt: message.repliedAt?.toISOString() ?? null,
+        repliedBy: message.repliedById
+          ? {
+              id: message.repliedById,
+              displayName: message.repliedByName || 'Unknown',
+              avatarUrl: message.repliedByAvatar,
+              email: message.repliedByEmail,
+            }
+          : null,
+        reactionCounts: message.reactionCounts ?? {},
+        userReactions: userReactions[message.id] ?? [],
+        createdAt: message.createdAt.toISOString(),
+        imageUrl: message.imageUrl,
+        imageUrls: message.imageUrls,
       })),
       cursor: hasMore ? items[items.length - 1].createdAt.toISOString() : null,
       hasMore,
     };
   }
 
+  private async submitMessageFromLookup(
+    result: Awaited<ReturnType<PublicMarshmallowService['requireEnabledLookupByPath']>>,
+    dto: SubmitMessageDto,
+    context: { ip: string; userAgent: string },
+  ): Promise<{ id: string; status: string; message: string }> {
+    const prisma = this.databaseService.getPrisma();
+    const { talent, config, tenantSchema } = result;
+
+    if (dto.content.length < config.minMessageLength) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Message must be at least ${config.minMessageLength} characters`,
+      });
+    }
+
+    if (dto.content.length > config.maxMessageLength) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Message must be at most ${config.maxMessageLength} characters`,
+      });
+    }
+
+    if (!config.allowAnonymous && dto.isAnonymous) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Anonymous messages are not allowed',
+      });
+    }
+
+    if (!dto.isAnonymous && !dto.senderName) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Sender name is required for non-anonymous messages',
+      });
+    }
+
+    const rateLimitResult = await this.rateLimitService.checkRateLimit(
+      config.id,
+      context.ip,
+      dto.fingerprint,
+      {
+        rateLimitPerIp: config.rateLimitPerIp,
+        rateLimitWindowHours: config.rateLimitWindowHours,
+      },
+    );
+
+    if (!rateLimitResult.allowed) {
+      throw new ForbiddenException({
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: '提交过于频繁，请稍后再试',
+        retryAfter: rateLimitResult.retryAfter,
+      });
+    }
+
+    const captchaContext: CaptchaContext = {
+      ip: context.ip,
+      fingerprint: dto.fingerprint,
+      userAgent: context.userAgent,
+      honeypotValue: dto.honeypot,
+    };
+
+    const captchaDecision = await this.captchaService.shouldRequireCaptcha(
+      config.captchaMode as CaptchaMode,
+      captchaContext,
+    );
+
+    if (captchaDecision.forceReject) {
+      await this.techEventLog.log({
+        eventType: TechEventType.SECURITY_EVENT,
+        scope: 'security',
+        severity: LogSeverity.WARN,
+        payload: {
+          type: 'marshmallow_bot_detected',
+          reason: captchaDecision.reason,
+          ip: context.ip,
+          fingerprint: dto.fingerprint,
+        },
+      }, {
+        tenantSchema,
+        ipAddress: context.ip,
+        userAgent: context.userAgent,
+      });
+
+      throw new ForbiddenException({
+        code: 'REQUEST_BLOCKED',
+        message: '请求已被拒绝',
+      });
+    }
+
+    if (captchaDecision.required) {
+      if (!dto.turnstileToken) {
+        throw new ForbiddenException({
+          code: 'CAPTCHA_REQUIRED',
+          message: '请完成人机验证',
+        });
+      }
+
+      const verified = await this.captchaService.verifyTurnstile(
+        dto.turnstileToken,
+        context.ip,
+        dto.fingerprint,
+      );
+
+      if (!verified) {
+        throw new ForbiddenException({
+          code: 'CAPTCHA_INVALID',
+          message: '人机验证失败，请重试',
+        });
+      }
+    }
+
+    const filterResult = await this.profanityFilter.filter(dto.content, talent.id, {
+      profanityFilterEnabled: config.profanityFilterEnabled,
+      externalBlocklistEnabled: config.externalBlocklistEnabled,
+    });
+
+    if (filterResult.action === 'reject') {
+      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'rejected');
+
+      await this.techEventLog.log({
+        eventType: TechEventType.SYSTEM_ERROR,
+        scope: 'security',
+        severity: LogSeverity.WARN,
+        payload: {
+          type: 'marshmallow_content_rejected',
+          talentId: talent.id,
+          flags: filterResult.flags,
+          score: filterResult.score,
+          ip: context.ip,
+        },
+      }, {
+        tenantSchema,
+        ipAddress: context.ip,
+        userAgent: context.userAgent,
+      });
+
+      throw new BadRequestException({
+        code: 'CONTENT_REJECTED',
+        message: '您的消息包含不允许的内容，请修改后重试',
+      });
+    }
+
+    if (filterResult.action === 'flag') {
+      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'flagged');
+    } else {
+      await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'clean');
+    }
+
+    let status: string;
+    if (!config.moderationEnabled) {
+      status = 'approved';
+    } else if (config.autoApprove && filterResult.action === 'allow') {
+      status = 'approved';
+    } else {
+      status = 'pending';
+    }
+
+    let imageUrl: string | null = null;
+    let imageUrls: string[] = [];
+    const socialLink: string | null = dto.socialLink || null;
+
+    if (dto.selectedImageUrls && dto.selectedImageUrls.length > 0) {
+      imageUrls = dto.selectedImageUrls;
+      imageUrl = imageUrls[0];
+    } else if (dto.socialLink) {
+      try {
+        const images = await this.resolveBilibiliImages(dto.socialLink);
+        if (images.length > 0) {
+          imageUrls = images;
+          imageUrl = images[0];
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to resolve Bilibili image: ${error}`);
+      }
+    }
+
+    const messages = await prisma.$queryRawUnsafe<Array<{ id: string; status: string }>>(`
+      INSERT INTO "${tenantSchema}".marshmallow_message (
+        id, config_id, talent_id, content, sender_name, is_anonymous, status,
+        ip_address, user_agent, fingerprint_hash, profanity_flags, image_url, image_urls, social_link, created_at
+      ) VALUES (
+        gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6,
+        $7::inet, $8, $9, $10::varchar(64)[], $11, $12::text[], $13, now()
+      )
+      RETURNING id, status
+    `,
+      config.id,
+      talent.id,
+      filterResult.filteredContent ?? dto.content,
+      dto.isAnonymous ? null : dto.senderName,
+      dto.isAnonymous,
+      status,
+      context.ip,
+      context.userAgent,
+      dto.fingerprint,
+      filterResult.flags || [],
+      imageUrl,
+      imageUrls,
+      socialLink,
+    );
+
+    const message = messages[0];
+
+    return {
+      id: message.id,
+      status: message.status,
+      message: config.thankYouText ?? '感谢你的提问！',
+    };
+  }
+
+  /**
+   * Submit message
+   */
+  async submitMessage(
+    path: string,
+    dto: SubmitMessageDto,
+    context: { ip: string; userAgent: string },
+  ): Promise<{ id: string; status: string; message: string }> {
+    return this.submitMessageFromLookup(
+      await this.requireEnabledLookupByPath(path),
+      dto,
+      context,
+    );
+  }
+
+  async submitMessageByCodes(
+    tenantCode: string,
+    talentCode: string,
+    dto: SubmitMessageDto,
+    context: { ip: string; userAgent: string },
+  ): Promise<{ id: string; status: string; message: string }> {
+    return this.submitMessageFromLookup(
+      await this.requireEnabledLookupByCodes(tenantCode, talentCode),
+      dto,
+      context,
+    );
+  }
+
+  /**
+   * Get public messages (multi-tenant aware)
+   */
+  async getMessages(path: string, query: PublicMessagesQueryDto) {
+    return this.getMessagesFromLookup(await this.requireEnabledLookupByPath(path), query);
+  }
+
+  async getMessagesByCodes(
+    tenantCode: string,
+    talentCode: string,
+    query: PublicMessagesQueryDto,
+  ) {
+    return this.getMessagesFromLookup(
+      await this.requireEnabledLookupByCodes(tenantCode, talentCode),
+      query,
+    );
+  }
+
   /**
    * Get config for public page (multi-tenant aware)
    */
   async getConfig(path: string) {
-    const result = await this.findTalentAndConfigByPath(path);
+    const { talent, config } = await this.requireEnabledLookupByPath(path);
+    return this.buildPublicConfigResponse(talent, config);
+  }
 
-    if (!result) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Page not found',
-      });
-    }
-
-    const { talent, config } = result;
-
-    if (!config.isEnabled) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Marshmallow is not enabled',
-      });
-    }
-
-    return {
-      talent: {
-        displayName: talent.displayName,
-        avatarUrl: config.avatarUrl || talent.avatarUrl, // Prefer config avatar, fallback to talent avatar
-      },
-      title: config.title,
-      welcomeText: config.welcomeText,
-      placeholderText: config.placeholderText,
-      allowAnonymous: config.allowAnonymous,
-      captchaMode: config.captchaMode,
-      maxMessageLength: config.maxMessageLength,
-      minMessageLength: config.minMessageLength,
-      reactionsEnabled: config.reactionsEnabled,
-      allowedReactions: config.allowedReactions,
-      theme: config.theme,
-      terms: {
-        en: config.termsContentEn,
-        zh: config.termsContentZh,
-        ja: config.termsContentJa,
-      },
-      privacy: {
-        en: config.privacyContentEn,
-        zh: config.privacyContentZh,
-        ja: config.privacyContentJa,
-      },
-    };
+  async getConfigByCodes(tenantCode: string, talentCode: string) {
+    const { talent, config } = await this.requireEnabledLookupByCodes(tenantCode, talentCode);
+    return this.buildPublicConfigResponse(talent, config);
   }
 
   /**

@@ -1,9 +1,29 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
 import { type WebhookRecord } from '../domain/webhook.policy';
+
+function asRecord(
+  value: Prisma.JsonValue | Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData'> & { extraData: Prisma.JsonValue | Record<string, unknown> | null }>(
+  record: T,
+): WebhookRecord {
+  return {
+    ...record,
+    extraData: asRecord(record.extraData),
+  };
+}
 
 @Injectable()
 export class WebhookReadRepository {
@@ -25,6 +45,7 @@ export class WebhookReadRepository {
             name_en as "nameEn",
             name_zh as "nameZh",
             name_ja as "nameJa",
+            extra_data as "extraData",
             url,
             secret,
             events,
@@ -46,9 +67,11 @@ export class WebhookReadRepository {
       );
     }
 
-    return this.prisma.webhook.findMany({
+    const records = await this.prisma.webhook.findMany({
       orderBy: { createdAt: 'desc' },
     });
+
+    return records.map((record) => mapWebhookRecord(record));
   }
 
   async findById(
@@ -64,6 +87,7 @@ export class WebhookReadRepository {
             name_en as "nameEn",
             name_zh as "nameZh",
             name_ja as "nameJa",
+            extra_data as "extraData",
             url,
             secret,
             events,
@@ -89,8 +113,10 @@ export class WebhookReadRepository {
       return rows[0] ?? null;
     }
 
-    return this.prisma.webhook.findUnique({
+    const record = await this.prisma.webhook.findUnique({
       where: { id },
     });
+
+    return record ? mapWebhookRecord(record) : null;
   }
 }

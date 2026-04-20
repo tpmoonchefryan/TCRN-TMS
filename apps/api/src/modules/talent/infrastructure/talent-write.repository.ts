@@ -48,6 +48,7 @@ export class TalentWriteRepository {
   async create(
     tenantSchema: string,
     data: TalentCreateInput & {
+      extraData?: Record<string, unknown> | null;
       path: string;
       settings: Record<string, unknown>;
     },
@@ -55,13 +56,13 @@ export class TalentWriteRepository {
   ): Promise<TalentData> {
     const results = await prisma.$queryRawUnsafe<TalentData[]>(
       `INSERT INTO "${tenantSchema}".talent
-        (id, subsidiary_id, profile_store_id, code, path, name_en, name_zh, name_ja, display_name,
+        (id, subsidiary_id, profile_store_id, code, path, name_en, name_zh, name_ja, extra_data, display_name,
          description_en, description_zh, description_ja, avatar_url, homepage_path, timezone,
          is_active, lifecycle_status, published_at, published_by, settings,
          created_at, updated_at, created_by, updated_by, version)
        VALUES
-        (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-         false, 'draft', NULL, NULL, $15::jsonb, now(), now(), $16::uuid, $16::uuid, 1)
+        (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15,
+         false, 'draft', NULL, NULL, $16::jsonb, now(), now(), $17::uuid, $17::uuid, 1)
        RETURNING
          ${TALENT_SELECT_FIELDS}`,
       data.subsidiaryId || null,
@@ -71,6 +72,7 @@ export class TalentWriteRepository {
       data.nameEn,
       data.nameZh || null,
       data.nameJa || null,
+      data.extraData ? JSON.stringify(data.extraData) : null,
       data.displayName,
       data.descriptionEn || null,
       data.descriptionZh || null,

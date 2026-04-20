@@ -10,6 +10,7 @@ import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
+import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import {
   buildBlocklistCreateLogPayload,
   buildBlocklistUpdateData,
@@ -49,11 +50,18 @@ export class BlocklistWriteService {
 
     const tenantSchema = context.tenantSchema;
     const prisma = this.databaseService.getPrisma();
+    const translationPayload = buildManagedNameTranslationPayload(dto);
     const entry = await prisma.$transaction(async (tx) => {
       const newEntry = await this.blocklistWriteRepository.create(
         tx,
         tenantSchema,
-        dto,
+        {
+          ...dto,
+          extraData: translationPayload.extraData,
+          nameEn: translationPayload.nameEn,
+          nameJa: translationPayload.nameJa,
+          nameZh: translationPayload.nameZh,
+        },
         context.userId as string,
       );
 
@@ -113,12 +121,19 @@ export class BlocklistWriteService {
     }
 
     const prisma = this.databaseService.getPrisma();
+    const translationPayload = buildManagedNameTranslationPayload(dto, entry);
     await prisma.$transaction(async (tx) => {
       await this.blocklistWriteRepository.update(
         tx,
         tenantSchema,
         id,
-        buildBlocklistUpdateData(dto),
+        {
+          ...buildBlocklistUpdateData(dto),
+          extraData: translationPayload.extraData,
+          nameEn: translationPayload.nameEn,
+          nameJa: translationPayload.nameJa,
+          nameZh: translationPayload.nameZh,
+        },
         context.userId,
       );
 

@@ -71,4 +71,37 @@ describe('normalizeStoredEmailConfig', () => {
       },
     });
   });
+
+  it('keeps tenant sender overrides by tenant schema', () => {
+    expect(
+      normalizeStoredEmailConfig({
+        provider: 'smtp',
+        tenantSenderOverrides: {
+          tenant_alpha: {
+            fromAddress: 'alpha@example.com',
+            fromName: 'Alpha Sender',
+            replyTo: 'alpha-reply@example.com',
+            ignored: true,
+          },
+          tenant_empty: {
+            ignored: 'value',
+          },
+          '': {
+            fromAddress: 'ignored@example.com',
+          },
+        },
+      }),
+    ).toEqual({
+      provider: 'smtp',
+      tencentSes: undefined,
+      smtp: undefined,
+      tenantSenderOverrides: {
+        tenant_alpha: {
+          fromAddress: 'alpha@example.com',
+          fromName: 'Alpha Sender',
+          replyTo: 'alpha-reply@example.com',
+        },
+      },
+    });
+  });
 });

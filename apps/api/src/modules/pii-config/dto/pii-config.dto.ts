@@ -6,6 +6,7 @@ import {
     IsBoolean,
     IsEnum,
     IsInt,
+    IsObject,
     IsOptional,
     IsString,
     IsUrl,
@@ -230,6 +231,17 @@ export class CreateProfileStoreDto {
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Locale-keyed managed name translations',
+    example: {
+      zh_HANT: '預設檔案庫',
+      fr: 'Magasin de profils par défaut',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Description in English', example: 'Primary customer profile store' })
   @IsOptional()
   @IsString()
@@ -244,6 +256,17 @@ export class CreateProfileStoreDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed managed description translations',
+    example: {
+      zh_HANT: '主要客戶檔案庫',
+      fr: 'Magasin principal des profils clients',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Whether this store becomes the default store', example: true })
   @IsOptional()
@@ -270,6 +293,17 @@ export class UpdateProfileStoreDto {
   @MaxLength(255)
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Locale-keyed managed name translations',
+    example: {
+      zh_HANT: '預設檔案庫',
+      fr: 'Magasin de profils par défaut',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Description in English', example: 'Primary customer profile store' })
   @IsOptional()
   @IsString()
@@ -284,6 +318,17 @@ export class UpdateProfileStoreDto {
   @IsOptional()
   @IsString()
   descriptionJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Locale-keyed managed description translations',
+    example: {
+      zh_HANT: '主要客戶檔案庫',
+      fr: 'Magasin principal des profils clients',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  descriptionTranslations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Whether this store should be the default store', example: true })
   @IsOptional()
@@ -305,6 +350,12 @@ export class UpdateProfileStoreDto {
 // ============================================================================
 
 export class PaginationQueryDto {
+  @ApiPropertyOptional({ description: 'Search keyword', example: 'DEFAULT' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  search?: string;
+
   @ApiPropertyOptional({ description: 'Page number', example: 1, minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)

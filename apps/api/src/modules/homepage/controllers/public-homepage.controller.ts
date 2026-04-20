@@ -1,12 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import {
-    Controller,
-    Get,
-    Param,
-    Res,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
@@ -112,14 +106,47 @@ export class PublicHomepageController {
   constructor(private readonly publicHomepageService: PublicHomepageService) {}
 
   /**
-   * Get public homepage data (JSON API)
+   * Get public homepage data via canonical shared-domain route.
    */
-  @Get('*path')
+  @Get(':tenantCode/:talentCode')
+  @Public()
+  @UseGuards(RateLimiterGuard)
+  @ApiResponse({ status: 200, description: 'Returns homepage content via canonical shared-domain route', schema: PUBLIC_HOMEPAGE_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Homepage not found', schema: PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA })
+  async getPublicHomepageByCodes(
+    @Param('tenantCode') tenantCode: string,
+    @Param('talentCode') talentCode: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const data = await this.publicHomepageService.getPublishedHomepageByCodesOrThrow(
+      tenantCode,
+      talentCode,
+    );
+
+    res.set({
+      'Cache-Control': 'public, max-age=300, s-maxage=900',
+      'CDN-Cache-Control': 'public, max-age=900',
+      'ETag': `"${Buffer.from(data.updatedAt).toString('base64')}"`,
+    });
+
+    return {
+      talent: data.talent,
+      content: data.content,
+      theme: data.theme,
+      seo: data.seo,
+      updatedAt: data.updatedAt,
+    };
+  }
+
+  /**
+   * Get public homepage data via legacy single-path route.
+   */
+  @Get(':path')
   @Public()
   @UseGuards(RateLimiterGuard)
   @ApiResponse({ status: 200, description: 'Returns homepage content', schema: PUBLIC_HOMEPAGE_SCHEMA })
   @ApiResponse({ status: 404, description: 'Homepage not found', schema: PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA })
-  async getPublicHomepage(
+  async getPublicHomepageByLegacyPath(
     @Param('path') path: string,
     @Res({ passthrough: true }) res: Response,
   ) {

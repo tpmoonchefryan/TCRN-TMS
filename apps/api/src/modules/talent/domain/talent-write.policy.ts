@@ -9,6 +9,8 @@ export interface TalentCreateInput {
   nameEn: string;
   nameZh?: string;
   nameJa?: string;
+  translations?: Record<string, string>;
+  extraData?: Record<string, unknown> | null;
   displayName: string;
   descriptionEn?: string;
   descriptionZh?: string;
@@ -23,6 +25,8 @@ export interface TalentUpdateInput {
   nameEn?: string;
   nameZh?: string;
   nameJa?: string;
+  translations?: Record<string, string>;
+  extraData?: Record<string, unknown> | null;
   displayName?: string;
   descriptionEn?: string;
   descriptionZh?: string;
@@ -191,6 +195,10 @@ export const buildTalentUpdateMutation = (
   if (data.nameJa !== undefined) {
     updates.push(`name_ja = $${paramIndex++}`);
     params.push(data.nameJa);
+  }
+  if (data.extraData !== undefined) {
+    updates.push(`extra_data = $${paramIndex++}::jsonb`);
+    params.push(data.extraData ? JSON.stringify(data.extraData) : null);
   }
   if (data.displayName !== undefined) {
     updates.push(`display_name = $${paramIndex++}`);

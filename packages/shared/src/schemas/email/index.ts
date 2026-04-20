@@ -3,12 +3,16 @@
 
 import { z } from 'zod';
 
+import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
+
+const TranslationMapSchema = z.record(z.string(), z.string());
+
 // ============================================================================
 // Enums
 // ============================================================================
 export const EmailProviderSchema = z.enum(['tencent_ses', 'smtp']);
 export const EmailTemplateCategorySchema = z.enum(['system', 'business']);
-export const EmailLocaleSchema = z.enum(['en', 'zh', 'ja']);
+export const EmailLocaleSchema = z.enum(SUPPORTED_UI_LOCALES);
 
 export type EmailProvider = z.infer<typeof EmailProviderSchema>;
 
@@ -34,10 +38,17 @@ export const SmtpConfigSchema = z.object({
   fromName: z.string().min(1, 'From name is required'),
 });
 
+export const TenantEmailSenderOverrideSchema = z.object({
+  fromAddress: z.string().email('Invalid email address').optional(),
+  fromName: z.string().min(1, 'From name is required').optional(),
+  replyTo: z.string().email('Invalid reply-to address').optional(),
+});
+
 export const SaveEmailConfigSchema = z.object({
   provider: EmailProviderSchema,
   tencentSes: TencentSesConfigSchema.optional(),
   smtp: SmtpConfigSchema.optional(),
+  tenantSenderOverrides: z.record(z.string(), TenantEmailSenderOverrideSchema).optional(),
 }).refine(
   (data) => {
     if (data.provider === 'tencent_ses') return !!data.tencentSes;
@@ -62,15 +73,19 @@ export const CreateEmailTemplateSchema = z.object({
   nameEn: z.string().max(128),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   subjectEn: z.string().max(255),
   subjectZh: z.string().max(255).optional(),
   subjectJa: z.string().max(255).optional(),
+  subjectTranslations: TranslationMapSchema.optional(),
   bodyHtmlEn: z.string(),
   bodyHtmlZh: z.string().optional(),
   bodyHtmlJa: z.string().optional(),
+  bodyHtmlTranslations: TranslationMapSchema.optional(),
   bodyTextEn: z.string().optional(),
   bodyTextZh: z.string().optional(),
   bodyTextJa: z.string().optional(),
+  bodyTextTranslations: TranslationMapSchema.optional(),
   variables: z.array(z.string()).optional(),
   category: EmailTemplateCategorySchema,
 });
@@ -79,15 +94,19 @@ export const UpdateEmailTemplateSchema = z.object({
   nameEn: z.string().max(128).optional(),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
+  translations: TranslationMapSchema.optional(),
   subjectEn: z.string().max(255).optional(),
   subjectZh: z.string().max(255).optional(),
   subjectJa: z.string().max(255).optional(),
+  subjectTranslations: TranslationMapSchema.optional(),
   bodyHtmlEn: z.string().optional(),
   bodyHtmlZh: z.string().optional(),
   bodyHtmlJa: z.string().optional(),
+  bodyHtmlTranslations: TranslationMapSchema.optional(),
   bodyTextEn: z.string().optional(),
   bodyTextZh: z.string().optional(),
   bodyTextJa: z.string().optional(),
+  bodyTextTranslations: TranslationMapSchema.optional(),
   variables: z.array(z.string()).optional(),
   category: EmailTemplateCategorySchema.optional(),
   isActive: z.boolean().optional(),

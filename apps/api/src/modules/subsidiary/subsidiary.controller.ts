@@ -16,10 +16,11 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
+import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
 import { SubsidiaryService } from './subsidiary.service';
 
 // DTOs
@@ -58,6 +59,18 @@ export class CreateSubsidiaryDto {
   @IsString()
   nameJa?: string;
 
+  @ApiPropertyOptional({
+    description: 'Managed locale map keyed by supported locale codes',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '東京分部',
+      ko: '도쿄 지사',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
+
   @ApiPropertyOptional({ description: 'Description in English', example: 'Main branch for JP operations' })
   @IsOptional()
   @IsString()
@@ -95,6 +108,18 @@ export class UpdateSubsidiaryDto {
   @IsOptional()
   @IsString()
   nameJa?: string;
+
+  @ApiPropertyOptional({
+    description: 'Managed locale map keyed by supported locale codes',
+    additionalProperties: { type: 'string' },
+    example: {
+      zh_HANT: '東京分部',
+      ko: '도쿄 지사',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  translations?: Record<string, string>;
 
   @ApiPropertyOptional({ description: 'Description in English', example: 'Main branch for JP operations' })
   @IsOptional()
@@ -581,6 +606,7 @@ export class SubsidiaryController {
           this.subsidiaryService.getChildrenCount(sub.id, user.tenantSchema),
           this.subsidiaryService.getTalentCount(sub.id, user.tenantSchema),
         ]);
+        const translations = buildManagedNameTranslations(sub);
 
         return {
           id: sub.id,
@@ -591,7 +617,8 @@ export class SubsidiaryController {
           nameEn: sub.nameEn,
           nameZh: sub.nameZh,
           nameJa: sub.nameJa,
-          name: getLocalizedName(sub),
+          translations,
+          name: translations.en || getLocalizedName(sub),
           descriptionEn: sub.descriptionEn,
           descriptionZh: sub.descriptionZh,
           descriptionJa: sub.descriptionJa,
@@ -651,6 +678,7 @@ export class SubsidiaryController {
         nameEn: dto.nameEn,
         nameZh: dto.nameZh,
         nameJa: dto.nameJa,
+        translations: dto.translations,
         descriptionEn: dto.descriptionEn,
         descriptionZh: dto.descriptionZh,
         descriptionJa: dto.descriptionJa,
@@ -658,6 +686,8 @@ export class SubsidiaryController {
       },
       user.id
     );
+
+    const translations = buildManagedNameTranslations(subsidiary);
 
     return success({
       id: subsidiary.id,
@@ -668,7 +698,8 @@ export class SubsidiaryController {
       nameEn: subsidiary.nameEn,
       nameZh: subsidiary.nameZh,
       nameJa: subsidiary.nameJa,
-      name: getLocalizedName(subsidiary),
+      translations,
+      name: translations.en || getLocalizedName(subsidiary),
       sortOrder: subsidiary.sortOrder,
       isActive: subsidiary.isActive,
       createdAt: subsidiary.createdAt.toISOString(),
@@ -719,6 +750,8 @@ export class SubsidiaryController {
       this.subsidiaryService.getTalentCount(subsidiaryId, user.tenantSchema),
     ]);
 
+    const translations = buildManagedNameTranslations(subsidiary);
+
     return success({
       id: subsidiary.id,
       parentId: subsidiary.parentId,
@@ -728,7 +761,8 @@ export class SubsidiaryController {
       nameEn: subsidiary.nameEn,
       nameZh: subsidiary.nameZh,
       nameJa: subsidiary.nameJa,
-      name: getLocalizedName(subsidiary),
+      translations,
+      name: translations.en || getLocalizedName(subsidiary),
       descriptionEn: subsidiary.descriptionEn,
       descriptionZh: subsidiary.descriptionZh,
       descriptionJa: subsidiary.descriptionJa,
@@ -785,12 +819,15 @@ export class SubsidiaryController {
       user.id
     );
 
+    const translations = buildManagedNameTranslations(subsidiary);
+
     return success({
       id: subsidiary.id,
       nameEn: subsidiary.nameEn,
       nameZh: subsidiary.nameZh,
       nameJa: subsidiary.nameJa,
-      name: getLocalizedName(subsidiary),
+      translations,
+      name: translations.en || getLocalizedName(subsidiary),
       sortOrder: subsidiary.sortOrder,
       updatedAt: subsidiary.updatedAt.toISOString(),
       version: subsidiary.version,

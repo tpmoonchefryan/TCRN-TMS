@@ -1,5 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
+  FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
+} from '@tcrn/shared';
+
 import type { HomepageContent, ThemeConfig } from '../dto/homepage.dto';
 
 export interface PublicHomepageData {
@@ -20,6 +25,7 @@ export interface PublicHomepageData {
 
 export interface PublicHomepageTalentRecord {
   id: string;
+  code: string;
   displayName: string;
   avatarUrl: string | null;
   homepagePath: string | null;
@@ -61,17 +67,14 @@ export function normalizeLookupDomain(domain: string): string {
 }
 
 export function resolveLookupRoute(
-  route: DomainLookupRouteRecord,
+  _route: DomainLookupRouteRecord,
   tenantSchema: string,
 ): DomainLookupResult {
-  const homepagePath = route.homepagePath || route.code;
-  const marshmallowPath = route.marshmallowPath || route.code;
-
   return {
-    homepagePath,
-    marshmallowPath,
+    homepagePath: FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
+    marshmallowPath: FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
     tenantSchema,
-    talentId: route.talentId,
+    talentId: _route.talentId,
   };
 }
 

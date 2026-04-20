@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { decorateManagedNameTranslations } from '../../../platform/persistence/managed-name-translations';
 import type { BlocklistListQueryDto } from '../dto/security.dto';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
@@ -31,6 +32,7 @@ export interface BlocklistListRow {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
   severity: string;
@@ -58,6 +60,7 @@ export interface BlocklistDetailRow {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
   severity: string;
@@ -87,6 +90,7 @@ export interface BlocklistEntryWithMeta {
   nameEn: string;
   nameZh: string | null;
   nameJa: string | null;
+  translations: Record<string, string>;
   description: string | null;
   category: string | null;
   severity: string;
@@ -130,9 +134,10 @@ export const buildBlocklistListItem = (
 ): BlocklistEntryWithMeta => {
   const isInherited =
     row.ownerType !== options.scopeType || row.ownerId !== options.scopeId;
+  const decoratedRow = decorateManagedNameTranslations(row);
 
   return {
-    ...row,
+    ...decoratedRow,
     lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     isInherited,
@@ -141,9 +146,13 @@ export const buildBlocklistListItem = (
   };
 };
 
-export const buildBlocklistDetailResponse = (row: BlocklistDetailRow) => ({
-  ...row,
-  createdAt: row.createdAt.toISOString(),
-  updatedAt: row.updatedAt.toISOString(),
-  lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,
-});
+export const buildBlocklistDetailResponse = (row: BlocklistDetailRow) => {
+  const decoratedRow = decorateManagedNameTranslations(row);
+
+  return {
+    ...decoratedRow,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,
+  };
+};

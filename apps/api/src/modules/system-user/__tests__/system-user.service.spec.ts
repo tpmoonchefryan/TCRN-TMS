@@ -145,12 +145,56 @@ describe('SystemUserService', () => {
   });
 
   describe('findById', () => {
-    it('should return user by ID', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockUser]);
+    it('should return user by ID with role assignments and scope access', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([mockUser])
+        .mockResolvedValueOnce([
+          {
+            id: 'assignment-1',
+            roleId: 'role-1',
+            roleCode: 'EDITOR',
+            roleNameEn: 'Editor',
+            roleNameZh: '编辑',
+            roleNameJa: '編集者',
+            roleIsActive: true,
+            scopeType: 'talent',
+            scopeId: 'talent-1',
+            scopeName: 'Tokino Sora',
+            scopePath: '/TOKYO/SORA',
+            inherit: false,
+            grantedAt: new Date('2026-04-17T08:00:00.000Z'),
+            expiresAt: null,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'access-1',
+            scopeType: 'subsidiary',
+            scopeId: 'subsidiary-1',
+            scopeName: 'Tokyo Branch',
+            scopePath: '/TOKYO',
+            includeSubunits: true,
+            grantedAt: new Date('2026-04-17T09:00:00.000Z'),
+          },
+        ]);
 
       const result = await service.findById('user-123', testSchema);
 
-      expect(result).toEqual(mockUser);
+      expect(result).toMatchObject({
+        ...mockUser,
+        roleAssignments: [
+          expect.objectContaining({
+            roleCode: 'EDITOR',
+            scopeName: 'Tokino Sora',
+          }),
+        ],
+        scopeAccess: [
+          expect.objectContaining({
+            scopeType: 'subsidiary',
+            includeSubunits: true,
+          }),
+        ],
+      });
     });
 
     it('should return null for non-existent user', async () => {
