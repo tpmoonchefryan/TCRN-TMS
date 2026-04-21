@@ -2269,6 +2269,7 @@ export function TalentSettingsScreen({
         title={lifecycleDialogState?.title || text('Confirm action', '确认操作', '操作を確認')}
         description={lifecycleDialogState?.description || ''}
         confirmText={lifecycleDialogState?.confirmText || text('Confirm', '确认', '確認')}
+        pendingText={lifecycleDialogState?.pendingText}
         intent={lifecycleDialogState?.intent || 'primary'}
         isPending={lifecyclePending}
         onCancel={() => {

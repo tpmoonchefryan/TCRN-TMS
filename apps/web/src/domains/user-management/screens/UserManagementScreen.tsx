@@ -1468,6 +1468,7 @@ export function UserManagementScreen({
         title={dialogState?.title || sharedCopy.confirmAction}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText || sharedCopy.confirm}
+        pendingText={dialogState?.pendingText}
         intent={dialogState?.intent || 'danger'}
         isPending={dialogPending}
         onCancel={() => {

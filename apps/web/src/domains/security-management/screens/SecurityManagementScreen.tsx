@@ -2876,6 +2876,7 @@ export function SecurityManagementScreen({
         title={dialogState?.title || copy.common.confirmAction}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText || copy.common.confirm}
+        pendingText={dialogState?.pendingText}
         intent={dialogState?.intent || 'danger'}
         isPending={dialogPending}
         onConfirm={() => void confirmDialog()}

@@ -70,4 +70,11 @@ describe('ConfirmActionDialog', () => {
     // Now unlocked
     expect(document.body.style.overflow).toBe('');
   });
+
+  it('renders provided pendingText instead of a hardcoded fallback', () => {
+    render(<ConfirmActionDialog {...defaultProps} isPending pendingText="Deleting..." />);
+
+    expect(screen.getByText('Deleting...')).toBeInTheDocument();
+    expect(screen.queryByText('Working...')).not.toBeInTheDocument();
+  });
 });

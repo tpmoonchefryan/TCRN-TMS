@@ -4971,6 +4971,7 @@ export function IntegrationManagementScreen({
         title={confirmState?.title || text('Confirm action', '确认操作', '操作を確認')}
         description={confirmState?.description || ''}
         confirmText={confirmState?.confirmText}
+        pendingText={confirmState?.pendingText}
         isPending={confirmPending}
         intent={confirmState?.intent}
         onCancel={() => {

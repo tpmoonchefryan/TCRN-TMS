@@ -691,6 +691,7 @@ export function HomepageManagementScreen({
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText}
+        pendingText={dialogState?.pendingText}
         intent={dialogState?.intent}
         isPending={dialogPending}
         onCancel={() => {

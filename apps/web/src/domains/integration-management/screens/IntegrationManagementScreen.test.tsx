@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { IntegrationManagementScreen } from '@/domains/integration-management/screens/IntegrationManagementScreen';
@@ -61,12 +62,12 @@ const organizationTreeResponse = {
   ],
 };
 
-async function selectTenantRootScope() {
-  fireEvent.click(await screen.findByRole('button', { name: /Tenant root/i }));
+async function selectTenantRootScope(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
 }
 
-async function selectSubsidiaryScope() {
-  fireEvent.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
+async function selectSubsidiaryScope(user: ReturnType<typeof userEvent.setup>) {
+  await user.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
 }
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -117,6 +118,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('only loads the active tab on mount so hidden AC-only surfaces do not fail the workspace eagerly', async () => {
+    const user = userEvent.setup();
     let emailConfigCalls = 0;
     let consumerCalls = 0;
     let webhookCalls = 0;
@@ -243,13 +245,13 @@ describe('IntegrationManagementScreen', () => {
     expect(adapterCalls).toBe(0);
     expect(platformCalls).toBe(0);
 
-    await selectTenantRootScope();
+    await selectTenantRootScope(user);
 
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
     expect(adapterCalls).toBe(1);
     expect(platformCalls).toBe(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+    await user.click(screen.getByRole('button', { name: 'Email' }));
 
     expect(await screen.findByRole('heading', { name: 'Email Templates' })).toBeInTheDocument();
     expect(screen.queryByText('AC-only email configuration')).not.toBeInTheDocument();
@@ -257,6 +259,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('loads scoped adapters for subsidiary selection and hides tenant-root only tabs', async () => {
+    const user = userEvent.setup();
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         return organizationTreeResponse;
@@ -336,7 +339,7 @@ describe('IntegrationManagementScreen', () => {
 
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
-    await selectSubsidiaryScope();
+    await selectSubsidiaryScope(user);
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -350,6 +353,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('keeps API client key lifecycle in the AC integration workspace only', async () => {
+    const user = userEvent.setup();
     pathname = '/ac/tenant-ac/integration-management';
     let consumerPrefix: string | null = null;
 
@@ -506,15 +510,15 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Integration Management' })).toBeInTheDocument();
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'API Keys' }));
+    await user.click(screen.getByRole('button', { name: 'API Keys' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=api-keys');
     expect(await screen.findByText('CRM_SYNC')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Generate key' }));
+    await user.click(screen.getByRole('button', { name: 'Generate key' }));
     expect(await screen.findByText('Generate API key for CRM_SYNC?')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate key' })[1]);
+    await user.click(screen.getAllByRole('button', { name: 'Generate key' })[1]);
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -528,7 +532,7 @@ describe('IntegrationManagementScreen', () => {
     expect((await screen.findAllByText(/API key generated successfully/)).length).toBeGreaterThan(0);
     expect(await screen.findByText('tcrn_pk_live_secret_value')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+    await user.click(screen.getByRole('button', { name: 'Email' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=email');
     expect(await screen.findByText('AC-only email configuration')).toBeInTheDocument();
@@ -536,6 +540,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('paginates adapter inventory at 20 rows by default and lets operators widen the page size', async () => {
+    const user = userEvent.setup();
     const adapters = Array.from({ length: 25 }, (_, index) => ({
       id: `adapter-${index + 1}`,
       ownerType: 'tenant' as const,
@@ -615,20 +620,18 @@ describe('IntegrationManagementScreen', () => {
 
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
-    await selectTenantRootScope();
+    await selectTenantRootScope(user);
 
     expect(await screen.findByText('ADAPTER_01')).toBeInTheDocument();
     expect(screen.queryByText('ADAPTER_21')).not.toBeInTheDocument();
     expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(await screen.findByText('ADAPTER_21')).toBeInTheDocument();
     expect(screen.queryByText('ADAPTER_01')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Rows per page' }), {
-      target: { value: '50' },
-    });
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Rows per page' }), '50');
 
     expect(await screen.findByText('ADAPTER_25')).toBeInTheDocument();
     expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
@@ -636,6 +639,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('reveals masked adapter secrets and submits config updates through the real adapter contract', async () => {
+    const user = userEvent.setup();
     let latestBaseUrl = 'https://old.example.com';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
@@ -788,20 +792,20 @@ describe('IntegrationManagementScreen', () => {
 
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
-    await selectTenantRootScope();
+    await selectTenantRootScope(user);
 
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reveal' }));
+    await user.click(screen.getByRole('button', { name: 'Reveal' }));
 
     expect(await screen.findByDisplayValue('revealed-secret-value')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByDisplayValue('https://old.example.com'), {
-      target: { value: 'https://new.example.com' },
-    });
+    const baseUrlInput = screen.getByDisplayValue('https://old.example.com');
+    await user.clear(baseUrlInput);
+    await user.type(baseUrlInput, 'https://new.example.com');
 
-    fireEvent.click(screen.getByRole('button', { name: /Save config changes/i }));
+    await user.click(screen.getByRole('button', { name: /Save config changes/i }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -817,6 +821,7 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('renders localized integration management copy for zh locale', async () => {
+    const user = userEvent.setup();
     localeState.currentLocale = 'zh';
 
     mockRequest.mockImplementation(async (path: string) => {
@@ -838,7 +843,7 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: '集成管理' })).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: /租户根/i }));
+    await user.click(await screen.findByRole('button', { name: /租户根/i }));
     expect(await screen.findByText('租户适配器')).toBeInTheDocument();
     expect(await screen.findByText('尚未配置适配器')).toBeInTheDocument();
   });
