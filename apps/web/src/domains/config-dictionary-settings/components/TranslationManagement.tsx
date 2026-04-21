@@ -33,6 +33,7 @@ export interface TranslationFieldSection {
 
 interface TranslationDrawerCopy {
   addLanguageLabel: string;
+  addOtherLanguageLabel: string;
   baseValueSuffix: string;
   cancelLabel: string;
   emptyHint: string;
@@ -42,11 +43,9 @@ interface TranslationDrawerCopy {
   helper: string;
   loadingLanguages: string;
   noLanguages: string;
-  noSearchResultsText: string;
   optionalLabel: string;
   removeLanguageVisibleLabel: string;
   saveLabel: string;
-  searchPlaceholder: string;
   triggerLabel: string;
   translationSectionSuffix: string;
 }
@@ -77,6 +76,7 @@ interface AsyncLanguagesState {
 const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
   en: {
     addLanguageLabel: 'Add Language',
+    addOtherLanguageLabel: 'Add other language...',
     baseValueSuffix: '(Base / English)',
     cancelLabel: 'Cancel',
     emptyHint: 'Leave a locale blank to fall back to the English base value.',
@@ -86,16 +86,15 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: 'Manage optional locale variants here.',
     loadingLanguages: 'Loading language options…',
     noLanguages: 'No language options available.',
-    noSearchResultsText: 'No languages found.',
     optionalLabel: 'Optional',
     removeLanguageVisibleLabel: 'Remove',
     saveLabel: 'Save',
-    searchPlaceholder: 'Search languages...',
     triggerLabel: 'Translation management',
     translationSectionSuffix: 'translations',
   },
   zh_HANS: {
     addLanguageLabel: '添加语言',
+    addOtherLanguageLabel: '添加其它语言…',
     baseValueSuffix: '（英文主值）',
     cancelLabel: '取消',
     emptyHint: '留空时将自动回退到英文主值。',
@@ -105,16 +104,15 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: '在这里管理可选的多语言变体。',
     loadingLanguages: '正在加载语言选项…',
     noLanguages: '当前没有可用语言选项。',
-    noSearchResultsText: '未找到匹配的语言。',
     optionalLabel: '可选',
     removeLanguageVisibleLabel: '移除',
     saveLabel: '保存',
-    searchPlaceholder: '搜索语言…',
     triggerLabel: '翻译管理',
     translationSectionSuffix: '翻译',
   },
   zh_HANT: {
     addLanguageLabel: '新增語言',
+    addOtherLanguageLabel: '新增其它語言…',
     baseValueSuffix: '（英文主值）',
     cancelLabel: '取消',
     emptyHint: '留空時會自動回退到英文主值。',
@@ -124,16 +122,15 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: '在這裡管理可選的多語言變體。',
     loadingLanguages: '正在載入語言選項…',
     noLanguages: '目前沒有可用語言選項。',
-    noSearchResultsText: '找不到符合的語言。',
     optionalLabel: '可選',
     removeLanguageVisibleLabel: '移除',
     saveLabel: '儲存',
-    searchPlaceholder: '搜尋語言…',
     triggerLabel: '管理翻譯',
     translationSectionSuffix: '翻譯',
   },
   ja: {
     addLanguageLabel: '言語を追加',
+    addOtherLanguageLabel: '他の言語を追加…',
     baseValueSuffix: '（英語の基準値）',
     cancelLabel: 'キャンセル',
     emptyHint: '未入力の場合は英語の基本値にフォールバックします。',
@@ -143,16 +140,15 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: 'ここで任意の各言語版を管理します。',
     loadingLanguages: '言語オプションを読み込んでいます…',
     noLanguages: '利用可能な言語オプションがありません。',
-    noSearchResultsText: '一致する言語が見つかりません。',
     optionalLabel: '任意',
     removeLanguageVisibleLabel: '削除',
     saveLabel: '保存',
-    searchPlaceholder: '言語を検索…',
     triggerLabel: '翻訳管理',
     translationSectionSuffix: '翻訳',
   },
   ko: {
     addLanguageLabel: '언어 추가',
+    addOtherLanguageLabel: '다른 언어 추가…',
     baseValueSuffix: '(영문 기본값)',
     cancelLabel: '취소',
     emptyHint: '값을 비워 두면 영어 기본값으로 대체됩니다.',
@@ -162,16 +158,15 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: '여기에서 선택 언어별 번역을 관리하세요.',
     loadingLanguages: '언어 옵션을 불러오는 중…',
     noLanguages: '사용 가능한 언어 옵션이 없습니다.',
-    noSearchResultsText: '일치하는 언어를 찾을 수 없습니다.',
     optionalLabel: '선택 사항',
     removeLanguageVisibleLabel: '제거',
     saveLabel: '저장',
-    searchPlaceholder: '언어 검색…',
     triggerLabel: '번역 관리',
     translationSectionSuffix: '번역',
   },
   fr: {
     addLanguageLabel: 'Ajouter une langue',
+    addOtherLanguageLabel: 'Ajouter une autre langue…',
     baseValueSuffix: '(Valeur de base / anglais)',
     cancelLabel: 'Annuler',
     emptyHint: "Laissez une langue vide pour revenir à la valeur anglaise de base.",
@@ -181,11 +176,9 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     helper: 'Gérez ici les variantes facultatives par langue.',
     loadingLanguages: 'Chargement des langues…',
     noLanguages: 'Aucune langue disponible.',
-    noSearchResultsText: 'Aucune langue correspondante.',
     optionalLabel: 'Optionnel',
     removeLanguageVisibleLabel: 'Retirer',
     saveLabel: 'Enregistrer',
-    searchPlaceholder: 'Rechercher une langue…',
     triggerLabel: 'Gérer les traductions',
     translationSectionSuffix: 'traductions',
   },
@@ -355,6 +348,7 @@ export function TranslationManagementDrawer({
       saveButtonLabel={copy.saveLabel}
       closeButtonAriaLabel={closeButtonAriaLabel}
       addLanguageLabel={copy.addLanguageLabel}
+      addOtherLanguageLabel={copy.addOtherLanguageLabel}
       removeLanguageVisibleLabel={copy.removeLanguageVisibleLabel}
       removeLanguageAriaLabel={(language) => `${copy.removeLanguageVisibleLabel} ${language}`}
       emptyTranslationsText={emptyTranslationsText}

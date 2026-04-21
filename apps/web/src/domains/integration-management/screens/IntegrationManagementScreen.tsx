@@ -1016,6 +1016,14 @@ export function IntegrationManagementScreen({
       ko: '언어 추가',
       fr: 'Ajouter une langue',
     }),
+    addOtherLanguageLabel: text({
+      en: 'Add other language...',
+      zh_HANS: '添加其它语言…',
+      zh_HANT: '新增其它語言…',
+      ja: '他の言語を追加…',
+      ko: '다른 언어 추가…',
+      fr: 'Ajouter une autre langue…',
+    }),
     removeLanguageVisibleLabel: text({
       en: 'Remove',
       zh_HANS: '移除',
@@ -1023,22 +1031,6 @@ export function IntegrationManagementScreen({
       ja: '削除',
       ko: '제거',
       fr: 'Retirer',
-    }),
-    searchPlaceholder: text({
-      en: 'Search languages...',
-      zh_HANS: '搜索语言…',
-      zh_HANT: '搜尋語言…',
-      ja: '言語を検索…',
-      ko: '언어 검색…',
-      fr: 'Rechercher une langue…',
-    }),
-    noSearchResultsText: text({
-      en: 'No languages found.',
-      zh_HANS: '未找到匹配的语言。',
-      zh_HANT: '找不到符合的語言。',
-      ja: '一致する言語が見つかりません。',
-      ko: '일치하는 언어를 찾을 수 없습니다.',
-      fr: 'Aucune langue correspondante.',
     }),
     emptyTranslationsText: text({
       en: 'No translations added yet.',
@@ -4805,6 +4797,7 @@ export function IntegrationManagementScreen({
           fr: 'Fermer le panneau de gestion des traductions',
         })}
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
+        addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}
         removeLanguageAriaLabel={(language) =>
           `${translationDrawerLabels.removeLanguageVisibleLabel} ${language}`
@@ -4840,6 +4833,7 @@ export function IntegrationManagementScreen({
           fr: 'Fermer le panneau de traduction de l’adaptateur',
         })}
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
+        addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}
         removeLanguageAriaLabel={(language) =>
           `${translationDrawerLabels.removeLanguageVisibleLabel} ${language}`
@@ -4875,6 +4869,7 @@ export function IntegrationManagementScreen({
           fr: 'Fermer le panneau de traduction du webhook',
         })}
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
+        addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}
         removeLanguageAriaLabel={(language) =>
           `${translationDrawerLabels.removeLanguageVisibleLabel} ${language}`
@@ -4951,6 +4946,7 @@ export function IntegrationManagementScreen({
           fr: 'Fermer le panneau de traduction du modèle d’e-mail',
         })}
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
+        addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}
         removeLanguageAriaLabel={(language) =>
           `${translationDrawerLabels.removeLanguageVisibleLabel} ${language}`
