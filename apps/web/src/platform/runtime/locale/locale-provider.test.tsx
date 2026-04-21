@@ -32,6 +32,7 @@ function LocaleHarness() {
       <p>{copy.auth.login.signIn}</p>
       <p>{copy.customerManagement.title}</p>
       <p>{copy.tenantGovernance.shellLabel}</p>
+      <p>{copy.tenantGovernance.titles.subsidiarySettings}</p>
       <p>{copy.publicMarshmallow.badge}</p>
       <button type="button" onClick={() => setLocale('en')}>
         Switch English
@@ -88,6 +89,7 @@ describe('RuntimeLocaleProvider', () => {
     expect(screen.getByText('登录')).toBeInTheDocument();
     expect(screen.getByText('客户管理')).toBeInTheDocument();
     expect(screen.getByText('租户')).toBeInTheDocument();
+    expect(screen.getByText('分目录设置')).toBeInTheDocument();
     expect(screen.getByText('公开棉花糖')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Switch English' }));
@@ -119,6 +121,7 @@ describe('RuntimeLocaleProvider', () => {
     expect(screen.getByTestId('selected-locale')).toHaveTextContent('zh_HANT');
     expect(screen.getByText('登入')).toBeInTheDocument();
     expect(screen.getByText('租户')).toBeInTheDocument();
+    expect(screen.getByText('分目錄設定')).toBeInTheDocument();
   });
 
   it('serves exact Korean runtime copy while preserving English family fallback for domain-local copies', () => {

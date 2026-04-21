@@ -19,7 +19,6 @@ export interface TranslationLanguageOption {
 interface TranslationLanguageLoadResult {
   options: TranslationLanguageOption[];
   error: string | null;
-  usedFallback: boolean;
 }
 
 type TranslationDrawerPayload =
@@ -29,15 +28,6 @@ type TranslationDrawerPayload =
 interface TranslationSectionLike {
   values: Record<string, string>;
 }
-
-const FALLBACK_LANGUAGE_LABELS: Record<SupportedUiLocale, string> = {
-  en: 'English',
-  zh_HANS: '简体中文',
-  zh_HANT: '繁體中文',
-  ja: '日本語',
-  ko: '한국어',
-  fr: 'Français',
-};
 
 const PREFERRED_TRANSLATION_LOCALE_ORDER: SupportedUiLocale[] = [
   'zh_HANS',
@@ -80,17 +70,14 @@ export async function loadTranslationLanguageOptions(
   selectedLocale: SupportedUiLocale,
   fallbackError: string,
 ) : Promise<TranslationLanguageLoadResult> {
-  const fallbackOptions = buildFallbackTranslationLanguageOptions();
-
   try {
     const types = await listDictionaryTypes(request, selectedLocale);
     const languageType = types.find((entry) => ['language', 'languages'].includes(entry.type.toLowerCase()));
 
     if (!languageType) {
       return {
-        options: fallbackOptions,
+        options: [],
         error: null,
-        usedFallback: true,
       };
     }
 
@@ -103,13 +90,11 @@ export async function loadTranslationLanguageOptions(
     return {
       options: mergeTranslationLanguageOptions(items, selectedLocale),
       error: null,
-      usedFallback: false,
     };
   } catch (reason) {
     return {
-      options: fallbackOptions,
+      options: [],
       error: getErrorMessage(reason, fallbackError),
-      usedFallback: true,
     };
   }
 }
@@ -236,13 +221,6 @@ const LEGACY_LOCALE_ALIAS: Record<string, SupportedUiLocale> = {
   zh_hant: 'zh_HANT',
 };
 
-function buildFallbackTranslationLanguageOptions(): TranslationLanguageOption[] {
-  return PREFERRED_TRANSLATION_LOCALE_ORDER.map((code) => ({
-    code,
-    label: FALLBACK_LANGUAGE_LABELS[code],
-  }));
-}
-
 async function listAllTranslationLanguageItems(
   requestEnvelope: RequestEnvelopeFn,
   dictionaryType: string,
@@ -276,14 +254,10 @@ function mergeTranslationLanguageOptions(
   items: Awaited<ReturnType<typeof listAllTranslationLanguageItems>>,
   selectedLocale: SupportedUiLocale,
 ): TranslationLanguageOption[] {
+  const preferredPriorities = new Map(
+    PREFERRED_TRANSLATION_LOCALE_ORDER.map((code, index) => [code, index]),
+  );
   const merged = new Map<string, { code: string; label: string; priority: number }>();
-
-  buildFallbackTranslationLanguageOptions().forEach((option, index) => {
-    merged.set(option.code, {
-      ...option,
-      priority: index,
-    });
-  });
 
   items.forEach((item) => {
     const normalizedCode = normalizeLegacyLocaleCode(item.code) ?? item.code.trim().replace(/-/g, '_');
@@ -293,24 +267,19 @@ function mergeTranslationLanguageOptions(
 
     const existing = merged.get(normalizedCode);
     const label = resolveLocalizedLabel(item.translations, selectedLocale, item.nameEn);
+    const priority = preferredPriorities.get(normalizedCode as SupportedUiLocale) ?? Number.MAX_SAFE_INTEGER;
     const canReplaceExistingLabel = isCanonicalTranslationLocaleCode(item.code, normalizedCode);
 
     if (!existing) {
       merged.set(normalizedCode, {
         code: normalizedCode,
         label,
-        priority: Number.MAX_SAFE_INTEGER,
+        priority,
       });
       return;
     }
 
-    if (
-      existing.priority === Number.MAX_SAFE_INTEGER
-      || (
-        canReplaceExistingLabel
-        && existing.label === FALLBACK_LANGUAGE_LABELS[existing.code as SupportedUiLocale]
-      )
-    ) {
+    if (canReplaceExistingLabel) {
       merged.set(normalizedCode, {
         code: normalizedCode,
         label,

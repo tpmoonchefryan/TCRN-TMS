@@ -18,7 +18,7 @@ describe('loadTranslationLanguageOptions', () => {
     mocks.listDictionaryTypes.mockReset();
   });
 
-  it('keeps supported UI locales visible and fetches all dictionary pages', async () => {
+  it('normalizes dictionary locales from all pages without inventing fallback entries', async () => {
     mocks.listDictionaryTypes.mockResolvedValue([
       {
         type: 'languages',
@@ -78,19 +78,13 @@ describe('loadTranslationLanguageOptions', () => {
 
     expect(mocks.listDictionaryItems).toHaveBeenCalledTimes(2);
     expect(result.error).toBeNull();
-    expect(result.usedFallback).toBe(false);
-    expect(result.options.slice(0, 5)).toEqual([
-      { code: 'zh_HANS', label: '简体中文' },
-      { code: 'zh_HANT', label: '繁體中文' },
-      { code: 'ja', label: '日本語' },
-      { code: 'ko', label: '한국어' },
-      { code: 'fr', label: 'Français' },
-    ]);
+    expect(result.options).toContainEqual({ code: 'zh_HANS', label: '中文' });
     expect(result.options).toContainEqual({ code: 'de', label: '德语' });
     expect(result.options).toContainEqual({ code: 'es', label: '西班牙语' });
+    expect(result.options).toHaveLength(3);
   });
 
-  it('falls back to supported UI locales when the language dictionary is unavailable', async () => {
+  it('surfaces the load error instead of inventing fallback language options', async () => {
     mocks.listDictionaryTypes.mockRejectedValue(new Error('network failed'));
 
     const result = await loadTranslationLanguageOptions(
@@ -100,14 +94,28 @@ describe('loadTranslationLanguageOptions', () => {
       'fallback error',
     );
 
-    expect(result.usedFallback).toBe(true);
     expect(result.error).toBe('fallback error');
-    expect(result.options).toEqual([
-      { code: 'zh_HANS', label: '简体中文' },
-      { code: 'zh_HANT', label: '繁體中文' },
-      { code: 'ja', label: '日本語' },
-      { code: 'ko', label: '한국어' },
-      { code: 'fr', label: 'Français' },
+    expect(result.options).toEqual([]);
+  });
+
+  it('keeps the drawer empty when the language dictionary type is missing', async () => {
+    mocks.listDictionaryTypes.mockResolvedValue([
+      {
+        type: 'countries',
+        name: 'Countries',
+        description: null,
+        count: 12,
+      },
     ]);
+
+    const result = await loadTranslationLanguageOptions(
+      vi.fn(),
+      vi.fn(),
+      'en',
+      'fallback error',
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.options).toEqual([]);
   });
 });

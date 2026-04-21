@@ -2580,26 +2580,26 @@ export function IntegrationManagementScreen({
             );
   const noScopeTreeHint =
     selectedLocale === 'zh_HANT'
-      ? '請先從左側樹中選擇租戶根、子公司或藝人。'
+      ? '請先從左側樹中選擇租戶根、分目錄或藝人。'
       : selectedLocale === 'ko'
         ? '먼저 왼쪽 트리에서 테넌트 루트, 자회사 또는 탤런트를 선택하세요.'
         : selectedLocale === 'fr'
           ? "Choisissez d’abord une racine de tenant, une filiale ou un talent dans l’arborescence de gauche."
           : text(
               'Choose tenant root, a subsidiary, or a talent from the left tree first.',
-              '请先从左侧树中选择租户根、子公司或艺人。',
+              '请先从左侧树中选择租户根、分目录或艺人。',
               '先に左側ツリーからテナントルート、子会社、またはタレントを選択してください。',
             );
   const noScopeTreeDescription =
     selectedLocale === 'zh_HANT'
-      ? '請先從左側樹中選擇租戶、子公司或藝人。'
+      ? '請先從左側樹中選擇租戶、分目錄或藝人。'
       : selectedLocale === 'ko'
         ? '왼쪽 트리에서 테넌트, 자회사 또는 탤런트를 선택하세요.'
         : selectedLocale === 'fr'
           ? 'Choisissez un tenant, une filiale ou un talent dans l’arborescence de gauche.'
           : text(
               'Choose a tenant, subsidiary, or talent from the left tree.',
-              '请先从左侧树中选择租户、子公司或艺人。',
+              '请先从左侧树中选择租户、分目录或艺人。',
               '左側ツリーからテナント、子会社、またはタレントを選択してください。',
             );
   const selectedScopeHint = !selectedIntegrationScope
@@ -2608,7 +2608,7 @@ export function IntegrationManagementScreen({
   const adapterSectionTitle = !selectedIntegrationScope || selectedIntegrationScope.ownerType === 'tenant'
     ? text('Tenant Adapters', '租户适配器', 'テナントアダプター')
     : selectedIntegrationScope.ownerType === 'subsidiary'
-      ? text('Subsidiary Adapters', '子公司适配器', '子会社アダプター')
+      ? text('Subsidiary Adapters', '分目录适配器', '子会社アダプター')
       : text('Talent Adapters', '艺人适配器', 'タレントアダプター');
   const adapterSectionDescription = !selectedIntegrationScope
     ? text(
@@ -2718,7 +2718,7 @@ export function IntegrationManagementScreen({
               nextLineage.join(' / '),
             ),
             depth,
-            text('Subsidiary', '子公司', '子会社'),
+            text('Subsidiary', '分目录', '子会社'),
           )}
           {node.talents.map((talent) => (
             <div key={`talent:${talent.id}`} className="space-y-2">
@@ -2745,7 +2745,7 @@ export function IntegrationManagementScreen({
     }
 
     if (selectedIntegrationScope?.ownerType === 'subsidiary') {
-      return text('Subsidiary', '子公司', '子会社');
+      return text('Subsidiary', '分目录', '子会社');
     }
 
     if (selectedIntegrationScope?.ownerType === 'talent') {
@@ -2883,8 +2883,8 @@ export function IntegrationManagementScreen({
               })}
               description={text({
                 en: 'Select tenant root, a subsidiary, or a talent to switch the integration workspace.',
-                zh_HANS: '选择租户根、子公司或艺人，以切换右侧的集成工作区。',
-                zh_HANT: '選擇租戶根、子公司或藝人，以切換右側的整合工作區。',
+                zh_HANS: '选择租户根、分目录或艺人，以切换右侧的集成工作区。',
+                zh_HANT: '選擇租戶根、分目錄或藝人，以切換右側的整合工作區。',
                 ja: 'テナントルート、子会社、またはタレントを選択して、右側の統合ワークスペースを切り替えます。',
                 ko: '테넌트 루트, 자회사 또는 탤런트를 선택해 오른쪽 통합 작업 영역을 전환하세요.',
                 fr: 'Sélectionnez la racine du tenant, une filiale ou un talent pour changer l’espace de travail d’intégration à droite.',

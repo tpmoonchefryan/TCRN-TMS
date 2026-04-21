@@ -38,8 +38,6 @@ interface TranslationDrawerCopy {
   cancelLabel: string;
   emptyHint: string;
   emptyTranslationsText: string;
-  fallbackLabel: string;
-  fallbackNotice: string;
   helper: string;
   loadingLanguages: string;
   noLanguages: string;
@@ -81,8 +79,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: 'Cancel',
     emptyHint: 'Leave a locale blank to fall back to the English base value.',
     emptyTranslationsText: 'No translations added yet.',
-    fallbackLabel: 'Fallback',
-    fallbackNotice: 'Language dictionary unavailable. Falling back to supported UI locales.',
     helper: 'Manage optional locale variants here.',
     loadingLanguages: 'Loading language options…',
     noLanguages: 'No language options available.',
@@ -99,8 +95,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: '取消',
     emptyHint: '留空时将自动回退到英文主值。',
     emptyTranslationsText: '当前还没有添加翻译。',
-    fallbackLabel: '回退',
-    fallbackNotice: '语言词典暂不可用，已回退到当前支持的 UI 语言。',
     helper: '在这里管理可选的多语言变体。',
     loadingLanguages: '正在加载语言选项…',
     noLanguages: '当前没有可用语言选项。',
@@ -117,8 +111,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: '取消',
     emptyHint: '留空時會自動回退到英文主值。',
     emptyTranslationsText: '目前尚未新增翻譯。',
-    fallbackLabel: '回退',
-    fallbackNotice: '語言詞典暫時不可用，已回退到目前支援的 UI 語言。',
     helper: '在這裡管理可選的多語言變體。',
     loadingLanguages: '正在載入語言選項…',
     noLanguages: '目前沒有可用語言選項。',
@@ -135,8 +127,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: 'キャンセル',
     emptyHint: '未入力の場合は英語の基本値にフォールバックします。',
     emptyTranslationsText: 'まだ翻訳は追加されていません。',
-    fallbackLabel: 'フォールバック',
-    fallbackNotice: '言語辞書を読み込めないため、対応済み UI ロケールへフォールバックしています。',
     helper: 'ここで任意の各言語版を管理します。',
     loadingLanguages: '言語オプションを読み込んでいます…',
     noLanguages: '利用可能な言語オプションがありません。',
@@ -153,8 +143,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: '취소',
     emptyHint: '값을 비워 두면 영어 기본값으로 대체됩니다.',
     emptyTranslationsText: '아직 추가된 번역이 없습니다.',
-    fallbackLabel: '대체',
-    fallbackNotice: '언어 사전을 불러올 수 없어 현재 지원되는 UI 언어로 대체합니다.',
     helper: '여기에서 선택 언어별 번역을 관리하세요.',
     loadingLanguages: '언어 옵션을 불러오는 중…',
     noLanguages: '사용 가능한 언어 옵션이 없습니다.',
@@ -171,8 +159,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     cancelLabel: 'Annuler',
     emptyHint: "Laissez une langue vide pour revenir à la valeur anglaise de base.",
     emptyTranslationsText: 'Aucune traduction n’a encore été ajoutée.',
-    fallbackLabel: 'Repli',
-    fallbackNotice: "Le dictionnaire des langues est indisponible. Utilisation des langues UI prises en charge.",
     helper: 'Gérez ici les variantes facultatives par langue.',
     loadingLanguages: 'Chargement des langues…',
     noLanguages: 'Aucune langue disponible.',
@@ -250,7 +236,6 @@ export function TranslationManagementDrawer({
     error: null,
     loading: true,
   });
-  const [usedFallbackLanguages, setUsedFallbackLanguages] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,7 +263,6 @@ export function TranslationManagementDrawer({
         error: result.error,
         loading: false,
       });
-      setUsedFallbackLanguages(result.usedFallback);
     }
 
     void hydrateLanguages();
@@ -312,7 +296,7 @@ export function TranslationManagementDrawer({
 
   const emptyTranslationsText = languagesState.loading
     ? copy.loadingLanguages
-    : languagesState.error && !usedFallbackLanguages
+    : languagesState.error
       ? languagesState.error
       : languageOptions.length === 0
         ? copy.noLanguages

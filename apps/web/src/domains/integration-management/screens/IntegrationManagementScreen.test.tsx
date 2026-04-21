@@ -13,7 +13,7 @@ let searchQuery = '';
 let pathname = '/tenant/tenant-1/integration-management';
 const localeState = {
   currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: 'en' as RuntimeLocale,
+  selectedLocale: 'en' as string,
   copy: null,
   setLocale: vi.fn(),
   availableLocales: ['en', 'zh', 'ja'] as RuntimeLocale[],
@@ -261,6 +261,25 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Email Templates' })).toBeInTheDocument();
     expect(screen.queryByText('AC-only email configuration')).not.toBeInTheDocument();
     expect(emailConfigCalls).toBe(0);
+  });
+
+  it('uses 分目录 wording in zh_HANS tenant scope copy instead of 子公司', async () => {
+    localeState.currentLocale = 'zh';
+    localeState.selectedLocale = 'zh_HANS';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: '集成管理' })).toBeInTheDocument();
+    expect(screen.getByText('选择租户根、分目录或艺人，以切换右侧的集成工作区。')).toBeInTheDocument();
+    expect(screen.queryByText(/子公司/)).not.toBeInTheDocument();
   });
 
   it('loads scoped adapters for subsidiary selection and hides tenant-root only tabs', async () => {

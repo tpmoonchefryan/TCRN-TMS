@@ -370,7 +370,18 @@ describe('TenantSettingsScreen', () => {
       }
 
       if (path === '/api/v1/system-dictionary') {
-        return [];
+        return [
+          {
+            type: 'language',
+            name: 'Language',
+            description: null,
+            count: 2,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/system-dictionary/language?includeInactive=false&page=1&pageSize=250') {
+        return languageDictionaryResponse;
       }
 
       if (path === '/api/v1/profile-stores' && init?.method === 'POST') {
