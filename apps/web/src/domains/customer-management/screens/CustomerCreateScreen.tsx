@@ -41,6 +41,8 @@ interface CustomerDraft {
 interface MembershipDraft {
   enabled: boolean;
   platformCode: string;
+  membershipClassCode: string;
+  membershipTypeCode: string;
   membershipLevelCode: string;
   validFrom: string;
   validTo: string;
@@ -71,6 +73,8 @@ function buildDefaultMembershipDraft(): MembershipDraft {
   return {
     enabled: false,
     platformCode: '',
+    membershipClassCode: '',
+    membershipTypeCode: '',
     membershipLevelCode: '',
     validFrom: new Date().toISOString().slice(0, 10),
     validTo: '',
@@ -258,21 +262,47 @@ export function CustomerCreateScreen({
     };
   }, [effectiveSelectedLocale, request, talentId]);
 
+  const membershipClassOptions = useMemo(
+    () =>
+      membershipOptions.classes.map((membershipClass) => ({
+        ...membershipClass,
+        label: pickLocalizedName(effectiveSelectedLocale, membershipClass),
+      })),
+    [effectiveSelectedLocale, membershipOptions.classes],
+  );
+
+  const selectedMembershipClass = useMemo(
+    () =>
+      membershipOptions.classes.find(
+        (membershipClass) => membershipClass.code === membershipDraft.membershipClassCode,
+      ) ?? null,
+    [membershipDraft.membershipClassCode, membershipOptions.classes],
+  );
+
+  const membershipTypeOptions = useMemo(
+    () =>
+      (selectedMembershipClass?.types ?? []).map((membershipType) => ({
+        ...membershipType,
+        label: pickLocalizedName(effectiveSelectedLocale, membershipType),
+      })),
+    [effectiveSelectedLocale, selectedMembershipClass],
+  );
+
+  const selectedMembershipType = useMemo(
+    () =>
+      selectedMembershipClass?.types.find(
+        (membershipType) => membershipType.code === membershipDraft.membershipTypeCode,
+      ) ?? null,
+    [membershipDraft.membershipTypeCode, selectedMembershipClass],
+  );
+
   const membershipLevelOptions = useMemo(
     () =>
-      membershipOptions.classes.flatMap((membershipClass) =>
-        membershipClass.types.flatMap((membershipType) =>
-          membershipType.levels.map((level) => ({
-            ...level,
-            classCode: membershipClass.code,
-            className: pickLocalizedName(effectiveSelectedLocale, membershipClass),
-            typeCode: membershipType.code,
-            typeName: pickLocalizedName(effectiveSelectedLocale, membershipType),
-            label: `${pickLocalizedName(effectiveSelectedLocale, membershipClass)} / ${pickLocalizedName(effectiveSelectedLocale, membershipType)} / ${pickLocalizedName(effectiveSelectedLocale, level)}`,
-          })),
-        ),
-      ),
-    [effectiveSelectedLocale, membershipOptions.classes],
+      (selectedMembershipType?.levels ?? []).map((level) => ({
+        ...level,
+        label: pickLocalizedName(effectiveSelectedLocale, level),
+      })),
+    [effectiveSelectedLocale, selectedMembershipType],
   );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -310,17 +340,23 @@ export function CustomerCreateScreen({
     }
 
     if (membershipDraft.enabled) {
-      if (!membershipDraft.platformCode || !membershipDraft.membershipLevelCode || !membershipDraft.validFrom) {
+      if (
+        !membershipDraft.platformCode
+        || !membershipDraft.membershipClassCode
+        || !membershipDraft.membershipTypeCode
+        || !membershipDraft.membershipLevelCode
+        || !membershipDraft.validFrom
+      ) {
         setErrorMessage(
           pickText(
             effectiveSelectedLocale,
             {
-              en: 'Platform, membership level, and valid-from date are required when adding membership.',
-              zh_HANS: '添加会员时，平台、会员等级和生效日期为必填项。',
-              zh_HANT: '新增會員時，平台、會員等級與生效日期為必填項。',
-              ja: '会員を追加する場合、プラットフォーム、会員レベル、有効開始日は必須です。',
-              ko: '멤버십을 추가하려면 플랫폼, 멤버십 등급, 시작일이 필요합니다.',
-              fr: 'La plateforme, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
+              en: 'Platform, membership class, type, level, and valid-from date are required when adding membership.',
+              zh_HANS: '添加会员时，平台、会员分类、会员类型、会员等级和生效日期为必填项。',
+              zh_HANT: '新增會員時，平台、會員分類、會員類型、會員等級與生效日期為必填項。',
+              ja: '会員を追加する場合、プラットフォーム、会員クラス、会員タイプ、会員レベル、有効開始日は必須です。',
+              ko: '멤버십을 추가하려면 플랫폼, 멤버십 분류, 유형, 등급, 시작일이 필요합니다.',
+              fr: 'La plateforme, la classe, le type, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
             },
           ),
         );
@@ -750,6 +786,120 @@ export function CustomerCreateScreen({
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-900">
                     {pickText(effectiveSelectedLocale, {
+                      en: 'Membership class',
+                      zh_HANS: '会员分类',
+                      zh_HANT: '會員分類',
+                      ja: '会員クラス',
+                      ko: '멤버십 분류',
+                      fr: 'Classe d’adhésion',
+                    })}
+                  </span>
+                  <select
+                    value={membershipDraft.membershipClassCode}
+                    onChange={(event) =>
+                      setMembershipDraft((current) => ({
+                        ...current,
+                        membershipClassCode: event.target.value,
+                        membershipTypeCode: '',
+                        membershipLevelCode: '',
+                      }))
+                    }
+                    disabled={membershipOptions.loading || membershipClassOptions.length === 0}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  >
+                    <option value="">
+                      {membershipOptions.loading
+                        ? pickText(effectiveSelectedLocale, {
+                            en: 'Loading membership classes…',
+                            zh_HANS: '正在加载会员分类…',
+                            zh_HANT: '正在載入會員分類…',
+                            ja: '会員クラスを読み込み中…',
+                            ko: '멤버십 분류를 불러오는 중…',
+                            fr: 'Chargement des classes d’adhésion…',
+                          })
+                        : pickText(effectiveSelectedLocale, {
+                            en: 'Select a membership class',
+                            zh_HANS: '选择会员分类',
+                            zh_HANT: '選擇會員分類',
+                            ja: '会員クラスを選択',
+                            ko: '멤버십 분류 선택',
+                            fr: 'Sélectionner une classe d’adhésion',
+                          })}
+                    </option>
+                    {membershipClassOptions.map((membershipClass) => (
+                      <option key={membershipClass.id} value={membershipClass.code}>
+                        {membershipClass.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {pickText(effectiveSelectedLocale, {
+                      en: 'Membership type',
+                      zh_HANS: '会员类型',
+                      zh_HANT: '會員類型',
+                      ja: '会員タイプ',
+                      ko: '멤버십 유형',
+                      fr: 'Type d’adhésion',
+                    })}
+                  </span>
+                  <select
+                    value={membershipDraft.membershipTypeCode}
+                    onChange={(event) =>
+                      setMembershipDraft((current) => ({
+                        ...current,
+                        membershipTypeCode: event.target.value,
+                        membershipLevelCode: '',
+                      }))
+                    }
+                    disabled={
+                      membershipOptions.loading
+                      || !membershipDraft.membershipClassCode
+                      || membershipTypeOptions.length === 0
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  >
+                    <option value="">
+                      {membershipOptions.loading
+                        ? pickText(effectiveSelectedLocale, {
+                            en: 'Loading membership types…',
+                            zh_HANS: '正在加载会员类型…',
+                            zh_HANT: '正在載入會員類型…',
+                            ja: '会員タイプを読み込み中…',
+                            ko: '멤버십 유형을 불러오는 중…',
+                            fr: 'Chargement des types d’adhésion…',
+                          })
+                        : !membershipDraft.membershipClassCode
+                          ? pickText(effectiveSelectedLocale, {
+                              en: 'Select a membership class first',
+                              zh_HANS: '请先选择会员分类',
+                              zh_HANT: '請先選擇會員分類',
+                              ja: '先に会員クラスを選択してください',
+                              ko: '먼저 멤버십 분류를 선택하세요',
+                              fr: 'Sélectionnez d’abord une classe d’adhésion',
+                            })
+                          : pickText(effectiveSelectedLocale, {
+                              en: 'Select a membership type',
+                              zh_HANS: '选择会员类型',
+                              zh_HANT: '選擇會員類型',
+                              ja: '会員タイプを選択',
+                              ko: '멤버십 유형 선택',
+                              fr: 'Sélectionner un type d’adhésion',
+                            })}
+                    </option>
+                    {membershipTypeOptions.map((membershipType) => (
+                      <option key={membershipType.id} value={membershipType.code}>
+                        {membershipType.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {pickText(effectiveSelectedLocale, {
                       en: 'Membership level',
                       zh_HANS: '会员等级',
                       zh_HANT: '會員等級',
@@ -766,7 +916,11 @@ export function CustomerCreateScreen({
                         membershipLevelCode: event.target.value,
                       }))
                     }
-                    disabled={membershipOptions.loading || membershipLevelOptions.length === 0}
+                    disabled={
+                      membershipOptions.loading
+                      || !membershipDraft.membershipTypeCode
+                      || membershipLevelOptions.length === 0
+                    }
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                   >
                     <option value="">
@@ -779,14 +933,23 @@ export function CustomerCreateScreen({
                             ko: '멤버십 등급을 불러오는 중…',
                             fr: 'Chargement des niveaux d’adhésion…',
                           })
-                        : pickText(effectiveSelectedLocale, {
-                            en: 'Select a membership level',
-                            zh_HANS: '选择会员等级',
-                            zh_HANT: '選擇會員等級',
-                            ja: '会員レベルを選択',
-                            ko: '멤버십 등급 선택',
-                            fr: 'Sélectionner un niveau d’adhésion',
-                          })}
+                        : !membershipDraft.membershipTypeCode
+                          ? pickText(effectiveSelectedLocale, {
+                              en: 'Select a membership type first',
+                              zh_HANS: '请先选择会员类型',
+                              zh_HANT: '請先選擇會員類型',
+                              ja: '先に会員タイプを選択してください',
+                              ko: '먼저 멤버십 유형을 선택하세요',
+                              fr: 'Sélectionnez d’abord un type d’adhésion',
+                            })
+                          : pickText(effectiveSelectedLocale, {
+                              en: 'Select a membership level',
+                              zh_HANS: '选择会员等级',
+                              zh_HANT: '選擇會員等級',
+                              ja: '会員レベルを選択',
+                              ko: '멤버십 등급 선택',
+                              fr: 'Sélectionner un niveau d’adhésion',
+                            })}
                     </option>
                     {membershipLevelOptions.map((level) => (
                       <option key={level.id} value={level.code}>

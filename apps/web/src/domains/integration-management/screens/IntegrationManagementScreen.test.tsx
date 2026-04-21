@@ -248,6 +248,11 @@ describe('IntegrationManagementScreen', () => {
     await selectTenantRootScope(user);
 
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.',
+      ),
+    ).toBeInTheDocument();
     expect(adapterCalls).toBe(1);
     expect(platformCalls).toBe(1);
 
@@ -348,6 +353,11 @@ describe('IntegrationManagementScreen', () => {
     });
 
     expect(await screen.findByText('TOKYO_SYNC')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'API clients stay in Account Center. Tokyo Branch inherits that contract, so only adapters are editable here.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Webhooks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Email' })).not.toBeInTheDocument();
   });

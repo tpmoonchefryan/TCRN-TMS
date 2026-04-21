@@ -2623,10 +2623,29 @@ export function IntegrationManagementScreen({
           'テナントルートで共有プラットフォーム定義に紐づくアダプターを作成・更新・有効化します。',
         )
       : text(
-          `Manage adapters inherited by or owned within ${selectedIntegrationScope.label}. Webhooks and email stay at tenant root.`,
-          `管理 ${selectedIntegrationScope.label} 范围内继承或自有的适配器。Webhook 与邮件保留在租户根范围。`,
-          `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。Webhook とメールはテナントルートに保持されます。`,
+          `Manage adapters inherited by or owned within ${selectedIntegrationScope.label}. API clients stay in Account Center, while webhooks and email stay at tenant root.`,
+          `管理 ${selectedIntegrationScope.label} 范围内继承或自有的适配器。API 客户端保留在账户中心，Webhook 与邮件保留在租户根范围。`,
+          `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。API クライアントはアカウントセンター、Webhook とメールはテナントルートに保持されます。`,
         );
+  const scopeAccessNotice = !selectedIntegrationScope
+    ? null
+    : isTenantRootScope
+      ? text({
+          en: 'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.',
+          zh_HANS: 'API 客户端保留在账户中心管理，不会出现在租户工作区中。当前范围用于管理适配器、Webhook 与邮件。',
+          zh_HANT: 'API 用戶端保留在帳戶中心管理，不會出現在租戶工作區中。目前範圍用於管理適配器、Webhook 與郵件。',
+          ja: 'API クライアントはアカウントセンターで管理され、テナントのワークスペースには表示されません。このスコープではアダプター、Webhook、メールを扱います。',
+          ko: 'API 클라이언트는 계정 센터에서 관리되며 테넌트 워크스페이스에는 표시되지 않습니다. 이 범위에서는 어댑터, 웹훅, 메일을 관리합니다.',
+          fr: 'Les clients API restent gérés dans l’Account Center et n’apparaissent pas dans les espaces tenant. Utilisez ce périmètre pour les adaptateurs, webhooks et e-mails.',
+        })
+      : text({
+          en: `API clients stay in Account Center. ${selectedIntegrationScope.label} inherits that contract, so only adapters are editable here.`,
+          zh_HANS: `API 客户端保留在账户中心管理。${selectedIntegrationScope.label} 继承该契约，因此这里只能编辑适配器。`,
+          zh_HANT: `API 用戶端保留在帳戶中心管理。${selectedIntegrationScope.label} 繼承此契約，因此這裡只能編輯適配器。`,
+          ja: `API クライアントはアカウントセンターで管理されます。${selectedIntegrationScope.label} はその契約を継承するため、ここで編集できるのはアダプターのみです。`,
+          ko: `API 클라이언트는 계정 센터에서 관리됩니다. ${selectedIntegrationScope.label}은 해당 계약을 상속하므로 여기서는 어댑터만 편집할 수 있습니다.`,
+          fr: `Les clients API restent gérés dans l’Account Center. ${selectedIntegrationScope.label} hérite de ce contrat, donc seuls les adaptateurs sont modifiables ici.`,
+        });
 
   function renderScopeButton(
     scope: IntegrationScopeSelection,
@@ -2943,20 +2962,27 @@ export function IntegrationManagementScreen({
       {isAcWorkspace || selectedIntegrationScope ? (
         <>
           <GlassSurface className="p-6">
-            <div className="flex flex-wrap items-center gap-3">
-              {availableTabs.length > 1
-                ? availableTabs.map((tab) => (
-                    <TabButton
-                      key={tab}
-                      label={tabLabel(tab)}
-                      isActive={activeTab === tab}
-                      onClick={() => setTab(tab)}
-                    />
-                  ))
-                : null}
-              <div className="ml-auto rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
-                {currentTabLabel}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {availableTabs.length > 1
+                  ? availableTabs.map((tab) => (
+                      <TabButton
+                        key={tab}
+                        label={tabLabel(tab)}
+                        isActive={activeTab === tab}
+                        onClick={() => setTab(tab)}
+                      />
+                    ))
+                  : null}
+                <div className="ml-auto rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
+                  {currentTabLabel}
+                </div>
               </div>
+              {!isAcWorkspace && scopeAccessNotice ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                  {scopeAccessNotice}
+                </div>
+              ) : null}
             </div>
           </GlassSurface>
 

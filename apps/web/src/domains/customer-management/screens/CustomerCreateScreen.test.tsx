@@ -136,6 +136,12 @@ describe('CustomerCreateScreen', () => {
     fireEvent.change(screen.getByLabelText('Platform'), {
       target: { value: 'YOUTUBE' },
     });
+    fireEvent.change(screen.getByLabelText('Membership class'), {
+      target: { value: 'FANCLUB' },
+    });
+    fireEvent.change(screen.getByLabelText('Membership type'), {
+      target: { value: 'PAID' },
+    });
     fireEvent.change(screen.getByLabelText('Membership level'), {
       target: { value: 'GOLD' },
     });
