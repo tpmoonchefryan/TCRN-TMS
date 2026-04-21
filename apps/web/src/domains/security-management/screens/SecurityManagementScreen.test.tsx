@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SecurityManagementScreen } from '@/domains/security-management/screens/SecurityManagementScreen';
@@ -298,26 +298,18 @@ describe('SecurityManagementScreen', () => {
     await screen.findByRole('heading', { name: 'Security' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
-    expect(await screen.findByText('Blocklist rule translations')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Add language' }));
-    fireEvent.change(screen.getByPlaceholderText('Search languages...'), {
-      target: { value: 'Chinese' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: /Simplified Chinese/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add language' }));
-    fireEvent.change(screen.getByPlaceholderText('Search languages...'), {
-      target: { value: 'Korean' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: /Korean/i }));
+    const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });
+    fireEvent.click(within(translationDrawer).getByRole('button', { name: /Simplified Chinese/i }));
+    fireEvent.click(within(translationDrawer).getByRole('button', { name: /Korean/i }));
 
-    const translationInputs = screen.getAllByLabelText('Translation');
+    const translationInputs = within(translationDrawer).getAllByLabelText('Translation');
     fireEvent.change(translationInputs[0], {
       target: { value: '敏感词规则' },
     });
     fireEvent.change(translationInputs[1], {
       target: { value: '비속어 규칙' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(within(translationDrawer).getByRole('button', { name: 'Save' }));
 
     fireEvent.change(screen.getByLabelText('Rule name'), {
       target: { value: 'Profanity rule' },

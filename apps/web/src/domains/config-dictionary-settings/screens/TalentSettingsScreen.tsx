@@ -179,15 +179,17 @@ function FieldRow({
   label,
   value,
   hint,
+  valueClassName,
 }: Readonly<{
   label: string;
   value: string;
   hint?: string;
+  valueClassName?: string;
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
+      <p className={`mt-2 min-w-0 whitespace-normal break-all font-semibold text-slate-950 ${valueClassName ?? 'text-base'}`}>{value}</p>
       {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
     </div>
   );
@@ -1824,7 +1826,7 @@ export function TalentSettingsScreen({
                     </p>
                   </div>
 
-                  <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                  <div className="mt-4 grid gap-4">
                     <FieldRow
                       label={text('Homepage Published', '主页发布状态', 'ホームページ公開状態')}
                       value={formatBoolean(
@@ -1836,6 +1838,7 @@ export function TalentSettingsScreen({
                     <FieldRow
                       label={text('Current Homepage URL', '当前主页 URL', '現在のホームページ URL')}
                       value={sharedHomepageUrl}
+                      valueClassName="font-mono text-sm leading-7"
                       hint={text(
                         'Use this URL to verify the route after saving.',
                         '保存后可用这个 URL 核对实际路由。',
@@ -1846,7 +1849,7 @@ export function TalentSettingsScreen({
 
                   <div className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-950">{text('Shared-domain route', '共享域路径', '共有ドメインルート')}</p>
+                      <p className="text-sm font-semibold text-slate-950">{text('Shared-domain routes', '共享域路径', '共有ドメインルート')}</p>
                       <p className="text-sm leading-6 text-slate-600">
                         {text(
                           'This route is derived automatically from tenant code and talent code. Bind a custom domain if you need a different public address.',
@@ -1863,24 +1866,28 @@ export function TalentSettingsScreen({
                       />
                     ) : homepagePanel.data ? (
                       <>
-                        <FieldRow
-                          label={text('Shared Homepage Route', '共享主页路径', '共有ホームページルート')}
-                          value={sharedHomepagePath || common.notConfigured}
-                          hint={text(
-                            'This route remains stable unless tenant code or talent code changes.',
-                            '除非租户代码或艺人代码变化，否则该路径保持稳定。',
-                            'テナントコードまたはタレントコードが変わらない限り、このルートは固定です。',
-                          )}
-                        />
-                        <FieldRow
-                          label={text('Shared Marshmallow Route', '共享棉花糖路径', '共有マシュマロルート')}
-                          value={sharedMarshmallowPath || common.notConfigured}
-                          hint={text(
-                            'Marshmallow follows the same shared-domain rule under /marshmallow.',
-                            '棉花糖在共享域名下也遵循同样规则，并固定挂在 /marshmallow。',
-                            'マシュマロも共有ドメインでは同じ規則に従い、/marshmallow 配下に固定されます。',
-                          )}
-                        />
+                        <div className="grid gap-4">
+                          <FieldRow
+                            label={text('Shared Homepage Route', '共享主页路径', '共有ホームページルート')}
+                            value={sharedHomepagePath || common.notConfigured}
+                            valueClassName="font-mono text-sm leading-7"
+                            hint={text(
+                              'This route remains stable unless tenant code or talent code changes.',
+                              '除非租户代码或艺人代码变化，否则该路径保持稳定。',
+                              'テナントコードまたはタレントコードが変わらない限り、このルートは固定です。',
+                            )}
+                          />
+                          <FieldRow
+                            label={text('Shared Marshmallow Route', '共享棉花糖路径', '共有マシュマロルート')}
+                            value={sharedMarshmallowPath || common.notConfigured}
+                            valueClassName="font-mono text-sm leading-7"
+                            hint={text(
+                              'Marshmallow follows the same shared-domain rule under /marshmallow.',
+                              '棉花糖在共享域名下也遵循同样规则，并固定挂在 /marshmallow。',
+                              'マシュマロも共有ドメインでは同じ規則に従い、/marshmallow 配下に固定されます。',
+                            )}
+                          />
+                        </div>
 
                         <div className="flex flex-wrap items-center gap-3">
                           <Link
@@ -1913,182 +1920,249 @@ export function TalentSettingsScreen({
                       />
                     ) : customDomainPanel.data ? (
                       <>
-                        <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              {text('Step 1', '步骤 1', 'ステップ 1')}
+                            </p>
+                            <p className="text-sm font-semibold text-slate-950">
+                              {text('Bind or update the custom domain', '绑定或更新自定义域名', 'カスタムドメインを設定または更新')}
+                            </p>
+                            <p className="text-sm leading-6 text-slate-600">
+                              {text(
+                                'Save the domain first. Verification and TLS can happen later without blocking you here.',
+                                '先保存域名，后续可以稍后再完成验证和 TLS 设置。',
+                                '先にドメインを保存し、その後で検証と TLS 設定を進められます。',
+                              )}
+                            </p>
+                          </div>
+
+                          <p className="rounded-xl border border-slate-200 bg-white/90 px-3 py-3 text-sm leading-6 text-slate-600">
+                            {text(
+                              'Each talent currently uses one custom domain at a time. Replace the saved domain when you need to switch.',
+                              '当前每个艺人一次只能使用一个自定义域名；如需切换，请直接替换已保存的域名。',
+                              '現在、各タレントは同時に 1 つのカスタムドメインのみ利用できます。切り替える場合は保存済みドメインを置き換えてください。',
+                            )}
+                          </p>
+
                           <FieldRow
                             label={text('Current Custom Domain', '当前自定义域名', '現在のカスタムドメイン')}
                             value={customDomainPanel.data.customDomain || common.notConfigured}
-                          />
-                          <FieldRow
-                            label={text('Verification Status', '验证状态', '検証状態')}
-                            value={
-                              !customDomainPanel.data.customDomain
-                                ? text('No domain bound', '未绑定域名', 'ドメイン未設定')
-                                : customDomainPanel.data.customDomainVerified
-                                  ? text('Verified', '已验证', '検証済み')
-                                  : text('Pending verification', '待验证', '検証待ち')
-                            }
-                            hint={
-                              homepageVerificationTxtRecord && customDomainPanel.data.customDomain
-                                ? `TXT host: _tcrn-verify.${customDomainPanel.data.customDomain}`
-                                : text('Bind a domain to receive a DNS proof record.', '先绑定域名才能生成 DNS 验证记录。', 'DNS 検証レコードを受け取るには先にドメインを設定してください。')
-                            }
-                          />
-                        </div>
-
-                        {homepageVerificationTxtRecord ? (
-                          <FieldRow
-                            label={text('Expected TXT Record', '期望 TXT 记录', '必要な TXT レコード')}
-                            value={homepageVerificationTxtRecord}
+                            valueClassName="font-mono text-sm leading-7"
                             hint={text(
-                              'Publish this TXT value before running domain verification.',
-                              '执行域名验证前，请先发布这条 TXT 记录。',
-                              'ドメイン検証を実行する前にこの TXT レコードを公開してください。',
-                            )}
-                          />
-                        ) : null}
-
-                        <label className="space-y-2">
-                          <span className="text-sm font-semibold text-slate-900">{text('Custom domain', '自定义域名', 'カスタムドメイン')}</span>
-                          <input
-                            aria-label={text('Custom domain', '自定义域名', 'カスタムドメイン')}
-                            type="text"
-                            value={customDomainDraft}
-                            onChange={(event) => {
-                              setCustomDomainDraft(event.target.value);
-                              setCustomDomainError(null);
-                              setCustomDomainSuccess(null);
-                              setCustomDomainVerifyNotice(null);
-                            }}
-                            placeholder="fans.example.com"
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                          />
-                          <p className="text-xs text-slate-500">
-                            {text(
                               'Leave the field empty and save to clear the current custom domain.',
                               '留空并保存即可清除当前自定义域名。',
                               '空欄のまま保存すると現在のカスタムドメインを解除できます。',
                             )}
-                          </p>
-                        </label>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => void handleSaveCustomDomain()}
-                            disabled={customDomainPending || !hasDirtyCustomDomain}
-                            className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {customDomainPending
-                              ? text('Saving custom domain…', '正在保存自定义域名…', 'カスタムドメインを保存中…')
-                              : text('Save custom domain', '保存自定义域名', 'カスタムドメインを保存')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleVerifyCustomDomain()}
-                            disabled={customDomainVerifyPending || !customDomainPanel.data.customDomain}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {customDomainVerifyPending
-                              ? text('Verifying domain…', '正在验证域名…', 'ドメインを検証中…')
-                              : text('Verify custom domain', '验证自定义域名', 'カスタムドメインを検証')}
-                          </button>
-                        </div>
-                        {customDomainError ? <NoticeBanner tone="error" message={customDomainError} /> : null}
-                        {customDomainSuccess ? <NoticeBanner tone="success" message={customDomainSuccess} /> : null}
-                        {customDomainVerifyNotice ? (
-                          <NoticeBanner tone={customDomainVerifyNotice.tone} message={customDomainVerifyNotice.message} />
-                        ) : null}
-
-                        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-950">
-                              {text('Fixed Public Routes', '固定公开路由', '固定公開ルート')}
-                            </p>
-                            <p className="text-sm leading-6 text-slate-600">
-                              {text(
-                                'Custom domains now use fixed routes. Change the domain itself if you need a different public address.',
-                                '自定义域名现在使用固定路由。如需不同的公开地址，请更换域名本身。',
-                                'カスタムドメインは固定ルートを使用します。別の公開アドレスが必要な場合は、ドメイン自体を変更してください。',
-                              )}
-                            </p>
-                          </div>
-
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <FieldRow
-                              label={text('Homepage route under custom domain', '自定义域名下的主页路由', 'カスタムドメイン配下のホームページルート')}
-                              value={fixedCustomDomainHomepageRoute}
-                              hint={text(
-                                'The homepage route is fixed to /homepage under any custom domain.',
-                                '任意自定义域名下的主页路由固定为 /homepage。',
-                                '任意のカスタムドメイン配下でホームページルートは /homepage に固定されます。',
-                              )}
-                            />
-                            <FieldRow
-                              label={text('Marshmallow route under custom domain', '自定义域名下的棉花糖路由', 'カスタムドメイン配下のマシュマロルート')}
-                              value={fixedCustomDomainMarshmallowRoute}
-                              hint={text(
-                                'The marshmallow route is fixed to /marshmallow under any custom domain.',
-                                '任意自定义域名下的棉花糖路由固定为 /marshmallow。',
-                                '任意のカスタムドメイン配下でマシュマロルートは /marshmallow に固定されます。',
-                              )}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-950">
-                              {text('Custom-Domain SSL Mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
-                            </p>
-                            <p className="text-sm leading-6 text-slate-600">
-                              {text(
-                                'Choose how TLS is handled for the custom domain.',
-                                '选择自定义域名的 TLS 处理方式。',
-                                'カスタムドメインの TLS 処理方式を選択します。',
-                              )}
-                            </p>
-                          </div>
+                          />
 
                           <label className="space-y-2">
-                            <span className="text-sm font-semibold text-slate-900">
-                              {text('Custom-domain SSL mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
-                            </span>
-                            <select
-                              aria-label={text('Custom-domain SSL mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
-                              value={customDomainSslModeDraft}
+                            <span className="text-sm font-semibold text-slate-900">{text('Custom domain', '自定义域名', 'カスタムドメイン')}</span>
+                            <input
+                              aria-label={text('Custom domain', '自定义域名', 'カスタムドメイン')}
+                              type="text"
+                              value={customDomainDraft}
                               onChange={(event) => {
-                                setCustomDomainSslModeDraft(
-                                  event.target.value as TalentCustomDomainConfigResponse['customDomainSslMode'],
-                                );
-                                setCustomDomainSslError(null);
-                                setCustomDomainSslSuccess(null);
+                                setCustomDomainDraft(event.target.value);
+                                setCustomDomainError(null);
+                                setCustomDomainSuccess(null);
+                                setCustomDomainVerifyNotice(null);
                               }}
+                              placeholder="fans.example.com"
                               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                            >
-                              {customDomainSslModeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <p className="text-xs text-slate-500">
-                              {customDomainSslModeOptions.find((option) => option.value === customDomainSslModeDraft)?.hint}
-                            </p>
+                            />
                           </label>
 
-                          <button
-                            type="button"
-                            onClick={() => void handleSaveCustomDomainSslMode()}
-                            disabled={customDomainSslPending || !hasDirtyCustomDomainSslMode}
-                            className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {customDomainSslPending
-                              ? text('Saving SSL mode…', '正在保存 SSL 模式…', 'SSL モードを保存中…')
-                              : text('Save custom-domain SSL mode', '保存自定义域名 SSL 模式', 'カスタムドメイン SSL モードを保存')}
-                          </button>
-                          {customDomainSslError ? <NoticeBanner tone="error" message={customDomainSslError} /> : null}
-                          {customDomainSslSuccess ? <NoticeBanner tone="success" message={customDomainSslSuccess} /> : null}
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveCustomDomain()}
+                              disabled={customDomainPending || !hasDirtyCustomDomain}
+                              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {customDomainPending
+                                ? text('Saving custom domain…', '正在保存自定义域名…', 'カスタムドメインを保存中…')
+                                : text('Save custom domain', '保存自定义域名', 'カスタムドメインを保存')}
+                            </button>
+                          </div>
+                          {customDomainError ? <NoticeBanner tone="error" message={customDomainError} /> : null}
+                          {customDomainSuccess ? <NoticeBanner tone="success" message={customDomainSuccess} /> : null}
                         </div>
+
+                        {customDomainPanel.data.customDomain ? (
+                          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                {text('Step 2', '步骤 2', 'ステップ 2')}
+                              </p>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {text('Verify DNS ownership', '验证 DNS 所有权', 'DNS 所有権を検証')}
+                              </p>
+                              <p className="text-sm leading-6 text-slate-600">
+                                {text(
+                                  'Publish the TXT record first, then verify when DNS has propagated.',
+                                  '先发布 TXT 记录，等待 DNS 生效后再执行验证。',
+                                  '先に TXT レコードを公開し、DNS が反映されたら検証してください。',
+                                )}
+                              </p>
+                            </div>
+
+                            <FieldRow
+                              label={text('Verification Status', '验证状态', '検証状態')}
+                              value={
+                                customDomainPanel.data.customDomainVerified
+                                  ? text('Verified', '已验证', '検証済み')
+                                  : text('Pending verification', '待验证', '検証待ち')
+                              }
+                              hint={
+                                homepageVerificationTxtRecord
+                                  ? `TXT host: _tcrn-verify.${customDomainPanel.data.customDomain}`
+                                  : text('Bind a domain to receive a DNS proof record.', '先绑定域名才能生成 DNS 验证记录。', 'DNS 検証レコードを受け取るには先にドメインを設定してください。')
+                              }
+                            />
+
+                            {homepageVerificationTxtRecord ? (
+                              <FieldRow
+                                label={text('Expected TXT Record', '期望 TXT 记录', '必要な TXT レコード')}
+                                value={homepageVerificationTxtRecord}
+                                valueClassName="font-mono text-sm leading-7"
+                                hint={text(
+                                  'Publish this TXT value before running domain verification.',
+                                  '执行域名验证前，请先发布这条 TXT 记录。',
+                                  'ドメイン検証を実行する前にこの TXT レコードを公開してください。',
+                                )}
+                              />
+                            ) : null}
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => void handleVerifyCustomDomain()}
+                                disabled={customDomainVerifyPending || !customDomainPanel.data.customDomain}
+                                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {customDomainVerifyPending
+                                  ? text('Verifying domain…', '正在验证域名…', 'ドメインを検証中…')
+                                  : text('Verify custom domain', '验证自定义域名', 'カスタムドメインを検証')}
+                              </button>
+                            </div>
+                            {customDomainVerifyNotice ? (
+                              <NoticeBanner tone={customDomainVerifyNotice.tone} message={customDomainVerifyNotice.message} />
+                            ) : null}
+                          </div>
+                        ) : (
+                          <SectionPlaceholder
+                            title={text('No custom domain bound', '未绑定自定义域名', 'カスタムドメイン未設定')}
+                            description={text(
+                              'Add a domain above when this talent needs its own public entry.',
+                              '如果该艺人需要独立公开入口，请先在上方添加域名。',
+                              'このタレント専用の公開入口が必要な場合は、まず上でドメインを追加してください。',
+                            )}
+                          />
+                        )}
+
+                        {customDomainPanel.data.customDomain ? (
+                          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                {text('Step 3', '步骤 3', 'ステップ 3')}
+                              </p>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {text('Fixed Public Routes', '固定公开路由', '固定公開ルート')}
+                              </p>
+                              <p className="text-sm leading-6 text-slate-600">
+                                {text(
+                                  'Custom domains now use fixed routes. Change the domain itself if you need a different public address.',
+                                  '自定义域名现在使用固定路由。如需不同的公开地址，请更换域名本身。',
+                                  'カスタムドメインは固定ルートを使用します。別の公開アドレスが必要な場合は、ドメイン自体を変更してください。',
+                                )}
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4">
+                              <FieldRow
+                                label={text('Homepage route under custom domain', '自定义域名下的主页路由', 'カスタムドメイン配下のホームページルート')}
+                                value={fixedCustomDomainHomepageRoute}
+                                valueClassName="font-mono text-sm leading-7"
+                                hint={text(
+                                  'The homepage route is fixed to /homepage under any custom domain.',
+                                  '任意自定义域名下的主页路由固定为 /homepage。',
+                                  '任意のカスタムドメイン配下でホームページルートは /homepage に固定されます。',
+                                )}
+                              />
+                              <FieldRow
+                                label={text('Marshmallow route under custom domain', '自定义域名下的棉花糖路由', 'カスタムドメイン配下のマシュマロルート')}
+                                value={fixedCustomDomainMarshmallowRoute}
+                                valueClassName="font-mono text-sm leading-7"
+                                hint={text(
+                                  'The marshmallow route is fixed to /marshmallow under any custom domain.',
+                                  '任意自定义域名下的棉花糖路由固定为 /marshmallow。',
+                                  '任意のカスタムドメイン配下でマシュマロルートは /marshmallow に固定されます。',
+                                )}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {customDomainPanel.data.customDomain ? (
+                          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                {text('Step 4', '步骤 4', 'ステップ 4')}
+                              </p>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {text('Custom-Domain SSL Mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
+                              </p>
+                              <p className="text-sm leading-6 text-slate-600">
+                                {text(
+                                  'Choose how TLS is handled for the custom domain.',
+                                  '选择自定义域名的 TLS 处理方式。',
+                                  'カスタムドメインの TLS 処理方式を選択します。',
+                                )}
+                              </p>
+                            </div>
+
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Custom-domain SSL mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
+                              </span>
+                              <select
+                                aria-label={text('Custom-domain SSL mode', '自定义域名 SSL 模式', 'カスタムドメイン SSL モード')}
+                                value={customDomainSslModeDraft}
+                                onChange={(event) => {
+                                  setCustomDomainSslModeDraft(
+                                    event.target.value as TalentCustomDomainConfigResponse['customDomainSslMode'],
+                                  );
+                                  setCustomDomainSslError(null);
+                                  setCustomDomainSslSuccess(null);
+                                }}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                              >
+                                {customDomainSslModeOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-xs text-slate-500">
+                                {customDomainSslModeOptions.find((option) => option.value === customDomainSslModeDraft)?.hint}
+                              </p>
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveCustomDomainSslMode()}
+                              disabled={customDomainSslPending || !hasDirtyCustomDomainSslMode}
+                              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {customDomainSslPending
+                                ? text('Saving SSL mode…', '正在保存 SSL 模式…', 'SSL モードを保存中…')
+                                : text('Save custom-domain SSL mode', '保存自定义域名 SSL 模式', 'カスタムドメイン SSL モードを保存')}
+                            </button>
+                            {customDomainSslError ? <NoticeBanner tone="error" message={customDomainSslError} /> : null}
+                            {customDomainSslSuccess ? <NoticeBanner tone="success" message={customDomainSslSuccess} /> : null}
+                          </div>
+                        ) : null}
                       </>
                     ) : null}
                   </div>

@@ -24,6 +24,7 @@ import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/co
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
+import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
@@ -459,12 +460,12 @@ export function SubsidiarySettingsScreen({
             <FormSection
               title={common.details}
               description={text({
-                en: 'Review subsidiary identity, hierarchy, and status.',
-                zh_HANS: '查看分目录身份、层级与状态。',
-                zh_HANT: '查看分目錄識別資訊、層級與狀態。',
-                ja: '配下スコープの識別情報、階層、状態を確認します。',
-                ko: '하위 조직의 식별 정보, 계층, 상태를 확인합니다.',
-                fr: 'Consultez l identite, la hierarchie et le statut de la filiale.',
+                en: 'Review subsidiary identity, hierarchy, status, and quick links.',
+                zh_HANS: '查看分目录身份、层级、状态与快捷入口。',
+                zh_HANT: '查看分目錄識別資訊、層級、狀態與快捷入口。',
+                ja: '配下スコープの識別情報、階層、状態、関連ショートカットを確認します。',
+                ko: '하위 조직의 식별 정보, 계층, 상태와 빠른 이동 링크를 확인합니다.',
+                fr: 'Consultez l identite, la hierarchie, le statut et les raccourcis de cette filiale.',
               })}
             >
               <div className="grid gap-4 xl:grid-cols-2">
@@ -510,6 +511,39 @@ export function SubsidiarySettingsScreen({
                   }),
                 )}
               />
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SectionEntryLink
+                  title={text({ en: 'Business Workspace', zh_HANS: '业务工作区', zh_HANT: '業務工作區', ja: '業務ワークスペース', ko: '비즈니스 워크스페이스', fr: 'Espace metier' })}
+                  description={text(
+                    'Open the subsidiary-level business workspace for cross-talent operations inside this branch.',
+                    '打开当前分目录的业务工作区，用于该层级内的跨艺人运营。',
+                    'この配下スコープ内の複数タレント運用向けに、業務ワークスペースを開きます。',
+                  )}
+                  href={buildSubsidiaryBusinessPath(tenantId, subsidiaryId)}
+                  cta={text({ en: 'Open business workspace', zh_HANS: '打开业务工作区', zh_HANT: '打開業務工作區', ja: '業務ワークスペースを開く', ko: '비즈니스 워크스페이스 열기', fr: 'Ouvrir l espace metier' })}
+                />
+                <SectionEntryLink
+                  title={text({ en: 'Security', zh_HANS: '安全管理', zh_HANT: '安全管理', ja: 'セキュリティ管理', ko: '보안 관리', fr: 'Securite' })}
+                  description={text(
+                    'Open security management for this subsidiary.',
+                    '打开当前分目录的安全管理页面。',
+                    'この配下スコープのセキュリティ管理を開きます。',
+                  )}
+                  href={`/tenant/${tenantId}/security?tab=blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
+                  cta={text({ en: 'Open security', zh_HANS: '打开安全管理', zh_HANT: '打開安全管理', ja: 'セキュリティを開く', ko: '보안 열기', fr: 'Ouvrir la securite' })}
+                />
+                <SectionEntryLink
+                  title={text({ en: 'External Blocklist', zh_HANS: '外部封禁', zh_HANT: '外部封禁', ja: '外部ブロックリスト', ko: '외부 차단 목록', fr: 'Liste de blocage externe' })}
+                  description={text(
+                    'Review external blocklist rules for this subsidiary.',
+                    '查看当前分目录的外部封禁规则。',
+                    'この配下スコープの外部ブロックリストを確認します。',
+                  )}
+                  href={`/tenant/${tenantId}/security?tab=external-blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
+                  cta={text({ en: 'Open blocklist', zh_HANS: '打开外部封禁', zh_HANT: '打開外部封禁', ja: 'ブロックリストを開く', ko: '차단 목록 열기', fr: 'Ouvrir la liste de blocage' })}
+                />
+              </div>
             </FormSection>
           </GlassSurface>
         </div>
@@ -666,50 +700,6 @@ export function SubsidiarySettingsScreen({
 
               {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
               {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-          <FormSection
-              title={text({
-                en: 'Security Shortcuts',
-                zh_HANS: '安全快捷入口',
-                zh_HANT: '安全快捷入口',
-                ja: 'セキュリティショートカット',
-                ko: '보안 바로가기',
-                fr: 'Raccourcis de securite',
-              })}
-              description={text({
-                en: 'Open security pages already filtered to this subsidiary.',
-                zh_HANS: '直接打开已带当前分目录筛选条件的安全页面。',
-                zh_HANT: '直接開啟已套用目前分目錄篩選條件的安全頁面。',
-                ja: 'この配下スコープで絞り込んだセキュリティ画面を開きます。',
-                ko: '이 하위 조직으로 이미 필터링된 보안 페이지를 엽니다.',
-                fr: 'Ouvrez les pages de securite deja filtrees sur cette filiale.',
-              })}
-            >
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SectionEntryLink
-                  title={text({ en: 'Security', zh_HANS: '安全管理', zh_HANT: '安全管理', ja: 'セキュリティ管理', ko: '보안 관리', fr: 'Securite' })}
-                  description={text(
-                    'Open security management for this subsidiary.',
-                    '打开当前分目录的安全管理页面。',
-                    'この配下スコープのセキュリティ管理を開きます。',
-                  )}
-                  href={`/tenant/${tenantId}/security?tab=blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
-                  cta={text({ en: 'Open security', zh_HANS: '打开安全管理', zh_HANT: '打開安全管理', ja: 'セキュリティを開く', ko: '보안 열기', fr: 'Ouvrir la securite' })}
-                />
-                <SectionEntryLink
-                  title={text({ en: 'External Blocklist', zh_HANS: '外部封禁', zh_HANT: '外部封禁', ja: '外部ブロックリスト', ko: '외부 차단 목록', fr: 'Liste de blocage externe' })}
-                  description={text(
-                    'Review external blocklist rules for this subsidiary.',
-                    '查看当前分目录的外部封禁规则。',
-                    'この配下スコープの外部ブロックリストを確認します。',
-                  )}
-                  href={`/tenant/${tenantId}/security?tab=external-blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
-                  cta={text({ en: 'Open blocklist', zh_HANS: '打开外部封禁', zh_HANT: '打開外部封禁', ja: 'ブロックリストを開く', ko: '차단 목록 열기', fr: 'Ouvrir la liste de blocage' })}
-                />
-              </div>
             </FormSection>
           </GlassSurface>
         </div>

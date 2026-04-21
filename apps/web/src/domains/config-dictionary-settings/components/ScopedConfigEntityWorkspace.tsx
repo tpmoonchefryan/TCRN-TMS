@@ -47,7 +47,7 @@ import {
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
-import { AsyncSubmitButton, ConfirmActionDialog, StateView, TableShell } from '@/platform/ui';
+import { ActionDrawer, AsyncSubmitButton, ConfirmActionDialog, StateView, TableShell } from '@/platform/ui';
 
 interface ScopedConfigEntityWorkspaceProps {
   request: <T>(path: string, init?: RequestInit) => Promise<T>;
@@ -265,6 +265,7 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
 };
 
 const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
+  'membership-class',
   'membership-type',
   'membership-level',
 ]);
@@ -836,6 +837,13 @@ export function ScopedConfigEntityWorkspace({
         ja: '翻訳管理',
       }),
     };
+  const editorDrawerCopy = {
+    closeButtonAriaLabel: pickLocaleText(locale, {
+      en: 'Close configuration record drawer',
+      zh: '关闭配置记录抽屉',
+      ja: '設定レコードドロワーを閉じる',
+    }),
+  };
 
   const translationSections = useMemo(() => {
     const sections: Array<{
@@ -1589,28 +1597,42 @@ export function ScopedConfigEntityWorkspace({
         </div>
       </div>
 
-      {editorMode !== 'closed' ? (
-        <div className="space-y-5 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-lg font-semibold text-slate-950">
-                {editorMode === 'create'
-                  ? resolvedCopy.editorCreateTitle(selectedEntry.label)
-                  : resolvedCopy.editorEditTitle(selectedEntry.label, editorTarget?.code ?? selectedEntry.label)}
-              </p>
-              <p className="text-sm leading-6 text-slate-600">
-                {resolvedCopy.editorDescription(resolvedCopy.scopeTypeLabel(scopeType))}
-              </p>
-            </div>
+      <ActionDrawer
+        open={editorMode !== 'closed'}
+        onOpenChange={(open) => {
+          if (!open && !editorPending) {
+            cancelEditor();
+          }
+        }}
+        title={
+          editorMode === 'create'
+            ? resolvedCopy.editorCreateTitle(selectedEntry.label)
+            : resolvedCopy.editorEditTitle(selectedEntry.label, editorTarget?.code ?? selectedEntry.label)
+        }
+        description={resolvedCopy.editorDescription(resolvedCopy.scopeTypeLabel(scopeType))}
+        size="xl"
+        closeButtonAriaLabel={editorDrawerCopy.closeButtonAriaLabel}
+        footer={
+          <div className="flex flex-wrap justify-end gap-3">
             <button
               type="button"
               onClick={cancelEditor}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              disabled={editorPending}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resolvedCopy.cancelLabel}
             </button>
+            <AsyncSubmitButton
+              intent="primary"
+              isPending={editorPending}
+              onClick={() => void handleSubmit()}
+            >
+              {editorMode === 'create' ? resolvedCopy.createSubmit : resolvedCopy.saveSubmit}
+            </AsyncSubmitButton>
           </div>
-
+        }
+      >
+        <div className="space-y-6">
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="space-y-2">
               <span className="text-sm font-semibold text-slate-900">{resolvedCopy.codeLabel}</span>
@@ -1687,25 +1709,8 @@ export function ScopedConfigEntityWorkspace({
           ) : null}
 
           {editorError ? <p className="text-sm font-medium text-red-600">{editorError}</p> : null}
-
-          <div className="flex flex-wrap justify-end gap-3">
-            <button
-              type="button"
-              onClick={cancelEditor}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-            >
-              {resolvedCopy.cancelLabel}
-            </button>
-            <AsyncSubmitButton
-              intent="primary"
-              isPending={editorPending}
-              onClick={() => void handleSubmit()}
-            >
-              {editorMode === 'create' ? resolvedCopy.createSubmit : resolvedCopy.saveSubmit}
-            </AsyncSubmitButton>
-          </div>
         </div>
-      ) : null}
+      </ActionDrawer>
 
       <TranslationManagementDrawer
         open={isTranslationsOpen}

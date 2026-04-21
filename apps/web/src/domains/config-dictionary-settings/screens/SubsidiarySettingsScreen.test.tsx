@@ -555,4 +555,65 @@ describe('SubsidiarySettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tokyo 하위 조직 설정' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '설정 섹션' })).toBeInTheDocument();
   });
+
+  it('includes a subsidiary business workspace shortcut in the details section', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/subsidiaries/sub-1') {
+        return {
+          id: 'sub-1',
+          parentId: null,
+          code: 'TOKYO',
+          path: '/TOKYO/',
+          depth: 1,
+          nameEn: 'Tokyo',
+          nameZh: '东京分部',
+          nameJa: '東京拠点',
+          name: 'Tokyo',
+          descriptionEn: 'Tokyo branch',
+          descriptionZh: '东京分部说明',
+          descriptionJa: null,
+          sortOrder: 10,
+          isActive: true,
+          childrenCount: 2,
+          talentCount: 5,
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:10:00.000Z',
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/subsidiaries/sub-1/settings') {
+        return {
+          scopeType: 'subsidiary',
+          scopeId: 'sub-1',
+          settings: {
+            defaultLanguage: 'en',
+            timezone: 'UTC',
+            allowCustomHomepage: true,
+          },
+          overrides: [],
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            allowCustomHomepage: 'tenant',
+          },
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tokyo Subsidiary Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open business workspace' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/subsidiary/sub-1/business',
+    );
+  });
 });

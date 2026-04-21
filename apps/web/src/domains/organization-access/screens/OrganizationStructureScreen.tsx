@@ -1066,10 +1066,12 @@ export function OrganizationStructureScreen({
                   isPending={loading}
                   pendingText={copy.actions.refreshing}
                   onClick={() => setReloadVersion((current) => current + 1)}
-                  className="shrink-0 gap-2 whitespace-nowrap"
+                  className="min-w-[10rem] shrink-0 whitespace-nowrap"
                 >
-                  <RefreshCcw className="h-4 w-4" />
-                  {copy.actions.refresh}
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <RefreshCcw className="h-4 w-4" />
+                    <span>{copy.actions.refresh}</span>
+                  </span>
                 </AsyncSubmitButton>
                 <Link
                   href={hierarchyBusinessHref}

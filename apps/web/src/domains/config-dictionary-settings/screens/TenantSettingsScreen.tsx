@@ -41,6 +41,7 @@ import {
 } from '@/domains/config-dictionary-settings/components/TranslationManagement';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
+import { buildTenantBusinessPath } from '@/platform/routing/workspace-paths';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
@@ -1053,6 +1054,16 @@ export function TenantSettingsScreen({
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
+                  <SectionEntryLink
+                    title={text('Business Workspace', '业务工作区', '業務ワークスペース')}
+                    description={text(
+                      'Open the tenant-level business workspace for cross-talent operations and future reporting modules.',
+                      '打开租户级业务工作区，用于跨艺人运营与后续报表模块。',
+                      '複数タレント横断の運用や今後のレポート機能向けに、テナント業務ワークスペースを開きます。',
+                    )}
+                    href={buildTenantBusinessPath(tenantId)}
+                    cta={text('Open business workspace', '打开业务工作区', '業務ワークスペースを開く')}
+                  />
                   <SectionEntryLink
                     title={text('Integration', '集成管理', '統合管理')}
                     description={text(

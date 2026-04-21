@@ -519,13 +519,11 @@ describe('TenantSettingsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
     const createTranslationDrawer = await screen.findByRole('dialog');
     expect(within(createTranslationDrawer).getByText('Profile store translations')).toBeInTheDocument();
-    fireEvent.click(within(createTranslationDrawer).getByRole('button', { name: 'Add Language' }));
     fireEvent.click(
       await within(createTranslationDrawer).findByRole('button', {
         name: /Simplified Chinese|简体中文/,
       }),
     );
-    fireEvent.click(within(createTranslationDrawer).getByRole('button', { name: 'Add Language' }));
     fireEvent.click(
       await within(createTranslationDrawer).findByRole('button', {
         name: /Korean|한국어/,
@@ -672,5 +670,46 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: '租户设置' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(await screen.findByRole('button', { name: '保存租户默认值' })).toBeInTheDocument();
+  });
+
+  it('includes a tenant business workspace shortcut in the details section', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/settings') {
+        return {
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'en',
+            timezone: 'UTC',
+            allowCustomHomepage: true,
+          },
+          overrides: [],
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            allowCustomHomepage: 'tenant',
+          },
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20&includeInactive=true') {
+        return profileStoreListResponse;
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open business workspace' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/business',
+    );
   });
 });
