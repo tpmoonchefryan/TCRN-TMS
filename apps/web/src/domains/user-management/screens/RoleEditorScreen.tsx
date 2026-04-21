@@ -905,8 +905,6 @@ export function RoleEditorScreen({
         removeLanguageAriaLabel={(language) =>
           `${translationDrawerLabels.removeLanguageVisibleLabel} ${language}`
         }
-        searchPlaceholder={translationDrawerLabels.searchPlaceholder}
-        noSearchResultsText={translationDrawerLabels.noSearchResultsText}
         emptyTranslationsText={translationDrawerLabels.emptyTranslationsText}
         baseValueSuffix={translationDrawerLabels.baseValueSuffix}
       />

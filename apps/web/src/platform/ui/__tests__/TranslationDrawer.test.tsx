@@ -5,9 +5,12 @@ import { TranslationDrawer } from '../patterns/TranslationDrawer';
 
 describe('TranslationDrawer', () => {
   const availableLocales = [
-    { code: 'zh_HANS', label: 'Simplified Chinese' },
-    { code: 'ko', label: 'Korean' },
-    { code: 'fr', label: 'French' },
+    { code: 'en', label: 'English' }, // priority
+    { code: 'zh_HANS', label: 'Simplified Chinese' }, // priority
+    { code: 'ko', label: 'Korean' }, // priority
+    { code: 'fr', label: 'French' }, // priority
+    { code: 'de', label: 'German' }, // long-tail
+    { code: 'it', label: 'Italian' }, // long-tail
   ];
 
   const fields = [
@@ -54,33 +57,42 @@ describe('TranslationDrawer', () => {
     expect(descInputs[0]).toHaveValue('系统管理员');
     
     // Inactive locales should not be rendered
-    expect(screen.queryByText('Korean')).not.toBeInTheDocument();
+    expect(screen.queryByText('Korean', { selector: 'h3' })).not.toBeInTheDocument();
   });
 
-  it('supports searching and adding a new language', async () => {
+  it('supports quick add via pills', async () => {
     render(<TranslationDrawer {...defaultProps} />);
     
-    // Click 'Add Language' to open searchable picker
-    const addButton = screen.getByRole('button', { name: /Add Language/i });
+    // There is no search mode wall anymore
+    expect(screen.queryByPlaceholderText('Search languages...')).not.toBeInTheDocument();
+    
+    // Click 'Korean' pill (a priority locale)
+    const koreanPill = screen.getByRole('button', { name: 'Korean' });
     await act(async () => {
-      fireEvent.click(addButton);
+      fireEvent.click(koreanPill);
     });
     
-    // Search for French
-    const searchInput = screen.getByPlaceholderText('Search languages...');
-    fireEvent.change(searchInput, { target: { value: 'fre' } });
+    // Korean block should now be rendered
+    expect(screen.getByText('Korean', { selector: 'h3' })).toBeInTheDocument();
     
-    // Korean should be filtered out
-    expect(screen.queryByText('Korean')).not.toBeInTheDocument();
+    // And focus should move to the newly added field (the first field in Korean block)
+    const nameInputs = screen.getAllByLabelText('Name');
+    // nameInputs[0] is zh_HANS, nameInputs[1] is ko
+    expect(nameInputs[1]).toHaveFocus();
+  });
+
+  it('supports adding long-tail languages via combobox', async () => {
+    render(<TranslationDrawer {...defaultProps} />);
     
-    // Click French
-    const frenchOption = screen.getByText('French');
+    // 'German' is long-tail, so it should be in the combobox
+    const select = screen.getByRole('combobox', { name: 'Add other language...' });
+    
     await act(async () => {
-      fireEvent.click(frenchOption);
+      fireEvent.change(select, { target: { value: 'de' } });
     });
     
-    // French block should now be rendered
-    expect(screen.getByText('French')).toBeInTheDocument();
+    // German block should now be rendered
+    expect(screen.getByText('German', { selector: 'h3' })).toBeInTheDocument();
   });
 
   it('can remove an active language block', async () => {
@@ -93,25 +105,19 @@ describe('TranslationDrawer', () => {
       fireEvent.click(removeButton);
     });
     
-    expect(screen.queryByText('Simplified Chinese')).not.toBeInTheDocument();
+    expect(screen.queryByText('Simplified Chinese', { selector: 'h3' })).not.toBeInTheDocument();
   });
 
   it('saves the multi-field payload correctly', async () => {
     render(<TranslationDrawer {...defaultProps} />);
     
-    // Open picker and add Korean
-    const addButton = screen.getByRole('button', { name: /Add Language/i });
+    // Add Korean
+    const koreanPill = screen.getByRole('button', { name: 'Korean' });
     await act(async () => {
-      fireEvent.click(addButton);
-    });
-    const koreanOption = screen.getByText('Korean');
-    await act(async () => {
-      fireEvent.click(koreanOption);
+      fireEvent.click(koreanPill);
     });
     
     // Simulate typing in the new Korean Name field
-    // Since labels are generic "Name" per section, we need to target the specific input
-    // The second "Name" label in the document will belong to the Korean block since it was appended
     const nameInputs = screen.getAllByLabelText('Name');
     fireEvent.change(nameInputs[1], { target: { value: '관리자' } });
     

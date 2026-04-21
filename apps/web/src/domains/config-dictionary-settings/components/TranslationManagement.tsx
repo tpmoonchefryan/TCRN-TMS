@@ -357,8 +357,6 @@ export function TranslationManagementDrawer({
       addLanguageLabel={copy.addLanguageLabel}
       removeLanguageVisibleLabel={copy.removeLanguageVisibleLabel}
       removeLanguageAriaLabel={(language) => `${copy.removeLanguageVisibleLabel} ${language}`}
-      searchPlaceholder={copy.searchPlaceholder}
-      noSearchResultsText={copy.noSearchResultsText}
       emptyTranslationsText={emptyTranslationsText}
       baseValueSuffix={copy.baseValueSuffix}
     />
