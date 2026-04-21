@@ -21,15 +21,16 @@ export interface TranslationDrawerProps {
   fields?: TranslationField[];
   availableLocales: Array<{ code: string; label: string }>;
   onSave: (payload: Record<string, Record<string, string>> | Record<string, string>) => Promise<void>;
-  saveButtonLabel?: string;
-  cancelButtonLabel?: string;
+  saveButtonLabel: string;
+  cancelButtonLabel: string;
   closeButtonAriaLabel?: string;
-  addLanguageLabel?: string;
-  addOtherLanguageLabel?: string;
-  removeLanguageVisibleLabel?: string;
-  removeLanguageAriaLabel?: (language: string) => string;
-  emptyTranslationsText?: string;
-  baseValueSuffix?: string;
+  addLanguageLabel: string;
+  addOtherLanguageLabel: string;
+  removeLanguageVisibleLabel: string;
+  removeLanguageAriaLabel: (language: string) => string;
+  emptyTranslationsText: string;
+  baseValueSuffix: string;
+  legacyFieldLabel?: string;
 }
 
 const PRIORITY_LOCALES = ['en', 'zh_HANS', 'zh_HANT', 'ja', 'ko', 'fr'];
@@ -43,8 +44,8 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
   fields,
   availableLocales,
   onSave,
-  saveButtonLabel = 'Save',
-  cancelButtonLabel = 'Cancel',
+  saveButtonLabel,
+  cancelButtonLabel,
   closeButtonAriaLabel,
   addLanguageLabel,
   addOtherLanguageLabel,
@@ -52,6 +53,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
   removeLanguageAriaLabel,
   emptyTranslationsText,
   baseValueSuffix,
+  legacyFieldLabel,
 }) => {
   const normalizedFields: TranslationField[] = useMemo(() => {
     if (fields) {
@@ -62,7 +64,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
       return [
         {
           id: 'default',
-          label: 'Translation',
+          label: legacyFieldLabel ?? title,
           baseValue,
           translations,
         },
@@ -70,7 +72,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
     }
 
     return [];
-  }, [baseValue, fields, translations]);
+  }, [baseValue, fields, legacyFieldLabel, title, translations]);
 
   const isLegacyMode = !fields && baseValue !== undefined && translations !== undefined;
   const [localData, setLocalData] = useState<Record<string, Record<string, string>>>({});
@@ -269,7 +271,11 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                 {field.label} <span className="font-normal text-slate-400">{baseValueSuffix}</span>
               </label>
               <div className={`whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 text-sm ${tokens.colors.text}`}>
-                {field.baseValue || <span className="italic text-slate-400">Empty</span>}
+                {field.baseValue.trim().length > 0 ? (
+                  field.baseValue
+                ) : (
+                  <span aria-hidden="true" className="block min-h-[1.25rem]" />
+                )}
               </div>
             </div>
           ))}
@@ -300,7 +306,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                     type="button"
                     onClick={() => handleRemoveLanguage(localeCode)}
                     className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    aria-label={removeLanguageAriaLabel?.(localeLabel) || `Remove ${localeLabel} translation`}
+                    aria-label={removeLanguageAriaLabel(localeLabel)}
                   >
                     {removeLanguageVisibleLabel}
                   </button>

@@ -2884,6 +2884,7 @@ export function SecurityManagementScreen({
         title={copy.sections.blocklistEditor.translationManagement.title}
         baseValue={blocklistDraft.nameEn}
         translations={blocklistDraft.nameTranslations}
+        legacyFieldLabel={copy.fields.ruleName}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -2911,6 +2912,7 @@ export function SecurityManagementScreen({
         title={copy.sections.externalEditor.translationManagement.title}
         baseValue={externalDraft.nameEn}
         translations={externalDraft.nameTranslations}
+        legacyFieldLabel={copy.fields.ruleName}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);

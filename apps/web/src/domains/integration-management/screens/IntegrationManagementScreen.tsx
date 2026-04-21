@@ -2537,23 +2537,27 @@ export function IntegrationManagementScreen({
           title: text('Template name translations', '模板名称翻译', 'テンプレート名翻訳'),
           baseValue: templateDraft.nameEn,
           translations: templateDraft.nameTranslations,
+          fieldLabel: text('Name (EN)', '名称（英文）', '名称（英語）'),
         }
       : templateTranslationSection === 'subject'
         ? {
             title: text('Template subject translations', '模板主题翻译', 'テンプレート件名翻訳'),
             baseValue: templateDraft.subjectEn,
             translations: templateDraft.subjectTranslations,
+            fieldLabel: text('Subject (EN)', '主题（英文）', '件名（英語）'),
           }
         : templateTranslationSection === 'bodyHtml'
           ? {
               title: text('HTML body translations', 'HTML 正文翻译', 'HTML 本文翻訳'),
               baseValue: templateDraft.bodyHtmlEn,
               translations: templateDraft.bodyHtmlTranslations,
+              fieldLabel: text('HTML body (EN)', 'HTML 内容（英文）', 'HTML 本文（英語）'),
             }
           : {
               title: text('Text body translations', '纯文本正文翻译', 'テキスト本文翻訳'),
               baseValue: templateDraft.bodyTextEn,
               translations: templateDraft.bodyTextTranslations,
+              fieldLabel: text('Text body (EN)', '纯文本内容（英文）', 'テキスト本文（英語）'),
             }
     : null;
   const isTenantRootScope = selectedIntegrationScope?.ownerType === 'tenant';
@@ -4775,6 +4779,7 @@ export function IntegrationManagementScreen({
         title={text('API client translations', 'API 客户端翻译', 'API クライアント翻訳')}
         baseValue={consumerDraft.nameEn}
         translations={consumerDraft.nameTranslations}
+        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -4811,6 +4816,7 @@ export function IntegrationManagementScreen({
         title={text('Adapter translations', '适配器翻译', 'アダプター翻訳')}
         baseValue={adapterDraft.nameEn}
         translations={adapterDraft.nameTranslations}
+        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -4847,6 +4853,7 @@ export function IntegrationManagementScreen({
         title={text('Webhook translations', 'Webhook 翻译', 'Webhook 翻訳')}
         baseValue={webhookDraft.nameEn}
         translations={webhookDraft.nameTranslations}
+        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -4894,6 +4901,7 @@ export function IntegrationManagementScreen({
         })}
         baseValue={templateTranslationDrawerConfig?.baseValue ?? ''}
         translations={templateTranslationDrawerConfig?.translations ?? {}}
+        legacyFieldLabel={templateTranslationDrawerConfig?.fieldLabel ?? text('Name (EN)', '名称（英文）', '名称（英語）')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);

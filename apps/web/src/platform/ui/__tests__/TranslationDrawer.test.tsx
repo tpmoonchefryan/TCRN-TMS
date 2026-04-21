@@ -36,6 +36,14 @@ describe('TranslationDrawer', () => {
     fields,
     availableLocales,
     onSave: vi.fn().mockResolvedValue(undefined),
+    saveButtonLabel: 'Apply translations',
+    cancelButtonLabel: 'Discard changes',
+    addLanguageLabel: 'Quick add language',
+    addOtherLanguageLabel: 'Choose another language',
+    removeLanguageVisibleLabel: 'Remove locale',
+    removeLanguageAriaLabel: (language: string) => `Remove ${language} locale`,
+    emptyTranslationsText: 'No locale variants configured yet.',
+    baseValueSuffix: '(Source value)',
   };
 
   it('renders base values and active locales for multiple fields', () => {
@@ -85,7 +93,7 @@ describe('TranslationDrawer', () => {
     render(<TranslationDrawer {...defaultProps} />);
     
     // 'German' is long-tail, so it should be in the combobox
-    const select = screen.getByRole('combobox', { name: '' });
+    const select = screen.getByRole('combobox', { name: 'Choose another language' });
     
     await act(async () => {
       fireEvent.change(select, { target: { value: 'de' } });
@@ -100,7 +108,7 @@ describe('TranslationDrawer', () => {
     
     expect(screen.getByText('Simplified Chinese')).toBeInTheDocument();
     
-    const removeButton = screen.getByLabelText('Remove Simplified Chinese translation');
+    const removeButton = screen.getByLabelText('Remove Simplified Chinese locale');
     await act(async () => {
       fireEvent.click(removeButton);
     });
@@ -121,7 +129,7 @@ describe('TranslationDrawer', () => {
     const nameInputs = screen.getAllByLabelText('Name');
     fireEvent.change(nameInputs[1], { target: { value: '관리자' } });
     
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Apply translations');
     await act(async () => {
       fireEvent.click(saveButton);
     });
@@ -136,5 +144,33 @@ describe('TranslationDrawer', () => {
         // ko description was left blank
       }
     });
+  });
+
+  it('uses caller-provided legacy labels without english fallbacks', () => {
+    render(
+      <TranslationDrawer
+        open
+        onOpenChange={vi.fn()}
+        title="Rule translations"
+        baseValue=""
+        translations={{}}
+        legacyFieldLabel="Rule name"
+        availableLocales={availableLocales}
+        onSave={vi.fn().mockResolvedValue(undefined)}
+        saveButtonLabel="Apply translations"
+        cancelButtonLabel="Discard changes"
+        addLanguageLabel="Quick add language"
+        addOtherLanguageLabel="Choose another language"
+        removeLanguageVisibleLabel="Remove locale"
+        removeLanguageAriaLabel={(language) => `Remove ${language} locale`}
+        emptyTranslationsText="No locale variants configured yet."
+        baseValueSuffix="(Source value)"
+      />,
+    );
+
+    expect(screen.getByText('Rule name')).toBeInTheDocument();
+    expect(screen.getByText('No locale variants configured yet.')).toBeInTheDocument();
+    expect(screen.queryByText('Translation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Empty')).not.toBeInTheDocument();
   });
 });

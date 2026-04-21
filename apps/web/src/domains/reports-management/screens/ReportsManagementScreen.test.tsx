@@ -57,7 +57,7 @@ describe('ReportsManagementScreen', () => {
 
     expect(await screen.findByRole('heading', { name: '报表管理' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '起草 MFR 任务' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '起草报表' })[0]);
 
     expect(await screen.findByRole('button', { name: '关闭 MFR 任务抽屉' })).toBeInTheDocument();
   });
@@ -173,7 +173,7 @@ describe('ReportsManagementScreen', () => {
     expect(await screen.findByText('No MFR jobs found')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Create MFR Job' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Draft MFR job' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Draft report' })[0]);
 
     expect(await screen.findByRole('heading', { name: 'Create MFR Job' })).toBeInTheDocument();
     expect(screen.getByText('No MFR jobs found')).toBeInTheDocument();

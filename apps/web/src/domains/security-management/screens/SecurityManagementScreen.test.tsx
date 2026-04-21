@@ -302,7 +302,7 @@ describe('SecurityManagementScreen', () => {
     fireEvent.click(within(translationDrawer).getByRole('button', { name: /Simplified Chinese/i }));
     fireEvent.click(within(translationDrawer).getByRole('button', { name: /Korean/i }));
 
-    const translationInputs = within(translationDrawer).getAllByLabelText('Translation');
+    const translationInputs = within(translationDrawer).getAllByLabelText('Rule name');
     fireEvent.change(translationInputs[0], {
       target: { value: '敏感词规则' },
     });
@@ -310,6 +310,11 @@ describe('SecurityManagementScreen', () => {
       target: { value: '비속어 규칙' },
     });
     fireEvent.click(within(translationDrawer).getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Blocklist rule translations' }),
+      ).not.toBeInTheDocument();
+    });
 
     fireEvent.change(screen.getByLabelText('Rule name'), {
       target: { value: 'Profanity rule' },

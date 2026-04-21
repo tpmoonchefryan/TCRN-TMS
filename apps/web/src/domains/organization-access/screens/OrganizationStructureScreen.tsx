@@ -942,6 +942,7 @@ export function OrganizationStructureScreen({
           title: copy.translationManagement.talentNameTitle,
           baseValue: createDraft.nameEn,
           translations: createDraft.nameTranslations,
+          fieldLabel: copy.form.legalNameLabel,
           onSave: async (
             payload: Record<string, Record<string, string>> | Record<string, string>,
           ) => {
@@ -958,6 +959,7 @@ export function OrganizationStructureScreen({
             title: copy.translationManagement.subsidiaryNameTitle,
             baseValue: createSubsidiaryDraft.nameEn,
             translations: createSubsidiaryDraft.nameTranslations,
+            fieldLabel: copy.form.subsidiaryNameLabel,
             onSave: async (
               payload: Record<string, Record<string, string>> | Record<string, string>,
             ) => {
@@ -1552,6 +1554,7 @@ export function OrganizationStructureScreen({
         title={translationDrawerConfig?.title ?? copy.translationManagement.talentNameTitle}
         baseValue={translationDrawerConfig?.baseValue ?? ''}
         translations={translationDrawerConfig?.translations ?? {}}
+        legacyFieldLabel={translationDrawerConfig?.fieldLabel ?? copy.form.legalNameLabel}
         availableLocales={translationOptionsState.data}
         onSave={translationDrawerConfig?.onSave ?? (async () => {})}
         saveButtonLabel={copy.translationManagement.save}

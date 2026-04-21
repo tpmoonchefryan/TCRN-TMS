@@ -880,6 +880,7 @@ export function RoleEditorScreen({
         title={roleEditorCopy.translationManagement.title}
         baseValue={draft.nameEn}
         translations={draft.nameTranslations}
+        legacyFieldLabel={roleEditorCopy.fields.nameEn}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);

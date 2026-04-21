@@ -766,9 +766,9 @@ export function ReportsManagementScreen({
               hint={copy.summary.tenantHint}
             />
             <SummaryCard
-              label={copy.summary.reportLabel}
-              value={copy.summary.reportName}
-              hint={copy.summary.reportDescription}
+              label={copy.summary.catalogLabel}
+              value={copy.summary.catalogValue}
+              hint={copy.summary.catalogHint}
             />
             <SummaryCard
               label={copy.summary.jobsLabel}
