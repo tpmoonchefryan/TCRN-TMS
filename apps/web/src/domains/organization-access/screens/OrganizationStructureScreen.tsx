@@ -155,6 +155,10 @@ const EMPTY_CREATE_SUBSIDIARY_DRAFT: CreateSubsidiaryDraft = {
 
 const TALENT_CODE_PATTERN = /^[A-Z0-9_]{3,32}$/;
 const SUBSIDIARY_CODE_PATTERN = /^[A-Z0-9_]{3,32}$/;
+const HEADER_ACTION_BUTTON_BASE_CLASS =
+  'inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold transition';
+const HEADER_ACTION_SECONDARY_BUTTON_CLASS = `${HEADER_ACTION_BUTTON_BASE_CLASS} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`;
+const HEADER_ACTION_PRIMARY_BUTTON_CLASS = `${HEADER_ACTION_BUTTON_BASE_CLASS} border border-slate-950 bg-slate-950 text-white hover:bg-slate-800`;
 
 function flattenNodes(
   nodes: OrganizationNode[],
@@ -1055,7 +1059,7 @@ export function OrganizationStructureScreen({
                 <button
                   type="button"
                   onClick={() => setShowInactive((current) => !current)}
-                  className={`inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                  className={`${HEADER_ACTION_BUTTON_BASE_CLASS} ${
                     showInactive
                       ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-400'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -1068,7 +1072,7 @@ export function OrganizationStructureScreen({
                   isPending={loading}
                   pendingText={copy.actions.refreshing}
                   onClick={() => setReloadVersion((current) => current + 1)}
-                  className="min-w-[10rem] shrink-0 whitespace-nowrap"
+                  className="h-11 shrink-0 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold"
                 >
                   <span className="inline-flex items-center gap-2 whitespace-nowrap">
                     <RefreshCcw className="h-4 w-4" />
@@ -1077,7 +1081,7 @@ export function OrganizationStructureScreen({
                 </AsyncSubmitButton>
                 <Link
                   href={hierarchyBusinessHref}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className={HEADER_ACTION_SECONDARY_BUTTON_CLASS}
                 >
                   <ChevronRight className="h-4 w-4" />
                   {copy.actions.openWorkspace}
@@ -1089,7 +1093,7 @@ export function OrganizationStructureScreen({
                     setIsCreateSubsidiaryDrawerOpen(true);
                     setNotice(null);
                   }}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className={HEADER_ACTION_SECONDARY_BUTTON_CLASS}
                 >
                   <Plus className="h-4 w-4" />
                   {copy.actions.createSubsidiary}
@@ -1101,7 +1105,7 @@ export function OrganizationStructureScreen({
                     setIsCreateDrawerOpen(true);
                     setNotice(null);
                   }}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                  className={HEADER_ACTION_PRIMARY_BUTTON_CLASS}
                 >
                   <Plus className="h-4 w-4" />
                   {copy.actions.createTalent}

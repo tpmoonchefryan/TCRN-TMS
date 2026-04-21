@@ -1,4 +1,4 @@
-import { act,fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AccountDropdownMenu } from '../patterns/AccountDropdownMenu';
@@ -66,7 +66,7 @@ describe('AccountDropdownMenu', () => {
     await act(async () => {
       fireEvent.keyDown(menu, { key: 'ArrowDown', code: 'ArrowDown' });
     });
-    expect(screen.getByText('Security / Sessions')).toHaveFocus();
+    expect(screen.getByText('Security')).toHaveFocus();
     
     // Wrap around
     await act(async () => {

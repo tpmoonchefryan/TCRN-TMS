@@ -15,4 +15,22 @@ describe('SidebarNav', () => {
     );
     expect(screen.getByRole('navigation')).toHaveAttribute('aria-label', customLabel);
   });
+
+  it('keeps the footer outside the scrollable nav region', () => {
+    render(
+      <SidebarNav
+        items={[{ key: '1', label: 'Item', href: '/item' }]}
+        onNavigate={vi.fn()}
+        footer={<div>Footer action</div>}
+      />,
+    );
+
+    const nav = screen.getByRole('navigation');
+    const footer = screen.getByText('Footer action').parentElement;
+
+    expect(nav).toHaveClass('min-h-0');
+    expect(nav).toHaveClass('overflow-y-auto');
+    expect(footer).toHaveClass('flex-none');
+    expect(footer).toHaveClass('border-t');
+  });
 });

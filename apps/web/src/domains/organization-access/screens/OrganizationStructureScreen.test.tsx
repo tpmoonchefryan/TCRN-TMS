@@ -275,6 +275,39 @@ describe('OrganizationStructureScreen', () => {
     expect(await screen.findByText('Mio')).toBeInTheDocument();
   });
 
+  it('uses compact single-line action controls in the structure header', async () => {
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
+
+    const refreshButton = screen.getByRole('button', { name: 'Refresh structure' });
+    const openWorkspaceLink = screen.getByRole('link', { name: /Open business/i });
+    const createSubsidiaryButton = screen.getByRole('button', { name: 'Create subsidiary' });
+    const createTalentButton = screen.getByRole('button', { name: 'Create talent' });
+
+    expect(refreshButton).toHaveClass('rounded-full');
+    expect(refreshButton.className).not.toContain('min-w-[10rem]');
+    expect(openWorkspaceLink).toHaveClass('rounded-full');
+    expect(createSubsidiaryButton).toHaveClass('rounded-full');
+    expect(createTalentButton).toHaveClass('rounded-full');
+  });
+
   it('queries the organization tree with the search term so the left tree can narrow to matching scopes', async () => {
     let searchTreeServed = false;
 

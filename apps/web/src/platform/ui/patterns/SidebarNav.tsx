@@ -16,10 +16,10 @@ export interface SidebarNavProps {
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ items, onNavigate, header, footer, ariaLabel }) => {
   return (
-    <div className="flex flex-col h-full">
-      {header && <div className="p-4 border-b border-slate-200/50 flex-none">{header}</div>}
+    <div className="flex h-full min-h-0 flex-col">
+      {header && <div className="flex-none border-b border-slate-200/50 p-4">{header}</div>}
       
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1" aria-label={ariaLabel}>
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" aria-label={ariaLabel}>
         {items.map((item) => (
           <a
             key={item.key}
@@ -50,7 +50,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ items, onNavigate, heade
         ))}
       </nav>
 
-      {footer && <div className="p-4 border-t border-slate-200/50 flex-none">{footer}</div>}
+      {footer && <div className="flex-none border-t border-slate-200/50 bg-white/60 p-4">{footer}</div>}
     </div>
   );
 };

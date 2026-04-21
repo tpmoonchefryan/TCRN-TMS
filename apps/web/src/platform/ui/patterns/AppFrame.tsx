@@ -11,28 +11,28 @@ export interface AppFrameProps {
 
 export const AppFrame: React.FC<AppFrameProps> = ({ sidebar, commandBar, banner, children }) => {
   return (
-    <div className={`min-h-[100dvh] flex flex-col ${tokens.colors.bgBase}`}>
+    <div className={`flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden ${tokens.colors.bgBase}`}>
       {banner && (
         <div className="z-50 w-full flex-none" role="banner">
           {banner}
         </div>
       )}
 
-      <div className="flex flex-1 h-full overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <aside
-          className={`z-20 flex w-64 flex-none flex-col border-r ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass}`}
+          className={`z-20 flex min-h-0 w-64 flex-none flex-col overflow-hidden border-r ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass}`}
         >
           {sidebar}
         </aside>
 
-        <div className="relative z-0 flex min-w-0 flex-1 flex-col bg-transparent">
+        <div className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col bg-transparent">
           <header
             className={`relative z-30 flex min-h-16 flex-none items-center overflow-visible border-b px-6 py-3 ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass}`}
           >
             {commandBar}
           </header>
 
-          <main className="relative z-0 flex-1 overflow-y-auto p-6" role="main">
+          <main className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain p-6" role="main">
             {children}
           </main>
         </div>

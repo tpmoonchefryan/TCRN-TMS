@@ -30,7 +30,7 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
   children,
   footer,
   size = 'md',
-  closeButtonAriaLabel,
+  closeButtonAriaLabel = 'Close drawer',
 }) => {
   const titleId = useId();
   const descId = useId();

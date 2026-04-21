@@ -505,19 +505,21 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
     expect(await screen.findByRole('button', { name: /New profile store/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Store code')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /New profile store/i }));
-    fireEvent.change(screen.getByLabelText('Store code'), {
+    const createDrawer = await screen.findByRole('dialog', { name: 'Create Profile Store' });
+    fireEvent.change(within(createDrawer).getByLabelText('Store code'), {
       target: { value: 'archive_store' },
     });
-    fireEvent.change(screen.getByLabelText('Name English'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Name English'), {
       target: { value: 'Archive Store' },
     });
-    fireEvent.change(screen.getByLabelText('Description English'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Description English'), {
       target: { value: 'Cold customer archive' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
-    const createTranslationDrawer = await screen.findByRole('dialog');
+    fireEvent.click(within(createDrawer).getByRole('button', { name: 'Translation management' }));
+    const createTranslationDrawer = await screen.findByRole('dialog', { name: 'Profile store translations' });
     expect(within(createTranslationDrawer).getByText('Profile store translations')).toBeInTheDocument();
     fireEvent.click(
       await within(createTranslationDrawer).findByRole('button', {
@@ -542,7 +544,7 @@ describe('TenantSettingsScreen', () => {
     });
     fireEvent.click(within(createTranslationDrawer).getByRole('button', { name: 'Save' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /Create profile store/i }));
+    fireEvent.click(within(createDrawer).getByRole('button', { name: /Create profile store/i }));
 
     await waitFor(() => {
       expect(lastCreatedBody).toEqual({
@@ -562,6 +564,9 @@ describe('TenantSettingsScreen', () => {
         isDefault: false,
       });
     });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Create Profile Store' })).not.toBeInTheDocument();
+    });
     expect(await screen.findByText('Profile store created.')).toBeInTheDocument();
     expect(await screen.findByText('Archive Store')).toBeInTheDocument();
 
@@ -569,16 +574,17 @@ describe('TenantSettingsScreen', () => {
       expect(screen.getAllByRole('button', { name: 'Edit' })).toHaveLength(2);
     });
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1]);
+    const editDrawer = await screen.findByRole('dialog', { name: 'Edit Profile Store' });
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Store code') as HTMLInputElement).value).toBe('ARCHIVE_STORE');
+      expect((within(editDrawer).getByLabelText('Store code') as HTMLInputElement).value).toBe('ARCHIVE_STORE');
     });
 
-    fireEvent.change(screen.getByLabelText('Name English'), {
+    fireEvent.change(within(editDrawer).getByLabelText('Name English'), {
       target: { value: 'Archive Store Updated' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
-    const editTranslationDrawer = await screen.findByRole('dialog');
+    fireEvent.click(within(editDrawer).getByRole('button', { name: 'Translation management' }));
+    const editTranslationDrawer = await screen.findByRole('dialog', { name: 'Profile store translations' });
     expect(within(editTranslationDrawer).getByText('Profile store translations')).toBeInTheDocument();
     const editNameInputs = within(editTranslationDrawer).getAllByLabelText('Store name');
     const editDescriptionInputs = within(editTranslationDrawer).getAllByLabelText('Store description');
@@ -590,7 +596,7 @@ describe('TenantSettingsScreen', () => {
     });
     fireEvent.click(within(editTranslationDrawer).getByRole('button', { name: 'Save' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /Save profile store/i }));
+    fireEvent.click(within(editDrawer).getByRole('button', { name: /Save profile store/i }));
 
     await waitFor(() => {
       expect(lastUpdatedBody).toEqual({
@@ -610,6 +616,9 @@ describe('TenantSettingsScreen', () => {
         isActive: true,
         version: 1,
       });
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Edit Profile Store' })).not.toBeInTheDocument();
     });
     expect(await screen.findByText('Profile store updated.')).toBeInTheDocument();
     expect((await screen.findAllByText('Archive Store Updated')).length).toBeGreaterThan(0);

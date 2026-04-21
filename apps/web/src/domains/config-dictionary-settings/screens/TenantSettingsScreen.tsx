@@ -52,6 +52,7 @@ import {
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
 import {
+  ActionDrawer,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -343,6 +344,7 @@ export function TenantSettingsScreen({
   const [profileStorePageSize, setProfileStorePageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
   const [profileStoreEditorState, setProfileStoreEditorState] = useState<ProfileStoreEditorState>({ mode: 'create' });
   const [profileStoreDraft, setProfileStoreDraft] = useState<ProfileStoreDraft>(EMPTY_PROFILE_STORE_DRAFT);
+  const [profileStoreEditorOpen, setProfileStoreEditorOpen] = useState(false);
   const [profileStoreTranslationsOpen, setProfileStoreTranslationsOpen] = useState(false);
   const [profileStoreEditorLoading, setProfileStoreEditorLoading] = useState(false);
   const [profileStoreSavePending, setProfileStoreSavePending] = useState(false);
@@ -693,11 +695,30 @@ export function TenantSettingsScreen({
     setProfileStoreEditorState({ mode: 'create' });
     setProfileStoreDraft(EMPTY_PROFILE_STORE_DRAFT);
     setProfileStoreTranslationsOpen(false);
+    setProfileStoreEditorLoading(false);
+  }
+
+  function handleOpenCreateProfileStore() {
+    resetProfileStoreEditor();
+    setProfileStoreNotice(null);
+    setProfileStoreEditorOpen(true);
+  }
+
+  function handleCloseProfileStoreEditor() {
+    setProfileStoreEditorOpen(false);
+    resetProfileStoreEditor();
     setProfileStoreNotice(null);
   }
 
   async function handleStartEditProfileStore(profileStoreId: string) {
+    setProfileStoreEditorOpen(true);
     setProfileStoreEditorLoading(true);
+    setProfileStoreEditorState({
+      mode: 'edit',
+      id: profileStoreId,
+      version: 0,
+    });
+    setProfileStoreTranslationsOpen(false);
     setProfileStoreNotice(null);
 
     try {
@@ -710,6 +731,7 @@ export function TenantSettingsScreen({
       setProfileStoreDraft(buildProfileStoreDraft(detail));
       setProfileStoreTranslationsOpen(false);
     } catch (reason) {
+      handleCloseProfileStoreEditor();
       setProfileStoreNotice({
         tone: 'error',
         message: getErrorMessage(
@@ -743,7 +765,7 @@ export function TenantSettingsScreen({
       if (profileStoreEditorState.mode === 'create') {
         await createProfileStore(request, buildCreateProfileStoreInput(profileStoreDraft));
         await refreshProfileStoresPanel();
-        resetProfileStoreEditor();
+        handleCloseProfileStoreEditor();
         setProfileStoreNotice({
           tone: 'success',
           message: text({
@@ -761,7 +783,7 @@ export function TenantSettingsScreen({
           profileStoreDraft.descriptionEn,
           profileStoreDraft.descriptionTranslations,
         );
-        const updated = await updateProfileStore(request, profileStoreEditorState.id, {
+        await updateProfileStore(request, profileStoreEditorState.id, {
           nameEn: profileStoreDraft.nameEn.trim(),
           nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
           nameJa: pickLegacyLocaleValue(translations, 'ja'),
@@ -775,11 +797,7 @@ export function TenantSettingsScreen({
           version: profileStoreEditorState.version,
         });
         await refreshProfileStoresPanel();
-        setProfileStoreEditorState({
-          mode: 'edit',
-          id: profileStoreEditorState.id,
-          version: updated.version,
-        });
+        handleCloseProfileStoreEditor();
         setProfileStoreNotice({
           tone: 'success',
           message: text({
@@ -1093,17 +1111,28 @@ export function TenantSettingsScreen({
         {displayedSectionId === 'config-entities' ? (
           <div className="space-y-6">
             <GlassSurface className="p-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-slate-950">{common.configEntities}</h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {text(
+                    'Keep profile stores and tenant-owned configuration families in one management workspace instead of splitting them into separate page-sprawl flows.',
+                    '将档案库与租户自有的配置实体放在同一个管理工作区内，而不是拆成多个摊开的页面流程。',
+                    'プロフィールストアとテナント所有の設定エンティティを、別々に広がる画面ではなく同じ管理ワークスペースで扱います。',
+                  )}
+                </p>
+              </div>
+
               <FormSection
-                title={common.configEntities}
+                title={text('Profile stores', '档案库', 'プロフィールストア')}
                 description={text(
-                  'Manage profile stores, status, and localized names.',
-                  '管理档案库、状态和本地化名称。',
-                  'プロフィールストア、状態、ローカライズ名を管理します。',
+                  'Profile stores are managed here as part of the tenant configuration inventory, alongside the rest of the scoped entity catalog.',
+                  '档案库作为租户配置库存的一部分在这里统一管理，与其余范围配置实体并列。',
+                  'プロフィールストアは、他のスコープ設定エンティティと同じテナント設定在庫としてここで管理します。',
                 )}
                 actions={(
                   <button
                     type="button"
-                    onClick={resetProfileStoreEditor}
+                    onClick={handleOpenCreateProfileStore}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                   >
                     <Plus className="h-4 w-4" />
@@ -1111,7 +1140,9 @@ export function TenantSettingsScreen({
                   </button>
                 )}
               >
-                {profileStoreNotice ? <NoticeBanner tone={profileStoreNotice.tone} message={profileStoreNotice.message} /> : null}
+                {!profileStoreEditorOpen && profileStoreNotice ? (
+                  <NoticeBanner tone={profileStoreNotice.tone} message={profileStoreNotice.message} />
+                ) : null}
                 <div className="grid gap-4 lg:grid-cols-3">
                   <FieldRow label={text('Active Stores', '启用档案库', '有効なストア')} value={String(allProfileStores.filter((item) => item.isActive).length)} />
                   <FieldRow label={text('Inactive Stores', '停用档案库', '無効なストア')} value={String(allProfileStores.filter((item) => !item.isActive).length)} />
@@ -1241,9 +1272,9 @@ export function TenantSettingsScreen({
                           <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
-                            onClick={() => void handleStartEditProfileStore(profileStore.id)}
-                            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                          >
+                              onClick={() => void handleStartEditProfileStore(profileStore.id)}
+                              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            >
                               {text('Edit', '编辑', '編集')}
                             </button>
                             <button
@@ -1291,244 +1322,23 @@ export function TenantSettingsScreen({
                   </div>
                 ) : null}
               </FormSection>
-            </GlassSurface>
 
-            <GlassSurface className="p-6">
-              <FormSection
-                title={profileStoreEditorState.mode === 'create'
-                  ? text({
-                      en: 'Create Profile Store',
-                      zh_HANS: '新建档案库',
-                      zh_HANT: '新增檔案庫',
-                      ja: 'プロフィールストアを作成',
-                      ko: '프로필 스토어 생성',
-                      fr: 'Créer un profil de stockage',
-                    })
-                  : text({
-                      en: 'Edit Profile Store',
-                      zh_HANS: '编辑档案库',
-                      zh_HANT: '編輯檔案庫',
-                      ja: 'プロフィールストアを編集',
-                      ko: '프로필 스토어 편집',
-                      fr: 'Modifier le profil de stockage',
-                    })}
-                description={profileStoreEditorState.mode === 'create'
-                  ? text(
-                      'Create a tenant-owned profile store and complete its localized fields.',
-                      '创建租户档案库并填写本地化字段。',
-                      'テナント所有のプロフィールストアを作成し、ローカライズ項目を設定します。',
-                    )
-                  : text(
-                      'Update localized names, descriptions, default status, and active status.',
-                      '更新本地化名称、描述、默认状态和启用状态。',
-                      'ローカライズ名、説明、既定状態、有効状態を更新します。',
-                    )}
-                actions={(
-                  <>
-                    {profileStoreEditorState.mode === 'edit' ? (
-                      <button
-                        type="button"
-                        onClick={resetProfileStoreEditor}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                      >
-                        {text({
-                          en: 'Switch to create',
-                          zh_HANS: '切换到新建',
-                          zh_HANT: '切換為新增',
-                          ja: '新規作成に切り替え',
-                          ko: '새로 만들기로 전환',
-                          fr: 'Passer en création',
-                        })}
-                      </button>
-                    ) : null}
-                    <AsyncSubmitButton
-                      type="button"
-                      isPending={profileStoreSavePending}
-                      pendingText={profileStoreEditorState.mode === 'create'
-                        ? text({ en: 'Creating…', zh_HANS: '创建中…', zh_HANT: '建立中…', ja: '作成中…', ko: '생성 중…', fr: 'Création…' })
-                        : text({ en: 'Saving…', zh_HANS: '保存中…', zh_HANT: '儲存中…', ja: '保存中…', ko: '저장 중…', fr: 'Enregistrement…' })}
-                      onClick={() => void handleSaveProfileStore()}
-                      disabled={profileStoreEditorLoading}
-                    >
-                      {profileStoreEditorState.mode === 'create'
-                        ? text({
-                            en: 'Create profile store',
-                            zh_HANS: '创建档案库',
-                            zh_HANT: '建立檔案庫',
-                            ja: 'プロフィールストアを作成',
-                            ko: '프로필 스토어 생성',
-                            fr: 'Créer le profil de stockage',
-                          })
-                        : text({
-                            en: 'Save profile store',
-                            zh_HANS: '保存档案库',
-                            zh_HANT: '儲存檔案庫',
-                            ja: 'プロフィールストアを保存',
-                            ko: '프로필 스토어 저장',
-                            fr: 'Enregistrer le profil de stockage',
-                          })}
-                    </AsyncSubmitButton>
-                  </>
-                )}
-              >
-                {profileStoreEditorLoading ? (
-                  <SectionPlaceholder
-                    title={text('Loading profile store detail', '正在加载档案库详情', 'プロフィールストア詳細を読み込み中')}
-                    description={text(
-                      'The selected profile store is loading.',
-                      '正在加载所选档案库。',
-                      '選択したプロフィールストアを読み込み中です。',
-                    )}
-                  />
-                ) : (
-                  <>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-900">{text('Store code', '档案库代码', 'ストアコード')}</span>
-                        <input
-                          aria-label={text('Store code', '档案库代码', 'ストアコード')}
-                          value={profileStoreDraft.code}
-                          onChange={(event) =>
-                            setProfileStoreDraft((current) => ({
-                              ...current,
-                              code: event.target.value.toUpperCase(),
-                            }))
-                          }
-                          disabled={profileStoreEditorState.mode === 'edit'}
-                          placeholder="DEFAULT_STORE"
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100"
-                        />
-                        {profileStoreEditorState.mode === 'edit' ? (
-                          <p className="text-xs text-slate-500">{text('Code cannot be changed after creation.', '创建后代码不可更改。', '作成後にコードは変更できません。')}</p>
-                        ) : null}
-                      </label>
-                      <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-900">{text('Name (English)', '名称（英文）', '名称（英語）')}</span>
-                        <input
-                          aria-label={text('Name English', '英文名称', '英語名')}
-                          value={profileStoreDraft.nameEn}
-                          onChange={(event) =>
-                            setProfileStoreDraft((current) => ({
-                              ...current,
-                              nameEn: event.target.value,
-                            }))
-                          }
-                          placeholder={text('Default Profile Store', '默认档案库', 'デフォルトプロフィールストア')}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {text('Translation management', '翻译管理', '翻訳管理')}
-                          </p>
-                          <p className="text-sm leading-6 text-slate-600">
-                            {text(
-                              'Keep English in the main fields. Add translated values only when you need extra locales.',
-                              '主字段保留英文；只有在需要额外语种时再补充翻译值。',
-                              '主フィールドは英語のままにし、追加言語が必要なときだけ翻訳値を補います。',
-                            )}
-                          </p>
-                        </div>
-                        <TranslationManagementTrigger
-                          count={countManagedLocaleValues(profileStoreTranslationSections)}
-                          onClick={() => setProfileStoreTranslationsOpen(true)}
-                        />
-                      </div>
-                    </div>
-
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{text('Description (English)', '描述（英文）', '説明（英語）')}</span>
-                      <textarea
-                        aria-label={text('Description English', '英文描述', '英語説明')}
-                        value={profileStoreDraft.descriptionEn}
-                        onChange={(event) =>
-                          setProfileStoreDraft((current) => ({
-                            ...current,
-                            descriptionEn: event.target.value,
-                          }))
-                        }
-                        rows={4}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                      />
-                    </label>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <input
-                          aria-label={text('Default profile store', '默认档案库', '既定プロフィールストア')}
-                          type="checkbox"
-                          checked={profileStoreDraft.isDefault}
-                          onChange={(event) =>
-                            setProfileStoreDraft((current) => ({
-                              ...current,
-                              isDefault: event.target.checked,
-                            }))
-                          }
-                          className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                        />
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-950">{text('Default profile store', '默认档案库', '既定プロフィールストア')}</p>
-                          <p className="text-sm leading-6 text-slate-600">
-                            {text(
-                              'Setting this store as default will replace the current default store.',
-                              '设为默认后，会替换当前的默认档案库。',
-                              '既定に設定すると、現在の既定ストアと入れ替わります。',
-                            )}
-                          </p>
-                        </div>
-                      </label>
-
-                      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <input
-                          aria-label={text('Profile store active', '档案库启用', 'プロフィールストアを有効化')}
-                          type="checkbox"
-                          checked={profileStoreDraft.isActive}
-                          onChange={(event) =>
-                            setProfileStoreDraft((current) => ({
-                              ...current,
-                              isActive: event.target.checked,
-                            }))
-                          }
-                          className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                        />
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-950">{text('Profile store active', '档案库启用', 'プロフィールストアを有効化')}</p>
-                          <p className="text-sm leading-6 text-slate-600">
-                            {text(
-                              'Turn this off when the store should no longer be selectable.',
-                              '当该档案库不应再被选择时，请关闭此项。',
-                              'このストアを選択できないようにする場合はオフにしてください。',
-                            )}
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                  </>
-                )}
-              </FormSection>
-            </GlassSurface>
-
-            <GlassSurface className="p-6">
               <FormSection
                 title={text({
-                  en: 'Scoped configuration entities',
-                  zh_HANS: '范围配置实体',
-                  zh_HANT: '範圍配置實體',
-                  ja: 'スコープ設定エンティティ',
-                  ko: '범위 구성 엔티티',
-                  fr: 'Entités de configuration par portée',
+                  en: 'Other scoped configuration families',
+                  zh_HANS: '其他范围配置实体',
+                  zh_HANT: '其他範圍配置實體',
+                  ja: 'その他のスコープ設定エンティティ',
+                  ko: '기타 범위 구성 엔티티',
+                  fr: 'Autres familles de configuration par portée',
                 })}
                 description={text({
-                  en: 'Maintain tenant-owned configuration families that flow downstream into subsidiary and talent scopes.',
-                  zh_HANS: '维护租户层直接拥有的配置实体，并向下游分目录与艺人范围继承。',
-                  zh_HANT: '維護租戶層直接擁有的配置實體，並向下游分目錄與藝人範圍繼承。',
-                  ja: 'テナントが直接保有する設定エンティティを管理し、配下スコープとタレントスコープへ継承します。',
-                  ko: '테넌트가 직접 보유하는 구성 엔티티를 관리하고 하위 조직 및 탤런트 범위로 상속합니다.',
-                  fr: 'Gérez les entités de configuration détenues par le tenant et héritées par les portées filiales et talent.',
+                  en: 'Maintain the rest of the tenant-owned configuration families that flow downstream into subsidiary and talent scopes.',
+                  zh_HANS: '维护除档案库以外的其他租户级配置实体，并向下游分目录与艺人范围继承。',
+                  zh_HANT: '維護除檔案庫以外的其他租戶級配置實體，並向下游分目錄與藝人範圍繼承。',
+                  ja: 'プロフィールストア以外のテナント所有設定エンティティを管理し、配下スコープとタレントスコープへ継承します。',
+                  ko: '프로필 스토어를 제외한 나머지 테넌트 소유 구성 엔티티를 관리하고 하위 조직 및 탤런트 범위로 상속합니다.',
+                  fr: 'Gérez les autres familles de configuration détenues par le tenant, héritées ensuite par les portées filiales et talent.',
                 })}
               >
                 <ScopedConfigEntityWorkspace
@@ -1690,6 +1500,254 @@ export function TenantSettingsScreen({
         ) : null}
         </div>
       </SettingsLayout>
+
+      <ActionDrawer
+        open={profileStoreEditorOpen}
+        onOpenChange={(open) => {
+          if (!open && !profileStoreSavePending) {
+            handleCloseProfileStoreEditor();
+          }
+        }}
+        title={profileStoreEditorState.mode === 'create'
+          ? text({
+              en: 'Create Profile Store',
+              zh_HANS: '新建档案库',
+              zh_HANT: '新增檔案庫',
+              ja: 'プロフィールストアを作成',
+              ko: '프로필 스토어 생성',
+              fr: 'Créer un profil de stockage',
+            })
+          : text({
+              en: 'Edit Profile Store',
+              zh_HANS: '编辑档案库',
+              zh_HANT: '編輯檔案庫',
+              ja: 'プロフィールストアを編集',
+              ko: '프로필 스토어 편집',
+              fr: 'Modifier le profil de stockage',
+            })}
+        description={profileStoreEditorState.mode === 'create'
+          ? text(
+              'Create a tenant-owned profile store and complete its localized fields.',
+              '创建租户档案库并填写本地化字段。',
+              'テナント所有のプロフィールストアを作成し、ローカライズ項目を設定します。',
+            )
+          : text(
+              'Update localized names, descriptions, default status, and active status.',
+              '更新本地化名称、描述、默认状态和启用状态。',
+              'ローカライズ名、説明、既定状態、有効状態を更新します。',
+            )}
+        closeButtonAriaLabel={text(
+          'Close profile store editor',
+          '关闭档案库编辑抽屉',
+          'プロフィールストア編集ドロワーを閉じる',
+        )}
+        size="lg"
+        footer={(
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {profileStoreEditorState.mode === 'edit' ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateProfileStore}
+                disabled={profileStoreEditorLoading || profileStoreSavePending}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {text({
+                  en: 'Switch to create',
+                  zh_HANS: '切换到新建',
+                  zh_HANT: '切換為新增',
+                  ja: '新規作成に切り替え',
+                  ko: '새로 만들기로 전환',
+                  fr: 'Passer en création',
+                })}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleCloseProfileStoreEditor}
+              disabled={profileStoreSavePending}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {text({
+                en: 'Cancel',
+                zh_HANS: '取消',
+                zh_HANT: '取消',
+                ja: 'キャンセル',
+                ko: '취소',
+                fr: 'Annuler',
+              })}
+            </button>
+            <AsyncSubmitButton
+              type="button"
+              isPending={profileStoreSavePending}
+              pendingText={profileStoreEditorState.mode === 'create'
+                ? text({ en: 'Creating…', zh_HANS: '创建中…', zh_HANT: '建立中…', ja: '作成中…', ko: '생성 중…', fr: 'Création…' })
+                : text({ en: 'Saving…', zh_HANS: '保存中…', zh_HANT: '儲存中…', ja: '保存中…', ko: '저장 중…', fr: 'Enregistrement…' })}
+              onClick={() => void handleSaveProfileStore()}
+              disabled={profileStoreEditorLoading}
+            >
+              {profileStoreEditorState.mode === 'create'
+                ? text({
+                    en: 'Create profile store',
+                    zh_HANS: '创建档案库',
+                    zh_HANT: '建立檔案庫',
+                    ja: 'プロフィールストアを作成',
+                    ko: '프로필 스토어 생성',
+                    fr: 'Créer le profil de stockage',
+                  })
+                : text({
+                    en: 'Save profile store',
+                    zh_HANS: '保存档案库',
+                    zh_HANT: '儲存檔案庫',
+                    ja: 'プロフィールストアを保存',
+                    ko: '프로필 스토어 저장',
+                    fr: 'Enregistrer le profil de stockage',
+                  })}
+            </AsyncSubmitButton>
+          </div>
+        )}
+      >
+        <div className="space-y-6">
+          {profileStoreNotice ? <NoticeBanner tone={profileStoreNotice.tone} message={profileStoreNotice.message} /> : null}
+          {profileStoreEditorLoading ? (
+            <SectionPlaceholder
+              title={text('Loading profile store detail', '正在加载档案库详情', 'プロフィールストア詳細を読み込み中')}
+              description={text(
+                'The selected profile store is loading.',
+                '正在加载所选档案库。',
+                '選択したプロフィールストアを読み込み中です。',
+              )}
+            />
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-900">{text('Store code', '档案库代码', 'ストアコード')}</span>
+                  <input
+                    aria-label={text('Store code', '档案库代码', 'ストアコード')}
+                    value={profileStoreDraft.code}
+                    onChange={(event) =>
+                      setProfileStoreDraft((current) => ({
+                        ...current,
+                        code: event.target.value.toUpperCase(),
+                      }))
+                    }
+                    disabled={profileStoreEditorState.mode === 'edit'}
+                    placeholder="DEFAULT_STORE"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  />
+                  {profileStoreEditorState.mode === 'edit' ? (
+                    <p className="text-xs text-slate-500">{text('Code cannot be changed after creation.', '创建后代码不可更改。', '作成後にコードは変更できません。')}</p>
+                  ) : null}
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-900">{text('Name (English)', '名称（英文）', '名称（英語）')}</span>
+                  <input
+                    aria-label={text('Name English', '英文名称', '英語名')}
+                    value={profileStoreDraft.nameEn}
+                    onChange={(event) =>
+                      setProfileStoreDraft((current) => ({
+                        ...current,
+                        nameEn: event.target.value,
+                      }))
+                    }
+                    placeholder={text('Default Profile Store', '默认档案库', 'デフォルトプロフィールストア')}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                  />
+                </label>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {text('Translation management', '翻译管理', '翻訳管理')}
+                    </p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {text(
+                        'Keep English in the main fields. Add translated values only when you need extra locales.',
+                        '主字段保留英文；只有在需要额外语种时再补充翻译值。',
+                        '主フィールドは英語のままにし、追加言語が必要なときだけ翻訳値を補います。',
+                      )}
+                    </p>
+                  </div>
+                  <TranslationManagementTrigger
+                    count={countManagedLocaleValues(profileStoreTranslationSections)}
+                    onClick={() => setProfileStoreTranslationsOpen(true)}
+                  />
+                </div>
+              </div>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-slate-900">{text('Description (English)', '描述（英文）', '説明（英語）')}</span>
+                <textarea
+                  aria-label={text('Description English', '英文描述', '英語説明')}
+                  value={profileStoreDraft.descriptionEn}
+                  onChange={(event) =>
+                    setProfileStoreDraft((current) => ({
+                      ...current,
+                      descriptionEn: event.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <input
+                    aria-label={text('Default profile store', '默认档案库', '既定プロフィールストア')}
+                    type="checkbox"
+                    checked={profileStoreDraft.isDefault}
+                    onChange={(event) =>
+                      setProfileStoreDraft((current) => ({
+                        ...current,
+                        isDefault: event.target.checked,
+                      }))
+                    }
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-950">{text('Default profile store', '默认档案库', '既定プロフィールストア')}</p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {text(
+                        'Setting this store as default will replace the current default store.',
+                        '设为默认后，会替换当前的默认档案库。',
+                        '既定に設定すると、現在の既定ストアと入れ替わります。',
+                      )}
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <input
+                    aria-label={text('Profile store active', '档案库启用', 'プロフィールストアを有効化')}
+                    type="checkbox"
+                    checked={profileStoreDraft.isActive}
+                    onChange={(event) =>
+                      setProfileStoreDraft((current) => ({
+                        ...current,
+                        isActive: event.target.checked,
+                      }))
+                    }
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-950">{text('Profile store active', '档案库启用', 'プロフィールストアを有効化')}</p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {text(
+                        'Turn this off when the store should no longer be selectable.',
+                        '当该档案库不应再被选择时，请关闭此项。',
+                        'このストアを選択できないようにする場合はオフにしてください。',
+                      )}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+      </ActionDrawer>
 
       <TranslationManagementDrawer
         open={profileStoreTranslationsOpen}
