@@ -69,7 +69,7 @@ const SCOPE_TYPE_LABELS: Record<
   },
   zh: {
     tenant: '租户',
-    subsidiary: '子公司',
+    subsidiary: '分目录',
     talent: '艺人',
   },
   ja: {
@@ -433,7 +433,8 @@ const COPY = {
         closeButtonAriaLabel: 'Close role name translations drawer',
         empty: 'No additional translations configured yet.',
         summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-        languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+        languageLoadError:
+          'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
       },
       validation: {
         code: 'Role code must be 3-32 characters using only A-Z, 0-9, and _.',
@@ -491,7 +492,7 @@ const COPY = {
       summaryActiveRolesLabel: '生效角色',
       summaryActiveRolesHint: '这里只显示当前范围允许使用的激活角色。',
       summaryDelegationsLabel: '委派记录',
-      summaryDelegationsHint: '委派记录继续以子公司或艺人为目标范围进行管理。',
+      summaryDelegationsHint: '委派记录继续以分目录或艺人为目标范围进行管理。',
       tabs: {
         users: '用户',
         roles: '角色',
@@ -565,7 +566,7 @@ const COPY = {
       },
       delegation: {
         title: '委派管理',
-        description: '按范围将子公司或艺人管理权限委派给指定用户或角色，并在列表中追踪现有授权。',
+        description: '按范围将分目录或艺人管理权限委派给指定用户或角色，并在列表中追踪现有授权。',
         grantTitle: '授予委派管理',
         grantDescription: '选择一个可见范围，并将该范围委派给用户或角色。',
         grantButton: '授予委派',
@@ -573,9 +574,9 @@ const COPY = {
         loadingTitle: '正在加载可委派范围',
         loadingDescription: '组织树加载完成后，表单即可直接提供可委派范围。',
         noScopesTitle: '没有可委派的范围',
-        noScopesDescription: '当前没有可用于委派管理的子公司或艺人范围。',
+        noScopesDescription: '当前没有可用于委派管理的分目录或艺人范围。',
         scopeTypeLabel: '范围类型',
-        scopeTypeSubsidiary: '子公司',
+        scopeTypeSubsidiary: '分目录',
         scopeTypeTalent: '艺人',
         scopeTargetLabel: '范围目标',
         delegateTypeLabel: '委派对象类型',
@@ -590,7 +591,7 @@ const COPY = {
         unavailableTitle: '委派管理不可用',
         emptyTitle: '尚未配置委派管理',
         emptyDescription: (isAcWorkspace: boolean) =>
-          `当前${isAcWorkspace ? ' AC 租户' : '租户'}还没有子公司或艺人范围的委派管理授权。`,
+          `当前${isAcWorkspace ? ' AC 租户' : '租户'}还没有分目录或艺人范围的委派管理授权。`,
         columns: ['范围', '委派对象', '授权人', '授权时间', '操作'],
         systemGrantedBy: '系统',
         remove: '移除',
@@ -649,7 +650,7 @@ const COPY = {
       lastLoginNeverHint: '该用户尚未登录过。',
       updateSuccess: (name: string) => `${name} 已更新。`,
       scopedAssignmentsTitle: '范围角色分配',
-      scopedAssignmentsDescription: '可在此按租户、子公司或艺人范围直接分配角色，列表页仅保留浏览。',
+      scopedAssignmentsDescription: '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
       scopeField: '范围',
       roleField: '角色',
       expiresAtField: '到期时间',
@@ -687,8 +688,8 @@ const COPY = {
       summaryBoundScopesLabel: '绑定范围',
       summaryBoundScopesHint: '当前范围覆盖来自现有角色分配。',
       scopeBindingsTitle: '分配派生的范围绑定',
-      scopeBindingsDescription: '当前绑定来自租户、子公司和艺人范围下的激活用户角色分配。',
-      scopeBindingsEmpty: '当前没有任何分配将该角色绑定到租户、子公司或艺人范围。',
+      scopeBindingsDescription: '当前绑定来自租户、分目录和艺人范围下的激活用户角色分配。',
+      scopeBindingsEmpty: '当前没有任何分配将该角色绑定到租户、分目录或艺人范围。',
       assignedUsersTitle: '已分配用户',
       assignedUsersDescription: '查看当前哪些用户持有该角色，以及分配落在哪个范围。',
       assignedUsersEmpty: '当前没有用户持有该角色。',
@@ -721,7 +722,7 @@ const COPY = {
         closeButtonAriaLabel: '关闭角色名称翻译抽屉',
         empty: '当前还没有额外语言翻译。',
         summary: (count: number) => `已配置 ${count} 个额外语言值。`,
-        languageLoadError: '语言选项暂时不可用，已改用当前支持的界面语言。',
+        languageLoadError: '语言选项暂时不可用，请先加载系统词典中的 Language 条目后重试。',
       },
       validation: {
         code: '角色编码需为 3-32 位，仅允许 A-Z、0-9 和下划线。',
@@ -1009,7 +1010,8 @@ const COPY = {
         closeButtonAriaLabel: 'ロール名翻訳ドロワーを閉じる',
         empty: '追加の翻訳はまだ設定されていません。',
         summary: (count: number) => `追加ロケール ${count} 件を設定済みです。`,
-        languageLoadError: '言語オプションを読み込めないため、対応済み UI ロケールを表示します。',
+        languageLoadError:
+          '言語オプションを読み込めません。System Dictionary の Language 項目を読み込んでから再試行してください。',
       },
       validation: {
         code: 'ロールコードは 3〜32 文字で、A-Z、0-9、_ のみ使用できます。',

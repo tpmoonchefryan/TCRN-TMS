@@ -175,6 +175,56 @@ describe('UserManagementScreen', () => {
     expect(screen.getByText('Tokino Sora')).toBeInTheDocument();
   });
 
+  it('uses 分目录 wording in zh copy for delegation scope instead of 子公司', async () => {
+    localeState.currentLocale = 'zh';
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/system-users?page=1&pageSize=20') {
+        return buildSuccessEnvelope([
+          {
+            id: 'user-1',
+            username: 'alice',
+            email: 'alice@example.com',
+            displayName: 'Alice',
+            avatarUrl: null,
+            isActive: true,
+            isTotpEnabled: true,
+            forceReset: false,
+            lastLoginAt: '2026-04-17T04:00:00.000Z',
+            createdAt: '2026-04-17T03:00:00.000Z',
+          },
+        ]);
+      }
+
+      throw new Error(`Unhandled requestEnvelope: ${path}`);
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/system-roles?isActive=true') {
+        return [];
+      }
+
+      if (path === '/api/v1/delegated-admins') {
+        return [];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserManagementScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /委派/ }));
+
+    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
+    expect(await screen.findByText('委派记录继续以分目录或艺人为目标范围进行管理。')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '分目录' })).toBeInTheDocument();
+    expect(screen.queryByText(/子公司/)).not.toBeInTheDocument();
+  });
+
   it('deactivates a user through the shared confirm dialog and refreshes the list', async () => {
     let isActive = true;
 

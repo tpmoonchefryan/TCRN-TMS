@@ -271,4 +271,52 @@ describe('RoleEditorScreen', () => {
     expect(await screen.findByText('Senior Editor was updated.')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Senior Editor' })).toBeInTheDocument();
   });
+
+  it('surfaces a dictionary-backed translation language error instead of claiming UI locale fallback', async () => {
+    const detail = {
+      id: 'role-1',
+      code: 'EDITOR',
+      nameEn: 'Editor',
+      nameZh: null,
+      nameJa: null,
+      translations: {
+        en: 'Editor',
+      },
+      description: 'Can manage tenant content.',
+      isSystem: false,
+      isActive: true,
+      permissions: [],
+      permissionCount: 0,
+      userCount: 0,
+      createdAt: '2026-04-17T01:00:00.000Z',
+      updatedAt: '2026-04-17T02:00:00.000Z',
+      scopeBindings: [],
+      assignedUsers: [],
+    };
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/system-roles/role-1') {
+        return detail;
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        throw new Error('dictionary unavailable');
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<RoleEditorScreen tenantId="tenant-1" systemRoleId="role-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
+
+    expect(
+      await screen.findByText(
+        'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Supported UI locales are shown instead/i)).not.toBeInTheDocument();
+  });
 });
