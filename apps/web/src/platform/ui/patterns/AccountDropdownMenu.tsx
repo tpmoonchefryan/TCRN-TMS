@@ -8,7 +8,7 @@ export interface AccountDropdownMenuProps {
   onNavigateSecurity: () => void;
   onSignOut: () => void;
   isSignOutPending?: boolean;
-  labels?: {
+  labels: {
     trigger: string;
     profile: string;
     security: string;
@@ -118,13 +118,13 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
     }
   };
 
-  const resolvedLabels = labels ?? {
-    trigger: 'Account menu',
-    profile: 'My Profile',
-    security: 'Security / Sessions',
-    signOut: 'Sign Out',
-    signingOut: 'Signing out...',
-  };
+  const resolvedLabels = labels; //
+//    trigger: 'Account menu',
+//    profile: 'My Profile',
+//    security: 'Security / Sessions',
+//    signOut: 'Sign Out',
+//    signingOut: 'Signing out...',
+//  };
 
   const animationClass = isExiting ? tokens.motion.popoverExit : tokens.motion.popoverEnter;
 

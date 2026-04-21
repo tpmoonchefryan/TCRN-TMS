@@ -28,10 +28,10 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({ leftArea, rightAre
             </div>
             <input
               type="text"
-              placeholder={searchProps.placeholder || "Search..."}
+              placeholder={searchProps.placeholder}
               className={`block w-full pl-10 pr-12 py-2 border border-slate-200 rounded-lg bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-colors`}
               onChange={(e) => searchProps.onSearch?.(e.target.value)}
-              aria-label={searchProps.ariaLabel || "Global Search"}
+              aria-label={searchProps.ariaLabel}
             />
             {searchProps.shortcutKey && (
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

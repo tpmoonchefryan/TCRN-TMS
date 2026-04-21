@@ -85,7 +85,7 @@ describe('TranslationDrawer', () => {
     render(<TranslationDrawer {...defaultProps} />);
     
     // 'German' is long-tail, so it should be in the combobox
-    const select = screen.getByRole('combobox', { name: 'Add other language...' });
+    const select = screen.getByRole('combobox', { name: '' });
     
     await act(async () => {
       fireEvent.change(select, { target: { value: 'de' } });

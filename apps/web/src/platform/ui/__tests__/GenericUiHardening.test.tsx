@@ -24,6 +24,7 @@ describe('Generic UI Hardening', () => {
         onNavigateProfile={vi.fn()}
         onNavigateSecurity={vi.fn()}
         onSignOut={vi.fn()}
+        labels={{ trigger: "Account menu", profile: "My Profile", security: "Security", signOut: "Sign Out", signingOut: "Signing out..." }}
       />
     );
     const button = screen.getByRole('button');

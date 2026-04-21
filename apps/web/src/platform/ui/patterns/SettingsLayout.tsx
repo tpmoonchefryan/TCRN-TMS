@@ -25,7 +25,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   activeSectionId,
   onSectionChange,
   children,
-  ariaLabel = "Settings sections",
+  ariaLabel,
 }) => {
   return (
     <div className="w-full space-y-6">

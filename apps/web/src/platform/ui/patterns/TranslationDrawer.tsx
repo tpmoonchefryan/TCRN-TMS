@@ -45,13 +45,13 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
   onSave,
   saveButtonLabel = 'Save',
   cancelButtonLabel = 'Cancel',
-  closeButtonAriaLabel = 'Close translation drawer',
-  addLanguageLabel = 'Quick Add',
-  addOtherLanguageLabel = 'Add other language...',
-  removeLanguageVisibleLabel = 'Remove',
-  removeLanguageAriaLabel = (language) => `Remove ${language} translation`,
-  emptyTranslationsText = 'No translations added yet.',
-  baseValueSuffix = '(Base/English)',
+  closeButtonAriaLabel,
+  addLanguageLabel,
+  addOtherLanguageLabel,
+  removeLanguageVisibleLabel,
+  removeLanguageAriaLabel,
+  emptyTranslationsText,
+  baseValueSuffix,
 }) => {
   const normalizedFields: TranslationField[] = useMemo(() => {
     if (fields) {
@@ -300,7 +300,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                     type="button"
                     onClick={() => handleRemoveLanguage(localeCode)}
                     className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    aria-label={removeLanguageAriaLabel(localeLabel)}
+                    aria-label={removeLanguageAriaLabel?.(localeLabel) || `Remove ${localeLabel} translation`}
                   >
                     {removeLanguageVisibleLabel}
                   </button>

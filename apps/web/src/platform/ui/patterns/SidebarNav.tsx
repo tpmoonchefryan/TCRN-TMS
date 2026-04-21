@@ -14,7 +14,7 @@ export interface SidebarNavProps {
   ariaLabel?: string;
 }
 
-export const SidebarNav: React.FC<SidebarNavProps> = ({ items, onNavigate, header, footer, ariaLabel = "Main Navigation" }) => {
+export const SidebarNav: React.FC<SidebarNavProps> = ({ items, onNavigate, header, footer, ariaLabel }) => {
   return (
     <div className="flex flex-col h-full">
       {header && <div className="p-4 border-b border-slate-200/50 flex-none">{header}</div>}
