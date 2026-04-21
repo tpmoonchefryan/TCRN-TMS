@@ -30,6 +30,7 @@ import {
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
+import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import {
   buildManagedTranslations,
   countManagedLocaleValues,
@@ -226,10 +227,10 @@ function FieldRow({
   hint?: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-base font-semibold text-slate-950">{value}</p>
-      {hint ? <p className="mt-2 text-sm leading-6 text-slate-600">{hint}</p> : null}
+      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
+      {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
     </div>
   );
 }
@@ -311,6 +312,8 @@ export function TenantSettingsScreen({
     selectedLocale,
     dictionaryExplorerCopy,
     formatDateTime,
+    localizedConfigEntityCatalog,
+    scopedConfigCopy,
     text,
   } = useSettingsFamilyCopy();
   const [settings, setSettings] = useState<ScopeSettingsResponse | null>(null);
@@ -1495,6 +1498,36 @@ export function TenantSettingsScreen({
                     </div>
                   </>
                 )}
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-6">
+              <FormSection
+                title={text({
+                  en: 'Scoped configuration entities',
+                  zh_HANS: '范围配置实体',
+                  zh_HANT: '範圍配置實體',
+                  ja: 'スコープ設定エンティティ',
+                  ko: '범위 구성 엔티티',
+                  fr: 'Entités de configuration par portée',
+                })}
+                description={text({
+                  en: 'Maintain tenant-owned configuration families that flow downstream into subsidiary and talent scopes.',
+                  zh_HANS: '维护租户层直接拥有的配置实体，并向下游分目录与艺人范围继承。',
+                  zh_HANT: '維護租戶層直接擁有的配置實體，並向下游分目錄與藝人範圍繼承。',
+                  ja: 'テナントが直接保有する設定エンティティを管理し、配下スコープとタレントスコープへ継承します。',
+                  ko: '테넌트가 직접 보유하는 구성 엔티티를 관리하고 하위 조직 및 탤런트 범위로 상속합니다.',
+                  fr: 'Gérez les entités de configuration détenues par le tenant et héritées par les portées filiales et talent.',
+                })}
+              >
+                <ScopedConfigEntityWorkspace
+                  request={request}
+                  requestEnvelope={requestEnvelope}
+                  scopeType="tenant"
+                  locale={selectedLocale}
+                  copy={scopedConfigCopy}
+                  catalog={localizedConfigEntityCatalog}
+                />
               </FormSection>
             </GlassSurface>
           </div>

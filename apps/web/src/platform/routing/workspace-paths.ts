@@ -13,6 +13,12 @@ export interface TalentWorkspaceRoute {
   section: TalentWorkspaceSection;
 }
 
+export interface HierarchyBusinessRoute {
+  tenantId: string;
+  scopeType: 'tenant' | 'subsidiary';
+  subsidiaryId: string | null;
+}
+
 export interface TalentSettingsPathOptions {
   section?: TalentSettingsSection;
   focus?: TalentSettingsFocus;
@@ -37,6 +43,14 @@ export function buildTenantWorkspacePath(tenantId: string) {
 
 export function buildTenantUserManagementPath(tenantId: string) {
   return `/tenant/${tenantId}/user-management`;
+}
+
+export function buildTenantBusinessPath(tenantId: string) {
+  return `/tenant/${tenantId}/business`;
+}
+
+export function buildSubsidiaryBusinessPath(tenantId: string, subsidiaryId: string) {
+  return `/tenant/${tenantId}/subsidiary/${subsidiaryId}/business`;
 }
 
 export function buildTenantUserCreatePath(tenantId: string) {
@@ -154,6 +168,34 @@ export function resolveTalentWorkspaceRoute(pathname: string): TalentWorkspaceRo
     tenantId,
     talentId,
     section,
+  };
+}
+
+export function resolveHierarchyBusinessRoute(pathname: string): HierarchyBusinessRoute | null {
+  const subsidiaryMatch = pathname.match(/^\/tenant\/([^/]+)\/subsidiary\/([^/]+)\/business(?:\/|$)/);
+
+  if (subsidiaryMatch) {
+    const [, tenantId, subsidiaryId] = subsidiaryMatch;
+
+    return {
+      tenantId,
+      scopeType: 'subsidiary',
+      subsidiaryId,
+    };
+  }
+
+  const tenantMatch = pathname.match(/^\/tenant\/([^/]+)\/business(?:\/|$)/);
+
+  if (!tenantMatch) {
+    return null;
+  }
+
+  const [, tenantId] = tenantMatch;
+
+  return {
+    tenantId,
+    scopeType: 'tenant',
+    subsidiaryId: null,
   };
 }
 

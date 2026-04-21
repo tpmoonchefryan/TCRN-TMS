@@ -390,7 +390,8 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     systemPill: 'System',
     disabledHerePill: 'Disabled here',
     requiredField: (fieldLabel) => `${fieldLabel} is required.`,
-    scopeTypeLabel: (scopeType) => (scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope'),
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
   },
   zh: {
     visibleRecordsLabel: '可见记录',
@@ -477,7 +478,8 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     systemPill: '系统',
     disabledHerePill: '已在此停用',
     requiredField: (fieldLabel) => `${fieldLabel}不能为空。`,
-    scopeTypeLabel: (scopeType) => (scopeType === 'subsidiary' ? '分目录范围' : '艺人范围'),
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? '租户范围' : scopeType === 'subsidiary' ? '分目录范围' : '艺人范围',
   },
   ja: {
     visibleRecordsLabel: '表示件数',
@@ -564,7 +566,8 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     systemPill: 'システム',
     disabledHerePill: 'このスコープで無効',
     requiredField: (fieldLabel) => `${fieldLabel}は必須です。`,
-    scopeTypeLabel: (scopeType) => (scopeType === 'subsidiary' ? '配下スコープ' : 'タレントスコープ'),
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? 'テナントスコープ' : scopeType === 'subsidiary' ? '配下スコープ' : 'タレントスコープ',
   },
 };
 
@@ -581,7 +584,9 @@ const CONFIG_ENTITY_COPY: Record<
     'communication-type': { label: '沟通方式', description: '下游客户联系流程继承的沟通方式。' },
     'reason-category': { label: '原因分类', description: '客户停用原因与运营选择使用的顶层分类。' },
     'inactivation-reason': { label: '停用原因', description: '挂在原因分类下的具体客户停用原因。' },
-    'membership-class': { label: '会员等级', description: '当前范围拥有的会员等级分类。' },
+    'membership-class': { label: '会员类别', description: '当前租户维护的会员类别顶层定义。' },
+    'membership-type': { label: '会员类型', description: '挂在会员类别下的会员类型定义。' },
+    'membership-level': { label: '会员层级', description: '挂在会员类型下的具体会员层级。' },
     consent: { label: '同意协议', description: '带有本地化内容与生效时间窗的同意协议。' },
   },
   ja: {
@@ -592,7 +597,9 @@ const CONFIG_ENTITY_COPY: Record<
     'communication-type': { label: 'コミュニケーション種別', description: '下流の顧客連絡フローで使う連絡方法です。' },
     'reason-category': { label: '理由カテゴリ', description: '顧客無効化理由の上位カテゴリです。' },
     'inactivation-reason': { label: '無効化理由', description: '理由カテゴリに紐づく具体的な無効化理由です。' },
-    'membership-class': { label: '会員クラス', description: '現在のスコープ境界で管理する会員分類です。' },
+    'membership-class': { label: '会員カテゴリ', description: 'テナントで管理する会員カテゴリの最上位定義です。' },
+    'membership-type': { label: '会員タイプ', description: '会員カテゴリ配下で管理する会員タイプです。' },
+    'membership-level': { label: '会員レベル', description: '会員タイプ配下で管理する具体的な会員レベルです。' },
     consent: { label: '同意契約', description: 'ローカライズ済み内容と有効期間を持つ同意契約です。' },
   },
 };
@@ -603,6 +610,12 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, Partial<Record<string, Partial<Co
     color: { label: '徽标颜色' },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
+    membershipClassId: { label: '会员类别' },
+    membershipTypeId: { label: '会员类型' },
+    externalControl: { label: '外部控制', description: '标记该会员类型是否由外部系统同步维护。' },
+    defaultRenewalDays: { label: '默认续期天数' },
+    rank: { label: '层级排序' },
+    badgeUrl: { label: '徽章 URL' },
     consentVersion: { label: '协议版本' },
     effectiveFrom: { label: '生效时间' },
     expiresAt: { label: '失效时间' },
@@ -616,6 +629,12 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, Partial<Record<string, Partial<Co
     color: { label: 'バッジ色' },
     channelCategoryId: { label: 'チャネルカテゴリ' },
     reasonCategoryId: { label: '理由カテゴリ' },
+    membershipClassId: { label: '会員カテゴリ' },
+    membershipTypeId: { label: '会員タイプ' },
+    externalControl: { label: '外部制御', description: 'この会員タイプが外部システム同期で管理されるかを示します。' },
+    defaultRenewalDays: { label: '既定更新日数' },
+    rank: { label: 'ランク順' },
+    badgeUrl: { label: 'バッジ URL' },
     consentVersion: { label: '同意バージョン' },
     effectiveFrom: { label: '有効開始' },
     expiresAt: { label: '有効終了' },

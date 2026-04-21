@@ -8,10 +8,12 @@ import {
   buildAcUserManagementPath,
   buildAcWorkspacePath,
   buildDefaultWorkspacePath,
+  buildSubsidiaryBusinessPath,
   buildTalentHomepageEditorPath,
   buildTalentSettingsPath,
   buildTalentWorkspacePath,
   buildTalentWorkspaceSectionPath,
+  buildTenantBusinessPath,
   buildTenantProfilePath,
   buildTenantProfileSecurityPath,
   buildTenantRoleCreatePath,
@@ -20,6 +22,7 @@ import {
   buildTenantUserEditorPath,
   buildTenantUserManagementPath,
   buildTenantWorkspacePath,
+  resolveHierarchyBusinessRoute,
   resolvePostLoginPath,
   resolveRecoveryTenantId,
   resolveTalentWorkspaceRoute,
@@ -70,6 +73,8 @@ describe('workspace-paths', () => {
   it('exposes the explicit tenant and ac helpers', () => {
     expect(buildTenantWorkspacePath('tenant-2')).toBe('/tenant/tenant-2');
     expect(buildAcWorkspacePath('tenant-ac-2')).toBe('/ac/tenant-ac-2/tenants');
+    expect(buildTenantBusinessPath('tenant-2')).toBe('/tenant/tenant-2/business');
+    expect(buildSubsidiaryBusinessPath('tenant-2', 'sub-4')).toBe('/tenant/tenant-2/subsidiary/sub-4/business');
   });
 
   it('builds profile and security routes for tenant and ac shells', () => {
@@ -131,6 +136,22 @@ describe('workspace-paths', () => {
   it('returns null for non-talent routes and unsupported sections', () => {
     expect(resolveTalentWorkspaceRoute('/tenant/tenant-9/settings')).toBeNull();
     expect(resolveTalentWorkspaceRoute('/tenant/tenant-9/talent/talent-5/inventory')).toBeNull();
+  });
+
+  it('resolves hierarchy business routes for tenant and subsidiary scopes', () => {
+    expect(resolveHierarchyBusinessRoute('/tenant/tenant-9/business')).toEqual({
+      tenantId: 'tenant-9',
+      scopeType: 'tenant',
+      subsidiaryId: null,
+    });
+
+    expect(resolveHierarchyBusinessRoute('/tenant/tenant-9/subsidiary/sub-7/business')).toEqual({
+      tenantId: 'tenant-9',
+      scopeType: 'subsidiary',
+      subsidiaryId: 'sub-7',
+    });
+
+    expect(resolveHierarchyBusinessRoute('/tenant/tenant-9/talent/talent-5')).toBeNull();
   });
 
   it('prefers the previous tenant id during recovery', () => {

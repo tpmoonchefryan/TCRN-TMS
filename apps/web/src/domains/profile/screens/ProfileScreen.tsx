@@ -999,7 +999,21 @@ export function ProfileScreen({
                     <div className="grid gap-4 xl:grid-cols-2">
                       <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                         <p className="text-sm font-semibold text-slate-950">{copy.totp.setupMaterialTitle}</p>
-                        <div className="mt-3 space-y-2 text-sm text-slate-700">
+                        <div className="mt-3 space-y-4">
+                          {totpSetup.qrCode ? (
+                            <div className="space-y-3">
+                              <p className="text-sm font-semibold text-slate-900">{copy.totp.qrCodeLabel}</p>
+                              <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                                <img
+                                  src={totpSetup.qrCode}
+                                  alt={copy.totp.qrCodeAlt}
+                                  className="h-44 w-44 rounded-xl object-contain"
+                                />
+                              </div>
+                              <p className="text-sm leading-6 text-slate-600">{copy.totp.qrCodeHint}</p>
+                            </div>
+                          ) : null}
+                          <div className="space-y-2 text-sm text-slate-700">
                           <p>
                             <span className="font-semibold text-slate-900">{copy.totp.accountLabel}:</span> {totpSetup.account}
                           </p>
@@ -1009,6 +1023,7 @@ export function ProfileScreen({
                           <p className="break-all">
                             <span className="font-semibold text-slate-900">{copy.totp.otpAuthUrlLabel}:</span> {totpSetup.otpauthUrl}
                           </p>
+                          </div>
                         </div>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">

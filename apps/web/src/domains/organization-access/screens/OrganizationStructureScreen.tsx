@@ -34,8 +34,10 @@ import {
 } from '@/domains/organization-access/api/organization.api';
 import { ApiRequestError } from '@/platform/http/api';
 import {
+  buildSubsidiaryBusinessPath,
   buildTalentSettingsPath,
   buildTalentWorkspacePath,
+  buildTenantBusinessPath,
 } from '@/platform/routing/workspace-paths';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
@@ -875,6 +877,9 @@ export function OrganizationStructureScreen({
 
   const scopeTitle = selectedNode ? selectedNode.displayName : session?.tenantName || copy.tree.tenantRootLabel;
   const scopePath = selectedNode?.path || copy.tree.tenantRootLabel;
+  const hierarchyBusinessHref = selectedNode
+    ? buildSubsidiaryBusinessPath(tenantId, selectedNode.id)
+    : buildTenantBusinessPath(tenantId);
   const createTalentSharedRoute =
     session?.tenantCode && createDraft.code.trim().length > 0
       ? buildSharedHomepagePath(session.tenantCode, createDraft.code.trim())
@@ -1056,7 +1061,7 @@ export function OrganizationStructureScreen({
                 <button
                   type="button"
                   onClick={() => setShowInactive((current) => !current)}
-                  className={`inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                  className={`inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition ${
                     showInactive
                       ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-400'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -1069,11 +1074,18 @@ export function OrganizationStructureScreen({
                   isPending={loading}
                   pendingText={copy.actions.refreshing}
                   onClick={() => setReloadVersion((current) => current + 1)}
-                  className="gap-2"
+                  className="shrink-0 gap-2 whitespace-nowrap"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   {copy.actions.refresh}
                 </AsyncSubmitButton>
+                <Link
+                  href={hierarchyBusinessHref}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  {copy.actions.openWorkspace}
+                </Link>
                 <button
                   type="button"
                   onClick={() => {
@@ -1081,7 +1093,7 @@ export function OrganizationStructureScreen({
                     setIsCreateSubsidiaryDrawerOpen(true);
                     setNotice(null);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   <Plus className="h-4 w-4" />
                   {copy.actions.createSubsidiary}
@@ -1093,7 +1105,7 @@ export function OrganizationStructureScreen({
                     setIsCreateDrawerOpen(true);
                     setNotice(null);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                 >
                   <Plus className="h-4 w-4" />
                   {copy.actions.createTalent}

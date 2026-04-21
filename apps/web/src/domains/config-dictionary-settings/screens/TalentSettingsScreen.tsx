@@ -185,10 +185,10 @@ function FieldRow({
   hint?: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-base font-semibold text-slate-950">{value}</p>
-      {hint ? <p className="mt-2 text-sm leading-6 text-slate-600">{hint}</p> : null}
+      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
+      {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
     </div>
   );
 }

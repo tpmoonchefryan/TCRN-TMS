@@ -69,6 +69,9 @@ interface ProfileCopy {
     prepared: string;
     prepareError: string;
     setupMaterialTitle: string;
+    qrCodeLabel: string;
+    qrCodeHint: string;
+    qrCodeAlt: string;
     accountLabel: string;
     secretLabel: string;
     otpAuthUrlLabel: string;
@@ -220,6 +223,9 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
       prepareError: 'Failed to prepare TOTP setup.',
       setupMaterialTitle: 'Setup material',
+      qrCodeLabel: 'QR code',
+      qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+      qrCodeAlt: 'TOTP setup QR code',
       accountLabel: 'Account',
       secretLabel: 'Secret',
       otpAuthUrlLabel: 'OTPAuth URL',
@@ -367,6 +373,9 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       prepared: 'TOTP 设置已准备完成。请输入认证器中的验证码以启用。',
       prepareError: '准备 TOTP 设置失败。',
       setupMaterialTitle: '设置信息',
+      qrCodeLabel: '二维码',
+      qrCodeHint: '请使用认证器扫描二维码；如果无法扫描，也可以使用下方密钥和 OTPAuth 地址。',
+      qrCodeAlt: 'TOTP 设置二维码',
       accountLabel: '账户',
       secretLabel: '密钥',
       otpAuthUrlLabel: 'OTPAuth 地址',
@@ -515,6 +524,9 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       prepared: 'TOTP 設定を準備しました。認証アプリのコードを入力して有効化してください。',
       prepareError: 'TOTP 設定の準備に失敗しました。',
       setupMaterialTitle: '設定情報',
+      qrCodeLabel: 'QR コード',
+      qrCodeHint: '認証アプリでこの QR コードを読み取るか、下のシークレットと OTPAuth URL を利用してください。',
+      qrCodeAlt: 'TOTP 設定用 QR コード',
       accountLabel: 'アカウント',
       secretLabel: 'シークレット',
       otpAuthUrlLabel: 'OTPAuth URL',

@@ -37,6 +37,8 @@ export const CONFIG_ENTITY_ORDER: ScopedConfigEntityType[] = [
   'reason-category',
   'inactivation-reason',
   'membership-class',
+  'membership-type',
+  'membership-level',
   'consent',
 ];
 
@@ -110,9 +112,70 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
   },
   'membership-class': {
     type: 'membership-class',
-    label: 'Membership Class',
-    description: 'Membership categories available at this level.',
+    label: 'Membership Category',
+    description: 'Top-level membership categories available to this tenant.',
     fields: [],
+  },
+  'membership-type': {
+    type: 'membership-type',
+    label: 'Membership Type',
+    description: 'Membership types grouped under a membership category.',
+    parentType: 'membership-class',
+    parentFieldKey: 'membershipClassId',
+    fields: [
+      {
+        key: 'membershipClassId',
+        label: 'Membership category',
+        kind: 'parent-select',
+        required: true,
+      },
+      {
+        key: 'externalControl',
+        label: 'Externally controlled',
+        kind: 'boolean',
+        description: 'Marks this membership type as synchronized from an external system.',
+      },
+      {
+        key: 'defaultRenewalDays',
+        label: 'Default renewal days',
+        kind: 'number',
+        placeholder: '30',
+      },
+    ],
+  },
+  'membership-level': {
+    type: 'membership-level',
+    label: 'Membership Level',
+    description: 'Concrete levels grouped under a membership type.',
+    parentType: 'membership-type',
+    parentFieldKey: 'membershipTypeId',
+    fields: [
+      {
+        key: 'membershipTypeId',
+        label: 'Membership type',
+        kind: 'parent-select',
+        required: true,
+      },
+      {
+        key: 'rank',
+        label: 'Rank',
+        kind: 'number',
+        required: true,
+        placeholder: '1',
+      },
+      {
+        key: 'color',
+        label: 'Badge color',
+        kind: 'color',
+        placeholder: '#4f46e5',
+      },
+      {
+        key: 'badgeUrl',
+        label: 'Badge URL',
+        kind: 'url',
+        placeholder: 'https://example.com/badges/gold.svg',
+      },
+    ],
   },
   consent: {
     type: 'consent',

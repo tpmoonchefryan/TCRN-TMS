@@ -119,6 +119,8 @@ export type ScopedConfigEntityType =
   | 'reason-category'
   | 'inactivation-reason'
   | 'membership-class'
+  | 'membership-type'
+  | 'membership-level'
   | 'consent';
 
 export interface ConfigEntityRecord {
@@ -159,6 +161,12 @@ export interface ConfigEntityRecord {
   contentMarkdownJa?: string | null;
   contentUrl?: string | null;
   isRequired?: boolean;
+  membershipClassId?: string | null;
+  membershipTypeId?: string | null;
+  externalControl?: boolean;
+  defaultRenewalDays?: number | null;
+  rank?: number | null;
+  badgeUrl?: string | null;
   [key: string]: unknown;
 }
 
@@ -192,6 +200,12 @@ export interface CreateConfigEntityInput {
   color?: string;
   channelCategoryId?: string;
   reasonCategoryId?: string;
+  membershipClassId?: string;
+  membershipTypeId?: string;
+  externalControl?: boolean;
+  defaultRenewalDays?: number;
+  rank?: number;
+  badgeUrl?: string;
   consentVersion?: string;
   effectiveFrom?: string;
   expiresAt?: string;

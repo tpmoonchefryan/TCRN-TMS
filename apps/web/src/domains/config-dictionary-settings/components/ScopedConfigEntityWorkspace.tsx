@@ -52,8 +52,8 @@ import { AsyncSubmitButton, ConfirmActionDialog, StateView, TableShell } from '@
 interface ScopedConfigEntityWorkspaceProps {
   request: <T>(path: string, init?: RequestInit) => Promise<T>;
   requestEnvelope: RequestEnvelopeFn;
-  scopeType: Exclude<ConfigEntityScopeType, 'tenant'>;
-  scopeId: string;
+  scopeType: ConfigEntityScopeType;
+  scopeId?: string;
   locale?: SupportedUiLocale | RuntimeLocale;
   copy?: ScopedConfigEntityWorkspaceCopy;
   catalog?: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
@@ -172,7 +172,7 @@ export interface ScopedConfigEntityWorkspaceCopy {
   systemPill: string;
   disabledHerePill: string;
   requiredField: (fieldLabel: string) => string;
-  scopeTypeLabel: (scopeType: Exclude<ConfigEntityScopeType, 'tenant'>) => string;
+  scopeTypeLabel: (scopeType: ConfigEntityScopeType) => string;
 }
 
 const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
@@ -263,6 +263,38 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
   requiredField: (fieldLabel) => `${fieldLabel} is required.`,
   scopeTypeLabel: (scopeType) => scopeType,
 };
+
+const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
+  'membership-type',
+  'membership-level',
+]);
+
+function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {
+  return TENANT_GLOBAL_ENTITY_TYPES.has(entityType);
+}
+
+function isEntityInheritedInScope(
+  entity: ConfigEntityRecord,
+  currentScopeType: ConfigEntityScopeType,
+  entityType: ScopedConfigEntityType,
+) {
+  if (isTenantGlobalEntityType(entityType)) {
+    return currentScopeType !== 'tenant';
+  }
+
+  return entity.isInherited;
+}
+
+function resolveEntityOwnerScopeType(
+  entity: ConfigEntityRecord,
+  entityType: ScopedConfigEntityType,
+) {
+  if (isTenantGlobalEntityType(entityType)) {
+    return 'tenant' as const;
+  }
+
+  return entity.ownerType ?? 'tenant';
+}
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -395,8 +427,8 @@ function validateDraft(
 function buildCreatePayload(
   entry: ConfigEntityCatalogEntry,
   draft: ConfigEntityDraft,
-  scopeType: Exclude<ConfigEntityScopeType, 'tenant'>,
-  scopeId: string,
+  scopeType: ConfigEntityScopeType,
+  scopeId: string | undefined,
   managedTranslations: ManagedTranslationDraft,
 ): CreateConfigEntityInput {
   const nameEn = normalizeStringValue(draft.nameEn) || '';
@@ -415,8 +447,11 @@ function buildCreatePayload(
     descriptionTranslations,
     sortOrder: Number(normalizeStringValue(draft.sortOrder) || '0'),
     ownerType: scopeType,
-    ownerId: scopeId,
   };
+
+  if (scopeId) {
+    payload.ownerId = scopeId;
+  }
 
   entry.fields.forEach((field) => {
     const value = draft[field.key];
@@ -561,20 +596,24 @@ function renderScopeSummary(
   locale: SupportedUiLocale | RuntimeLocale,
   entity: ConfigEntityRecord,
   copy: ScopedConfigEntityWorkspaceCopy,
+  scopeType: ConfigEntityScopeType,
+  entityType: ScopedConfigEntityType,
 ) {
+  const ownerScopeType = resolveEntityOwnerScopeType(entity, entityType);
   const scopeTone =
-    entity.ownerType === 'talent'
+    ownerScopeType === 'talent'
       ? 'bg-rose-100 text-rose-700'
-      : entity.ownerType === 'subsidiary'
+      : ownerScopeType === 'subsidiary'
         ? 'bg-amber-100 text-amber-700'
         : 'bg-slate-100 text-slate-700';
+  const isInherited = isEntityInheritedInScope(entity, scopeType, entityType);
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${scopeTone}`}>
-          {entity.isInherited
-            ? copy.inheritedFromScope(copy.scopeTypeLabel(entity.ownerType as Exclude<ConfigEntityScopeType, 'tenant'>))
+          {isInherited
+            ? copy.inheritedFromScope(copy.scopeTypeLabel(ownerScopeType))
             : copy.scopeOwned}
         </span>
         {entity.isDisabledHere ? (
@@ -763,6 +802,17 @@ export function ScopedConfigEntityWorkspace({
   const [confirmPending, setConfirmPending] = useState(false);
 
   const selectedEntry = catalog[selectedType];
+  const supportsLocalScopeOnly = !isTenantGlobalEntityType(selectedType);
+  const canManageSelectedTypeInCurrentScope = !isTenantGlobalEntityType(selectedType) || scopeType === 'tenant';
+  const effectiveCurrentScopeOnly = supportsLocalScopeOnly ? currentScopeOnly : false;
+  const inheritedOnlyNotice =
+    !canManageSelectedTypeInCurrentScope
+      ? pickLocaleText(locale, {
+          en: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`,
+          zh: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`,
+          ja: `${selectedEntry.label} はテナントスコープでのみ管理でき、この画面では継承結果の確認のみ可能です。`,
+        })
+      : null;
   const translationEditorCopy =
     {
       closeButtonAriaLabel: pickLocaleText(locale, {
@@ -857,8 +907,14 @@ export function ScopedConfigEntityWorkspace({
   }, [selectedEntry]);
 
   useEffect(() => {
+    if (!supportsLocalScopeOnly && currentScopeOnly) {
+      setCurrentScopeOnly(false);
+    }
+  }, [currentScopeOnly, supportsLocalScopeOnly]);
+
+  useEffect(() => {
     setPage(1);
-  }, [currentScopeOnly, includeInactive, search, selectedType]);
+  }, [effectiveCurrentScopeOnly, includeInactive, search, selectedType]);
 
   useEffect(() => {
     if (page !== pagination.page) {
@@ -877,10 +933,10 @@ export function ScopedConfigEntityWorkspace({
         const response = await listConfigEntitiesPage(requestEnvelope, selectedType, {
           scopeType,
           scopeId,
-          includeInherited: !currentScopeOnly,
+          includeInherited: !effectiveCurrentScopeOnly,
           includeDisabled: true,
           includeInactive,
-          ownerOnly: currentScopeOnly,
+          ownerOnly: effectiveCurrentScopeOnly,
           search: search.trim() || undefined,
           page,
           pageSize,
@@ -910,7 +966,7 @@ export function ScopedConfigEntityWorkspace({
       cancelled = true;
     };
   }, [
-    currentScopeOnly,
+    effectiveCurrentScopeOnly,
     includeInactive,
     page,
     pageSize,
@@ -1044,10 +1100,10 @@ export function ScopedConfigEntityWorkspace({
       const response = await listConfigEntitiesPage(requestEnvelope, selectedType, {
         scopeType,
         scopeId,
-        includeInherited: !currentScopeOnly,
+        includeInherited: !effectiveCurrentScopeOnly,
         includeDisabled: true,
         includeInactive,
-        ownerOnly: currentScopeOnly,
+        ownerOnly: effectiveCurrentScopeOnly,
         search: search.trim() || undefined,
         page,
         pageSize,
@@ -1065,7 +1121,9 @@ export function ScopedConfigEntityWorkspace({
   }
 
   function queueToggle(entity: ConfigEntityRecord) {
-    if (entity.isInherited && entity.canDisable) {
+    const entityIsInherited = isEntityInheritedInScope(entity, scopeType, selectedType);
+
+    if (entityIsInherited && entity.canDisable && scopeType !== 'tenant' && !isTenantGlobalEntityType(selectedType)) {
       setConfirmState({
         title: entity.isDisabledHere
           ? resolvedCopy.enableInScopeTitle(entity.code ?? entity.name)
@@ -1076,6 +1134,10 @@ export function ScopedConfigEntityWorkspace({
         entity,
         action: entity.isDisabledHere ? 'enable' : 'disable',
       });
+      return;
+    }
+
+    if (entityIsInherited) {
       return;
     }
 
@@ -1113,12 +1175,20 @@ export function ScopedConfigEntityWorkspace({
           message: resolvedCopy.reactivateSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       } else if (confirmState.action === 'disable') {
+        if (scopeType === 'tenant' || !scopeId) {
+          throw new Error('Inherited records can only be disabled inside subsidiary or talent scopes.');
+        }
+
         await disableInheritedConfigEntity(request, selectedType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
           message: resolvedCopy.disableInScopeSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       } else {
+        if (scopeType === 'tenant' || !scopeId) {
+          throw new Error('Inherited records can only be enabled inside subsidiary or talent scopes.');
+        }
+
         await enableInheritedConfigEntity(request, selectedType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
@@ -1129,10 +1199,10 @@ export function ScopedConfigEntityWorkspace({
       const response = await listConfigEntitiesPage(requestEnvelope, selectedType, {
         scopeType,
         scopeId,
-        includeInherited: !currentScopeOnly,
+        includeInherited: !effectiveCurrentScopeOnly,
         includeDisabled: true,
         includeInactive,
-        ownerOnly: currentScopeOnly,
+        ownerOnly: effectiveCurrentScopeOnly,
         search: search.trim() || undefined,
         page,
         pageSize,
@@ -1152,7 +1222,7 @@ export function ScopedConfigEntityWorkspace({
   }
 
   const activeCount = records.filter((record) => record.isActive).length;
-  const inheritedCount = records.filter((record) => record.isInherited).length;
+  const inheritedCount = records.filter((record) => isEntityInheritedInScope(record, scopeType, selectedType)).length;
   const disabledHereCount = records.filter((record) => record.isDisabledHere).length;
   const pageRange = getPaginationRange(pagination, records.length);
   const paginationCopy = {
@@ -1227,14 +1297,24 @@ export function ScopedConfigEntityWorkspace({
               <p className="text-lg font-semibold text-slate-950">{selectedEntry.label}</p>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">{selectedEntry.description}</p>
             </div>
-            <button
-              type="button"
-              onClick={beginCreate}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-            >
-              <Plus className="h-4 w-4" />
-              {resolvedCopy.newRecordLabel}
-            </button>
+            {canManageSelectedTypeInCurrentScope ? (
+              <button
+                type="button"
+                onClick={beginCreate}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <Plus className="h-4 w-4" />
+                {resolvedCopy.newRecordLabel}
+              </button>
+            ) : (
+              <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
+                {pickLocaleText(locale, {
+                  en: 'Inherited review only',
+                  zh: '仅查看继承结果',
+                  ja: '継承確認のみ',
+                })}
+              </span>
+            )}
           </div>
 
           {notice ? (
@@ -1291,16 +1371,18 @@ export function ScopedConfigEntityWorkspace({
                 <RefreshCcw className="h-4 w-4" />
               </button>
 
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                <input
-                  aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
-                  type="checkbox"
-                  checked={currentScopeOnly}
-                  onChange={(event) => setCurrentScopeOnly(event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                />
-                {resolvedCopy.currentScopeOnlyLabel}
-              </label>
+              {supportsLocalScopeOnly ? (
+                <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                  <input
+                    aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
+                    type="checkbox"
+                    checked={currentScopeOnly}
+                    onChange={(event) => setCurrentScopeOnly(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                  />
+                  {resolvedCopy.currentScopeOnlyLabel}
+                </label>
+              ) : null}
 
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
                 <input
@@ -1314,13 +1396,20 @@ export function ScopedConfigEntityWorkspace({
               </label>
             </div>
 
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
-                {resolvedCopy.currentScopeOnlyDescription(resolvedCopy.scopeTypeLabel(scopeType))}
-              </p>
+            <div className={`mt-3 grid gap-3 ${supportsLocalScopeOnly || inheritedOnlyNotice ? 'lg:grid-cols-2' : ''}`}>
+              {supportsLocalScopeOnly ? (
+                <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
+                  {resolvedCopy.currentScopeOnlyDescription(resolvedCopy.scopeTypeLabel(scopeType))}
+                </p>
+              ) : null}
               <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
                 {resolvedCopy.includeInactiveDescription}
               </p>
+              {inheritedOnlyNotice ? (
+                <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
+                  {inheritedOnlyNotice}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -1354,11 +1443,13 @@ export function ScopedConfigEntityWorkspace({
                 isEmpty={!loading && records.length === 0}
                 emptyTitle={resolvedCopy.emptyTitle(selectedEntry.label)}
                 emptyDescription={
-                  currentScopeOnly
+                  !canManageSelectedTypeInCurrentScope
+                    ? inheritedOnlyNotice ?? resolvedCopy.emptyFilteredDescription(selectedEntry.label)
+                    : effectiveCurrentScopeOnly
                     ? resolvedCopy.emptyOwnedDescription(selectedEntry.label, resolvedCopy.scopeTypeLabel(scopeType))
                     : resolvedCopy.emptyFilteredDescription(selectedEntry.label)
                 }
-                emptyAction={
+                emptyAction={canManageSelectedTypeInCurrentScope ? (
                   <button
                     type="button"
                     onClick={beginCreate}
@@ -1366,9 +1457,18 @@ export function ScopedConfigEntityWorkspace({
                   >
                     {resolvedCopy.emptyActionLabel}
                   </button>
-                }
+                ) : undefined}
               >
-                {records.map((entity) => (
+                {records.map((entity) => {
+                  const entityIsInherited = isEntityInheritedInScope(entity, scopeType, selectedType);
+                  const canEditOwnedRecord = canManageSelectedTypeInCurrentScope && !entityIsInherited;
+                  const canToggleInheritedRecord =
+                    entityIsInherited &&
+                    entity.canDisable &&
+                    scopeType !== 'tenant' &&
+                    !isTenantGlobalEntityType(selectedType);
+
+                  return (
                   <tr key={entity.id} className={!entity.isActive ? 'bg-slate-50/80' : undefined}>
                     <td className="px-6 py-4 align-top">
                       <div className="space-y-2">
@@ -1382,7 +1482,9 @@ export function ScopedConfigEntityWorkspace({
                         {entity.description ? <p className="text-sm leading-6 text-slate-600">{entity.description}</p> : null}
                       </div>
                     </td>
-                    <td className="px-6 py-4 align-top">{renderScopeSummary(locale, entity, resolvedCopy)}</td>
+                    <td className="px-6 py-4 align-top">
+                      {renderScopeSummary(locale, entity, resolvedCopy, scopeType, selectedType)}
+                    </td>
                     <td className="px-6 py-4 align-top">
                       <div className="space-y-2">
                         <span
@@ -1396,7 +1498,7 @@ export function ScopedConfigEntityWorkspace({
                     </td>
                     <td className="px-6 py-4 align-top">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {!entity.isInherited ? (
+                        {canEditOwnedRecord ? (
                           <>
                             <button
                               type="button"
@@ -1416,7 +1518,7 @@ export function ScopedConfigEntityWorkspace({
                               {entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel}
                             </button>
                           </>
-                        ) : entity.canDisable ? (
+                        ) : canToggleInheritedRecord ? (
                           <button
                             type="button"
                             onClick={() => queueToggle(entity)}
@@ -1433,7 +1535,7 @@ export function ScopedConfigEntityWorkspace({
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </TableShell>
 
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">

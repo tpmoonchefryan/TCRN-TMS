@@ -105,6 +105,9 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
         prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
         prepareError: 'Failed to prepare TOTP setup.',
         setupMaterialTitle: 'Setup material',
+        qrCodeLabel: 'QR code',
+        qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+        qrCodeAlt: 'TOTP setup QR code',
         accountLabel: 'Account',
         secretLabel: 'Secret',
         otpAuthUrlLabel: 'OTPAuth URL',
@@ -433,6 +436,55 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(mockUpdateSessionUser).not.toHaveBeenCalled();
     });
+  });
+
+  it('renders the TOTP QR code when setup material includes it', async () => {
+    currentSession = {
+      tenantName: 'Moonshot Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: false,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
+        return buildProfile();
+      }
+
+      if (path === '/api/v1/users/me/sessions') {
+        return [];
+      }
+
+      if (path === '/api/v1/users/me/totp/setup' && init?.method === 'POST') {
+        return {
+          secret: 'ABC123',
+          qrCode: 'data:image/png;base64,ZmFrZS1xci1jb2Rl',
+          otpauthUrl: 'otpauth://totp/TCRN:alice@example.com?secret=ABC123',
+          issuer: 'TCRN',
+          account: 'alice@example.com',
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
+
+    expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare TOTP setup' }));
+
+    const qrCode = await screen.findByAltText('TOTP setup QR code');
+    expect(qrCode).toBeInTheDocument();
+    expect(qrCode).toHaveAttribute('src', 'data:image/png;base64,ZmFrZS1xci1jb2Rl');
   });
 
   it('revokes a non-current session through the shared confirm dialog', async () => {

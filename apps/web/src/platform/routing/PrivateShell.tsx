@@ -7,6 +7,7 @@ import {
   buildAcWorkspacePath,
   buildTenantWorkspacePath,
   isAcTenantTier,
+  resolveHierarchyBusinessRoute,
   resolveTalentWorkspaceRoute,
 } from '@/platform/routing/workspace-paths';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
@@ -14,6 +15,7 @@ import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { StateView } from '@/platform/ui';
 
+import { HierarchyBusinessShell } from './HierarchyBusinessShell';
 import { TalentBusinessShell } from './TalentBusinessShell';
 import { TenantGovernanceShell } from './TenantGovernanceShell';
 
@@ -158,6 +160,7 @@ export function PrivateShell({
   }
 
   const activeTalentRoute = resolveTalentWorkspaceRoute(pathname);
+  const activeHierarchyBusinessRoute = resolveHierarchyBusinessRoute(pathname);
 
   if (activeTalentRoute && activeTalentRoute.tenantId === tenantId) {
     return (
@@ -174,6 +177,24 @@ export function PrivateShell({
       >
         {children}
       </TalentBusinessShell>
+    );
+  }
+
+  if (activeHierarchyBusinessRoute && activeHierarchyBusinessRoute.tenantId === tenantId) {
+    return (
+      <HierarchyBusinessShell
+        tenantId={tenantId}
+        scopeType={activeHierarchyBusinessRoute.scopeType}
+        subsidiaryId={activeHierarchyBusinessRoute.subsidiaryId ?? undefined}
+        session={session}
+        onNavigate={(href) => {
+          router.push(href);
+        }}
+        onSignOut={handleSignOut}
+        isSignOutPending={isSignOutPending}
+      >
+        {children}
+      </HierarchyBusinessShell>
     );
   }
 
