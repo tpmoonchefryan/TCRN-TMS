@@ -177,6 +177,48 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
   });
 
+  it('uses stable form semantics for login, TOTP, and password-reset fields', async () => {
+    mocks.login.mockResolvedValueOnce({
+      kind: 'totp_required',
+      sessionToken: 'totp-session',
+      expiresIn: 300,
+    });
+    mocks.login.mockResolvedValueOnce({
+      kind: 'password_reset_required',
+      sessionToken: 'reset-session',
+      expiresIn: 300,
+      reason: 'PASSWORD_RESET_REQUIRED',
+    });
+
+    const firstView = render(<LoginForm />);
+
+    expect(screen.getByLabelText('Tenant code')).toHaveAttribute('name', 'tenantCode');
+    expect(screen.getByLabelText('Tenant code')).toHaveAttribute('autocomplete', 'off');
+    expect(screen.getByLabelText('Username or email')).toHaveAttribute('name', 'login');
+    expect(screen.getByLabelText('Username or email')).toHaveAttribute('autocomplete', 'username');
+    expect(screen.getByLabelText('Password')).toHaveAttribute('name', 'password');
+    expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'current-password');
+
+    fillCredentials();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    const totpInput = await screen.findByLabelText('TOTP code');
+    expect(totpInput).toHaveAttribute('name', 'totpCode');
+    expect(totpInput).toHaveAttribute('autocomplete', 'one-time-code');
+
+    firstView.unmount();
+    render(<LoginForm />);
+    fillCredentials();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    const newPasswordInput = await screen.findByLabelText('New password');
+    const confirmInput = screen.getByLabelText('Confirm new password');
+    expect(newPasswordInput).toHaveAttribute('name', 'newPassword');
+    expect(newPasswordInput).toHaveAttribute('autocomplete', 'new-password');
+    expect(confirmInput).toHaveAttribute('name', 'newPasswordConfirm');
+    expect(confirmInput).toHaveAttribute('autocomplete', 'new-password');
+  });
+
   it('authenticates credentials and routes to the default workspace path', async () => {
     const result = buildAuthenticatedResult();
     mocks.login.mockResolvedValueOnce({
@@ -321,7 +363,9 @@ describe('LoginForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByText('Invalid credentials')).toBeInTheDocument();
+    const errorBanner = await screen.findByRole('status');
+    expect(errorBanner).toHaveTextContent('Invalid credentials');
+    expect(errorBanner).toHaveAttribute('aria-live', 'polite');
     expect(mocks.authenticate).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
   });

@@ -201,6 +201,7 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.tenantCodeLabel}</span>
                   <input
+                    name="tenantCode"
                     value={credentials.tenantCode}
                     onChange={(event) =>
                       setCredentials((current) => ({
@@ -210,7 +211,8 @@ export function LoginForm() {
                     }
                     className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder="AC"
-                    autoComplete="organization"
+                    autoCapitalize="characters"
+                    autoComplete="off"
                     spellCheck={false}
                     required
                   />
@@ -219,6 +221,7 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.usernameLabel}</span>
                   <input
+                    name="login"
                     value={credentials.login}
                     onChange={(event) =>
                       setCredentials((current) => ({
@@ -237,6 +240,7 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.passwordLabel}</span>
                   <input
+                    name="password"
                     type="password"
                     value={credentials.password}
                     onChange={(event) =>
@@ -273,6 +277,7 @@ export function LoginForm() {
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-slate-700">{loginCopy.totpLabel}</span>
                 <input
+                  name="totpCode"
                   inputMode="numeric"
                   pattern="[0-9]{6}"
                   maxLength={6}
@@ -280,7 +285,9 @@ export function LoginForm() {
                   onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
                   className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-lg tracking-[0.35em] text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                   placeholder={loginCopy.totpPlaceholder}
+                  autoComplete="one-time-code"
                   aria-label={loginCopy.totpLabel}
+                  spellCheck={false}
                   required
                 />
               </label>
@@ -291,11 +298,13 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.newPasswordLabel}</span>
                   <input
+                    name="newPassword"
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
                     className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.passwordPlaceholder}
+                    autoComplete="new-password"
                     required
                   />
                 </label>
@@ -303,11 +312,13 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.confirmNewPasswordLabel}</span>
                   <input
+                    name="newPasswordConfirm"
                     type="password"
                     value={newPasswordConfirm}
                     onChange={(event) => setNewPasswordConfirm(event.target.value)}
                     className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.confirmNewPasswordPlaceholder}
+                    autoComplete="new-password"
                     required
                   />
                 </label>
@@ -315,7 +326,13 @@ export function LoginForm() {
             )}
 
             {errorMessage && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</div>
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {errorMessage}
+              </div>
             )}
 
             <button
