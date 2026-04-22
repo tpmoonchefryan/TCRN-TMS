@@ -55,11 +55,15 @@ function splitSharedDomainPath(path: string) {
   };
 }
 
-export async function readPublicHomepage(path: string) {
+export function buildPublicHomepageEndpoint(path: string) {
   const sharedDomainPath = splitSharedDomainPath(path);
-  const endpoint = sharedDomainPath
+  return sharedDomainPath
     ? `/api/v1/public/homepage/${sharedDomainPath.tenantCode}/${sharedDomainPath.talentCode}`
     : `/api/v1/public/homepage/${encodePublicPath(path)}`;
+}
+
+export async function readPublicHomepage(path: string) {
+  const endpoint = buildPublicHomepageEndpoint(path);
 
   const response = await fetch(endpoint, {
     credentials: 'include',
