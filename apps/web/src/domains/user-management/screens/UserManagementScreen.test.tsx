@@ -408,10 +408,11 @@ describe('UserManagementScreen', () => {
     render(<UserManagementScreen />);
 
     expect(await screen.findByText('System roles')).toBeInTheDocument();
+    expect(await screen.findByText('Editor')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Create system role' })).not.toBeInTheDocument();
 
     const newRoleLink = screen.getByRole('link', { name: 'New role' });
-    const editLinks = screen.getAllByRole('link', { name: 'Edit' });
+    const editLinks = await screen.findAllByRole('link', { name: 'Edit' });
 
     expect(newRoleLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/new');
     expect(editLinks[0]).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-1');
