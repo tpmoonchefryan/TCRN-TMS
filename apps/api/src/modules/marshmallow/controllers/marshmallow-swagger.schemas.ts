@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, TRILINGUAL_LOCALE_FAMILIES, type TrilingualLocaleFamily } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
   type: 'object',
@@ -20,6 +20,17 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
     success: false,
     error: { code, message },
   },
+});
+
+const createTrilingualTextSchema = (examples: Record<TrilingualLocaleFamily, string>) => ({
+  type: 'object',
+  properties: Object.fromEntries(
+    TRILINGUAL_LOCALE_FAMILIES.map((locale) => [
+      locale,
+      { type: 'string', nullable: true, example: examples[locale] },
+    ]),
+  ),
+  required: [...TRILINGUAL_LOCALE_FAMILIES],
 });
 
 const createSuccessEnvelopeSchema = (
@@ -788,24 +799,16 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
         backgroundColor: '#fff7f7',
       },
     },
-    terms: {
-      type: 'object',
-      properties: {
-        en: { type: 'string', nullable: true, example: 'Be respectful.' },
-        zh: { type: 'string', nullable: true, example: '请保持礼貌。' },
-        ja: { type: 'string', nullable: true, example: '礼儀を守ってください。' },
-      },
-      required: ['en', 'zh', 'ja'],
-    },
-    privacy: {
-      type: 'object',
-      properties: {
-        en: { type: 'string', nullable: true, example: 'We only keep moderation metadata.' },
-        zh: { type: 'string', nullable: true, example: '我们仅保存审核所需元数据。' },
-        ja: { type: 'string', nullable: true, example: '審査に必要なメタデータのみ保存します。' },
-      },
-      required: ['en', 'zh', 'ja'],
-    },
+    terms: createTrilingualTextSchema({
+      en: 'Be respectful.',
+      zh: '请保持礼貌。',
+      ja: '礼儀を守ってください。',
+    }),
+    privacy: createTrilingualTextSchema({
+      en: 'We only keep moderation metadata.',
+      zh: '我们仅保存审核所需元数据。',
+      ja: '審査に必要なメタデータのみ保存します。',
+    }),
   },
   required: [
     'talent',
