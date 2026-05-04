@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { IsEmail, IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class SendEmailDto {
@@ -13,7 +14,7 @@ export class SendEmailDto {
   recipientEmail!: string;
 
   @IsOptional()
-  @IsIn(['en', 'zh', 'ja'])
+  @IsIn(SUPPORTED_UI_LOCALES)
   locale?: string;
 
   @IsOptional()
