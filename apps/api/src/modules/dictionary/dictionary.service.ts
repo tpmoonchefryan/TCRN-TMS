@@ -142,7 +142,7 @@ export class DictionaryService {
     }
 
     if (search) {
-      whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex} OR name_ja ILIKE $${paramIndex})`;
+      whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex} OR name_ja ILIKE $${paramIndex} OR EXISTS (SELECT 1 FROM jsonb_each_text(COALESCE(extra_data -> 'translations', '{}'::jsonb)) AS translation(locale, value) WHERE translation.value ILIKE $${paramIndex}))`;
       params.push(`%${search}%`);
       paramIndex++;
     }

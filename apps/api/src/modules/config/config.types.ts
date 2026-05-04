@@ -197,6 +197,8 @@ export const CONFIG_HAS_EXTRA_DATA: Set<ConfigEntityType> = new Set([
   'reason-category',
   'inactivation-reason',
   'membership-class',
+  'membership-type',
+  'membership-level',
   'consent',
   'consumer',
 ]);

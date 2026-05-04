@@ -114,12 +114,25 @@ export class ConfigService {
     }
 
     const hasCode = CONFIG_HAS_CODE.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
     if (search) {
+      const localizedNameSearchClauses = [
+        `name_en ILIKE $${paramIndex}`,
+        `name_zh ILIKE $${paramIndex}`,
+        `name_ja ILIKE $${paramIndex}`,
+      ];
+
+      if (hasExtraData) {
+        localizedNameSearchClauses.push(
+          `EXISTS (SELECT 1 FROM jsonb_each_text(COALESCE(extra_data -> 'translations', '{}'::jsonb)) AS translation(locale, value) WHERE translation.value ILIKE $${paramIndex})`,
+        );
+      }
+
       if (hasCode) {
-        whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex})`;
+        whereClause += ` AND (code ILIKE $${paramIndex} OR ${localizedNameSearchClauses.join(' OR ')})`;
       } else {
-        // For entities without code field (e.g., blocklist-entries), search by name only
-        whereClause += ` AND (name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex})`;
+        // For entities without code field (e.g., blocklist-entries), search by localized name only
+        whereClause += ` AND (${localizedNameSearchClauses.join(' OR ')})`;
       }
       params.push(`%${search}%`);
       paramIndex++;
@@ -160,7 +173,6 @@ export class ConfigService {
     const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
-    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
     
     const codeField = hasCode ? 'code,' : 'NULL as code,';
     const sortOrderField = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';

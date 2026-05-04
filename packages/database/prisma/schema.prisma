@@ -1048,6 +1048,7 @@ model MembershipType {
   descriptionEn      String?  @map("description_en") @db.Text
   descriptionZh      String?  @map("description_zh") @db.Text
   descriptionJa      String?  @map("description_ja") @db.Text
+  extraData          Json?    @map("extra_data") @db.JsonB
   externalControl    Boolean  @default(false) @map("external_control")
   defaultRenewalDays Int      @default(30) @map("default_renewal_days")
   sortOrder          Int      @default(0) @map("sort_order")
@@ -1080,6 +1081,7 @@ model MembershipLevel {
   descriptionEn    String?  @map("description_en") @db.Text
   descriptionZh    String?  @map("description_zh") @db.Text
   descriptionJa    String?  @map("description_ja") @db.Text
+  extraData        Json?    @map("extra_data") @db.JsonB
   rank             Int      @default(0)
   color            String?  @db.VarChar(7)
   badgeUrl         String?  @map("badge_url") @db.VarChar(512)

@@ -1,12 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { prisma } from '@tcrn/database';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigService } from './config.service';
 import {
-  CONFIG_HAS_EXTRA_DATA,
   type BaseConfigEntity,
+  CONFIG_HAS_EXTRA_DATA,
   type ConfigEntityType,
   type ConfigEntityWithMeta,
 } from './config.types';
+
+vi.mock('@tcrn/database', () => ({
+  prisma: {
+    $queryRawUnsafe: vi.fn(),
+  },
+}));
+
+const mockPrisma = prisma as unknown as {
+  $queryRawUnsafe: ReturnType<typeof vi.fn>;
+};
 
 interface TranslationPayload {
   contentTranslations: Record<string, string>;
@@ -62,10 +73,34 @@ const createBaseEntity = (overrides: Partial<BaseConfigEntity> = {}): BaseConfig
 });
 
 describe('ConfigService translation contract', () => {
-  const service = new ConfigService() as unknown as TestableConfigService;
+  const service = new ConfigService();
+  const testableService = service as unknown as TestableConfigService;
+
+  beforeEach(() => {
+    mockPrisma.$queryRawUnsafe.mockReset();
+  });
+
+  it('searches dynamic translation maps for membership configuration entities', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ count: 0n }])
+      .mockResolvedValueOnce([]);
+
+    await service.list('membership-type', 'tenant_test', {
+      includeDisabled: true,
+      search: 'Membre',
+    });
+
+    const countSql = String(mockPrisma.$queryRawUnsafe.mock.calls[0][0]);
+
+    expect(CONFIG_HAS_EXTRA_DATA.has('membership-type')).toBe(true);
+    expect(CONFIG_HAS_EXTRA_DATA.has('membership-level')).toBe(true);
+    expect(countSql).toContain('name_ja ILIKE');
+    expect(countSql).toContain("jsonb_each_text(COALESCE(extra_data -> 'translations', '{}'::jsonb))");
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe('%Membre%');
+  });
 
   it('stores non-legacy locale maps in extraData while keeping legacy fallback fields aligned', () => {
-    const payload = service.prepareTranslationPayload('consent', {
+    const payload = testableService.prepareTranslationPayload('consent', {
       nameEn: 'Terms consent',
       translations: {
         en: 'Terms consent',
@@ -121,7 +156,7 @@ describe('ConfigService translation contract', () => {
   });
 
   it('resolves full Accept-Language locale tokens from translation maps before legacy fields', () => {
-    const decorated = service.decorateEntity(
+    const decorated = testableService.decorateEntity(
       'customer-status',
       createBaseEntity({
         extraData: {
