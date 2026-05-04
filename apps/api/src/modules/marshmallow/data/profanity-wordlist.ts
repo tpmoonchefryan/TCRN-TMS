@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { resolveTrilingualLocaleFamily, type TrilingualLocaleFamily } from '@tcrn/shared';
+
 /**
  * Multi-language Profanity Wordlist
  *
@@ -191,11 +193,7 @@ export const PROFANITY_JA: ProfanityEntry[] = [
 // Combined Wordlist
 // =============================================================================
 
-export interface ProfanityWordlist {
-  en: ProfanityEntry[];
-  zh: ProfanityEntry[];
-  ja: ProfanityEntry[];
-}
+export type ProfanityWordlist = Record<TrilingualLocaleFamily, ProfanityEntry[]>;
 
 export const PROFANITY_WORDLIST: ProfanityWordlist = {
   en: PROFANITY_EN,
@@ -220,8 +218,8 @@ export function getProfanityBySeverity(severity: ProfanitySeverity): ProfanityEn
 /**
  * Get words by language
  */
-export function getProfanityByLanguage(lang: 'en' | 'zh' | 'ja'): ProfanityEntry[] {
-  return PROFANITY_WORDLIST[lang];
+export function getProfanityByLanguage(lang: string): ProfanityEntry[] {
+  return PROFANITY_WORDLIST[resolveTrilingualLocaleFamily(lang)];
 }
 
 /**
