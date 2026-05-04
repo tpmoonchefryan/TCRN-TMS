@@ -208,7 +208,7 @@ describe('importJobProcessor', () => {
     mockMinioClient.getObject.mockResolvedValueOnce(
       Readable.from([
         'external_id,nickname,primary_language,status_code,tags,notes\n',
-        'EXT001,Template User,zh,ACTIVE,tag-a,notes here\n',
+        'EXT001,Template User,zh_HANS,ACTIVE,tag-a,notes here\n',
       ]),
     );
     customerStatusRows = [{ id: 'status-1', code: 'ACTIVE' }];
@@ -234,7 +234,7 @@ describe('importJobProcessor', () => {
 
     expect(customerProfileInsert?.[5]).toBe('individual');
     expect(customerProfileInsert?.[6]).toBe('Template User');
-    expect(customerProfileInsert?.[7]).toBe('zh');
+    expect(customerProfileInsert?.[7]).toBe('zh_HANS');
     expect(customerProfileInsert?.[8]).toBe('status-1');
     expect(customerProfileInsert?.[9]).toEqual(['tag-a']);
     expect(customerProfileInsert?.[11]).toBe('notes here');
@@ -242,6 +242,33 @@ describe('importJobProcessor', () => {
     expect(externalIdInsert?.[3]).toBe('consumer-1');
     expect(externalIdInsert?.[4]).toBe('EXT001');
     expect(externalIdInsert?.[5]).toBe('user-1');
+  });
+
+  it('rejects legacy aggregate Chinese primary_language values before tenant persistence', async () => {
+    mockJob.data.options = {
+      validateOnly: false,
+    };
+    mockMinioClient.getObject.mockResolvedValueOnce(
+      Readable.from([
+        'nickname,primary_language,status_code,tags,notes\n',
+        'Legacy Locale User,zh,,vip,legacy locale\n',
+      ]),
+    );
+
+    const result = await importJobProcessor(mockJob);
+
+    expect(result).toMatchObject({
+      totalRows: 1,
+      successRows: 0,
+      failedRows: 1,
+    });
+    expect(result.errors[0]?.message).toContain('Invalid primary_language: zh');
+    const customerProfileInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('INSERT INTO "tenant_test"."customer_profile"'),
+    );
+    expect(customerProfileInsert).toBeUndefined();
   });
 
   it('fails closed when deprecated individual PII columns are present in the import row', async () => {

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { z } from 'zod';
 
 import {
@@ -10,7 +11,7 @@ import {
 const IndividualRowSchema = z.object({
   external_id: z.string().max(128).optional(),
   nickname: z.string().min(1).max(128),
-  primary_language: z.string().length(2).optional().or(z.literal('')),
+  primary_language: z.enum(SUPPORTED_UI_LOCALES).optional().or(z.literal('')),
   status_code: z.string().max(32).optional(),
   tags: z.string().optional(),
   notes: z.string().max(2000).optional(),
@@ -224,7 +225,7 @@ export const generateIndividualImportTemplate = (): string => {
   const exampleRow = [
     'EXT001',
     '粉丝小明',
-    'zh',
+    'zh_HANS',
     'ACTIVE',
     '活跃,高价值',
     '老粉丝',

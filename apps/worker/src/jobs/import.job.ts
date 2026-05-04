@@ -2,6 +2,7 @@
 // Import Job Processor (PRD §11.7)
 
 import { PrismaClient } from '@tcrn/database';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import { parse } from 'csv-parse';
 import * as fs from 'fs';
@@ -14,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { importLogger as logger } from '../logger';
 
 const IMPORTS_BUCKET = 'imports';
+const SUPPORTED_CUSTOMER_PRIMARY_LANGUAGES = new Set<string>(SUPPORTED_UI_LOCALES);
 
 /**
  * Import job data interface (PRD §11.7)
@@ -499,6 +501,12 @@ function validateRow(
 
   if (row.status_code && !lookupData.customerStatuses.has(row.status_code)) {
     errors.push(`Invalid status_code: ${row.status_code}`);
+  }
+
+  if (row.primary_language && !SUPPORTED_CUSTOMER_PRIMARY_LANGUAGES.has(row.primary_language)) {
+    errors.push(
+      `Invalid primary_language: ${row.primary_language}. Must be one of ${SUPPORTED_UI_LOCALES.join(', ')}`,
+    );
   }
 
   if (row.external_id && !consumerCode) {

@@ -17,7 +17,7 @@ describe('ImportParserService', () => {
     const result = service.parseIndividualRow(
       {
         nickname: 'Test User',
-        primary_language: 'en',
+        primary_language: 'zh_HANS',
         status_code: 'ACTIVE',
         tags: 'vip,new',
       },
@@ -27,7 +27,7 @@ describe('ImportParserService', () => {
     expect(result.success).toBe(true);
     expect(result.data).toMatchObject({
       nickname: 'Test User',
-      primaryLanguage: 'en',
+      primaryLanguage: 'zh_HANS',
       statusCode: 'ACTIVE',
       tags: ['vip', 'new'],
     });

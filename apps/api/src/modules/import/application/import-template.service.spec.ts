@@ -28,6 +28,13 @@ describe('ImportTemplateApplicationService', () => {
     expect(result.errors).toEqual([]);
   });
 
+  it('generates individual template examples with canonical UI locale tags', () => {
+    const template = service.generateIndividualTemplate();
+
+    expect(template).toContain('zh_HANS');
+    expect(template).not.toContain(',zh,');
+  });
+
   it('rejects unexpected headers for individual imports', () => {
     const csv = [
       `${INDIVIDUAL_IMPORT_HEADERS.join(',')},legacy_pii_email`,
@@ -56,7 +63,7 @@ describe('ImportTemplateApplicationService', () => {
     const result = service.parseIndividualRow(
       {
         nickname: 'Test User',
-        primary_language: 'en',
+        primary_language: 'zh_HANT',
         status_code: 'ACTIVE',
         tags: 'vip,new',
       },
@@ -66,11 +73,24 @@ describe('ImportTemplateApplicationService', () => {
     expect(result.success).toBe(true);
     expect(result.data).toEqual({
       nickname: 'Test User',
-      primaryLanguage: 'en',
+      primaryLanguage: 'zh_HANT',
       statusCode: 'ACTIVE',
       tags: ['vip', 'new'],
       warnings: [],
     });
+  });
+
+  it('rejects legacy aggregate Chinese locale in individual import rows', () => {
+    const result = service.parseIndividualRow(
+      {
+        nickname: 'Test User',
+        primary_language: 'zh',
+      },
+      1,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.errors.some((message) => message.includes('primary_language'))).toBe(true);
   });
 
   it('generates the expected error CSV envelope', () => {

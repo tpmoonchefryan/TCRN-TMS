@@ -550,7 +550,7 @@ describe('Import Runtime Smoke Integration', () => {
   it('processes public individual import upload through API, Redis worker, and tenant DB end-to-end', async () => {
     const csvContent = [
       'external_id,nickname,primary_language,status_code,tags,notes',
-      ',Runtime Import Customer,zh,,vip,runtime create smoke',
+      ',Runtime Import Customer,zh_HANS,,vip,runtime create smoke',
     ].join('\n');
 
     const createResponse = await withAuth(
@@ -602,7 +602,7 @@ describe('Import Runtime Smoke Integration', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       nickname: 'Runtime Import Customer',
-      primaryLanguage: 'zh',
+      primaryLanguage: 'zh_HANS',
       tags: ['vip'],
       notes: 'runtime create smoke',
       profileStoreId: talentProfileStoreId,
