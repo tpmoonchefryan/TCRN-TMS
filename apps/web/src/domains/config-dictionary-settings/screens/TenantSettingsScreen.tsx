@@ -1075,9 +1075,9 @@ export function TenantSettingsScreen({
                   <SectionEntryLink
                     title={text('Business Workspace', '业务工作区', '業務ワークスペース')}
                     description={text(
-                      'Open the tenant-level business workspace for cross-talent operations and future reporting modules.',
-                      '打开租户级业务工作区，用于跨艺人运营与后续报表模块。',
-                      '複数タレント横断の運用や今後のレポート機能向けに、テナント業務ワークスペースを開きます。',
+                      'Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.',
+                      '打开租户级业务工作区，用于跨艺人运营、报表与工作区交接。',
+                      '複数タレント横断の運用、レポート、ワークスペース連携のためにテナント業務ワークスペースを開きます。',
                     )}
                     href={buildTenantBusinessPath(tenantId)}
                     cta={text('Open business workspace', '打开业务工作区', '業務ワークスペースを開く')}
@@ -1115,9 +1115,9 @@ export function TenantSettingsScreen({
                 <h2 className="text-xl font-semibold text-slate-950">{common.configEntities}</h2>
                 <p className="text-sm leading-6 text-slate-600">
                   {text(
-                    'Keep profile stores and tenant-owned configuration families in one management workspace instead of splitting them into separate page-sprawl flows.',
-                    '将档案库与租户自有的配置实体放在同一个管理工作区内，而不是拆成多个摊开的页面流程。',
-                    'プロフィールストアとテナント所有の設定エンティティを、別々に広がる画面ではなく同じ管理ワークスペースで扱います。',
+                    'Keep profile stores and tenant-owned configuration families in one management area so operators can review and edit them together.',
+                    '将档案库与租户自有配置实体放在同一个管理区域，便于统一查看与编辑。',
+                    'プロフィールストアとテナント所有の設定エンティティを同じ管理エリアで扱い、まとめて確認・編集できるようにします。',
                   )}
                 </p>
               </div>
@@ -1125,9 +1125,9 @@ export function TenantSettingsScreen({
               <FormSection
                 title={text('Profile stores', '档案库', 'プロフィールストア')}
                 description={text(
-                  'Profile stores are managed here as part of the tenant configuration inventory, alongside the rest of the scoped entity catalog.',
-                  '档案库作为租户配置库存的一部分在这里统一管理，与其余范围配置实体并列。',
-                  'プロフィールストアは、他のスコープ設定エンティティと同じテナント設定在庫としてここで管理します。',
+                  'Profile stores are managed here with the scoped configuration entities owned by this tenant.',
+                  '档案库在这里与当前租户拥有的范围配置实体一起管理。',
+                  'プロフィールストアは、このテナントが所有するスコープ設定エンティティと一緒にここで管理します。',
                 )}
                 actions={(
                   <button

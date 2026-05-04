@@ -303,9 +303,19 @@ describe('TenantSettingsScreen', () => {
     render(<TenantSettingsScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
     expect(await screen.findByText('Default Store')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Keep profile stores and tenant-owned configuration families in one management area so operators can review and edit them together.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
     expect((await screen.findAllByText('Customer Status')).length).toBeGreaterThan(0);
