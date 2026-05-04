@@ -67,6 +67,7 @@ interface DictionaryItemDraft {
 
 interface ItemMutationState {
   mode: 'create' | 'edit';
+  dictionaryType: DictionaryTypeSummary;
   item: DictionaryItemRecord | null;
 }
 
@@ -289,6 +290,7 @@ export function SystemDictionaryScreen() {
 
     setItemMutationState({
       mode: 'create',
+      dictionaryType: selectedType,
       item: null,
     });
     setItemDraft(EMPTY_ITEM_DRAFT);
@@ -297,8 +299,16 @@ export function SystemDictionaryScreen() {
   }
 
   function openEditItemDrawer(item: DictionaryItemRecord) {
+    const dictionaryType = selectedType ?? {
+      type: item.dictionaryCode,
+      name: item.dictionaryCode,
+      description: null,
+      count: 0,
+    };
+
     setItemMutationState({
       mode: 'edit',
+      dictionaryType,
       item,
     });
     setItemDraft(buildItemDraft(item));
@@ -381,7 +391,7 @@ export function SystemDictionaryScreen() {
   }
 
   async function handleSaveItem() {
-    if (!selectedType || !itemMutationState || isSavingItem) {
+    if (!itemMutationState || isSavingItem) {
       return;
     }
 
@@ -438,7 +448,7 @@ export function SystemDictionaryScreen() {
           itemDraft.descriptionTranslations,
         );
 
-        await createDictionaryItem(request, selectedType.type, {
+        await createDictionaryItem(request, itemMutationState.dictionaryType.type, {
           code: itemDraft.code.trim().toUpperCase(),
           nameEn: itemDraft.nameEn.trim(),
           nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
@@ -455,9 +465,9 @@ export function SystemDictionaryScreen() {
         setNotice({
           tone: 'success',
           message: text(
-            `${itemDraft.code.trim().toUpperCase()} item created under ${selectedType.type}.`,
-            `已在 ${selectedType.type} 下创建词典项 ${itemDraft.code.trim().toUpperCase()}。`,
-            `${selectedType.type} に辞書項目 ${itemDraft.code.trim().toUpperCase()} を作成しました。`,
+            `${itemDraft.code.trim().toUpperCase()} item created under ${itemMutationState.dictionaryType.type}.`,
+            `已在 ${itemMutationState.dictionaryType.type} 下创建词典项 ${itemDraft.code.trim().toUpperCase()}。`,
+            `${itemMutationState.dictionaryType.type} に辞書項目 ${itemDraft.code.trim().toUpperCase()} を作成しました。`,
           ),
         });
       } else if (itemMutationState.item) {
@@ -467,7 +477,7 @@ export function SystemDictionaryScreen() {
           itemDraft.descriptionTranslations,
         );
 
-        await updateDictionaryItem(request, selectedType.type, itemMutationState.item.id, {
+        await updateDictionaryItem(request, itemMutationState.dictionaryType.type, itemMutationState.item.id, {
           nameEn: itemDraft.nameEn.trim(),
           nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
           nameJa: pickLegacyLocaleValue(translations, 'ja'),
@@ -501,7 +511,7 @@ export function SystemDictionaryScreen() {
   }
 
   async function handleToggleItemActive() {
-    if (!selectedType || !confirmState || isConfirmPending) {
+    if (!confirmState || isConfirmPending) {
       return;
     }
 
@@ -509,11 +519,11 @@ export function SystemDictionaryScreen() {
 
     try {
       if (confirmState.nextActive) {
-        await reactivateDictionaryItem(request, selectedType.type, confirmState.item.id, {
+        await reactivateDictionaryItem(request, confirmState.item.dictionaryCode, confirmState.item.id, {
           version: confirmState.item.version,
         });
       } else {
-        await deactivateDictionaryItem(request, selectedType.type, confirmState.item.id, {
+        await deactivateDictionaryItem(request, confirmState.item.dictionaryCode, confirmState.item.id, {
           version: confirmState.item.version,
         });
       }
@@ -910,9 +920,9 @@ export function SystemDictionaryScreen() {
           itemMutationState?.mode === 'edit'
             ? text('Update multilingual labels, descriptions, ordering, and structured extra data.', '更新多语言标签、描述、排序和结构化额外数据。', '多言語ラベル、説明、順序、構造化追加データを更新します。')
             : text(
-                `Create a new item inside ${selectedType?.type || 'the selected dictionary'}.`,
-                `在 ${selectedType?.type || '当前词典'} 中创建新的词典项。`,
-                `${selectedType?.type || '選択中の辞書'} に新しい項目を作成します。`,
+                `Create a new item inside ${itemMutationState?.dictionaryType.type || 'the selected dictionary'}.`,
+                `在 ${itemMutationState?.dictionaryType.type || '当前词典'} 中创建新的词典项。`,
+                `${itemMutationState?.dictionaryType.type || '選択中の辞書'} に新しい項目を作成します。`,
               )
         }
         size="xl"

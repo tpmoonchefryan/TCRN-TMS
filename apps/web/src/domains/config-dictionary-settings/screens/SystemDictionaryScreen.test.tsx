@@ -228,6 +228,23 @@ describe('SystemDictionaryScreen', () => {
         };
       }
 
+      if (url.pathname === '/api/v1/system-dictionary/MEMBERSHIP_LEVEL') {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
       if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items' && init?.method === 'POST') {
         const body = JSON.parse(String(init.body)) as {
           code: string;
@@ -377,6 +394,7 @@ describe('SystemDictionaryScreen', () => {
     fireEvent.change(screen.getByLabelText('Dictionary item English name'), {
       target: { value: 'Inactive customer' },
     });
+    fireEvent.click(screen.getByRole('button', { name: /Membership Level/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Create item' }));
 
     await waitFor(() => {
@@ -398,6 +416,7 @@ describe('SystemDictionaryScreen', () => {
     });
 
     expect(await screen.findByText('INACTIVE item created under CUSTOMER_STATUS.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Customer Status/ }));
     expect((await screen.findAllByText('Inactive customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
