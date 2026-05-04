@@ -52,7 +52,50 @@ describe('DomainLookupService', () => {
     expect(mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute).toHaveBeenCalledWith(
       'tenant_demo',
       'brand.example.com',
+      null,
     );
+    expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
+  });
+
+  it('resolves shared domain only when an explicit talent code selection exists', async () => {
+    mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
+    mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute.mockResolvedValue({
+      domainId: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      tenantSchema: 'tenant_demo',
+      talentId: 'talent-1',
+    });
+
+    const result = await service.lookupDomain('Brand.Example.COM.', 'SORA');
+
+    expect(result).toEqual({
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
+      tenantSchema: 'tenant_demo',
+      talentId: 'talent-1',
+      domainId: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      routeMode: 'scoped_talent_path',
+      routePrefix: 'SORA',
+      requiresTalentPath: true,
+    });
+    expect(mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute).toHaveBeenCalledWith(
+      'tenant_demo',
+      'brand.example.com',
+      'SORA',
+    );
+    expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to legacy dedicated lookup when a shared-domain talent code was requested', async () => {
+    mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
+    mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute.mockResolvedValue(null);
+
+    await expect(service.lookupDomain('brand.example.com', 'SORA')).resolves.toBeNull();
     expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
   });
 

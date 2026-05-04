@@ -114,6 +114,7 @@ export class PublicHomepageReadRepository {
   async findVerifiedDomainBindingRoute(
     schema: string,
     normalizedDomain: string,
+    talentCode: string | null = null,
   ): Promise<DomainLookupBindingRouteRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const results = await prisma.$queryRawUnsafe<DomainLookupBindingRouteRecord[]>(`
@@ -127,17 +128,60 @@ export class PublicHomepageReadRepository {
       FROM public.tenant tenant
       JOIN public.custom_domain_binding binding ON binding.tenant_id = tenant.id
       LEFT JOIN "${schema}".talent talent ON (
-        binding.owner_type = 'talent'
-        AND binding.owner_id = talent.id
-        AND talent.lifecycle_status = 'published'
+        (
+          binding.owner_type = 'talent'
+          AND binding.owner_id = talent.id
+          AND $3::text IS NULL
+        )
+        OR (
+          binding.owner_type != 'talent'
+          AND LOWER(talent.code) = LOWER($3)
+          AND EXISTS (
+            SELECT 1
+            FROM public.custom_domain_talent_selection selection
+            WHERE selection.tenant_id = tenant.id
+              AND selection.custom_domain_binding_id = binding.id
+              AND selection.talent_id = talent.id
+              AND selection.is_enabled = true
+          )
+        )
       )
       WHERE tenant.schema_name = $1
         AND binding.hostname = $2
         AND binding.custom_domain_verified = true
         AND binding.is_active = true
-        AND (binding.owner_type != 'talent' OR talent.id IS NOT NULL)
+        AND (
+          (
+            binding.owner_type = 'talent'
+            AND $3::text IS NULL
+            AND talent.lifecycle_status = 'published'
+          )
+          OR (
+            binding.owner_type != 'talent'
+            AND $3::text IS NULL
+          )
+          OR (
+            binding.owner_type != 'talent'
+            AND $3::text IS NOT NULL
+            AND talent.lifecycle_status = 'published'
+            AND (
+              binding.owner_type = 'tenant'
+              OR (
+                binding.owner_type = 'subsidiary'
+                AND talent.subsidiary_id IS NOT NULL
+                AND EXISTS (
+                  SELECT 1
+                  FROM "${schema}".subsidiary leaf
+                  JOIN "${schema}".subsidiary owner ON leaf.path LIKE owner.path || '%'
+                  WHERE leaf.id = talent.subsidiary_id
+                    AND owner.id = binding.owner_id
+                )
+              )
+            )
+          )
+        )
       LIMIT 1
-    `, schema, normalizedDomain);
+    `, schema, normalizedDomain, talentCode);
 
     return results[0] ?? null;
   }

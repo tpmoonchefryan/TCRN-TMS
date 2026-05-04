@@ -28,6 +28,7 @@ const DOMAIN_LOOKUP_SCHEMA = {
     routeMode: { type: 'string', example: 'dedicated_talent' },
     routePrefix: { type: 'string', nullable: true, example: null },
     requiresTalentPath: { type: 'boolean', example: false },
+    talentId: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440001' },
   },
   required: ['path', 'type', 'homepagePath', 'marshmallowPath'],
   example: {
@@ -42,6 +43,7 @@ const DOMAIN_LOOKUP_SCHEMA = {
     routeMode: 'dedicated_talent',
     routePrefix: null,
     requiresTalentPath: false,
+    talentId: '550e8400-e29b-41d4-a716-446655440001',
   },
 };
 
@@ -82,9 +84,13 @@ export class DomainLookupController {
   @UseGuards(RateLimiterGuard)
   @ApiOperation({ summary: 'Lookup custom domain routing' })
   @ApiQuery({ name: 'domain', required: true, description: 'The custom domain to lookup' })
+  @ApiQuery({ name: 'talentCode', required: false, description: 'Talent code required for tenant/subsidiary inherited domains' })
   @ApiResponse({ status: 200, description: 'Domain mapping found', schema: DOMAIN_LOOKUP_SCHEMA })
   @ApiResponse({ status: 404, description: 'Domain not found or not verified', schema: DOMAIN_LOOKUP_NOT_FOUND_SCHEMA })
-  async lookupDomain(@Query('domain') domain: string) {
+  async lookupDomain(
+    @Query('domain') domain: string,
+    @Query('talentCode') talentCode?: string,
+  ) {
     if (!domain || domain.trim().length === 0) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
@@ -92,7 +98,8 @@ export class DomainLookupController {
       });
     }
 
-    const result = await this.domainLookupService.lookupDomain(domain.trim());
+    const normalizedTalentCode = talentCode?.trim() || null;
+    const result = await this.domainLookupService.lookupDomain(domain.trim(), normalizedTalentCode);
 
     if (!result) {
       throw new NotFoundException({
@@ -113,6 +120,7 @@ export class DomainLookupController {
       routeMode: result.routeMode,
       routePrefix: result.routePrefix,
       requiresTalentPath: result.requiresTalentPath,
+      talentId: result.talentId,
     };
   }
 }

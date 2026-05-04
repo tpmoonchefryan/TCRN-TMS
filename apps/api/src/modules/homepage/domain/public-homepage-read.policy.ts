@@ -104,6 +104,7 @@ export function resolveLookupRoute(
 
 export function resolveLookupBindingRoute(
   route: DomainLookupBindingRouteRecord,
+  talentCode: string | null = null,
 ): DomainLookupResult {
   const requiresTalentPath = route.ownerType !== 'talent';
 
@@ -117,7 +118,7 @@ export function resolveLookupBindingRoute(
     ownerType: route.ownerType,
     ownerId: route.ownerId,
     routeMode: requiresTalentPath ? 'scoped_talent_path' : 'dedicated_talent',
-    routePrefix: requiresTalentPath ? ':talentCode' : null,
+    routePrefix: requiresTalentPath ? talentCode ?? ':talentCode' : null,
     requiresTalentPath,
   };
 }

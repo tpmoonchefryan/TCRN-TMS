@@ -115,6 +115,29 @@ export class PublicHomepageService {
     return data;
   }
 
+
+  async getPublishedHomepageByDomainAndTalentCode(
+    domain: string,
+    talentCode: string,
+  ): Promise<PublicHomepageData | null> {
+    const mapping = await this.domainLookupService.lookupDomain(domain, talentCode);
+
+    if (!mapping || !mapping.talentId) {
+      return null;
+    }
+
+    const talent = await this.publicHomepageReadRepository.findPublishedTalentById(
+      mapping.tenantSchema,
+      mapping.talentId,
+    );
+
+    if (!talent) {
+      return null;
+    }
+
+    return this.getPublishedHomepageForTalent(mapping.tenantSchema, talent);
+  }
+
   async getPublishedHomepageByDomain(domain: string): Promise<PublicHomepageData | null> {
     const mapping = await this.domainLookupService.lookupDomain(domain);
 

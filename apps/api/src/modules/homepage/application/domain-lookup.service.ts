@@ -20,7 +20,7 @@ export class DomainLookupService {
     private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
   ) {}
 
-  async lookupDomain(domain: string): Promise<DomainLookupResult | null> {
+  async lookupDomain(domain: string, talentCode: string | null = null): Promise<DomainLookupResult | null> {
     this.logger.debug(`[lookupDomain] Looking up domain: "${domain}"`);
     const normalizedDomain = normalizeLookupDomain(domain);
     const tenantSchemas = await this.publicHomepageReadRepository.listActiveTenantSchemas();
@@ -31,10 +31,11 @@ export class DomainLookupService {
           await this.publicHomepageReadRepository.findVerifiedDomainBindingRoute(
             schema,
             normalizedDomain,
+            talentCode,
           );
 
         if (bindingRoute) {
-          const result = resolveLookupBindingRoute(bindingRoute);
+          const result = resolveLookupBindingRoute(bindingRoute, talentCode);
 
           this.logger.debug(
             `[lookupDomain] Found domain binding "${domain}" in schema "${schema}" -> route mode "${result.routeMode}"`,
@@ -43,10 +44,12 @@ export class DomainLookupService {
           return result;
         }
 
-        const route = await this.publicHomepageReadRepository.findVerifiedDomainRoute(
-          schema,
-          normalizedDomain,
-        );
+        const route = talentCode
+          ? null
+          : await this.publicHomepageReadRepository.findVerifiedDomainRoute(
+              schema,
+              normalizedDomain,
+            );
 
         if (route) {
           const result = resolveLookupRoute(route, schema);

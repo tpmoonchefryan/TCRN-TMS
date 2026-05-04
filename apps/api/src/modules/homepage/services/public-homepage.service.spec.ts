@@ -34,6 +34,75 @@ describe('PublicHomepageService', () => {
     );
   });
 
+  it('loads selected inherited-domain homepage through domain and talent code', async () => {
+    vi.mocked(mockDomainLookupService.lookupDomain).mockResolvedValue({
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
+      tenantSchema: 'tenant_demo',
+      talentId: 'talent-1',
+      domainId: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      routeMode: 'scoped_talent_path',
+      routePrefix: 'SORA',
+      requiresTalentPath: true,
+    });
+    mockPublicHomepageReadRepository.findPublishedTalentById.mockResolvedValue({
+      id: 'talent-1',
+      code: 'SORA',
+      displayName: 'Demo Talent',
+      avatarUrl: null,
+      homepagePath: 'demo-home',
+      timezone: 'Asia/Tokyo',
+    });
+    mockPublicHomepageReadRepository.findPublishedHomepageRecord.mockResolvedValue({
+      id: 'homepage-1',
+      isPublished: true,
+      publishedVersionId: 'version-1',
+      seoTitle: 'Demo SEO',
+      seoDescription: null,
+      ogImageUrl: null,
+    });
+    mockPublicHomepageReadRepository.findHomepageVersion.mockResolvedValue({
+      content: { version: '1.0.0', components: [] },
+      theme: {
+        preset: 'default',
+        visualStyle: 'simple',
+        colors: {},
+        background: {},
+        card: {},
+        typography: {},
+        animation: {},
+        decorations: {},
+      },
+      publishedAt: new Date('2026-04-12T00:00:00.000Z'),
+      createdAt: new Date('2026-04-11T00:00:00.000Z'),
+    });
+
+    const result = await service.getPublishedHomepageByDomainAndTalentCode(
+      'brand.example.com',
+      'SORA',
+    );
+
+    expect(result).toMatchObject({
+      talent: {
+        displayName: 'Demo Talent',
+      },
+      seo: {
+        title: 'Demo SEO',
+      },
+    });
+    expect(mockDomainLookupService.lookupDomain).toHaveBeenCalledWith(
+      'brand.example.com',
+      'SORA',
+    );
+    expect(mockPublicHomepageReadRepository.findPublishedTalentById).toHaveBeenCalledWith(
+      'tenant_demo',
+      'talent-1',
+    );
+  });
+
   it('filters public path resolution by published lifecycle', async () => {
     mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
     mockPublicHomepageReadRepository.findPublishedTalentByPath.mockResolvedValue(null);
