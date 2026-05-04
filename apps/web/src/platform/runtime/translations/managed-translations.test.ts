@@ -37,9 +37,14 @@ describe('loadTranslationLanguageOptions', () => {
             translations: { en: 'German', zh_HANS: '德语' },
           },
           {
-            code: 'zh',
-            nameEn: 'Chinese',
-            translations: { en: 'Chinese', zh_HANS: '中文' },
+            code: 'zh_HANS',
+            nameEn: 'Simplified Chinese',
+            translations: { en: 'Simplified Chinese', zh_HANS: '简体中文' },
+          },
+          {
+            code: 'zh_HANT',
+            nameEn: 'Traditional Chinese',
+            translations: { en: 'Traditional Chinese', zh_HANS: '繁体中文' },
           },
         ],
         pagination: {
@@ -78,10 +83,12 @@ describe('loadTranslationLanguageOptions', () => {
 
     expect(mocks.listDictionaryItems).toHaveBeenCalledTimes(2);
     expect(result.error).toBeNull();
-    expect(result.options).toContainEqual({ code: 'zh_HANS', label: '中文' });
+    expect(result.options).toContainEqual({ code: 'zh_HANS', label: '简体中文' });
+    expect(result.options).toContainEqual({ code: 'zh_HANT', label: '繁体中文' });
     expect(result.options).toContainEqual({ code: 'de', label: '德语' });
     expect(result.options).toContainEqual({ code: 'es', label: '西班牙语' });
-    expect(result.options).toHaveLength(3);
+    expect(result.options).not.toContainEqual(expect.objectContaining({ code: 'zh' }));
+    expect(result.options).toHaveLength(4);
   });
 
   it('surfaces the load error instead of inventing fallback language options', async () => {

@@ -24,7 +24,7 @@ interface DictionaryItem {
 // Dictionary Type Definitions
 const DICTIONARY_TYPES: DictionaryType[] = [
   { code: 'countries', nameEn: 'Countries/Regions', nameZh: '国家/地区', nameJa: '国・地域', descriptionEn: 'ISO 3166-1 alpha-2 country codes', sortOrder: 1 },
-  { code: 'languages', nameEn: 'Languages', nameZh: '语言', nameJa: '言語', descriptionEn: 'ISO 639-1 language codes', sortOrder: 2 },
+  { code: 'languages', nameEn: 'Languages', nameZh: '语言', nameJa: '言語', descriptionEn: 'ISO 639-1 plus product UI locale tags', sortOrder: 2 },
   { code: 'currencies', nameEn: 'Currencies', nameZh: '货币', nameJa: '通貨', descriptionEn: 'ISO 4217 currency codes', sortOrder: 3 },
   { code: 'timezones', nameEn: 'Timezones', nameZh: '时区', nameJa: 'タイムゾーン', descriptionEn: 'IANA timezone database', sortOrder: 4 },
   { code: 'genders', nameEn: 'Genders', nameZh: '性别', nameJa: '性別', sortOrder: 5 },
@@ -284,7 +284,9 @@ const COUNTRIES: DictionaryItem[] = [
     { code: 'ZW', nameEn: 'Zimbabwe', nameZh: '津巴布韦', nameJa: 'ジンバブエ' },
   ];
 
-// ISO 639-1 Languages (Full list)
+// ISO 639-1 Languages plus product UI locale tags used by translation management.
+const DEPRECATED_LANGUAGE_CODES = ['zh'] as const;
+
 const LANGUAGES: DictionaryItem[] = [
     { code: 'aa', nameEn: 'Afar', nameZh: '阿法尔语', nameJa: 'アファル語' },
     { code: 'ab', nameEn: 'Abkhazian', nameZh: '阿布哈兹语', nameJa: 'アブハズ語' },
@@ -468,7 +470,8 @@ const LANGUAGES: DictionaryItem[] = [
     { code: 'yi', nameEn: 'Yiddish', nameZh: '意第绪语', nameJa: 'イディッシュ語' },
     { code: 'yo', nameEn: 'Yoruba', nameZh: '约鲁巴语', nameJa: 'ヨルバ語' },
     { code: 'za', nameEn: 'Zhuang', nameZh: '壮语', nameJa: 'チワン語' },
-    { code: 'zh', nameEn: 'Chinese', nameZh: '中文', nameJa: '中国語' },
+    { code: 'zh_HANS', nameEn: 'Simplified Chinese', nameZh: '简体中文', nameJa: '簡体字中国語' },
+    { code: 'zh_HANT', nameEn: 'Traditional Chinese', nameZh: '繁体中文', nameJa: '繁体字中国語' },
     { code: 'zu', nameEn: 'Zulu', nameZh: '祖鲁语', nameJa: 'ズールー語' },
   ];
 
@@ -840,6 +843,17 @@ export async function seedSystemDictionary(prisma: PrismaClient): Promise<void> 
       }
       console.log(`    ✓ ${dictCode}: ${insertedCount} items`);
     }
+
+    await prisma.systemDictionaryItem.updateMany({
+      where: {
+        dictionaryCode: 'languages',
+        code: { in: [...DEPRECATED_LANGUAGE_CODES] },
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date(),
+      },
+    });
   
     console.log('  ✓ System dictionaries seeded successfully');
   }
