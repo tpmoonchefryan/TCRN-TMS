@@ -2,7 +2,7 @@
 
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { checkDatabaseConnection, prisma, type PrismaClient } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, resolveTrilingualLocaleFamily } from '@tcrn/shared';
 
 /**
  * Database Service
@@ -122,9 +122,10 @@ export class DatabaseService {
   getLocalizedField<T extends Record<string, unknown>>(
     entity: T,
     fieldPrefix: string,
-    language: 'en' | 'zh' | 'ja' = 'en'
+    language: string = 'en'
   ): string {
-    const fieldName = `${fieldPrefix}${language.charAt(0).toUpperCase()}${language.slice(1)}` as keyof T;
+    const localeFamily = resolveTrilingualLocaleFamily(language);
+    const fieldName = `${fieldPrefix}${localeFamily.charAt(0).toUpperCase()}${localeFamily.slice(1)}` as keyof T;
     const fallbackField = `${fieldPrefix}En` as keyof T;
     
     return (entity[fieldName] as string) || (entity[fallbackField] as string) || '';
