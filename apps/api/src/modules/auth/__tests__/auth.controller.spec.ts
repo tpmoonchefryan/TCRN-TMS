@@ -67,7 +67,20 @@ describe('UserController TOTP queries', () => {
       account: 'alice@example.com',
     });
 
-    await controller.setupTotp(currentUser as never);
+    const result = await controller.setupTotp(currentUser as never);
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        secret: 'SECRET',
+        qrCode: 'data:image/png;base64,abc',
+        otpauthUrl: 'otpauth://totp/TCRN:alice@example.com?secret=SECRET',
+        issuer: 'TCRN TMS',
+        account: 'alice@example.com',
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain('qrCodeUrl');
+    expect(JSON.stringify(result)).not.toContain('accountName');
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = $1::uuid'),

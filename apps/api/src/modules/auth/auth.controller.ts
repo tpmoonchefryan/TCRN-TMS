@@ -1251,9 +1251,10 @@ export class UserController {
         success: true,
         data: {
           secret: 'JBSWY3DPEHPK3PXP',
-          qrCodeUrl: 'data:image/png;base64,...',
+          qrCode: 'data:image/png;base64,...',
+          otpauthUrl: 'otpauth://totp/TCRN%20TMS:john.doe%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS',
           issuer: 'TCRN TMS',
-          accountName: 'john.doe@example.com',
+          account: 'john.doe@example.com',
         },
       },
     },
