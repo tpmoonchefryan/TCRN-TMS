@@ -219,6 +219,36 @@ describe('LoginForm', () => {
     expect(confirmInput).toHaveAttribute('autocomplete', 'new-password');
   });
 
+  it('moves focus to the first active field for each login step', async () => {
+    mocks.login.mockResolvedValueOnce({
+      kind: 'totp_required',
+      sessionToken: 'totp-session',
+      expiresIn: 300,
+    });
+    mocks.login.mockResolvedValueOnce({
+      kind: 'password_reset_required',
+      sessionToken: 'reset-session',
+      expiresIn: 300,
+      reason: 'PASSWORD_RESET_REQUIRED',
+    });
+
+    const firstView = render(<LoginForm />);
+
+    expect(screen.getByLabelText('Tenant code')).toHaveFocus();
+
+    fillCredentials();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByLabelText('TOTP code')).toHaveFocus();
+
+    firstView.unmount();
+    render(<LoginForm />);
+    fillCredentials();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByLabelText('New password')).toHaveFocus();
+  });
+
   it('authenticates credentials and routes to the default workspace path', async () => {
     const result = buildAuthenticatedResult();
     mocks.login.mockResolvedValueOnce({

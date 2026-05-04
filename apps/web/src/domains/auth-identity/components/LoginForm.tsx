@@ -201,6 +201,7 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.tenantCodeLabel}</span>
                   <input
+                    autoFocus
                     name="tenantCode"
                     value={credentials.tenantCode}
                     onChange={(event) =>
@@ -277,6 +278,7 @@ export function LoginForm() {
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-slate-700">{loginCopy.totpLabel}</span>
                 <input
+                  autoFocus
                   name="totpCode"
                   inputMode="numeric"
                   pattern="[0-9]{6}"
@@ -298,6 +300,7 @@ export function LoginForm() {
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">{loginCopy.newPasswordLabel}</span>
                   <input
+                    autoFocus
                     name="newPassword"
                     type="password"
                     value={newPassword}
