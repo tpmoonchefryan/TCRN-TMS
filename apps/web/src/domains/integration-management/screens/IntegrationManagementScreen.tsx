@@ -15,7 +15,7 @@ import {
   Unplug,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   createConsumer,
@@ -1081,6 +1081,7 @@ export function IntegrationManagementScreen({
   const [adaptersPanel, setAdaptersPanel] = useState<PanelState<IntegrationAdapterListItemRecord[]>>(
     createPanelState<IntegrationAdapterListItemRecord[]>([]),
   );
+  const adaptersScopeRef = useRef<IntegrationScopeSelection | null>(null);
   const [adapterDetailPanel, setAdapterDetailPanel] = useState<PanelState<IntegrationAdapterDetailRecord | null>>(
     createPanelState<IntegrationAdapterDetailRecord | null>(null, false),
   );
@@ -1352,15 +1353,21 @@ export function IntegrationManagementScreen({
   }
 
   async function refreshAdapters(preferredId?: string | null) {
-    if (!selectedIntegrationScope) {
+    const scope = selectedIntegrationScope;
+
+    if (!scope) {
+      adaptersScopeRef.current = null;
       setAdaptersPanel(createPanelState<IntegrationAdapterListItemRecord[]>([], false));
       setSelectedAdapterId(null);
       setAdapterPage(1);
       return;
     }
 
+    const shouldRetainAdapters = scopeMatches(adaptersScopeRef.current, scope);
+    adaptersScopeRef.current = scope;
+
     setAdaptersPanel((current) => ({
-      ...current,
+      data: shouldRetainAdapters ? current.data : [],
       loading: true,
       error: null,
       unavailableReason: null,
@@ -1368,9 +1375,14 @@ export function IntegrationManagementScreen({
 
     try {
       const data =
-        selectedIntegrationScope.ownerType === 'tenant'
+        scope.ownerType === 'tenant'
           ? await listTenantAdapters(request)
-          : await listScopedAdapters(request, selectedIntegrationScope);
+          : await listScopedAdapters(request, scope);
+
+      if (!scopeMatches(adaptersScopeRef.current, scope)) {
+        return;
+      }
+
       setAdaptersPanel({
         data,
         loading: false,
@@ -1394,6 +1406,10 @@ export function IntegrationManagementScreen({
         setAdapterPage(targetIndex >= 0 ? resolvePageForIndex(targetIndex, adapterPageSize) : 1);
       }
     } catch (reason) {
+      if (!scopeMatches(adaptersScopeRef.current, scope)) {
+        return;
+      }
+
       const unavailableReason = getUnavailableReason(reason);
       setAdaptersPanel((current) => ({
         data: current.data,

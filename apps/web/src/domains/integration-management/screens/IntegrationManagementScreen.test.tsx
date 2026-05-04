@@ -381,6 +381,127 @@ describe('IntegrationManagementScreen', () => {
     expect(screen.queryByRole('button', { name: 'Email' })).not.toBeInTheDocument();
   });
 
+  it('ignores stale adapter responses after switching integration scope', async () => {
+    const user = userEvent.setup();
+    let resolveTenantAdapters: (value: unknown[]) => void = () => {};
+    const tenantAdapters = new Promise<unknown[]>((resolve) => {
+      resolveTenantAdapters = resolve;
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return tenantAdapters;
+      }
+
+      if (path === '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [
+          {
+            id: 'adapter-sub-1',
+            ownerType: 'subsidiary',
+            ownerId: 'subsidiary-1',
+            platformId: 'platform-1',
+            platform: {
+              code: 'BILIBILI',
+              displayName: 'Bilibili',
+              iconUrl: null,
+            },
+            code: 'TOKYO_SYNC',
+            nameEn: 'Tokyo Sync',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: 1,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: 2,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-sub-1') {
+        return {
+          id: 'adapter-sub-1',
+          ownerType: 'subsidiary',
+          ownerId: 'subsidiary-1',
+          platform: {
+            id: 'platform-1',
+            code: 'BILIBILI',
+            displayName: 'Bilibili',
+          },
+          code: 'TOKYO_SYNC',
+          nameEn: 'Tokyo Sync',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 2,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith('/api/v1/integration/adapters?includeInherited=true&includeDisabled=true');
+    });
+
+    await selectSubsidiaryScope(user);
+    expect(await screen.findByText('TOKYO_SYNC')).toBeInTheDocument();
+
+    resolveTenantAdapters([
+      {
+        id: 'adapter-tenant-1',
+        ownerType: 'tenant',
+        ownerId: null,
+        platformId: 'platform-1',
+        platform: {
+          code: 'BILIBILI',
+          displayName: 'Bilibili',
+          iconUrl: null,
+        },
+        code: 'TENANT_SYNC',
+        nameEn: 'Tenant Sync',
+        nameZh: null,
+        nameJa: null,
+        adapterType: 'api_key',
+        inherit: true,
+        isActive: true,
+        isInherited: false,
+        configCount: 1,
+        createdAt: '2026-04-17T08:00:00.000Z',
+        updatedAt: '2026-04-17T09:00:00.000Z',
+        version: 2,
+      },
+    ]);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 10);
+    });
+
+    expect(screen.getByText('TOKYO_SYNC')).toBeInTheDocument();
+    expect(screen.queryByText('TENANT_SYNC')).not.toBeInTheDocument();
+    expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/integration/adapters/adapter-tenant-1');
+  });
+
   it('keeps API client key lifecycle in the AC integration workspace only', async () => {
     const user = userEvent.setup();
     pathname = '/ac/tenant-ac/integration-management';
