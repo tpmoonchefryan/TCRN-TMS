@@ -177,6 +177,31 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
   });
 
+  it('renders the login hero description as animated visual copy with screen-reader text', () => {
+    const heroDescription = 'Record every drop of sweat behind the spotlight.';
+    localeState.copy.auth.login = buildLoginCopy({
+      heroDescription,
+      heroTitle: 'Welcome to TCRN TMS',
+    });
+
+    const { container } = render(<LoginForm />);
+
+    expect(screen.getByText('Welcome to TCRN TMS')).toBeInTheDocument();
+
+    const visualDescription = container.querySelector('.login-hero-typewriter');
+    expect(visualDescription).toHaveAttribute('aria-hidden', 'true');
+    expect(visualDescription).toHaveTextContent(heroDescription);
+    expect((visualDescription as HTMLElement).style.getPropertyValue('--hero-characters')).toBe(
+      String(heroDescription.length),
+    );
+
+    const screenReaderDescription = screen
+      .getAllByText(heroDescription)
+      .find((element) => element.classList.contains('sr-only'));
+    expect(screenReaderDescription).toBeDefined();
+    expect(container.querySelector('style')?.textContent).toContain('prefers-reduced-motion: reduce');
+  });
+
   it('uses stable form semantics for login, TOTP, and password-reset fields', async () => {
     mocks.login.mockResolvedValueOnce({
       kind: 'totp_required',

@@ -84,6 +84,7 @@ export function LoginForm() {
 
   const heroTitle = loginCopy.heroTitle.trim();
   const heroDescription = loginCopy.heroDescription.trim();
+  const heroDescriptionCharacterCount = Math.max(heroDescription.length, 1);
   const surfaceNote = loginCopy.surfaceNote.trim();
 
   function finishAuthentication(result: AuthenticatedSessionResult) {
@@ -167,7 +168,16 @@ export function LoginForm() {
               <p className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">{heroTitle}</p>
             ) : null}
             {heroDescription ? (
-              <p className="max-w-2xl text-base leading-7 text-slate-600">{heroDescription}</p>
+              <p className="max-w-2xl text-base leading-7 text-slate-700 [text-shadow:0_1px_0_rgba(255,255,255,0.7)]">
+                <span className="sr-only">{heroDescription}</span>
+                <span
+                  aria-hidden="true"
+                  className="login-hero-typewriter inline-block max-w-full overflow-hidden whitespace-nowrap border-r-2 border-slate-700 pr-1 align-bottom"
+                  style={{ '--hero-characters': heroDescriptionCharacterCount } as React.CSSProperties}
+                >
+                  {heroDescription}
+                </span>
+              </p>
             ) : null}
           </div>
 
@@ -350,6 +360,45 @@ export function LoginForm() {
           </form>
         </section>
       </div>
+
+      {heroDescription ? (
+        <style>{`
+          .login-hero-typewriter {
+            max-width: 0;
+            animation:
+              loginHeroTyping 3s steps(var(--hero-characters), end) 0.35s forwards,
+              loginHeroCaret 1s step-end infinite;
+          }
+
+          @keyframes loginHeroTyping {
+            from {
+              max-width: 0;
+            }
+            to {
+              max-width: 100%;
+            }
+          }
+
+          @keyframes loginHeroCaret {
+            0%,
+            100% {
+              border-color: transparent;
+            }
+            50% {
+              border-color: rgb(51 65 85);
+            }
+          }
+
+          @media (max-width: 640px), (prefers-reduced-motion: reduce) {
+            .login-hero-typewriter {
+              max-width: 100%;
+              white-space: normal;
+              animation: none;
+              border-right-color: transparent;
+            }
+          }
+        `}</style>
+      ) : null}
     </div>
   );
 }
