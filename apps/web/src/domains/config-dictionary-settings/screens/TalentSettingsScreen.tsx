@@ -15,6 +15,7 @@ import { startTransition, useEffect, useRef, useState } from 'react';
 
 import {
   readTalentCustomDomainConfig,
+  selectInheritedCustomDomains,
   setTalentCustomDomain,
   type TalentCustomDomainConfigResponse,
   updateTalentCustomDomainSslMode,
@@ -139,6 +140,14 @@ function buildFixedCustomDomainRoute(
 
   return customDomain ? `https://${customDomain}/${pathSegment}` : fallback;
 }
+
+
+function buildEffectiveCustomDomainRoute(domain: TalentCustomDomainConfigResponse['domains'][number], route: 'homepage' | 'marshmallow') {
+  const path = route === 'homepage' ? domain.homepagePath : domain.marshmallowPath;
+
+  return `https://${domain.hostname}/${path}`;
+}
+
 
 function formatBoolean(value: boolean | null | undefined, truthy: string, falsy: string) {
   return value ? truthy : falsy;
@@ -443,6 +452,10 @@ export function TalentSettingsScreen({
   const [customDomainSslPending, setCustomDomainSslPending] = useState(false);
   const [customDomainSslError, setCustomDomainSslError] = useState<string | null>(null);
   const [customDomainSslSuccess, setCustomDomainSslSuccess] = useState<string | null>(null);
+  const [selectedInheritedDomainIdsDraft, setSelectedInheritedDomainIdsDraft] = useState<string[]>([]);
+  const [inheritedDomainSelectionPending, setInheritedDomainSelectionPending] = useState(false);
+  const [inheritedDomainSelectionError, setInheritedDomainSelectionError] = useState<string | null>(null);
+  const [inheritedDomainSelectionSuccess, setInheritedDomainSelectionSuccess] = useState<string | null>(null);
   const [marshmallowEnabledDraft, setMarshmallowEnabledDraft] = useState<boolean | null>(null);
   const [marshmallowSavePending, setMarshmallowSavePending] = useState(false);
   const [marshmallowSaveError, setMarshmallowSaveError] = useState<string | null>(null);
@@ -634,6 +647,7 @@ export function TalentSettingsScreen({
           });
           setCustomDomainDraft(customDomainResult.value.customDomain ?? '');
           setCustomDomainSslModeDraft(customDomainResult.value.customDomainSslMode);
+          setSelectedInheritedDomainIdsDraft(customDomainResult.value.selectedInheritedDomainIds);
         } else {
           setCustomDomainPanel({
             data: null,
@@ -644,6 +658,7 @@ export function TalentSettingsScreen({
           });
           setCustomDomainDraft('');
           setCustomDomainSslModeDraft('auto');
+          setSelectedInheritedDomainIdsDraft([]);
         }
         setMarshmallowPanel({
           data: marshmallowResult.status === 'fulfilled' ? marshmallowResult.value : null,
@@ -717,6 +732,11 @@ export function TalentSettingsScreen({
   const hasDirtyCustomDomainSslMode =
     customDomainPanel.data !== null &&
     customDomainPanel.data.customDomainSslMode !== customDomainSslModeDraft;
+  const selectedInheritedDomainIdSet = new Set(selectedInheritedDomainIdsDraft);
+  const sortedSelectedInheritedDomainIds = [...selectedInheritedDomainIdsDraft].sort();
+  const persistedSelectedInheritedDomainIds = customDomainPanel.data?.selectedInheritedDomainIds ?? [];
+  const hasDirtyInheritedDomainSelection =
+    sortedSelectedInheritedDomainIds.join('\n') !== [...persistedSelectedInheritedDomainIds].sort().join('\n');
   const homepageVerificationTxtRecord = buildVerificationTxtRecord(
     customDomainPanel.data?.customDomainVerificationToken ?? null,
   );
@@ -833,29 +853,15 @@ export function TalentSettingsScreen({
       const result = await setTalentCustomDomain(request, talentId, {
         customDomain: normalizedCustomDomainDraft,
       });
+      const nextConfig = await readTalentCustomDomainConfig(request, talentId);
 
-      setCustomDomainPanel((current) => ({
-        data: current.data
-          ? {
-              ...current.data,
-              customDomain: result.customDomain,
-              customDomainVerified: false,
-              customDomainVerificationToken: result.token,
-            }
-          : {
-              customDomain: result.customDomain,
-              customDomainVerified: false,
-              customDomainVerificationToken: result.token,
-              customDomainSslMode: 'auto',
-              homepageCustomPath: null,
-              marshmallowCustomPath: null,
-              domains: [],
-              inheritedDomains: [],
-              selectedInheritedDomainIds: [],
-            },
+      setCustomDomainPanel({
+        data: nextConfig,
         error: null,
-      }));
-      setCustomDomainDraft(result.customDomain ?? '');
+      });
+      setCustomDomainDraft(nextConfig.customDomain ?? '');
+      setCustomDomainSslModeDraft(nextConfig.customDomainSslMode);
+      setSelectedInheritedDomainIdsDraft(nextConfig.selectedInheritedDomainIds);
       setCustomDomainSuccess(
         result.customDomain
           ? text('Custom domain saved.', '自定义域名已保存。', 'カスタムドメインを保存しました。')
@@ -879,17 +885,26 @@ export function TalentSettingsScreen({
 
     try {
       const result = await verifyTalentCustomDomain(request, talentId);
-      setCustomDomainPanel((current) =>
-        current.data
-          ? {
-              data: {
-                ...current.data,
-                customDomainVerified: result.verified,
-              },
-              error: current.error,
-            }
-          : current,
-      );
+      if (result.verified) {
+        const nextConfig = await readTalentCustomDomainConfig(request, talentId);
+        setCustomDomainPanel({
+          data: nextConfig,
+          error: null,
+        });
+        setSelectedInheritedDomainIdsDraft(nextConfig.selectedInheritedDomainIds);
+      } else {
+        setCustomDomainPanel((current) =>
+          current.data
+            ? {
+                data: {
+                  ...current.data,
+                  customDomainVerified: false,
+                },
+                error: current.error,
+              }
+            : current,
+        );
+      }
       setCustomDomainVerifyNotice({
         tone: result.verified ? 'success' : 'error',
         message: result.message,
@@ -901,6 +916,57 @@ export function TalentSettingsScreen({
       });
     } finally {
       setCustomDomainVerifyPending(false);
+    }
+  }
+
+
+  function handleToggleInheritedDomain(domainId: string, selected: boolean) {
+    setSelectedInheritedDomainIdsDraft((current) => {
+      const currentSet = new Set(current);
+
+      if (selected) {
+        currentSet.add(domainId);
+      } else {
+        currentSet.delete(domainId);
+      }
+
+      return [...currentSet];
+    });
+    setInheritedDomainSelectionError(null);
+    setInheritedDomainSelectionSuccess(null);
+  }
+
+  async function handleSaveInheritedDomainSelection() {
+    if (!customDomainPanel.data || inheritedDomainSelectionPending || !hasDirtyInheritedDomainSelection) {
+      return;
+    }
+
+    setInheritedDomainSelectionPending(true);
+    setInheritedDomainSelectionError(null);
+    setInheritedDomainSelectionSuccess(null);
+
+    try {
+      const nextConfig = await selectInheritedCustomDomains(request, talentId, {
+        domainIds: sortedSelectedInheritedDomainIds,
+      });
+
+      setCustomDomainPanel({
+        data: nextConfig,
+        error: null,
+      });
+      setSelectedInheritedDomainIdsDraft(nextConfig.selectedInheritedDomainIds);
+      setInheritedDomainSelectionSuccess(
+        text('Inherited domain selections saved.', '继承域名选择已保存。', '継承ドメインの選択を保存しました。'),
+      );
+    } catch (reason) {
+      setInheritedDomainSelectionError(
+        getErrorMessage(
+          reason,
+          text('Failed to save inherited domain selections.', '保存继承域名选择失败。', '継承ドメインの選択保存に失敗しました。'),
+        ),
+      );
+    } finally {
+      setInheritedDomainSelectionPending(false);
     }
   }
 
@@ -1991,6 +2057,116 @@ export function TalentSettingsScreen({
                           {customDomainError ? <NoticeBanner tone="error" message={customDomainError} /> : null}
                           {customDomainSuccess ? <NoticeBanner tone="success" message={customDomainSuccess} /> : null}
                         </div>
+
+
+                        {customDomainPanel.data.domains.length > 0 ? (
+                          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                {text('Domain inventory', '域名清单', 'ドメイン一覧')}
+                              </p>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {text('Dedicated and inherited public routes', '专用与继承公开路由', '専用および継承公開ルート')}
+                              </p>
+                              <p className="text-sm leading-6 text-slate-600">
+                                {text(
+                                  'Talent-owned domains keep /homepage and /marshmallow. Tenant or subsidiary domains require the talent code path segment.',
+                                  '艺人专用域名继续使用 /homepage 与 /marshmallow；租户或分目录继承域名需要带艺人代码路径段。',
+                                  'タレント所有ドメインは /homepage と /marshmallow を維持します。テナントまたは配下スコープの継承ドメインではタレントコードのパス区間が必要です。',
+                                )}
+                              </p>
+                            </div>
+
+                            <div className="space-y-3">
+                              {customDomainPanel.data.domains.map((domain) => {
+                                const canSelectInheritedDomain = domain.inherited && domain.customDomainVerified && (domain.isActive ?? true);
+                                const inheritedSelectionDisabled = domain.inherited && !canSelectInheritedDomain;
+
+                                return (
+                                  <div key={domain.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                      <div className="min-w-0 space-y-1">
+                                        <p className="break-all font-mono text-sm font-semibold text-slate-950">{domain.hostname}</p>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                          {domain.ownerType === 'talent'
+                                            ? text('Talent dedicated', '艺人专用', 'タレント専用')
+                                            : domain.ownerType === 'subsidiary'
+                                              ? text('Subsidiary inherited', '分目录继承', '配下スコープ継承')
+                                              : text('Tenant inherited', '租户继承', 'テナント継承')} · {domain.routeMode === 'scoped_talent_path' ? text('Scoped route', '带艺人路径路由', 'スコープ付きルート') : text('Dedicated route', '专用路由', '専用ルート')}
+                                        </p>
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${domain.customDomainVerified ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                                          {domain.customDomainVerified ? text('Verified', '已验证', '検証済み') : text('Unverified', '未验证', '未検証')}
+                                        </span>
+                                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${(domain.isActive ?? true) ? 'border-slate-200 bg-white text-slate-600' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>
+                                          {(domain.isActive ?? true) ? text('Active', '启用中', '有効') : text('Inactive', '停用', '無効')}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                      <FieldRow
+                                        label={text('Homepage preview', '主页预览', 'ホームページプレビュー')}
+                                        value={buildEffectiveCustomDomainRoute(domain, 'homepage')}
+                                        valueClassName="font-mono text-sm leading-7"
+                                      />
+                                      <FieldRow
+                                        label={text('Marshmallow preview', '棉花糖预览', 'マシュマロプレビュー')}
+                                        value={buildEffectiveCustomDomainRoute(domain, 'marshmallow')}
+                                        valueClassName="font-mono text-sm leading-7"
+                                      />
+                                    </div>
+
+                                    {domain.inherited ? (
+                                      <label className="mt-3 flex items-start gap-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-sm text-slate-700">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedInheritedDomainIdSet.has(domain.id)}
+                                          disabled={inheritedSelectionDisabled}
+                                          onChange={(event) => handleToggleInheritedDomain(domain.id, event.target.checked)}
+                                          className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-950 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                          aria-label={text(
+                                            `Select inherited domain ${domain.hostname}`,
+                                            `选择继承域名 ${domain.hostname}`,
+                                            `継承ドメイン ${domain.hostname} を選択`,
+                                          )}
+                                        />
+                                        <span className="space-y-1">
+                                          <span className="block font-semibold text-slate-900">
+                                            {text('Publish this inherited domain for the talent', '为该艺人发布此继承域名', 'このタレントに継承ドメインを公開')}
+                                          </span>
+                                          <span className="block leading-6 text-slate-600">
+                                            {canSelectInheritedDomain
+                                              ? text('Selection is explicit; inherited domains are not published automatically.', '选择是显式的；继承域名不会自动对该艺人发布。', '選択は明示的です。継承ドメインは自動公開されません。')
+                                              : text('Verify and activate the inherited domain before selecting it.', '请先验证并启用该继承域名，再进行选择。', '選択する前に継承ドメインを検証し有効化してください。')}
+                                          </span>
+                                        </span>
+                                      </label>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {customDomainPanel.data.inheritedDomains.length > 0 ? (
+                              <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSaveInheritedDomainSelection()}
+                                  disabled={inheritedDomainSelectionPending || !hasDirtyInheritedDomainSelection}
+                                  className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {inheritedDomainSelectionPending
+                                    ? text('Saving inherited domains…', '正在保存继承域名…', '継承ドメインを保存中…')
+                                    : text('Save inherited domain selection', '保存继承域名选择', '継承ドメイン選択を保存')}
+                                </button>
+                              </div>
+                            ) : null}
+                            {inheritedDomainSelectionError ? <NoticeBanner tone="error" message={inheritedDomainSelectionError} /> : null}
+                            {inheritedDomainSelectionSuccess ? <NoticeBanner tone="success" message={inheritedDomainSelectionSuccess} /> : null}
+                          </div>
+                        ) : null}
 
                         {customDomainPanel.data.customDomain ? (
                           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">

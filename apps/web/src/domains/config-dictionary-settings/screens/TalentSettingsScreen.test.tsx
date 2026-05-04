@@ -1151,6 +1151,237 @@ describe('TalentSettingsScreen', () => {
     ).toBe(false);
   });
 
+
+  it('shows inherited custom-domain route previews and saves explicit selections', async () => {
+    currentSearch = 'section=settings&focus=homepage-routing';
+    let customDomainConfig: TalentCustomDomainConfigResponse = {
+      customDomain: 'fans.example.com',
+      customDomainVerified: true,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      homepageCustomPath: 'homepage',
+      marshmallowCustomPath: 'marshmallow',
+      domains: [
+        {
+          id: 'legacy:fans.example.com',
+          hostname: 'fans.example.com',
+          ownerType: 'talent',
+          ownerId: 'talent-1',
+          inherited: false,
+          selected: true,
+          customDomainVerified: true,
+          customDomainSslMode: 'auto',
+          isActive: true,
+          routeMode: 'dedicated_talent',
+          routePrefix: null,
+          homepagePath: 'homepage',
+          marshmallowPath: 'marshmallow',
+        },
+        {
+          id: 'tenant-domain',
+          hostname: 'brand.example.com',
+          ownerType: 'tenant',
+          ownerId: null,
+          inherited: true,
+          selected: false,
+          customDomainVerified: true,
+          customDomainSslMode: 'cloudflare',
+          isActive: true,
+          routeMode: 'scoped_talent_path',
+          routePrefix: 'sora',
+          homepagePath: 'sora/homepage',
+          marshmallowPath: 'sora/marshmallow',
+        },
+        {
+          id: 'unverified-domain',
+          hostname: 'draft.example.com',
+          ownerType: 'subsidiary',
+          ownerId: 'subsidiary-1',
+          inherited: true,
+          selected: false,
+          customDomainVerified: false,
+          customDomainSslMode: 'auto',
+          isActive: true,
+          routeMode: 'scoped_talent_path',
+          routePrefix: 'sora',
+          homepagePath: 'sora/homepage',
+          marshmallowPath: 'sora/marshmallow',
+        },
+      ],
+      inheritedDomains: [],
+      selectedInheritedDomainIds: [],
+    };
+    customDomainConfig = {
+      ...customDomainConfig,
+      inheritedDomains: customDomainConfig.domains.filter((domain) => domain.inherited),
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/talents/talent-1' && !init) {
+        return {
+          id: 'talent-1',
+          subsidiaryId: 'subsidiary-1',
+          profileStoreId: 'store-1',
+          profileStore: {
+            id: 'store-1',
+            code: 'DEFAULT_STORE',
+            nameEn: 'Default Store',
+            nameZh: '默认档案库',
+            nameJa: null,
+            translations: { en: 'Default Store', zh_HANS: '默认档案库' },
+            isDefault: true,
+            piiProxyUrl: 'https://pii.internal.test',
+          },
+          code: 'SORA',
+          path: '/TOKYO/SORA/',
+          nameEn: 'Tokino Sora',
+          nameZh: '时乃空',
+          nameJa: 'ときのそら',
+          name: 'Tokino Sora',
+          displayName: 'Sora',
+          descriptionEn: null,
+          descriptionZh: null,
+          descriptionJa: null,
+          avatarUrl: null,
+          homepagePath: 'sora',
+          timezone: 'Asia/Tokyo',
+          lifecycleStatus: 'published',
+          publishedAt: '2026-04-17T00:00:00.000Z',
+          publishedBy: 'user-1',
+          isActive: true,
+          settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
+          stats: { customerCount: 12, homepageVersionCount: 2, marshmallowMessageCount: 9 },
+          externalPagesDomain: { homepage: { isPublished: true }, marshmallow: { isEnabled: true } },
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:10:00.000Z',
+          version: 5,
+        } satisfies TalentDetailResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/settings' && !init) {
+        return {
+          scopeType: 'talent',
+          scopeId: 'talent-1',
+          settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
+          overrides: [],
+          inheritedFrom: { defaultLanguage: 'tenant', timezone: 'tenant', allowCustomHomepage: 'tenant' },
+          version: 5,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage' && !init) {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: true,
+          publishedVersion: {
+            id: 'version-1',
+            versionNumber: 1,
+            createdAt: '2026-04-17T00:00:00.000Z',
+            publishedAt: '2026-04-17T00:05:00.000Z',
+            publishedBy: { id: 'user-1', username: 'Admin User' },
+          },
+          draftVersion: null,
+          customDomain: 'fans.example.com',
+          customDomainVerified: true,
+          seoTitle: null,
+          seoDescription: null,
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:10:00.000Z',
+          version: 3,
+        } satisfies HomepageResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/custom-domain' && !init) {
+        return customDomainConfig;
+      }
+
+      if (path === '/api/v1/talents/talent-1/custom-domain/inherited-selections' && init?.method === 'PATCH') {
+        customDomainConfig = {
+          ...customDomainConfig,
+          selectedInheritedDomainIds: ['tenant-domain'],
+          domains: customDomainConfig.domains.map((domain) => ({
+            ...domain,
+            selected: domain.id === 'tenant-domain' || !domain.inherited,
+          })),
+        };
+        customDomainConfig = {
+          ...customDomainConfig,
+          inheritedDomains: customDomainConfig.domains.filter((domain) => domain.inherited),
+        };
+
+        return customDomainConfig;
+      }
+
+      if (path === '/api/v1/talents/talent-1/publish-readiness') {
+        return {
+          id: 'talent-1',
+          lifecycleStatus: 'published',
+          targetState: 'disabled',
+          recommendedAction: 'disable',
+          canEnterPublishedState: true,
+          blockers: [],
+          warnings: [],
+          version: 5,
+        } satisfies TalentPublishReadinessResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/marshmallow/config' && !init) {
+        return {
+          isEnabled: true,
+          allowAnonymous: true,
+          requireCaptcha: false,
+          moderationEnabled: true,
+          rateLimitPerMinute: 5,
+          sensitiveWordsEnabled: true,
+          notifyByEmail: false,
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      if (path.startsWith('/api/v1/configuration-entity/') && !init) {
+        return [];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByText('Domain inventory')).toBeInTheDocument();
+    expect(screen.getByText('https://brand.example.com/sora/homepage')).toBeInTheDocument();
+    expect(screen.getByText('https://brand.example.com/sora/marshmallow')).toBeInTheDocument();
+    expect(screen.getAllByText('https://fans.example.com/homepage').length).toBeGreaterThan(0);
+
+    const tenantSelection = screen.getByLabelText('Select inherited domain brand.example.com');
+    const unverifiedSelection = screen.getByLabelText('Select inherited domain draft.example.com');
+    expect(tenantSelection).not.toBeChecked();
+    expect(unverifiedSelection).toBeDisabled();
+
+    fireEvent.click(tenantSelection);
+    fireEvent.click(screen.getByRole('button', { name: 'Save inherited domain selection' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/custom-domain/inherited-selections',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ domainIds: ['tenant-domain'] }),
+        }),
+      );
+    });
+    expect(await screen.findByText('Inherited domain selections saved.')).toBeInTheDocument();
+  });
+
+
   it('does not render deprecated homepage-path editors when the settings route focuses homepage routing', async () => {
     currentSearch = 'section=settings&focus=homepage-routing';
 
