@@ -29,6 +29,8 @@ describe('TalentCustomDomainService', () => {
     markCustomDomainVerified: vi.fn(),
     updateServicePaths: vi.fn(),
     updateSslMode: vi.fn(),
+    listCustomDomainBindingsForTalent: vi.fn(),
+    listSelectedInheritedDomainIds: vi.fn(),
   } as unknown as TalentCustomDomainRepository;
 
   const service = new TalentCustomDomainService(mockRepository);
@@ -64,8 +66,66 @@ describe('TalentCustomDomainService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('returns legacy-compatible config with additive effective domain fields', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: 'sub-1',
+      customDomain: 'talent.example.com',
+      customDomainVerified: true,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'auto',
+      homepageCustomPath: 'legacy-home',
+      marshmallowCustomPath: 'legacy-ask',
+    });
+    vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockResolvedValue([
+      {
+        id: 'tenant-domain',
+        hostname: 'tenant.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        customDomainVerified: true,
+        customDomainVerificationToken: null,
+        customDomainSslMode: 'cloudflare',
+        isActive: true,
+      },
+    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([
+      'tenant-domain',
+    ]);
+
+    await expect(
+      service.getCustomDomainConfig('talent-123', 'tenant_test'),
+    ).resolves.toMatchObject({
+      customDomain: 'talent.example.com',
+      homepageCustomPath: 'homepage',
+      marshmallowCustomPath: 'marshmallow',
+      selectedInheritedDomainIds: ['tenant-domain'],
+      domains: [
+        expect.objectContaining({
+          hostname: 'talent.example.com',
+          routeMode: 'dedicated_talent',
+          homepagePath: 'homepage',
+        }),
+        expect.objectContaining({
+          id: 'tenant-domain',
+          selected: true,
+          routeMode: 'scoped_talent_path',
+          homepagePath: 'shiori/homepage',
+        }),
+      ],
+      inheritedDomains: [
+        expect.objectContaining({ id: 'tenant-domain' }),
+      ],
+    });
+  });
+
   it('verifies the custom domain when the expected TXT record exists', async () => {
     vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
       customDomain: 'talent.example.com',
       customDomainVerified: false,
       customDomainVerificationToken: 'token-123',
@@ -87,6 +147,9 @@ describe('TalentCustomDomainService', () => {
 
   it('returns fixed custom-domain paths and does not mutate legacy path storage', async () => {
     vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
       customDomain: 'talent.example.com',
       customDomainVerified: false,
       customDomainVerificationToken: 'token-123',

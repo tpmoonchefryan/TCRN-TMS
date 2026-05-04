@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
 import type {
+  DomainLookupBindingRouteRecord,
   DomainLookupRouteRecord,
   HomepageVersionRecord,
   PublicHomepageTalentRecord,
@@ -107,6 +108,38 @@ export class PublicHomepageReadRepository {
     `, talentId);
 
     return talents[0] ?? null;
+  }
+
+
+  async findVerifiedDomainBindingRoute(
+    schema: string,
+    normalizedDomain: string,
+  ): Promise<DomainLookupBindingRouteRecord | null> {
+    const prisma = this.databaseService.getPrisma();
+    const results = await prisma.$queryRawUnsafe<DomainLookupBindingRouteRecord[]>(`
+      SELECT
+        binding.id as "domainId",
+        binding.hostname,
+        binding.owner_type as "ownerType",
+        binding.owner_id as "ownerId",
+        tenant.schema_name as "tenantSchema",
+        talent.id as "talentId"
+      FROM public.tenant tenant
+      JOIN public.custom_domain_binding binding ON binding.tenant_id = tenant.id
+      LEFT JOIN "${schema}".talent talent ON (
+        binding.owner_type = 'talent'
+        AND binding.owner_id = talent.id
+        AND talent.lifecycle_status = 'published'
+      )
+      WHERE tenant.schema_name = $1
+        AND binding.hostname = $2
+        AND binding.custom_domain_verified = true
+        AND binding.is_active = true
+        AND (binding.owner_type != 'talent' OR talent.id IS NOT NULL)
+      LIMIT 1
+    `, schema, normalizedDomain);
+
+    return results[0] ?? null;
   }
 
   async findVerifiedDomainRoute(

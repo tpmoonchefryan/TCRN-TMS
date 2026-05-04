@@ -51,6 +51,13 @@ describe('PublicHomepageService', () => {
       marshmallowPath: 'demo-mm',
       tenantSchema: 'tenant_demo',
       talentId: '550e8400-e29b-41d4-a716-446655440000',
+      domainId: null,
+      hostname: null,
+      ownerType: 'legacy_talent',
+      ownerId: '550e8400-e29b-41d4-a716-446655440000',
+      routeMode: 'dedicated_talent',
+      routePrefix: null,
+      requiresTalentPath: false,
     });
     mockPublicHomepageReadRepository.findPublishedTalentById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',

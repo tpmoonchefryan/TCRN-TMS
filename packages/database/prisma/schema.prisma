@@ -28,8 +28,54 @@ model Tenant {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
+  customDomainBindings CustomDomainBinding[]
+  customDomainTalentSelections CustomDomainTalentSelection[]
+
   @@index([code])
   @@map("tenant")
+  @@schema("public")
+}
+
+
+/// Custom Domain Binding - Global hostname registry for tenant/subsidiary/talent owned domains
+model CustomDomainBinding {
+  id                            String   @id @default(uuid()) @db.Uuid
+  tenantId                      String   @map("tenant_id") @db.Uuid
+  ownerType                     String   @map("owner_type") @db.VarChar(16)
+  ownerId                       String?  @map("owner_id") @db.Uuid
+  hostname                      String   @unique @db.VarChar(255)
+  customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
+  customDomainVerificationToken String?  @map("custom_domain_verification_token") @db.VarChar(64)
+  customDomainSslMode           String   @default("auto") @map("custom_domain_ssl_mode") @db.VarChar(32)
+  isActive                      Boolean  @default(true) @map("is_active")
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  selections CustomDomainTalentSelection[]
+
+  @@index([tenantId, ownerType, ownerId])
+  @@index([isActive])
+  @@map("custom_domain_binding")
+  @@schema("public")
+}
+
+/// Custom Domain Talent Selection - Explicit talent publication on inherited domains
+model CustomDomainTalentSelection {
+  id                    String   @id @default(uuid()) @db.Uuid
+  tenantId              String   @map("tenant_id") @db.Uuid
+  customDomainBindingId String   @map("custom_domain_binding_id") @db.Uuid
+  talentId              String   @map("talent_id") @db.Uuid
+  isEnabled             Boolean  @default(true) @map("is_enabled")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customDomainBinding CustomDomainBinding @relation(fields: [customDomainBindingId], references: [id], onDelete: Cascade)
+
+  @@unique([customDomainBindingId, talentId])
+  @@index([tenantId, talentId])
+  @@map("custom_domain_talent_selection")
   @@schema("public")
 }
 

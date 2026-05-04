@@ -118,7 +118,7 @@ export class PublicHomepageService {
   async getPublishedHomepageByDomain(domain: string): Promise<PublicHomepageData | null> {
     const mapping = await this.domainLookupService.lookupDomain(domain);
 
-    if (!mapping) {
+    if (!mapping || !mapping.talentId) {
       return null;
     }
 

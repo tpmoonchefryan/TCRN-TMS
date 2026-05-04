@@ -775,8 +775,28 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       customDomainSslMode: { type: 'string', example: 'cloudflare' },
       homepageCustomPath: { type: 'string', nullable: true, example: 'homepage' },
       marshmallowCustomPath: { type: 'string', nullable: true, example: 'marshmallow' },
+      domains: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'legacy:fans.example.com' },
+            hostname: { type: 'string', example: 'fans.example.com' },
+            ownerType: { type: 'string', example: 'talent' },
+            ownerId: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440001' },
+            inherited: { type: 'boolean', example: false },
+            selected: { type: 'boolean', example: true },
+            routeMode: { type: 'string', example: 'dedicated_talent' },
+            routePrefix: { type: 'string', nullable: true, example: null },
+            homepagePath: { type: 'string', example: 'homepage' },
+            marshmallowPath: { type: 'string', example: 'marshmallow' },
+          },
+        },
+      },
+      inheritedDomains: { type: 'array', items: { type: 'object' } },
+      selectedInheritedDomainIds: { type: 'array', items: { type: 'string' } },
     },
-    required: ['customDomain', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'homepageCustomPath', 'marshmallowCustomPath'],
+    required: ['customDomain', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'homepageCustomPath', 'marshmallowCustomPath', 'domains', 'inheritedDomains', 'selectedInheritedDomainIds'],
   },
   {
     customDomain: 'fans.example.com',
@@ -785,6 +805,22 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     customDomainSslMode: 'cloudflare',
     homepageCustomPath: 'homepage',
     marshmallowCustomPath: 'marshmallow',
+    domains: [
+      {
+        id: 'legacy:fans.example.com',
+        hostname: 'fans.example.com',
+        ownerType: 'talent',
+        ownerId: '550e8400-e29b-41d4-a716-446655440001',
+        inherited: false,
+        selected: true,
+        routeMode: 'dedicated_talent',
+        routePrefix: null,
+        homepagePath: 'homepage',
+        marshmallowPath: 'marshmallow',
+      },
+    ],
+    inheritedDomains: [],
+    selectedInheritedDomainIds: [],
   },
 );
 

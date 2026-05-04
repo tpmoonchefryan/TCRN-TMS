@@ -38,6 +38,13 @@ export class PublicDomainController {
         talentPath: result.homepagePath,
         homepagePath: result.homepagePath,
         marshmallowPath: result.marshmallowPath,
+        domainId: result.domainId,
+        hostname: result.hostname,
+        ownerType: result.ownerType,
+        ownerId: result.ownerId,
+        routeMode: result.routeMode,
+        routePrefix: result.routePrefix,
+        requiresTalentPath: result.requiresTalentPath,
       });
     }
 

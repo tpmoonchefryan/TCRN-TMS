@@ -7,12 +7,14 @@ describe('DomainLookupService', () => {
   let service: DomainLookupService;
   let mockPublicHomepageReadRepository: {
     listActiveTenantSchemas: ReturnType<typeof vi.fn>;
+    findVerifiedDomainBindingRoute: ReturnType<typeof vi.fn>;
     findVerifiedDomainRoute: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     mockPublicHomepageReadRepository = {
       listActiveTenantSchemas: vi.fn(),
+      findVerifiedDomainBindingRoute: vi.fn(),
       findVerifiedDomainRoute: vi.fn(),
     };
 
@@ -21,8 +23,42 @@ describe('DomainLookupService', () => {
     );
   });
 
-  it('looks up only published talents and normalizes the requested domain', async () => {
+  it('prefers verified domain binding records and exposes inherited route metadata', async () => {
     mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
+    mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute.mockResolvedValue({
+      domainId: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      tenantSchema: 'tenant_demo',
+      talentId: null,
+    });
+
+    const result = await service.lookupDomain('Brand.Example.COM.');
+
+    expect(result).toEqual({
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
+      tenantSchema: 'tenant_demo',
+      talentId: null,
+      domainId: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      routeMode: 'scoped_talent_path',
+      routePrefix: ':talentCode',
+      requiresTalentPath: true,
+    });
+    expect(mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute).toHaveBeenCalledWith(
+      'tenant_demo',
+      'brand.example.com',
+    );
+    expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
+  });
+
+  it('falls back to legacy published talent custom domains', async () => {
+    mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
+    mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute.mockResolvedValue(null);
     mockPublicHomepageReadRepository.findVerifiedDomainRoute.mockResolvedValue({
       talentId: 'talent-1',
       homepagePath: 'demo-home',
@@ -37,6 +73,13 @@ describe('DomainLookupService', () => {
       marshmallowPath: 'marshmallow',
       tenantSchema: 'tenant_demo',
       talentId: 'talent-1',
+      domainId: null,
+      hostname: null,
+      ownerType: 'legacy_talent',
+      ownerId: 'talent-1',
+      routeMode: 'dedicated_talent',
+      routePrefix: null,
+      requiresTalentPath: false,
     });
     expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).toHaveBeenCalledWith(
       'tenant_demo',
@@ -46,6 +89,7 @@ describe('DomainLookupService', () => {
 
   it('returns null when no tenant contains a published mapping', async () => {
     mockPublicHomepageReadRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_demo']);
+    mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute.mockResolvedValue(null);
     mockPublicHomepageReadRepository.findVerifiedDomainRoute.mockResolvedValue(null);
 
     await expect(service.lookupDomain('missing.example.com')).resolves.toBeNull();

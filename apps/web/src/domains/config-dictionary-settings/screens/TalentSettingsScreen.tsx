@@ -849,6 +849,9 @@ export function TalentSettingsScreen({
               customDomainSslMode: 'auto',
               homepageCustomPath: null,
               marshmallowCustomPath: null,
+              domains: [],
+              inheritedDomains: [],
+              selectedInheritedDomainIds: [],
             },
         error: null,
       }));

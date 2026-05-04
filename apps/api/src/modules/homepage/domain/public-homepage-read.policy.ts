@@ -5,6 +5,7 @@ import {
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
 } from '@tcrn/shared';
 
+import type { CustomDomainOwnerType, CustomDomainRouteMode } from '../../talent/domain/talent-custom-domain.policy';
 import type { HomepageContent, ThemeConfig } from '../dto/homepage.dto';
 
 export interface PublicHomepageData {
@@ -55,11 +56,27 @@ export interface DomainLookupRouteRecord {
   code: string;
 }
 
+export interface DomainLookupBindingRouteRecord {
+  domainId: string;
+  hostname: string;
+  ownerType: CustomDomainOwnerType;
+  ownerId: string | null;
+  tenantSchema: string;
+  talentId: string | null;
+}
+
 export interface DomainLookupResult {
   homepagePath: string;
   marshmallowPath: string;
   tenantSchema: string;
-  talentId: string;
+  talentId: string | null;
+  domainId: string | null;
+  hostname: string | null;
+  ownerType: CustomDomainOwnerType | 'legacy_talent';
+  ownerId: string | null;
+  routeMode: CustomDomainRouteMode;
+  routePrefix: string | null;
+  requiresTalentPath: boolean;
 }
 
 export function normalizeLookupDomain(domain: string): string {
@@ -75,6 +92,33 @@ export function resolveLookupRoute(
     marshmallowPath: FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
     tenantSchema,
     talentId: _route.talentId,
+    domainId: null,
+    hostname: null,
+    ownerType: 'legacy_talent',
+    ownerId: _route.talentId,
+    routeMode: 'dedicated_talent',
+    routePrefix: null,
+    requiresTalentPath: false,
+  };
+}
+
+export function resolveLookupBindingRoute(
+  route: DomainLookupBindingRouteRecord,
+): DomainLookupResult {
+  const requiresTalentPath = route.ownerType !== 'talent';
+
+  return {
+    homepagePath: FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
+    marshmallowPath: FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
+    tenantSchema: route.tenantSchema,
+    talentId: route.talentId,
+    domainId: route.domainId,
+    hostname: route.hostname,
+    ownerType: route.ownerType,
+    ownerId: route.ownerId,
+    routeMode: requiresTalentPath ? 'scoped_talent_path' : 'dedicated_talent',
+    routePrefix: requiresTalentPath ? ':talentCode' : null,
+    requiresTalentPath,
   };
 }
 

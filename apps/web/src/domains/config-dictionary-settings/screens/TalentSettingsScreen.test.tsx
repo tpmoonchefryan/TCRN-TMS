@@ -196,6 +196,9 @@ describe('TalentSettingsScreen', () => {
           customDomainSslMode: 'auto',
           homepageCustomPath: null,
           marshmallowCustomPath: null,
+          domains: [],
+          inheritedDomains: [],
+          selectedInheritedDomainIds: [],
         } satisfies TalentCustomDomainConfigResponse;
       }
 
@@ -345,6 +348,9 @@ describe('TalentSettingsScreen', () => {
             customDomainSslMode: 'auto',
             homepageCustomPath: null,
             marshmallowCustomPath: null,
+            domains: [],
+            inheritedDomains: [],
+            selectedInheritedDomainIds: [],
           } satisfies TalentCustomDomainConfigResponse;
         }
 
@@ -539,6 +545,9 @@ describe('TalentSettingsScreen', () => {
           customDomainSslMode: 'auto',
           homepageCustomPath: null,
           marshmallowCustomPath: null,
+          domains: [],
+          inheritedDomains: [],
+          selectedInheritedDomainIds: [],
         };
       }
 
@@ -781,6 +790,9 @@ describe('TalentSettingsScreen', () => {
       customDomainSslMode: 'auto',
       homepageCustomPath: null,
       marshmallowCustomPath: null,
+      domains: [],
+      inheritedDomains: [],
+      selectedInheritedDomainIds: [],
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
@@ -1246,6 +1258,9 @@ describe('TalentSettingsScreen', () => {
           customDomainSslMode: 'auto',
           homepageCustomPath: null,
           marshmallowCustomPath: null,
+          domains: [],
+          inheritedDomains: [],
+          selectedInheritedDomainIds: [],
         };
       }
 
@@ -1444,6 +1459,9 @@ describe('TalentSettingsScreen', () => {
           customDomainSslMode: 'auto',
           homepageCustomPath: null,
           marshmallowCustomPath: null,
+          domains: [],
+          inheritedDomains: [],
+          selectedInheritedDomainIds: [],
         };
       }
 
@@ -1679,6 +1697,9 @@ describe('TalentSettingsScreen', () => {
           customDomainSslMode: 'auto',
           homepageCustomPath: null,
           marshmallowCustomPath: null,
+          domains: [],
+          inheritedDomains: [],
+          selectedInheritedDomainIds: [],
         };
       }
 

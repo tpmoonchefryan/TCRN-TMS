@@ -21,6 +21,13 @@ const DOMAIN_LOOKUP_SCHEMA = {
     type: { type: 'string', example: 'homepage' },
     homepagePath: { type: 'string', example: 'aki-home' },
     marshmallowPath: { type: 'string', nullable: true, example: 'aki-mailbox' },
+    domainId: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440000' },
+    hostname: { type: 'string', nullable: true, example: 'fans.example.com' },
+    ownerType: { type: 'string', example: 'talent' },
+    ownerId: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440001' },
+    routeMode: { type: 'string', example: 'dedicated_talent' },
+    routePrefix: { type: 'string', nullable: true, example: null },
+    requiresTalentPath: { type: 'boolean', example: false },
   },
   required: ['path', 'type', 'homepagePath', 'marshmallowPath'],
   example: {
@@ -28,6 +35,13 @@ const DOMAIN_LOOKUP_SCHEMA = {
     type: 'homepage',
     homepagePath: 'aki-home',
     marshmallowPath: 'aki-mailbox',
+    domainId: null,
+    hostname: null,
+    ownerType: 'legacy_talent',
+    ownerId: '550e8400-e29b-41d4-a716-446655440001',
+    routeMode: 'dedicated_talent',
+    routePrefix: null,
+    requiresTalentPath: false,
   },
 };
 
@@ -92,6 +106,13 @@ export class DomainLookupController {
       type: 'homepage',
       homepagePath: result.homepagePath,
       marshmallowPath: result.marshmallowPath,
+      domainId: result.domainId,
+      hostname: result.hostname,
+      ownerType: result.ownerType,
+      ownerId: result.ownerId,
+      routeMode: result.routeMode,
+      routePrefix: result.routePrefix,
+      requiresTalentPath: result.requiresTalentPath,
     };
   }
 }

@@ -5,6 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   type DomainLookupResult,
   normalizeLookupDomain,
+  resolveLookupBindingRoute,
   resolveLookupRoute,
 } from '../domain/public-homepage-read.policy';
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
@@ -26,6 +27,22 @@ export class DomainLookupService {
 
     for (const schema of tenantSchemas) {
       try {
+        const bindingRoute =
+          await this.publicHomepageReadRepository.findVerifiedDomainBindingRoute(
+            schema,
+            normalizedDomain,
+          );
+
+        if (bindingRoute) {
+          const result = resolveLookupBindingRoute(bindingRoute);
+
+          this.logger.debug(
+            `[lookupDomain] Found domain binding "${domain}" in schema "${schema}" -> route mode "${result.routeMode}"`,
+          );
+
+          return result;
+        }
+
         const route = await this.publicHomepageReadRepository.findVerifiedDomainRoute(
           schema,
           normalizedDomain,
@@ -35,7 +52,7 @@ export class DomainLookupService {
           const result = resolveLookupRoute(route, schema);
 
           this.logger.debug(
-            `[lookupDomain] Found unified domain "${domain}" in schema "${schema}" -> homepage "${result.homepagePath}", marshmallow "${result.marshmallowPath}"`,
+            `[lookupDomain] Found legacy talent domain "${domain}" in schema "${schema}" -> homepage "${result.homepagePath}", marshmallow "${result.marshmallowPath}"`,
           );
 
           return result;

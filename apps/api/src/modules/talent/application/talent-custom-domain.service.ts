@@ -9,6 +9,7 @@ import { ErrorCodes } from '@tcrn/shared';
 
 import {
   buildFixedCustomDomainPaths,
+  buildTalentEffectiveCustomDomains,
   buildVerificationTxtRecord,
   normalizeCustomDomain,
   type TalentCustomDomainConfig,
@@ -24,21 +25,49 @@ export class TalentCustomDomainService {
     private readonly talentCustomDomainRepository: TalentCustomDomainRepository,
   ) {}
 
-  getCustomDomainConfig(
+  async getCustomDomainConfig(
     talentId: string,
     tenantSchema: string,
   ): Promise<TalentCustomDomainConfig | null> {
-    return this.talentCustomDomainRepository.getCustomDomainConfig(
-      talentId,
-      tenantSchema,
-    ).then((config) =>
-      config
-        ? {
-            ...config,
-            ...buildFixedCustomDomainPaths(),
-          }
-        : null,
-    );
+    const legacyConfig =
+      await this.talentCustomDomainRepository.getCustomDomainConfig(
+        talentId,
+        tenantSchema,
+      );
+
+    if (!legacyConfig) {
+      return null;
+    }
+
+    const [bindingRecords, selectedInheritedDomainIds] = await Promise.all([
+      this.talentCustomDomainRepository.listCustomDomainBindingsForTalent(
+        tenantSchema,
+        legacyConfig,
+      ),
+      this.talentCustomDomainRepository.listSelectedInheritedDomainIds(
+        tenantSchema,
+        legacyConfig.talentId,
+      ),
+    ]);
+    const domains = buildTalentEffectiveCustomDomains({
+      legacyConfig,
+      bindingRecords,
+      selectedInheritedDomainIds,
+    });
+
+    const fixedPaths = buildFixedCustomDomainPaths();
+
+    return {
+      customDomain: legacyConfig.customDomain,
+      customDomainVerified: legacyConfig.customDomainVerified,
+      customDomainVerificationToken:
+        legacyConfig.customDomainVerificationToken,
+      customDomainSslMode: legacyConfig.customDomainSslMode,
+      ...fixedPaths,
+      domains,
+      inheritedDomains: domains.filter((domain) => domain.inherited),
+      selectedInheritedDomainIds,
+    };
   }
 
   async setCustomDomain(

@@ -1,3 +1,19 @@
+export interface TalentEffectiveCustomDomainResponse {
+  id: string;
+  hostname: string;
+  ownerType: 'tenant' | 'subsidiary' | 'talent' | string;
+  ownerId: string | null;
+  ownerDepth?: number | null;
+  inherited: boolean;
+  selected: boolean;
+  customDomainVerified: boolean;
+  customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare' | string;
+  routeMode: 'dedicated_talent' | 'scoped_talent_path' | string;
+  routePrefix: string | null;
+  homepagePath: string;
+  marshmallowPath: string;
+}
+
 export interface TalentCustomDomainConfigResponse {
   customDomain: string | null;
   customDomainVerified: boolean;
@@ -5,6 +21,9 @@ export interface TalentCustomDomainConfigResponse {
   customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare' | string;
   homepageCustomPath: string | null;
   marshmallowCustomPath: string | null;
+  domains: TalentEffectiveCustomDomainResponse[];
+  inheritedDomains: TalentEffectiveCustomDomainResponse[];
+  selectedInheritedDomainIds: string[];
 }
 
 export interface SetTalentCustomDomainInput {
