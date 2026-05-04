@@ -1210,7 +1210,7 @@ export function ReportsManagementScreen({
           </div>
         }
       >
-        <div className="space-y-6">
+        <fieldset disabled={previewPending || createPending} className="space-y-6 disabled:opacity-70">
           <div className="grid gap-4 xl:grid-cols-2">
             <TextField
               label={copy.drawer.fields.platformCodes}
@@ -1282,7 +1282,7 @@ export function ReportsManagementScreen({
               onChange={(next) => setDraft((current) => ({ ...current, includeInactive: next }))}
             />
           </div>
-        </div>
+        </fieldset>
       </ActionDrawer>
     </div>
   );

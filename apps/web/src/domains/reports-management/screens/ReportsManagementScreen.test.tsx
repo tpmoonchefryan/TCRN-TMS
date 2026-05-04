@@ -127,6 +127,90 @@ describe('ReportsManagementScreen', () => {
     expect(screen.queryByText('Pending file assignment')).not.toBeInTheDocument();
   });
 
+  it('locks report draft filters while preview is pending', async () => {
+    let resolvePreview: (value: {
+      totalCount: number;
+      preview: [];
+      filterSummary: {
+        platforms: string[];
+        dateRange: string | null;
+        includeExpired: boolean;
+      };
+    }) => void = () => {};
+    const previewResponse = new Promise<Parameters<typeof resolvePreview>[0]>((resolve) => {
+      resolvePreview = resolve;
+    });
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: {
+            total: 0,
+          },
+        };
+      }
+
+      if (path === '/api/v1/reports/mfr/search' && init?.method === 'POST') {
+        return previewResponse;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Draft report' }))[0]);
+    fireEvent.change(screen.getByLabelText('Platform codes'), {
+      target: { value: 'YOUTUBE' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview rows' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/reports/mfr/search',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            talentId: 'talent-1',
+            filters: {
+              platformCodes: ['YOUTUBE'],
+              membershipClassCodes: undefined,
+              membershipTypeCodes: undefined,
+              membershipLevelCodes: undefined,
+              statusCodes: undefined,
+              validFromStart: undefined,
+              validFromEnd: undefined,
+              validToStart: undefined,
+              validToEnd: undefined,
+              includeExpired: undefined,
+              includeInactive: undefined,
+            },
+            previewLimit: 8,
+          }),
+        }),
+      );
+    });
+    expect(screen.getByLabelText('Platform codes')).toBeDisabled();
+    expect(screen.getByLabelText('Download format')).toBeDisabled();
+    expect(screen.getByLabelText('Include inactive memberships')).toBeDisabled();
+
+    resolvePreview({
+      totalCount: 0,
+      preview: [],
+      filterSummary: {
+        platforms: ['YOUTUBE'],
+        dateRange: null,
+        includeExpired: false,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Platform codes')).not.toBeDisabled();
+    });
+    expect(await screen.findByText('Matched Rows')).toBeInTheDocument();
+  });
+
   it('creates a local MFR job and refreshes the ledger', async () => {
     let hasQueuedJob = false;
 
