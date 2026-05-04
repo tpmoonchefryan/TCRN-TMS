@@ -11,7 +11,7 @@ type Locale = 'en' | 'zh' | 'ja';
  * 
  * @param entity The entity object containing name_en, name_zh, etc.
  * @param fieldPrefix The prefix of the field, e.g., 'name' or 'description'
- * @param locale The desired locale code ('en', 'zh', 'ja')
+ * @param locale The requested locale tag or trilingual family; normalized to 'en', 'zh', or 'ja'
  * @returns The localized string or the English fallback
  */
 export function getLocalizedValue<T extends LocalizableEntity>(

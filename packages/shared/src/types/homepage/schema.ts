@@ -40,7 +40,7 @@ export interface ComponentInstance {
   };
   
   // New: Internationalization
-  // Map of locale code (e.g., 'zh', 'ja') to partial props override
+  // Map of locale tag (e.g., 'zh_HANS', 'zh_HANT', 'ja') to partial props override
   i18n?: Record<string, Record<string, unknown>>;
 }
 
