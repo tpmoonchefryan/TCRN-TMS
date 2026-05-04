@@ -570,7 +570,7 @@ model CustomerProfile {
   lastModifiedTalentId String?   @map("last_modified_talent_id") @db.Uuid
   profileType          String    @map("profile_type") @db.VarChar(16) // 'individual', 'company'
   nickname             String    @db.VarChar(128)
-  primaryLanguage      String?   @map("primary_language") @db.VarChar(5)
+  primaryLanguage      String?   @map("primary_language") @db.VarChar(16)
   statusId             String?   @map("status_id") @db.Uuid
   inactivationReasonId String?   @map("inactivation_reason_id") @db.Uuid
   inactivatedAt        DateTime? @map("inactivated_at") @db.Timestamptz

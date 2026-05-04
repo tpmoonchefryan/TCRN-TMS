@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
   type: 'object',
@@ -71,7 +71,7 @@ export const CUSTOMER_LIST_ITEM_SCHEMA = {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' },
     profileType: { type: 'string', example: 'individual' },
     nickname: { type: 'string', example: 'Aki' },
-    primaryLanguage: { type: 'string', nullable: true, example: 'ja' },
+    primaryLanguage: { type: 'string', nullable: true, enum: [...SUPPORTED_UI_LOCALES], example: 'zh_HANS' },
     status: {
       type: 'object',
       nullable: true,
@@ -190,7 +190,7 @@ export const CUSTOMER_DETAIL_SCHEMA = {
     profileType: { type: 'string', example: 'individual' },
     talentId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440200' },
     nickname: { type: 'string', example: 'Aki' },
-    primaryLanguage: { type: 'string', nullable: true, example: 'ja' },
+    primaryLanguage: { type: 'string', nullable: true, enum: [...SUPPORTED_UI_LOCALES], example: 'zh_HANS' },
     status: CUSTOMER_LIST_ITEM_SCHEMA.properties.status,
     inactivationReason: {
       type: 'object',

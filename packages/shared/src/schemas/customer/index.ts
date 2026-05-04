@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 
+import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
 import { PaginationSchema, UUIDSchema } from '../common.schema';
 
 // ============================================================================
@@ -92,7 +93,7 @@ export type CompanyPiiDataInput = z.infer<typeof CompanyPiiDataSchema>;
 export const CreateIndividualCustomerSchema = z.object({
   talentId: UUIDSchema,
   nickname: z.string().min(1, 'Nickname is required').max(128),
-  primaryLanguage: z.string().max(5).optional(),
+  primaryLanguage: z.enum(SUPPORTED_UI_LOCALES).optional(),
   statusCode: z.string().optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().max(64).optional(),
@@ -104,7 +105,7 @@ export const CreateIndividualCustomerSchema = z.object({
 
 export const UpdateIndividualCustomerSchema = z.object({
   nickname: z.string().max(128).optional(),
-  primaryLanguage: z.string().max(5).optional(),
+  primaryLanguage: z.enum(SUPPORTED_UI_LOCALES).optional(),
   statusCode: z.string().optional(),
   tags: z.array(z.string()).optional(),
   notes: z.string().max(2000).optional(),
@@ -126,7 +127,7 @@ export type UpdateIndividualPiiInput = z.infer<typeof UpdateIndividualPiiSchema>
 export const CreateCompanyCustomerSchema = z.object({
   talentId: UUIDSchema,
   nickname: z.string().min(1, 'Nickname is required').max(128),
-  primaryLanguage: z.string().max(5).optional(),
+  primaryLanguage: z.enum(SUPPORTED_UI_LOCALES).optional(),
   statusCode: z.string().optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().max(64).optional(),
@@ -146,7 +147,7 @@ export const CreateCompanyCustomerSchema = z.object({
 
 export const UpdateCompanyCustomerSchema = z.object({
   nickname: z.string().max(128).optional(),
-  primaryLanguage: z.string().max(5).optional(),
+  primaryLanguage: z.enum(SUPPORTED_UI_LOCALES).optional(),
   statusCode: z.string().optional(),
   tags: z.array(z.string()).optional(),
   notes: z.string().max(2000).optional(),

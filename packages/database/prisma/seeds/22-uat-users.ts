@@ -186,7 +186,7 @@ export async function seedUatUsers(
     // Create user
     const userResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${soloSchema}".system_user (id, username, email, display_name, password_hash, preferred_language, is_active, force_reset, password_changed_at, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, 'zh', true, false, now(), now(), now())
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, 'zh_HANS', true, false, now(), now(), now())
        ON CONFLICT (username) DO UPDATE SET email = EXCLUDED.email, display_name = EXCLUDED.display_name, password_hash = EXCLUDED.password_hash
        RETURNING id`,
       user.username, user.email, user.displayName, UAT_PASSWORD_HASH

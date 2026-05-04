@@ -180,7 +180,7 @@ export async function seedUatCustomers(
       ? `${JAPANESE_NAMES[i % JAPANESE_NAMES.length].replace(/\s+/g, '')}_fan`
       : `${CHINESE_NAMES[(i - 10) % CHINESE_NAMES.length]}_粉丝`;
     const status = i < 15 ? 'ACTIVE' : 'VIP';
-    const language = i < 10 ? 'ja' : 'zh';
+    const language = i < 10 ? 'ja' : 'zh_HANS';
 
     const customerResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${soloSchema}".customer_profile 

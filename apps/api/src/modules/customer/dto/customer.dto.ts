@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsArray,
@@ -8,6 +9,7 @@ import {
     IsDateString,
     IsEmail,
     IsEnum,
+    IsIn,
     IsInt,
     IsOptional,
     IsString,
@@ -270,10 +272,11 @@ export class CreateIndividualCustomerDto {
   @MaxLength(128)
   nickname!: string;
 
-  @ApiPropertyOptional({ description: 'Primary language code', example: 'ja', maxLength: 5 })
+  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
   @IsOptional()
   @IsString()
-  @MaxLength(5)
+  @IsIn(SUPPORTED_UI_LOCALES)
+  @MaxLength(16)
   primaryLanguage?: string;
 
   @ApiPropertyOptional({ description: 'Status code', example: 'active' })
@@ -324,10 +327,11 @@ export class UpdateIndividualCustomerDto {
   @MaxLength(128)
   nickname?: string;
 
-  @ApiPropertyOptional({ description: 'Primary language code', example: 'ja', maxLength: 5 })
+  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
   @IsOptional()
   @IsString()
-  @MaxLength(5)
+  @IsIn(SUPPORTED_UI_LOCALES)
+  @MaxLength(16)
   primaryLanguage?: string;
 
   @ApiPropertyOptional({ description: 'Status code', example: 'active' })
@@ -373,10 +377,11 @@ export class CreateCompanyCustomerDto {
   @MaxLength(128)
   nickname!: string;
 
-  @ApiPropertyOptional({ description: 'Primary language code', example: 'ja', maxLength: 5 })
+  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
   @IsOptional()
   @IsString()
-  @MaxLength(5)
+  @IsIn(SUPPORTED_UI_LOCALES)
+  @MaxLength(16)
   primaryLanguage?: string;
 
   @ApiPropertyOptional({ description: 'Status code', example: 'active' })
@@ -468,7 +473,8 @@ export class UpdateCompanyCustomerDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(5)
+  @IsIn(SUPPORTED_UI_LOCALES)
+  @MaxLength(16)
   primaryLanguage?: string;
 
   @IsOptional()
