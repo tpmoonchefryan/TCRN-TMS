@@ -478,7 +478,7 @@ describe('UserManagementScreen', () => {
     render(<UserManagementScreen />);
 
     expect(await screen.findByText('System roles')).toBeInTheDocument();
-    expect(screen.getByText('Administrator')).toBeInTheDocument();
+    expect(await screen.findByText('Administrator')).toBeInTheDocument();
     expect(screen.queryByText('Platform Administrator')).not.toBeInTheDocument();
   });
 

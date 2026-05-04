@@ -299,8 +299,8 @@ describe('SecurityManagementScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
     const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });
-    fireEvent.click(within(translationDrawer).getByRole('button', { name: /Simplified Chinese/i }));
-    fireEvent.click(within(translationDrawer).getByRole('button', { name: /Korean/i }));
+    fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Simplified Chinese/i }));
+    fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Korean/i }));
 
     const translationInputs = within(translationDrawer).getAllByLabelText('Rule name');
     fireEvent.change(translationInputs[0], {
