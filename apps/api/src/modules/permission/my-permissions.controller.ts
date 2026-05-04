@@ -7,6 +7,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getPrimaryAcceptLanguage, getTrilingualNameColumn } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
@@ -51,8 +52,7 @@ export class MyPermissionsController {
     @Query() query: GetMyPermissionsQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
-    const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
+    const nameField = getTrilingualNameColumn(getPrimaryAcceptLanguage(req));
 
     const scopeType = query.scopeType || 'tenant';
     const scopeId = query.scopeId || null;

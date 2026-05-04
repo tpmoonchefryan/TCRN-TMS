@@ -4,6 +4,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { getTrilingualNameColumn } from '../../common/request-locale.util';
+
 export type DelegateType = 'user' | 'role';
 export type DelegateScopeType = 'subsidiary' | 'talent';
 
@@ -36,9 +38,9 @@ export class DelegatedAdminService {
       scopeType?: DelegateScopeType;
       scopeId?: string;
     } = {},
-    language: string = 'en'  
+    language: string = 'en'
   ): Promise<DelegatedAdminData[]> {
-    const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
+    const nameField = getTrilingualNameColumn(language);
 
     let whereClause = '1=1';
     const params: unknown[] = [];

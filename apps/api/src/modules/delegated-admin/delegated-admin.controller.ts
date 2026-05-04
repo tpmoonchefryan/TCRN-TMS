@@ -17,6 +17,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getRequestTrilingualLocaleFamily } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { DelegatedAdminService, DelegateScopeType, DelegateType } from './delegated-admin.service';
 
@@ -67,7 +68,7 @@ export class DelegatedAdminController {
     @Query() query: ListDelegatedAdminsQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getRequestTrilingualLocaleFamily(req);
 
     const delegations = await this.delegatedAdminService.list(
       user.tenantSchema,
@@ -105,10 +106,7 @@ export class DelegatedAdminController {
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateDelegatedAdminDto,
-    @Req() req: Request,
   ) {
-    const _language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
-
     const delegation = await this.delegatedAdminService.create(
       user.tenantSchema,
       {

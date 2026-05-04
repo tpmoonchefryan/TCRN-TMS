@@ -20,19 +20,13 @@ import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
+import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { paginated, success } from '../../common/response.util';
 import { BlocklistService } from './blocklist.service';
 import { ConfigService } from './config.service';
 import { OwnerType } from './config.types';
 import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConsumerKeyService } from './consumer-key.service';
-
-function getRequestLanguage(req: Request): string {
-  const rawHeader = req.headers['accept-language'];
-  const header = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
-
-  return header?.split(',')[0]?.trim() || 'en';
-}
 
 // DTOs
 class ListConfigQueryDto {
@@ -506,7 +500,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const { data, total } = await this.configService.list(
       validEntityType,
@@ -549,7 +543,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
@@ -585,7 +579,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const entity = await this.configService.findById(validEntityType, id, user.tenantSchema, language);
     if (!entity) {
@@ -614,7 +608,7 @@ export class ConfigController {
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
@@ -768,7 +762,7 @@ export class ConfigController {
     @Query() query: { scopeType?: OwnerType; scopeId?: string; includeInactive?: boolean },
     @Req() req: Request,
   ) {
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
     
     const tree = await this.configService.getMembershipTree(
       user.tenantSchema,
@@ -796,7 +790,7 @@ export class ConfigController {
     @Query() query: ListConfigQueryDto,
     @Req() req: Request,
   ) {
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const { data, total } = await this.configService.list(
       'membership-type',
@@ -831,7 +825,7 @@ export class ConfigController {
     @Query() query: ListConfigQueryDto,
     @Req() req: Request,
   ) {
-    const language = getRequestLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const { data, total } = await this.configService.list(
       'membership-level',

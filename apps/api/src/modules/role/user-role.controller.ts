@@ -17,6 +17,7 @@ import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString } from 'class-val
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { ScopeType } from '../permission/permission-snapshot.service';
 import { UserRoleService } from './user-role.service';
@@ -78,7 +79,7 @@ export class UserRoleController {
     @Param('userId') userId: string,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const assignments = await this.userRoleService.getUserRoles(userId, user.tenantSchema, language);
 

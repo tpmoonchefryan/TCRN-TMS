@@ -8,6 +8,7 @@ import {
   isRbacRoleAvailableForTenantTier,
 } from '@tcrn/shared';
 
+import { getTrilingualNameColumn } from '../../common/request-locale.util';
 import { DelegatedAdminService, DelegateScopeType } from '../delegated-admin/delegated-admin.service';
 import { PermissionSnapshotService, ScopeType } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant/tenant.service';
@@ -63,7 +64,7 @@ export class UserRoleService {
    * Get user's role assignments
    */
   async getUserRoles(userId: string, tenantSchema: string, language: string = 'en'): Promise<UserRoleAssignment[]> {
-    const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
+    const nameField = getTrilingualNameColumn(language);
 
     const assignments = await prisma.$queryRawUnsafe<UserRoleAssignment[]>(`
       SELECT 

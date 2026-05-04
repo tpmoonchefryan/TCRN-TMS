@@ -182,10 +182,21 @@ describe('RoleService', () => {
     it('should support different languages', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await service.getRolePermissions('role-123', testSchema, 'zh');
+      await service.getRolePermissions('role-123', testSchema, 'zh-Hant-TW');
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('name_zh'),
+        'role-123',
+      );
+    });
+
+    it('falls back non-trilingual UI locales to English legacy permission names', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+
+      await service.getRolePermissions('role-123', testSchema, 'fr-FR');
+
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('name_en'),
         'role-123',
       );
     });

@@ -136,6 +136,19 @@ describe('UserRoleService', () => {
     });
   });
 
+  describe('getUserRoles', () => {
+    it('normalizes full Chinese locale tags before selecting legacy name columns', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+
+      await service.getUserRoles('user-2', testSchema, 'zh-Hant-TW');
+
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('name_zh'),
+        'user-2',
+      );
+    });
+  });
+
   describe('assignRole', () => {
     it('rejects workspace-incompatible roles before writing assignments', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([

@@ -126,4 +126,58 @@ describe('PermissionService', () => {
       },
     ]);
   });
+
+  it('normalizes full Chinese locale tags for RBAC resource display names', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        code: 'customer.export',
+        module: 'customer',
+        nameEn: 'Customer Export',
+        nameZh: '客户导出',
+        nameJa: '顧客エクスポート',
+        actions: 'read',
+      },
+    ]);
+
+    const result = await service.getResourceDefinitions('tenant_test', 'zh-Hant-TW');
+
+    expect(result[0]).toMatchObject({
+      module: 'customer',
+      moduleName: '客户管理',
+      resources: [
+        {
+          code: 'customer.export',
+          name: '客户导出',
+          actions: ['read'],
+        },
+      ],
+    });
+  });
+
+  it('falls non-trilingual UI locales back to English RBAC resource display names', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        code: 'customer.export',
+        module: 'customer',
+        nameEn: 'Customer Export',
+        nameZh: '客户导出',
+        nameJa: '顧客エクスポート',
+        actions: 'read',
+      },
+    ]);
+
+    const result = await service.getResourceDefinitions('tenant_test', 'fr-FR');
+
+    expect(result[0]).toMatchObject({
+      module: 'customer',
+      moduleName: 'Customer',
+      resources: [
+        {
+          code: 'customer.export',
+          name: 'Customer Export',
+          actions: ['read'],
+        },
+      ],
+    });
+  });
 });

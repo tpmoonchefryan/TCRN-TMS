@@ -20,6 +20,7 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
+import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { paginated, success } from '../../common/response.util';
 import { DictionaryService } from './dictionary.service';
 
@@ -1052,7 +1053,7 @@ export class DictionaryController {
   // =====================================================
 
   private getLanguage(req: Request): string {
-    return (req.headers['accept-language'] as string)?.split(',')[0]?.trim() || 'en';
+    return getPrimaryAcceptLanguage(req);
   }
 
   private ensureAcTenant(req: Request): void {

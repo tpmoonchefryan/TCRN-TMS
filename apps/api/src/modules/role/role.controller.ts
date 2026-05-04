@@ -15,12 +15,13 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, resolveTrilingualLocaleFamily } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { RoleService } from './role.service';
 
@@ -383,7 +384,7 @@ function getLocalizedName(
   entity: { nameEn: string; nameZh: string | null; nameJa: string | null },
   language: string = 'en'
 ): string {
-  switch (language) {
+  switch (resolveTrilingualLocaleFamily(language)) {
     case 'zh':
       return entity.nameZh || entity.nameEn;
     case 'ja':
@@ -424,7 +425,7 @@ export class RoleController {
     @Query() query: ListRolesQueryDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const roles = await this.roleService.list(user.tenantSchema, {
       search: query.search,
@@ -475,7 +476,7 @@ export class RoleController {
     @Body() dto: CreateRoleDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const role = await this.roleService.create(
       user.tenantSchema,
@@ -535,7 +536,7 @@ export class RoleController {
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const role = await this.roleService.findById(roleId, user.tenantSchema);
     if (!role) {
@@ -601,7 +602,7 @@ export class RoleController {
     @Body() dto: UpdateRoleDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const role = await this.roleService.update(roleId, user.tenantSchema, dto, user.id);
 
@@ -656,7 +657,7 @@ export class RoleController {
     @Body() dto: SetPermissionsDto,
     @Req() req: Request,
   ) {
-    const language = (req.headers['accept-language'] as string)?.split(',')[0]?.substring(0, 2) || 'en';
+    const language = getPrimaryAcceptLanguage(req);
 
     const { role, affectedUsers } = await this.roleService.setPermissions(
       roleId,

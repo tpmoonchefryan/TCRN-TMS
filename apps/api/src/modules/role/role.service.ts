@@ -9,6 +9,7 @@ import {
   type RolePermission,
 } from '@tcrn/shared';
 
+import { getTrilingualNameColumn } from '../../common/request-locale.util';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
 export interface RoleData {
@@ -143,7 +144,7 @@ export class RoleService {
    * Get role permissions
    */
   async getRolePermissions(roleId: string, tenantSchema: string, language: string = 'en'): Promise<RolePermission[]> {
-    const nameField = language === 'zh' ? 'name_zh' : language === 'ja' ? 'name_ja' : 'name_en';
+    const nameField = getTrilingualNameColumn(language);
 
     const permissions = await prisma.$queryRawUnsafe<Array<{
       id: string;

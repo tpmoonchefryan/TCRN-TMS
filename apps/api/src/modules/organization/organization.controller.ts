@@ -14,6 +14,7 @@ import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import type { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import type { TalentSummary, TreeNode } from './organization.service';
 import { OrganizationService } from './organization.service';
@@ -155,10 +156,6 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
     error: { code, message },
   },
 });
-
-function resolveRequestedLanguage(req: Request) {
-  return (req.headers['accept-language'] as string | undefined)?.split(',')[0]?.trim() || 'en';
-}
 
 const ORGANIZATION_TREE_TALENT_SCHEMA = {
   type: 'object',
@@ -479,7 +476,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetTreeQueryDto,
     @Req() req: Request,
   ) {
-    const language = resolveRequestedLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const tree = await this.organizationService.getTree(
       user.tenantId,
@@ -523,7 +520,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetChildrenQueryDto,
     @Req() req: Request,
   ) {
-    const language = resolveRequestedLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const result = await this.organizationService.getRootNodes(
       user.tenantId,
@@ -577,7 +574,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Query() query: GetChildrenQueryDto,
     @Req() req: Request,
   ) {
-    const language = resolveRequestedLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
 
     const result = await this.organizationService.getChildren(
       user.tenantSchema,
@@ -637,7 +634,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     @Param('subpath') pathParam: string,
     @Req() req: Request,
   ) {
-    const language = resolveRequestedLanguage(req);
+    const language = getPrimaryAcceptLanguage(req);
     const path = '/' + pathParam + (pathParam.endsWith('/') ? '' : '/');
 
     const breadcrumb = await this.organizationService.getBreadcrumb(

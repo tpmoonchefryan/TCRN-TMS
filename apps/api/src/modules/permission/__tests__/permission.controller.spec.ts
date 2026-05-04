@@ -37,6 +37,32 @@ describe('PermissionController', () => {
     );
   });
 
+  describe('list', () => {
+    it('normalizes full Chinese locale tags before localizing permission display names', async () => {
+      (mockPermissionService.list as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        {
+          id: 'perm-1',
+          resourceCode: 'customer.profile',
+          action: 'read',
+          nameEn: 'Customer Profile',
+          nameZh: '客户档案',
+          nameJa: '顧客プロファイル',
+          description: null,
+          isSystem: true,
+          isActive: true,
+        },
+      ]);
+
+      const result = await controller.list(
+        user,
+        {},
+        { headers: { 'accept-language': 'zh-Hant-TW,zh;q=0.9' } } as never,
+      );
+
+      expect(result.data[0].name).toBe('客户档案');
+    });
+  });
+
   describe('checkPermissions', () => {
     it('normalizes alias actions before snapshot permission checks', async () => {
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);

@@ -9,6 +9,7 @@ import {
   type PermissionAction as RbacPermissionAction,
   RBAC_MODULE_LABELS,
   type RbacResourceCode,
+  resolveTrilingualLocaleFamily,
   type ResourceDefinition,
 } from '@tcrn/shared';
 
@@ -124,6 +125,8 @@ export class PermissionService {
    * Note: Resources and policies are defined in tenant_template schema (global definitions)
    */
   async getResourceDefinitions(_tenantSchema: string, language: string = 'en'): Promise<ResourceDefinition[]> {
+    const localeFamily = resolveTrilingualLocaleFamily(language);
+
     // Get all resources with their associated policy actions from tenant_template (global definitions)
     const resources = await prisma.$queryRawUnsafe<Array<{
       code: string;
@@ -164,8 +167,8 @@ export class PermissionService {
         moduleMap.set(definition.module, []);
       }
       
-      const name = language === 'zh' ? (res.nameZh || res.nameEn) 
-                 : language === 'ja' ? (res.nameJa || res.nameEn) 
+      const name = localeFamily === 'zh' ? (res.nameZh || res.nameEn)
+                 : localeFamily === 'ja' ? (res.nameJa || res.nameEn)
                  : res.nameEn;
       
       const actions = res.actions
@@ -186,7 +189,7 @@ export class PermissionService {
     for (const [module, resourceList] of moduleMap) {
       const moduleLabels = RBAC_MODULE_LABELS[module as keyof typeof RBAC_MODULE_LABELS];
       const moduleName = moduleLabels
-        ? (language === 'zh' ? moduleLabels.zh : language === 'ja' ? moduleLabels.ja : moduleLabels.en)
+        ? (localeFamily === 'zh' ? moduleLabels.zh : localeFamily === 'ja' ? moduleLabels.ja : moduleLabels.en)
         : module;
 
       result.push({
