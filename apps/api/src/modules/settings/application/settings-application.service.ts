@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, normalizeSupportedUiLocale } from '@tcrn/shared';
 
 import {
   createDefaultInheritedFrom,
@@ -88,12 +88,34 @@ export class SettingsApplicationService {
       });
     }
 
-    const newSettings = { ...(current?.settings ?? {}), ...updates };
+    const normalizedUpdates = this.normalizeSettingsUpdates(updates);
+    const newSettings = { ...(current?.settings ?? {}), ...normalizedUpdates };
     const newVersion = (current?.version ?? 0) + 1;
 
     await this.saveScopeSettings(tenantSchema, scopeType, scopeId, newSettings, newVersion, userId);
 
     return this.getEffectiveSettings(tenantSchema, scopeType, scopeId);
+  }
+
+  private normalizeSettingsUpdates(updates: Record<string, unknown>): Record<string, unknown> {
+    const normalizedUpdates = { ...updates };
+
+    if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'defaultLanguage')) {
+      const normalizedDefaultLanguage = typeof normalizedUpdates.defaultLanguage === 'string'
+        ? normalizeSupportedUiLocale(normalizedUpdates.defaultLanguage)
+        : null;
+
+      if (!normalizedDefaultLanguage) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'defaultLanguage must be a supported UI locale',
+        });
+      }
+
+      normalizedUpdates.defaultLanguage = normalizedDefaultLanguage;
+    }
+
+    return normalizedUpdates;
   }
 
   async resetToInherited(

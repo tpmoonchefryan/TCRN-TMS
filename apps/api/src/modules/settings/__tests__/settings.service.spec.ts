@@ -219,6 +219,58 @@ describe('SettingsApplicationService', () => {
       );
     });
 
+    it('should normalize defaultLanguage updates to supported UI locale tags', async () => {
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC' },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: { timezone: 'UTC', defaultLanguage: 'zh_HANS' },
+        });
+      mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
+
+      await service.updateSettings(
+        testSchema,
+        'tenant',
+        null,
+        { defaultLanguage: 'zh-CN' },
+        1,
+        'user-123',
+      );
+
+      expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
+        testSchema,
+        expect.objectContaining({
+          timezone: 'UTC',
+          defaultLanguage: 'zh_HANS',
+        }),
+      );
+    });
+
+    it('should reject unsupported defaultLanguage updates', async () => {
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({ id: 'tenant-123', settings: { timezone: 'UTC' } })
+        .mockResolvedValueOnce({ id: 'tenant-123', settings: { timezone: 'UTC' } });
+
+      await expect(
+        service.updateSettings(
+          testSchema,
+          'tenant',
+          null,
+          { defaultLanguage: 'xx' },
+          1,
+          'user-123',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
+    });
+
     it('should validate scope exists before updating', async () => {
       mockSettingsRepository.findTenantBySchema.mockResolvedValue(null);
 
