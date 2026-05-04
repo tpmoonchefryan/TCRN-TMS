@@ -11,6 +11,7 @@ describe('LocaleSwitcher', () => {
       { code: 'zh', label: '中文' },
     ],
     onChange: vi.fn(),
+    ariaLabel: '切换语言，当前语言为 English',
   };
 
   beforeEach(() => {
@@ -32,7 +33,7 @@ describe('LocaleSwitcher', () => {
   it('renders with current locale label and correct listbox semantics', async () => {
     render(<LocaleSwitcher {...defaultProps} />);
     
-    const trigger = screen.getByLabelText(/Change language, current language is English/i);
+    const trigger = screen.getByLabelText('切换语言，当前语言为 English');
     expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
     
     await act(async () => {
@@ -51,7 +52,7 @@ describe('LocaleSwitcher', () => {
   it('handles keyboard navigation correctly', async () => {
     render(<LocaleSwitcher {...defaultProps} />);
     
-    const trigger = screen.getByRole('button', { name: /Change language/i });
+    const trigger = screen.getByRole('button', { name: /切换语言/i });
     await act(async () => {
       fireEvent.click(trigger);
     });
@@ -87,7 +88,7 @@ describe('LocaleSwitcher', () => {
   it('closes on Escape and returns focus to trigger', async () => {
     render(<LocaleSwitcher {...defaultProps} />);
     
-    const trigger = screen.getByRole('button', { name: /Change language/i });
+    const trigger = screen.getByRole('button', { name: /切换语言/i });
     await act(async () => {
       fireEvent.click(trigger);
     });
@@ -114,7 +115,7 @@ describe('LocaleSwitcher', () => {
     const onChange = vi.fn();
     render(<LocaleSwitcher {...defaultProps} onChange={onChange} />);
     
-    const trigger = screen.getByRole('button', { name: /Change language/i });
+    const trigger = screen.getByRole('button', { name: /切换语言/i });
     await act(async () => {
       fireEvent.click(trigger);
     });
@@ -143,7 +144,7 @@ describe('LocaleSwitcher', () => {
   it('cancels exit timeout if reopened rapidly', async () => {
     render(<LocaleSwitcher {...defaultProps} />);
     
-    const trigger = screen.getByRole('button', { name: /Change language/i });
+    const trigger = screen.getByRole('button', { name: /切换语言/i });
     
     // Open
     await act(async () => {

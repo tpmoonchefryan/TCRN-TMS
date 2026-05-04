@@ -228,9 +228,11 @@ describe('Swagger ops and async family contract', () => {
     expect(getDocumentedDtoProperties(CreateEmailTemplateDto)).toEqual([
       'bodyHtmlEn',
       'bodyHtmlJa',
+      'bodyHtmlTranslations',
       'bodyHtmlZh',
       'bodyTextEn',
       'bodyTextJa',
+      'bodyTextTranslations',
       'bodyTextZh',
       'category',
       'code',
@@ -239,15 +241,19 @@ describe('Swagger ops and async family contract', () => {
       'nameZh',
       'subjectEn',
       'subjectJa',
+      'subjectTranslations',
       'subjectZh',
+      'translations',
       'variables',
     ]);
     expect(getDocumentedDtoProperties(UpdateEmailTemplateDto)).toEqual([
       'bodyHtmlEn',
       'bodyHtmlJa',
+      'bodyHtmlTranslations',
       'bodyHtmlZh',
       'bodyTextEn',
       'bodyTextJa',
+      'bodyTextTranslations',
       'bodyTextZh',
       'category',
       'isActive',
@@ -256,7 +262,9 @@ describe('Swagger ops and async family contract', () => {
       'nameZh',
       'subjectEn',
       'subjectJa',
+      'subjectTranslations',
       'subjectZh',
+      'translations',
       'variables',
     ]);
     expect(getDocumentedDtoProperties(PreviewEmailTemplateDto)).toEqual([

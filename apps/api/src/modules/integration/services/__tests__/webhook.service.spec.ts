@@ -149,6 +149,9 @@ describe('WebhookService', () => {
         nameEn: 'Test Webhook',
         nameZh: null,
         nameJa: null,
+        translations: {
+          en: 'Test Webhook',
+        },
         url: 'https://example.com/webhook',
         events: [WebhookEventType.CUSTOMER_CREATED],
         isActive: true,

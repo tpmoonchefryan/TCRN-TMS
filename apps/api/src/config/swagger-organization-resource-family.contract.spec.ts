@@ -179,6 +179,7 @@ describe('Swagger organization resource family contract', () => {
       'nameZh',
       'parentId',
       'sortOrder',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateSubsidiaryDto)).toEqual([
       'descriptionEn',
@@ -188,6 +189,7 @@ describe('Swagger organization resource family contract', () => {
       'nameJa',
       'nameZh',
       'sortOrder',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(MoveSubsidiaryDto)).toEqual(['newParentId', 'version']);
@@ -211,6 +213,7 @@ describe('Swagger organization resource family contract', () => {
       'settings',
       'subsidiaryId',
       'timezone',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateTalentDto)).toEqual([
       'avatarUrl',
@@ -224,6 +227,7 @@ describe('Swagger organization resource family contract', () => {
       'nameZh',
       'settings',
       'timezone',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(MoveTalentDto)).toEqual(['newSubsidiaryId', 'version']);
@@ -239,42 +243,52 @@ describe('Swagger organization resource family contract', () => {
       'code',
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
+      'extraData',
       'nameEn',
       'nameJa',
       'nameZh',
       'sortOrder',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateDictionaryTypeDto)).toEqual([
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
+      'extraData',
       'nameEn',
       'nameJa',
       'nameZh',
       'sortOrder',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(CreateDictionaryItemDto)).toEqual([
       'code',
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
       'extraData',
       'nameEn',
       'nameJa',
       'nameZh',
       'sortOrder',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateDictionaryItemDto)).toEqual([
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
       'extraData',
       'nameEn',
       'nameJa',
       'nameZh',
       'sortOrder',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(DeactivateItemDto)).toEqual(['version']);

@@ -211,27 +211,32 @@ describe('Swagger PII and observability family contract', () => {
       'code',
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
       'isDefault',
       'nameEn',
       'nameJa',
       'nameZh',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateProfileStoreDto)).toEqual([
       'descriptionEn',
       'descriptionJa',
+      'descriptionTranslations',
       'descriptionZh',
       'isActive',
       'isDefault',
       'nameEn',
       'nameJa',
       'nameZh',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(PaginationQueryDto)).toEqual([
       'includeInactive',
       'page',
       'pageSize',
+      'search',
     ]);
   });
 });

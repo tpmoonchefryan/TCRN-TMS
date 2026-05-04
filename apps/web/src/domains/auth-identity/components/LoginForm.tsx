@@ -150,7 +150,9 @@ export function LoginForm() {
           currentLocale={selectedLocale}
           options={localeOptions}
           onChange={setLocale}
-          ariaLabelPrefix={copy.common.languageSwitcherLabel}
+          ariaLabel={`${copy.common.languageSwitcherLabel}: ${
+            localeOptions.find((option) => option.code === selectedLocale)?.label || selectedLocale
+          }`}
         />
       </div>
 

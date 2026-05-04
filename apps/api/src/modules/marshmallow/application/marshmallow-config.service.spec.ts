@@ -16,7 +16,8 @@ describe('MarshmallowConfigApplicationService', () => {
     findActiveTalent: vi.fn(),
     insertDefaultConfig: vi.fn(),
     findStatsByConfigId: vi.fn(),
-    findTalentHomepagePath: vi.fn(),
+    findTenantCodeBySchema: vi.fn(),
+    findTalentRouteRecord: vi.fn(),
     updateConfigFields: vi.fn(),
   };
 
@@ -85,7 +86,11 @@ describe('MarshmallowConfigApplicationService', () => {
       rejected: 0n,
       unread: 0n,
     });
-    mockRepository.findTalentHomepagePath.mockResolvedValue('demo');
+    mockRepository.findTenantCodeBySchema.mockResolvedValue('tenant-code');
+    mockRepository.findTalentRouteRecord.mockResolvedValue({
+      code: 'TALENT_123',
+      homepagePath: 'demo',
+    });
 
     await expect(
       service.getOrCreate('talent-123', 'tenant_test'),
@@ -96,7 +101,7 @@ describe('MarshmallowConfigApplicationService', () => {
         totalMessages: 0,
         pendingCount: 0,
       },
-      marshmallowUrl: 'http://localhost:3000/m/demo',
+      marshmallowUrl: 'http://localhost:3000/tenant-code/talent_123/marshmallow',
     });
   });
 
@@ -121,7 +126,11 @@ describe('MarshmallowConfigApplicationService', () => {
       rejected: 0n,
       unread: 0n,
     });
-    mockRepository.findTalentHomepagePath.mockResolvedValue('demo');
+    mockRepository.findTenantCodeBySchema.mockResolvedValue('tenant-code');
+    mockRepository.findTalentRouteRecord.mockResolvedValue({
+      code: 'TALENT_123',
+      homepagePath: 'demo',
+    });
     mockChangeLogService.createDirect.mockResolvedValue(undefined);
 
     await expect(

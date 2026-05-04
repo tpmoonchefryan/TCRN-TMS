@@ -42,6 +42,7 @@ describe('Generic UI Hardening', () => {
         currentLocale="en"
         options={[{ code: 'en', label: 'English' }]}
         onChange={vi.fn()}
+        ariaLabel="Change language: English"
       />
     );
     const button = screen.getByRole('button');

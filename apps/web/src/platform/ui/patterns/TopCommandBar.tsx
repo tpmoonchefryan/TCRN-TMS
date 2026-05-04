@@ -4,10 +4,10 @@ export interface TopCommandBarProps {
   leftArea?: React.ReactNode;
   rightArea?: React.ReactNode;
   searchProps?: {
-    placeholder?: string;
+    placeholder: string;
     onSearch?: (query: string) => void;
     shortcutKey?: string;
-    ariaLabel?: string;
+    ariaLabel: string;
   };
 }
 

@@ -79,6 +79,10 @@ describe('AdapterReadApplicationService', () => {
         nameEn: 'Bili Sync',
         nameZh: '哔哩同步',
         nameJa: null,
+        translations: {
+          en: 'Bili Sync',
+          zh_HANS: '哔哩同步',
+        },
         adapterType: 'oauth',
         inherit: true,
         isActive: true,
@@ -152,6 +156,9 @@ describe('AdapterReadApplicationService', () => {
       nameEn: 'Bili Sync',
       nameZh: null,
       nameJa: null,
+      translations: {
+        en: 'Bili Sync',
+      },
       adapterType: 'oauth',
       inherit: true,
       isActive: true,

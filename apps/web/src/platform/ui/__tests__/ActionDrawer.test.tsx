@@ -9,6 +9,7 @@ describe('ActionDrawer', () => {
     onOpenChange: vi.fn(),
     title: 'Test Drawer',
     children: <div data-testid="drawer-content">Content</div>,
+    closeButtonAriaLabel: '关闭抽屉',
   };
 
   beforeEach(() => {
@@ -43,7 +44,7 @@ describe('ActionDrawer', () => {
 
   it('calls onOpenChange with false when close button is clicked', () => {
     render(<ActionDrawer {...defaultProps} />);
-    const closeButton = screen.getByLabelText('Close drawer');
+    const closeButton = screen.getByLabelText('关闭抽屉');
     fireEvent.click(closeButton);
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });

@@ -450,6 +450,7 @@ describe('Swagger security and marshmallow family contract', () => {
       'replacement',
       'severity',
       'sortOrder',
+      'translations',
     ]);
     expect(getDocumentedDtoProperties(UpdateExternalBlocklistDto)).toEqual([
       'action',
@@ -466,6 +467,7 @@ describe('Swagger security and marshmallow family contract', () => {
       'replacement',
       'severity',
       'sortOrder',
+      'translations',
       'version',
     ]);
     expect(getDocumentedDtoProperties(BatchToggleDto)).toEqual(['ids', 'isActive']);

@@ -30,6 +30,7 @@ describe('HomepageAdminService', () => {
     markHomepageUnpublished: ReturnType<typeof vi.fn>;
     appendHomepageUnpublishChangeLog: ReturnType<typeof vi.fn>;
     findHomepageSettings: ReturnType<typeof vi.fn>;
+    findTenantCodeBySchema: ReturnType<typeof vi.fn>;
     findTalentIdByHomepagePath: ReturnType<typeof vi.fn>;
     updateTalentHomepagePath: ReturnType<typeof vi.fn>;
     updateHomepageSettings: ReturnType<typeof vi.fn>;
@@ -50,7 +51,10 @@ describe('HomepageAdminService', () => {
 
   const mockTalent = {
     id: 'talent-123',
+    code: 'TEST_TALENT',
     homepagePath: 'test-talent',
+    customDomain: null,
+    customDomainVerified: false,
   };
 
   const mockHomepage = {
@@ -103,6 +107,7 @@ describe('HomepageAdminService', () => {
       markHomepageUnpublished: vi.fn(),
       appendHomepageUnpublishChangeLog: vi.fn(),
       findHomepageSettings: vi.fn(),
+      findTenantCodeBySchema: vi.fn().mockResolvedValue('tenant-code'),
       findTalentIdByHomepagePath: vi.fn(),
       updateTalentHomepagePath: vi.fn(),
       updateHomepageSettings: vi.fn(),
@@ -172,7 +177,7 @@ describe('HomepageAdminService', () => {
       const result = await service.getOrCreate('talent-123', 'tenant_test123');
 
       expect(result.homepagePath).toBe('test-talent');
-      expect(result.homepageUrl).toBe('http://localhost:3000/p/test-talent');
+      expect(result.homepageUrl).toBe('http://localhost:3000/tenant-code/test_talent/homepage');
     });
   });
 
@@ -406,6 +411,7 @@ describe('HomepageAdminService', () => {
         draftVersionId: 'draft-version-1',
         customDomain: 'demo.example.com',
         homepagePath: 'test-talent',
+        talentCode: 'TEST_TALENT',
       });
       mockHomepageAdminRepository.publishHomepageVersion.mockResolvedValue({
         id: 'draft-version-1',
@@ -418,7 +424,7 @@ describe('HomepageAdminService', () => {
 
       expect(result.publishedVersion.id).toBe('draft-version-1');
       expect(result.publishedVersion.versionNumber).toBe(3);
-      expect(result.homepageUrl).toBe('http://localhost:3000/p/test-talent');
+      expect(result.homepageUrl).toBe('http://localhost:3000/tenant-code/test_talent/homepage');
       expect(result.cdnPurgeStatus).toBe('success');
       expect(mockCdnPurgeService.purgeHomepage).toHaveBeenCalledWith(
         'test-talent',
@@ -438,6 +444,7 @@ describe('HomepageAdminService', () => {
         draftVersionId: null,
         customDomain: null,
         homepagePath: 'test-talent',
+        talentCode: 'TEST_TALENT',
       });
 
       await expect(service.publish('talent-123', testContext)).rejects.toThrow('No draft');
@@ -449,6 +456,7 @@ describe('HomepageAdminService', () => {
         draftVersionId: 'draft-version-1',
         customDomain: null,
         homepagePath: 'test-talent',
+        talentCode: 'TEST_TALENT',
       });
       mockHomepageAdminRepository.publishHomepageVersion.mockResolvedValue({
         id: 'draft-version-1',

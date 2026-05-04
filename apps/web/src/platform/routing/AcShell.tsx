@@ -273,7 +273,9 @@ export function AcShell({
                 currentLocale={selectedLocale}
                 options={localeOptions}
                 onChange={setLocale}
-                ariaLabelPrefix={copy.common.languageSwitcherLabel}
+                ariaLabel={`${copy.common.languageSwitcherLabel}: ${
+                  localeOptions.find((o) => o.code === selectedLocale)?.label || selectedLocale
+                }`}
               />
               <AccountDropdownMenu
                 user={{
