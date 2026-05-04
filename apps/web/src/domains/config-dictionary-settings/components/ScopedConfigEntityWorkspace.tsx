@@ -2,7 +2,7 @@
 
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { Plus, RefreshCcw } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type ConfigEntityRecord,
@@ -84,6 +84,8 @@ interface ConfirmState {
   confirmText: string;
   intent: 'danger' | 'primary';
   entity: ConfigEntityRecord;
+  entityType: ScopedConfigEntityType;
+  entry: ConfigEntityCatalogEntry;
   action: 'deactivate' | 'reactivate' | 'disable' | 'enable';
 }
 
@@ -777,6 +779,7 @@ export function ScopedConfigEntityWorkspace({
   const resolvedCopy = copy;
   const [selectedType, setSelectedType] = useState<ScopedConfigEntityType>(DEFAULT_CONFIG_ENTITY_TYPE);
   const [records, setRecords] = useState<ConfigEntityRecord[]>([]);
+  const recordsTypeRef = useRef<ScopedConfigEntityType | null>(null);
   const [parentOptions, setParentOptions] = useState<ParentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -934,6 +937,14 @@ export function ScopedConfigEntityWorkspace({
     let cancelled = false;
 
     async function loadRecords() {
+      const shouldRetainRecords = recordsTypeRef.current === selectedType;
+      recordsTypeRef.current = selectedType;
+
+      if (!shouldRetainRecords) {
+        setRecords([]);
+        setPagination(buildPaginationMeta(0, page, pageSize));
+      }
+
       setLoading(true);
       setError(null);
 
@@ -1140,6 +1151,8 @@ export function ScopedConfigEntityWorkspace({
         confirmText: entity.isDisabledHere ? resolvedCopy.enableInScopeConfirm : resolvedCopy.disableInScopeConfirm,
         intent: entity.isDisabledHere ? 'primary' : 'danger',
         entity,
+        entityType: selectedType,
+        entry: selectedEntry,
         action: entity.isDisabledHere ? 'enable' : 'disable',
       });
       return;
@@ -1157,6 +1170,8 @@ export function ScopedConfigEntityWorkspace({
       confirmText: entity.isActive ? resolvedCopy.deactivateConfirm : resolvedCopy.reactivateConfirm,
       intent: entity.isActive ? 'danger' : 'primary',
       entity,
+      entityType: selectedType,
+      entry: selectedEntry,
       action: entity.isActive ? 'deactivate' : 'reactivate',
     });
   }
@@ -1166,63 +1181,69 @@ export function ScopedConfigEntityWorkspace({
       return;
     }
 
+    const actionType = confirmState.entityType;
+    const actionEntry = confirmState.entry;
+
     setConfirmPending(true);
     setNotice(null);
 
     try {
       if (confirmState.action === 'deactivate') {
-        await deactivateConfigEntity(request, selectedType, confirmState.entity.id, confirmState.entity.version);
+        await deactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.deactivateSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.deactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       } else if (confirmState.action === 'reactivate') {
-        await reactivateConfigEntity(request, selectedType, confirmState.entity.id, confirmState.entity.version);
+        await reactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.reactivateSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.reactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       } else if (confirmState.action === 'disable') {
         if (scopeType === 'tenant' || !scopeId) {
           throw new Error('Inherited records can only be disabled inside subsidiary or talent scopes.');
         }
 
-        await disableInheritedConfigEntity(request, selectedType, confirmState.entity.id, scopeType, scopeId);
+        await disableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.disableInScopeSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.disableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       } else {
         if (scopeType === 'tenant' || !scopeId) {
           throw new Error('Inherited records can only be enabled inside subsidiary or talent scopes.');
         }
 
-        await enableInheritedConfigEntity(request, selectedType, confirmState.entity.id, scopeType, scopeId);
+        await enableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.enableInScopeSuccess(selectedEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.enableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
         });
       }
 
-      const response = await listConfigEntitiesPage(requestEnvelope, selectedType, {
-        scopeType,
-        scopeId,
-        includeInherited: !effectiveCurrentScopeOnly,
-        includeDisabled: true,
-        includeInactive,
-        ownerOnly: effectiveCurrentScopeOnly,
-        search: search.trim() || undefined,
-        page,
-        pageSize,
-        sort: 'sortOrder',
-      });
-      setRecords(response.items);
-      setPagination(response.pagination);
+      if (selectedType === actionType) {
+        const response = await listConfigEntitiesPage(requestEnvelope, actionType, {
+          scopeType,
+          scopeId,
+          includeInherited: !effectiveCurrentScopeOnly,
+          includeDisabled: true,
+          includeInactive,
+          ownerOnly: effectiveCurrentScopeOnly,
+          search: search.trim() || undefined,
+          page,
+          pageSize,
+          sort: 'sortOrder',
+        });
+        setRecords(response.items);
+        setPagination(response.pagination);
+      }
+
       setConfirmState(null);
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, resolvedCopy.stateUpdateError(selectedEntry.label)),
+        message: getErrorMessage(reason, resolvedCopy.stateUpdateError(actionEntry.label)),
       });
     } finally {
       setConfirmPending(false);
