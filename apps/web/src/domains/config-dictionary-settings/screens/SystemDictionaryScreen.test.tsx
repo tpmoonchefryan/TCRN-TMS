@@ -55,6 +55,17 @@ function cloneItems(items: DictionaryItemRecord[]) {
   }));
 }
 
+function getTableRowByText(text: string) {
+  const element = screen.getByText(text);
+  const tableRow = element.closest('tr');
+
+  if (!tableRow) {
+    throw new Error(`No table row found for text: ${text}`);
+  }
+
+  return tableRow;
+}
+
 describe('SystemDictionaryScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
@@ -542,7 +553,7 @@ describe('SystemDictionaryScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Customer Status/ }));
     expect((await screen.findAllByText('Inactive customer')).length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
+    fireEvent.click(within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByLabelText('Dictionary item English name'), {
       target: { value: 'Currently active' },
     });
@@ -572,9 +583,11 @@ describe('SystemDictionaryScreen', () => {
     });
 
     expect(await screen.findByText('ACTIVE item updated.')).toBeInTheDocument();
-    expect((await screen.findAllByText('Currently active')).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(within(getTableRowByText('ACTIVE')).getByText('v2')).toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Deactivate' })[0]);
+    fireEvent.click(within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Deactivate' }));
     const deactivateDialog = await screen.findByRole('dialog');
     expect(within(deactivateDialog).getByText('Deactivate dictionary item')).toBeInTheDocument();
     fireEvent.click(within(deactivateDialog).getByRole('button', { name: 'Deactivate' }));
@@ -594,9 +607,15 @@ describe('SystemDictionaryScreen', () => {
     expect(await screen.findByText('ACTIVE deactivated.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('Include inactive dictionary items'));
-    expect(await screen.findByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
+    await waitFor(() => {
+      const activeRow = getTableRowByText('ACTIVE');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reactivate' }));
+      expect(within(activeRow).getByText('v3')).toBeInTheDocument();
+      expect(within(activeRow).getByText('Inactive')).toBeInTheDocument();
+      expect(within(activeRow).getByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Reactivate' }));
     const reactivateDialog = await screen.findByRole('dialog');
     expect(within(reactivateDialog).getByText('Reactivate dictionary item')).toBeInTheDocument();
     fireEvent.click(within(reactivateDialog).getByRole('button', { name: 'Reactivate' }));
