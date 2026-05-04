@@ -2,6 +2,11 @@
 // Report Job Processor (PRD §20)
 
 import { Prisma, PrismaClient } from '@tcrn/database';
+import {
+  resolveTrilingualLocaleFamily,
+  type SupportedUiLocale,
+  type TrilingualLocaleFamily,
+} from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
 import * as fs from 'fs';
@@ -34,6 +39,7 @@ const TEMP_REPORTS_BUCKET = 'temp-reports';
  * Report format options
  */
 export type ReportFormat = 'xlsx' | 'csv';
+type ReportLanguage = SupportedUiLocale | TrilingualLocaleFamily;
 
 /**
  * Report job data interface (PRD §20)
@@ -60,7 +66,7 @@ export interface ReportJobData {
   };
   options?: {
     includePii?: boolean; // Requires additional permission check
-    language?: 'en' | 'zh' | 'ja';
+    language?: ReportLanguage;
   };
 }
 
@@ -182,7 +188,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
     logger.info(`Total records to process: ${totalCount}`);
 
-    const language = options?.language || 'en';
+    const language = resolveTrilingualLocaleFamily(options?.language);
     const headers = getHeaders(language);
     tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.${format}`);
     let workbook: ExcelJS.stream.xlsx.WorkbookWriter | null = null;

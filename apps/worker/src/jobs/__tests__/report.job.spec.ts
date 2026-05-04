@@ -198,6 +198,38 @@ describe('reportJobProcessor', () => {
     );
   });
 
+  it('normalizes full UI locale tags to trilingual report labels', async () => {
+    mockJob.data.format = 'csv';
+    mockJob.data.options = {
+      language: 'zh_HANT',
+      includePii: false,
+    };
+
+    await reportJobProcessor(mockJob);
+
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('/mfr_report-job-1.csv'),
+      expect.stringContaining('昵称,类型,平台'),
+      'utf8',
+    );
+  });
+
+  it('falls non-trilingual UI locale tags back to English report labels', async () => {
+    mockJob.data.format = 'csv';
+    mockJob.data.options = {
+      language: 'fr',
+      includePii: false,
+    };
+
+    await reportJobProcessor(mockJob);
+
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('/mfr_report-job-1.csv'),
+      expect.stringContaining('Nickname,Type,Platform'),
+      'utf8',
+    );
+  });
+
   it('fails closed when a report job requests inline pii generation', async () => {
     mockJob.data.options = {
       language: 'en',
