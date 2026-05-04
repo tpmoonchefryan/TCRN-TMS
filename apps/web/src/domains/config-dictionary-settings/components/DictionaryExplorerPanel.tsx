@@ -26,6 +26,7 @@ import {
 import { StateView, TableShell } from '@/platform/ui';
 
 interface DictionaryItemsState {
+  dictionaryTypeCode: string | null;
   data: DictionaryItemRecord[];
   pagination: ApiPaginationMeta;
   error: string | null;
@@ -129,6 +130,7 @@ export function DictionaryExplorerPanel({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
   const [itemsPanel, setItemsPanel] = useState<DictionaryItemsState>({
+    dictionaryTypeCode: null,
     data: [],
     pagination: buildPaginationMeta(0, 1, PAGE_SIZE_OPTIONS[0]),
     error: null,
@@ -164,6 +166,7 @@ export function DictionaryExplorerPanel({
   useEffect(() => {
     if (!selectedType) {
       setItemsPanel({
+        dictionaryTypeCode: null,
         data: [],
         pagination: buildPaginationMeta(0, 1, pageSize),
         error: null,
@@ -176,11 +179,17 @@ export function DictionaryExplorerPanel({
     let cancelled = false;
 
     async function loadItems() {
-      setItemsPanel((current) => ({
-        ...current,
-        error: null,
-        loading: true,
-      }));
+      setItemsPanel((current) => {
+        const shouldRetainData = current.dictionaryTypeCode === selectedTypeCode;
+
+        return {
+          dictionaryTypeCode: selectedTypeCode,
+          data: shouldRetainData ? current.data : [],
+          pagination: shouldRetainData ? current.pagination : buildPaginationMeta(0, page, pageSize),
+          error: null,
+          loading: true,
+        };
+      });
 
       try {
         const response = await listDictionaryItems(requestEnvelope, selectedTypeCode, {
@@ -195,6 +204,7 @@ export function DictionaryExplorerPanel({
         }
 
         setItemsPanel({
+          dictionaryTypeCode: selectedTypeCode,
           data: response.items,
           pagination: response.pagination,
           error: null,
@@ -206,6 +216,7 @@ export function DictionaryExplorerPanel({
         }
 
         setItemsPanel({
+          dictionaryTypeCode: selectedTypeCode,
           data: [],
           pagination: buildPaginationMeta(0, page, pageSize),
           error: getErrorMessage(reason, copy.itemsUnavailableFallback),

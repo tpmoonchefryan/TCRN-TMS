@@ -130,6 +130,129 @@ describe('SystemDictionaryScreen', () => {
     expect(await screen.findByRole('button', { name: '辞書項目ドロワーを閉じる' })).toBeInTheDocument();
   });
 
+  it('clears stale dictionary rows while loading a newly selected type', async () => {
+    const types: DictionaryTypeSummary[] = [
+      {
+        type: 'CUSTOMER_STATUS',
+        name: 'Customer Status',
+        description: 'Customer lifecycle flags',
+        count: 1,
+      },
+      {
+        type: 'MEMBERSHIP_LEVEL',
+        name: 'Membership Level',
+        description: 'Customer tier labels',
+        count: 0,
+      },
+    ];
+
+    let resolveMembershipItems: (value: {
+      success: true;
+      data: DictionaryItemRecord[];
+      meta: {
+        pagination: {
+          page: number;
+          pageSize: number;
+          totalCount: number;
+          totalPages: number;
+          hasNext: boolean;
+          hasPrev: boolean;
+        };
+      };
+    }) => void = () => {};
+
+    const membershipItems = new Promise<Parameters<typeof resolveMembershipItems>[0]>((resolve) => {
+      resolveMembershipItems = resolve;
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      const url = new URL(path, 'https://tcrn.local');
+
+      if (url.pathname === '/api/v1/system-dictionary') {
+        return types;
+      }
+
+      if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS') {
+        return {
+          success: true,
+          data: [
+            {
+              id: 'item-1',
+              dictionaryCode: 'CUSTOMER_STATUS',
+              code: 'ACTIVE',
+              nameEn: 'Active customer',
+              nameZh: null,
+              nameJa: null,
+              translations: {
+                en: 'Active customer',
+              },
+              name: 'Active customer',
+              descriptionEn: null,
+              descriptionZh: null,
+              descriptionJa: null,
+              descriptionTranslations: {},
+              sortOrder: 0,
+              isActive: true,
+              extraData: null,
+              createdAt: '2026-04-17T00:00:00.000Z',
+              updatedAt: '2026-04-17T00:10:00.000Z',
+              version: 1,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 1,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      if (url.pathname === '/api/v1/system-dictionary/MEMBERSHIP_LEVEL') {
+        return membershipItems;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<SystemDictionaryScreen />);
+
+    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Membership Level/ }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/system-dictionary/MEMBERSHIP_LEVEL'),
+        expect.anything(),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Active customer')).not.toBeInTheDocument();
+    });
+
+    resolveMembershipItems({
+      success: true,
+      data: [],
+      meta: {
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          totalCount: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
+        },
+      },
+    });
+
+    expect(await screen.findByText('This dictionary type does not contain any visible items yet.')).toBeInTheDocument();
+  });
+
   it('creates dictionary types and manages dictionary item lifecycle in the AC-owned workspace', async () => {
     let types: DictionaryTypeSummary[] = [
       {
