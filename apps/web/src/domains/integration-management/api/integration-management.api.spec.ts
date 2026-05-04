@@ -7,6 +7,7 @@ import {
   createWebhook,
   type IntegrationConsumerRecord,
   listConsumers,
+  listEmailSenderTenants,
   listSocialPlatforms,
   type SocialPlatformRecord,
   updateConsumer,
@@ -37,6 +38,15 @@ function buildConsumer(id: string): IntegrationConsumerRecord {
     isActive: true,
     version: 1,
     consumerCategory: 'internal',
+  };
+}
+
+function buildEmailSenderTenant(index: number) {
+  return {
+    id: `tenant-${index}`,
+    code: `tenant-${index}`,
+    name: `Tenant ${index}`,
+    schemaName: `tenant_${index}`,
   };
 }
 
@@ -77,6 +87,28 @@ describe('integration-management.api pagination helpers', () => {
 
     expect(request).toHaveBeenCalledTimes(1);
     expect(result).toEqual(firstPage);
+  });
+
+  it('loads all active standard tenants for AC sender override targets', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => buildEmailSenderTenant(index + 1));
+    const secondPage = [buildEmailSenderTenant(101)];
+    const request = vi.fn(async (path: string) => {
+      if (path === '/api/v1/tenants?page=1&pageSize=100&tier=standard&isActive=true') {
+        return firstPage;
+      }
+
+      if (path === '/api/v1/tenants?page=2&pageSize=100&tier=standard&isActive=true') {
+        return secondPage;
+      }
+
+      throw new Error(`Unexpected request path: ${path}`);
+    });
+
+    const result = await listEmailSenderTenants(request as never);
+
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(101);
+    expect(result.at(-1)?.schemaName).toBe('tenant_101');
   });
 
   it('sends managed translation payloads when creating consumers', async () => {

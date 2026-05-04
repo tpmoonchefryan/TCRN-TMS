@@ -483,6 +483,8 @@ function buildAdapterCollectionPath(scope: IntegrationAdapterScope) {
 
 const CONFIGURATION_ENTITY_PAGE_SIZE = 100;
 const MAX_CONFIGURATION_ENTITY_PAGES = 100;
+const EMAIL_SENDER_TENANT_PAGE_SIZE = 100;
+const MAX_EMAIL_SENDER_TENANT_PAGES = 100;
 
 async function listConfigurationEntitiesAcrossPages<T>(
   request: RequestFn,
@@ -764,8 +766,27 @@ export function sendEmailTest(request: RequestFn, testEmail: string) {
   );
 }
 
-export function listEmailSenderTenants(request: RequestFn) {
-  return request<EmailSenderTenantTarget[]>('/api/v1/tenants?page=1&pageSize=100&tier=standard&isActive=true');
+export async function listEmailSenderTenants(request: RequestFn): Promise<EmailSenderTenantTarget[]> {
+  const tenants: EmailSenderTenantTarget[] = [];
+
+  for (let page = 1; page <= MAX_EMAIL_SENDER_TENANT_PAGES; page += 1) {
+    const batch = await request<EmailSenderTenantTarget[]>(
+      `/api/v1/tenants${buildQueryString({
+        page,
+        pageSize: EMAIL_SENDER_TENANT_PAGE_SIZE,
+        tier: 'standard',
+        isActive: true,
+      })}`,
+    );
+
+    tenants.push(...batch);
+
+    if (batch.length < EMAIL_SENDER_TENANT_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return tenants;
 }
 
 export function listEmailTemplates(
