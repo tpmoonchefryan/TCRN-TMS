@@ -3,7 +3,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
-import * as crypto from 'crypto';
+
+import {
+  generateApiKeyMaterial,
+  getApiKeyStoredPrefix,
+  hashApiKey,
+  isManagedApiKey,
+} from '../integration/domain/api-key.policy';
 
 export interface GeneratedApiKey {
   apiKey: string;
@@ -16,9 +22,6 @@ export interface GeneratedApiKey {
  */
 @Injectable()
 export class ConsumerKeyService {
-  private readonly KEY_LENGTH = 32;
-  private readonly PREFIX_LENGTH = 8;
-
   /**
    * Generate a new API key for a consumer
    */
@@ -40,10 +43,7 @@ export class ConsumerKeyService {
       });
     }
 
-    // Generate random API key
-    const apiKey = this.generateRandomKey();
-    const apiKeyPrefix = apiKey.substring(0, this.PREFIX_LENGTH);
-    const apiKeyHash = this.hashKey(apiKey);
+    const { key: apiKey, prefix: apiKeyPrefix, hash: apiKeyHash } = generateApiKeyMaterial();
 
     // Update consumer with new key
     await prisma.$executeRawUnsafe(`
@@ -106,8 +106,12 @@ export class ConsumerKeyService {
     apiKey: string,
     tenantSchema: string
   ): Promise<{ consumerId: string; consumerCode: string } | null> {
-    const prefix = apiKey.substring(0, this.PREFIX_LENGTH);
-    const hash = this.hashKey(apiKey);
+    if (!isManagedApiKey(apiKey)) {
+      return null;
+    }
+
+    const prefix = getApiKeyStoredPrefix(apiKey);
+    const hash = hashApiKey(apiKey);
 
     // Find consumer by prefix and hash
     const consumers = await prisma.$queryRawUnsafe<Array<{ id: string; code: string; apiKeyHash: string }>>(
@@ -144,19 +148,4 @@ export class ConsumerKeyService {
     return result.length > 0 && result[0].hasKey;
   }
 
-  /**
-   * Generate a random API key
-   */
-  private generateRandomKey(): string {
-    // Generate URL-safe base64 string
-    const bytes = crypto.randomBytes(this.KEY_LENGTH);
-    return bytes.toString('base64url').substring(0, this.KEY_LENGTH);
-  }
-
-  /**
-   * Hash an API key using SHA-256
-   */
-  private hashKey(apiKey: string): string {
-    return crypto.createHash('sha256').update(apiKey).digest('hex');
-  }
 }
