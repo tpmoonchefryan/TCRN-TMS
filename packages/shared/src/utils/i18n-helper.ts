@@ -1,9 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { resolveTrilingualLocaleFamily } from '../constants/locale';
+import { resolveTrilingualLocaleFamily, type TrilingualLocaleFamily } from '../constants/locale';
 import { LocalizableEntity } from '../types/db-schema';
-
-type Locale = 'en' | 'zh' | 'ja';
 
 /**
  * Helper to get the localized value of a field from an entity.
@@ -20,7 +18,7 @@ export function getLocalizedValue<T extends LocalizableEntity>(
   locale: string
 ): string {
   // Normalize locale to supported keys
-  const safeLocale = resolveTrilingualLocaleFamily(locale) as Locale;
+  const safeLocale: TrilingualLocaleFamily = resolveTrilingualLocaleFamily(locale);
   
   const key = `${fieldPrefix}_${safeLocale}` as keyof T;
   const fallbackKey = `${fieldPrefix}_en` as keyof T;
