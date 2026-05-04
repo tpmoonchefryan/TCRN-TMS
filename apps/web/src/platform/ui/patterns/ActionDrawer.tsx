@@ -11,7 +11,7 @@ export interface ActionDrawerProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-  closeButtonAriaLabel?: string;
+  closeButtonAriaLabel: string;
 }
 
 const sizeClasses = {

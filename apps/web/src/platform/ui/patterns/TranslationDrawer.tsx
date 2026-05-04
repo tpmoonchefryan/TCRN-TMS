@@ -23,7 +23,7 @@ export interface TranslationDrawerProps {
   onSave: (payload: Record<string, Record<string, string>> | Record<string, string>) => Promise<void>;
   saveButtonLabel: string;
   cancelButtonLabel: string;
-  closeButtonAriaLabel?: string;
+  closeButtonAriaLabel: string;
   addLanguageLabel: string;
   addOtherLanguageLabel: string;
   removeLanguageVisibleLabel: string;

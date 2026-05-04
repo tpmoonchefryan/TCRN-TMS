@@ -38,6 +38,7 @@ describe('TranslationDrawer', () => {
     onSave: vi.fn().mockResolvedValue(undefined),
     saveButtonLabel: 'Apply translations',
     cancelButtonLabel: 'Discard changes',
+    closeButtonAriaLabel: 'Close translations',
     addLanguageLabel: 'Quick add language',
     addOtherLanguageLabel: 'Choose another language',
     removeLanguageVisibleLabel: 'Remove locale',
@@ -159,6 +160,7 @@ describe('TranslationDrawer', () => {
         onSave={vi.fn().mockResolvedValue(undefined)}
         saveButtonLabel="Apply translations"
         cancelButtonLabel="Discard changes"
+        closeButtonAriaLabel="Close translations"
         addLanguageLabel="Quick add language"
         addOtherLanguageLabel="Choose another language"
         removeLanguageVisibleLabel="Remove locale"
