@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TenantSettingsScreen } from '@/domains/config-dictionary-settings/screens/TenantSettingsScreen';
@@ -167,6 +167,18 @@ const languageDictionaryResponse = {
     },
   },
 };
+
+
+function createDeferred<T>(_sample?: T) {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return { promise, reject, resolve };
+}
 
 describe('TenantSettingsScreen', () => {
   beforeEach(() => {
@@ -345,6 +357,121 @@ describe('TenantSettingsScreen', () => {
     });
 
     expect(await screen.findByText('Tenant defaults saved.')).toBeInTheDocument();
+  });
+
+
+  it('ignores stale profile store detail responses after the editor is closed', async () => {
+    const deferredDetail = createDeferred({
+      id: 'store-1',
+      code: 'DEFAULT_STORE',
+      name: 'Default Store',
+      nameZh: null,
+      nameJa: null,
+      translations: {
+        en: 'Default Store',
+      },
+      description: 'Default profile store',
+      descriptionZh: null,
+      descriptionJa: null,
+      descriptionTranslations: {
+        en: 'Default profile store',
+      },
+      talentCount: 2,
+      customerCount: 18,
+      isDefault: true,
+      isActive: true,
+      createdAt: '2026-04-17T00:00:00.000Z',
+      updatedAt: '2026-04-17T00:10:00.000Z',
+      version: 1,
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/settings') {
+        return {
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'zh-CN',
+            timezone: 'Asia/Shanghai',
+            allowCustomHomepage: true,
+          },
+          overrides: ['timezone'],
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            allowCustomHomepage: 'tenant',
+          },
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20&includeInactive=true') {
+        return profileStoreListResponse;
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      if (path === '/api/v1/profile-stores/store-1') {
+        return deferredDetail.promise;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
+    expect(await screen.findByText('Default Store')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const editDrawer = await screen.findByRole('dialog', { name: 'Edit Profile Store' });
+    expect(within(editDrawer).getByText('Loading profile store detail')).toBeInTheDocument();
+
+    fireEvent.click(within(editDrawer).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Edit Profile Store' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /New profile store/i }));
+    const createDrawer = await screen.findByRole('dialog', { name: 'Create Profile Store' });
+    const storeCodeInput = within(createDrawer).getByLabelText('Store code') as HTMLInputElement;
+
+    fireEvent.change(storeCodeInput, {
+      target: { value: 'fresh_store' },
+    });
+
+    await act(async () => {
+      deferredDetail.resolve({
+        id: 'store-1',
+        code: 'DEFAULT_STORE',
+        name: 'Default Store',
+        nameZh: null,
+        nameJa: null,
+        translations: {
+          en: 'Default Store',
+        },
+        description: 'Default profile store',
+        descriptionZh: null,
+        descriptionJa: null,
+        descriptionTranslations: {
+          en: 'Default profile store',
+        },
+        talentCount: 2,
+        customerCount: 18,
+        isDefault: true,
+        isActive: true,
+        createdAt: '2026-04-17T00:00:00.000Z',
+        updatedAt: '2026-04-17T00:10:00.000Z',
+        version: 1,
+      });
+      await deferredDetail.promise;
+    });
+
+    expect(storeCodeInput.value).toBe('FRESH_STORE');
+    expect((within(createDrawer).getByLabelText('Name English') as HTMLInputElement).value).toBe('');
   });
 
   it('creates, edits, and deactivates profile stores from the tenant settings workspace', async () => {

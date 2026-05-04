@@ -6,7 +6,7 @@ import {
 } from '@tcrn/shared';
 import { Building2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
 
 import {
   buildTenantSettingsDraft,
@@ -347,6 +347,7 @@ export function TenantSettingsScreen({
   const [profileStoreEditorOpen, setProfileStoreEditorOpen] = useState(false);
   const [profileStoreTranslationsOpen, setProfileStoreTranslationsOpen] = useState(false);
   const [profileStoreEditorLoading, setProfileStoreEditorLoading] = useState(false);
+  const profileStoreEditorRequestIdRef = useRef(0);
   const [profileStoreSavePending, setProfileStoreSavePending] = useState(false);
   const [profileStoreDialogState, setProfileStoreDialogState] = useState<ProfileStoreDialogState | null>(null);
   const [profileStoreDialogPending, setProfileStoreDialogPending] = useState(false);
@@ -692,6 +693,7 @@ export function TenantSettingsScreen({
   }
 
   function resetProfileStoreEditor() {
+    profileStoreEditorRequestIdRef.current += 1;
     setProfileStoreEditorState({ mode: 'create' });
     setProfileStoreDraft(EMPTY_PROFILE_STORE_DRAFT);
     setProfileStoreTranslationsOpen(false);
@@ -711,6 +713,9 @@ export function TenantSettingsScreen({
   }
 
   async function handleStartEditProfileStore(profileStoreId: string) {
+    const requestId = profileStoreEditorRequestIdRef.current + 1;
+    profileStoreEditorRequestIdRef.current = requestId;
+
     setProfileStoreEditorOpen(true);
     setProfileStoreEditorLoading(true);
     setProfileStoreEditorState({
@@ -723,6 +728,11 @@ export function TenantSettingsScreen({
 
     try {
       const detail = await readProfileStoreDetail(request, profileStoreId);
+
+      if (profileStoreEditorRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setProfileStoreEditorState({
         mode: 'edit',
         id: detail.id,
@@ -731,6 +741,10 @@ export function TenantSettingsScreen({
       setProfileStoreDraft(buildProfileStoreDraft(detail));
       setProfileStoreTranslationsOpen(false);
     } catch (reason) {
+      if (profileStoreEditorRequestIdRef.current !== requestId) {
+        return;
+      }
+
       handleCloseProfileStoreEditor();
       setProfileStoreNotice({
         tone: 'error',
@@ -744,7 +758,9 @@ export function TenantSettingsScreen({
         ),
       });
     } finally {
-      setProfileStoreEditorLoading(false);
+      if (profileStoreEditorRequestIdRef.current === requestId) {
+        setProfileStoreEditorLoading(false);
+      }
     }
   }
 
