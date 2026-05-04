@@ -10,7 +10,7 @@ describe('buildTalentEffectiveCustomDomains', () => {
     customDomain: 'legacy.example.com',
     customDomainVerified: true,
     customDomainVerificationToken: 'legacy-token',
-    customDomainSslMode: 'auto',
+    customDomainSslMode: 'auto' as const,
     homepageCustomPath: 'legacy-home',
     marshmallowCustomPath: 'legacy-mm',
   };
@@ -53,7 +53,7 @@ describe('buildTalentEffectiveCustomDomains', () => {
           ownerDepth: null,
           customDomainVerified: true,
           customDomainVerificationToken: null,
-          customDomainSslMode: 'auto',
+          customDomainSslMode: 'auto' as const,
           isActive: true,
         },
         {
@@ -86,7 +86,7 @@ describe('buildTalentEffectiveCustomDomains', () => {
           ownerDepth: null,
           customDomainVerified: true,
           customDomainVerificationToken: null,
-          customDomainSslMode: 'auto',
+          customDomainSslMode: 'auto' as const,
           isActive: true,
         },
       ],

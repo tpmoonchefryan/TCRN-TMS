@@ -17,11 +17,12 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
 import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
+import { CUSTOM_DOMAIN_OWNER_TYPES, CUSTOM_DOMAIN_SSL_MODES } from './domain/talent-custom-domain.policy';
 import { TalentService } from './talent.service';
 
 // DTOs
@@ -287,6 +288,64 @@ export class ListTalentsQueryDto {
   @IsOptional()
   @IsString()
   sort?: string;
+}
+
+
+export class UpsertCustomDomainBindingDto {
+  @ApiProperty({
+    description: 'Binding owner scope',
+    enum: CUSTOM_DOMAIN_OWNER_TYPES,
+    example: 'tenant',
+  })
+  @IsString()
+  @IsIn(CUSTOM_DOMAIN_OWNER_TYPES)
+  ownerType: 'tenant' | 'subsidiary' | 'talent';
+
+  @ApiPropertyOptional({
+    description: 'Owner identifier. Required for subsidiary/talent; omitted for tenant.',
+    format: 'uuid',
+    nullable: true,
+    example: '550e8400-e29b-41d4-a716-446655440300',
+  })
+  @IsOptional()
+  @IsUUID()
+  ownerId?: string | null;
+
+  @ApiProperty({
+    description: 'Normalized custom-domain hostname',
+    example: 'fans.example.com',
+  })
+  @IsString()
+  hostname: string;
+
+  @ApiPropertyOptional({
+    description: 'SSL mode for this domain binding',
+    enum: CUSTOM_DOMAIN_SSL_MODES,
+    example: 'cloudflare',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(CUSTOM_DOMAIN_SSL_MODES)
+  customDomainSslMode?: 'auto' | 'self_hosted' | 'cloudflare';
+
+  @ApiPropertyOptional({
+    description: 'Whether the domain binding is available for routing/selection',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class SelectInheritedCustomDomainsDto {
+  @ApiProperty({
+    description: 'Verified inherited domain binding identifiers selected for this talent',
+    type: [String],
+    example: ['550e8400-e29b-41d4-a716-446655440900'],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  domainIds: string[];
 }
 
 export class SetCustomDomainDto {
@@ -824,6 +883,46 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   },
 );
 
+
+const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      domain: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440900' },
+          hostname: { type: 'string', example: 'fans.example.com' },
+          ownerType: { type: 'string', enum: CUSTOM_DOMAIN_OWNER_TYPES, example: 'tenant' },
+          ownerId: { type: 'string', nullable: true, example: null },
+          customDomainVerified: { type: 'boolean', example: false },
+          customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+          customDomainSslMode: { type: 'string', enum: CUSTOM_DOMAIN_SSL_MODES, example: 'cloudflare' },
+          isActive: { type: 'boolean', example: true },
+        },
+        required: ['id', 'hostname', 'ownerType', 'ownerId', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'isActive'],
+      },
+      token: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+      txtRecord: { type: 'string', nullable: true, example: 'tcrn-verify=aabbccddeeff00112233445566778899' },
+    },
+    required: ['domain', 'token', 'txtRecord'],
+  },
+  {
+    domain: {
+      id: '550e8400-e29b-41d4-a716-446655440900',
+      hostname: 'fans.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: 'aabbccddeeff00112233445566778899',
+      customDomainSslMode: 'cloudflare',
+      isActive: true,
+    },
+    token: 'aabbccddeeff00112233445566778899',
+    txtRecord: 'tcrn-verify=aabbccddeeff00112233445566778899',
+  },
+);
+
 const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'object',
@@ -1145,6 +1244,126 @@ export class TalentController {
       createdAt: talent.createdAt.toISOString(),
       version: talent.version,
     });
+  }
+
+  /**
+   * POST /api/v1/talents/custom-domain-bindings
+   * Create tenant/subsidiary/talent custom-domain binding
+   */
+  @Post('custom-domain-bindings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create custom-domain binding' })
+  @ApiResponse({
+    status: 200,
+    description: 'Creates a custom-domain binding and returns DNS TXT verification details',
+    schema: TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Custom-domain binding request is invalid',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create custom-domain bindings',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  async createCustomDomainBinding(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: UpsertCustomDomainBindingDto,
+  ) {
+    const result = await this.talentService.createCustomDomainBinding(
+      user.tenantSchema,
+      body,
+    );
+    return success(result);
+  }
+
+  /**
+   * PATCH /api/v1/talents/custom-domain-bindings/:domainId
+   * Update tenant/subsidiary/talent custom-domain binding
+   */
+  @Patch('custom-domain-bindings/:domainId')
+  @ApiOperation({ summary: 'Update custom-domain binding' })
+  @ApiParam({
+    name: 'domainId',
+    description: 'Custom-domain binding identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Updates a custom-domain binding and returns new DNS TXT details when hostname changed',
+    schema: TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Custom-domain binding request is invalid',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update custom-domain bindings',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Custom-domain binding was not found',
+    schema: TALENT_NOT_FOUND_SCHEMA,
+  })
+  async updateCustomDomainBinding(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('domainId', ParseUUIDPipe) domainId: string,
+    @Body() body: UpsertCustomDomainBindingDto,
+  ) {
+    const result = await this.talentService.updateCustomDomainBinding(
+      user.tenantSchema,
+      domainId,
+      body,
+    );
+    return success(result);
+  }
+
+  /**
+   * POST /api/v1/talents/custom-domain-bindings/:domainId/verify
+   * Verify tenant/subsidiary/talent custom-domain binding
+   */
+  @Post('custom-domain-bindings/:domainId/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify custom-domain binding' })
+  @ApiParam({
+    name: 'domainId',
+    description: 'Custom-domain binding identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns current verification result for the custom-domain binding',
+    schema: TALENT_VERIFY_CUSTOM_DOMAIN_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Custom-domain binding verification request is invalid',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to verify custom-domain bindings',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Custom-domain binding was not found',
+    schema: TALENT_NOT_FOUND_SCHEMA,
+  })
+  async verifyCustomDomainBinding(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('domainId', ParseUUIDPipe) domainId: string,
+  ) {
+    const result = await this.talentService.verifyCustomDomainBinding(
+      user.tenantSchema,
+      domainId,
+    );
+    return success(result);
   }
 
   /**
@@ -1753,6 +1972,51 @@ export class TalentController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
   ) {
     const result = await this.talentService.verifyCustomDomain(talentId, user.tenantSchema);
+    return success(result);
+  }
+
+
+  /**
+   * PATCH /api/v1/talents/:talentId/custom-domain/inherited-selections
+   * Replace explicit inherited custom-domain selections for a talent.
+   */
+  @Patch(':talentId/custom-domain/inherited-selections')
+  @ApiOperation({ summary: 'Select inherited custom domains for a talent' })
+  @ApiParam({
+    name: 'talentId',
+    description: 'Talent identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Updates selected inherited domains and returns refreshed custom-domain config',
+    schema: TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Inherited-domain selection request is invalid',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to select inherited custom domains',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Talent was not found',
+    schema: TALENT_NOT_FOUND_SCHEMA,
+  })
+  async selectInheritedCustomDomains(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Body() body: SelectInheritedCustomDomainsDto,
+  ) {
+    const result = await this.talentService.setSelectedInheritedDomainIds(
+      talentId,
+      user.tenantSchema,
+      body.domainIds,
+    );
     return success(result);
   }
 

@@ -90,6 +90,21 @@ describe('TalentController lifecycle route contract', () => {
           path: ':talentId/move',
         },
         {
+          methodName: 'createCustomDomainBinding',
+          requestMethod: RequestMethod.POST,
+          path: 'custom-domain-bindings',
+        },
+        {
+          methodName: 'updateCustomDomainBinding',
+          requestMethod: RequestMethod.PATCH,
+          path: 'custom-domain-bindings/:domainId',
+        },
+        {
+          methodName: 'verifyCustomDomainBinding',
+          requestMethod: RequestMethod.POST,
+          path: 'custom-domain-bindings/:domainId/verify',
+        },
+        {
           methodName: 'getCustomDomainConfig',
           requestMethod: RequestMethod.GET,
           path: ':talentId/custom-domain',
@@ -105,6 +120,11 @@ describe('TalentController lifecycle route contract', () => {
           path: ':talentId/custom-domain/verify',
         },
         {
+          methodName: 'selectInheritedCustomDomains',
+          requestMethod: RequestMethod.PATCH,
+          path: ':talentId/custom-domain/inherited-selections',
+        },
+        {
           methodName: 'updateServicePaths',
           requestMethod: RequestMethod.PATCH,
           path: ':talentId/custom-domain/paths',
@@ -115,6 +135,19 @@ describe('TalentController lifecycle route contract', () => {
           path: ':talentId/custom-domain/ssl-mode',
         },
       ]),
+    );
+  });
+
+
+  it('keeps static custom-domain binding routes before the dynamic talent detail route', () => {
+    const routes = getControllerRoutes(TalentController);
+    const routeKeys = routes.map((route) => `${RequestMethod[route.requestMethod]} ${route.path}`);
+
+    expect(routeKeys.indexOf('POST custom-domain-bindings')).toBeLessThan(
+      routeKeys.indexOf('GET :talentId'),
+    );
+    expect(routeKeys.indexOf('PATCH custom-domain-bindings/:domainId')).toBeLessThan(
+      routeKeys.indexOf('PATCH :talentId'),
     );
   });
 

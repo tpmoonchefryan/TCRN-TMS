@@ -31,6 +31,14 @@ describe('TalentCustomDomainService', () => {
     updateSslMode: vi.fn(),
     listCustomDomainBindingsForTalent: vi.fn(),
     listSelectedInheritedDomainIds: vi.fn(),
+    customDomainOwnerExists: vi.fn(),
+    findCustomDomainBindingById: vi.fn(),
+    findCustomDomainBindingByHostname: vi.fn(),
+    findLegacyCustomDomainOwner: vi.fn(),
+    createCustomDomainBinding: vi.fn(),
+    updateCustomDomainBinding: vi.fn(),
+    markCustomDomainBindingVerified: vi.fn(),
+    replaceSelectedInheritedDomainIds: vi.fn(),
   } as unknown as TalentCustomDomainRepository;
 
   const service = new TalentCustomDomainService(mockRepository);
@@ -41,6 +49,7 @@ describe('TalentCustomDomainService', () => {
 
   it('sets a normalized custom domain and returns the TXT verification record', async () => {
     vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue(null);
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue(null);
     vi.mocked(mockRepository.setCustomDomain).mockResolvedValue(true);
 
     await expect(
@@ -60,10 +69,32 @@ describe('TalentCustomDomainService', () => {
     vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue(
       'talent-456',
     );
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue(null);
 
     await expect(
       service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com'),
     ).rejects.toThrow(BadRequestException);
+  });
+
+
+  it('fails closed when a legacy talent domain collides with binding registry', async () => {
+    vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue(null);
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue({
+      id: 'domain-1',
+      hostname: 'talent.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: true,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      isActive: true,
+    });
+
+    await expect(
+      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com'),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockRepository.setCustomDomain).not.toHaveBeenCalled();
   });
 
   it('returns legacy-compatible config with additive effective domain fields', async () => {
@@ -143,6 +174,199 @@ describe('TalentCustomDomainService', () => {
       verified: true,
       message: 'Domain verified successfully',
     });
+  });
+
+
+  it('creates a tenant-owned domain binding with normalized hostname and TXT record', async () => {
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue(null);
+    vi.mocked(mockRepository.findLegacyCustomDomainOwner).mockResolvedValue(null);
+    vi.mocked(mockRepository.createCustomDomainBinding).mockResolvedValue({
+      id: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'cloudflare',
+      isActive: true,
+    });
+
+    await expect(
+      service.createCustomDomainBinding('tenant_test', {
+        ownerType: 'tenant',
+        ownerId: null,
+        hostname: 'Brand.Example.COM.',
+        customDomainSslMode: 'cloudflare',
+      }),
+    ).resolves.toEqual({
+      domain: expect.objectContaining({
+        id: 'domain-1',
+        hostname: 'brand.example.com',
+        ownerType: 'tenant',
+      }),
+      token: 'token-123',
+      txtRecord: 'tcrn-verify=token-123',
+    });
+    expect(mockRepository.createCustomDomainBinding).toHaveBeenCalledWith(
+      'tenant_test',
+      {
+        ownerType: 'tenant',
+        ownerId: null,
+        hostname: 'brand.example.com',
+        customDomainSslMode: 'cloudflare',
+        isActive: true,
+      },
+      'token-123',
+    );
+  });
+
+  it('fails closed when a domain binding hostname collides with existing registry', async () => {
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue({
+      id: 'existing-domain',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: true,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      isActive: true,
+    });
+    vi.mocked(mockRepository.findLegacyCustomDomainOwner).mockResolvedValue(null);
+
+    await expect(
+      service.createCustomDomainBinding('tenant_test', {
+        ownerType: 'tenant',
+        hostname: 'brand.example.com',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockRepository.createCustomDomainBinding).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the binding owner is outside the tenant scope', async () => {
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(false);
+
+    await expect(
+      service.createCustomDomainBinding('tenant_test', {
+        ownerType: 'subsidiary',
+        ownerId: 'sub-foreign',
+        hostname: 'brand.example.com',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockRepository.findCustomDomainBindingByHostname).not.toHaveBeenCalled();
+  });
+
+  it('verifies a domain binding when the expected TXT record exists', async () => {
+    vi.mocked(mockRepository.findCustomDomainBindingById).mockResolvedValue({
+      id: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'auto',
+      isActive: true,
+    });
+    vi.mocked(dnsPromises.resolveTxt).mockResolvedValue([
+      ['tcrn-verify=token-123'],
+    ] as never);
+
+    await expect(
+      service.verifyCustomDomainBinding('tenant_test', 'domain-1'),
+    ).resolves.toEqual({
+      verified: true,
+      message: 'Domain binding verified successfully',
+    });
+    expect(mockRepository.markCustomDomainBindingVerified).toHaveBeenCalledWith(
+      'tenant_test',
+      'domain-1',
+    );
+  });
+
+  it('fails closed when selecting an unverified inherited domain', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
+      customDomain: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      homepageCustomPath: null,
+      marshmallowCustomPath: null,
+    });
+    vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockResolvedValue([
+      {
+        id: 'tenant-domain',
+        hostname: 'tenant.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        customDomainVerified: false,
+        customDomainVerificationToken: 'token-123',
+        customDomainSslMode: 'auto',
+        isActive: true,
+      },
+    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([]);
+
+    await expect(
+      service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', ['tenant-domain']),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockRepository.replaceSelectedInheritedDomainIds).not.toHaveBeenCalled();
+  });
+
+  it('replaces selected inherited domain ids when domains are verified and in scope', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
+      customDomain: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      homepageCustomPath: null,
+      marshmallowCustomPath: null,
+    });
+    vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockResolvedValue([
+      {
+        id: 'tenant-domain',
+        hostname: 'tenant.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        customDomainVerified: true,
+        customDomainVerificationToken: 'token-123',
+        customDomainSslMode: 'auto',
+        isActive: true,
+      },
+    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(['tenant-domain']);
+    vi.mocked(mockRepository.replaceSelectedInheritedDomainIds).mockResolvedValue(undefined);
+
+    await expect(
+      service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', [
+        'tenant-domain',
+        'tenant-domain',
+      ]),
+    ).resolves.toMatchObject({
+      selectedInheritedDomainIds: ['tenant-domain'],
+      inheritedDomains: [expect.objectContaining({
+        id: 'tenant-domain',
+        selected: true,
+      })],
+    });
+    expect(mockRepository.replaceSelectedInheritedDomainIds).toHaveBeenCalledWith(
+      'tenant_test',
+      'talent-123',
+      ['tenant-domain'],
+    );
   });
 
   it('returns fixed custom-domain paths and does not mutate legacy path storage', async () => {

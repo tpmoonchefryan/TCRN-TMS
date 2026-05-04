@@ -8,6 +8,7 @@ export interface TalentEffectiveCustomDomainResponse {
   selected: boolean;
   customDomainVerified: boolean;
   customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare' | string;
+  isActive?: boolean;
   routeMode: 'dedicated_talent' | 'scoped_talent_path' | string;
   routePrefix: string | null;
   homepagePath: string;
@@ -24,6 +25,34 @@ export interface TalentCustomDomainConfigResponse {
   domains: TalentEffectiveCustomDomainResponse[];
   inheritedDomains: TalentEffectiveCustomDomainResponse[];
   selectedInheritedDomainIds: string[];
+}
+
+
+export interface UpsertCustomDomainBindingInput {
+  ownerType: 'tenant' | 'subsidiary' | 'talent';
+  ownerId?: string | null;
+  hostname: string;
+  customDomainSslMode?: 'auto' | 'self_hosted' | 'cloudflare';
+  isActive?: boolean;
+}
+
+export interface CustomDomainBindingResponse {
+  domain: {
+    id: string;
+    hostname: string;
+    ownerType: 'tenant' | 'subsidiary' | 'talent' | string;
+    ownerId: string | null;
+    customDomainVerified: boolean;
+    customDomainVerificationToken: string | null;
+    customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare' | string;
+    isActive: boolean;
+  };
+  token: string | null;
+  txtRecord: string | null;
+}
+
+export interface SelectInheritedCustomDomainsInput {
+  domainIds: string[];
 }
 
 export interface SetTalentCustomDomainInput {
@@ -90,6 +119,46 @@ export function updateTalentCustomDomainSslMode(
 ) {
   return request<UpdateTalentCustomDomainSslModeResponse>(
     `/api/v1/talents/${talentId}/custom-domain/ssl-mode`,
+    buildJsonRequestInit('PATCH', input),
+  );
+}
+
+
+export function createCustomDomainBinding(
+  request: RequestFn,
+  input: UpsertCustomDomainBindingInput,
+) {
+  return request<CustomDomainBindingResponse>(
+    '/api/v1/talents/custom-domain-bindings',
+    buildJsonRequestInit('POST', input),
+  );
+}
+
+export function updateCustomDomainBinding(
+  request: RequestFn,
+  domainId: string,
+  input: UpsertCustomDomainBindingInput,
+) {
+  return request<CustomDomainBindingResponse>(
+    `/api/v1/talents/custom-domain-bindings/${domainId}`,
+    buildJsonRequestInit('PATCH', input),
+  );
+}
+
+export function verifyCustomDomainBinding(request: RequestFn, domainId: string) {
+  return request<VerifyTalentCustomDomainResponse>(
+    `/api/v1/talents/custom-domain-bindings/${domainId}/verify`,
+    buildJsonRequestInit('POST', {}),
+  );
+}
+
+export function selectInheritedCustomDomains(
+  request: RequestFn,
+  talentId: string,
+  input: SelectInheritedCustomDomainsInput,
+) {
+  return request<TalentCustomDomainConfigResponse>(
+    `/api/v1/talents/${talentId}/custom-domain/inherited-selections`,
     buildJsonRequestInit('PATCH', input),
   );
 }

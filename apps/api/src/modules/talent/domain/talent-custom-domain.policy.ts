@@ -7,6 +7,19 @@ import {
 
 export type CustomDomainOwnerType = 'tenant' | 'subsidiary' | 'talent';
 export type CustomDomainRouteMode = 'dedicated_talent' | 'scoped_talent_path';
+export type CustomDomainSslMode = 'auto' | 'self_hosted' | 'cloudflare';
+
+export const CUSTOM_DOMAIN_OWNER_TYPES: CustomDomainOwnerType[] = [
+  'tenant',
+  'subsidiary',
+  'talent',
+];
+
+export const CUSTOM_DOMAIN_SSL_MODES: CustomDomainSslMode[] = [
+  'auto',
+  'self_hosted',
+  'cloudflare',
+];
 
 export interface TalentLegacyCustomDomainConfig {
   talentId: string;
@@ -15,7 +28,7 @@ export interface TalentLegacyCustomDomainConfig {
   customDomain: string | null;
   customDomainVerified: boolean;
   customDomainVerificationToken: string | null;
-  customDomainSslMode: string;
+  customDomainSslMode: CustomDomainSslMode;
   homepageCustomPath: string | null;
   marshmallowCustomPath: string | null;
 }
@@ -24,7 +37,7 @@ export interface TalentCustomDomainConfig {
   customDomain: string | null;
   customDomainVerified: boolean;
   customDomainVerificationToken: string | null;
-  customDomainSslMode: string;
+  customDomainSslMode: CustomDomainSslMode;
   homepageCustomPath: string | null;
   marshmallowCustomPath: string | null;
   domains: TalentEffectiveCustomDomain[];
@@ -39,7 +52,7 @@ export interface TalentCustomDomainBindingRecord {
   ownerId: string | null;
   customDomainVerified: boolean;
   customDomainVerificationToken: string | null;
-  customDomainSslMode: string;
+  customDomainSslMode: CustomDomainSslMode;
   isActive: boolean;
   ownerDepth: number | null;
 }
@@ -53,12 +66,30 @@ export interface TalentEffectiveCustomDomain {
   inherited: boolean;
   selected: boolean;
   customDomainVerified: boolean;
-  customDomainSslMode: string;
+  customDomainSslMode: CustomDomainSslMode;
+  isActive: boolean;
   routeMode: CustomDomainRouteMode;
   routePrefix: string | null;
   homepagePath: string;
   marshmallowPath: string;
 }
+
+
+export interface TalentCustomDomainBindingMutationInput {
+  ownerType: CustomDomainOwnerType;
+  ownerId: string | null;
+  hostname: string;
+  customDomainSslMode: CustomDomainSslMode;
+  isActive: boolean;
+}
+
+export interface TalentCustomDomainBindingMutationResult {
+  domain: TalentCustomDomainBindingRecord;
+  token: string | null;
+  txtRecord: string | null;
+}
+
+export type TalentCustomDomainSelectionResult = TalentCustomDomainConfig;
 
 export interface TalentCustomDomainSetResult {
   customDomain: string | null;
@@ -77,7 +108,44 @@ export interface TalentCustomDomainVerificationResult {
 }
 
 export const normalizeCustomDomain = (customDomain: string): string =>
-  customDomain.toLowerCase().trim();
+  customDomain.toLowerCase().trim().replace(/\.$/, '');
+
+export function isCustomDomainOwnerType(value: string): value is CustomDomainOwnerType {
+  return CUSTOM_DOMAIN_OWNER_TYPES.includes(value as CustomDomainOwnerType);
+}
+
+export function isCustomDomainSslMode(value: string): value is CustomDomainSslMode {
+  return CUSTOM_DOMAIN_SSL_MODES.includes(value as CustomDomainSslMode);
+}
+
+export function isValidCustomDomainHostname(hostname: string): boolean {
+  if (hostname.length < 4 || hostname.length > 255) {
+    return false;
+  }
+
+  if (hostname.includes('://') || hostname.includes('/') || hostname.includes(':')) {
+    return false;
+  }
+
+  if (hostname.startsWith('.') || hostname.endsWith('.') || hostname.includes('..')) {
+    return false;
+  }
+
+  if (hostname.startsWith('*')) {
+    return false;
+  }
+
+  const labels = hostname.split('.');
+  if (labels.length < 2) {
+    return false;
+  }
+
+  return labels.every((label) => (
+    label.length >= 1 &&
+    label.length <= 63 &&
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
+  ));
+}
 
 export const buildVerificationTxtRecord = (token: string): string =>
   `tcrn-verify=${token}`;
@@ -133,6 +201,7 @@ export function buildTalentEffectiveCustomDomains(params: {
       selected: inherited ? selectedSet.has(record.id) : true,
       customDomainVerified: record.customDomainVerified,
       customDomainSslMode: record.customDomainSslMode,
+      isActive: record.isActive,
       routeMode,
       routePrefix: routes.routePrefix,
       homepagePath: routes.homepagePath,
@@ -159,6 +228,7 @@ export function buildTalentEffectiveCustomDomains(params: {
       selected: true,
       customDomainVerified: params.legacyConfig.customDomainVerified,
       customDomainSslMode: params.legacyConfig.customDomainSslMode,
+      isActive: true,
       routeMode: 'dedicated_talent',
       routePrefix: routes.routePrefix,
       homepagePath: routes.homepagePath,

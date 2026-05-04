@@ -9,6 +9,7 @@ import { TalentCustomDomainService } from './application/talent-custom-domain.se
 import { TalentLifecycleService } from './application/talent-lifecycle.service';
 import { TalentReadService } from './application/talent-read.service';
 import { TalentWriteService } from './application/talent-write.service';
+import type { CustomDomainOwnerType, CustomDomainSslMode } from './domain/talent-custom-domain.policy';
 import type {
   TalentData,
   TalentListOptions,
@@ -300,6 +301,63 @@ export class TalentService {
   /**
    * Find talent by custom domain
    */
+
+  async createCustomDomainBinding(
+    tenantSchema: string,
+    input: {
+      ownerType: CustomDomainOwnerType;
+      ownerId?: string | null;
+      hostname: string;
+      customDomainSslMode?: CustomDomainSslMode;
+      isActive?: boolean;
+    },
+  ) {
+    return this.talentCustomDomainService.createCustomDomainBinding(
+      tenantSchema,
+      input,
+    );
+  }
+
+  async updateCustomDomainBinding(
+    tenantSchema: string,
+    domainId: string,
+    input: {
+      ownerType: CustomDomainOwnerType;
+      ownerId?: string | null;
+      hostname: string;
+      customDomainSslMode?: CustomDomainSslMode;
+      isActive?: boolean;
+    },
+  ) {
+    return this.talentCustomDomainService.updateCustomDomainBinding(
+      tenantSchema,
+      domainId,
+      input,
+    );
+  }
+
+  async verifyCustomDomainBinding(
+    tenantSchema: string,
+    domainId: string,
+  ) {
+    return this.talentCustomDomainService.verifyCustomDomainBinding(
+      tenantSchema,
+      domainId,
+    );
+  }
+
+  async setSelectedInheritedDomainIds(
+    talentId: string,
+    tenantSchema: string,
+    domainIds: string[],
+  ) {
+    return this.talentCustomDomainService.setSelectedInheritedDomainIds(
+      talentId,
+      tenantSchema,
+      domainIds,
+    );
+  }
+
   async findByCustomDomain(
     customDomain: string,
     tenantSchema: string
