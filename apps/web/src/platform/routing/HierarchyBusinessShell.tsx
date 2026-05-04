@@ -55,7 +55,7 @@ function getScopeLabel(
     zh_HANT: '分目錄業務',
     ja: '配下スコープ業務',
     ko: '하위 조직 비즈니스',
-    fr: 'Métier de la filiale',
+    fr: 'Métier du périmètre',
   });
 }
 
@@ -138,7 +138,7 @@ export function HierarchyBusinessShell({
           zh_HANT: '目前分目錄',
           ja: '選択中の配下スコープ',
           ko: '선택한 하위 조직',
-          fr: 'Filiale sélectionnée',
+          fr: 'Périmètre sélectionné',
         }));
 
   return (

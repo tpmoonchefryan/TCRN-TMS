@@ -459,7 +459,7 @@ export function formatTenantMetric(
       zh_HANT: `${count} 個分目錄`,
       ja: `子組織 ${count}`,
       ko: `하위 조직 ${count}`,
-      fr: `${count} filiales`,
+      fr: `${count} périmètres`,
     });
   }
 

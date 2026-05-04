@@ -1354,7 +1354,7 @@ export function TenantSettingsScreen({
                   zh_HANT: '維護除檔案庫以外的其他租戶級配置實體，並向下游分目錄與藝人範圍繼承。',
                   ja: 'プロフィールストア以外のテナント所有設定エンティティを管理し、配下スコープとタレントスコープへ継承します。',
                   ko: '프로필 스토어를 제외한 나머지 테넌트 소유 구성 엔티티를 관리하고 하위 조직 및 탤런트 범위로 상속합니다.',
-                  fr: 'Gérez les autres familles de configuration détenues par le tenant, héritées ensuite par les portées filiales et talent.',
+                  fr: 'Gérez les autres familles de configuration détenues par le tenant, héritées ensuite par les portées de périmètre et talent.',
                 })}
               >
                 <ScopedConfigEntityWorkspace

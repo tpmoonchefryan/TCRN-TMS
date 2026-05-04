@@ -191,7 +191,7 @@ export function SubsidiarySettingsScreen({
                 zh_HANT: '載入分目錄詳情失敗。',
                 ja: '配下スコープ詳細の読み込みに失敗しました。',
                 ko: '하위 조직 상세 정보를 불러오지 못했습니다.',
-                fr: 'Echec du chargement des details de la filiale.',
+                fr: 'Echec du chargement des details du perimetre.',
               }),
             ),
           );
@@ -208,7 +208,7 @@ export function SubsidiarySettingsScreen({
                 zh_HANT: '載入分目錄設定失敗。',
                 ja: '配下スコープ設定の読み込みに失敗しました。',
                 ko: '하위 조직 설정을 불러오지 못했습니다.',
-                fr: 'Echec du chargement des parametres de la filiale.',
+                fr: 'Echec du chargement des parametres du perimetre.',
               }),
             ),
           );
@@ -262,7 +262,7 @@ export function SubsidiarySettingsScreen({
               zh_HANT: '正在載入分目錄設定…',
               ja: '配下スコープ設定を読み込み中…',
               ko: '하위 조직 설정을 불러오는 중…',
-              fr: 'Chargement des parametres de la filiale…',
+              fr: 'Chargement des parametres du perimetre…',
             })}
           </p>
         </GlassSurface>
@@ -280,7 +280,7 @@ export function SubsidiarySettingsScreen({
           zh_HANT: '分目錄設定不可用',
           ja: '配下スコープ設定を読み込めません',
           ko: '하위 조직 설정을 사용할 수 없습니다',
-          fr: 'Les parametres de la filiale sont indisponibles',
+          fr: 'Les parametres du perimetre sont indisponibles',
         })}
         description={loadError || undefined}
       />
@@ -297,7 +297,7 @@ export function SubsidiarySettingsScreen({
     zh_HANT: '分目錄覆寫',
     ja: '配下スコープ上書き',
     ko: '하위 조직 재정의',
-    fr: 'Remplacement au niveau de la filiale',
+    fr: 'Remplacement au niveau du perimetre',
   });
 
   function formatScopeSource(source: string | null | undefined) {
@@ -323,7 +323,7 @@ export function SubsidiarySettingsScreen({
         zh_HANT: '上級分目錄',
         ja: '親配下スコープ',
         ko: '상위 하위 조직',
-        fr: 'Filiale parente',
+        fr: 'Perimetre parent',
       });
     }
 
@@ -370,7 +370,7 @@ export function SubsidiarySettingsScreen({
           zh_HANT: '分目錄設定已儲存。',
           ja: '配下スコープ設定を保存しました。',
           ko: '하위 조직 설정을 저장했습니다.',
-          fr: 'Les parametres de la filiale ont ete enregistres.',
+          fr: 'Les parametres du perimetre ont ete enregistres.',
         }),
       );
     } catch (reason) {
@@ -383,7 +383,7 @@ export function SubsidiarySettingsScreen({
             zh_HANT: '儲存分目錄設定失敗。',
             ja: '配下スコープ設定の保存に失敗しました。',
             ko: '하위 조직 설정을 저장하지 못했습니다.',
-            fr: 'Echec de l enregistrement des parametres de la filiale.',
+            fr: 'Echec de l enregistrement des parametres du perimetre.',
           }),
         ),
       );
@@ -406,7 +406,7 @@ export function SubsidiarySettingsScreen({
         zh_HANT: '分目錄設定',
         ja: '配下スコープ設定',
         ko: '하위 조직 설정',
-        fr: 'Parametres de la filiale',
+        fr: 'Parametres du perimetre',
       })}`}
       description={text({
         en: 'Manage subsidiary identity, defaults, configuration entities, and dictionary visibility.',
@@ -414,7 +414,7 @@ export function SubsidiarySettingsScreen({
         zh_HANT: '管理分目錄識別資訊、預設值、配置實體與詞典可見性。',
         ja: '配下スコープの識別情報、既定値、設定エンティティ、辞書表示を管理します。',
         ko: '하위 조직의 식별 정보, 기본값, 구성 엔티티, 사전 가시성을 관리합니다.',
-        fr: 'Gerez l identite de la filiale, ses valeurs par defaut, ses entites de configuration et la visibilite du dictionnaire.',
+        fr: 'Gerez l identite du perimetre, ses valeurs par defaut, ses entites de configuration et la visibilite du dictionnaire.',
       })}
       sections={[
         { id: 'details', label: common.details },
@@ -442,15 +442,15 @@ export function SubsidiarySettingsScreen({
                     zh_HANT: '分目錄設定',
                     ja: '配下スコープ設定',
                     ko: '하위 조직 설정',
-                    fr: 'Parametres de la filiale',
+                    fr: 'Parametres du perimetre',
                   })}
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <FieldRow label={text({ en: 'Tenant', zh_HANS: '租户', zh_HANT: '租戶', ja: 'テナント', ko: '테넌트', fr: 'Locataire' })} value={session?.tenantName || common.currentTenant} />
-                <FieldRow label={text({ en: 'Subsidiary', zh_HANS: '分目录', zh_HANT: '分目錄', ja: '配下スコープ', ko: '하위 조직', fr: 'Filiale' })} value={detail.name} />
-                <FieldRow label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Filiales enfants' })} value={String(detail.childrenCount)} />
+                <FieldRow label={text({ en: 'Subsidiary', zh_HANS: '分目录', zh_HANT: '分目錄', ja: '配下スコープ', ko: '하위 조직', fr: 'Perimetre' })} value={detail.name} />
+                <FieldRow label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Perimetres enfants' })} value={String(detail.childrenCount)} />
                 <FieldRow label={text({ en: 'Attached Talents', zh_HANS: '关联艺人', zh_HANT: '關聯藝人', ja: '所属タレント', ko: '연결된 아티스트', fr: 'Talents rattaches' })} value={String(detail.talentCount)} />
               </div>
             </div>
@@ -465,18 +465,18 @@ export function SubsidiarySettingsScreen({
                 zh_HANT: '查看分目錄識別資訊、層級、狀態與快捷入口。',
                 ja: '配下スコープの識別情報、階層、状態、関連ショートカットを確認します。',
                 ko: '하위 조직의 식별 정보, 계층, 상태와 빠른 이동 링크를 확인합니다.',
-                fr: 'Consultez l identite, la hierarchie, le statut et les raccourcis de cette filiale.',
+                fr: 'Consultez l identite, la hierarchie, le statut et les raccourcis de ce perimetre.',
               })}
             >
               <div className="grid gap-4 xl:grid-cols-2">
-                <FieldRow label={text({ en: 'Subsidiary Code', zh_HANS: '分目录代码', zh_HANT: '分目錄代碼', ja: '配下スコープコード', ko: '하위 조직 코드', fr: 'Code de la filiale' })} value={detail.code} />
+                <FieldRow label={text({ en: 'Subsidiary Code', zh_HANS: '分目录代码', zh_HANT: '分目錄代碼', ja: '配下スコープコード', ko: '하위 조직 코드', fr: 'Code du perimetre' })} value={detail.code} />
                 <FieldRow label={text({ en: 'Path', zh_HANS: '路径', zh_HANT: '路徑', ja: 'パス', ko: '경로', fr: 'Chemin' })} value={detail.path} />
                 <FieldRow label={text({ en: 'Legal Name', zh_HANS: '正式名称', zh_HANT: '正式名稱', ja: '正式名称', ko: '법인명', fr: 'Raison sociale' })} value={detail.nameEn} />
                 <FieldRow
                   label={text({ en: 'Parent scope', zh_HANS: '上级范围', zh_HANT: '上級範圍', ja: '親スコープ', ko: '상위 범위', fr: 'Perimetre parent' })}
                   value={
                     detail.parentId
-                      ? text({ en: 'Parent subsidiary', zh_HANS: '上级分目录', zh_HANT: '上級分目錄', ja: '親の子会社', ko: '상위 하위 조직', fr: 'Filiale parente' })
+                      ? text({ en: 'Parent subsidiary', zh_HANS: '上级分目录', zh_HANT: '上級分目錄', ja: '親スコープ', ko: '상위 하위 조직', fr: 'Perimetre parent' })
                       : text({ en: 'Tenant root', zh_HANS: '租户根级', zh_HANT: '租戶根級', ja: 'テナントルート', ko: '테넌트 루트', fr: 'Racine du locataire' })
                   }
                 />
@@ -507,7 +507,7 @@ export function SubsidiarySettingsScreen({
                     zh_HANT: '此分目錄尚無說明。',
                     ja: 'この配下スコープには説明がありません。',
                     ko: '이 하위 조직에는 아직 설명이 없습니다.',
-                    fr: 'Aucune description n a encore ete renseignee pour cette filiale.',
+                    fr: 'Aucune description n a encore ete renseignee pour ce perimetre.',
                   }),
                 )}
               />
@@ -559,12 +559,12 @@ export function SubsidiarySettingsScreen({
               zh_HANT: '管理目前分目錄可用的配置實體。',
               ja: 'この配下スコープで利用できる設定エンティティを管理します。',
               ko: '이 하위 조직에서 사용할 수 있는 구성 엔티티를 관리합니다.',
-              fr: 'Gerez les entites de configuration disponibles pour cette filiale.',
+              fr: 'Gerez les entites de configuration disponibles pour ce perimetre.',
             })}
           >
             <div className="grid gap-4 xl:grid-cols-3">
               <FieldRow
-                label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Filiales enfants' })}
+                label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Perimetres enfants' })}
                 value={String(detail.childrenCount)}
                 hint={text(
                   'Number of child subsidiaries under this branch.',
@@ -616,7 +616,7 @@ export function SubsidiarySettingsScreen({
               zh_HANT: '調整分目錄的語言與時區預設值。',
               ja: '配下スコープの言語とタイムゾーン既定値を調整します。',
               ko: '하위 조직의 기본 언어와 시간대를 조정합니다.',
-              fr: 'Ajustez les valeurs par defaut de langue et de fuseau horaire pour cette filiale.',
+              fr: 'Ajustez les valeurs par defaut de langue et de fuseau horaire pour ce perimetre.',
             })}
               actions={
                 <>
@@ -642,7 +642,7 @@ export function SubsidiarySettingsScreen({
                           zh_HANT: '儲存分目錄設定',
                           ja: '配下スコープ設定を保存',
                           ko: '하위 조직 설정 저장',
-                          fr: 'Enregistrer les parametres de la filiale',
+                          fr: 'Enregistrer les parametres du perimetre',
                         })}
                   </button>
                 </>
@@ -715,7 +715,7 @@ export function SubsidiarySettingsScreen({
               zh_HANT: '查看目前分目錄可用的詞典內容。',
               ja: 'この配下スコープで利用できる辞書項目を確認します。',
               ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
-              fr: 'Consultez les elements du dictionnaire disponibles pour cette filiale.',
+              fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
             })}
           >
             {dictionaryPanel.error ? (
@@ -753,7 +753,7 @@ export function SubsidiarySettingsScreen({
                           zh_HANT: '查看目前分目錄可用的詞典項。',
                           ja: 'この配下スコープで利用できる辞書項目を確認します。',
                           ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
-                          fr: 'Consultez les elements du dictionnaire disponibles pour cette filiale.',
+                          fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
                         })}
                       </p>
                       <p className="mt-2">
@@ -774,7 +774,7 @@ export function SubsidiarySettingsScreen({
                     zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
                     ja: 'この配下スコープで利用できる辞書タイプはありません。',
                     ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
-                    fr: 'Aucun type de dictionnaire n est actuellement disponible pour cette filiale.',
+                    fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
                   })}
                 />
               </>
@@ -794,7 +794,7 @@ export function SubsidiarySettingsScreen({
                   zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
                   ja: 'この配下スコープで利用できる辞書タイプはありません。',
                   ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
-                  fr: 'Aucun type de dictionnaire n est actuellement disponible pour cette filiale.',
+                  fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
                 })}
               />
             )}

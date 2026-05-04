@@ -103,7 +103,7 @@ export function HierarchyBusinessOverviewScreen({
                 zh_HANT: '目前組織結構中找不到所選分目錄。',
                 ja: '現在の組織構造で選択した配下スコープを見つけられませんでした。',
                 ko: '현재 조직 구조에서 선택한 하위 조직을 찾을 수 없습니다.',
-                fr: 'La filiale sélectionnée est introuvable dans la structure actuelle.',
+                fr: 'Le périmètre sélectionné est introuvable dans la structure actuelle.',
               }),
             );
           } else {
@@ -217,7 +217,7 @@ export function HierarchyBusinessOverviewScreen({
         zh_HANT: '分目錄範圍',
         ja: '配下スコープ',
         ko: '하위 조직 범위',
-        fr: 'Portée de la filiale',
+        fr: 'Portée du périmètre',
       });
   const scopeSummary = scopePath || pickLocaleText(selectedLocale, {
     en: 'Current organization scope',

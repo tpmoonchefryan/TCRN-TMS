@@ -269,7 +269,7 @@ const DICTIONARY_PANEL_COPY: Record<RuntimeLocale, DictionaryExplorerPanelCopy> 
 
 const LEGACY_SETTINGS_TEXT_OVERRIDES: Partial<Record<string, SettingsFamilyLocalizedText>> = {
   Tenant: buildExactText('Tenant', '租户', '租戶', 'テナント', '테넌트', 'Locataire'),
-  Subsidiary: buildExactText('Subsidiary', '分目录', '分目錄', '配下スコープ', '하위 조직', 'Filiale'),
+  Subsidiary: buildExactText('Subsidiary', '分目录', '分目錄', '配下スコープ', '하위 조직', 'Périmètre'),
   Talent: buildExactText('Talent', '艺人', '藝人', 'タレント', '아티스트', 'Talent'),
   Status: buildExactText('Status', '状态', '狀態', '状態', '상태', 'Statut'),
   Actions: buildExactText('Actions', '操作', '操作', '操作', '작업', 'Actions'),
