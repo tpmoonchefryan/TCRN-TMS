@@ -144,7 +144,7 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       isActive: true,
       settings: {
         timezone: 'Asia/Shanghai',
-        defaultLanguage: 'zh',
+        defaultLanguage: 'zh_HANS',
         features: {
           multiSubsidiary: false,
           advancedReports: false,
@@ -160,7 +160,7 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       isActive: true,
       settings: {
         timezone: 'Asia/Shanghai',
-        defaultLanguage: 'zh',
+        defaultLanguage: 'zh_HANS',
         features: {
           multiSubsidiary: false,
           advancedReports: false,
