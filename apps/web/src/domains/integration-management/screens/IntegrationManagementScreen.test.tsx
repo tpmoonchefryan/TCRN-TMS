@@ -256,7 +256,7 @@ describe('IntegrationManagementScreen', () => {
     expect(adapterCalls).toBe(1);
     expect(platformCalls).toBe(1);
 
-    await user.click(screen.getByRole('button', { name: 'Email' }));
+    await user.click(screen.getByRole('tab', { name: 'Email' }));
 
     expect(await screen.findByRole('heading', { name: 'Email Templates' })).toBeInTheDocument();
     expect(screen.queryByText('AC-only email configuration')).not.toBeInTheDocument();
@@ -377,8 +377,8 @@ describe('IntegrationManagementScreen', () => {
         'API clients stay in Account Center. Tokyo Branch inherits that contract, so only adapters are editable here.',
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Webhooks' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Email' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Webhooks' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Email' })).not.toBeInTheDocument();
   });
 
   it('ignores stale adapter responses after switching integration scope', async () => {
@@ -660,7 +660,7 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Integration Management' })).toBeInTheDocument();
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'API Keys' }));
+    await user.click(screen.getByRole('tab', { name: 'API Keys' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=api-keys');
     expect(await screen.findByText('CRM_SYNC')).toBeInTheDocument();
@@ -682,7 +682,7 @@ describe('IntegrationManagementScreen', () => {
     expect((await screen.findAllByText(/API key generated successfully/)).length).toBeGreaterThan(0);
     expect(await screen.findByText('tcrn_pk_live_secret_value')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Email' }));
+    await user.click(screen.getByRole('tab', { name: 'Email' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=email');
     expect(await screen.findByText('AC-only email configuration')).toBeInTheDocument();

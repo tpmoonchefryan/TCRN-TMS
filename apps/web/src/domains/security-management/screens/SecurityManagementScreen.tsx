@@ -99,6 +99,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  SectionTabs,
   StateView,
   TableShell,
   TranslationDrawer,
@@ -464,30 +465,6 @@ function NoticeBanner({
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
-}
-
-function TabButton({
-  label,
-  isActive,
-  onClick,
-}: Readonly<{
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}>) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-        isActive
-          ? 'bg-slate-950 text-white shadow-sm'
-          : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white'
-      }`}
-    >
-      {label}
-    </button>
-  );
 }
 
 function Field({
@@ -1376,20 +1353,17 @@ export function SecurityManagementScreen({
 
       <GlassSurface className="p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            <TabButton label={copy.tabs.blocklist} isActive={activeTab === 'blocklist'} onClick={() => setActiveTab('blocklist')} />
-            <TabButton
-              label={copy.tabs.externalBlocklist}
-              isActive={activeTab === 'external-blocklist'}
-              onClick={() => setActiveTab('external-blocklist')}
-            />
-            <TabButton label={copy.tabs.ipAccess} isActive={activeTab === 'ip-access'} onClick={() => setActiveTab('ip-access')} />
-            <TabButton
-              label={copy.tabs.runtimeSignals}
-              isActive={activeTab === 'runtime-signals'}
-              onClick={() => setActiveTab('runtime-signals')}
-            />
-          </div>
+          <SectionTabs
+            items={[
+              { id: 'blocklist', label: copy.tabs.blocklist },
+              { id: 'external-blocklist', label: copy.tabs.externalBlocklist },
+              { id: 'ip-access', label: copy.tabs.ipAccess },
+              { id: 'runtime-signals', label: copy.tabs.runtimeSignals },
+            ]}
+            activeId={activeTab}
+            onChange={(nextTab) => setActiveTab(nextTab as SecurityTab)}
+            ariaLabel={copy.header.title}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={copy.scopeLens.scopeType}>

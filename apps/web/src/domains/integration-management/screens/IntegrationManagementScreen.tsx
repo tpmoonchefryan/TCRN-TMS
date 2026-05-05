@@ -111,6 +111,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  SectionTabs,
   StateView,
   TableShell,
   TranslationDrawer,
@@ -679,30 +680,6 @@ function SecondaryButton({
       className={`inline-flex items-center gap-2 rounded-full border bg-white/85 px-3 py-2 text-sm font-medium transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {children}
-    </button>
-  );
-}
-
-function TabButton({
-  label,
-  isActive,
-  onClick,
-}: Readonly<{
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}>) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-        isActive
-          ? 'bg-slate-900 text-white shadow-sm'
-          : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white'
-      }`}
-    >
-      {label}
     </button>
   );
 }
@@ -2980,16 +2957,14 @@ export function IntegrationManagementScreen({
           <GlassSurface className="p-6">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
-                {availableTabs.length > 1
-                  ? availableTabs.map((tab) => (
-                      <TabButton
-                        key={tab}
-                        label={tabLabel(tab)}
-                        isActive={activeTab === tab}
-                        onClick={() => setTab(tab)}
-                      />
-                    ))
-                  : null}
+                {availableTabs.length > 1 ? (
+                  <SectionTabs
+                    items={availableTabs.map((tab) => ({ id: tab, label: tabLabel(tab) }))}
+                    activeId={activeTab}
+                    onChange={(nextTab) => setTab(nextTab as IntegrationTab)}
+                    ariaLabel={text('Integration sections', '集成分区', '連携セクション')}
+                  />
+                ) : null}
                 <div className="ml-auto rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
                   {currentTabLabel}
                 </div>

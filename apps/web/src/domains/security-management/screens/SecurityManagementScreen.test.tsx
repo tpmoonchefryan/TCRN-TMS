@@ -484,7 +484,7 @@ describe('SecurityManagementScreen', () => {
       '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Security Activity' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Security Activity' }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith(
