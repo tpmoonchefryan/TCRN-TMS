@@ -954,10 +954,12 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
 
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
+    expect(screen.getByText(/Masked secret stays unchanged unless you type a replacement/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Reveal' }));
 
     expect(await screen.findByDisplayValue('revealed-secret-value')).toBeInTheDocument();
+    expect(screen.getByText(/This secret value is visible or newly typed/i)).toBeInTheDocument();
 
     const baseUrlInput = screen.getByDisplayValue('https://old.example.com');
     await user.clear(baseUrlInput);

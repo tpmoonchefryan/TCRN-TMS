@@ -1997,11 +1997,14 @@ export function IntegrationManagementScreen({
     if (payload.length === 0) {
       setNotice({
         tone: 'info',
-        message: text(
-          'There are no writable config changes to submit. Reveal masked secrets before updating them.',
-          '当前没有可提交的配置变更。若要修改已遮罩的密钥，请先显式显示其内容。',
-          '送信できる設定変更はありません。マスクされたシークレットを更新する前に、先に明示表示してください。',
-        ),
+        message: text({
+          en: 'There are no writable config changes to submit. Masked secrets stay unchanged when untouched; type a replacement before saving.',
+          zh_HANS: '当前没有可提交的配置变更。已遮罩密钥在未触碰时会保持不变；请先输入替换值再保存。',
+          zh_HANT: '目前沒有可提交的設定變更。已遮罩密鑰在未觸碰時會保持不變；請先輸入替換值再儲存。',
+          ja: '送信できる設定変更はありません。マスク済みシークレットは未変更のまま保持されます。保存前に置換値を入力してください。',
+          ko: '제출할 설정 변경이 없습니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 저장하기 전에 대체 값을 입력하세요.',
+          fr: 'Aucun changement de configuration à envoyer. Les secrets masqués restent inchangés tant qu’ils ne sont pas modifiés ; saisissez une valeur de remplacement avant d’enregistrer.',
+        }),
       });
       return;
     }
@@ -3339,16 +3342,22 @@ export function IntegrationManagementScreen({
               title={text('Configuration & secrets', '配置与密钥', '設定とシークレット')}
               description={
                 shouldShowAdapterConfigEditor
-                  ? text(
-                      'Add or update config rows here. Reveal masked secret values before replacing them.',
-                      '可在这里新增或更新配置行。若要替换已遮罩的密钥值，请先显式显示其内容。',
-                      'ここで設定行を追加・更新できます。マスク済みシークレットを置き換える前に内容を表示してください。',
-                    )
-                  : text(
-                      'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter.',
-                      '配置值与已遮罩密钥默认收起，只有显式配置所选适配器时才展开。',
-                      '設定値とマスク済みシークレットは、選択中のアダプターを明示的に設定するまで折りたたまれます。',
-                    )
+                  ? text({
+                      en: 'Add or update config rows here. Masked secrets are kept when untouched; type a replacement to rotate, or reveal only when you must inspect the current value. Clearing secrets is not supported in this flow.',
+                      zh_HANS: '可在这里新增或更新配置行。已遮罩密钥在未触碰时会保持不变；输入替换值即可轮换，仅在必须查看当前值时才显示。此流程不支持清空密钥。',
+                      zh_HANT: '可在這裡新增或更新設定列。已遮罩密鑰在未觸碰時會保持不變；輸入替換值即可輪換，只有必須查看目前值時才顯示。此流程不支援清空密鑰。',
+                      ja: 'ここで設定行を追加・更新できます。マスク済みシークレットは未変更なら保持されます。ローテーションする場合は置換値を入力し、現在値の確認が必要な場合だけ表示してください。このフローではシークレットの消去はできません。',
+                      ko: '여기에서 설정 행을 추가하거나 업데이트합니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 교체하려면 새 값을 입력하고, 현재 값을 확인해야 할 때만 표시하세요. 이 흐름에서는 시크릿 삭제를 지원하지 않습니다.',
+                      fr: 'Ajoutez ou modifiez les lignes de configuration ici. Les secrets masqués sont conservés s’ils ne sont pas modifiés ; saisissez une valeur de remplacement pour les renouveler, ou révélez-les seulement si vous devez inspecter la valeur actuelle. La suppression des secrets n’est pas prise en charge ici.',
+                    })
+                  : text({
+                      en: 'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter; untouched masked secrets are preserved.',
+                      zh_HANS: '配置值与已遮罩密钥默认收起，只有显式配置所选适配器时才展开；未触碰的遮罩密钥会被保留。',
+                      zh_HANT: '設定值與已遮罩密鑰預設收起，只有明確設定所選適配器時才展開；未觸碰的遮罩密鑰會被保留。',
+                      ja: '設定値とマスク済みシークレットは、選択中のアダプターを明示的に設定するまで折りたたまれます。未変更のマスク済みシークレットは保持されます。',
+                      ko: '설정 값과 마스킹된 시크릿은 선택한 어댑터를 명시적으로 설정할 때까지 접혀 있으며, 건드리지 않은 마스킹 시크릿은 유지됩니다.',
+                      fr: 'Les valeurs de configuration et les secrets masqués restent repliés jusqu’à configuration explicite de l’adaptateur sélectionné ; les secrets masqués non modifiés sont conservés.',
+                    })
               }
               actions={
                 shouldShowAdapterConfigEditor ? (
@@ -3396,24 +3405,47 @@ export function IntegrationManagementScreen({
                         disabled={!row.isNew}
                         placeholder={text('client_secret', 'client_secret', 'client_secret')}
                       />
-                      <TextField
-                        label={text(`Value ${index + 1}`, `值 ${index + 1}`, `値 ${index + 1}`)}
-                        value={row.configValue}
-                        onChange={(value) =>
-                          setAdapterConfigRows((current) =>
-                            current.map((item) =>
-                              item.rowKey === row.rowKey
-                                ? {
-                                    ...item,
-                                    configValue: value,
-                                    isMasked: false,
-                                  }
-                                : item,
-                            ),
-                          )
-                        }
-                        placeholder={row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値')}
-                      />
+                      <div className="space-y-2">
+                        <TextField
+                          label={text(`Value ${index + 1}`, `值 ${index + 1}`, `値 ${index + 1}`)}
+                          value={row.configValue}
+                          onChange={(value) =>
+                            setAdapterConfigRows((current) =>
+                              current.map((item) =>
+                                item.rowKey === row.rowKey
+                                  ? {
+                                      ...item,
+                                      configValue: value,
+                                      isMasked: false,
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                          placeholder={row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値')}
+                        />
+                        {row.isSecret ? (
+                          <p className="text-xs leading-5 text-slate-500">
+                            {row.isMasked
+                              ? text({
+                                  en: 'Masked secret stays unchanged unless you type a replacement. Reveal only to inspect the current value; clearing is not supported here.',
+                                  zh_HANS: '已遮罩密钥会保持不变，除非你输入替换值。仅在需要查看当前值时才显示；此处不支持清空。',
+                                  zh_HANT: '已遮罩密鑰會保持不變，除非你輸入替換值。只有需要查看目前值時才顯示；此處不支援清空。',
+                                  ja: 'マスク済みシークレットは、置換値を入力しない限り保持されます。現在値の確認が必要な場合だけ表示してください。ここでは消去できません。',
+                                  ko: '마스킹된 시크릿은 대체 값을 입력하지 않으면 유지됩니다. 현재 값을 확인해야 할 때만 표시하세요. 여기서는 삭제를 지원하지 않습니다.',
+                                  fr: 'Le secret masqué reste inchangé sauf si vous saisissez une valeur de remplacement. Révélez-le seulement pour inspecter la valeur actuelle ; la suppression n’est pas prise en charge ici.',
+                                })
+                              : text({
+                                  en: 'This secret value is visible or newly typed. Saving writes the value currently shown in this field.',
+                                  zh_HANS: '此密钥值当前可见或刚输入；保存会写入此字段当前显示的值。',
+                                  zh_HANT: '此密鑰值目前可見或剛輸入；儲存會寫入此欄位目前顯示的值。',
+                                  ja: 'このシークレット値は表示中、または新しく入力された値です。保存すると、この欄に表示されている値が書き込まれます。',
+                                  ko: '이 시크릿 값은 현재 표시 중이거나 새로 입력된 값입니다. 저장하면 이 필드에 표시된 값이 기록됩니다.',
+                                  fr: 'Cette valeur secrète est visible ou nouvellement saisie. L’enregistrement écrit la valeur actuellement affichée dans ce champ.',
+                                })}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="flex flex-wrap items-end gap-2">
                         {row.isSecret ? <StatusBadge tone="warning" label={text('Secret', '密钥', 'シークレット')} /> : <StatusBadge tone="neutral" label={text('Plain', '明文', '平文')} />}
                         {!adapterCreateMode && row.isSecret && row.isMasked ? (
@@ -3458,11 +3490,14 @@ export function IntegrationManagementScreen({
                 <StateView
                   status="empty"
                   title={text('Configuration is collapsed', '配置已收起', '設定は折りたたまれています')}
-                  description={text(
-                    'Use Configure when you are ready to reveal or edit adapter config values and secrets.',
-                    '准备查看或编辑适配器配置值与密钥时，再点击配置。',
-                    'アダプターの設定値やシークレットを表示・編集する準備ができたら「設定」を使用してください。',
-                  )}
+                  description={text({
+                    en: 'Use Configure when you are ready to review config values. Masked secrets stay preserved unless you reveal or replace them.',
+                    zh_HANS: '准备查看配置值时再点击配置。已遮罩密钥会保持不变，除非你显示或替换它。',
+                    zh_HANT: '準備查看設定值時再點擊設定。已遮罩密鑰會保持不變，除非你顯示或替換它。',
+                    ja: '設定値を確認する準備ができたら「設定」を使用してください。マスク済みシークレットは、表示または置換しない限り保持されます。',
+                    ko: '설정 값을 검토할 준비가 되었을 때 설정을 사용하세요. 마스킹된 시크릿은 표시하거나 교체하지 않는 한 유지됩니다.',
+                    fr: 'Utilisez Configurer lorsque vous êtes prêt à examiner les valeurs. Les secrets masqués restent conservés sauf si vous les révélez ou les remplacez.',
+                  })}
                 />
               ) : (
                 <p className="text-sm text-slate-500">{text('Select or create an adapter to manage config values.', '请选择或创建一个适配器来管理配置值。', '設定値を管理するにはアダプターを選択または作成してください。')}</p>
