@@ -95,6 +95,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -700,6 +702,90 @@ function resolvePageForIndex(index: number, pageSize: PageSizeOption) {
   return Math.floor(index / pageSize) + 1;
 }
 
+function resolveVisiblePageTarget<Item>(
+  items: readonly Item[],
+  page: number,
+  pageSize: PageSizeOption,
+  getTargetId: (item: Item) => string,
+) {
+  const pagination = buildPaginationMeta(items.length, page, pageSize);
+  const startIndex = (pagination.page - 1) * pagination.pageSize;
+  const targetItem = items[startIndex] ?? items[0] ?? null;
+
+  return {
+    page: pagination.page,
+    targetId: targetItem ? getTargetId(targetItem) : null,
+  };
+}
+
+function buildIntegrationPaginationQueryState(
+  searchParams: { toString(): string },
+  {
+    adapterPage,
+    adapterPageSize,
+    consumerPage,
+    consumerPageSize,
+    emailTemplatePage,
+    emailTemplatePageSize,
+    webhookPage,
+    webhookPageSize,
+  }: {
+    adapterPage: number;
+    adapterPageSize: PageSizeOption;
+    consumerPage: number;
+    consumerPageSize: PageSizeOption;
+    emailTemplatePage: number;
+    emailTemplatePageSize: PageSizeOption;
+    webhookPage: number;
+    webhookPageSize: PageSizeOption;
+  },
+) {
+  const params = new URLSearchParams(searchParams.toString());
+
+  params.delete('adapterPage');
+  params.delete('adapterPageSize');
+  params.delete('webhookPage');
+  params.delete('webhookPageSize');
+  params.delete('apiClientPage');
+  params.delete('apiClientPageSize');
+  params.delete('emailTemplatePage');
+  params.delete('emailTemplatePageSize');
+
+  if (adapterPage > 1) {
+    params.set('adapterPage', String(adapterPage));
+  }
+
+  if (adapterPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('adapterPageSize', String(adapterPageSize));
+  }
+
+  if (webhookPage > 1) {
+    params.set('webhookPage', String(webhookPage));
+  }
+
+  if (webhookPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('webhookPageSize', String(webhookPageSize));
+  }
+
+  if (consumerPage > 1) {
+    params.set('apiClientPage', String(consumerPage));
+  }
+
+  if (consumerPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('apiClientPageSize', String(consumerPageSize));
+  }
+
+  if (emailTemplatePage > 1) {
+    params.set('emailTemplatePage', String(emailTemplatePage));
+  }
+
+  if (emailTemplatePageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('emailTemplatePageSize', String(emailTemplatePageSize));
+  }
+
+  return params.toString();
+}
+
 function buildPaginationFooterLabels(
   locale: SupportedUiLocale | 'en' | 'zh' | 'ja',
   pagination: ApiPaginationMeta,
@@ -992,6 +1078,14 @@ export function IntegrationManagementScreen({
     searchParams.get('tab'),
     availableTabs.length > 0 ? availableTabs : (['adapters'] as const),
   );
+  const urlAdapterPage = parsePageParam(searchParams.get('adapterPage'));
+  const urlAdapterPageSize = parsePageSizeParam(searchParams.get('adapterPageSize'));
+  const urlWebhookPage = parsePageParam(searchParams.get('webhookPage'));
+  const urlWebhookPageSize = parsePageSizeParam(searchParams.get('webhookPageSize'));
+  const urlConsumerPage = parsePageParam(searchParams.get('apiClientPage'));
+  const urlConsumerPageSize = parsePageSizeParam(searchParams.get('apiClientPageSize'));
+  const urlEmailTemplatePage = parsePageParam(searchParams.get('emailTemplatePage'));
+  const urlEmailTemplatePageSize = parsePageSizeParam(searchParams.get('emailTemplatePageSize'));
 
   const [activeTab, setActiveTab] = useState<IntegrationTab>(resolvedInitialTab);
   const {
@@ -1012,13 +1106,13 @@ export function IntegrationManagementScreen({
   const [adapterDetailPanel, setAdapterDetailPanel] = useState<PanelState<IntegrationAdapterDetailRecord | null>>(
     createPanelState<IntegrationAdapterDetailRecord | null>(null, false),
   );
-  const [adapterPage, setAdapterPage] = useState(1);
-  const [adapterPageSize, setAdapterPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [adapterPage, setAdapterPage] = useState(urlAdapterPage);
+  const [adapterPageSize, setAdapterPageSize] = useState<PageSizeOption>(urlAdapterPageSize);
   const [webhooksPanel, setWebhooksPanel] = useState<PanelState<IntegrationWebhookListItemRecord[]>>(
     createPanelState<IntegrationWebhookListItemRecord[]>([]),
   );
-  const [webhookPage, setWebhookPage] = useState(1);
-  const [webhookPageSize, setWebhookPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [webhookPage, setWebhookPage] = useState(urlWebhookPage);
+  const [webhookPageSize, setWebhookPageSize] = useState<PageSizeOption>(urlWebhookPageSize);
   const [webhookEventsPanel, setWebhookEventsPanel] = useState<PanelState<WebhookEventDefinition[]>>(
     createPanelState<WebhookEventDefinition[]>([]),
   );
@@ -1028,13 +1122,13 @@ export function IntegrationManagementScreen({
   const [consumersPanel, setConsumersPanel] = useState<PanelState<IntegrationConsumerRecord[]>>(
     createPanelState<IntegrationConsumerRecord[]>([]),
   );
-  const [consumerPage, setConsumerPage] = useState(1);
-  const [consumerPageSize, setConsumerPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [consumerPage, setConsumerPage] = useState(urlConsumerPage);
+  const [consumerPageSize, setConsumerPageSize] = useState<PageSizeOption>(urlConsumerPageSize);
   const [emailTemplatesPanel, setEmailTemplatesPanel] = useState<PanelState<EmailTemplateRecord[]>>(
     createPanelState<EmailTemplateRecord[]>([]),
   );
-  const [emailTemplatePage, setEmailTemplatePage] = useState(1);
-  const [emailTemplatePageSize, setEmailTemplatePageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [emailTemplatePage, setEmailTemplatePage] = useState(urlEmailTemplatePage);
+  const [emailTemplatePageSize, setEmailTemplatePageSize] = useState<PageSizeOption>(urlEmailTemplatePageSize);
   const [emailConfigPanel, setEmailConfigPanel] = useState<EmailConfigPanelState>({
     data: null,
     loading: true,
@@ -1093,6 +1187,110 @@ export function IntegrationManagementScreen({
   useEffect(() => {
     setActiveTab(resolvedInitialTab);
   }, [resolvedInitialTab]);
+
+  useEffect(() => {
+    setAdapterPage((current) => (current === urlAdapterPage ? current : urlAdapterPage));
+    setAdapterPageSize((current) => (current === urlAdapterPageSize ? current : urlAdapterPageSize));
+    setWebhookPage((current) => (current === urlWebhookPage ? current : urlWebhookPage));
+    setWebhookPageSize((current) => (current === urlWebhookPageSize ? current : urlWebhookPageSize));
+    setConsumerPage((current) => (current === urlConsumerPage ? current : urlConsumerPage));
+    setConsumerPageSize((current) => (current === urlConsumerPageSize ? current : urlConsumerPageSize));
+    setEmailTemplatePage((current) => (current === urlEmailTemplatePage ? current : urlEmailTemplatePage));
+    setEmailTemplatePageSize((current) => (
+      current === urlEmailTemplatePageSize ? current : urlEmailTemplatePageSize
+    ));
+  }, [
+    urlAdapterPage,
+    urlAdapterPageSize,
+    urlConsumerPage,
+    urlConsumerPageSize,
+    urlEmailTemplatePage,
+    urlEmailTemplatePageSize,
+    urlWebhookPage,
+    urlWebhookPageSize,
+  ]);
+
+  function applyPaginationQueryState(
+    nextState: Partial<{
+      adapterPage: number;
+      adapterPageSize: PageSizeOption;
+      consumerPage: number;
+      consumerPageSize: PageSizeOption;
+      emailTemplatePage: number;
+      emailTemplatePageSize: PageSizeOption;
+      webhookPage: number;
+      webhookPageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextAdapterPage = nextState.adapterPage ?? adapterPage;
+    const nextAdapterPageSize = nextState.adapterPageSize ?? adapterPageSize;
+    const nextWebhookPage = nextState.webhookPage ?? webhookPage;
+    const nextWebhookPageSize = nextState.webhookPageSize ?? webhookPageSize;
+    const nextConsumerPage = nextState.consumerPage ?? consumerPage;
+    const nextConsumerPageSize = nextState.consumerPageSize ?? consumerPageSize;
+    const nextEmailTemplatePage = nextState.emailTemplatePage ?? emailTemplatePage;
+    const nextEmailTemplatePageSize = nextState.emailTemplatePageSize ?? emailTemplatePageSize;
+
+    if (nextState.adapterPage !== undefined) {
+      setAdapterPage(nextAdapterPage);
+    }
+
+    if (nextState.adapterPageSize !== undefined) {
+      setAdapterPageSize(nextAdapterPageSize);
+    }
+
+    if (nextState.webhookPage !== undefined) {
+      setWebhookPage(nextWebhookPage);
+    }
+
+    if (nextState.webhookPageSize !== undefined) {
+      setWebhookPageSize(nextWebhookPageSize);
+    }
+
+    if (nextState.consumerPage !== undefined) {
+      setConsumerPage(nextConsumerPage);
+    }
+
+    if (nextState.consumerPageSize !== undefined) {
+      setConsumerPageSize(nextConsumerPageSize);
+    }
+
+    if (nextState.emailTemplatePage !== undefined) {
+      setEmailTemplatePage(nextEmailTemplatePage);
+    }
+
+    if (nextState.emailTemplatePageSize !== undefined) {
+      setEmailTemplatePageSize(nextEmailTemplatePageSize);
+    }
+
+    const nextQueryString = buildIntegrationPaginationQueryState(searchParams, {
+      adapterPage: nextAdapterPage,
+      adapterPageSize: nextAdapterPageSize,
+      consumerPage: nextConsumerPage,
+      consumerPageSize: nextConsumerPageSize,
+      emailTemplatePage: nextEmailTemplatePage,
+      emailTemplatePageSize: nextEmailTemplatePageSize,
+      webhookPage: nextWebhookPage,
+      webhookPageSize: nextWebhookPageSize,
+    });
+    const currentQueryString = buildIntegrationPaginationQueryState(searchParams, {
+      adapterPage,
+      adapterPageSize,
+      consumerPage,
+      consumerPageSize,
+      emailTemplatePage,
+      emailTemplatePageSize,
+      webhookPage,
+      webhookPageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    router.replace(nextHref);
+  }
 
   useEffect(() => {
     if (!isAnyTranslationDrawerOpen) {
@@ -1325,15 +1523,22 @@ export function IntegrationManagementScreen({
       }
 
       if (!adapterCreateMode) {
-        const targetId =
+        const retainedTargetId =
           preferredId && data.some((item) => item.id === preferredId)
             ? preferredId
             : selectedAdapterId && data.some((item) => item.id === selectedAdapterId)
               ? selectedAdapterId
-              : data[0]?.id || null;
-        setSelectedAdapterId(targetId);
-        const targetIndex = targetId ? data.findIndex((item) => item.id === targetId) : -1;
-        setAdapterPage(targetIndex >= 0 ? resolvePageForIndex(targetIndex, adapterPageSize) : 1);
+              : null;
+
+        if (retainedTargetId) {
+          setSelectedAdapterId(retainedTargetId);
+          const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
+          setAdapterPage(resolvePageForIndex(targetIndex, adapterPageSize));
+        } else {
+          const visibleTarget = resolveVisiblePageTarget(data, adapterPage, adapterPageSize, (item) => item.id);
+          setSelectedAdapterId(visibleTarget.targetId);
+          setAdapterPage(visibleTarget.page);
+        }
       }
     } catch (reason) {
       if (!scopeMatches(adaptersScopeRef.current, scope)) {
@@ -1381,15 +1586,22 @@ export function IntegrationManagementScreen({
       }
 
       if (!webhookCreateMode) {
-        const targetId =
+        const retainedTargetId =
           preferredId && data.some((item) => item.id === preferredId)
             ? preferredId
             : selectedWebhookId && data.some((item) => item.id === selectedWebhookId)
               ? selectedWebhookId
-              : data[0]?.id || null;
-        setSelectedWebhookId(targetId);
-        const targetIndex = targetId ? data.findIndex((item) => item.id === targetId) : -1;
-        setWebhookPage(targetIndex >= 0 ? resolvePageForIndex(targetIndex, webhookPageSize) : 1);
+              : null;
+
+        if (retainedTargetId) {
+          setSelectedWebhookId(retainedTargetId);
+          const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
+          setWebhookPage(resolvePageForIndex(targetIndex, webhookPageSize));
+        } else {
+          const visibleTarget = resolveVisiblePageTarget(data, webhookPage, webhookPageSize, (item) => item.id);
+          setSelectedWebhookId(visibleTarget.targetId);
+          setWebhookPage(visibleTarget.page);
+        }
       }
     } catch (reason) {
       const unavailableReason = getUnavailableReason(reason);
@@ -1424,15 +1636,22 @@ export function IntegrationManagementScreen({
       }
 
       if (!consumerCreateMode) {
-        const targetId =
+        const retainedTargetId =
           preferredId && data.some((item) => item.id === preferredId)
             ? preferredId
             : selectedConsumerId && data.some((item) => item.id === selectedConsumerId)
               ? selectedConsumerId
-              : data[0]?.id || null;
-        setSelectedConsumerId(targetId);
-        const targetIndex = targetId ? data.findIndex((item) => item.id === targetId) : -1;
-        setConsumerPage(targetIndex >= 0 ? resolvePageForIndex(targetIndex, consumerPageSize) : 1);
+              : null;
+
+        if (retainedTargetId) {
+          setSelectedConsumerId(retainedTargetId);
+          const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
+          setConsumerPage(resolvePageForIndex(targetIndex, consumerPageSize));
+        } else {
+          const visibleTarget = resolveVisiblePageTarget(data, consumerPage, consumerPageSize, (item) => item.id);
+          setSelectedConsumerId(visibleTarget.targetId);
+          setConsumerPage(visibleTarget.page);
+        }
       }
     } catch (reason) {
       const unavailableReason = getUnavailableReason(reason);
@@ -1467,15 +1686,22 @@ export function IntegrationManagementScreen({
       }
 
       if (!templateCreateMode) {
-        const targetCode =
+        const retainedTargetCode =
           preferredCode && data.some((item) => item.code === preferredCode)
             ? preferredCode
             : selectedTemplateCode && data.some((item) => item.code === selectedTemplateCode)
               ? selectedTemplateCode
-              : data[0]?.code || null;
-        setSelectedTemplateCode(targetCode);
-        const targetIndex = targetCode ? data.findIndex((item) => item.code === targetCode) : -1;
-        setEmailTemplatePage(targetIndex >= 0 ? resolvePageForIndex(targetIndex, emailTemplatePageSize) : 1);
+              : null;
+
+        if (retainedTargetCode) {
+          setSelectedTemplateCode(retainedTargetCode);
+          const targetIndex = data.findIndex((item) => item.code === retainedTargetCode);
+          setEmailTemplatePage(resolvePageForIndex(targetIndex, emailTemplatePageSize));
+        } else {
+          const visibleTarget = resolveVisiblePageTarget(data, emailTemplatePage, emailTemplatePageSize, (item) => item.code);
+          setSelectedTemplateCode(visibleTarget.targetId);
+          setEmailTemplatePage(visibleTarget.page);
+        }
       }
     } catch (reason) {
       const unavailableReason = getUnavailableReason(reason);
@@ -1801,28 +2027,220 @@ export function IntegrationManagementScreen({
   );
 
   useEffect(() => {
-    if (adapterPage !== paginatedAdapters.pagination.page) {
-      setAdapterPage(paginatedAdapters.pagination.page);
+    if (
+      !adaptersPanel.loading
+      && (adaptersPanel.data.length > 0 || adaptersPanel.error || adaptersPanel.unavailableReason)
+      && adapterPage !== paginatedAdapters.pagination.page
+    ) {
+      const nextPage = paginatedAdapters.pagination.page;
+      setAdapterPage(nextPage);
+
+      const nextQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage: nextPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+      const currentQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        router.replace(nextHref);
+      }
     }
-  }, [adapterPage, paginatedAdapters.pagination.page]);
+  }, [
+    adapterPage,
+    adapterPageSize,
+    adaptersPanel.data.length,
+    adaptersPanel.error,
+    adaptersPanel.loading,
+    adaptersPanel.unavailableReason,
+    consumerPage,
+    consumerPageSize,
+    emailTemplatePage,
+    emailTemplatePageSize,
+    paginatedAdapters.pagination.page,
+    pathname,
+    router,
+    searchParams,
+    webhookPage,
+    webhookPageSize,
+  ]);
 
   useEffect(() => {
-    if (webhookPage !== paginatedWebhooks.pagination.page) {
-      setWebhookPage(paginatedWebhooks.pagination.page);
+    if (
+      !webhooksPanel.loading
+      && (webhooksPanel.data.length > 0 || webhooksPanel.error || webhooksPanel.unavailableReason)
+      && webhookPage !== paginatedWebhooks.pagination.page
+    ) {
+      const nextPage = paginatedWebhooks.pagination.page;
+      setWebhookPage(nextPage);
+
+      const nextQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage: nextPage,
+        webhookPageSize,
+      });
+      const currentQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        router.replace(nextHref);
+      }
     }
-  }, [paginatedWebhooks.pagination.page, webhookPage]);
+  }, [
+    adapterPage,
+    adapterPageSize,
+    consumerPage,
+    consumerPageSize,
+    emailTemplatePage,
+    emailTemplatePageSize,
+    paginatedWebhooks.pagination.page,
+    pathname,
+    router,
+    searchParams,
+    webhookPage,
+    webhookPageSize,
+    webhooksPanel.data.length,
+    webhooksPanel.error,
+    webhooksPanel.loading,
+    webhooksPanel.unavailableReason,
+  ]);
 
   useEffect(() => {
-    if (consumerPage !== paginatedConsumers.pagination.page) {
-      setConsumerPage(paginatedConsumers.pagination.page);
+    if (
+      !consumersPanel.loading
+      && (consumersPanel.data.length > 0 || consumersPanel.error || consumersPanel.unavailableReason)
+      && consumerPage !== paginatedConsumers.pagination.page
+    ) {
+      const nextPage = paginatedConsumers.pagination.page;
+      setConsumerPage(nextPage);
+
+      const nextQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage: nextPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+      const currentQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        router.replace(nextHref);
+      }
     }
-  }, [consumerPage, paginatedConsumers.pagination.page]);
+  }, [
+    adapterPage,
+    adapterPageSize,
+    consumerPage,
+    consumerPageSize,
+    consumersPanel.data.length,
+    consumersPanel.error,
+    consumersPanel.loading,
+    consumersPanel.unavailableReason,
+    emailTemplatePage,
+    emailTemplatePageSize,
+    paginatedConsumers.pagination.page,
+    pathname,
+    router,
+    searchParams,
+    webhookPage,
+    webhookPageSize,
+  ]);
 
   useEffect(() => {
-    if (emailTemplatePage !== paginatedEmailTemplates.pagination.page) {
-      setEmailTemplatePage(paginatedEmailTemplates.pagination.page);
+    if (
+      !emailTemplatesPanel.loading
+      && (emailTemplatesPanel.data.length > 0 || emailTemplatesPanel.error || emailTemplatesPanel.unavailableReason)
+      && emailTemplatePage !== paginatedEmailTemplates.pagination.page
+    ) {
+      const nextPage = paginatedEmailTemplates.pagination.page;
+      setEmailTemplatePage(nextPage);
+
+      const nextQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage: nextPage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+      const currentQueryString = buildIntegrationPaginationQueryState(searchParams, {
+        adapterPage,
+        adapterPageSize,
+        consumerPage,
+        consumerPageSize,
+        emailTemplatePage,
+        emailTemplatePageSize,
+        webhookPage,
+        webhookPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        router.replace(nextHref);
+      }
     }
-  }, [emailTemplatePage, paginatedEmailTemplates.pagination.page]);
+  }, [
+    adapterPage,
+    adapterPageSize,
+    consumerPage,
+    consumerPageSize,
+    emailTemplatePage,
+    emailTemplatePageSize,
+    emailTemplatesPanel.data.length,
+    emailTemplatesPanel.error,
+    emailTemplatesPanel.loading,
+    emailTemplatesPanel.unavailableReason,
+    paginatedEmailTemplates.pagination.page,
+    pathname,
+    router,
+    searchParams,
+    webhookPage,
+    webhookPageSize,
+  ]);
 
   const selectedConsumer = useMemo(
     () => consumersPanel.data.find((item) => item.id === selectedConsumerId) || null,
@@ -3172,10 +3590,12 @@ export function IntegrationManagementScreen({
                         paginatedAdapters.pagination,
                         paginatedAdapters.items.length,
                       )}
-                      onPageChange={setAdapterPage}
+                      onPageChange={(page) => applyPaginationQueryState({ adapterPage: page })}
                       onPageSizeChange={(pageSize) => {
-                        setAdapterPageSize(pageSize as PageSizeOption);
-                        setAdapterPage(1);
+                        applyPaginationQueryState({
+                          adapterPage: 1,
+                          adapterPageSize: pageSize as PageSizeOption,
+                        });
                       }}
                       isLoading={adaptersPanel.loading}
                       className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
@@ -3635,10 +4055,12 @@ export function IntegrationManagementScreen({
                         paginatedWebhooks.pagination,
                         paginatedWebhooks.items.length,
                       )}
-                      onPageChange={setWebhookPage}
+                      onPageChange={(page) => applyPaginationQueryState({ webhookPage: page })}
                       onPageSizeChange={(pageSize) => {
-                        setWebhookPageSize(pageSize as PageSizeOption);
-                        setWebhookPage(1);
+                        applyPaginationQueryState({
+                          webhookPage: 1,
+                          webhookPageSize: pageSize as PageSizeOption,
+                        });
                       }}
                       isLoading={webhooksPanel.loading}
                       className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
@@ -3988,10 +4410,12 @@ export function IntegrationManagementScreen({
                         paginatedConsumers.pagination,
                         paginatedConsumers.items.length,
                       )}
-                      onPageChange={setConsumerPage}
+                      onPageChange={(page) => applyPaginationQueryState({ consumerPage: page })}
                       onPageSizeChange={(pageSize) => {
-                        setConsumerPageSize(pageSize as PageSizeOption);
-                        setConsumerPage(1);
+                        applyPaginationQueryState({
+                          consumerPage: 1,
+                          consumerPageSize: pageSize as PageSizeOption,
+                        });
                       }}
                       isLoading={consumersPanel.loading}
                       className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
@@ -4628,10 +5052,12 @@ export function IntegrationManagementScreen({
                         paginatedEmailTemplates.pagination,
                         paginatedEmailTemplates.items.length,
                       )}
-                      onPageChange={setEmailTemplatePage}
+                      onPageChange={(page) => applyPaginationQueryState({ emailTemplatePage: page })}
                       onPageSizeChange={(pageSize) => {
-                        setEmailTemplatePageSize(pageSize as PageSizeOption);
-                        setEmailTemplatePage(1);
+                        applyPaginationQueryState({
+                          emailTemplatePage: 1,
+                          emailTemplatePageSize: pageSize as PageSizeOption,
+                        });
                       }}
                       isLoading={emailTemplatesPanel.loading}
                       className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"

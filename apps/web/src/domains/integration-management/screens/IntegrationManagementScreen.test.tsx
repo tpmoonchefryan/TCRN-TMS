@@ -781,14 +781,110 @@ describe('IntegrationManagementScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
+    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/integration-management?adapterPage=2');
     expect(await screen.findByText('ADAPTER_21')).toBeInTheDocument();
     expect(screen.queryByText('ADAPTER_01')).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Rows per page' }), '50');
 
+    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/integration-management?adapterPageSize=50');
     expect(await screen.findByText('ADAPTER_25')).toBeInTheDocument();
     expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
     expect(screen.getByText('ADAPTER_01')).toBeInTheDocument();
+  });
+
+
+  it('hydrates adapter pagination from URL without collapsing before scope data loads', async () => {
+    const user = userEvent.setup();
+    searchQuery = 'adapterPage=2&adapterPageSize=50&foo=1';
+    const adapters = Array.from({ length: 55 }, (_, index) => ({
+      id: `adapter-${index + 1}`,
+      ownerType: 'tenant' as const,
+      ownerId: null,
+      platformId: 'platform-1',
+      platform: {
+        code: 'BILIBILI',
+        displayName: 'Bilibili',
+        iconUrl: null,
+      },
+      code: `ADAPTER_${String(index + 1).padStart(2, '0')}`,
+      nameEn: `Adapter ${index + 1}`,
+      nameZh: null,
+      nameJa: null,
+      adapterType: 'api_key' as const,
+      inherit: true,
+      isActive: true,
+      isInherited: false,
+      configCount: 1,
+      createdAt: '2026-04-17T08:00:00.000Z',
+      updatedAt: '2026-04-17T09:00:00.000Z',
+      version: 1,
+    }));
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [
+          {
+            id: 'platform-1',
+            code: 'BILIBILI',
+            name: 'Bilibili',
+            nameEn: 'Bilibili',
+            sortOrder: 0,
+            isActive: true,
+            version: 1,
+            displayName: 'Bilibili',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return adapters;
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-51') {
+        return {
+          id: 'adapter-51',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'BILIBILI',
+            displayName: 'Bilibili',
+          },
+          code: 'ADAPTER_51',
+          nameEn: 'Adapter 51',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+
+    expect(await screen.findByText('ADAPTER_51')).toBeInTheDocument();
+    expect(screen.queryByText('ADAPTER_01')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Rows per page' }), '20');
+
+    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/integration-management?foo=1');
   });
 
   it('reveals masked adapter secrets and submits config updates through the real adapter contract', async () => {
