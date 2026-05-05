@@ -32,7 +32,7 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { ConfirmActionDialog, GlassSurface, StateView, TableShell } from '@/platform/ui';
+import { ConfirmActionDialog, GlassSurface, PaginationFooter, StateView, TableShell } from '@/platform/ui';
 
 type ActivityFilter = 'all' | 'active' | 'inactive';
 type MembershipFilter = 'all' | 'members' | 'non-members';
@@ -785,25 +785,6 @@ export function CustomerManagementScreen({
               })}
             </div>
 
-            <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm text-slate-700">
-              {pageSizeLabel}
-              <select
-                value={pageSize}
-                onChange={(event) =>
-                  applyQueryState({
-                    pageSize: Number(event.target.value) as PageSizeOption,
-                    page: 1,
-                  })
-                }
-                className="bg-transparent text-sm outline-none"
-              >
-                {PAGE_SIZE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
 
           {panel.error ? (
@@ -927,39 +908,31 @@ export function CustomerManagementScreen({
                 ))}
               </TableShell>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 px-2 pt-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-700">{paginationLabel}</p>
-                  <p className="text-xs text-slate-500">{paginationRangeLabel}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyQueryState({
-                        page: Math.max(1, page - 1),
-                      })
-                    }
-                    disabled={!panel.pagination.hasPrev || panel.loading}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {previousPageLabel}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyQueryState({
-                        page: page + 1,
-                      })
-                    }
-                    disabled={!panel.pagination.hasNext || panel.loading}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {nextPageLabel}
-                  </button>
-                </div>
-              </div>
+              <PaginationFooter
+                pagination={panel.pagination}
+                itemCount={panel.data.length}
+                labels={{
+                  pageLabel: paginationLabel,
+                  rangeLabel: paginationRangeLabel,
+                  rowsPerPageLabel: pageSizeLabel,
+                  pageSizeAriaLabel: pageSizeLabel,
+                  previousLabel: previousPageLabel,
+                  nextLabel: nextPageLabel,
+                }}
+                onPageChange={(nextPage) =>
+                  applyQueryState({
+                    page: nextPage,
+                  })
+                }
+                onPageSizeChange={(nextPageSize) =>
+                  applyQueryState({
+                    pageSize: nextPageSize as PageSizeOption,
+                    page: 1,
+                  })
+                }
+                isLoading={panel.loading}
+                className="mt-4 rounded-2xl border border-slate-200"
+              />
             </>
           )}
         </div>
