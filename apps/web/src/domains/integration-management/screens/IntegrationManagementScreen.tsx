@@ -5034,7 +5034,8 @@ export function IntegrationManagementScreen({
         open={Boolean(confirmState)}
         title={confirmState?.title || text('Confirm action', '确认操作', '操作を確認')}
         description={confirmState?.description || ''}
-        confirmText={confirmState?.confirmText}
+        confirmText={confirmState?.confirmText ?? text({ en: 'Confirm', zh_HANS: '确认', zh_HANT: '確認', ja: '確認', ko: '확인', fr: 'Confirmer' })}
+        cancelText={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
         pendingText={confirmState?.pendingText}
         isPending={confirmPending}
         intent={confirmState?.intent}

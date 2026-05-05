@@ -9,6 +9,8 @@ describe('ConfirmActionDialog', () => {
     onOpenChange: vi.fn(),
     title: 'Delete Item',
     description: 'Are you sure you want to delete this item?',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
     onConfirm: vi.fn().mockResolvedValue(undefined),
   };
 

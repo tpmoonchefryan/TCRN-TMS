@@ -17,8 +17,8 @@ export interface TableShellProps {
   dataLength: number;
   isLoading?: boolean;
   isEmpty?: boolean;
-  emptyTitle?: string;
-  emptyDescription?: string;
+  emptyTitle: string;
+  emptyDescription: string;
   emptyAction?: React.ReactNode;
   children: React.ReactNode;
   caption?: string;
@@ -57,8 +57,8 @@ export const TableShell: React.FC<TableShellProps> = ({
   dataLength,
   isLoading = false,
   isEmpty = false,
-  emptyTitle = 'No data found',
-  emptyDescription = 'There are no records to display at this time.',
+  emptyTitle,
+  emptyDescription,
   emptyAction,
   children,
   caption,

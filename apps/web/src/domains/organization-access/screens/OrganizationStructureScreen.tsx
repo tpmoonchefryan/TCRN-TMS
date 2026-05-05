@@ -1508,7 +1508,8 @@ export function OrganizationStructureScreen({
         open={lifecycleDialogState !== null}
         title={lifecycleDialogState?.title || copy.lifecycle.confirmFallback}
         description={lifecycleDialogState?.description || ''}
-        confirmText={lifecycleDialogState?.confirmText}
+        confirmText={lifecycleDialogState?.confirmText ?? copy.lifecycle.disableConfirm}
+        cancelText={copy.actions.cancel}
         pendingText={lifecycleDialogState?.pendingText}
         intent={lifecycleDialogState?.intent}
         isPending={lifecycleDialogPending}

@@ -944,7 +944,8 @@ export function CustomerManagementScreen({
         open={dialogState !== null}
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
-        confirmText={dialogState?.confirmText}
+        confirmText={dialogState?.confirmText ?? customerCopy.deactivateConfirm}
+        cancelText={pickLocaleText(currentLocale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
         pendingText={dialogState?.pendingText}
         intent={dialogState?.intent}
         isPending={dialogPending}

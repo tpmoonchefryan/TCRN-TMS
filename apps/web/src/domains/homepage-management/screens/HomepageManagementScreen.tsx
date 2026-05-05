@@ -667,7 +667,8 @@ export function HomepageManagementScreen({
         open={dialogState !== null}
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
-        confirmText={dialogState?.confirmText}
+        confirmText={dialogState?.confirmText ?? copy.dialogs.publishConfirm}
+        cancelText={copy.common.cancel}
         pendingText={dialogState?.pendingText}
         intent={dialogState?.intent}
         isPending={dialogPending}

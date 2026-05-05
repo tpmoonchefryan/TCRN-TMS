@@ -1122,6 +1122,7 @@ export function SystemDictionaryScreen() {
           )
         }
         confirmText={confirmState?.nextActive ? text('Reactivate', '重新启用', '再有効化') : text('Deactivate', '停用', '無効化')}
+        cancelText={text('Cancel', '取消', 'キャンセル')}
         intent={confirmState?.nextActive ? 'primary' : 'danger'}
         isPending={isConfirmPending}
         onConfirm={() => {

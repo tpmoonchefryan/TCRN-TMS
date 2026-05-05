@@ -83,6 +83,7 @@ export interface HomepageEditorCopy {
   };
   dialogs: {
     leaveConfirm: string;
+    leaveCancel: string;
     leaveDescription: (label: string) => string;
     leaveTitle: string;
   };
@@ -230,6 +231,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     dialogs: {
       leaveConfirm: 'Leave editor',
+      leaveCancel: 'Cancel',
       leaveDescription: (label) => `You have unsaved changes. Leave for ${label} without saving?`,
       leaveTitle: 'Leave homepage editor?',
     },
@@ -375,6 +377,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     dialogs: {
       leaveConfirm: '离开编辑器',
+      leaveCancel: '取消',
       leaveDescription: (label) => `当前有未保存的更改。是否不保存并前往${label}？`,
       leaveTitle: '离开主页编辑器？',
     },
@@ -520,6 +523,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     dialogs: {
       leaveConfirm: 'エディタを離れる',
+      leaveCancel: 'キャンセル',
       leaveDescription: (label) => `未保存の変更があります。保存せずに${label}へ移動しますか？`,
       leaveTitle: 'ホームページ編集画面を離れますか？',
     },

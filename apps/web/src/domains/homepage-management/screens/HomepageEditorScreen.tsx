@@ -1037,6 +1037,7 @@ export function HomepageEditorScreen({
         title={copy.dialogs.leaveTitle}
         description={leaveGuardState ? copy.dialogs.leaveDescription(leaveGuardState.label) : ''}
         confirmText={copy.dialogs.leaveConfirm}
+        cancelText={copy.dialogs.leaveCancel}
         intent="danger"
         onCancel={() => {
           setLeaveGuardState(null);

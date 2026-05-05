@@ -2866,6 +2866,7 @@ export function SecurityManagementScreen({
         title={dialogState?.title || copy.common.confirmAction}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText || copy.common.confirm}
+        cancelText={copy.common.cancel}
         pendingText={dialogState?.pendingText}
         intent={dialogState?.intent || 'danger'}
         isPending={dialogPending}

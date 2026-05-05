@@ -1101,7 +1101,8 @@ export function ReportsManagementScreen({
         open={dialogState !== null}
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
-        confirmText={dialogState?.confirmText}
+        confirmText={dialogState?.confirmText ?? copy.ledger.cancelDialogConfirm}
+        cancelText={copy.drawer.cancel}
         intent="danger"
         isPending={dialogPending}
         onCancel={() => {

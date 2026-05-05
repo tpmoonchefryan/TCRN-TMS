@@ -581,6 +581,7 @@ export function TenantManagementScreen({
         title={confirmState?.title || copy.confirmAction}
         description={confirmState?.description || ''}
         confirmText={confirmState?.confirmText || copy.confirmAction}
+        cancelText={copy.cancelAction}
         intent={confirmState?.intent || 'danger'}
         isPending={confirmPending}
         onCancel={() => {

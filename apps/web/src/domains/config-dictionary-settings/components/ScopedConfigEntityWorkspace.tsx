@@ -145,7 +145,9 @@ export interface ScopedConfigEntityWorkspaceCopy {
   entitySpecificFieldsTitle: string;
   entitySpecificFieldsDescription: string;
   createSubmit: string;
+  createPending: string;
   saveSubmit: string;
+  savePending: string;
   loadError: string;
   saveError: (entryLabel: string) => string;
   createSuccess: (entryLabel: string, code: string) => string;
@@ -234,7 +236,9 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
   entitySpecificFieldsTitle: 'Entity-specific fields',
   entitySpecificFieldsDescription: 'Complete the fields required for this entity.',
   createSubmit: 'Create record',
+  createPending: 'Creating record…',
   saveSubmit: 'Save changes',
+  savePending: 'Saving changes…',
   loadError: 'Failed to load configuration entities for this scope.',
   saveError: (entryLabel) => `Failed to save ${entryLabel.toLowerCase()}.`,
   createSuccess: (entryLabel, code) => `${entryLabel} ${code} created.`,
@@ -1619,6 +1623,7 @@ export function ScopedConfigEntityWorkspace({
             <AsyncSubmitButton
               intent="primary"
               isPending={editorPending}
+              pendingText={editorMode === 'create' ? resolvedCopy.createPending : resolvedCopy.savePending}
               onClick={() => void handleSubmit()}
             >
               {editorMode === 'create' ? resolvedCopy.createSubmit : resolvedCopy.saveSubmit}
@@ -1752,7 +1757,8 @@ export function ScopedConfigEntityWorkspace({
         open={confirmState !== null}
         title={confirmState?.title || ''}
         description={confirmState?.description || ''}
-        confirmText={confirmState?.confirmText}
+        confirmText={confirmState?.confirmText ?? resolvedCopy.deactivateConfirm}
+        cancelText={resolvedCopy.cancelLabel}
         intent={confirmState?.intent || 'danger'}
         isPending={confirmPending}
         onConfirm={() => {

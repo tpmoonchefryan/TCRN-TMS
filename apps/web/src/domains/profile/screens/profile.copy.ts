@@ -153,6 +153,7 @@ interface ProfileCopy {
     emailDescription: string;
   };
   dialog: {
+    cancelAction: string;
     confirmAction: string;
   };
 }
@@ -307,6 +308,7 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       emailDescription: 'Request and confirm email changes.',
     },
     dialog: {
+      cancelAction: 'Cancel',
       confirmAction: 'Confirm',
     },
   },
@@ -457,6 +459,7 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       emailDescription: '申请并确认邮箱变更。',
     },
     dialog: {
+      cancelAction: '取消',
       confirmAction: '确认',
     },
   },
@@ -608,6 +611,7 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
       emailDescription: 'メール変更の申請と確認。',
     },
     dialog: {
+      cancelAction: 'キャンセル',
       confirmAction: '確認',
     },
   },

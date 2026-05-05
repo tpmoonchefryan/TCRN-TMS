@@ -136,6 +136,7 @@ const EXPLICIT_PERMISSION_COUNT_LABELS: Record<RuntimeLocale, (count: number) =>
 const COPY = {
   en: {
     shared: {
+      cancel: 'Cancel',
       confirm: 'Confirm',
       confirmAction: 'Confirm action',
       never: 'Never',
@@ -444,6 +445,7 @@ const COPY = {
   },
   zh: {
     shared: {
+      cancel: '取消',
       confirm: '确认',
       confirmAction: '确认操作',
       never: '从未',
@@ -732,6 +734,7 @@ const COPY = {
   },
   ja: {
     shared: {
+      cancel: 'キャンセル',
       confirm: '確認',
       confirmAction: '操作の確認',
       never: '未実施',

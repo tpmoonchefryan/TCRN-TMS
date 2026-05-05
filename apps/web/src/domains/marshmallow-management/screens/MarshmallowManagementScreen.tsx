@@ -1199,7 +1199,8 @@ export function MarshmallowManagementScreen({
         open={dialogState !== null}
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
-        confirmText={dialogState?.confirmText}
+        confirmText={dialogState?.confirmText ?? copy.actions.approve}
+        cancelText={pickLocaleText(selectedLocale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
         intent={dialogState?.intent}
         isPending={dialogPending}
         onCancel={() => {

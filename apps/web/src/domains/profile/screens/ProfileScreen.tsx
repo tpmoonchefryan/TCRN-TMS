@@ -1194,6 +1194,7 @@ export function ProfileScreen({
         title={dialogState?.title || copy.dialog.confirmAction}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText || copy.dialog.confirmAction}
+        cancelText={copy.dialog.cancelAction}
         intent="danger"
         isPending={dialogPending}
         onConfirm={() => void handleConfirmDialog()}

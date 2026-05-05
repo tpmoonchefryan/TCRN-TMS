@@ -109,6 +109,7 @@ interface HomepageManagementCopy {
   filters: Record<VersionFilter, string>;
   statuses: Record<HomepageVersionStatus | 'inactive', string>;
   common: {
+    cancel: string;
     never: string;
     none: string;
     unknown: string;
@@ -224,6 +225,7 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       inactive: 'Inactive',
     },
     common: {
+      cancel: 'Cancel',
       never: 'Never',
       none: 'None',
       unknown: 'Unknown',
@@ -337,6 +339,7 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       inactive: '未启用',
     },
     common: {
+      cancel: '取消',
       never: '从未',
       none: '无',
       unknown: '未知',
@@ -450,6 +453,7 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       inactive: '停止中',
     },
     common: {
+      cancel: 'キャンセル',
       never: '未実施',
       none: 'なし',
       unknown: '不明',

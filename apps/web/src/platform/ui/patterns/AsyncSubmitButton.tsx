@@ -4,13 +4,13 @@ import { tokens } from '../foundations/tokens';
 
 export interface AsyncSubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isPending?: boolean;
-  pendingText?: string;
+  pendingText: string;
   intent?: 'primary' | 'danger';
 }
 
 export const AsyncSubmitButton: React.FC<AsyncSubmitButtonProps> = ({
   isPending = false,
-  pendingText = 'Processing...',
+  pendingText,
   intent = 'primary',
   children,
   disabled,

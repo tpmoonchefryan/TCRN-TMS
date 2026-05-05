@@ -5,7 +5,7 @@ import { AsyncSubmitButton } from '../patterns/AsyncSubmitButton';
 
 describe('AsyncSubmitButton', () => {
   it('renders children when not pending', () => {
-    render(<AsyncSubmitButton>Save</AsyncSubmitButton>);
+    render(<AsyncSubmitButton pendingText="Saving...">Save</AsyncSubmitButton>);
     expect(screen.getByText('Save')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toHaveAttribute('aria-busy', 'false');
   });
@@ -20,7 +20,7 @@ describe('AsyncSubmitButton', () => {
   });
 
   it('is disabled when disabled prop is true', () => {
-    render(<AsyncSubmitButton disabled>Save</AsyncSubmitButton>);
+    render(<AsyncSubmitButton disabled pendingText="Saving...">Save</AsyncSubmitButton>);
     expect(screen.getByRole('button')).toBeDisabled();
   });
 });

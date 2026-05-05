@@ -10,9 +10,9 @@ export interface ConfirmActionDialogProps {
   onCancel?: () => void;
   title: string;
   description: React.ReactNode;
-  confirmText?: string;
+  confirmText: string;
   pendingText?: string;
-  cancelText?: string;
+  cancelText: string;
   onConfirm: () => void | Promise<void>;
   intent?: 'danger' | 'primary';
   isPending?: boolean;
@@ -24,9 +24,9 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
   onCancel,
   title,
   description,
-  confirmText = 'Confirm',
+  confirmText,
   pendingText = confirmText,
-  cancelText = 'Cancel',
+  cancelText,
   onConfirm,
   intent = 'primary',
   isPending: externalIsPending = false,

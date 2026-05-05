@@ -1788,7 +1788,8 @@ export function TenantSettingsScreen({
         open={profileStoreDialogState !== null}
         title={profileStoreDialogState?.title || text('Confirm store action', '确认档案库操作', 'ストア操作を確認')}
         description={profileStoreDialogState?.description || ''}
-        confirmText={profileStoreDialogState?.confirmText}
+        confirmText={profileStoreDialogState?.confirmText ?? text('Confirm', '确认', '確認')}
+        cancelText={text('Cancel', '取消', 'キャンセル')}
         intent={profileStoreDialogState?.intent}
         isPending={profileStoreDialogPending}
         onCancel={() => {

@@ -10,6 +10,7 @@ import {
 
 interface TenantManagementCopy {
   currentAcTenantFallback: string;
+  cancelAction: string;
   confirmAction: string;
   management: {
     active: string;
@@ -116,6 +117,7 @@ interface TenantManagementCopy {
 const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
   en: {
     currentAcTenantFallback: 'Current AC Tenant',
+    cancelAction: 'Cancel',
     confirmAction: 'Confirm',
     management: {
       active: 'Active',
@@ -220,6 +222,7 @@ const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
   },
   zh: {
     currentAcTenantFallback: '当前 AC 租户',
+    cancelAction: '取消',
     confirmAction: '确认',
     management: {
       active: '启用中',
@@ -324,6 +327,7 @@ const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
   },
   ja: {
     currentAcTenantFallback: '現在の AC テナント',
+    cancelAction: 'キャンセル',
     confirmAction: '確認',
     management: {
       active: '稼働中',

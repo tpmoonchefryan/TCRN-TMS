@@ -27,6 +27,7 @@ type SecurityLocale = SupportedUiLocale | RuntimeLocale;
 const COPY = {
   en: {
     common: {
+      cancel: 'Cancel',
       confirmAction: 'Confirm action',
       confirm: 'Confirm',
       never: 'Never',
@@ -313,6 +314,7 @@ const COPY = {
   },
   zh: {
     common: {
+      cancel: '取消',
       confirmAction: '确认操作',
       confirm: '确认',
       never: '从未',
@@ -597,6 +599,7 @@ const COPY = {
   },
   ja: {
     common: {
+      cancel: 'キャンセル',
       confirmAction: '操作を確認',
       confirm: '確認',
       never: 'なし',
