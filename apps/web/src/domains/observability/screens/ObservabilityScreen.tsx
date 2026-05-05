@@ -33,7 +33,7 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { AsyncSubmitButton, FormSection, GlassSurface, SectionTabs, StateView, TableShell } from '@/platform/ui';
+import { AsyncSubmitButton, FormSection, GlassSurface, PaginationFooter, SectionTabs, StateView, TableShell } from '@/platform/ui';
 
 type PagedPanelState<T> = {
   data: T[];
@@ -180,76 +180,6 @@ function Field({ label, hint, children }: Readonly<FieldProps>) {
       {children}
       {hint ? <span className="block text-xs leading-5 text-slate-500">{hint}</span> : null}
     </label>
-  );
-}
-
-function PaginationFooter({
-  label,
-  rangeLabel,
-  pageSizeLabel,
-  previousLabel,
-  nextLabel,
-  pageSize,
-  onPageSizeChange,
-  onPrevious,
-  onNext,
-  hasPrev,
-  hasNext,
-  isLoading,
-}: Readonly<{
-  label: string;
-  rangeLabel: string;
-  pageSizeLabel: string;
-  previousLabel: string;
-  nextLabel: string;
-  pageSize: PageSizeOption;
-  onPageSizeChange: (pageSize: PageSizeOption) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  hasPrev: boolean;
-  hasNext: boolean;
-  isLoading: boolean;
-}>) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-2 pt-4">
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        <p className="text-xs text-slate-500">{rangeLabel}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
-          {pageSizeLabel}
-          <select
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSizeOption)}
-            className="bg-transparent text-sm outline-none"
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          onClick={onPrevious}
-          disabled={!hasPrev || isLoading}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {previousLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!hasNext || isLoading}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {nextLabel}
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -787,21 +717,23 @@ export function ObservabilityScreen({
               )}
             </FormSection>
             <PaginationFooter
-              label={changePaginationLabel}
-              rangeLabel={changePaginationRangeLabel}
-              pageSizeLabel={pageSizeLabel}
-              previousLabel={previousPageLabel}
-              nextLabel={nextPageLabel}
-              pageSize={changePageSize}
+              pagination={changePanel.pagination}
+              itemCount={changePanel.data.length}
+              labels={{
+                pageLabel: changePaginationLabel,
+                rangeLabel: changePaginationRangeLabel,
+                rowsPerPageLabel: pageSizeLabel,
+                pageSizeAriaLabel: pageSizeLabel,
+                previousLabel: previousPageLabel,
+                nextLabel: nextPageLabel,
+              }}
+              onPageChange={setChangePage}
               onPageSizeChange={(nextPageSize) => {
-                setChangePageSize(nextPageSize);
+                setChangePageSize(nextPageSize as PageSizeOption);
                 setChangePage(1);
               }}
-              onPrevious={() => setChangePage((current) => Math.max(1, current - 1))}
-              onNext={() => setChangePage((current) => current + 1)}
-              hasPrev={changePanel.pagination.hasPrev}
-              hasNext={changePanel.pagination.hasNext}
               isLoading={changePanel.loading}
+              className="mt-4"
             />
           </GlassSurface>
         </>
@@ -918,21 +850,23 @@ export function ObservabilityScreen({
               )}
             </FormSection>
             <PaginationFooter
-              label={techPaginationLabel}
-              rangeLabel={techPaginationRangeLabel}
-              pageSizeLabel={pageSizeLabel}
-              previousLabel={previousPageLabel}
-              nextLabel={nextPageLabel}
-              pageSize={techPageSize}
+              pagination={techPanel.pagination}
+              itemCount={techPanel.data.length}
+              labels={{
+                pageLabel: techPaginationLabel,
+                rangeLabel: techPaginationRangeLabel,
+                rowsPerPageLabel: pageSizeLabel,
+                pageSizeAriaLabel: pageSizeLabel,
+                previousLabel: previousPageLabel,
+                nextLabel: nextPageLabel,
+              }}
+              onPageChange={setTechPage}
               onPageSizeChange={(nextPageSize) => {
-                setTechPageSize(nextPageSize);
+                setTechPageSize(nextPageSize as PageSizeOption);
                 setTechPage(1);
               }}
-              onPrevious={() => setTechPage((current) => Math.max(1, current - 1))}
-              onNext={() => setTechPage((current) => current + 1)}
-              hasPrev={techPanel.pagination.hasPrev}
-              hasNext={techPanel.pagination.hasNext}
               isLoading={techPanel.loading}
+              className="mt-4"
             />
           </GlassSurface>
         </>
@@ -1071,21 +1005,23 @@ export function ObservabilityScreen({
               )}
             </FormSection>
             <PaginationFooter
-              label={integrationPaginationLabel}
-              rangeLabel={integrationPaginationRangeLabel}
-              pageSizeLabel={pageSizeLabel}
-              previousLabel={previousPageLabel}
-              nextLabel={nextPageLabel}
-              pageSize={integrationPageSize}
+              pagination={integrationPanel.pagination}
+              itemCount={integrationPanel.data.length}
+              labels={{
+                pageLabel: integrationPaginationLabel,
+                rangeLabel: integrationPaginationRangeLabel,
+                rowsPerPageLabel: pageSizeLabel,
+                pageSizeAriaLabel: pageSizeLabel,
+                previousLabel: previousPageLabel,
+                nextLabel: nextPageLabel,
+              }}
+              onPageChange={setIntegrationPage}
               onPageSizeChange={(nextPageSize) => {
-                setIntegrationPageSize(nextPageSize);
+                setIntegrationPageSize(nextPageSize as PageSizeOption);
                 setIntegrationPage(1);
               }}
-              onPrevious={() => setIntegrationPage((current) => Math.max(1, current - 1))}
-              onNext={() => setIntegrationPage((current) => current + 1)}
-              hasPrev={integrationPanel.pagination.hasPrev}
-              hasNext={integrationPanel.pagination.hasNext}
               isLoading={integrationPanel.loading}
+              className="mt-4"
             />
           </GlassSurface>
         </>
