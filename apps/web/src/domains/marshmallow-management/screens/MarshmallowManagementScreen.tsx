@@ -9,7 +9,8 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type ReactNode, startTransition, useEffect, useState } from 'react';
 
 import {
   approveMarshmallowMessage,
@@ -48,6 +49,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -114,6 +117,53 @@ interface DialogState {
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
+}
+
+function parseMessageStatusFilter(value: string | null): MessageStatusFilter {
+  return value === 'pending' || value === 'approved' || value === 'rejected' || value === 'spam' ? value : 'all';
+}
+
+function parseReplyFilter(value: string | null): ReplyFilter {
+  return value === 'replied' || value === 'unreplied' ? value : 'all';
+}
+
+function buildMarshmallowManagementQueryState({
+  keyword,
+  messageStatusFilter,
+  replyFilter,
+  page,
+  pageSize,
+}: {
+  keyword: string;
+  messageStatusFilter: MessageStatusFilter;
+  replyFilter: ReplyFilter;
+  page: number;
+  pageSize: PageSizeOption;
+}) {
+  const params = new URLSearchParams();
+  const normalizedKeyword = keyword.trim();
+
+  if (normalizedKeyword) {
+    params.set('keyword', normalizedKeyword);
+  }
+
+  if (messageStatusFilter !== 'all') {
+    params.set('status', messageStatusFilter);
+  }
+
+  if (replyFilter !== 'all') {
+    params.set('reply', replyFilter);
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function buildConfigDraft(config: MarshmallowConfigResponse): MarshmallowConfigDraft {
@@ -346,6 +396,14 @@ export function MarshmallowManagementScreen({
   tenantId: string;
   talentId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlKeyword = searchParams.get('keyword') ?? '';
+  const urlMessageStatusFilter = parseMessageStatusFilter(searchParams.get('status'));
+  const urlReplyFilter = parseReplyFilter(searchParams.get('reply'));
+  const urlPage = parsePageParam(searchParams.get('page'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
   const {
     selectedLocale,
@@ -367,11 +425,11 @@ export function MarshmallowManagementScreen({
     loading: true,
     error: null,
   });
-  const [messageStatusFilter, setMessageStatusFilter] = useState<MessageStatusFilter>('all');
-  const [replyFilter, setReplyFilter] = useState<ReplyFilter>('all');
-  const [keyword, setKeyword] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [messageStatusFilter, setMessageStatusFilter] = useState<MessageStatusFilter>(urlMessageStatusFilter);
+  const [replyFilter, setReplyFilter] = useState<ReplyFilter>(urlReplyFilter);
+  const [keyword, setKeyword] = useState(urlKeyword);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [savePending, setSavePending] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
@@ -383,6 +441,74 @@ export function MarshmallowManagementScreen({
   const [exportJob, setExportJob] = useState<MarshmallowExportJobResponse | null>(null);
   const [exportJobId, setExportJobId] = useState<string | null>(null);
   const [downloadPending, setDownloadPending] = useState(false);
+
+  useEffect(() => {
+    setKeyword((current) => (current === urlKeyword ? current : urlKeyword));
+    setMessageStatusFilter((current) => (current === urlMessageStatusFilter ? current : urlMessageStatusFilter));
+    setReplyFilter((current) => (current === urlReplyFilter ? current : urlReplyFilter));
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [urlKeyword, urlMessageStatusFilter, urlPage, urlPageSize, urlReplyFilter]);
+
+  function applyMessageQueryState(
+    nextState: Partial<{
+      keyword: string;
+      messageStatusFilter: MessageStatusFilter;
+      replyFilter: ReplyFilter;
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextKeyword = nextState.keyword ?? keyword;
+    const nextMessageStatusFilter = nextState.messageStatusFilter ?? messageStatusFilter;
+    const nextReplyFilter = nextState.replyFilter ?? replyFilter;
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.keyword !== undefined) {
+      setKeyword(nextKeyword);
+    }
+
+    if (nextState.messageStatusFilter !== undefined) {
+      setMessageStatusFilter(nextMessageStatusFilter);
+    }
+
+    if (nextState.replyFilter !== undefined) {
+      setReplyFilter(nextReplyFilter);
+    }
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildMarshmallowManagementQueryState({
+      keyword: nextKeyword,
+      messageStatusFilter: nextMessageStatusFilter,
+      replyFilter: nextReplyFilter,
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildMarshmallowManagementQueryState({
+      keyword,
+      messageStatusFilter,
+      replyFilter,
+      page,
+      pageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -933,8 +1059,10 @@ export function MarshmallowManagementScreen({
                 label={copy.moderation.filters.keywordSearch}
                 value={keyword}
                 onChange={(value) => {
-                  setKeyword(value);
-                  setPage(1);
+                  applyMessageQueryState({
+                    keyword: value,
+                    page: 1,
+                  });
                 }}
               />
               <SelectField
@@ -942,8 +1070,10 @@ export function MarshmallowManagementScreen({
                 value={messageStatusFilter}
                 options={messageStatusOptions}
                 onChange={(value) => {
-                  setMessageStatusFilter(value as MessageStatusFilter);
-                  setPage(1);
+                  applyMessageQueryState({
+                    messageStatusFilter: value as MessageStatusFilter,
+                    page: 1,
+                  });
                 }}
               />
               <SelectField
@@ -951,8 +1081,10 @@ export function MarshmallowManagementScreen({
                 value={replyFilter}
                 options={replyFilterOptions}
                 onChange={(value) => {
-                  setReplyFilter(value as ReplyFilter);
-                  setPage(1);
+                  applyMessageQueryState({
+                    replyFilter: value as ReplyFilter,
+                    page: 1,
+                  });
                 }}
               />
             </div>
@@ -1104,10 +1236,14 @@ export function MarshmallowManagementScreen({
                   previousLabel: previousPageLabel,
                   nextLabel: nextPageLabel,
                 }}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  applyMessageQueryState({ page: nextPage });
+                }}
                 onPageSizeChange={(nextPageSize) => {
-                  setPageSize(nextPageSize as PageSizeOption);
-                  setPage(1);
+                  applyMessageQueryState({
+                    page: 1,
+                    pageSize: nextPageSize as PageSizeOption,
+                  });
                 }}
                 isLoading={messagesPanel.loading}
                 className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70"

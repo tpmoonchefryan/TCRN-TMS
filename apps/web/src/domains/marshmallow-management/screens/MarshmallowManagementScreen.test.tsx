@@ -5,6 +5,9 @@ import { MarshmallowManagementScreen } from '@/domains/marshmallow-management/sc
 
 const mockRequest = vi.fn();
 const openSpy = vi.fn();
+const replace = vi.fn();
+let pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
 };
@@ -27,6 +30,14 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 function buildConfig(version = 3) {
@@ -76,7 +87,15 @@ describe('MarshmallowManagementScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     openSpy.mockReset();
+    replace.mockReset();
     localeState.currentLocale = 'en';
+    pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
+    currentSearch = '';
+    replace.mockImplementation((href: string) => {
+      const resolved = new URL(href, 'https://tcrn.local');
+      pathname = resolved.pathname;
+      currentSearch = resolved.search.startsWith('?') ? resolved.search.slice(1) : resolved.search;
+    });
     vi.stubGlobal('open', openSpy);
   });
 
@@ -185,6 +204,117 @@ describe('MarshmallowManagementScreen', () => {
 
     expect(await screen.findByText('Approved note')).toBeInTheDocument();
     expect(screen.queryByText('Happy birthday!')).not.toBeInTheDocument();
+  });
+
+  it('hydrates moderation filters from the URL and keeps reply changes shareable', async () => {
+    currentSearch = 'keyword=fan&status=approved&reply=replied&page=2&pageSize=50';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/marshmallow/config') {
+        return buildConfig();
+      }
+
+      if (path === '/api/v1/talents/talent-1/marshmallow/messages?page=2&pageSize=50&status=approved&keyword=fan&hasReply=true') {
+        return {
+          items: [
+            {
+              id: 'message-2',
+              content: 'Approved fan note',
+              senderName: 'Fan B',
+              isAnonymous: false,
+              status: 'approved',
+              rejectionReason: null,
+              isRead: true,
+              isStarred: true,
+              isPinned: false,
+              replyContent: 'Thanks!',
+              repliedAt: '2026-04-17T10:10:00.000Z',
+              repliedBy: {
+                id: 'user-1',
+                username: 'moderator',
+              },
+              reactionCounts: {
+                heart: 2,
+              },
+              profanityFlags: [],
+              imageUrl: null,
+              imageUrls: [],
+              socialLink: null,
+              createdAt: '2026-04-17T10:05:00.000Z',
+            },
+          ],
+          meta: {
+            total: 51,
+            stats: {
+              pendingCount: 0,
+              approvedCount: 51,
+              rejectedCount: 0,
+              unreadCount: 0,
+            },
+          },
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false') {
+        return {
+          items: [
+            {
+              id: 'message-3',
+              content: 'Needs reply',
+              senderName: 'Fan C',
+              isAnonymous: false,
+              status: 'approved',
+              rejectionReason: null,
+              isRead: false,
+              isStarred: false,
+              isPinned: false,
+              replyContent: null,
+              repliedAt: null,
+              repliedBy: null,
+              reactionCounts: {},
+              profanityFlags: [],
+              imageUrl: null,
+              imageUrls: [],
+              socialLink: null,
+              createdAt: '2026-04-17T10:20:00.000Z',
+            },
+          ],
+          meta: {
+            total: 1,
+            stats: {
+              pendingCount: 0,
+              approvedCount: 1,
+              rejectedCount: 0,
+              unreadCount: 1,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByText('Approved fan note')).toBeInTheDocument();
+    expect(screen.getByLabelText('Keyword search')).toHaveValue('fan');
+    expect(screen.getByLabelText('Message status filter')).toHaveValue('approved');
+    expect(screen.getByLabelText('Reply state')).toHaveValue('replied');
+
+    fireEvent.change(screen.getByLabelText('Reply state'), {
+      target: { value: 'unreplied' },
+    });
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false',
+      );
+      expect(replace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/talent/talent-1/marshmallow?keyword=fan&status=approved&reply=unreplied&pageSize=50',
+      );
+    });
+
+    expect(await screen.findByText('Needs reply')).toBeInTheDocument();
   });
 
   it('saves config updates and moderates messages through the shared confirm dialog', async () => {
