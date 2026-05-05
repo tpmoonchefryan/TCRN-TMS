@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
@@ -7,6 +7,9 @@ import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
+const mockRouterReplace = vi.fn();
+let currentPathname = '/tenant/tenant-1/settings';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as RuntimeLocale,
   selectedLocale: undefined,
@@ -14,6 +17,14 @@ const localeState = {
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => currentPathname,
+  useRouter: () => ({
+    replace: mockRouterReplace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 function buildConfigEntityRecord(overrides: Partial<ConfigEntityRecord> = {}): ConfigEntityRecord {
@@ -68,6 +79,60 @@ describe('ScopedConfigEntityWorkspace', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
+    mockRouterReplace.mockReset();
+    currentPathname = '/tenant/tenant-1/settings';
+    currentSearch = '';
+  });
+
+
+  it('hydrates config entity list state from URL and preserves unrelated query params', async () => {
+    currentSearch = 'configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true&configEntityPage=2&configEntityPageSize=50&foo=1';
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/configuration-entity/business-segment?scopeType=tenant&includeInherited=false&includeDisabled=true&includeInactive=true&ownerOnly=true&search=music&page=2&pageSize=50&sort=sortOrder'
+      ) {
+        return {
+          success: true,
+          data: [buildConfigEntityRecord({ code: 'MUSIC_VIP', name: 'VIP Music' })],
+          meta: {
+            pagination: {
+              page: 2,
+              pageSize: 50,
+              totalCount: 51,
+              totalPages: 2,
+              hasNext: false,
+              hasPrev: true,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="tenant"
+      />,
+    );
+
+    expect(await screen.findByText('VIP Music')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search configuration entities')).toHaveValue('music');
+    expect(screen.getByLabelText('Current scope only')).toBeChecked();
+    expect(screen.getByLabelText('Include inactive records')).toBeChecked();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '20' } });
+    });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/settings?foo=1&configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true',
+    );
   });
 
   it('clears stale config rows while loading a newly selected entity family', async () => {

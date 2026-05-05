@@ -2,7 +2,8 @@
 
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { Plus, RefreshCcw } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type ConfigEntityRecord,
@@ -46,6 +47,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { ActionDrawer, AsyncSubmitButton, ConfirmActionDialog, PaginationFooter, StateView, TableShell } from '@/platform/ui';
 
@@ -278,6 +281,76 @@ const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
 
 function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {
   return TENANT_GLOBAL_ENTITY_TYPES.has(entityType);
+}
+
+function resolveScopedConfigEntityType(
+  catalog: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>,
+  requestedType: string | null,
+): ScopedConfigEntityType {
+  if (requestedType && Object.prototype.hasOwnProperty.call(catalog, requestedType)) {
+    return requestedType as ScopedConfigEntityType;
+  }
+
+  return DEFAULT_CONFIG_ENTITY_TYPE;
+}
+
+function parseConfigEntityBooleanParam(value: string | null) {
+  return value === 'true';
+}
+
+function buildScopedConfigEntityQueryState(
+  searchParams: { toString(): string },
+  {
+    currentScopeOnly,
+    includeInactive,
+    page,
+    pageSize,
+    search,
+    selectedType,
+  }: {
+    currentScopeOnly: boolean;
+    includeInactive: boolean;
+    page: number;
+    pageSize: PageSizeOption;
+    search: string;
+    selectedType: ScopedConfigEntityType;
+  },
+) {
+  const params = new URLSearchParams(searchParams.toString());
+  const normalizedSearch = search.trim();
+
+  params.delete('configEntityType');
+  params.delete('configEntitySearch');
+  params.delete('configEntityScopeOnly');
+  params.delete('configEntityInactive');
+  params.delete('configEntityPage');
+  params.delete('configEntityPageSize');
+
+  if (selectedType !== DEFAULT_CONFIG_ENTITY_TYPE) {
+    params.set('configEntityType', selectedType);
+  }
+
+  if (normalizedSearch) {
+    params.set('configEntitySearch', normalizedSearch);
+  }
+
+  if (currentScopeOnly) {
+    params.set('configEntityScopeOnly', 'true');
+  }
+
+  if (includeInactive) {
+    params.set('configEntityInactive', 'true');
+  }
+
+  if (page > 1) {
+    params.set('configEntityPage', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('configEntityPageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function isEntityInheritedInScope(
@@ -781,17 +854,29 @@ export function ScopedConfigEntityWorkspace({
   catalog = CONFIG_ENTITY_CATALOG,
 }: Readonly<ScopedConfigEntityWorkspaceProps>) {
   const resolvedCopy = copy;
-  const [selectedType, setSelectedType] = useState<ScopedConfigEntityType>(DEFAULT_CONFIG_ENTITY_TYPE);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSelectedType = resolveScopedConfigEntityType(catalog, searchParams.get('configEntityType'));
+  const urlSelectedTypeSupportsLocalScopeOnly = !isTenantGlobalEntityType(urlSelectedType);
+  const urlSearch = searchParams.get('configEntitySearch') ?? '';
+  const urlCurrentScopeOnly = urlSelectedTypeSupportsLocalScopeOnly
+    ? parseConfigEntityBooleanParam(searchParams.get('configEntityScopeOnly'))
+    : false;
+  const urlIncludeInactive = parseConfigEntityBooleanParam(searchParams.get('configEntityInactive'));
+  const urlPage = parsePageParam(searchParams.get('configEntityPage'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('configEntityPageSize'));
+  const [selectedType, setSelectedType] = useState<ScopedConfigEntityType>(urlSelectedType);
   const [records, setRecords] = useState<ConfigEntityRecord[]>([]);
   const recordsTypeRef = useRef<ScopedConfigEntityType | null>(null);
   const [parentOptions, setParentOptions] = useState<ParentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [includeInactive, setIncludeInactive] = useState(false);
-  const [currentScopeOnly, setCurrentScopeOnly] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [search, setSearch] = useState(urlSearch);
+  const [includeInactive, setIncludeInactive] = useState(urlIncludeInactive);
+  const [currentScopeOnly, setCurrentScopeOnly] = useState(urlCurrentScopeOnly);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [pagination, setPagination] = useState<ApiPaginationMeta>(() =>
     buildPaginationMeta(0, 1, PAGE_SIZE_OPTIONS[0]),
   );
@@ -922,20 +1007,143 @@ export function ScopedConfigEntityWorkspace({
   }, [selectedEntry]);
 
   useEffect(() => {
+    setSelectedType((current) => (current === urlSelectedType ? current : urlSelectedType));
+    setSearch((current) => (current === urlSearch ? current : urlSearch));
+    setIncludeInactive((current) => (current === urlIncludeInactive ? current : urlIncludeInactive));
+    setCurrentScopeOnly((current) => (current === urlCurrentScopeOnly ? current : urlCurrentScopeOnly));
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [
+    urlCurrentScopeOnly,
+    urlIncludeInactive,
+    urlPage,
+    urlPageSize,
+    urlSearch,
+    urlSelectedType,
+  ]);
+
+  function applyScopedConfigQueryState(
+    nextState: Partial<{
+      currentScopeOnly: boolean;
+      includeInactive: boolean;
+      page: number;
+      pageSize: PageSizeOption;
+      search: string;
+      selectedType: ScopedConfigEntityType;
+    }>,
+  ) {
+    const nextSelectedType = resolveScopedConfigEntityType(
+      catalog,
+      nextState.selectedType !== undefined ? nextState.selectedType : selectedType,
+    );
+    const nextSupportsLocalScopeOnly = !isTenantGlobalEntityType(nextSelectedType);
+    const nextCurrentScopeOnly = nextSupportsLocalScopeOnly
+      ? nextState.currentScopeOnly ?? currentScopeOnly
+      : false;
+    const nextIncludeInactive = nextState.includeInactive ?? includeInactive;
+    const nextSearch = nextState.search ?? search;
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.selectedType !== undefined) {
+      setSelectedType(nextSelectedType);
+    }
+
+    if (nextState.currentScopeOnly !== undefined || !nextSupportsLocalScopeOnly) {
+      setCurrentScopeOnly(nextCurrentScopeOnly);
+    }
+
+    if (nextState.includeInactive !== undefined) {
+      setIncludeInactive(nextIncludeInactive);
+    }
+
+    if (nextState.search !== undefined) {
+      setSearch(nextSearch);
+    }
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildScopedConfigEntityQueryState(searchParams, {
+      currentScopeOnly: nextCurrentScopeOnly,
+      includeInactive: nextIncludeInactive,
+      page: nextPage,
+      pageSize: nextPageSize,
+      search: nextSearch,
+      selectedType: nextSelectedType,
+    });
+    const currentQueryString = buildScopedConfigEntityQueryState(searchParams, {
+      currentScopeOnly: effectiveCurrentScopeOnly,
+      includeInactive,
+      page,
+      pageSize,
+      search,
+      selectedType,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
+
+  useEffect(() => {
     if (!supportsLocalScopeOnly && currentScopeOnly) {
       setCurrentScopeOnly(false);
     }
   }, [currentScopeOnly, supportsLocalScopeOnly]);
 
   useEffect(() => {
-    setPage(1);
-  }, [effectiveCurrentScopeOnly, includeInactive, search, selectedType]);
+    if (!loading && page !== pagination.page) {
+      const nextPage = pagination.page;
+      setPage(nextPage);
 
-  useEffect(() => {
-    if (page !== pagination.page) {
-      setPage(pagination.page);
+      const nextQueryString = buildScopedConfigEntityQueryState(searchParams, {
+        currentScopeOnly: effectiveCurrentScopeOnly,
+        includeInactive,
+        page: nextPage,
+        pageSize,
+        search,
+        selectedType,
+      });
+      const currentQueryString = buildScopedConfigEntityQueryState(searchParams, {
+        currentScopeOnly: effectiveCurrentScopeOnly,
+        includeInactive,
+        page,
+        pageSize,
+        search,
+        selectedType,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
     }
-  }, [page, pagination.page]);
+  }, [
+    effectiveCurrentScopeOnly,
+    includeInactive,
+    loading,
+    page,
+    pageSize,
+    pagination.page,
+    pathname,
+    router,
+    search,
+    searchParams,
+    selectedType,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1305,7 +1513,7 @@ export function ScopedConfigEntityWorkspace({
               <button
                 key={entityType}
                 type="button"
-                onClick={() => setSelectedType(entityType)}
+                onClick={() => applyScopedConfigQueryState({ page: 1, selectedType: entityType })}
                 className={`w-full rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isActive
                     ? 'border-indigo-200 bg-indigo-50 text-indigo-950 shadow-sm'
@@ -1389,7 +1597,7 @@ export function ScopedConfigEntityWorkspace({
                   aria-label={resolvedCopy.searchAriaLabel}
                   type="search"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => applyScopedConfigQueryState({ page: 1, search: event.target.value })}
                   placeholder={resolvedCopy.searchPlaceholder(selectedEntry.label)}
                   className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-4 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 />
@@ -1410,7 +1618,7 @@ export function ScopedConfigEntityWorkspace({
                     aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
                     type="checkbox"
                     checked={currentScopeOnly}
-                    onChange={(event) => setCurrentScopeOnly(event.target.checked)}
+                    onChange={(event) => applyScopedConfigQueryState({ currentScopeOnly: event.target.checked, page: 1 })}
                     className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                   />
                   {resolvedCopy.currentScopeOnlyLabel}
@@ -1422,7 +1630,7 @@ export function ScopedConfigEntityWorkspace({
                   aria-label={resolvedCopy.includeInactiveAriaLabel}
                   type="checkbox"
                   checked={includeInactive}
-                  onChange={(event) => setIncludeInactive(event.target.checked)}
+                  onChange={(event) => applyScopedConfigQueryState({ includeInactive: event.target.checked, page: 1 })}
                   className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 />
                 {resolvedCopy.includeInactiveLabel}
@@ -1583,10 +1791,12 @@ export function ScopedConfigEntityWorkspace({
                   previousLabel: paginationCopy.previous,
                   nextLabel: paginationCopy.next,
                 }}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => applyScopedConfigQueryState({ page: nextPage })}
                 onPageSizeChange={(nextPageSize) => {
-                  setPageSize(nextPageSize as PageSizeOption);
-                  setPage(1);
+                  applyScopedConfigQueryState({
+                    page: 1,
+                    pageSize: nextPageSize as PageSizeOption,
+                  });
                 }}
                 isLoading={loading}
                 className="rounded-2xl border border-slate-200 bg-slate-50/80"
