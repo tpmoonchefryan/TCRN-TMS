@@ -3,7 +3,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { Activity, Fingerprint, Languages, ShieldCheck, ShieldEllipsis, Trash2 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type OrganizationNode,
@@ -84,6 +84,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -226,15 +228,42 @@ function isScopedSecurityScopeType(value: SecurityScopeType): value is ScopedSec
   return value === 'subsidiary' || value === 'talent';
 }
 
-function buildQueryString({
-  tab,
-  scopeType,
-  scopeId,
-}: {
-  tab: SecurityTab;
-  scopeType: SecurityScopeType;
-  scopeId: string;
-}) {
+const SECURITY_QUERY_KEYS = new Set([
+  'tab',
+  'scopeType',
+  'scopeId',
+  'blocklistPage',
+  'blocklistPageSize',
+  'externalPage',
+  'externalPageSize',
+  'ipRulesPage',
+  'ipRulesPageSize',
+]);
+
+function buildSecurityQueryState(
+  searchParams: { toString(): string },
+  {
+    blocklistPage,
+    blocklistPageSize,
+    externalPage,
+    externalPageSize,
+    ipRulesPage,
+    ipRulesPageSize,
+    scopeId,
+    scopeType,
+    tab,
+  }: {
+    blocklistPage: number;
+    blocklistPageSize: PageSizeOption;
+    externalPage: number;
+    externalPageSize: PageSizeOption;
+    ipRulesPage: number;
+    ipRulesPageSize: PageSizeOption;
+    scopeId: string;
+    scopeType: SecurityScopeType;
+    tab: SecurityTab;
+  },
+) {
   const params = new URLSearchParams();
   params.set('tab', tab);
   params.set('scopeType', scopeType);
@@ -243,8 +272,37 @@ function buildQueryString({
     params.set('scopeId', scopeId.trim());
   }
 
-  const query = params.toString();
-  return query ? `?${query}` : '';
+  if (blocklistPage > 1) {
+    params.set('blocklistPage', String(blocklistPage));
+  }
+
+  if (blocklistPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('blocklistPageSize', String(blocklistPageSize));
+  }
+
+  if (externalPage > 1) {
+    params.set('externalPage', String(externalPage));
+  }
+
+  if (externalPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('externalPageSize', String(externalPageSize));
+  }
+
+  if (ipRulesPage > 1) {
+    params.set('ipRulesPage', String(ipRulesPage));
+  }
+
+  if (ipRulesPageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('ipRulesPageSize', String(ipRulesPageSize));
+  }
+
+  new URLSearchParams(searchParams.toString()).forEach((value, key) => {
+    if (!SECURITY_QUERY_KEYS.has(key)) {
+      params.append(key, value);
+    }
+  });
+
+  return params.toString();
 }
 
 function emptyListPanel<T>(): ListPanelState<T> {
@@ -543,6 +601,12 @@ export function SecurityManagementScreen({
   const currentTab = getInitialTab(searchParams.get('tab'));
   const currentScopeType = getInitialScopeType(searchParams.get('scopeType'));
   const currentScopeId = searchParams.get('scopeId') || '';
+  const urlBlocklistPage = parsePageParam(searchParams.get('blocklistPage'));
+  const urlBlocklistPageSize = parsePageSizeParam(searchParams.get('blocklistPageSize'));
+  const urlExternalPage = parsePageParam(searchParams.get('externalPage'));
+  const urlExternalPageSize = parsePageSizeParam(searchParams.get('externalPageSize'));
+  const urlIpRulesPage = parsePageParam(searchParams.get('ipRulesPage'));
+  const urlIpRulesPageSize = parsePageSizeParam(searchParams.get('ipRulesPageSize'));
 
   const [activeTab, setActiveTab] = useState<SecurityTab>(currentTab);
   const {
@@ -551,18 +615,19 @@ export function SecurityManagementScreen({
   } = useFadeSwapState(activeTab);
   const [scopeType, setScopeType] = useState<SecurityScopeType>(currentScopeType);
   const [scopeId, setScopeId] = useState(currentScopeId);
+  const lastPaginationScopeKeyRef = useRef(`${currentScopeType}:${currentScopeId}`);
   const [organizationScopesPanel, setOrganizationScopesPanel] =
     useState<ValuePanelState<OrganizationScopeOption[]>>(emptyValuePanel);
 
   const [blocklistPanel, setBlocklistPanel] = useState<ListPanelState<BlocklistEntryRecord>>(emptyListPanel);
   const [externalPanel, setExternalPanel] = useState<ListPanelState<ExternalBlocklistRecord>>(emptyListPanel);
   const [ipRulesPanel, setIpRulesPanel] = useState<ListPanelState<IpAccessRuleRecord>>(emptyListPanel);
-  const [blocklistPage, setBlocklistPage] = useState(1);
-  const [blocklistPageSize, setBlocklistPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
-  const [externalPage, setExternalPage] = useState(1);
-  const [externalPageSize, setExternalPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
-  const [ipRulesPage, setIpRulesPage] = useState(1);
-  const [ipRulesPageSize, setIpRulesPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [blocklistPage, setBlocklistPage] = useState(urlBlocklistPage);
+  const [blocklistPageSize, setBlocklistPageSize] = useState<PageSizeOption>(urlBlocklistPageSize);
+  const [externalPage, setExternalPage] = useState(urlExternalPage);
+  const [externalPageSize, setExternalPageSize] = useState<PageSizeOption>(urlExternalPageSize);
+  const [ipRulesPage, setIpRulesPage] = useState(urlIpRulesPage);
+  const [ipRulesPageSize, setIpRulesPageSize] = useState<PageSizeOption>(urlIpRulesPageSize);
   const [fingerprintPanel, setFingerprintPanel] = useState<ValuePanelState<FingerprintResponse>>(emptyValuePanel);
   const [rateLimitPanel, setRateLimitPanel] = useState<ValuePanelState<RateLimitStatsResponse>>(emptyValuePanel);
   const [profileStorePanel, setProfileStorePanel] = useState<ValuePanelState<ProfileStoreSummaryRecord[]>>(emptyValuePanel);
@@ -663,7 +728,23 @@ export function SecurityManagementScreen({
     setActiveTab(currentTab);
     setScopeType(currentScopeType);
     setScopeId(currentScopeId);
-  }, [currentScopeId, currentScopeType, currentTab]);
+    setBlocklistPage((current) => (current === urlBlocklistPage ? current : urlBlocklistPage));
+    setBlocklistPageSize((current) => (current === urlBlocklistPageSize ? current : urlBlocklistPageSize));
+    setExternalPage((current) => (current === urlExternalPage ? current : urlExternalPage));
+    setExternalPageSize((current) => (current === urlExternalPageSize ? current : urlExternalPageSize));
+    setIpRulesPage((current) => (current === urlIpRulesPage ? current : urlIpRulesPage));
+    setIpRulesPageSize((current) => (current === urlIpRulesPageSize ? current : urlIpRulesPageSize));
+  }, [
+    currentScopeId,
+    currentScopeType,
+    currentTab,
+    urlBlocklistPage,
+    urlBlocklistPageSize,
+    urlExternalPage,
+    urlExternalPageSize,
+    urlIpRulesPage,
+    urlIpRulesPageSize,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -712,13 +793,58 @@ export function SecurityManagementScreen({
   }, [copy.options.scopeType, copy.scopeLens.emptyOptions, request]);
 
   useEffect(() => {
-    const query = buildQueryString({
-      tab: activeTab,
-      scopeType,
+    const nextQueryString = buildSecurityQueryState(searchParams, {
+      blocklistPage,
+      blocklistPageSize,
+      externalPage,
+      externalPageSize,
+      ipRulesPage,
+      ipRulesPageSize,
       scopeId,
+      scopeType,
+      tab: activeTab,
     });
-    router.replace(`${pathname}${query}`);
-  }, [activeTab, pathname, router, scopeId, scopeType]);
+    const currentQueryString = buildSecurityQueryState(searchParams, {
+      blocklistPage: urlBlocklistPage,
+      blocklistPageSize: urlBlocklistPageSize,
+      externalPage: urlExternalPage,
+      externalPageSize: urlExternalPageSize,
+      ipRulesPage: urlIpRulesPage,
+      ipRulesPageSize: urlIpRulesPageSize,
+      scopeId: currentScopeId,
+      scopeType: currentScopeType,
+      tab: currentTab,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    router.replace(nextHref);
+  }, [
+    activeTab,
+    blocklistPage,
+    blocklistPageSize,
+    currentScopeId,
+    currentScopeType,
+    currentTab,
+    externalPage,
+    externalPageSize,
+    ipRulesPage,
+    ipRulesPageSize,
+    pathname,
+    router,
+    scopeId,
+    scopeType,
+    searchParams,
+    urlBlocklistPage,
+    urlBlocklistPageSize,
+    urlExternalPage,
+    urlExternalPageSize,
+    urlIpRulesPage,
+    urlIpRulesPageSize,
+  ]);
 
   const organizationScopeOptions = useMemo(() => {
     const options = organizationScopesPanel.data ?? [];
@@ -1005,6 +1131,13 @@ export function SecurityManagementScreen({
   }, [ipRulesPage, ipRulesPageSize, request]);
 
   useEffect(() => {
+    const nextScopeKey = `${scopeType}:${scopeId}`;
+
+    if (lastPaginationScopeKeyRef.current === nextScopeKey) {
+      return;
+    }
+
+    lastPaginationScopeKeyRef.current = nextScopeKey;
     setBlocklistPage(1);
     setExternalPage(1);
   }, [scopeId, scopeType]);

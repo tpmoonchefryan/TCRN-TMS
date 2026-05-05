@@ -490,7 +490,7 @@ describe('SecurityManagementScreen', () => {
       'whitespace-nowrap',
     );
     expect(screen.getByText('active').closest('div')).toHaveClass('flex-nowrap', 'whitespace-nowrap');
-    expect(mockReplace).toHaveBeenCalledWith(
+    expect(mockReplace).not.toHaveBeenCalledWith(
       '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1',
     );
 
@@ -518,6 +518,125 @@ describe('SecurityManagementScreen', () => {
     expect(await screen.findByText('Device fingerprint')).toBeInTheDocument();
     expect(await screen.findByText('abc123')).toBeInTheDocument();
     expect(await screen.findByText('Primary Store')).toBeInTheDocument();
+  });
+
+  it('hydrates and writes scoped list pagination through URL query', async () => {
+    searchQuery = 'tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&externalPage=2&externalPageSize=20&foo=1';
+    const externalRequests: string[] = [];
+
+    mockRequest.mockImplementation(async (requestPath: string, init?: RequestInit) => {
+      if (requestPath === '/api/v1/organization/tree?includeInactive=true') {
+        return organizationTreeResponse;
+      }
+
+      if (requestPath.startsWith('/api/v1/blocklist-entries?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (requestPath.startsWith('/api/v1/ip-access-rules?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (requestPath === '/api/v1/security/fingerprint' && init?.method === 'POST') {
+        return {
+          fingerprint: 'tenant-user-fingerprint',
+          shortFingerprint: 'abc123',
+          version: 'v1',
+          generatedAt: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (requestPath === '/api/v1/rate-limit/stats') {
+        return {
+          summary: {
+            totalRequests24h: 0,
+            blockedRequests24h: 0,
+            uniqueIPs24h: 0,
+            currentlyBlocked: 0,
+          },
+          topEndpoints: [],
+          topIPs: [],
+          lastUpdated: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (requestPath === '/api/v1/profile-stores?page=1&pageSize=8') {
+        return {
+          items: [],
+        };
+      }
+
+      throw new Error(`Unhandled request: ${requestPath}`);
+    });
+
+    mockRequestEnvelope.mockImplementation(async (requestPath: string) => {
+      if (requestPath.startsWith('/api/v1/external-blocklist?')) {
+        externalRequests.push(requestPath);
+        const isPageTwo = requestPath.includes('page=2');
+        const itemNumber = isPageTwo ? 21 : 1;
+
+        return {
+          success: true,
+          data: [
+            {
+              id: `ext-${itemNumber}`,
+              ownerType: 'subsidiary',
+              ownerId: 'sub-1',
+              pattern: `pattern-${itemNumber}`,
+              patternType: 'domain',
+              nameEn: `External Pattern ${itemNumber}`,
+              nameZh: null,
+              nameJa: null,
+              description: null,
+              category: 'spam',
+              severity: 'medium',
+              action: 'reject',
+              replacement: '[filtered]',
+              inherit: true,
+              sortOrder: itemNumber,
+              isActive: true,
+              version: 1,
+              isInherited: false,
+              isDisabledHere: false,
+              canDisable: false,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: isPageTwo ? 2 : 1,
+              pageSize: 20,
+              totalCount: 25,
+              totalPages: 2,
+              hasNext: !isPageTwo,
+              hasPrev: isPageTwo,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled envelope request: ${requestPath}`);
+    });
+
+    render(<SecurityManagementScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByText('External Pattern 21')).toBeInTheDocument();
+    expect(externalRequests.some((requestPath) => (
+      requestPath.includes('page=2') && requestPath.includes('pageSize=20')
+    ))).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&foo=1',
+      );
+    });
   });
 
   it('batch deactivates the visible external patterns through the shared confirm dialog', async () => {
