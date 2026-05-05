@@ -106,6 +106,8 @@ async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10) {
   await expect(locator).toBeFocused();
 }
 
+const localeOverrideStorageKey = 'tcrn.web.locale.override';
+
 const visualQaFixture = {
   displayName: 'Playwright Public Talent',
   homepagePath: 'browser-visual-homepage',
@@ -114,6 +116,33 @@ const visualQaFixture = {
   marshmallowTitle: 'Ask The Talent',
   welcomeText: 'Drop a thoughtful question.',
 };
+
+const localeVisualQaCases = [
+  {
+    name: 'Traditional Chinese',
+    locale: 'zh_HANT',
+    homepageBadge: '公開主頁',
+    messageLabel: '訊息內容',
+    anonymousLabel: '匿名提交',
+    sendButton: '送出訊息',
+  },
+  {
+    name: 'Korean',
+    locale: 'ko',
+    homepageBadge: '공개 홈페이지',
+    messageLabel: '메시지',
+    anonymousLabel: '익명으로 제출',
+    sendButton: '메시지 보내기',
+  },
+  {
+    name: 'French',
+    locale: 'fr',
+    homepageBadge: "Page d'accueil publique",
+    messageLabel: 'Message',
+    anonymousLabel: 'Envoyer anonymement',
+    sendButton: 'Envoyer le message',
+  },
+];
 
 const visualQaTheme = {
   preset: 'default',
@@ -182,6 +211,15 @@ function buildHomepageResponse(input: { displayName: string; theme: typeof visua
       updatedAt: '2026-05-06T00:00:00.000Z',
     },
   };
+}
+
+async function useLocaleOverride(page: Page, locale: string) {
+  await page.addInitScript(
+    ({ key, value }) => {
+      window.localStorage.setItem(key, value);
+    },
+    { key: localeOverrideStorageKey, value: locale }
+  );
 }
 
 async function mockPublicRuntimeApi(page: Page) {
@@ -338,6 +376,29 @@ test.describe('public runtime browser visual QA', () => {
       }
     }
   });
+
+  for (const localeCase of localeVisualQaCases) {
+    test(`public runtime keeps mobile layout for ${localeCase.name} copy`, async ({ page }) => {
+      await useLocaleOverride(page, localeCase.locale);
+      await page.setViewportSize({ width: 390, height: 844 });
+
+      await page.goto(`/p/${visualQaFixture.homepagePath}`);
+      await expect(page.getByText(localeCase.homepageBadge)).toBeVisible();
+      await expectNoHorizontalOverflow(page, `${localeCase.name} mobile homepage`);
+
+      await page.goto(`/m/${visualQaFixture.marshmallowPath}`);
+
+      const messageInput = page.getByLabel(localeCase.messageLabel);
+      const anonymousCheckbox = page.getByLabel(localeCase.anonymousLabel);
+      const sendButton = page.getByRole('button', { name: localeCase.sendButton });
+
+      await expect(messageInput).toBeVisible();
+      await expect(anonymousCheckbox).toBeVisible();
+      await expect(sendButton).toBeVisible();
+      await expectNoHorizontalOverflow(page, `${localeCase.name} mobile marshmallow`);
+      await expectReadableContrast(sendButton, `${localeCase.name} mobile marshmallow send button`);
+    });
+  }
 
   test('public marshmallow keeps mobile form controls reachable by keyboard', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
