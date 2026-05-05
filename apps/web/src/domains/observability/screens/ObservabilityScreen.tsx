@@ -31,6 +31,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { AsyncSubmitButton, FormSection, GlassSurface, PaginationFooter, SectionTabs, StateView, TableShell } from '@/platform/ui';
@@ -157,9 +159,36 @@ function resolveInitialTab(value: string | null): ObservabilityTab {
   return 'change-logs';
 }
 
-function buildTabQuery(tab: ObservabilityTab) {
+function buildObservabilityQuery({
+  tab,
+  page,
+  pageSize,
+  limit,
+}: {
+  tab: ObservabilityTab;
+  page: number;
+  pageSize: PageSizeOption;
+  limit: PageSizeOption;
+}) {
   const params = new URLSearchParams();
   params.set('tab', tab);
+
+  if (tab === 'log-search') {
+    if (limit !== PAGE_SIZE_OPTIONS[0]) {
+      params.set('limit', String(limit));
+    }
+
+    return `?${params.toString()}`;
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
   return `?${params.toString()}`;
 }
 
@@ -219,6 +248,9 @@ export function ObservabilityScreen({
   const workspaceName = session?.tenantName || workspaceLabel;
 
   const currentTab = resolveInitialTab(searchParams.get('tab'));
+  const urlPage = parsePageParam(searchParams.get('page'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
+  const urlSearchLimit = parsePageSizeParam(searchParams.get('limit'));
 
   const [activeTab, setActiveTab] = useState<ObservabilityTab>(currentTab);
   const {
@@ -249,13 +281,13 @@ export function ObservabilityScreen({
     severity: '',
     timeRange: '24h',
   });
-  const [changePage, setChangePage] = useState(1);
-  const [changePageSize, setChangePageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
-  const [techPage, setTechPage] = useState(1);
-  const [techPageSize, setTechPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
-  const [integrationPage, setIntegrationPage] = useState(1);
-  const [integrationPageSize, setIntegrationPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
-  const [searchLimit, setSearchLimit] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [changePage, setChangePage] = useState(currentTab === 'change-logs' ? urlPage : 1);
+  const [changePageSize, setChangePageSize] = useState<PageSizeOption>(currentTab === 'change-logs' ? urlPageSize : PAGE_SIZE_OPTIONS[0]);
+  const [techPage, setTechPage] = useState(currentTab === 'tech-events' ? urlPage : 1);
+  const [techPageSize, setTechPageSize] = useState<PageSizeOption>(currentTab === 'tech-events' ? urlPageSize : PAGE_SIZE_OPTIONS[0]);
+  const [integrationPage, setIntegrationPage] = useState(currentTab === 'integration-logs' ? urlPage : 1);
+  const [integrationPageSize, setIntegrationPageSize] = useState<PageSizeOption>(currentTab === 'integration-logs' ? urlPageSize : PAGE_SIZE_OPTIONS[0]);
+  const [searchLimit, setSearchLimit] = useState<PageSizeOption>(currentTab === 'log-search' ? urlSearchLimit : PAGE_SIZE_OPTIONS[0]);
 
   const [changePanel, setChangePanel] = useState<PagedPanelState<ChangeLogRecord>>(emptyPagedPanel);
   const [techPanel, setTechPanel] = useState<PagedPanelState<TechEventRecord>>(emptyPagedPanel);
@@ -264,11 +296,61 @@ export function ObservabilityScreen({
 
   useEffect(() => {
     setActiveTab(currentTab);
-  }, [currentTab]);
+
+    if (currentTab === 'change-logs') {
+      setChangePage(urlPage);
+      setChangePageSize(urlPageSize);
+    }
+
+    if (currentTab === 'tech-events') {
+      setTechPage(urlPage);
+      setTechPageSize(urlPageSize);
+    }
+
+    if (currentTab === 'integration-logs') {
+      setIntegrationPage(urlPage);
+      setIntegrationPageSize(urlPageSize);
+    }
+
+    if (currentTab === 'log-search') {
+      setSearchLimit(urlSearchLimit);
+    }
+  }, [currentTab, urlPage, urlPageSize, urlSearchLimit]);
 
   useEffect(() => {
-    router.replace(`${pathname}${buildTabQuery(activeTab)}`);
-  }, [activeTab, pathname, router]);
+    const activePage = activeTab === 'change-logs'
+      ? changePage
+      : activeTab === 'tech-events'
+        ? techPage
+        : activeTab === 'integration-logs'
+          ? integrationPage
+          : 1;
+    const activePageSize = activeTab === 'change-logs'
+      ? changePageSize
+      : activeTab === 'tech-events'
+        ? techPageSize
+        : activeTab === 'integration-logs'
+          ? integrationPageSize
+          : PAGE_SIZE_OPTIONS[0];
+
+    router.replace(`${pathname}${buildObservabilityQuery({
+      tab: activeTab,
+      page: activePage,
+      pageSize: activePageSize,
+      limit: searchLimit,
+    })}`);
+  }, [
+    activeTab,
+    changePage,
+    changePageSize,
+    integrationPage,
+    integrationPageSize,
+    pathname,
+    router,
+    searchLimit,
+    techPage,
+    techPageSize,
+  ]);
 
   async function loadChangeLogs() {
     setChangePanel((current) => ({

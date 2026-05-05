@@ -185,6 +185,83 @@ describe('ObservabilityScreen', () => {
     expect(screen.getByText('500')).toBeInTheDocument();
   });
 
+  it('hydrates integration log pagination from the URL and keeps page changes shareable', async () => {
+    searchQuery = 'tab=integration-logs&page=2&pageSize=50';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/logs/integrations?page=2&pageSize=50') {
+        return {
+          items: [
+            {
+              id: 'integration-page-2',
+              occurredAt: '2026-04-17T10:00:00.000Z',
+              consumerId: 'consumer-1',
+              consumerCode: 'PUBLIC_API',
+              direction: 'outbound',
+              endpoint: '/webhook/page-2',
+              method: 'POST',
+              requestHeaders: null,
+              requestBody: null,
+              responseStatus: 202,
+              responseBody: null,
+              latencyMs: 120,
+              errorMessage: null,
+              traceId: 'trace-page-2',
+            },
+          ],
+          total: 51,
+          page: 2,
+          pageSize: 50,
+          totalPages: 2,
+        };
+      }
+
+      if (path === '/api/v1/logs/integrations?page=1&pageSize=50') {
+        return {
+          items: [
+            {
+              id: 'integration-page-1',
+              occurredAt: '2026-04-17T10:05:00.000Z',
+              consumerId: 'consumer-1',
+              consumerCode: 'PUBLIC_API',
+              direction: 'outbound',
+              endpoint: '/webhook/page-1',
+              method: 'POST',
+              requestHeaders: null,
+              requestBody: null,
+              responseStatus: 200,
+              responseBody: null,
+              latencyMs: 100,
+              errorMessage: null,
+              traceId: 'trace-page-1',
+            },
+          ],
+          total: 51,
+          page: 1,
+          pageSize: 50,
+          totalPages: 2,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ObservabilityScreen tenantId="tenant-1" />);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations?page=2&pageSize=50');
+    });
+    expect(screen.getByRole('tab', { name: 'Integration Logs' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations?page=1&pageSize=50');
+      expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/observability?tab=integration-logs&pageSize=50');
+    });
+
+  });
+
   it('renders localized zh copy for the header chrome', async () => {
     localeState.currentLocale = 'zh';
 
