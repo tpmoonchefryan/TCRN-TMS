@@ -99,6 +99,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
   SectionTabs,
   StateView,
   TableShell,
@@ -485,25 +486,11 @@ function Field({
   );
 }
 
-function PaginationFooter({
-  locale,
-  pagination,
-  itemCount,
-  pageSize,
-  onPageSizeChange,
-  onPrevious,
-  onNext,
-  isLoading,
-}: Readonly<{
-  locale: SupportedUiLocale | RuntimeLocale;
-  pagination: ApiPaginationMeta;
-  itemCount: number;
-  pageSize: PageSizeOption;
-  onPageSizeChange: (pageSize: PageSizeOption) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  isLoading: boolean;
-}>) {
+function getSecurityPaginationLabels(
+  locale: SupportedUiLocale | RuntimeLocale,
+  pagination: ApiPaginationMeta,
+  itemCount: number,
+) {
   const pageRange = getPaginationRange(pagination, itemCount);
   const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
@@ -527,53 +514,15 @@ function PaginationFooter({
           zh: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
           ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
         });
-  const previousLabel = pickLocaleText(locale, { en: 'Previous', zh: '上一页', ja: '前へ' });
-  const nextLabel = pickLocaleText(locale, { en: 'Next', zh: '下一页', ja: '次へ' });
 
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-slate-700">{paginationLabel}</p>
-        <p className="text-xs text-slate-500">{paginationRangeLabel}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <span className="font-medium text-slate-700">{pageSizeLabel}</span>
-          <select
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSizeOption)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onPrevious}
-            disabled={!pagination.hasPrev || isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {previousLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!pagination.hasNext || isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {nextLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return {
+    pageLabel: paginationLabel,
+    rangeLabel: paginationRangeLabel,
+    rowsPerPageLabel: pageSizeLabel,
+    pageSizeAriaLabel: pageSizeLabel,
+    previousLabel: pickLocaleText(locale, { en: 'Previous', zh: '上一页', ja: '前へ' }),
+    nextLabel: pickLocaleText(locale, { en: 'Next', zh: '下一页', ja: '次へ' }),
+  };
 }
 
 const inputClassName =
@@ -1637,17 +1586,16 @@ export function SecurityManagementScreen({
                     )})}
                   </TableShell>
                   <PaginationFooter
-                    locale={selectedLocale}
                     pagination={blocklistPanel.pagination}
                     itemCount={blocklistPanel.data.length}
-                    pageSize={blocklistPageSize}
+                    labels={getSecurityPaginationLabels(selectedLocale, blocklistPanel.pagination, blocklistPanel.data.length)}
+                    onPageChange={setBlocklistPage}
                     onPageSizeChange={(nextPageSize) => {
-                      setBlocklistPageSize(nextPageSize);
+                      setBlocklistPageSize(nextPageSize as PageSizeOption);
                       setBlocklistPage(1);
                     }}
-                    onPrevious={() => setBlocklistPage((current) => Math.max(1, current - 1))}
-                    onNext={() => setBlocklistPage((current) => current + 1)}
                     isLoading={blocklistPanel.loading}
+                    className="mt-4 rounded-2xl border border-slate-200"
                   />
                 </>
               )}
@@ -2176,17 +2124,16 @@ export function SecurityManagementScreen({
                     )})}
                   </TableShell>
                   <PaginationFooter
-                    locale={selectedLocale}
                     pagination={externalPanel.pagination}
                     itemCount={externalPanel.data.length}
-                    pageSize={externalPageSize}
+                    labels={getSecurityPaginationLabels(selectedLocale, externalPanel.pagination, externalPanel.data.length)}
+                    onPageChange={setExternalPage}
                     onPageSizeChange={(nextPageSize) => {
-                      setExternalPageSize(nextPageSize);
+                      setExternalPageSize(nextPageSize as PageSizeOption);
                       setExternalPage(1);
                     }}
-                    onPrevious={() => setExternalPage((current) => Math.max(1, current - 1))}
-                    onNext={() => setExternalPage((current) => current + 1)}
                     isLoading={externalPanel.loading}
+                    className="mt-4 rounded-2xl border border-slate-200"
                   />
                 </>
               )}
@@ -2553,17 +2500,16 @@ export function SecurityManagementScreen({
                     ))}
                   </TableShell>
                   <PaginationFooter
-                    locale={selectedLocale}
                     pagination={ipRulesPanel.pagination}
                     itemCount={ipRulesPanel.data.length}
-                    pageSize={ipRulesPageSize}
+                    labels={getSecurityPaginationLabels(selectedLocale, ipRulesPanel.pagination, ipRulesPanel.data.length)}
+                    onPageChange={setIpRulesPage}
                     onPageSizeChange={(nextPageSize) => {
-                      setIpRulesPageSize(nextPageSize);
+                      setIpRulesPageSize(nextPageSize as PageSizeOption);
                       setIpRulesPage(1);
                     }}
-                    onPrevious={() => setIpRulesPage((current) => Math.max(1, current - 1))}
-                    onNext={() => setIpRulesPage((current) => current + 1)}
                     isLoading={ipRulesPanel.loading}
+                    className="mt-4 rounded-2xl border border-slate-200"
                   />
                 </>
               )}
