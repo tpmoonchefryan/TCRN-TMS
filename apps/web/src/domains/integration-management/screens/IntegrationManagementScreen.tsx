@@ -5556,7 +5556,7 @@ export function IntegrationManagementScreen({
                       zh_HANT: '先在租戶根管理共用適配器、Webhook 與郵件，再依需要下鑽到分目錄或藝人覆寫。',
                       ja: '共有アダプター、Webhook、メールはテナントルートで管理し、必要に応じて配下スコープやタレントへ絞り込みます。',
                       ko: '공유 어댑터, 웹훅, 메일은 테넌트 루트에서 관리한 뒤 필요할 때 하위 범위나 탤런트 오버라이드로 좁히세요.',
-                      fr: 'Utilisez la racine tenant pour les adaptateurs partagés, les webhooks et l’e-mail avant de descendre vers les overrides filiale ou talent.',
+                      fr: 'Utilisez la racine tenant pour les adaptateurs partagés, les webhooks et l’e-mail avant de descendre vers les overrides de périmètre ou de talent.',
                     })}
                   </span>
                 </button>
@@ -5581,7 +5581,7 @@ export function IntegrationManagementScreen({
                       zh_HANT: '當變更屬於具體業務範圍時，從左側樹選擇分目錄或藝人；這些範圍只編輯適配器。',
                       ja: '変更が特定の業務スコープに属する場合は左のツリーで配下スコープまたはタレントを選びます。そこで編集できるのはアダプターのみです。',
                       ko: '변경이 특정 비즈니스 범위에 속하면 왼쪽 트리에서 하위 범위나 탤런트를 선택하세요. 해당 범위에서는 어댑터만 편집합니다.',
-                      fr: 'Choisissez une filiale ou un talent dans l’arborescence lorsque le changement appartient à ce périmètre métier ; seuls les adaptateurs y sont modifiables.',
+                      fr: 'Choisissez un périmètre ou un talent dans l’arborescence lorsque le changement appartient à ce périmètre métier ; seuls les adaptateurs y sont modifiables.',
                     })}
                   </p>
                 </div>
