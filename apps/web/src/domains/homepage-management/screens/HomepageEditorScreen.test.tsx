@@ -177,9 +177,17 @@ describe('HomepageEditorScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
     expect(await screen.findByText('Draft v3')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Profile card JSON')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Profile card block' }));
+
     expect(screen.getByLabelText('Profile card JSON')).toBeInTheDocument();
     expect(screen.getByLabelText('Profile card JSON')).toHaveAttribute('name', 'component-json-profile-1');
     expect(screen.getByLabelText('Profile card JSON')).toHaveAttribute('spellcheck', 'false');
+    expect(screen.queryByLabelText('Theme JSON')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit theme JSON' }));
+
     expect(screen.getByLabelText('Theme JSON')).toHaveAttribute('name', 'theme-json');
     expect(screen.getByLabelText('Theme JSON')).toHaveAttribute('spellcheck', 'false');
 
@@ -455,6 +463,10 @@ describe('HomepageEditorScreen', () => {
         'No draft exists yet, so the editor starts from the published version.',
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Rich text JSON')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Rich text block' }));
+
     expect(screen.getByLabelText('Rich text JSON')).toBeInTheDocument();
   });
 

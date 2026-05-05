@@ -429,6 +429,8 @@ export function HomepageEditorScreen({
   const [themeError, setThemeError] = useState<string | null>(null);
   const [componentJsonMap, setComponentJsonMap] = useState<Record<string, string>>({});
   const [componentErrors, setComponentErrors] = useState<Record<string, string>>({});
+  const [activeComponentEditorId, setActiveComponentEditorId] = useState<string | null>(null);
+  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
   const [sourceVersion, setSourceVersion] = useState<{ id: string; versionNumber: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -461,6 +463,8 @@ export function HomepageEditorScreen({
         setThemeError(null);
         setComponentJsonMap(buildComponentTextMap(nextState.content));
         setComponentErrors({});
+        setActiveComponentEditorId(null);
+        setIsThemeEditorOpen(false);
         setSourceMode(nextState.sourceMode);
         setSourceVersion(nextState.sourceVersion);
         setBaselineSignature(buildEditorLoadedStateSignature(nextState.content, nextState.theme));
@@ -525,6 +529,7 @@ export function HomepageEditorScreen({
       ...current,
       [nextComponent.id]: asPrettyJson(nextComponent.props),
     }));
+    setActiveComponentEditorId(nextComponent.id);
     setNotice(null);
   }
 
@@ -559,6 +564,7 @@ export function HomepageEditorScreen({
       delete nextErrors[componentId];
       return nextErrors;
     });
+    setActiveComponentEditorId((current) => (current === componentId ? null : current));
   }
 
   function handleToggleVisibility(componentId: string) {
@@ -654,6 +660,8 @@ export function HomepageEditorScreen({
       });
       const nextState = await loadHomepageEditorState(request, talentId);
 
+      setActiveComponentEditorId(null);
+      setIsThemeEditorOpen(false);
       setHomepage(nextState.homepage);
       setContent(nextState.content);
       setTheme(nextState.theme);
@@ -860,6 +868,7 @@ export function HomepageEditorScreen({
                 ) : (
                   content.components.map((component, index) => {
                     const entryCopy = getCatalogEntryCopy(copy, component.type);
+                    const isEditing = activeComponentEditorId === component.id;
 
                     return (
                       <div key={component.id} className="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm">
@@ -892,6 +901,16 @@ export function HomepageEditorScreen({
                             </button>
                             <button
                               type="button"
+                              onClick={() => setActiveComponentEditorId(isEditing ? null : component.id)}
+                              aria-expanded={isEditing}
+                              aria-controls={`component-json-panel-${component.id}`}
+                              aria-label={isEditing ? copy.block.doneEditingAriaLabel(entryCopy.label) : copy.block.editAriaLabel(entryCopy.label)}
+                              className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+                            >
+                              {isEditing ? copy.block.doneEditing : copy.block.edit}
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleToggleVisibility(component.id)}
                               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                             >
@@ -918,26 +937,28 @@ export function HomepageEditorScreen({
                           </div>
                         </div>
 
-                        <div className="mt-4 space-y-2">
-                          <label htmlFor={`component-json-${component.id}`} className="text-sm font-medium text-slate-800">
-                            {copy.block.jsonLabel(entryCopy.label)}
-                          </label>
-                          <textarea
-                            id={`component-json-${component.id}`}
-                            name={`component-json-${component.id}`}
-                            value={componentJsonMap[component.id] || '{}'}
-                            onChange={(event) => handleComponentJsonChange(component.id, event.target.value)}
-                            rows={10}
-                            className="min-h-[220px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            aria-invalid={componentErrors[component.id] ? 'true' : 'false'}
-                            spellCheck={false}
-                          />
-                          {componentErrors[component.id] ? (
-                            <p className="text-sm font-medium text-rose-700">{componentErrors[component.id]}</p>
-                          ) : (
-                            <p className="text-xs leading-5 text-slate-500">{copy.block.jsonHint}</p>
-                          )}
-                        </div>
+                        {isEditing ? (
+                          <div id={`component-json-panel-${component.id}`} className="mt-4 space-y-2">
+                            <label htmlFor={`component-json-${component.id}`} className="text-sm font-medium text-slate-800">
+                              {copy.block.jsonLabel(entryCopy.label)}
+                            </label>
+                            <textarea
+                              id={`component-json-${component.id}`}
+                              name={`component-json-${component.id}`}
+                              value={componentJsonMap[component.id] || '{}'}
+                              onChange={(event) => handleComponentJsonChange(component.id, event.target.value)}
+                              rows={10}
+                              className="min-h-[220px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                              aria-invalid={componentErrors[component.id] ? 'true' : 'false'}
+                              spellCheck={false}
+                            />
+                            {componentErrors[component.id] ? (
+                              <p className="text-sm font-medium text-rose-700">{componentErrors[component.id]}</p>
+                            ) : (
+                              <p className="text-xs leading-5 text-slate-500">{copy.block.jsonHint}</p>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })
@@ -951,22 +972,37 @@ export function HomepageEditorScreen({
               title={copy.sections.themeTitle}
               description={copy.sections.themeDescription}
             >
-              <div className="space-y-2">
-                <label htmlFor="theme-json-editor" className="text-sm font-medium text-slate-800">
-                  {copy.sections.themeJsonLabel}
-                </label>
-                <textarea
-                  id="theme-json-editor"
-                  name="theme-json"
-                  value={themeJson}
-                  onChange={(event) => handleThemeJsonChange(event.target.value)}
-                  rows={16}
-                  className="min-h-[320px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                  aria-invalid={themeError ? 'true' : 'false'}
-                  spellCheck={false}
-                />
-                {themeError ? (
-                  <p className="text-sm font-medium text-rose-700">{themeError}</p>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setIsThemeEditorOpen((current) => !current)}
+                  aria-expanded={isThemeEditorOpen}
+                  aria-controls="theme-json-panel"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {isThemeEditorOpen ? copy.sections.hideThemeJson : copy.sections.editThemeJson}
+                </button>
+                {isThemeEditorOpen ? (
+                  <div id="theme-json-panel" className="space-y-2">
+                    <label htmlFor="theme-json-editor" className="text-sm font-medium text-slate-800">
+                      {copy.sections.themeJsonLabel}
+                    </label>
+                    <textarea
+                      id="theme-json-editor"
+                      name="theme-json"
+                      value={themeJson}
+                      onChange={(event) => handleThemeJsonChange(event.target.value)}
+                      rows={16}
+                      className="min-h-[320px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      aria-invalid={themeError ? 'true' : 'false'}
+                      spellCheck={false}
+                    />
+                    {themeError ? (
+                      <p className="text-sm font-medium text-rose-700">{themeError}</p>
+                    ) : (
+                      <p className="text-xs leading-5 text-slate-500">{copy.sections.themeJsonHint}</p>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-xs leading-5 text-slate-500">{copy.sections.themeJsonHint}</p>
                 )}

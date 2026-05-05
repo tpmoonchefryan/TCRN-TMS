@@ -55,6 +55,8 @@ export interface HomepageEditorCopy {
     emptyBlocksTitle: string;
     previewDescription: string;
     previewTitle: string;
+    editThemeJson: string;
+    hideThemeJson: string;
     themeDescription: string;
     themeJsonHint: string;
     themeJsonLabel: string;
@@ -66,6 +68,10 @@ export interface HomepageEditorCopy {
     entries: Record<string, { description: string; label: string }>;
   };
   block: {
+    doneEditing: string;
+    doneEditingAriaLabel: (label: string) => string;
+    edit: string;
+    editAriaLabel: (label: string) => string;
     hidden: string;
     indexLabel: (index: number) => string;
     jsonHint: string;
@@ -137,8 +143,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: 'No homepage blocks yet',
       previewDescription: 'Review the current draft as visitors would see it after publication.',
       previewTitle: 'Draft preview',
-      themeDescription: 'Adjust theme values for this draft here. Public access settings are managed separately.',
-      themeJsonHint: 'The preview uses the most recent valid theme JSON from this editor.',
+      editThemeJson: 'Edit theme JSON',
+      hideThemeJson: 'Hide theme JSON',
+      themeDescription: 'Theme JSON is an advanced editor for visual tokens. Public access settings are managed separately.',
+      themeJsonHint: 'Open the advanced editor only when you need to change theme JSON. The preview uses the most recent valid theme JSON.',
       themeJsonLabel: 'Theme JSON',
       themeTitle: 'Theme',
     },
@@ -207,6 +215,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       },
     },
     block: {
+      doneEditing: 'Done editing',
+      doneEditingAriaLabel: (label) => `Close ${label} block editor`,
+      edit: 'Edit block',
+      editAriaLabel: (label) => `Edit ${label} block`,
       hidden: 'Hidden',
       indexLabel: (index) => `Block #${index}`,
       jsonHint: 'Preview updates after this JSON parses as a valid object.',
@@ -276,8 +288,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: '还没有主页区块',
       previewDescription: '按发布后用户看到的方式预览当前草稿。',
       previewTitle: '草稿预览',
-      themeDescription: '在这里调整当前草稿的主题。公开访问设置会在单独页面管理。',
-      themeJsonHint: '预览会使用这里最近一次解析成功的主题 JSON。',
+      editThemeJson: '编辑主题 JSON',
+      hideThemeJson: '收起主题 JSON',
+      themeDescription: '主题 JSON 是视觉 token 的高级编辑入口。公开访问设置会在单独页面管理。',
+      themeJsonHint: '仅在需要修改主题 JSON 时打开高级编辑器。预览会使用最近一次解析成功的主题 JSON。',
       themeJsonLabel: '主题 JSON',
       themeTitle: '主题',
     },
@@ -346,6 +360,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       },
     },
     block: {
+      doneEditing: '完成编辑',
+      doneEditingAriaLabel: (label) => `关闭${label}区块编辑器`,
+      edit: '编辑区块',
+      editAriaLabel: (label) => `编辑${label}区块`,
       hidden: '已隐藏',
       indexLabel: (index) => `区块 #${index}`,
       jsonHint: '当这里的 JSON 解析为合法对象后，预览会同步更新。',
@@ -415,8 +433,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: 'ホームページブロックはまだありません',
       previewDescription: '公開後に訪問者が見る形で現在の下書きを確認します。',
       previewTitle: '下書きプレビュー',
-      themeDescription: 'この下書きのテーマをここで調整します。公開アクセス設定は別画面で管理します。',
-      themeJsonHint: 'プレビューにはこのエディタで最後に有効だったテーマ JSON が使われます。',
+      editThemeJson: 'テーマ JSON を編集',
+      hideThemeJson: 'テーマ JSON を閉じる',
+      themeDescription: 'テーマ JSON はビジュアル token 用の高度な編集入口です。公開アクセス設定は別画面で管理します。',
+      themeJsonHint: 'テーマ JSON を変更する必要がある場合だけ高度な編集欄を開きます。プレビューには最後に有効だったテーマ JSON が使われます。',
       themeJsonLabel: 'テーマ JSON',
       themeTitle: 'テーマ',
     },
@@ -485,6 +505,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       },
     },
     block: {
+      doneEditing: '編集を完了',
+      doneEditingAriaLabel: (label) => `${label} ブロック編集を閉じる`,
+      edit: 'ブロックを編集',
+      editAriaLabel: (label) => `${label} ブロックを編集`,
       hidden: '非表示',
       indexLabel: (index) => `ブロック #${index}`,
       jsonHint: 'ここが有効な JSON オブジェクトとして解釈されると、プレビューが更新されます。',
