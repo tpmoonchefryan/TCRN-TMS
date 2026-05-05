@@ -47,8 +47,10 @@ export interface HomepageEditorCopy {
     tenantLabel: string;
   };
   sections: {
+    addBlock: string;
     catalogDescription: string;
     catalogTitle: string;
+    hideCatalog: string;
     draftBlocksDescription: string;
     draftBlocksTitle: string;
     emptyBlocksDescription: string;
@@ -136,11 +138,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       tenantLabel: 'Tenant',
     },
     sections: {
-      catalogDescription: 'Add blocks to the homepage draft from the approved component set.',
+      addBlock: 'Add block',
+      catalogDescription: 'Open the catalog only when you need to add a new block to the draft.',
       catalogTitle: 'Component catalog',
+      hideCatalog: 'Hide catalog',
       draftBlocksDescription: 'Edit each block in order. The preview updates after the JSON becomes valid.',
       draftBlocksTitle: 'Draft blocks',
-      emptyBlocksDescription: 'Add the first block from the catalog to start composing this homepage.',
+      emptyBlocksDescription: 'Use Add block to open the catalog and start composing this homepage.',
       emptyBlocksTitle: 'No homepage blocks yet',
       previewDescription: 'Review the current draft as visitors would see it after publication.',
       previewTitle: 'Draft preview',
@@ -282,11 +286,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       tenantLabel: '租户',
     },
     sections: {
-      catalogDescription: '从已提供的组件集中添加主页区块。',
+      addBlock: '添加区块',
+      catalogDescription: '仅在需要新增区块时打开组件目录。',
       catalogTitle: '组件目录',
+      hideCatalog: '收起目录',
       draftBlocksDescription: '按顺序编辑各区块。只有 JSON 合法时，预览才会更新。',
       draftBlocksTitle: '草稿区块',
-      emptyBlocksDescription: '先从组件目录中添加第一个区块，再开始编辑主页内容。',
+      emptyBlocksDescription: '点击添加区块打开组件目录，再开始编辑主页内容。',
       emptyBlocksTitle: '还没有主页区块',
       previewDescription: '按发布后用户看到的方式预览当前草稿。',
       previewTitle: '草稿预览',
@@ -428,11 +434,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       tenantLabel: 'テナント',
     },
     sections: {
-      catalogDescription: '提供済みコンポーネントからホームページのブロックを追加します。',
+      addBlock: 'ブロックを追加',
+      catalogDescription: '新しいブロックを追加するときだけコンポーネント一覧を開きます。',
       catalogTitle: 'コンポーネント一覧',
+      hideCatalog: '一覧を閉じる',
       draftBlocksDescription: 'ブロックを順番に編集します。JSON が有効になるとプレビューが更新されます。',
       draftBlocksTitle: '下書きブロック',
-      emptyBlocksDescription: '最初のブロックを一覧から追加して、ホームページ編集を始めてください。',
+      emptyBlocksDescription: 'ブロックを追加から一覧を開き、ホームページ編集を始めてください。',
       emptyBlocksTitle: 'ホームページブロックはまだありません',
       previewDescription: '公開後に訪問者が見る形で現在の下書きを確認します。',
       previewTitle: '下書きプレビュー',

@@ -178,6 +178,8 @@ describe('HomepageEditorScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
     expect(await screen.findByText('Draft v3')).toBeInTheDocument();
     expect(screen.queryByLabelText('Profile card JSON')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add block' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: /Link button/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Profile card block' }));
 
@@ -191,8 +193,12 @@ describe('HomepageEditorScreen', () => {
     expect(screen.getByLabelText('Theme JSON')).toHaveAttribute('name', 'theme-json');
     expect(screen.getByLabelText('Theme JSON')).toHaveAttribute('spellcheck', 'false');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
+    expect(screen.getByRole('button', { name: 'Hide catalog' })).toHaveAttribute('aria-expanded', 'true');
+
     fireEvent.click(screen.getByRole('button', { name: /Link button/i }));
 
+    expect(screen.getByRole('button', { name: 'Add block' })).toHaveAttribute('aria-expanded', 'false');
     const linkButtonEditor = await screen.findByLabelText('Link button JSON');
 
     fireEvent.change(linkButtonEditor, {
@@ -299,6 +305,7 @@ describe('HomepageEditorScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
     fireEvent.click(screen.getByRole('button', { name: /Link button/i }));
 
     expect(await screen.findByLabelText('Link button JSON')).toBeInTheDocument();
@@ -368,6 +375,7 @@ describe('HomepageEditorScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
     fireEvent.click(screen.getByRole('button', { name: /Link button/i }));
 
     expect(await screen.findByLabelText('Link button JSON')).toHaveValue(
@@ -528,6 +536,7 @@ describe('HomepageEditorScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
     fireEvent.click(screen.getByRole('button', { name: /Link button/i }));
     expect(await screen.findByText('Unsaved changes')).toBeInTheDocument();
 
@@ -665,6 +674,7 @@ describe('HomepageEditorScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
     fireEvent.click(screen.getByRole('button', { name: /Link button/i }));
 
     const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;

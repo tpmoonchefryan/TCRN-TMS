@@ -430,6 +430,7 @@ export function HomepageEditorScreen({
   const [componentJsonMap, setComponentJsonMap] = useState<Record<string, string>>({});
   const [componentErrors, setComponentErrors] = useState<Record<string, string>>({});
   const [activeComponentEditorId, setActiveComponentEditorId] = useState<string | null>(null);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
   const [sourceVersion, setSourceVersion] = useState<{ id: string; versionNumber: number } | null>(null);
@@ -464,6 +465,7 @@ export function HomepageEditorScreen({
         setComponentJsonMap(buildComponentTextMap(nextState.content));
         setComponentErrors({});
         setActiveComponentEditorId(null);
+        setIsCatalogOpen(false);
         setIsThemeEditorOpen(false);
         setSourceMode(nextState.sourceMode);
         setSourceVersion(nextState.sourceVersion);
@@ -530,6 +532,7 @@ export function HomepageEditorScreen({
       [nextComponent.id]: asPrettyJson(nextComponent.props),
     }));
     setActiveComponentEditorId(nextComponent.id);
+    setIsCatalogOpen(false);
     setNotice(null);
   }
 
@@ -807,58 +810,69 @@ export function HomepageEditorScreen({
         <div className="space-y-6">
           <GlassSurface className="p-6">
             <FormSection
-              title={copy.sections.catalogTitle}
-              description={copy.sections.catalogDescription}
-            >
-              <div className="space-y-5">
-                {(['core', 'media', 'content', 'interactive', 'layout'] as const).map((category) => {
-                  const entries = COMPONENT_CATALOG.filter((entry) => entry.category === category);
-
-                  return (
-                    <div key={category} className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          {copy.catalog.categories[category]}
-                        </p>
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {entries.map((entry) => {
-                          const entryCopy = getCatalogEntryCopy(copy, entry.type);
-
-                          return (
-                            <button
-                              key={entry.type}
-                              type="button"
-                              onClick={() => handleAddComponent(entry)}
-                              className="rounded-2xl border border-slate-200 bg-white/85 p-4 text-left transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="space-y-1">
-                                  <p className="text-sm font-semibold text-slate-900">{entryCopy.label}</p>
-                                  <p className="text-xs leading-5 text-slate-500">{entryCopy.description}</p>
-                                </div>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-700">
-                                  <Plus className="h-3 w-3" />
-                                  {copy.catalog.add}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection
               title={copy.sections.draftBlocksTitle}
               description={copy.sections.draftBlocksDescription}
             >
               <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">{copy.sections.catalogTitle}</p>
+                    <p className="text-xs leading-5 text-slate-500">{copy.sections.catalogDescription}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCatalogOpen((current) => !current)}
+                    aria-expanded={isCatalogOpen}
+                    aria-controls="component-catalog-panel"
+                    className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {isCatalogOpen ? copy.sections.hideCatalog : copy.sections.addBlock}
+                  </button>
+                </div>
+
+                {isCatalogOpen ? (
+                  <div id="component-catalog-panel" className="space-y-5 rounded-3xl border border-indigo-100 bg-indigo-50/45 p-4">
+                    {(['core', 'media', 'content', 'interactive', 'layout'] as const).map((category) => {
+                      const entries = COMPONENT_CATALOG.filter((entry) => entry.category === category);
+
+                      return (
+                        <div key={category} className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                              {copy.catalog.categories[category]}
+                            </p>
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {entries.map((entry) => {
+                              const entryCopy = getCatalogEntryCopy(copy, entry.type);
+
+                              return (
+                                <button
+                                  key={entry.type}
+                                  type="button"
+                                  onClick={() => handleAddComponent(entry)}
+                                  className="rounded-2xl border border-slate-200 bg-white/85 p-4 text-left transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-semibold text-slate-900">{entryCopy.label}</p>
+                                      <p className="text-xs leading-5 text-slate-500">{entryCopy.description}</p>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-700">
+                                      <Plus className="h-3 w-3" />
+                                      {copy.catalog.add}
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
                 {content.components.length === 0 ? (
                   <StateView
                     status="unavailable"
