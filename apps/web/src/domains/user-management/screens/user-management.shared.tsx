@@ -19,9 +19,9 @@ import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   getPaginationRange,
-  PAGE_SIZE_OPTIONS,
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
+import { PaginationFooter } from '@/platform/ui';
 
 import {
   formatUserManagementDateTime,
@@ -330,7 +330,6 @@ export function UserManagementPaginationFooter({
   currentLocale,
   pagination,
   itemCount,
-  pageSize,
   onPageSizeChange,
   onPrevious,
   onNext,
@@ -346,46 +345,29 @@ export function UserManagementPaginationFooter({
   const paginationCopy = getUserManagementPaginationCopy(currentLocale, pagination, itemCount);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm">
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-slate-700">{paginationCopy.page}</p>
-        <p className="text-xs text-slate-500">{paginationCopy.range}</p>
-      </div>
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <span className="font-medium text-slate-700">{paginationCopy.pageSize}</span>
-          <select
-            aria-label={paginationCopy.pageSize}
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSizeOption)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onPrevious}
-            disabled={!pagination.hasPrev}
-            className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {paginationCopy.previous}
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!pagination.hasNext}
-            className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {paginationCopy.next}
-          </button>
-        </div>
-      </div>
-    </div>
+    <PaginationFooter
+      pagination={pagination}
+      itemCount={itemCount}
+      labels={{
+        pageLabel: paginationCopy.page,
+        rangeLabel: paginationCopy.range,
+        rowsPerPageLabel: paginationCopy.pageSize,
+        pageSizeAriaLabel: paginationCopy.pageSize,
+        previousLabel: paginationCopy.previous,
+        nextLabel: paginationCopy.next,
+      }}
+      onPageChange={(nextPage) => {
+        if (nextPage < pagination.page) {
+          onPrevious();
+          return;
+        }
+
+        if (nextPage > pagination.page) {
+          onNext();
+        }
+      }}
+      onPageSizeChange={(nextPageSize) => onPageSizeChange(nextPageSize as PageSizeOption)}
+      className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+    />
   );
 }
