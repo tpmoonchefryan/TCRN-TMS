@@ -33,7 +33,7 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { AsyncSubmitButton, FormSection, GlassSurface, StateView, TableShell } from '@/platform/ui';
+import { AsyncSubmitButton, FormSection, GlassSurface, SectionTabs, StateView, TableShell } from '@/platform/ui';
 
 type PagedPanelState<T> = {
   data: T[];
@@ -170,30 +170,6 @@ function SummaryCard({ label, value, hint }: Readonly<SummaryCardProps>) {
       <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
-  );
-}
-
-function TabButton({
-  label,
-  isActive,
-  onClick,
-}: Readonly<{
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}>) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-        isActive
-          ? 'bg-slate-950 text-white shadow-sm'
-          : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white'
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -690,16 +666,17 @@ export function ObservabilityScreen({
       </GlassSurface>
 
       <GlassSurface className="p-6">
-        <div className="flex flex-wrap gap-2">
-          <TabButton label={copy.tabs.changeLogs} isActive={activeTab === 'change-logs'} onClick={() => setActiveTab('change-logs')} />
-          <TabButton label={copy.tabs.techEvents} isActive={activeTab === 'tech-events'} onClick={() => setActiveTab('tech-events')} />
-          <TabButton
-            label={copy.tabs.integrationLogs}
-            isActive={activeTab === 'integration-logs'}
-            onClick={() => setActiveTab('integration-logs')}
-          />
-          <TabButton label={copy.tabs.logSearch} isActive={activeTab === 'log-search'} onClick={() => setActiveTab('log-search')} />
-        </div>
+        <SectionTabs
+          items={[
+            { id: 'change-logs', label: copy.tabs.changeLogs },
+            { id: 'tech-events', label: copy.tabs.techEvents },
+            { id: 'integration-logs', label: copy.tabs.integrationLogs },
+            { id: 'log-search', label: copy.tabs.logSearch },
+          ]}
+          activeId={activeTab}
+          onChange={(nextTab) => setActiveTab(nextTab as ObservabilityTab)}
+          ariaLabel={copy.header.title}
+        />
       </GlassSurface>
 
       <div className={tabTransitionClassName}>

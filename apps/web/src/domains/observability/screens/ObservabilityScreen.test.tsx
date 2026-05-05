@@ -99,7 +99,7 @@ describe('ObservabilityScreen', () => {
     expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
     expect(screen.getByText('Operator Alice')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Log Search' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Log Search' }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/observability?tab=log-search');
