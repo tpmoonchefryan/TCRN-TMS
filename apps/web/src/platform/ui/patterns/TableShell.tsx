@@ -3,8 +3,17 @@ import React from 'react';
 import { tokens } from '../foundations/tokens';
 import { StateView } from './StateView';
 
+export interface TableColumn {
+  id: string;
+  header: React.ReactNode;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
+  className?: string;
+  headerClassName?: string;
+}
+
 export interface TableShellProps {
-  columns: string[];
+  columns: Array<string | TableColumn>;
   dataLength: number;
   isLoading?: boolean;
   isEmpty?: boolean;
@@ -12,6 +21,35 @@ export interface TableShellProps {
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
   children: React.ReactNode;
+  caption?: string;
+  ariaLabel?: string;
+  density?: 'compact' | 'comfortable';
+  stickyHeader?: boolean;
+  className?: string;
+  tableClassName?: string;
+}
+
+function normalizeColumn(column: string | TableColumn, index: number): TableColumn {
+  if (typeof column === 'string') {
+    return {
+      id: `${index}-${column}`,
+      header: column,
+    };
+  }
+
+  return column;
+}
+
+function getAlignClass(align: TableColumn['align']) {
+  if (align === 'right') {
+    return 'text-right';
+  }
+
+  if (align === 'center') {
+    return 'text-center';
+  }
+
+  return 'text-left';
 }
 
 export const TableShell: React.FC<TableShellProps> = ({
@@ -23,6 +61,12 @@ export const TableShell: React.FC<TableShellProps> = ({
   emptyDescription = 'There are no records to display at this time.',
   emptyAction,
   children,
+  caption,
+  ariaLabel,
+  density = 'comfortable',
+  stickyHeader = false,
+  className = '',
+  tableClassName = '',
 }) => {
   if (isEmpty && !isLoading) {
     return (
@@ -35,17 +79,27 @@ export const TableShell: React.FC<TableShellProps> = ({
     );
   }
 
+  const normalizedColumns = columns.map(normalizeColumn);
+  const cellPaddingClass = density === 'compact' ? 'px-4 py-3' : 'px-6 py-4';
+  const headerStickyClass = stickyHeader ? 'sticky top-0 z-10' : '';
+
   // Handle transparent fading for background loading of new data (not first load)
   const bodyOpacityClass = isLoading && dataLength > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100';
 
   return (
-    <div className={`w-full overflow-x-auto rounded-xl border ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass}`}>
-      <table className="w-full text-left border-collapse">
-        <thead>
+    <div className={`w-full overflow-x-auto rounded-xl border ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} ${className}`}>
+      <table aria-label={ariaLabel} className={`w-full border-collapse text-left ${tableClassName}`}>
+        {caption ? <caption className="sr-only">{caption}</caption> : null}
+        <thead className={headerStickyClass}>
           <tr className="border-b border-slate-200/60 bg-slate-50/50">
-            {columns.map((col, idx) => (
-              <th key={idx} className="px-6 py-4 text-sm font-semibold text-slate-600">
-                {col}
+            {normalizedColumns.map((column) => (
+              <th
+                key={column.id}
+                scope="col"
+                style={column.width ? { width: column.width } : undefined}
+                className={`${cellPaddingClass} text-sm font-semibold text-slate-600 ${getAlignClass(column.align)} ${column.headerClassName ?? ''} ${column.className ?? ''}`}
+              >
+                {column.header}
               </th>
             ))}
           </tr>
@@ -53,11 +107,11 @@ export const TableShell: React.FC<TableShellProps> = ({
         <tbody className={`divide-y divide-slate-100 ${tokens.motion.transitionQuick} ${tokens.motion.reduced} ${bodyOpacityClass}`}>
           {isLoading && dataLength === 0 ? (
             // Loading skeleton rows (Pulse is conditionally disabled by motion-reduce in Tailwind output)
-            Array.from({ length: 5 }).map((_, idx) => (
-              <tr key={`skeleton-${idx}`} className="animate-pulse motion-reduce:animate-none">
-                {columns.map((_, colIdx) => (
-                  <td key={colIdx} className="px-6 py-4">
-                    <div className="h-4 bg-slate-200/60 rounded w-3/4"></div>
+            Array.from({ length: 5 }).map((_, rowIndex) => (
+              <tr key={`skeleton-${rowIndex}`} className="animate-pulse motion-reduce:animate-none">
+                {normalizedColumns.map((column) => (
+                  <td key={column.id} className={cellPaddingClass}>
+                    <div className="h-4 w-3/4 rounded bg-slate-200/60"></div>
                   </td>
                 ))}
               </tr>

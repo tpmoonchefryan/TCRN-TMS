@@ -5,9 +5,9 @@ import { SettingsLayout } from '../patterns/SettingsLayout';
 
 describe('SettingsLayout', () => {
   it('supports caller-supplied ariaLabel', () => {
-    const customLabel = "設定セクション";
+    const customLabel = '設定セクション';
     render(
-      <SettingsLayout 
+      <SettingsLayout
         title="Settings"
         sections={[{ id: '1', label: 'Section 1' }]}
         activeSectionId="1"
