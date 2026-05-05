@@ -297,12 +297,17 @@ describe('SecurityManagementScreen', () => {
 
     await screen.findByRole('heading', { name: 'Security' });
     expect(screen.getByText('Scope lock')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Scopes')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Rule name')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit advanced scopes' }));
-    expect(screen.getByLabelText('Scopes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
+    const ruleDrawer = await screen.findByRole('dialog', { name: 'Create Blocklist Rule' });
+    expect(within(ruleDrawer).queryByLabelText('Scopes')).not.toBeInTheDocument();
+
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Edit advanced scopes' }));
+    expect(within(ruleDrawer).getByLabelText('Scopes')).toBeInTheDocument();
+
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Translation management' }));
     const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });
     fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Simplified Chinese/i }));
     fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Korean/i }));
@@ -321,17 +326,17 @@ describe('SecurityManagementScreen', () => {
       ).not.toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Rule name'), {
+    fireEvent.change(within(ruleDrawer).getByLabelText('Rule name'), {
       target: { value: 'Profanity rule' },
     });
-    fireEvent.change(screen.getByLabelText('Category'), {
+    fireEvent.change(within(ruleDrawer).getByLabelText('Category'), {
       target: { value: 'profanity' },
     });
-    fireEvent.change(screen.getByLabelText('Pattern'), {
+    fireEvent.change(within(ruleDrawer).getByLabelText('Pattern'), {
       target: { value: 'badword' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Create rule/i }));
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: /Create rule/i }));
 
     await waitFor(() => {
       expect(createdPayload).toEqual(

@@ -95,6 +95,7 @@ import {
   type TranslationLanguageOption,
 } from '@/platform/runtime/translations/managed-translations';
 import {
+  ActionDrawer,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -568,6 +569,7 @@ export function SecurityManagementScreen({
 
   const [blocklistMode, setBlocklistMode] = useState<EntryMode>('create');
   const [selectedBlocklistId, setSelectedBlocklistId] = useState<string | null>(null);
+  const [blocklistDrawerOpen, setBlocklistDrawerOpen] = useState(false);
   const [blocklistDetailLoading, setBlocklistDetailLoading] = useState(false);
   const [blocklistTranslationDrawerOpen, setBlocklistTranslationDrawerOpen] = useState(false);
   const [blocklistAdvancedOpen, setBlocklistAdvancedOpen] = useState(false);
@@ -1009,7 +1011,27 @@ export function SecurityManagementScreen({
     setBlocklistMode('create');
     setSelectedBlocklistId(null);
     setBlocklistAdvancedOpen(false);
+    setBlocklistDetailLoading(false);
+    setBlocklistTranslationDrawerOpen(false);
+    setBlocklistDrawerOpen(false);
     setBlocklistDraft(createEmptyBlocklistDraft(scopeType, scopeId));
+  }
+
+  function openBlocklistCreateDrawer() {
+    resetBlocklistEditor();
+    setBlocklistDrawerOpen(true);
+  }
+
+  function setBlocklistDrawerOpenSafely(open: boolean) {
+    if (!open && blocklistSavePending) {
+      return;
+    }
+
+    if (!open) {
+      setBlocklistTranslationDrawerOpen(false);
+    }
+
+    setBlocklistDrawerOpen(open);
   }
 
   function resetExternalEditor() {
@@ -1019,6 +1041,7 @@ export function SecurityManagementScreen({
   }
 
   async function openBlocklistEditor(entryId: string) {
+    setBlocklistDrawerOpen(true);
     setBlocklistDetailLoading(true);
     setBlocklistTestError(null);
     setBlocklistTestResult(null);
@@ -1030,6 +1053,7 @@ export function SecurityManagementScreen({
       setBlocklistAdvancedOpen(false);
       setBlocklistDraft(mapBlocklistToDraft(detail));
     } catch (error) {
+      setBlocklistDrawerOpen(false);
       setNotice({
         tone: 'error',
         message: getErrorMessage(error, copy.sections.blocklistEditor.loadingTitle),
@@ -1110,6 +1134,7 @@ export function SecurityManagementScreen({
       setBlocklistMode('edit');
       setSelectedBlocklistId(saved.id);
       setBlocklistDraft(mapBlocklistToDraft(saved));
+      setBlocklistDrawerOpen(false);
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -1455,6 +1480,15 @@ export function SecurityManagementScreen({
               title={copy.sections.blocklistList.title}
               description={copy.sections.blocklistList.description}
             >
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={openBlocklistCreateDrawer}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {copy.sections.blocklistEditor.newRule}
+                </button>
+              </div>
               {blocklistPanel.error ? (
                 <StateView status="denied" title={copy.sections.blocklistList.unavailable} description={blocklistPanel.error} />
               ) : (
@@ -1603,325 +1637,341 @@ export function SecurityManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={blocklistMode === 'create' ? copy.sections.blocklistEditor.createTitle : copy.sections.blocklistEditor.updateTitle}
-              description={copy.sections.blocklistEditor.description}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={resetBlocklistEditor}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                  >
-                    {copy.sections.blocklistEditor.newRule}
-                  </button>
-                  <AsyncSubmitButton
-                    onClick={() => void submitBlocklist()}
-                    isPending={blocklistSavePending}
-                    pendingText={blocklistMode === 'create' ? copy.sections.blocklistEditor.creating : copy.sections.blocklistEditor.saving}
-                  >
-                    {blocklistMode === 'create' ? copy.sections.blocklistEditor.createRule : copy.sections.blocklistEditor.saveChanges}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {blocklistDetailLoading ? (
-                <StateView
-                  status="unavailable"
-                  title={copy.sections.blocklistEditor.loadingTitle}
-                  description={copy.sections.blocklistEditor.loadingDescription}
-                />
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label={copy.fields.ownerType}>
-                    <select
-                      aria-label={copy.fields.ownerType}
-                      value={blocklistDraft.ownerType}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => {
-                          const nextType = event.target.value as SecurityScopeType;
-                          const nextOwnerId = isScopedSecurityScopeType(nextType)
-                            ? getScopeOptions(nextType)[0]?.id ?? ''
-                            : '';
-
-                          return {
-                            ...current,
-                            ownerType: nextType,
-                            ownerId: nextOwnerId,
-                          };
-                        })
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="tenant">{copy.options.scopeType.tenant}</option>
-                      <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
-                      <option value="talent">{copy.options.scopeType.talent}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.ownerId}>
-                    {blocklistDraft.ownerType === 'tenant' ? (
-                      <input
-                        aria-label={copy.fields.ownerId}
-                        value={copy.scopeLens.tenantPlaceholder}
-                        disabled
-                        className={inputClassName}
-                      />
-                    ) : (
-                      <select
-                        aria-label={copy.fields.ownerId}
-                        value={blocklistDraft.ownerId}
-                        onChange={(event) =>
-                          setBlocklistDraft((current) => ({
-                            ...current,
-                            ownerId: event.target.value,
-                          }))
-                        }
-                        disabled={
-                          organizationScopesPanel.loading
-                          || getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0
-                        }
-                        className={inputClassName}
-                      >
-                        {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0 ? (
-                          <option value="">{copy.scopeLens.emptyOptions}</option>
-                        ) : null}
-                        {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).map((option) => (
-                          <option key={`${option.type}-${option.id}`} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </Field>
-                  <div className="space-y-3 md:col-span-2">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <Field label={copy.fields.ruleName}>
-                        <input
-                          aria-label={copy.fields.ruleName}
-                          value={blocklistDraft.nameEn}
-                          onChange={(event) =>
-                            setBlocklistDraft((current) => ({
-                              ...current,
-                              nameEn: event.target.value,
-                            }))
-                          }
-                          placeholder={copy.placeholders.ruleName}
-                          className={inputClassName}
-                        />
-                      </Field>
-                      <button
-                        type="button"
-                        onClick={() => setBlocklistTranslationDrawerOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                        aria-label={copy.sections.blocklistEditor.translationManagement.trigger}
-                      >
-                        <Languages className="h-4 w-4" />
-                        <span>{copy.sections.blocklistEditor.translationManagement.trigger}</span>
-                        {configuredBlocklistTranslationCount > 0 ? (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                            {configuredBlocklistTranslationCount}
-                          </span>
-                        ) : null}
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {configuredBlocklistTranslationCount > 0
-                        ? copy.sections.blocklistEditor.translationManagement.summary(configuredBlocklistTranslationCount)
-                        : copy.sections.blocklistEditor.translationManagement.empty}
-                    </p>
-                    {translationOptionsState.error ? (
-                      <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
-                    ) : null}
-                  </div>
-                  <Field label={copy.fields.category}>
-                    <input
-                      aria-label={copy.fields.category}
-                      value={blocklistDraft.category}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          category: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.category}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.pattern}>
-                    <input
-                      aria-label={copy.fields.pattern}
-                      value={blocklistDraft.pattern}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          pattern: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.pattern}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.patternType}>
-                    <select
-                      aria-label={copy.fields.patternType}
-                      value={blocklistDraft.patternType}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          patternType: event.target.value as BlocklistPatternType,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="keyword">{copy.options.blocklistPatternType.keyword}</option>
-                      <option value="regex">{copy.options.blocklistPatternType.regex}</option>
-                      <option value="wildcard">{copy.options.blocklistPatternType.wildcard}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.severity}>
-                    <select
-                      aria-label={copy.fields.severity}
-                      value={blocklistDraft.severity}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          severity: event.target.value as BlocklistSeverity,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="low">{copy.options.severity.low}</option>
-                      <option value="medium">{copy.options.severity.medium}</option>
-                      <option value="high">{copy.options.severity.high}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.action}>
-                    <select
-                      aria-label={copy.fields.action}
-                      value={blocklistDraft.action}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          action: event.target.value as BlocklistAction,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="reject">{copy.options.action.reject}</option>
-                      <option value="flag">{copy.options.action.flag}</option>
-                      <option value="replace">{copy.options.action.replace}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.replacement}>
-                    <input
-                      aria-label={copy.fields.replacement}
-                      value={blocklistDraft.replacement}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          replacement: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.replacement}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">{advancedScopeTitle}</p>
-                        <p className="text-xs leading-5 text-slate-500">{copy.fields.scopesHint}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setBlocklistAdvancedOpen((current) => !current)}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                      >
-                        {advancedScopeToggle}
-                      </button>
-                    </div>
-                    {blocklistAdvancedOpen ? (
-                      <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
-                        <input
-                          aria-label={copy.fields.scopes}
-                          value={blocklistDraft.scopeCsv}
-                          onChange={(event) =>
-                            setBlocklistDraft((current) => ({
-                              ...current,
-                              scopeCsv: event.target.value,
-                            }))
-                          }
-                          placeholder={copy.placeholders.scopes}
-                          className={inputClassName}
-                        />
-                      </Field>
-                    ) : (
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                        {blocklistDraft.scopeCsv || copy.common.all}
-                      </div>
-                    )}
-                  </div>
-                  <Field label={copy.fields.sortOrder}>
-                    <input
-                      aria-label={copy.fields.sortOrder}
-                      type="number"
-                      value={blocklistDraft.sortOrder}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          sortOrder: event.target.value,
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.description}>
-                    <textarea
-                      aria-label={copy.fields.description}
-                      value={blocklistDraft.description}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          description: event.target.value,
-                        }))
-                      }
-                      rows={4}
-                      className={`${inputClassName} resize-y`}
-                    />
-                  </Field>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={blocklistDraft.inherit}
-                        onChange={(event) =>
-                          setBlocklistDraft((current) => ({
-                            ...current,
-                            inherit: event.target.checked,
-                          }))
-                        }
-                      />
-                      {copy.fields.inherit}
-                    </label>
-                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={blocklistDraft.isForceUse}
-                        onChange={(event) =>
-                          setBlocklistDraft((current) => ({
-                            ...current,
-                            isForceUse: event.target.checked,
-                          }))
-                        }
-                      />
-                      {copy.fields.forceUse}
-                    </label>
-                  </div>
+          <ActionDrawer
+            open={blocklistDrawerOpen}
+            onOpenChange={setBlocklistDrawerOpenSafely}
+            title={blocklistMode === 'create' ? copy.sections.blocklistEditor.createTitle : copy.sections.blocklistEditor.updateTitle}
+            description={copy.sections.blocklistEditor.description}
+            size="xl"
+            closeButtonAriaLabel={copy.sections.blocklistEditor.closeButtonAriaLabel}
+            closeOnBackdropClick={!blocklistSavePending}
+            closeOnEscape={!blocklistSavePending}
+            footer={
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBlocklistDrawerOpenSafely(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {copy.common.cancel}
+                </button>
+                <AsyncSubmitButton
+                  onClick={() => void submitBlocklist()}
+                  isPending={blocklistSavePending}
+                  pendingText={blocklistMode === 'create' ? copy.sections.blocklistEditor.creating : copy.sections.blocklistEditor.saving}
+                >
+                  {blocklistMode === 'create' ? copy.sections.blocklistEditor.createRule : copy.sections.blocklistEditor.saveChanges}
+                </AsyncSubmitButton>
+              </div>
+            }
+          >
+            <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+              <div className="flex flex-wrap items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-semibold">{scopeLockTitle}</p>
+                  <p className="leading-6">{scopeLockDescription}</p>
+                  <p className="text-xs text-indigo-800/80">
+                    {copy.options.scopeType[scopeType]} · {activeScopeLabel}
+                  </p>
                 </div>
-              )}
-            </FormSection>
-          </GlassSurface>
+              </div>
+            </div>
+            {blocklistDetailLoading ? (
+              <StateView
+                status="unavailable"
+                title={copy.sections.blocklistEditor.loadingTitle}
+                description={copy.sections.blocklistEditor.loadingDescription}
+              />
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={copy.fields.ownerType}>
+                  <select
+                    aria-label={copy.fields.ownerType}
+                    value={blocklistDraft.ownerType}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => {
+                        const nextType = event.target.value as SecurityScopeType;
+                        const nextOwnerId = isScopedSecurityScopeType(nextType)
+                          ? getScopeOptions(nextType)[0]?.id ?? ''
+                          : '';
+
+                        return {
+                          ...current,
+                          ownerType: nextType,
+                          ownerId: nextOwnerId,
+                        };
+                      })
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="tenant">{copy.options.scopeType.tenant}</option>
+                    <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
+                    <option value="talent">{copy.options.scopeType.talent}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.ownerId}>
+                  {blocklistDraft.ownerType === 'tenant' ? (
+                    <input
+                      aria-label={copy.fields.ownerId}
+                      value={copy.scopeLens.tenantPlaceholder}
+                      disabled
+                      className={inputClassName}
+                    />
+                  ) : (
+                    <select
+                      aria-label={copy.fields.ownerId}
+                      value={blocklistDraft.ownerId}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          ownerId: event.target.value,
+                        }))
+                      }
+                      disabled={
+                        organizationScopesPanel.loading
+                        || getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0
+                      }
+                      className={inputClassName}
+                    >
+                      {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0 ? (
+                        <option value="">{copy.scopeLens.emptyOptions}</option>
+                      ) : null}
+                      {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).map((option) => (
+                        <option key={`${option.type}-${option.id}`} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <div className="space-y-3 md:col-span-2">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <Field label={copy.fields.ruleName}>
+                      <input
+                        aria-label={copy.fields.ruleName}
+                        value={blocklistDraft.nameEn}
+                        onChange={(event) =>
+                          setBlocklistDraft((current) => ({
+                            ...current,
+                            nameEn: event.target.value,
+                          }))
+                        }
+                        placeholder={copy.placeholders.ruleName}
+                        className={inputClassName}
+                      />
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={() => setBlocklistTranslationDrawerOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                      aria-label={copy.sections.blocklistEditor.translationManagement.trigger}
+                    >
+                      <Languages className="h-4 w-4" />
+                      <span>{copy.sections.blocklistEditor.translationManagement.trigger}</span>
+                      {configuredBlocklistTranslationCount > 0 ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                          {configuredBlocklistTranslationCount}
+                        </span>
+                      ) : null}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {configuredBlocklistTranslationCount > 0
+                      ? copy.sections.blocklistEditor.translationManagement.summary(configuredBlocklistTranslationCount)
+                      : copy.sections.blocklistEditor.translationManagement.empty}
+                  </p>
+                  {translationOptionsState.error ? (
+                    <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
+                  ) : null}
+                </div>
+                <Field label={copy.fields.category}>
+                  <input
+                    aria-label={copy.fields.category}
+                    value={blocklistDraft.category}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        category: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.category}
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.pattern}>
+                  <input
+                    aria-label={copy.fields.pattern}
+                    value={blocklistDraft.pattern}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        pattern: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.pattern}
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.patternType}>
+                  <select
+                    aria-label={copy.fields.patternType}
+                    value={blocklistDraft.patternType}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        patternType: event.target.value as BlocklistPatternType,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="keyword">{copy.options.blocklistPatternType.keyword}</option>
+                    <option value="regex">{copy.options.blocklistPatternType.regex}</option>
+                    <option value="wildcard">{copy.options.blocklistPatternType.wildcard}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.severity}>
+                  <select
+                    aria-label={copy.fields.severity}
+                    value={blocklistDraft.severity}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        severity: event.target.value as BlocklistSeverity,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="low">{copy.options.severity.low}</option>
+                    <option value="medium">{copy.options.severity.medium}</option>
+                    <option value="high">{copy.options.severity.high}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.action}>
+                  <select
+                    aria-label={copy.fields.action}
+                    value={blocklistDraft.action}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        action: event.target.value as BlocklistAction,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="reject">{copy.options.action.reject}</option>
+                    <option value="flag">{copy.options.action.flag}</option>
+                    <option value="replace">{copy.options.action.replace}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.replacement}>
+                  <input
+                    aria-label={copy.fields.replacement}
+                    value={blocklistDraft.replacement}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        replacement: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.replacement}
+                    className={inputClassName}
+                  />
+                </Field>
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">{advancedScopeTitle}</p>
+                      <p className="text-xs leading-5 text-slate-500">{copy.fields.scopesHint}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setBlocklistAdvancedOpen((current) => !current)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                    >
+                      {advancedScopeToggle}
+                    </button>
+                  </div>
+                  {blocklistAdvancedOpen ? (
+                    <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
+                      <input
+                        aria-label={copy.fields.scopes}
+                        value={blocklistDraft.scopeCsv}
+                        onChange={(event) =>
+                          setBlocklistDraft((current) => ({
+                            ...current,
+                            scopeCsv: event.target.value,
+                          }))
+                        }
+                        placeholder={copy.placeholders.scopes}
+                        className={inputClassName}
+                      />
+                    </Field>
+                  ) : (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                      {blocklistDraft.scopeCsv || copy.common.all}
+                    </div>
+                  )}
+                </div>
+                <Field label={copy.fields.sortOrder}>
+                  <input
+                    aria-label={copy.fields.sortOrder}
+                    type="number"
+                    value={blocklistDraft.sortOrder}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        sortOrder: event.target.value,
+                      }))
+                    }
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.description}>
+                  <textarea
+                    aria-label={copy.fields.description}
+                    value={blocklistDraft.description}
+                    onChange={(event) =>
+                      setBlocklistDraft((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    rows={4}
+                    className={`${inputClassName} resize-y`}
+                  />
+                </Field>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={blocklistDraft.inherit}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          inherit: event.target.checked,
+                        }))
+                      }
+                    />
+                    {copy.fields.inherit}
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={blocklistDraft.isForceUse}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          isForceUse: event.target.checked,
+                        }))
+                      }
+                    />
+                    {copy.fields.forceUse}
+                  </label>
+                </div>
+              </div>
+            )}
+          </ActionDrawer>
 
           <GlassSurface className="p-6">
             <FormSection
