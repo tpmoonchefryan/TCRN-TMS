@@ -76,17 +76,17 @@ describe('TalentBusinessShell', () => {
       </RuntimeLocaleProvider>,
     );
 
-    expect(screen.getByText('Customer Management')).toBeInTheDocument();
-    expect(screen.getByText('Talent Scope')).toBeInTheDocument();
-    expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
+    expect(screen.getAllByText('Customer Management')).toHaveLength(2);
+    expect(screen.getAllByText('Talent Scope')).toHaveLength(1);
+    expect(await screen.findAllByText('Tokino Sora')).toHaveLength(2);
     expect(screen.queryByText('talent-9')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Change language/i }));
     fireEvent.click(screen.getByRole('option', { name: '日本語' }));
 
-    expect(screen.getByText('顧客管理')).toBeInTheDocument();
-    expect(screen.getByText('タレントスコープ')).toBeInTheDocument();
+    expect(screen.getAllByText('顧客管理')).toHaveLength(2);
+    expect(screen.getAllByText('タレントスコープ')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: '設定' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '組織構造' })).toHaveAttribute(
       'href',
@@ -123,7 +123,7 @@ describe('TalentBusinessShell', () => {
       </RuntimeLocaleProvider>,
     );
 
-    expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
+    expect(await screen.findAllByText('Tokino Sora')).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Organization Structure' })).toHaveAttribute(
       'href',
       '/tenant/tenant-1/organization-structure',

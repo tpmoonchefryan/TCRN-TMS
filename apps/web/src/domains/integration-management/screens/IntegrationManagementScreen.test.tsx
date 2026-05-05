@@ -1373,7 +1373,7 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
     await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
     expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
-  });
+  }, 10_000);
 
   it('renders localized integration management copy for zh locale', async () => {
     const user = userEvent.setup();

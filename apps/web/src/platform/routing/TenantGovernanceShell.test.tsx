@@ -67,7 +67,7 @@ describe('TenantGovernanceShell', () => {
     expect(within(navigation).getByRole('link', { name: 'Organization Structure' })).toBeInTheDocument();
     expect(within(navigation).queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Tenant Settings' })).not.toBeInTheDocument();
-    expect(screen.getByText('Tenant')).toBeInTheDocument();
+    expect(screen.getAllByText('Tenant')).toHaveLength(2);
     expect(navigation).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Change language/i }));
@@ -75,7 +75,7 @@ describe('TenantGovernanceShell', () => {
 
     expect(screen.getByRole('link', { name: '组织架构' })).toBeInTheDocument();
     expect(within(screen.getByRole('navigation', { name: '主导航' })).queryByRole('link', { name: '我的资料' })).not.toBeInTheDocument();
-    expect(screen.getByText('租户')).toBeInTheDocument();
+    expect(screen.getAllByText('租户')).toHaveLength(2);
     expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '账户菜单' }));
