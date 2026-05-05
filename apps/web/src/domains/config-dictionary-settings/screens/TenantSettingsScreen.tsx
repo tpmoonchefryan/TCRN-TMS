@@ -6,7 +6,8 @@ import {
 } from '@tcrn/shared';
 import { Building2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from 'react';
 
 import {
   buildTenantSettingsDraft,
@@ -48,6 +49,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
@@ -85,6 +88,51 @@ interface ProfileStoreDraft {
 }
 
 type ProfileStoreActivityFilter = 'all' | 'active' | 'inactive';
+
+function parseProfileStoreActivityFilter(value: string | null): ProfileStoreActivityFilter {
+  return value === 'active' || value === 'inactive' ? value : 'all';
+}
+
+function buildTenantSettingsProfileStoreQueryState(
+  searchParams: { toString(): string },
+  {
+    search,
+    activity,
+    page,
+    pageSize,
+  }: {
+    search: string;
+    activity: ProfileStoreActivityFilter;
+    page: number;
+    pageSize: PageSizeOption;
+  },
+) {
+  const params = new URLSearchParams(searchParams.toString());
+  const normalizedSearch = search.trim();
+
+  params.delete('profileStoreSearch');
+  params.delete('profileStoreStatus');
+  params.delete('profileStorePage');
+  params.delete('profileStorePageSize');
+
+  if (normalizedSearch) {
+    params.set('profileStoreSearch', normalizedSearch);
+  }
+
+  if (activity !== 'all') {
+    params.set('profileStoreStatus', activity);
+  }
+
+  if (page > 1) {
+    params.set('profileStorePage', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('profileStorePageSize', String(pageSize));
+  }
+
+  return params.toString();
+}
 
 type ProfileStoreEditorState =
   | { mode: 'create' }
@@ -302,6 +350,13 @@ export function TenantSettingsScreen({
 }: Readonly<{
   tenantId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlProfileStoreSearch = searchParams.get('profileStoreSearch') ?? '';
+  const urlProfileStoreActivityFilter = parseProfileStoreActivityFilter(searchParams.get('profileStoreStatus'));
+  const urlProfileStorePage = parsePageParam(searchParams.get('profileStorePage'));
+  const urlProfileStorePageSize = parsePageSizeParam(searchParams.get('profileStorePageSize'));
   const [activeSectionId, setActiveSectionId] = useState<'details' | 'config-entities' | 'settings' | 'dictionary'>(
     'details',
   );
@@ -338,11 +393,11 @@ export function TenantSettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [profileStoreNotice, setProfileStoreNotice] = useState<NoticeState | null>(null);
-  const [profileStoreSearch, setProfileStoreSearch] = useState('');
+  const [profileStoreSearch, setProfileStoreSearch] = useState(urlProfileStoreSearch);
   const deferredProfileStoreSearch = useDeferredValue(profileStoreSearch);
-  const [profileStoreActivityFilter, setProfileStoreActivityFilter] = useState<ProfileStoreActivityFilter>('all');
-  const [profileStorePage, setProfileStorePage] = useState(1);
-  const [profileStorePageSize, setProfileStorePageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [profileStoreActivityFilter, setProfileStoreActivityFilter] = useState<ProfileStoreActivityFilter>(urlProfileStoreActivityFilter);
+  const [profileStorePage, setProfileStorePage] = useState(urlProfileStorePage);
+  const [profileStorePageSize, setProfileStorePageSize] = useState<PageSizeOption>(urlProfileStorePageSize);
   const [profileStoreEditorState, setProfileStoreEditorState] = useState<ProfileStoreEditorState>({ mode: 'create' });
   const [profileStoreDraft, setProfileStoreDraft] = useState<ProfileStoreDraft>(EMPTY_PROFILE_STORE_DRAFT);
   const [profileStoreEditorOpen, setProfileStoreEditorOpen] = useState(false);
@@ -352,6 +407,78 @@ export function TenantSettingsScreen({
   const [profileStoreSavePending, setProfileStoreSavePending] = useState(false);
   const [profileStoreDialogState, setProfileStoreDialogState] = useState<ProfileStoreDialogState | null>(null);
   const [profileStoreDialogPending, setProfileStoreDialogPending] = useState(false);
+
+  useEffect(() => {
+    setProfileStoreSearch((current) => (
+      current === urlProfileStoreSearch ? current : urlProfileStoreSearch
+    ));
+    setProfileStoreActivityFilter((current) => (
+      current === urlProfileStoreActivityFilter ? current : urlProfileStoreActivityFilter
+    ));
+    setProfileStorePage((current) => (
+      current === urlProfileStorePage ? current : urlProfileStorePage
+    ));
+    setProfileStorePageSize((current) => (
+      current === urlProfileStorePageSize ? current : urlProfileStorePageSize
+    ));
+  }, [
+    urlProfileStoreActivityFilter,
+    urlProfileStorePage,
+    urlProfileStorePageSize,
+    urlProfileStoreSearch,
+  ]);
+
+  function applyProfileStoreQueryState(
+    nextState: Partial<{
+      search: string;
+      activity: ProfileStoreActivityFilter;
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextSearch = nextState.search ?? profileStoreSearch;
+    const nextActivity = nextState.activity ?? profileStoreActivityFilter;
+    const nextPage = nextState.page ?? profileStorePage;
+    const nextPageSize = nextState.pageSize ?? profileStorePageSize;
+
+    if (nextState.search !== undefined) {
+      setProfileStoreSearch(nextSearch);
+    }
+
+    if (nextState.activity !== undefined) {
+      setProfileStoreActivityFilter(nextActivity);
+    }
+
+    if (nextState.page !== undefined) {
+      setProfileStorePage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setProfileStorePageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildTenantSettingsProfileStoreQueryState(searchParams, {
+      search: nextSearch,
+      activity: nextActivity,
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildTenantSettingsProfileStoreQueryState(searchParams, {
+      search: profileStoreSearch,
+      activity: profileStoreActivityFilter,
+      page: profileStorePage,
+      pageSize: profileStorePageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -1172,8 +1299,10 @@ export function TenantSettingsScreen({
                     <input
                       value={profileStoreSearch}
                       onChange={(event) => {
-                        setProfileStoreSearch(event.target.value);
-                        setProfileStorePage(1);
+                        applyProfileStoreQueryState({
+                          page: 1,
+                          search: event.target.value,
+                        });
                       }}
                       placeholder={text('Search code or localized name', '按代码或本地化名称搜索', 'コードまたはローカライズ名で検索')}
                       className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
@@ -1189,8 +1318,10 @@ export function TenantSettingsScreen({
                           type="button"
                           aria-pressed={isActive}
                           onClick={() => {
-                            setProfileStoreActivityFilter(candidate);
-                            setProfileStorePage(1);
+                            applyProfileStoreQueryState({
+                              activity: candidate,
+                              page: 1,
+                            });
                           }}
                           className={`rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition ${
                             isActive
@@ -1308,10 +1439,12 @@ export function TenantSettingsScreen({
                       previousLabel: profileStorePreviousLabel,
                       nextLabel: profileStoreNextLabel,
                     }}
-                    onPageChange={setProfileStorePage}
+                    onPageChange={(nextPage) => applyProfileStoreQueryState({ page: nextPage })}
                     onPageSizeChange={(nextPageSize) => {
-                      setProfileStorePageSize(nextPageSize as PageSizeOption);
-                      setProfileStorePage(1);
+                      applyProfileStoreQueryState({
+                        page: 1,
+                        pageSize: nextPageSize as PageSizeOption,
+                      });
                     }}
                     isLoading={profileStoresPanel.loading}
                     className="mt-4 rounded-2xl border border-slate-200"

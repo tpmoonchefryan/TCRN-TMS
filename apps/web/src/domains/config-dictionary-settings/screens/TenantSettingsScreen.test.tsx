@@ -5,9 +5,21 @@ import { TenantSettingsScreen } from '@/domains/config-dictionary-settings/scree
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
+const replace = vi.fn();
+const pathname = '/tenant/tenant-1/settings';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as RuntimeLocale,
 };
+
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -827,6 +839,83 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: '租户设置' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(await screen.findByRole('button', { name: '保存租户默认值' })).toBeInTheDocument();
+  });
+
+
+  it('hydrates profile-store filters and pagination from the URL', async () => {
+    currentSearch = 'profileStoreSearch=Default&profileStoreStatus=active&profileStorePage=2&profileStorePageSize=50';
+
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/organization/settings') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'en',
+            timezone: 'Asia/Shanghai',
+            allowCustomHomepage: true,
+          },
+          overrides: [],
+          inheritedFrom: {},
+          version: 1,
+        });
+      }
+
+      if (path === '/api/v1/profile-stores?page=2&pageSize=50&includeInactive=true&search=Default') {
+        return Promise.resolve({
+          items: [
+            {
+              id: 'store-1',
+              code: 'DEFAULT_STORE',
+              name: 'Default Store',
+              nameZh: null,
+              nameJa: null,
+              translations: { en: 'Default Store' },
+              talentCount: 2,
+              customerCount: 18,
+              isDefault: true,
+              isActive: true,
+              createdAt: '2026-04-17T00:00:00.000Z',
+              version: 1,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 2,
+              pageSize: 50,
+              totalCount: 51,
+              totalPages: 2,
+              hasNext: false,
+              hasPrev: true,
+            },
+          },
+        });
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return Promise.resolve([]);
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    expect(mockRequest).toHaveBeenCalledWith(
+      '/api/v1/profile-stores?page=2&pageSize=50&includeInactive=true&search=Default',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
+    expect(await screen.findByDisplayValue('Default')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Active' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inactive' }));
+
+    expect(replace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/settings?profileStoreSearch=Default&profileStoreStatus=inactive&profileStorePageSize=50',
+    );
   });
 
   it('includes a tenant business workspace shortcut in the details section', async () => {
