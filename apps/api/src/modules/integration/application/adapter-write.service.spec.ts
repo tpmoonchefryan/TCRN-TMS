@@ -41,6 +41,7 @@ describe('AdapterWriteApplicationService', () => {
     findById: vi.fn(),
     update: vi.fn(),
     incrementVersion: vi.fn(),
+    deleteConfig: vi.fn(),
     findConfig: vi.fn(),
     findDisabledOverride: vi.fn(),
     upsertDisabledOverride: vi.fn(),
@@ -205,6 +206,7 @@ describe('AdapterWriteApplicationService', () => {
           configs: [
             {
               configKey: 'client_secret',
+              mutation: 'replace',
               configValue: 'rotated-secret',
             },
           ],
@@ -228,6 +230,182 @@ describe('AdapterWriteApplicationService', () => {
         },
       ],
     );
+    expect(mockTechEventLog.log).toHaveBeenCalledWith({
+      eventType: TechEventType.SECURITY_EVENT,
+      scope: 'security',
+      severity: LogSeverity.WARN,
+      payload: {
+        action: 'secret_replaced',
+        adapterId: 'adapter-1',
+        configKey: 'client_secret',
+        userId: 'user-1',
+      },
+    });
+  });
+
+  it('keeps untouched secrets, clears optional secrets, and audit-logs clear without secret values', async () => {
+    vi.mocked(mockRepository.findById).mockResolvedValue({
+      id: 'adapter-1',
+      ownerType: OwnerType.TENANT,
+      ownerId: null,
+      platformId: 'platform-1',
+      code: 'BILI_SYNC',
+      nameEn: 'Bili Sync',
+      nameZh: null,
+      nameJa: null,
+      adapterType: AdapterType.OAUTH,
+      inherit: true,
+      isActive: true,
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      version: 5,
+    } as never);
+    vi.mocked(mockRepository.incrementVersion).mockResolvedValue(6);
+
+    await expect(
+      service.updateConfigs(
+        'adapter-1',
+        {
+          adapterVersion: 5,
+          configs: [
+            {
+              configKey: 'client_secret',
+              mutation: 'keep',
+            },
+            {
+              configKey: 'access_token',
+              mutation: 'clear',
+            },
+            {
+              configKey: 'endpoint_url',
+              mutation: 'replace',
+              configValue: 'https://new.example.com',
+            },
+          ],
+        },
+        context,
+      ),
+    ).resolves.toEqual({
+      updatedCount: 2,
+      adapterVersion: 6,
+    });
+
+    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
+      prisma,
+      'tenant_test',
+      'adapter-1',
+      [
+        {
+          configKey: 'endpoint_url',
+          configValue: 'https://new.example.com',
+          isSecret: false,
+        },
+      ],
+    );
+    expect(mockRepository.deleteConfig).toHaveBeenCalledWith(
+      prisma,
+      'tenant_test',
+      'adapter-1',
+      'access_token',
+    );
+    expect(mockTechEventLog.log).toHaveBeenCalledWith({
+      eventType: TechEventType.SECURITY_EVENT,
+      scope: 'security',
+      severity: LogSeverity.WARN,
+      payload: {
+        action: 'secret_cleared',
+        adapterId: 'adapter-1',
+        configKey: 'access_token',
+        userId: 'user-1',
+      },
+    });
+  });
+
+  it('treats keep-only config payloads as non-mutating', async () => {
+    vi.mocked(mockRepository.findById).mockResolvedValue({
+      id: 'adapter-1',
+      ownerType: OwnerType.TENANT,
+      ownerId: null,
+      platformId: 'platform-1',
+      code: 'BILI_SYNC',
+      nameEn: 'Bili Sync',
+      nameZh: null,
+      nameJa: null,
+      adapterType: AdapterType.OAUTH,
+      inherit: true,
+      isActive: true,
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      version: 5,
+    } as never);
+
+    await expect(
+      service.updateConfigs(
+        'adapter-1',
+        {
+          adapterVersion: 5,
+          configs: [
+            {
+              configKey: 'client_secret',
+              mutation: 'keep',
+            },
+          ],
+        },
+        context,
+      ),
+    ).resolves.toEqual({
+      updatedCount: 0,
+      adapterVersion: 5,
+    });
+
+    expect(mockRepository.upsertConfigs).not.toHaveBeenCalled();
+    expect(mockRepository.deleteConfig).not.toHaveBeenCalled();
+    expect(mockRepository.incrementVersion).not.toHaveBeenCalled();
+    expect(mockChangeLogService.create).not.toHaveBeenCalled();
+    expect(mockTechEventLog.log).not.toHaveBeenCalled();
+  });
+
+  it('rejects required secret clear mutations', async () => {
+    vi.mocked(mockRepository.findById).mockResolvedValue({
+      id: 'adapter-1',
+      ownerType: OwnerType.TENANT,
+      ownerId: null,
+      platformId: 'platform-1',
+      code: 'BILI_SYNC',
+      nameEn: 'Bili Sync',
+      nameZh: null,
+      nameJa: null,
+      adapterType: AdapterType.OAUTH,
+      inherit: true,
+      isActive: true,
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      version: 5,
+    } as never);
+
+    await expect(
+      service.updateConfigs(
+        'adapter-1',
+        {
+          adapterVersion: 5,
+          configs: [
+            {
+              configKey: 'client_secret',
+              mutation: 'clear',
+            },
+          ],
+        },
+        context,
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Required secret 'client_secret' cannot be cleared; replace the secret or disable the adapter instead",
+      },
+    });
+
+    expect(mockRepository.deleteConfig).not.toHaveBeenCalled();
+    expect(mockRepository.upsertConfigs).not.toHaveBeenCalled();
   });
 
   it('decrypts secret config reveals and emits the same security tech event payload', async () => {

@@ -959,7 +959,7 @@ describe('IntegrationManagementScreen', () => {
           configs: [
             {
               id: 'config-1',
-              configKey: 'client_secret',
+              configKey: 'api_key',
               configValue: '******',
               isSecret: true,
             },
@@ -1002,9 +1002,9 @@ describe('IntegrationManagementScreen', () => {
         );
       }
 
-      if (path === '/api/v1/integration/adapters/adapter-1/configs/client_secret/reveal' && init?.method === 'POST') {
+      if (path === '/api/v1/integration/adapters/adapter-1/configs/api_key/reveal' && init?.method === 'POST') {
         return {
-          configKey: 'client_secret',
+          configKey: 'api_key',
           configValue: 'revealed-secret-value',
           revealedAt: '2026-04-17T10:00:00.000Z',
           expiresInSeconds: 60,
@@ -1016,11 +1016,12 @@ describe('IntegrationManagementScreen', () => {
           JSON.stringify({
             configs: [
               {
-                configKey: 'client_secret',
-                configValue: 'revealed-secret-value',
+                configKey: 'api_key',
+                mutation: 'keep',
               },
               {
                 configKey: 'base_url',
+                mutation: 'replace',
                 configValue: 'https://new.example.com',
               },
             ],
@@ -1050,7 +1051,7 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
 
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
-    expect(screen.getByText(/Masked secret stays unchanged unless you type a replacement/i)).toBeInTheDocument();
+    expect(screen.getByText(/Required masked secret stays unchanged unless you type a replacement/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Reveal' }));
 
@@ -1074,6 +1075,178 @@ describe('IntegrationManagementScreen', () => {
 
     expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
     expect(await screen.findByDisplayValue('https://new.example.com')).toBeInTheDocument();
+  });
+
+  it('submits explicit clear only for optional adapter secrets', async () => {
+    const user = userEvent.setup();
+    let accessTokenStillPresent = true;
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [
+          {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            name: 'PII Platform',
+            nameEn: 'PII Platform',
+            sortOrder: 0,
+            isActive: true,
+            version: 1,
+            displayName: 'PII Platform',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [
+          {
+            id: 'adapter-1',
+            ownerType: 'tenant',
+            ownerId: null,
+            platformId: 'platform-1',
+            platform: {
+              code: 'PII_PLATFORM',
+              displayName: 'PII Platform',
+              iconUrl: null,
+            },
+            code: 'TCRN_PII_PLATFORM',
+            nameEn: 'PII Relay',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'oauth',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: accessTokenStillPresent ? 2 : 1,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: accessTokenStillPresent ? 3 : 4,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1' && !init) {
+        return {
+          id: 'adapter-1',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            displayName: 'PII Platform',
+          },
+          code: 'TCRN_PII_PLATFORM',
+          nameEn: 'PII Relay',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'oauth',
+          inherit: true,
+          isActive: true,
+          configs: [
+            {
+              id: 'config-1',
+              configKey: 'client_secret',
+              configValue: '******',
+              isSecret: true,
+            },
+            ...(accessTokenStillPresent
+              ? [{
+                  id: 'config-2',
+                  configKey: 'access_token',
+                  configValue: '******',
+                  isSecret: true,
+                }]
+              : []),
+          ],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: accessTokenStillPresent ? 3 : 4,
+        };
+      }
+
+      if (path === '/api/v1/integration/webhooks') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/webhooks/events') {
+        return [];
+      }
+
+      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+        return [];
+      }
+
+      if (path === '/api/v1/email-templates') {
+        return [];
+      }
+
+      if (path === '/api/v1/email/config') {
+        throw new ApiRequestError(
+          'Email configuration is only available for AC tenant administrators',
+          'AC_TENANT_ONLY',
+          403,
+        );
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1/configs' && init?.method === 'PATCH') {
+        expect(init.body).toBe(
+          JSON.stringify({
+            configs: [
+              {
+                configKey: 'client_secret',
+                mutation: 'keep',
+              },
+              {
+                configKey: 'access_token',
+                mutation: 'clear',
+              },
+            ],
+            adapterVersion: 3,
+          }),
+        );
+        accessTokenStillPresent = false;
+        return {
+          updatedCount: 1,
+          adapterVersion: 4,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+
+    expect(screen.getByText(/Required masked secret stays unchanged/i)).toBeInTheDocument();
+    expect(screen.getByText(/Masked optional secret stays unchanged/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear secret' })).toBeInTheDocument();
+    expect(screen.getAllByText('Secret').length).toBeGreaterThan(1);
+
+    await user.click(screen.getByRole('button', { name: 'Clear secret' }));
+    expect(screen.getByText(/optional secret will be cleared on save/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Keep secret' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Save config changes/i }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/integration/adapters/adapter-1/configs',
+        expect.objectContaining({
+          method: 'PATCH',
+        }),
+      );
+    });
+
+    expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
   });
 
   it('guards dirty adapter metadata before switching adapter rows', async () => {

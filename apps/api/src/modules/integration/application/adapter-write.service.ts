@@ -7,13 +7,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  LogSeverity,
+  type RequestContext,
+  TechEventScope,
+  TechEventType,
+} from '@tcrn/shared';
 
 import { ChangeLogService, TechEventLogService } from '../../log';
 import type { IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
 import {
   ADAPTER_SECRET_REVEAL_EXPIRY_SECONDS,
   buildAdapterActiveStateResult,
+  buildAdapterConfigMutationPlan,
   buildAdapterConfigUpdateResult,
   buildAdapterUpdateMutationPlan,
   buildInheritedAdapterScopeStateResult,
@@ -224,12 +231,75 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      await this.adapterWriteRepository.upsertConfigs(
-        prisma,
-        tenantSchema,
-        adapterId,
-        this.toPersistenceConfigs(dto.configs),
+      const plans = dto.configs.map((config) =>
+        buildAdapterConfigMutationPlan(adapter, config),
       );
+      const replacePlans = plans.filter((plan) => plan.mutation === 'replace');
+      const clearPlans = plans.filter((plan) => plan.mutation === 'clear');
+      const mutationSummary = plans
+        .filter((plan) => plan.mutation !== 'keep')
+        .map((plan) => ({
+          configKey: plan.configKey,
+          mutation: plan.mutation,
+          isSecret: plan.isSecret,
+        }));
+
+      for (const plan of plans) {
+        if (plan.mutation === 'replace' && (!plan.configValue || plan.configValue.length === 0)) {
+          throw new BadRequestException({
+            code: ErrorCodes.VALIDATION_FAILED,
+            message: `Replacement value is required for config '${plan.configKey}'`,
+          });
+        }
+
+        if (plan.mutation !== 'replace' && plan.configValue !== undefined) {
+          throw new BadRequestException({
+            code: ErrorCodes.VALIDATION_FAILED,
+            message: `Config value is only allowed for replace mutations`,
+          });
+        }
+
+        if (plan.mutation === 'clear' && !plan.isSecret) {
+          throw new BadRequestException({
+            code: ErrorCodes.VALIDATION_FAILED,
+            message: `Only optional secret configs can be cleared explicitly`,
+          });
+        }
+
+        if (plan.mutation === 'clear' && plan.isRequiredSecret) {
+          throw new BadRequestException({
+            code: ErrorCodes.VALIDATION_FAILED,
+            message: `Required secret '${plan.configKey}' cannot be cleared; replace the secret or disable the adapter instead`,
+          });
+        }
+      }
+
+      if (replacePlans.length === 0 && clearPlans.length === 0) {
+        return adapter.version;
+      }
+
+      if (replacePlans.length > 0) {
+        await this.adapterWriteRepository.upsertConfigs(
+          prisma,
+          tenantSchema,
+          adapterId,
+          this.toPersistenceConfigs(
+            replacePlans.map((plan) => ({
+              configKey: plan.configKey,
+              configValue: plan.configValue ?? '',
+            })),
+          ),
+        );
+      }
+
+      for (const plan of clearPlans) {
+        await this.adapterWriteRepository.deleteConfig(
+          prisma,
+          tenantSchema,
+          adapterId,
+          plan.configKey,
+        );
+      }
 
       const version = await this.adapterWriteRepository.incrementVersion(
         prisma,
@@ -245,15 +315,20 @@ export class AdapterWriteApplicationService {
           objectType: 'adapter_config',
           objectId: adapterId,
           objectName: adapter.code,
-          newValue: { configKeys: dto.configs.map((config) => config.configKey) },
+          newValue: { configMutations: mutationSummary },
         },
         context,
       );
 
+      await this.logSecretConfigMutations(adapterId, plans, context);
+
       return version ?? adapter.version + 1;
     });
 
-    return buildAdapterConfigUpdateResult(dto.configs.length, nextVersion);
+    return buildAdapterConfigUpdateResult(
+      dto.configs.filter((config) => config.mutation !== 'keep').length,
+      nextVersion,
+    );
   }
 
   async revealConfig(adapterId: string, configKey: string, context: RequestContext) {
@@ -505,5 +580,33 @@ export class AdapterWriteApplicationService {
         isSecret,
       };
     });
+  }
+
+  private async logSecretConfigMutations(
+    adapterId: string,
+    plans: Array<{
+      configKey: string;
+      mutation: 'keep' | 'replace' | 'clear';
+      isSecret: boolean;
+    }>,
+    context: RequestContext,
+  ) {
+    for (const plan of plans) {
+      if (!plan.isSecret || (plan.mutation !== 'replace' && plan.mutation !== 'clear')) {
+        continue;
+      }
+
+      await this.techEventLog.log({
+        eventType: TechEventType.SECURITY_EVENT,
+        scope: TechEventScope.SECURITY,
+        severity: LogSeverity.WARN,
+        payload: {
+          action: plan.mutation === 'clear' ? 'secret_cleared' : 'secret_replaced',
+          adapterId,
+          configKey: plan.configKey,
+          userId: context.userId,
+        },
+      });
+    }
   }
 }

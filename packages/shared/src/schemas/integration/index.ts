@@ -38,6 +38,35 @@ export const AdapterConfigItemSchema = z.object({
   configValue: z.string().max(2048),
 });
 
+export const AdapterConfigMutationSchema = z.enum(['keep', 'replace', 'clear']);
+
+export const AdapterConfigMutationItemSchema = z.object({
+  configKey: z.string().max(64),
+  mutation: AdapterConfigMutationSchema.optional(),
+  configValue: z.string().max(2048).optional(),
+}).superRefine((value, ctx) => {
+  const mutation = value.mutation ?? 'replace';
+
+  if (mutation === 'replace') {
+    if (value.configValue === undefined || value.configValue.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['configValue'],
+        message: 'Replacement config value is required',
+      });
+    }
+    return;
+  }
+
+  if (value.configValue !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['configValue'],
+      message: 'Config value is only allowed for replace mutations',
+    });
+  }
+});
+
 export const CreateAdapterSchema = z.object({
   platformId: z.string().uuid(),
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores'),
@@ -60,13 +89,15 @@ export const UpdateAdapterSchema = z.object({
 });
 
 export const UpdateAdapterConfigsSchema = z.object({
-  configs: z.array(AdapterConfigItemSchema),
+  configs: z.array(AdapterConfigMutationItemSchema),
   adapterVersion: z.number().int(),
 });
 
 export type AdapterListQueryInput = z.infer<typeof AdapterListQuerySchema>;
 export type CreateAdapterInput = z.infer<typeof CreateAdapterSchema>;
 export type UpdateAdapterInput = z.infer<typeof UpdateAdapterSchema>;
+export type AdapterConfigMutation = z.infer<typeof AdapterConfigMutationSchema>;
+export type AdapterConfigMutationInput = z.infer<typeof AdapterConfigMutationItemSchema>;
 
 // ============================================================================
 // Webhook Schemas

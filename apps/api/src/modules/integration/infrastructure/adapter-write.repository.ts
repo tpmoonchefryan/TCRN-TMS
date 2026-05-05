@@ -225,6 +225,23 @@ export class AdapterWriteRepository {
     }
   }
 
+  deleteConfig(
+    prisma: Prisma.TransactionClient,
+    tenantSchema: string,
+    adapterId: string,
+    configKey: string,
+  ): Promise<number> {
+    return prisma.$executeRawUnsafe(
+      `
+        DELETE FROM "${tenantSchema}".adapter_config
+        WHERE adapter_id = $1::uuid
+          AND config_key = $2
+      `,
+      adapterId,
+      configKey,
+    );
+  }
+
   async findById(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,

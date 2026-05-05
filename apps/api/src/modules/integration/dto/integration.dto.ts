@@ -5,6 +5,7 @@ import {
     IsArray,
     IsBoolean,
     IsEnum,
+    IsIn,
     IsInt,
     IsObject,
     IsOptional,
@@ -113,6 +114,21 @@ export class AdapterConfigItemDto {
   configValue!: string;
 }
 
+export class AdapterConfigMutationItemDto {
+  @IsString()
+  @MaxLength(64)
+  configKey!: string;
+
+  @IsOptional()
+  @IsIn(['keep', 'replace', 'clear'])
+  mutation?: 'keep' | 'replace' | 'clear';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  configValue?: string;
+}
+
 export class CreateAdapterDto {
   @IsUUID()
   platformId!: string;
@@ -184,8 +200,8 @@ export class UpdateAdapterDto {
 export class UpdateAdapterConfigsDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => AdapterConfigItemDto)
-  configs!: AdapterConfigItemDto[];
+  @Type(() => AdapterConfigMutationItemDto)
+  configs!: AdapterConfigMutationItemDto[];
 
   @IsInt()
   adapterVersion!: number;

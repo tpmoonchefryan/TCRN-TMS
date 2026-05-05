@@ -1,8 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { ADAPTER_CONFIG_KEYS } from '@tcrn/shared';
+
 import type { UpdateAdapterDto } from '../dto/integration.dto';
-import { buildNameTranslations } from './name-translation.policy';
 import type { IntegrationAdapterOwnerScope } from './adapter-read.policy';
+import { buildNameTranslations } from './name-translation.policy';
 
 export interface IntegrationAdapterMutationRecord {
   id: string;
@@ -50,6 +52,22 @@ export interface AdapterUpdateMutationPlan {
   newValue: Record<string, unknown>;
 }
 
+export type AdapterConfigMutationType = 'keep' | 'replace' | 'clear';
+
+export interface AdapterConfigMutationInput {
+  configKey: string;
+  mutation?: AdapterConfigMutationType;
+  configValue?: string;
+}
+
+export interface AdapterConfigMutationPlan {
+  configKey: string;
+  mutation: AdapterConfigMutationType;
+  configValue?: string;
+  isSecret: boolean;
+  isRequiredSecret: boolean;
+}
+
 export const SECRET_CONFIG_KEYS = [
   'client_secret',
   'access_token',
@@ -63,6 +81,39 @@ export const ADAPTER_SECRET_REVEAL_EXPIRY_SECONDS = 30;
 
 export const isSecretAdapterConfigKey = (configKey: string): boolean =>
   SECRET_CONFIG_KEYS.includes(configKey as (typeof SECRET_CONFIG_KEYS)[number]);
+
+export const resolveAdapterConfigMutationType = (
+  config: AdapterConfigMutationInput,
+): AdapterConfigMutationType => config.mutation ?? 'replace';
+
+export const isRequiredSecretAdapterConfigKey = (
+  adapterType: string,
+  configKey: string,
+): boolean => {
+  if (!(adapterType in ADAPTER_CONFIG_KEYS)) {
+    return false;
+  }
+
+  return ADAPTER_CONFIG_KEYS[adapterType as keyof typeof ADAPTER_CONFIG_KEYS].some(
+    (definition) => definition.key === configKey && definition.secret && definition.required,
+  );
+};
+
+export const buildAdapterConfigMutationPlan = (
+  adapter: IntegrationAdapterMutationRecord,
+  config: AdapterConfigMutationInput,
+): AdapterConfigMutationPlan => {
+  const mutation = resolveAdapterConfigMutationType(config);
+  const isSecret = isSecretAdapterConfigKey(config.configKey);
+
+  return {
+    configKey: config.configKey,
+    mutation,
+    configValue: config.configValue,
+    isSecret,
+    isRequiredSecret: isSecret && isRequiredSecretAdapterConfigKey(adapter.adapterType, config.configKey),
+  };
+};
 
 export const hasAdapterVersionMismatch = (
   adapter: IntegrationAdapterMutationRecord,

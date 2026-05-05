@@ -1,6 +1,6 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
+import { ADAPTER_CONFIG_KEYS, type SupportedUiLocale } from '@tcrn/shared';
 import {
   Cable,
   ChevronRight,
@@ -173,6 +173,7 @@ interface AdapterConfigDraftRow {
   isMasked: boolean;
   isNew: boolean;
   valueEdited: boolean;
+  clearRequested: boolean;
 }
 
 interface WebhookDraft {
@@ -408,6 +409,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
         isMasked: false,
         isNew: true,
         valueEdited: false,
+        clearRequested: false,
       },
     ];
   }
@@ -421,6 +423,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isMasked: config.isSecret && config.configValue === '******',
       isNew: false,
       valueEdited: false,
+      clearRequested: false,
     })),
     {
       rowKey: `new-config-${record.id}`,
@@ -430,6 +433,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isMasked: false,
       isNew: true,
       valueEdited: false,
+      clearRequested: false,
     },
   ];
 }
@@ -628,8 +632,19 @@ function normalizeAdapterConfigRowsForDirty(
         configValue: revealOnlyValue ? baseline.configValue : row.configValue,
         isSecret: row.isSecret,
         isNew: row.isNew,
+        clearRequested: row.clearRequested,
       };
     });
+}
+
+function isRequiredSecretConfig(adapterType: AdapterDraft['adapterType'], configKey: string) {
+  if (!(adapterType in ADAPTER_CONFIG_KEYS)) {
+    return false;
+  }
+
+  return ADAPTER_CONFIG_KEYS[adapterType as keyof typeof ADAPTER_CONFIG_KEYS].some(
+    (definition) => definition.key === configKey && definition.secret && definition.required,
+  );
 }
 
 function hasAdapterConfigRowsChanged(
@@ -2587,16 +2602,42 @@ export function IntegrationManagementScreen({
       return;
     }
 
-    const payload = adapterConfigRows
+    const configMutations = adapterConfigRows
       .filter((row) => row.configKey.trim())
-      .filter((row) => !row.isSecret || !row.isMasked || row.isNew)
-      .filter((row) => row.configValue.trim() !== '')
-      .map((row) => ({
-        configKey: row.configKey.trim(),
-        configValue: row.configValue,
-      }));
+      .map((row) => {
+        const configKey = row.configKey.trim();
 
-    if (payload.length === 0) {
+        if (row.isSecret && !row.isNew && row.clearRequested) {
+          return {
+            configKey,
+            mutation: 'clear' as const,
+          };
+        }
+
+        if (row.isSecret && !row.isNew && !row.valueEdited) {
+          return {
+            configKey,
+            mutation: 'keep' as const,
+          };
+        }
+
+        if (!row.isSecret && !row.isNew && !row.valueEdited) {
+          return null;
+        }
+
+        if (row.configValue.trim() === '') {
+          return null;
+        }
+
+        return {
+          configKey,
+          mutation: 'replace' as const,
+          configValue: row.configValue,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    if (!configMutations.some((row) => row.mutation !== 'keep')) {
       setNotice({
         tone: 'info',
         message: text({
@@ -2616,7 +2657,7 @@ export function IntegrationManagementScreen({
 
     try {
       await updateTenantAdapterConfigs(request, selectedAdapterId, {
-        configs: payload,
+        configs: configMutations,
         adapterVersion: adapterDetailPanel.data.version,
       });
 
@@ -3958,12 +3999,12 @@ export function IntegrationManagementScreen({
               description={
                 shouldShowAdapterConfigEditor
                   ? text({
-                      en: 'Add or update config rows here. Masked secrets are kept when untouched; type a replacement to rotate, or reveal only when you must inspect the current value. Clearing secrets is not supported in this flow.',
-                      zh_HANS: '可在这里新增或更新配置行。已遮罩密钥在未触碰时会保持不变；输入替换值即可轮换，仅在必须查看当前值时才显示。此流程不支持清空密钥。',
-                      zh_HANT: '可在這裡新增或更新設定列。已遮罩密鑰在未觸碰時會保持不變；輸入替換值即可輪換，只有必須查看目前值時才顯示。此流程不支援清空密鑰。',
-                      ja: 'ここで設定行を追加・更新できます。マスク済みシークレットは未変更なら保持されます。ローテーションする場合は置換値を入力し、現在値の確認が必要な場合だけ表示してください。このフローではシークレットの消去はできません。',
-                      ko: '여기에서 설정 행을 추가하거나 업데이트합니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 교체하려면 새 값을 입력하고, 현재 값을 확인해야 할 때만 표시하세요. 이 흐름에서는 시크릿 삭제를 지원하지 않습니다.',
-                      fr: 'Ajoutez ou modifiez les lignes de configuration ici. Les secrets masqués sont conservés s’ils ne sont pas modifiés ; saisissez une valeur de remplacement pour les renouveler, ou révélez-les seulement si vous devez inspecter la valeur actuelle. La suppression des secrets n’est pas prise en charge ici.',
+                      en: 'Add or update config rows here. Masked secrets are kept when untouched; type a replacement to rotate, reveal only when you must inspect the current value, or explicitly clear optional secrets.',
+                      zh_HANS: '可在这里新增或更新配置行。已遮罩密钥在未触碰时会保持不变；输入替换值即可轮换，仅在必须查看当前值时才显示，也可显式清空可选密钥。',
+                      zh_HANT: '可在這裡新增或更新設定列。已遮罩密鑰在未觸碰時會保持不變；輸入替換值即可輪換，只有必須查看目前值時才顯示，也可明確清除可選密鑰。',
+                      ja: 'ここで設定行を追加・更新できます。マスク済みシークレットは未変更なら保持されます。ローテーションする場合は置換値を入力し、現在値の確認が必要な場合だけ表示し、任意シークレットは明示的に消去できます。',
+                      ko: '여기에서 설정 행을 추가하거나 업데이트합니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 교체하려면 새 값을 입력하고, 현재 값을 확인해야 할 때만 표시하거나 선택 시크릿을 명시적으로 삭제하세요.',
+                      fr: 'Ajoutez ou modifiez les lignes de configuration ici. Les secrets masqués sont conservés s’ils ne sont pas modifiés ; saisissez une valeur de remplacement pour les renouveler, révélez-les seulement si nécessaire, ou supprimez explicitement les secrets facultatifs.',
                     })
                   : text({
                       en: 'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter; untouched masked secrets are preserved.',
@@ -4000,87 +4041,137 @@ export function IntegrationManagementScreen({
               {shouldShowAdapterConfigEditor ? (
                 <div className="space-y-4">
                   {adapterConfigRows.map((row, index) => (
-                    <div key={row.rowKey} className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]">
-                      <TextField
-                        label={text(`Config key ${index + 1}`, `配置键 ${index + 1}`, `設定キー ${index + 1}`)}
-                        value={row.configKey}
-                        onChange={(value) =>
-                          setAdapterConfigRows((current) =>
-                            current.map((item) =>
-                              item.rowKey === row.rowKey
-                                ? {
-                                    ...item,
-                                    configKey: value,
-                                    isSecret: /secret|token|password|key/i.test(value),
-                                  }
-                                : item,
-                            ),
-                          )
-                        }
-                        disabled={!row.isNew}
-                        placeholder={text('client_secret', 'client_secret', 'client_secret')}
-                      />
-                      <div className="space-y-2">
-                        <TextField
-                          label={text(`Value ${index + 1}`, `值 ${index + 1}`, `値 ${index + 1}`)}
-                          value={row.configValue}
-                          onChange={(value) =>
-                            setAdapterConfigRows((current) =>
-                              current.map((item) =>
-                                item.rowKey === row.rowKey
-                                  ? {
-                                      ...item,
-                                      configValue: value,
-                                      isMasked: false,
-                                      valueEdited: true,
-                                    }
-                                  : item,
-                              ),
-                            )
-                          }
-                          placeholder={row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値')}
-                        />
-                        {row.isSecret ? (
-                          <p className="text-xs leading-5 text-slate-500">
-                            {row.isMasked
-                              ? text({
-                                  en: 'Masked secret stays unchanged unless you type a replacement. Reveal only to inspect the current value; clearing is not supported here.',
-                                  zh_HANS: '已遮罩密钥会保持不变，除非你输入替换值。仅在需要查看当前值时才显示；此处不支持清空。',
-                                  zh_HANT: '已遮罩密鑰會保持不變，除非你輸入替換值。只有需要查看目前值時才顯示；此處不支援清空。',
-                                  ja: 'マスク済みシークレットは、置換値を入力しない限り保持されます。現在値の確認が必要な場合だけ表示してください。ここでは消去できません。',
-                                  ko: '마스킹된 시크릿은 대체 값을 입력하지 않으면 유지됩니다. 현재 값을 확인해야 할 때만 표시하세요. 여기서는 삭제를 지원하지 않습니다.',
-                                  fr: 'Le secret masqué reste inchangé sauf si vous saisissez une valeur de remplacement. Révélez-le seulement pour inspecter la valeur actuelle ; la suppression n’est pas prise en charge ici.',
-                                })
-                              : text({
-                                  en: 'This secret value is visible or newly typed. Saving writes the value currently shown in this field.',
-                                  zh_HANS: '此密钥值当前可见或刚输入；保存会写入此字段当前显示的值。',
-                                  zh_HANT: '此密鑰值目前可見或剛輸入；儲存會寫入此欄位目前顯示的值。',
-                                  ja: 'このシークレット値は表示中、または新しく入力された値です。保存すると、この欄に表示されている値が書き込まれます。',
-                                  ko: '이 시크릿 값은 현재 표시 중이거나 새로 입력된 값입니다. 저장하면 이 필드에 표시된 값이 기록됩니다.',
-                                  fr: 'Cette valeur secrète est visible ou nouvellement saisie. L’enregistrement écrit la valeur actuellement affichée dans ce champ.',
-                                })}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-wrap items-end gap-2">
-                        {row.isSecret ? <StatusBadge tone="warning" label={text('Secret', '密钥', 'シークレット')} /> : <StatusBadge tone="neutral" label={text('Plain', '明文', '平文')} />}
-                        {!adapterCreateMode && row.isSecret && row.isMasked ? (
-                          <SecondaryButton onClick={() => void handleRevealAdapterConfig(row.configKey)}>
-                            {text('Reveal', '显示', '表示')}
-                          </SecondaryButton>
-                        ) : null}
-                        {row.isNew ? (
-                          <SecondaryButton
-                            tone="danger"
-                            onClick={() =>
-                              setAdapterConfigRows((current) => current.filter((item) => item.rowKey !== row.rowKey))
+                    (() => {
+                      const requiredSecret = row.isSecret && isRequiredSecretConfig(adapterDraft.adapterType, row.configKey);
+                      const canClearSecret = !adapterCreateMode && row.isSecret && !row.isNew && !requiredSecret;
+
+                      return (
+                        <div key={row.rowKey} className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]">
+                          <TextField
+                            label={text(`Config key ${index + 1}`, `配置键 ${index + 1}`, `設定キー ${index + 1}`)}
+                            value={row.configKey}
+                            onChange={(value) =>
+                              setAdapterConfigRows((current) =>
+                                current.map((item) =>
+                                  item.rowKey === row.rowKey
+                                    ? {
+                                        ...item,
+                                        configKey: value,
+                                        isSecret: /secret|token|password|key/i.test(value),
+                                        clearRequested: false,
+                                      }
+                                    : item,
+                                ),
+                              )
                             }
-                          >
-                            {text('Remove', '移除', '削除')}
-                          </SecondaryButton>
-                        ) : null}
-                      </div>
-                    </div>
+                            disabled={!row.isNew}
+                            placeholder={text('client_secret', 'client_secret', 'client_secret')}
+                          />
+                          <div className="space-y-2">
+                            <TextField
+                              label={text(`Value ${index + 1}`, `值 ${index + 1}`, `値 ${index + 1}`)}
+                              value={row.configValue}
+                              onChange={(value) =>
+                                setAdapterConfigRows((current) =>
+                                  current.map((item) =>
+                                    item.rowKey === row.rowKey
+                                      ? {
+                                          ...item,
+                                          configValue: value,
+                                          isMasked: false,
+                                          valueEdited: true,
+                                          clearRequested: false,
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              placeholder={row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値')}
+                              disabled={row.clearRequested}
+                            />
+                            {row.isSecret ? (
+                              <p className="text-xs leading-5 text-slate-500">
+                                {row.clearRequested
+                                  ? text({
+                                      en: 'This optional secret will be cleared on save. Type a replacement to cancel the clear request.',
+                                      zh_HANS: '保存时会清除此可选密钥。输入替换值即可取消清空请求。',
+                                      zh_HANT: '儲存時會清除此可選密鑰。輸入替換值即可取消清除請求。',
+                                      ja: '保存時にこの任意シークレットを消去します。置換値を入力すると消去要求を取り消します。',
+                                      ko: '저장 시 이 선택 시크릿이 삭제됩니다. 대체 값을 입력하면 삭제 요청이 취소됩니다.',
+                                      fr: 'Ce secret facultatif sera supprimé à l’enregistrement. Saisissez une valeur de remplacement pour annuler la suppression.',
+                                    })
+                                  : row.isMasked
+                                    ? requiredSecret
+                                      ? text({
+                                          en: 'Required masked secret stays unchanged unless you type a replacement. It cannot be cleared; replace it or disable the adapter.',
+                                          zh_HANS: '必填遮罩密钥会保持不变，除非你输入替换值。它不能被清空；请替换它或停用适配器。',
+                                          zh_HANT: '必填遮罩密鑰會保持不變，除非你輸入替換值。它不能被清除；請替換它或停用適配器。',
+                                          ja: '必須のマスク済みシークレットは、置換値を入力しない限り保持されます。消去はできません。置換するかアダプターを無効化してください。',
+                                          ko: '필수 마스킹 시크릿은 대체 값을 입력하지 않으면 유지됩니다. 삭제할 수 없으며 교체하거나 어댑터를 비활성화하세요.',
+                                          fr: 'Le secret masqué obligatoire reste inchangé sauf si vous saisissez une valeur de remplacement. Il ne peut pas être supprimé ; remplacez-le ou désactivez l’adaptateur.',
+                                        })
+                                      : text({
+                                          en: 'Masked optional secret stays unchanged unless you type a replacement or explicitly clear it. Reveal only to inspect the current value.',
+                                          zh_HANS: '可选遮罩密钥会保持不变，除非你输入替换值或显式清空它。仅在需要查看当前值时才显示。',
+                                          zh_HANT: '可選遮罩密鑰會保持不變，除非你輸入替換值或明確清除它。只有需要查看目前值時才顯示。',
+                                          ja: '任意のマスク済みシークレットは、置換値を入力するか明示的に消去しない限り保持されます。現在値の確認が必要な場合だけ表示してください。',
+                                          ko: '선택 마스킹 시크릿은 대체 값을 입력하거나 명시적으로 삭제하지 않으면 유지됩니다. 현재 값을 확인해야 할 때만 표시하세요.',
+                                          fr: 'Le secret masqué facultatif reste inchangé sauf si vous saisissez une valeur de remplacement ou le supprimez explicitement. Révélez-le seulement pour inspecter la valeur actuelle.',
+                                        })
+                                    : text({
+                                        en: 'This secret value is visible or newly typed. Saving replaces the current stored value.',
+                                        zh_HANS: '此密钥值当前可见或刚输入；保存会替换当前已存储值。',
+                                        zh_HANT: '此密鑰值目前可見或剛輸入；儲存會替換目前已儲存值。',
+                                        ja: 'このシークレット値は表示中、または新しく入力された値です。保存すると現在の保存値を置換します。',
+                                        ko: '이 시크릿 값은 현재 표시 중이거나 새로 입력된 값입니다. 저장하면 현재 저장된 값을 교체합니다.',
+                                        fr: 'Cette valeur secrète est visible ou nouvellement saisie. L’enregistrement remplace la valeur stockée actuelle.',
+                                      })}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap items-end gap-2">
+                            {row.isSecret ? <StatusBadge tone="warning" label={text('Secret', '密钥', 'シークレット')} /> : <StatusBadge tone="neutral" label={text('Plain', '明文', '平文')} />}
+                            {!adapterCreateMode && row.isSecret && row.isMasked ? (
+                              <SecondaryButton onClick={() => void handleRevealAdapterConfig(row.configKey)}>
+                                {text('Reveal', '显示', '表示')}
+                              </SecondaryButton>
+                            ) : null}
+                            {canClearSecret ? (
+                              <SecondaryButton
+                                tone={row.clearRequested ? 'neutral' : 'danger'}
+                                onClick={() =>
+                                  setAdapterConfigRows((current) =>
+                                    current.map((item) =>
+                                      item.rowKey === row.rowKey
+                                        ? {
+                                            ...item,
+                                            configValue: item.clearRequested ? '******' : '',
+                                            isMasked: !item.clearRequested,
+                                            valueEdited: false,
+                                            clearRequested: !item.clearRequested,
+                                          }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                              >
+                                {row.clearRequested ? text('Keep secret', '保留密钥', 'シークレットを保持') : text('Clear secret', '清空密钥', 'シークレットを消去')}
+                              </SecondaryButton>
+                            ) : null}
+                            {row.isNew ? (
+                              <SecondaryButton
+                                tone="danger"
+                                onClick={() =>
+                                  setAdapterConfigRows((current) => current.filter((item) => item.rowKey !== row.rowKey))
+                                }
+                              >
+                                {text('Remove', '移除', '削除')}
+                              </SecondaryButton>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })()
                   ))}
 
                   <SecondaryButton
@@ -4095,6 +4186,7 @@ export function IntegrationManagementScreen({
                           isMasked: false,
                           isNew: true,
                           valueEdited: false,
+                          clearRequested: false,
                         },
                       ])
                     }

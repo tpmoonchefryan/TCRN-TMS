@@ -338,7 +338,8 @@ export interface UpdateTenantAdapterPayload {
 export interface UpdateTenantAdapterConfigsPayload {
   configs: Array<{
     configKey: string;
-    configValue: string;
+    mutation?: 'keep' | 'replace' | 'clear';
+    configValue?: string;
   }>;
   adapterVersion: number;
 }

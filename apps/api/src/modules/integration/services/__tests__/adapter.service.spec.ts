@@ -108,7 +108,12 @@ describe('AdapterService', () => {
       configs: [
         {
           configKey: 'client_secret',
+          mutation: 'replace',
           configValue: 'rotated',
+        },
+        {
+          configKey: 'access_token',
+          mutation: 'clear',
         },
       ],
     };

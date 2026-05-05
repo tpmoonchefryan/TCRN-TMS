@@ -36,6 +36,14 @@ export interface AdapterConfig {
   is_secret: boolean;
 }
 
+export type AdapterConfigMutation = 'keep' | 'replace' | 'clear';
+
+export interface AdapterConfigMutationInput {
+  configKey: string;
+  mutation?: AdapterConfigMutation;
+  configValue?: string;
+}
+
 // --- Webhook ---
 export interface Webhook {
   id: string;
