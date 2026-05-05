@@ -794,6 +794,7 @@ export function CustomerManagementScreen({
           ) : (
             <>
               <TableShell
+                ariaLabel={customerCopy.title}
                 columns={[
                   customerCopy.customerColumn,
                   customerCopy.profileTypeColumn,

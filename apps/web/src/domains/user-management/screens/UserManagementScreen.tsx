@@ -920,6 +920,7 @@ export function UserManagementScreen({
             <GlassSurface className="p-4">
               {usersPanel.error ? <NoticeBanner tone="error" message={usersPanel.error} /> : null}
               <TableShell
+                ariaLabel={managementCopy.users.title}
                 columns={[...managementCopy.users.columns]}
                 dataLength={usersPanel.data.length}
                 isLoading={usersPanel.loading}
@@ -1097,6 +1098,7 @@ export function UserManagementScreen({
             <GlassSurface className="p-4">
               {rolesPanel.error ? <NoticeBanner tone="error" message={rolesPanel.error} /> : null}
               <TableShell
+                ariaLabel={managementCopy.roles.title}
                 columns={[...managementCopy.roles.columns]}
                 dataLength={paginatedRoles.length}
                 isLoading={rolesPanel.loading}
@@ -1383,6 +1385,7 @@ export function UserManagementScreen({
             <GlassSurface className="p-4">
               {delegationsPanel.error ? <NoticeBanner tone="error" message={delegationsPanel.error} /> : null}
               <TableShell
+                ariaLabel={managementCopy.delegation.title}
                 columns={[...managementCopy.delegation.columns]}
                 dataLength={paginatedDelegations.length}
                 isLoading={delegationsPanel.loading}

@@ -8,7 +8,7 @@ describe('TableShell', () => {
 
   it('renders table structure with children', () => {
     render(
-      <TableShell columns={columns} dataLength={1} emptyTitle="No Users" emptyDescription="No users are available.">
+      <TableShell ariaLabel="User table" columns={columns} dataLength={1} emptyTitle="No Users" emptyDescription="No users are available.">
         <tr>
           <td>Alice</td>
           <td>Admin</td>
@@ -23,7 +23,7 @@ describe('TableShell', () => {
 
   it('renders StateView when empty and not loading', () => {
     render(
-      <TableShell columns={columns} dataLength={0} isEmpty={true} emptyTitle="No Users" emptyDescription="Invite a user to get started.">
+      <TableShell ariaLabel="User table" columns={columns} dataLength={0} isEmpty={true} emptyTitle="No Users" emptyDescription="Invite a user to get started.">
         <tr />
       </TableShell>
     );

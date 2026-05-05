@@ -1464,6 +1464,7 @@ export function ScopedConfigEntityWorkspace({
           ) : (
             <>
               <TableShell
+                ariaLabel={resolvedCopy.visibleRecordsLabel}
                 columns={[
                   resolvedCopy.codeColumn,
                   resolvedCopy.nameColumn,

@@ -567,6 +567,7 @@ export function HomepageManagementScreen({
               />
             ) : (
               <TableShell
+                ariaLabel={copy.ledger.title}
                 columns={[
                   copy.ledger.columns.version,
                   copy.ledger.columns.status,

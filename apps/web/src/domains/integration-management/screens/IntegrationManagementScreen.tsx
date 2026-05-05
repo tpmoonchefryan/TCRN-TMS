@@ -3028,6 +3028,7 @@ export function IntegrationManagementScreen({
               ) : (
                 <>
                   <TableShell
+                  ariaLabel={adapterSectionTitle}
                   columns={[
                     text('Platform', '平台', 'プラットフォーム'),
                     text('Code', '代码', 'コード'),
@@ -3508,6 +3509,7 @@ export function IntegrationManagementScreen({
               ) : (
                 <>
                   <TableShell
+                  ariaLabel={text('Webhooks', 'Webhook', 'Webhook')}
                   columns={[
                     text('Code', '代码', 'コード'),
                     text('Endpoint', '端点', 'エンドポイント'),
@@ -3853,6 +3855,7 @@ export function IntegrationManagementScreen({
               ) : (
                 <>
                   <TableShell
+                  ariaLabel={text('API clients', 'API 客户端', 'API クライアント')}
                   columns={[
                     text('Code', '代码', 'コード'),
                     text('Category', '分类', 'カテゴリ'),
@@ -4492,6 +4495,7 @@ export function IntegrationManagementScreen({
               ) : (
                 <>
                   <TableShell
+                  ariaLabel={text('Email templates', '邮件模板', 'メールテンプレート')}
                   columns={[
                     text('Code', '代码', 'コード'),
                     text('Category', '分类', 'カテゴリ'),

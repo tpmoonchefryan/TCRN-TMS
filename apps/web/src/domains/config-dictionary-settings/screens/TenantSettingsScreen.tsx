@@ -1213,6 +1213,7 @@ export function TenantSettingsScreen({
                   <SectionPlaceholder title={text('Profile stores unavailable', '档案库不可用', 'プロフィールストアを読み込めません')} description={profileStoresPanel.error} />
                 ) : (
                   <TableShell
+                    ariaLabel={text('Profile stores', '档案库', 'プロフィールストア')}
                     columns={[
                       text('Store', '档案库', 'ストア'),
                       text('Status', '状态', '状態'),

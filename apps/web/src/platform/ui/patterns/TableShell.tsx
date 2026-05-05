@@ -22,7 +22,7 @@ export interface TableShellProps {
   emptyAction?: React.ReactNode;
   children: React.ReactNode;
   caption?: string;
-  ariaLabel?: string;
+  ariaLabel: string;
   density?: 'compact' | 'comfortable';
   stickyHeader?: boolean;
   className?: string;

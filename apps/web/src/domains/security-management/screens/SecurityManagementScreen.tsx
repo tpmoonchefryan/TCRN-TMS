@@ -1460,6 +1460,7 @@ export function SecurityManagementScreen({
               ) : (
                 <>
                   <TableShell
+                    ariaLabel={copy.sections.blocklistList.title}
                     columns={[...copy.sections.blocklistList.columns]}
                     dataLength={blocklistPanel.data.length}
                     isLoading={blocklistPanel.loading}
@@ -1999,6 +2000,7 @@ export function SecurityManagementScreen({
               ) : (
                 <>
                   <TableShell
+                    ariaLabel={copy.sections.externalList.title}
                     columns={[...copy.sections.externalList.columns]}
                     dataLength={externalPanel.data.length}
                     isLoading={externalPanel.loading}
@@ -2439,6 +2441,7 @@ export function SecurityManagementScreen({
               ) : (
                 <>
                   <TableShell
+                    ariaLabel={copy.sections.ipRules.listTitle}
                     columns={[...copy.sections.ipRules.columns]}
                     dataLength={ipRulesPanel.data.length}
                     isLoading={ipRulesPanel.loading}
@@ -2766,6 +2769,7 @@ export function SecurityManagementScreen({
                 <StateView status="unavailable" title={copy.sections.runtimeSignals.endpointsUnavailable} description={rateLimitPanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.sections.runtimeSignals.endpointsTitle}
                   columns={[...copy.sections.runtimeSignals.endpointsColumns]}
                   dataLength={rateLimitPanel.data?.topEndpoints.length || 0}
                   isLoading={rateLimitPanel.loading}
@@ -2794,6 +2798,7 @@ export function SecurityManagementScreen({
             >
               <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
                 <TableShell
+                  ariaLabel={copy.sections.runtimeSignals.topIpsTitle}
                   columns={[...copy.sections.runtimeSignals.topIpsColumns]}
                   dataLength={rateLimitPanel.data?.topIPs.length || 0}
                   isLoading={rateLimitPanel.loading}

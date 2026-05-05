@@ -441,6 +441,7 @@ export function TenantManagementScreen({
       <GlassSurface className="p-4">
         {panel.error ? <NoticeBanner tone="error" message={panel.error} /> : null}
         <TableShell
+          ariaLabel={managementCopy.title}
           columns={[
             managementCopy.tenantColumn,
             managementCopy.tierColumn,

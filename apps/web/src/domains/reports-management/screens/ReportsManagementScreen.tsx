@@ -950,6 +950,7 @@ export function ReportsManagementScreen({
                   </div>
 
                   <TableShell
+                    ariaLabel={copy.preview.title}
                     columns={[...copy.preview.tableColumns]}
                     dataLength={previewPanel.data.preview.length}
                     isLoading={previewPanel.loading}
@@ -1005,6 +1006,7 @@ export function ReportsManagementScreen({
                 <StateView status="error" title={copy.ledger.unavailableTitle} description={jobsPanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.ledger.title}
                   columns={[...copy.ledger.tableColumns]}
                   dataLength={jobsPanel.data.length}
                   isLoading={jobsPanel.loading}

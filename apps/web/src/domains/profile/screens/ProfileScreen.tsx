@@ -1114,6 +1114,7 @@ export function ProfileScreen({
           <GlassSurface className="p-6">
             <FormSection title={copy.sessions.title} description={copy.sessions.description}>
               <TableShell
+                ariaLabel={copy.sessions.title}
                 columns={copy.sessions.columns}
                 dataLength={paginatedSessions.length}
                 isLoading={false}

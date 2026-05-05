@@ -961,6 +961,7 @@ export function MarshmallowManagementScreen({
               <StateView status="error" title={copy.moderation.table.errorTitle} description={messagesPanel.error} />
             ) : (
               <TableShell
+                ariaLabel={copy.moderation.title}
                 columns={[...copy.moderation.table.columns]}
                 dataLength={messagesPanel.data.length}
                 isLoading={messagesPanel.loading}

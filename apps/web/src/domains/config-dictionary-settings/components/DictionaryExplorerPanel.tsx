@@ -361,6 +361,7 @@ export function DictionaryExplorerPanel({
           ) : (
             <Fragment>
               <TableShell
+                ariaLabel={copy.defaultItemsTitle}
                 columns={columns}
                 dataLength={itemsPanel.data.length}
                 isLoading={itemsPanel.loading}

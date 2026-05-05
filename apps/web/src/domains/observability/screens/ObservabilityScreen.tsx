@@ -685,6 +685,7 @@ export function ObservabilityScreen({
                 <StateView status="denied" title={copy.changeTable.unavailableTitle} description={changePanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.changeTable.title}
                   columns={[...copy.changeTable.columns]}
                   dataLength={changePanel.data.length}
                   isLoading={changePanel.loading}
@@ -827,6 +828,7 @@ export function ObservabilityScreen({
                 <StateView status="denied" title={copy.techTable.unavailableTitle} description={techPanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.techTable.title}
                   columns={[...copy.techTable.columns]}
                   dataLength={techPanel.data.length}
                   isLoading={techPanel.loading}
@@ -974,6 +976,7 @@ export function ObservabilityScreen({
                 <StateView status="denied" title={copy.integrationTable.unavailableTitle} description={integrationPanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.integrationTable.title}
                   columns={[...copy.integrationTable.columns]}
                   dataLength={integrationPanel.data.length}
                   isLoading={integrationPanel.loading}
@@ -1137,6 +1140,7 @@ export function ObservabilityScreen({
                 <StateView status="denied" title={copy.searchTable.unavailableTitle} description={searchPanel.error} />
               ) : (
                 <TableShell
+                  ariaLabel={copy.searchTable.title}
                   columns={[...copy.searchTable.columns]}
                   dataLength={searchPanel.data.length}
                   isLoading={searchPanel.loading}
