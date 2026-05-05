@@ -247,11 +247,31 @@ export interface ReportJobResponse {
     code: string;
     message: string;
   };
+  failureReason: string | null;
+  parameterSnapshot: {
+    reportType: ReportType;
+    format: ReportFormat;
+    requestedAt: string | null;
+    filters: Record<string, unknown>;
+  };
+  timeline: Array<{
+    phase: 'queued' | 'started' | 'completed' | 'downloaded' | 'expired';
+    at: string | null;
+  }>;
+  artifacts: Array<{
+    kind: 'report-file';
+    downloadState: 'available' | 'consumed' | 'expired' | 'unavailable';
+    fileName: string | null;
+    fileSizeBytes: number | null;
+    expiresAt: string | null;
+    downloadedAt: string | null;
+  }>;
   fileName: string | null;
   fileSizeBytes: number | null;
   queuedAt: string | null;
   startedAt: string | null;
   completedAt: string | null;
+  downloadedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
   createdBy: {

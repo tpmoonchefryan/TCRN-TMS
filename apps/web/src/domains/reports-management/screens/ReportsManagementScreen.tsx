@@ -3,6 +3,8 @@
 import {
   type MfrFilterCriteria,
   type PiiPlatformReportCreateResponse,
+  type ReportCatalogItem,
+  type ReportFilterField,
   type ReportFormat,
   type ReportJobStatus,
   resolveTrilingualLocaleFamily,
@@ -10,6 +12,7 @@ import {
 import {
   Download,
   ExternalLink,
+  Eye,
   FileSpreadsheet,
   RefreshCcw,
   Search,
@@ -24,8 +27,14 @@ import {
   createMfrJob,
   downloadMfrJob,
   listMfrJobs,
+  listReportCatalog,
+  listReportConfigFilterOptions,
+  listReportDictionaryFilterOptions,
   type MfrSearchResult,
+  readMfrJob,
+  type ReportFilterOption,
   type ReportJobListItem,
+  type ReportJobResponse,
   searchMfr,
 } from '@/domains/reports-management/api/reports.api';
 import {
@@ -85,8 +94,26 @@ interface JobsPanelState {
   error: string | null;
 }
 
+interface CatalogPanelState {
+  data: ReportCatalogItem[];
+  loading: boolean;
+  error: string | null;
+}
+
 interface PreviewPanelState {
   data: MfrSearchResult | null;
+  loading: boolean;
+  error: string | null;
+}
+
+interface JobDetailPanelState {
+  data: ReportJobResponse | null;
+  loading: boolean;
+  error: string | null;
+}
+
+interface FilterOptionsPanelState {
+  data: Record<string, ReportFilterOption[]>;
   loading: boolean;
   error: string | null;
 }
@@ -134,6 +161,57 @@ function splitCodes(value: string) {
   return codes.length > 0 ? codes : undefined;
 }
 
+function joinCodes(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string').join(', ')
+    : '';
+}
+
+function readSelectedCodes(value: unknown): string[] {
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return splitCodes(value) ?? [];
+}
+
+function toggleSelectedCode(value: unknown, code: string) {
+  const current = readSelectedCodes(value);
+  const next = current.includes(code)
+    ? current.filter((item) => item !== code)
+    : [...current, code];
+
+  return next.join(', ');
+}
+
+function readBooleanFilter(value: unknown) {
+  return typeof value === 'boolean' ? value : false;
+}
+
+function readStringFilter(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+function buildDraftFromFilters(
+  filters: Record<string, unknown>,
+  format: ReportFormat = 'xlsx',
+): ReportFilterDraft {
+  return {
+    platformCodes: joinCodes(filters.platformCodes),
+    membershipClassCodes: joinCodes(filters.membershipClassCodes),
+    membershipTypeCodes: joinCodes(filters.membershipTypeCodes),
+    membershipLevelCodes: joinCodes(filters.membershipLevelCodes),
+    statusCodes: joinCodes(filters.statusCodes),
+    validFromStart: readStringFilter(filters.validFromStart),
+    validFromEnd: readStringFilter(filters.validFromEnd),
+    validToStart: readStringFilter(filters.validToStart),
+    validToEnd: readStringFilter(filters.validToEnd),
+    includeExpired: readBooleanFilter(filters.includeExpired),
+    includeInactive: readBooleanFilter(filters.includeInactive),
+    format,
+  };
+}
+
 function buildMfrFilters(draft: ReportFilterDraft): MfrFilterCriteria | undefined {
   const filters: MfrFilterCriteria = {
     platformCodes: splitCodes(draft.platformCodes),
@@ -158,6 +236,58 @@ function buildMfrFilters(draft: ReportFilterDraft): MfrFilterCriteria | undefine
   });
 
   return hasValues ? filters : undefined;
+}
+
+function updateDraftField(
+  draft: ReportFilterDraft,
+  key: string,
+  value: string | boolean,
+): ReportFilterDraft {
+  if (key === 'platformCodes') {
+    return { ...draft, platformCodes: String(value) };
+  }
+
+  if (key === 'membershipClassCodes') {
+    return { ...draft, membershipClassCodes: String(value) };
+  }
+
+  if (key === 'membershipTypeCodes') {
+    return { ...draft, membershipTypeCodes: String(value) };
+  }
+
+  if (key === 'membershipLevelCodes') {
+    return { ...draft, membershipLevelCodes: String(value) };
+  }
+
+  if (key === 'statusCodes') {
+    return { ...draft, statusCodes: String(value) };
+  }
+
+  if (key === 'validFromStart') {
+    return { ...draft, validFromStart: String(value) };
+  }
+
+  if (key === 'validFromEnd') {
+    return { ...draft, validFromEnd: String(value) };
+  }
+
+  if (key === 'validToStart') {
+    return { ...draft, validToStart: String(value) };
+  }
+
+  if (key === 'validToEnd') {
+    return { ...draft, validToEnd: String(value) };
+  }
+
+  if (key === 'includeExpired') {
+    return { ...draft, includeExpired: Boolean(value) };
+  }
+
+  if (key === 'includeInactive') {
+    return { ...draft, includeInactive: Boolean(value) };
+  }
+
+  return draft;
 }
 
 function parseReportsView(value: string | null): ReportsView {
@@ -407,6 +537,282 @@ function SelectField({
   );
 }
 
+function getFilterFieldValue(draft: ReportFilterDraft, key: string) {
+  if (key === 'platformCodes') {
+    return draft.platformCodes;
+  }
+
+  if (key === 'membershipClassCodes') {
+    return draft.membershipClassCodes;
+  }
+
+  if (key === 'membershipTypeCodes') {
+    return draft.membershipTypeCodes;
+  }
+
+  if (key === 'membershipLevelCodes') {
+    return draft.membershipLevelCodes;
+  }
+
+  if (key === 'statusCodes') {
+    return draft.statusCodes;
+  }
+
+  if (key === 'validFromStart') {
+    return draft.validFromStart;
+  }
+
+  if (key === 'validFromEnd') {
+    return draft.validFromEnd;
+  }
+
+  if (key === 'validToStart') {
+    return draft.validToStart;
+  }
+
+  if (key === 'validToEnd') {
+    return draft.validToEnd;
+  }
+
+  if (key === 'includeExpired') {
+    return draft.includeExpired;
+  }
+
+  if (key === 'includeInactive') {
+    return draft.includeInactive;
+  }
+
+  return '';
+}
+
+function describeFilterFieldSource(field: ReportFilterField) {
+  if ('source' in field) {
+    if (field.source.kind === 'config-entity') {
+      return field.source.entityType;
+    }
+
+    return field.source.dictionaryCode;
+  }
+
+  return null;
+}
+
+function SchemaFilterField({
+  field,
+  draft,
+  locale,
+  options,
+  optionsLoading = false,
+  optionsError = null,
+  advanced = false,
+  onChange,
+}: Readonly<{
+  field: ReportFilterField;
+  draft: ReportFilterDraft;
+  locale: string;
+  options?: ReportFilterOption[];
+  optionsLoading?: boolean;
+  optionsError?: string | null;
+  advanced?: boolean;
+  onChange: (key: string, value: string | boolean) => void;
+}>) {
+  const label = pickLocaleText(locale, field.label);
+  const description = field.description ? pickLocaleText(locale, field.description) : null;
+  const source = describeFilterFieldSource(field);
+
+  if (field.type === 'date-range') {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-slate-900">{label}</p>
+          {description ? <p className="text-xs leading-5 text-slate-500">{description}</p> : null}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <DateField
+            label={pickLocaleText(locale, {
+              en: `${label} start`,
+              zh_HANS: `${label}（起）`,
+              zh_HANT: `${label}（起）`,
+              ja: `${label} 開始`,
+              ko: `${label} 시작`,
+              fr: `${label} debut`,
+            })}
+            value={String(getFilterFieldValue(draft, field.fromField))}
+            onChange={(value) => onChange(field.fromField, value)}
+          />
+          <DateField
+            label={pickLocaleText(locale, {
+              en: `${label} end`,
+              zh_HANS: `${label}（止）`,
+              zh_HANT: `${label}（止）`,
+              ja: `${label} 終了`,
+              ko: `${label} 종료`,
+              fr: `${label} fin`,
+            })}
+            value={String(getFilterFieldValue(draft, field.toField))}
+            onChange={(value) => onChange(field.toField, value)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (field.type === 'boolean') {
+    return (
+      <CheckboxField
+        label={label}
+        checked={Boolean(getFilterFieldValue(draft, field.targetField))}
+        onChange={(next) => onChange(field.targetField, next)}
+      />
+    );
+  }
+
+  if (field.type === 'enum-select') {
+    return (
+      <SelectField
+        label={label}
+        value={String(getFilterFieldValue(draft, field.targetField))}
+        options={[
+          { value: '', label: pickLocaleText(locale, {
+            en: 'Any',
+            zh_HANS: '不限',
+            zh_HANT: '不限',
+            ja: '指定なし',
+            ko: '전체',
+            fr: 'Tous',
+          }) },
+          ...field.options.map((option) => ({
+            value: option.value,
+            label: pickLocaleText(locale, option.label),
+          })),
+        ]}
+        onChange={(value) => onChange(field.targetField, value)}
+      />
+    );
+  }
+
+  if (field.type === 'config-multi-select' || field.type === 'dictionary-multi-select') {
+    const selectedCodes = readSelectedCodes(getFilterFieldValue(draft, field.targetField));
+    const visibleOptions = options ?? [];
+
+    return (
+      <fieldset className="space-y-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+        <legend className="text-sm font-medium text-slate-800">{label}</legend>
+        {description || source ? (
+          <p className="text-xs leading-5 text-slate-500">
+            {[description, source].filter(Boolean).join(' ')}
+          </p>
+        ) : null}
+        {optionsError ? (
+          <p className="text-xs font-medium text-rose-700">{optionsError}</p>
+        ) : null}
+        {optionsLoading && visibleOptions.length === 0 ? (
+          <p className="text-xs text-slate-500">
+            {pickLocaleText(locale, {
+              en: 'Loading options...',
+              zh_HANS: '正在加载选项...',
+              zh_HANT: '正在載入選項...',
+              ja: '選択肢を読み込み中...',
+              ko: '옵션을 불러오는 중...',
+              fr: 'Chargement des options...',
+            })}
+          </p>
+        ) : visibleOptions.length > 0 ? (
+          <div className="grid gap-2">
+            {visibleOptions.map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCodes.includes(option.value)}
+                  onChange={() => {
+                    onChange(field.targetField, toggleSelectedCode(getFilterFieldValue(draft, field.targetField), option.value));
+                  }}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>{option.label}</span>
+                <span aria-hidden="true" className="ml-auto text-xs text-slate-400">{option.value}</span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">
+            {pickLocaleText(locale, {
+              en: 'No configured options are available.',
+              zh_HANS: '当前没有已配置选项。',
+              zh_HANT: '目前沒有已設定選項。',
+              ja: '利用できる設定済み選択肢がありません。',
+              ko: '사용 가능한 구성 옵션이 없습니다.',
+              fr: 'Aucune option configuree disponible.',
+            })}
+          </p>
+        )}
+      </fieldset>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <TextField
+        label={label}
+        value={String(getFilterFieldValue(draft, field.targetField))}
+        placeholder={source ? `${source}: code-a, code-b` : 'code-a, code-b'}
+        onChange={(value) => onChange(field.targetField, value)}
+      />
+      {description || source || advanced ? (
+        <p className="text-xs leading-5 text-slate-500">
+          {[
+            description,
+            source
+              ? pickLocaleText(locale, {
+                  en: `Source: ${source}`,
+                  zh_HANS: `来源：${source}`,
+                  zh_HANT: `來源：${source}`,
+                  ja: `ソース: ${source}`,
+                  ko: `소스: ${source}`,
+                  fr: `Source : ${source}`,
+                })
+              : null,
+            advanced
+              ? pickLocaleText(locale, {
+                  en: 'Advanced raw-code fallback.',
+                  zh_HANS: '高级原始代码兜底。',
+                  zh_HANT: '進階原始代碼備援。',
+                  ja: '高度な生コードのフォールバックです。',
+                  ko: '고급 원시 코드 대체 입력입니다.',
+                  fr: 'Fallback avance par codes bruts.',
+                })
+              : null,
+          ].filter(Boolean).join(' ')}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function SchemaFilterSummary({
+  field,
+  locale,
+}: Readonly<{
+  field: ReportFilterField;
+  locale: string;
+}>) {
+  const label = pickLocaleText(locale, field.label);
+  const description = field.description ? pickLocaleText(locale, field.description) : null;
+  const source = describeFilterFieldSource(field);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
+      <p className="text-sm font-semibold text-slate-900">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {[description, source].filter(Boolean).join(' ')}
+      </p>
+    </div>
+  );
+}
+
 export function ReportsManagementScreen({
   tenantId,
   talentId,
@@ -437,6 +843,16 @@ export function ReportsManagementScreen({
     loading: true,
     error: null,
   });
+  const [catalogPanel, setCatalogPanel] = useState<CatalogPanelState>({
+    data: [],
+    loading: true,
+    error: null,
+  });
+  const [filterOptionsPanel, setFilterOptionsPanel] = useState<FilterOptionsPanelState>({
+    data: {},
+    loading: false,
+    error: null,
+  });
   const [jobStatusFilter, setJobStatusFilter] = useState<JobStatusFilter>(urlJobStatusFilter);
   const [page, setPage] = useState(urlPage);
   const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
@@ -446,6 +862,13 @@ export function ReportsManagementScreen({
   const [dialogPending, setDialogPending] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [isDraftDrawerOpen, setIsDraftDrawerOpen] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState<string>('mfr');
+  const [detailJobId, setDetailJobId] = useState<string | null>(null);
+  const [detailPanel, setDetailPanel] = useState<JobDetailPanelState>({
+    data: null,
+    loading: false,
+    error: null,
+  });
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [portalHandoff, setPortalHandoff] = useState<PiiPlatformReportCreateResponse | null>(null);
   const [activeView, setActiveView] = useState<ReportsView>(urlActiveView);
@@ -456,6 +879,108 @@ export function ReportsManagementScreen({
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
   }, [urlActiveView, urlJobStatusFilter, urlPage, urlPageSize]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCatalog() {
+      setCatalogPanel((current) => ({
+        ...current,
+        loading: true,
+        error: null,
+      }));
+
+      try {
+        const response = await listReportCatalog(request);
+
+        if (!cancelled) {
+          setCatalogPanel({
+            data: response.items,
+            loading: false,
+            error: null,
+          });
+          setSelectedReportId((current) => response.items.some((item) => item.id === current)
+            ? current
+            : response.items[0]?.id ?? 'mfr');
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setCatalogPanel({
+            data: [],
+            loading: false,
+            error: getErrorMessage(reason, copy.state.loadCatalogError),
+          });
+        }
+      }
+    }
+
+    void loadCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.state.loadCatalogError, request]);
+
+  useEffect(() => {
+    const selectedReport = catalogPanel.data.find((report) => report.id === selectedReportId);
+    const fields = selectedReport?.filterSchema.fields.filter((field) =>
+      field.type === 'config-multi-select' || field.type === 'dictionary-multi-select',
+    ) ?? [];
+    let cancelled = false;
+
+    async function loadFilterOptions() {
+      if (!isDraftDrawerOpen) {
+        return;
+      }
+
+      if (fields.length === 0) {
+        setFilterOptionsPanel({
+          data: {},
+          loading: false,
+          error: null,
+        });
+        return;
+      }
+
+      setFilterOptionsPanel((current) => ({
+        ...current,
+        loading: true,
+        error: null,
+      }));
+
+      try {
+        const entries = await Promise.all(fields.map(async (field) => {
+          const response = field.type === 'config-multi-select'
+            ? await listReportConfigFilterOptions(request, field.source, talentId)
+            : await listReportDictionaryFilterOptions(request, field.source);
+
+          return [field.id, response.options] as const;
+        }));
+
+        if (!cancelled) {
+          setFilterOptionsPanel({
+            data: Object.fromEntries(entries),
+            loading: false,
+            error: null,
+          });
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setFilterOptionsPanel((current) => ({
+            ...current,
+            loading: false,
+            error: getErrorMessage(reason, copy.state.loadCatalogError),
+          }));
+        }
+      }
+    }
+
+    void loadFilterOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogPanel.data, copy.state.loadCatalogError, isDraftDrawerOpen, request, selectedReportId, talentId]);
 
   function applyReportsQueryState(
     nextState: Partial<{
@@ -684,6 +1209,48 @@ export function ReportsManagementScreen({
     }
   }
 
+  async function openJobDetail(job: ReportJobListItem) {
+    if (detailPanel.loading) {
+      return;
+    }
+
+    setDetailJobId(job.id);
+    setDetailPanel({
+      data: null,
+      loading: true,
+      error: null,
+    });
+
+    try {
+      const detail = await readMfrJob(request, talentId, job.id);
+      setDetailPanel({
+        data: detail,
+        loading: false,
+        error: null,
+      });
+    } catch (reason) {
+      setDetailPanel({
+        data: null,
+        loading: false,
+        error: getErrorMessage(reason, copy.state.loadJobDetailError),
+      });
+    }
+  }
+
+  function retryFromDetail() {
+    if (!detailPanel.data) {
+      return;
+    }
+
+    setDraft(buildDraftFromFilters(
+      detailPanel.data.parameterSnapshot.filters,
+      detailPanel.data.parameterSnapshot.format,
+    ));
+    setDetailJobId(null);
+    setIsDraftDrawerOpen(true);
+    applyReportsQueryState({ activeView: 'directory' });
+  }
+
   async function handleConfirmCancel() {
     if (!dialogState) {
       return;
@@ -840,7 +1407,18 @@ export function ReportsManagementScreen({
             cardEmpty: 'Additional report types will appear here when they are enabled.',
             historyDescription: 'Review report execution history.',
           };
+  const selectedReport = catalogPanel.data.find((report) => report.id === selectedReportId)
+    ?? catalogPanel.data[0]
+    ?? null;
+  const primaryFilterFields = selectedReport?.filterSchema.fields.filter((field) => !field.advanced) ?? [];
+  const advancedFilterFields = selectedReport?.filterSchema.fields.filter((field) => field.advanced) ?? [];
+  const selectedReportName = selectedReport ? pickLocaleText(selectedLocale, selectedReport.name) : copy.summary.reportName;
+  const selectedReportDescription = selectedReport
+    ? pickLocaleText(selectedLocale, selectedReport.description)
+    : copy.summary.reportDescription;
+  const selectedReportIsAvailable = selectedReport?.availability.status === 'available';
   const reportDirectoryCountLabel = jobsPanel.loading ? copy.summary.jobsLoading : String(jobsPanel.total);
+  const reportCatalogCount = catalogPanel.loading ? copy.summary.jobsLoading : String(catalogPanel.data.length);
 
   return (
     <div className="space-y-6">
@@ -868,9 +1446,13 @@ export function ReportsManagementScreen({
             <button
               type="button"
               onClick={() => {
+                if (!selectedReportIsAvailable) {
+                  return;
+                }
                 setNotice(null);
                 setIsDraftDrawerOpen(true);
               }}
+              disabled={!selectedReportIsAvailable}
               className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -890,7 +1472,7 @@ export function ReportsManagementScreen({
             />
             <SummaryCard
               label={copy.summary.catalogLabel}
-              value={copy.summary.catalogValue}
+              value={reportCatalogCount}
               hint={copy.summary.catalogHint}
             />
             <SummaryCard
@@ -974,63 +1556,101 @@ export function ReportsManagementScreen({
           <GlassSurface className="p-6">
             <FormSection title={reportsViewCopy.directoryTitle} description={reportsViewCopy.directoryDescription}>
               <div className="space-y-5">
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
-                  <p className="font-semibold">{copy.summary.catalogValue}</p>
-                  <p className="mt-1 leading-6">{copy.summary.catalogHint}</p>
-                </div>
+                {catalogPanel.error ? (
+                  <StateView status="error" title={copy.drawer.unavailableReport} description={catalogPanel.error} />
+                ) : null}
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(20rem,1fr)]">
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
                   <GlassSurface variant="solid" className="p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="space-y-3">
-                        <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                          {reportsViewCopy.cardBadge}
-                        </p>
-                        <div className="space-y-2">
-                          <h2 className="text-xl font-semibold text-slate-950">{copy.summary.reportName}</h2>
-                          <p className="max-w-2xl text-sm leading-6 text-slate-600">{copy.summary.reportDescription}</p>
+                    {catalogPanel.loading && catalogPanel.data.length === 0 ? (
+                      <StateView
+                        status="empty"
+                        title={copy.summary.catalogLabel}
+                        description={copy.summary.catalogHint}
+                      />
+                    ) : selectedReport ? (
+                      <div className="space-y-5">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="space-y-3">
+                            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                              {selectedReportIsAvailable ? reportsViewCopy.cardBadge : copy.drawer.unavailableReport}
+                            </p>
+                            <div className="space-y-2">
+                              <h2 className="text-xl font-semibold text-slate-950">{selectedReportName}</h2>
+                              <p className="max-w-2xl text-sm leading-6 text-slate-600">{selectedReportDescription}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNotice(null);
+                                setIsDraftDrawerOpen(true);
+                              }}
+                              disabled={!selectedReportIsAvailable}
+                              className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
+                            >
+                              <FileSpreadsheet className="h-4 w-4" />
+                              {selectedReportIsAvailable ? reportsViewCopy.cardAction : copy.drawer.unavailableReport}
+                            </button>
+                            <SecondaryButton
+                              onClick={() => applyReportsQueryState({ activeView: 'history' })}
+                              ariaLabel={reportsViewCopy.cardHistory}
+                            >
+                              <RefreshCcw className="h-3.5 w-3.5" />
+                              {reportsViewCopy.cardHistory}
+                            </SecondaryButton>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <SummaryCard
+                            label={copy.summary.catalogLabel}
+                            value={reportCatalogCount}
+                            hint={copy.summary.catalogHint}
+                          />
+                          <SummaryCard
+                            label={copy.summary.jobsLabel}
+                            value={reportDirectoryCountLabel}
+                            hint={copy.summary.jobsHint}
+                          />
+                          <SummaryCard
+                            label={copy.summary.activeDownloadableLabel}
+                            value={`${activeJobs} / ${downloadableJobs}`}
+                            hint={copy.summary.activeDownloadableHint}
+                          />
+                        </div>
+
+                        <div className="grid gap-4 xl:grid-cols-2">
+                          <div className="space-y-4">
+                            <p className="text-sm font-semibold text-slate-900">{copy.drawer.codeFiltersTitle}</p>
+                            <div className="space-y-4">
+                              {primaryFilterFields.length > 0 ? primaryFilterFields.map((field) => (
+                                <SchemaFilterSummary
+                                  key={field.id}
+                                  field={field}
+                                  locale={selectedLocale}
+                                />
+                              )) : (
+                                <StateView
+                                  status="unavailable"
+                                  title={copy.drawer.unavailableReport}
+                                  description={copy.drawer.codeFiltersDescription}
+                                />
+                              )}
+                            </div>
+                          </div>
+
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNotice(null);
-                            setIsDraftDrawerOpen(true);
-                          }}
-                          className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                        >
-                          <FileSpreadsheet className="h-4 w-4" />
-                          {reportsViewCopy.cardAction}
-                        </button>
-                        <SecondaryButton
-                          onClick={() => setActiveView('history')}
-                          ariaLabel={reportsViewCopy.cardHistory}
-                        >
-                          <RefreshCcw className="h-3.5 w-3.5" />
-                          {reportsViewCopy.cardHistory}
-                        </SecondaryButton>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-3 md:grid-cols-3">
-                      <SummaryCard
-                        label={copy.summary.jobsLabel}
-                        value={reportDirectoryCountLabel}
-                        hint={copy.summary.jobsHint}
+                    ) : (
+                      <StateView
+                        status="empty"
+                        title={copy.summary.reportName}
+                        description={copy.summary.reportDescription}
                       />
-                      <SummaryCard
-                        label={copy.summary.activeDownloadableLabel}
-                        value={`${activeJobs} / ${downloadableJobs}`}
-                        hint={copy.summary.activeDownloadableHint}
-                      />
-                      <SummaryCard
-                        label={copy.notes.scopeLabel}
-                        value={copy.notes.scopeValue}
-                        hint={copy.notes.scopeHint}
-                      />
-                    </div>
+                    )}
                   </GlassSurface>
 
                   <GlassSurface className="p-6">
@@ -1177,6 +1797,14 @@ export function ReportsManagementScreen({
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
                             <SecondaryButton
+                              onClick={() => void openJobDetail(job)}
+                              disabled={detailPanel.loading}
+                              ariaLabel={copy.ledger.detailsAriaLabel(job.fileName || job.id)}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              {copy.ledger.details}
+                            </SecondaryButton>
+                            <SecondaryButton
                               onClick={() => void handleDownload(job)}
                               disabled={!canDownload || downloadJobId === job.id}
                               ariaLabel={copy.ledger.downloadAriaLabel(job.fileName || job.id)}
@@ -1238,6 +1866,154 @@ export function ReportsManagementScreen({
           </FormSection>
         </GlassSurface>
       )}
+
+      <ActionDrawer
+        open={detailJobId !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && !detailPanel.loading) {
+            setDetailJobId(null);
+            setDetailPanel({
+              data: null,
+              loading: false,
+              error: null,
+            });
+          }
+        }}
+        title={copy.detail.title}
+        description={copy.detail.description}
+        size="xl"
+        closeButtonAriaLabel={copy.detail.closeLabel}
+        footer={
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (!detailPanel.loading) {
+                  setDetailJobId(null);
+                  setDetailPanel({
+                    data: null,
+                    loading: false,
+                    error: null,
+                  });
+                }
+              }}
+              disabled={detailPanel.loading}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {copy.drawer.cancel}
+            </button>
+            <AsyncSubmitButton
+              isPending={detailPanel.loading}
+              pendingText={copy.detail.loading}
+              disabled={!detailPanel.data}
+              onClick={() => retryFromDetail()}
+            >
+              {copy.detail.retryFromFilters}
+            </AsyncSubmitButton>
+          </div>
+        }
+      >
+        {detailPanel.loading ? (
+          <StateView status="empty" title={copy.detail.loading} />
+        ) : detailPanel.error ? (
+          <StateView status="error" title={copy.detail.unavailableTitle} description={detailPanel.error} />
+        ) : detailPanel.data ? (
+          <div className="space-y-6">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <SummaryCard
+                label={copy.detail.requestedAt}
+                value={formatReportsDateTime(selectedLocale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}
+                hint={copy.detail.format}
+              />
+              <SummaryCard
+                label={copy.detail.format}
+                value={detailPanel.data.parameterSnapshot.format}
+                hint={selectedReportName}
+              />
+              <SummaryCard
+                label={copy.detail.failureTitle}
+                value={detailPanel.data.failureReason || copy.detail.noFailureReason}
+                hint={getReportsJobStatusLabel(selectedLocale, detailPanel.data.status)}
+              />
+              <SummaryCard
+                label={copy.detail.downloadState}
+                value={copy.detail.downloadStates[detailPanel.data.artifacts[0]?.downloadState ?? 'unavailable']}
+                hint={detailPanel.data.artifacts[0]?.fileName || copy.ledger.pendingFileAssignment}
+              />
+            </div>
+
+            <GlassSurface className="p-4">
+              <FormSection title={copy.detail.snapshotTitle} description={copy.detail.description}>
+                <div className="space-y-3 text-sm text-slate-700">
+                  <p><span className="font-semibold">{copy.detail.requestedAt}:</span> {formatReportsDateTime(selectedLocale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}</p>
+                  <p><span className="font-semibold">{copy.detail.format}:</span> {detailPanel.data.parameterSnapshot.format}</p>
+                  <div className="space-y-2">
+                    <p className="font-semibold text-slate-900">{copy.detail.filters}</p>
+                    {Object.keys(detailPanel.data.parameterSnapshot.filters).length > 0 ? (
+                      <pre className="overflow-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+                        {JSON.stringify(detailPanel.data.parameterSnapshot.filters, null, 2)}
+                      </pre>
+                    ) : (
+                      <p className="text-slate-500">{copy.detail.noFilters}</p>
+                    )}
+                  </div>
+                </div>
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-4">
+              <FormSection title={copy.detail.timelineTitle} description={copy.detail.description}>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {detailPanel.data.timeline.map((step) => (
+                    <SummaryCard
+                      key={step.phase}
+                      label={copy.detail.timelinePhases[step.phase]}
+                      value={formatReportsDateTime(selectedLocale, step.at, copy.common.never)}
+                      hint={step.phase}
+                    />
+                  ))}
+                </div>
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-4">
+              <FormSection title={copy.detail.artifactsTitle} description={copy.detail.description}>
+                {detailPanel.data.artifacts.length > 0 ? (
+                  <div className="space-y-3">
+                    {detailPanel.data.artifacts.map((artifact) => (
+                      <div key={`${artifact.kind}-${artifact.fileName || 'artifact'}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <p className="font-semibold text-slate-900">{artifact.fileName || copy.ledger.pendingFileAssignment}</p>
+                            <p>{copy.detail.downloadState}: {copy.detail.downloadStates[artifact.downloadState]}</p>
+                            <p>{copy.detail.fileSize}: {formatReportsNumber(selectedLocale, artifact.fileSizeBytes, copy.ledger.pendingRows)}</p>
+                          </div>
+                          <div className="space-y-1 text-right">
+                            <p>{copy.detail.expiresAt}: {formatReportsDateTime(selectedLocale, artifact.expiresAt, copy.common.never)}</p>
+                            <p>{copy.detail.downloadedAt}: {formatReportsDateTime(selectedLocale, artifact.downloadedAt, copy.common.never)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <StateView status="empty" title={copy.detail.artifactsTitle} description={copy.detail.noArtifacts} />
+                )}
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-4">
+              <FormSection title={copy.detail.failureTitle} description={copy.detail.description}>
+                <p className="text-sm leading-6 text-slate-700">
+                  {detailPanel.data.failureReason || copy.detail.noFailureReason}
+                </p>
+              </FormSection>
+            </GlassSurface>
+          </div>
+        ) : (
+          <StateView status="empty" title={copy.detail.unavailableTitle} description={copy.detail.noArtifacts} />
+        )}
+      </ActionDrawer>
 
       <ConfirmActionDialog
         open={dialogState !== null}
@@ -1302,77 +2078,24 @@ export function ReportsManagementScreen({
               <p className="text-xs leading-5 text-slate-500">{copy.drawer.codeFiltersDescription}</p>
             </div>
             <div className="grid gap-4 xl:grid-cols-2">
-              <TextField
-                label={copy.drawer.fields.platformCodes}
-                value={draft.platformCodes}
-                placeholder={copy.drawer.fields.platformCodesPlaceholder}
-                onChange={(value) => setDraft((current) => ({ ...current, platformCodes: value }))}
-              />
-              <TextField
-                label={copy.drawer.fields.membershipClassCodes}
-                value={draft.membershipClassCodes}
-                placeholder={copy.drawer.fields.membershipClassCodesPlaceholder}
-                onChange={(value) => setDraft((current) => ({ ...current, membershipClassCodes: value }))}
-              />
-              <TextField
-                label={copy.drawer.fields.membershipTypeCodes}
-                value={draft.membershipTypeCodes}
-                placeholder={copy.drawer.fields.membershipTypeCodesPlaceholder}
-                onChange={(value) => setDraft((current) => ({ ...current, membershipTypeCodes: value }))}
-              />
-              <TextField
-                label={copy.drawer.fields.membershipLevelCodes}
-                value={draft.membershipLevelCodes}
-                placeholder={copy.drawer.fields.membershipLevelCodesPlaceholder}
-                onChange={(value) => setDraft((current) => ({ ...current, membershipLevelCodes: value }))}
-              />
-              <TextField
-                label={copy.drawer.fields.customerStatusCodes}
-                value={draft.statusCodes}
-                placeholder={copy.drawer.fields.customerStatusCodesPlaceholder}
-                onChange={(value) => setDraft((current) => ({ ...current, statusCodes: value }))}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-            <div className="mb-4 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">{copy.drawer.validityTitle}</p>
-              <p className="text-xs leading-5 text-slate-500">{copy.drawer.validityDescription}</p>
-            </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <DateField
-                label={copy.drawer.fields.validFromStart}
-                value={draft.validFromStart}
-                onChange={(value) => setDraft((current) => ({ ...current, validFromStart: value }))}
-              />
-              <DateField
-                label={copy.drawer.fields.validFromEnd}
-                value={draft.validFromEnd}
-                onChange={(value) => setDraft((current) => ({ ...current, validFromEnd: value }))}
-              />
-              <DateField
-                label={copy.drawer.fields.validToStart}
-                value={draft.validToStart}
-                onChange={(value) => setDraft((current) => ({ ...current, validToStart: value }))}
-              />
-              <DateField
-                label={copy.drawer.fields.validToEnd}
-                value={draft.validToEnd}
-                onChange={(value) => setDraft((current) => ({ ...current, validToEnd: value }))}
-              />
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <CheckboxField
-                label={copy.drawer.fields.includeExpired}
-                checked={draft.includeExpired}
-                onChange={(next) => setDraft((current) => ({ ...current, includeExpired: next }))}
-              />
-              <CheckboxField
-                label={copy.drawer.fields.includeInactive}
-                checked={draft.includeInactive}
-                onChange={(next) => setDraft((current) => ({ ...current, includeInactive: next }))}
-              />
+              {primaryFilterFields.length > 0 ? (
+                primaryFilterFields.map((field) => (
+                  <SchemaFilterField
+                    key={field.id}
+                    field={field}
+                    draft={draft}
+                    locale={selectedLocale}
+                    options={filterOptionsPanel.data[field.id]}
+                    optionsLoading={filterOptionsPanel.loading}
+                    optionsError={filterOptionsPanel.error}
+                    onChange={(key, value) => {
+                      setDraft((current) => updateDraftField(current, key, value));
+                    }}
+                  />
+                ))
+              ) : (
+                <StateView status="unavailable" title={copy.drawer.unavailableReport} description={copy.drawer.codeFiltersDescription} />
+              )}
             </div>
           </div>
 
@@ -1388,6 +2111,32 @@ export function ReportsManagementScreen({
               onChange={(value) => setDraft((current) => ({ ...current, format: value as ReportFormat }))}
             />
           </div>
+
+          {advancedFilterFields.length > 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+              <div className="mb-4 space-y-1">
+                <p className="text-sm font-semibold text-slate-900">{copy.drawer.advancedTitle}</p>
+                <p className="text-xs leading-5 text-slate-500">{copy.drawer.advancedDescription}</p>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-2">
+                {advancedFilterFields.map((field) => (
+                  <SchemaFilterField
+                    key={field.id}
+                    field={field}
+                    draft={draft}
+                    locale={selectedLocale}
+                    options={filterOptionsPanel.data[field.id]}
+                    optionsLoading={filterOptionsPanel.loading}
+                    optionsError={filterOptionsPanel.error}
+                    advanced
+                    onChange={(key, value) => {
+                      setDraft((current) => updateDraftField(current, key, value));
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </fieldset>
       </ActionDrawer>
     </div>

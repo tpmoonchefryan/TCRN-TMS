@@ -169,11 +169,64 @@ const MFR_JOB_DETAIL_SCHEMA = {
       },
       required: ['code', 'message'],
     },
+    failureReason: { type: 'string', nullable: true, example: 'Report cannot exceed 50,000 rows' },
+    parameterSnapshot: {
+      type: 'object',
+      properties: {
+        reportType: { type: 'string', example: 'mfr' },
+        format: { type: 'string', example: 'xlsx' },
+        requestedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:00:00.000Z' },
+        filters: {
+          type: 'object',
+          additionalProperties: true,
+          example: {
+            platformCodes: ['youtube'],
+            includeExpired: false,
+          },
+        },
+      },
+      required: ['reportType', 'format', 'requestedAt', 'filters'],
+    },
+    timeline: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          phase: {
+            type: 'string',
+            enum: ['queued', 'started', 'completed', 'downloaded', 'expired'],
+            example: 'completed',
+          },
+          at: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:02:00.000Z' },
+        },
+        required: ['phase', 'at'],
+      },
+    },
+    artifacts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          kind: { type: 'string', enum: ['report-file'], example: 'report-file' },
+          downloadState: {
+            type: 'string',
+            enum: ['available', 'consumed', 'expired', 'unavailable'],
+            example: 'available',
+          },
+          fileName: { type: 'string', nullable: true, example: 'MFR_TCRN_AKI_20260413.xlsx' },
+          fileSizeBytes: { type: 'integer', nullable: true, example: 524288 },
+          expiresAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:07:00.000Z' },
+          downloadedAt: { type: 'string', nullable: true, format: 'date-time', example: null },
+        },
+        required: ['kind', 'downloadState', 'fileName', 'fileSizeBytes', 'expiresAt', 'downloadedAt'],
+      },
+    },
     fileName: { type: 'string', nullable: true, example: 'MFR_TCRN_AKI_20260413.xlsx' },
     fileSizeBytes: { type: 'integer', nullable: true, example: 524288 },
     queuedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:00:00.000Z' },
     startedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:00:10.000Z' },
     completedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:02:00.000Z' },
+    downloadedAt: { type: 'string', nullable: true, format: 'date-time', example: null },
     expiresAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T10:07:00.000Z' },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T10:00:00.000Z' },
     createdBy: {
@@ -185,7 +238,7 @@ const MFR_JOB_DETAIL_SCHEMA = {
       required: ['id', 'username'],
     },
   },
-  required: ['id', 'reportType', 'status', 'progress', 'fileName', 'fileSizeBytes', 'queuedAt', 'startedAt', 'completedAt', 'expiresAt', 'createdAt', 'createdBy'],
+  required: ['id', 'reportType', 'status', 'progress', 'failureReason', 'parameterSnapshot', 'timeline', 'artifacts', 'fileName', 'fileSizeBytes', 'queuedAt', 'startedAt', 'completedAt', 'downloadedAt', 'expiresAt', 'createdAt', 'createdBy'],
 };
 
 const MFR_JOB_DOWNLOAD_SCHEMA = {

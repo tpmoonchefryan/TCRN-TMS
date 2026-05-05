@@ -243,6 +243,11 @@ describe('ReportJobService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
         id: 'job-123',
         report_type: ReportType.MFR,
+        format: ReportFormat.XLSX,
+        filter_criteria: {
+          platformCodes: ['YOUTUBE'],
+          includeExpired: false,
+        },
         status: ReportJobStatus.SUCCESS,
         total_rows: 100,
         processed_rows: 100,
@@ -250,11 +255,13 @@ describe('ReportJobService', () => {
         error_code: null,
         error_message: null,
         file_name: 'report.xlsx',
+        file_path: 'tenant_test/job-123/report.xlsx',
         file_size_bytes: 2048n,
         queued_at: new Date('2026-01-23T10:00:00Z'),
         started_at: new Date('2026-01-23T10:00:05Z'),
         completed_at: new Date('2026-01-23T10:02:00Z'),
-        expires_at: new Date('2026-01-23T10:07:00Z'),
+        downloaded_at: null,
+        expires_at: new Date('2099-01-23T10:07:00Z'),
         created_at: new Date('2026-01-23T10:00:00Z'),
         creator_id: 'user-123',
         creator_username: 'operator',
@@ -272,18 +279,84 @@ describe('ReportJobService', () => {
           percentage: 100,
         },
         error: undefined,
+        failureReason: null,
+        parameterSnapshot: {
+          reportType: ReportType.MFR,
+          format: ReportFormat.XLSX,
+          requestedAt: '2026-01-23T10:00:00.000Z',
+          filters: {
+            platformCodes: ['YOUTUBE'],
+            includeExpired: false,
+          },
+        },
+        timeline: [
+          { phase: 'queued', at: '2026-01-23T10:00:00.000Z' },
+          { phase: 'started', at: '2026-01-23T10:00:05.000Z' },
+          { phase: 'completed', at: '2026-01-23T10:02:00.000Z' },
+          { phase: 'downloaded', at: null },
+          { phase: 'expired', at: null },
+        ],
+        artifacts: [
+          {
+            kind: 'report-file',
+            downloadState: 'available',
+            fileName: 'report.xlsx',
+            fileSizeBytes: 2048,
+            expiresAt: '2099-01-23T10:07:00.000Z',
+            downloadedAt: null,
+          },
+        ],
         fileName: 'report.xlsx',
         fileSizeBytes: 2048,
         queuedAt: '2026-01-23T10:00:00.000Z',
         startedAt: '2026-01-23T10:00:05.000Z',
         completedAt: '2026-01-23T10:02:00.000Z',
-        expiresAt: '2026-01-23T10:07:00.000Z',
+        downloadedAt: null,
+        expiresAt: '2099-01-23T10:07:00.000Z',
         createdAt: '2026-01-23T10:00:00.000Z',
         createdBy: {
           id: 'user-123',
           username: 'operator',
         },
       });
+    });
+
+    it('maps failure reason fallback and artifact expiry state', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
+        id: 'job-expired',
+        report_type: ReportType.MFR,
+        format: ReportFormat.CSV,
+        filter_criteria: {
+          statusCodes: ['active'],
+        },
+        status: ReportJobStatus.SUCCESS,
+        total_rows: 1,
+        processed_rows: 1,
+        progress_percentage: 100,
+        error_code: 'REPORT_SOURCE_EMPTY',
+        error_message: null,
+        file_name: 'report.csv',
+        file_path: 'tenant_test/job-expired/report.csv',
+        file_size_bytes: 128n,
+        queued_at: new Date('2026-01-23T10:00:00Z'),
+        started_at: new Date('2026-01-23T10:00:05Z'),
+        completed_at: new Date('2026-01-23T10:02:00Z'),
+        downloaded_at: null,
+        expires_at: new Date('2020-01-23T10:07:00Z'),
+        created_at: new Date('2026-01-23T10:00:00Z'),
+        creator_id: 'user-123',
+        creator_username: 'reporter',
+      }]);
+
+      const result = await service.findById('job-expired', 'talent-123', mockContext as any);
+
+      expect(result.failureReason).toBe('REPORT_SOURCE_EMPTY');
+      expect(result.artifacts).toEqual([
+        expect.objectContaining({
+          downloadState: 'expired',
+          fileName: 'report.csv',
+        }),
+      ]);
     });
 
     it('throws NotFoundException when the report job does not exist', async () => {
@@ -306,7 +379,7 @@ describe('ReportJobService', () => {
           file_name: 'report.xlsx',
           created_at: new Date('2026-01-23T10:00:00Z'),
           completed_at: new Date('2026-01-23T10:02:00Z'),
-          expires_at: new Date('2026-01-23T10:07:00Z'),
+          expires_at: new Date('2099-01-23T10:07:00Z'),
         }])
         .mockResolvedValueOnce([{ count: 1n }]);
 
@@ -328,7 +401,7 @@ describe('ReportJobService', () => {
           fileName: 'report.xlsx',
           createdAt: '2026-01-23T10:00:00.000Z',
           completedAt: '2026-01-23T10:02:00.000Z',
-          expiresAt: '2026-01-23T10:07:00.000Z',
+          expiresAt: '2099-01-23T10:07:00.000Z',
         }],
         total: 1,
       });
