@@ -57,6 +57,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
   SettingsLayout,
   StateView,
   TableShell,
@@ -1205,23 +1206,6 @@ export function TenantSettingsScreen({
                       );
                     })}
                   </div>
-                  <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm text-slate-700">
-                    {profileStorePageSizeLabel}
-                    <select
-                      value={profileStorePageSize}
-                      onChange={(event) => {
-                        setProfileStorePageSize(Number(event.target.value) as PageSizeOption);
-                        setProfileStorePage(1);
-                      }}
-                      className="bg-transparent text-sm outline-none"
-                    >
-                      {PAGE_SIZE_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
 
                 {profileStoresPanel.error ? (
@@ -1311,31 +1295,25 @@ export function TenantSettingsScreen({
                   </TableShell>
                 )}
                 {profileStorePagination ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 px-2 pt-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-slate-700">{profileStorePaginationLabel}</p>
-                      <p className="text-xs text-slate-500">{profileStorePaginationRangeLabel}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setProfileStorePage((current) => Math.max(1, current - 1))}
-                        disabled={!profileStorePagination.hasPrev || profileStoresPanel.loading}
-                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {profileStorePreviousLabel}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileStorePage((current) => current + 1)}
-                        disabled={!profileStorePagination.hasNext || profileStoresPanel.loading}
-                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {profileStoreNextLabel}
-                      </button>
-                    </div>
-                  </div>
+                  <PaginationFooter
+                    pagination={profileStorePagination}
+                    itemCount={allProfileStores.length}
+                    labels={{
+                      pageLabel: profileStorePaginationLabel,
+                      rangeLabel: profileStorePaginationRangeLabel,
+                      rowsPerPageLabel: profileStorePageSizeLabel,
+                      pageSizeAriaLabel: profileStorePageSizeLabel,
+                      previousLabel: profileStorePreviousLabel,
+                      nextLabel: profileStoreNextLabel,
+                    }}
+                    onPageChange={setProfileStorePage}
+                    onPageSizeChange={(nextPageSize) => {
+                      setProfileStorePageSize(nextPageSize as PageSizeOption);
+                      setProfileStorePage(1);
+                    }}
+                    isLoading={profileStoresPanel.loading}
+                    className="mt-4 rounded-2xl border border-slate-200"
+                  />
                 ) : null}
               </FormSection>
 
