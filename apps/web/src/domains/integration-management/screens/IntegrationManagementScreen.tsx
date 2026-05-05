@@ -143,6 +143,10 @@ interface ConfirmDialogState {
   onConfirm: () => Promise<string>;
 }
 
+interface DirtyGuardState {
+  onDiscard: () => void;
+}
+
 interface IntegrationScopeSelection {
   ownerType: OwnerType;
   ownerId: string | null;
@@ -168,6 +172,7 @@ interface AdapterConfigDraftRow {
   isSecret: boolean;
   isMasked: boolean;
   isNew: boolean;
+  valueEdited: boolean;
 }
 
 interface WebhookDraft {
@@ -402,6 +407,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
         isSecret: false,
         isMasked: false,
         isNew: true,
+        valueEdited: false,
       },
     ];
   }
@@ -414,6 +420,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isSecret: config.isSecret,
       isMasked: config.isSecret && config.configValue === '******',
       isNew: false,
+      valueEdited: false,
     })),
     {
       rowKey: `new-config-${record.id}`,
@@ -422,6 +429,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isSecret: false,
       isMasked: false,
       isNew: true,
+      valueEdited: false,
     },
   ];
 }
@@ -594,6 +602,44 @@ function parseVariableLines(input: string, invalidEntryMessage: (line: string) =
   }
 
   return variables;
+}
+
+function hasDraftChanges<Draft>(draft: Draft, baseline: Draft) {
+  return JSON.stringify(draft) !== JSON.stringify(baseline);
+}
+
+function normalizeAdapterConfigRowsForDirty(
+  rows: AdapterConfigDraftRow[],
+  baselineRows: AdapterConfigDraftRow[],
+) {
+  return rows
+    .filter((row) => !row.isNew || row.configKey.trim() || row.configValue.trim())
+    .map((row) => {
+      const baseline = baselineRows.find((item) => item.rowKey === row.rowKey);
+      const revealOnlyValue = baseline?.isSecret
+        && baseline.isMasked
+        && row.isSecret
+        && !row.isMasked
+        && !row.valueEdited;
+
+      return {
+        rowKey: row.rowKey,
+        configKey: row.configKey,
+        configValue: revealOnlyValue ? baseline.configValue : row.configValue,
+        isSecret: row.isSecret,
+        isNew: row.isNew,
+      };
+    });
+}
+
+function hasAdapterConfigRowsChanged(
+  rows: AdapterConfigDraftRow[],
+  baselineRows: AdapterConfigDraftRow[],
+) {
+  return hasDraftChanges(
+    normalizeAdapterConfigRowsForDirty(rows, baselineRows),
+    normalizeAdapterConfigRowsForDirty(baselineRows, baselineRows),
+  );
 }
 
 function StatusBadge({
@@ -1095,6 +1141,7 @@ export function IntegrationManagementScreen({
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmDialogState | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
+  const [dirtyGuardState, setDirtyGuardState] = useState<DirtyGuardState | null>(null);
 
   const [platformsPanel, setPlatformsPanel] = useState<PanelState<SocialPlatformRecord[]>>(
     createPanelState<SocialPlatformRecord[]>([]),
@@ -1143,20 +1190,24 @@ export function IntegrationManagementScreen({
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
   const [adapterConfigPanelOpen, setAdapterConfigPanelOpen] = useState(false);
   const [adapterDraft, setAdapterDraft] = useState<AdapterDraft>(() => buildAdapterDraft());
+  const [adapterDraftBaseline, setAdapterDraftBaseline] = useState<AdapterDraft>(() => buildAdapterDraft());
   const [adapterTranslationDrawerOpen, setAdapterTranslationDrawerOpen] = useState(false);
   const [adapterConfigRows, setAdapterConfigRows] = useState<AdapterConfigDraftRow[]>(() => buildAdapterConfigRows());
+  const [adapterConfigRowsBaseline, setAdapterConfigRowsBaseline] = useState<AdapterConfigDraftRow[]>(() => buildAdapterConfigRows());
   const [adapterSubmitting, setAdapterSubmitting] = useState(false);
   const [adapterConfigSubmitting, setAdapterConfigSubmitting] = useState(false);
 
   const [webhookCreateMode, setWebhookCreateMode] = useState(false);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
   const [webhookDraft, setWebhookDraft] = useState<WebhookDraft>(() => buildWebhookDraft());
+  const [webhookDraftBaseline, setWebhookDraftBaseline] = useState<WebhookDraft>(() => buildWebhookDraft());
   const [webhookTranslationDrawerOpen, setWebhookTranslationDrawerOpen] = useState(false);
   const [webhookSubmitting, setWebhookSubmitting] = useState(false);
 
   const [consumerCreateMode, setConsumerCreateMode] = useState(false);
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null);
   const [consumerDraft, setConsumerDraft] = useState<ConsumerDraft>(() => buildConsumerDraft());
+  const [consumerDraftBaseline, setConsumerDraftBaseline] = useState<ConsumerDraft>(() => buildConsumerDraft());
   const [consumerTranslationDrawerOpen, setConsumerTranslationDrawerOpen] = useState(false);
   const [consumerTranslationOptionsState, setConsumerTranslationOptionsState] = useState<TranslationOptionsState>({
     data: [],
@@ -1169,6 +1220,7 @@ export function IntegrationManagementScreen({
   const [templateCreateMode, setTemplateCreateMode] = useState(false);
   const [selectedTemplateCode, setSelectedTemplateCode] = useState<string | null>(null);
   const [templateDraft, setTemplateDraft] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
+  const [templateDraftBaseline, setTemplateDraftBaseline] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
   const [templateTranslationSection, setTemplateTranslationSection] = useState<TemplateTranslationSection | null>(null);
   const [templateSubmitting, setTemplateSubmitting] = useState(false);
   const [templatePreviewVariables, setTemplatePreviewVariables] = useState('name=Tokino Sora');
@@ -1176,6 +1228,7 @@ export function IntegrationManagementScreen({
   const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
 
   const [emailConfigDraft, setEmailConfigDraft] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
+  const [emailConfigDraftBaseline, setEmailConfigDraftBaseline] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
   const [emailConfigSubmitting, setEmailConfigSubmitting] = useState(false);
   const [emailActionPending, setEmailActionPending] = useState<'connection' | 'test-email' | null>(null);
   const [emailActionResult, setEmailActionResult] = useState<EmailActionResult | null>(null);
@@ -1183,6 +1236,69 @@ export function IntegrationManagementScreen({
     || adapterTranslationDrawerOpen
     || webhookTranslationDrawerOpen
     || templateTranslationSection !== null;
+
+  function setAdapterEditorState(nextDraft: AdapterDraft, nextConfigRows: AdapterConfigDraftRow[]) {
+    setAdapterDraft(nextDraft);
+    setAdapterDraftBaseline(nextDraft);
+    setAdapterConfigRows(nextConfigRows);
+    setAdapterConfigRowsBaseline(nextConfigRows);
+  }
+
+  function setWebhookEditorState(nextDraft: WebhookDraft) {
+    setWebhookDraft(nextDraft);
+    setWebhookDraftBaseline(nextDraft);
+  }
+
+  function setConsumerEditorState(nextDraft: ConsumerDraft) {
+    setConsumerDraft(nextDraft);
+    setConsumerDraftBaseline(nextDraft);
+  }
+
+  function setTemplateEditorState(nextDraft: EmailTemplateDraft) {
+    setTemplateDraft(nextDraft);
+    setTemplateDraftBaseline(nextDraft);
+  }
+
+  function setEmailConfigEditorState(nextDraft: EmailConfigDraft) {
+    setEmailConfigDraft(nextDraft);
+    setEmailConfigDraftBaseline(nextDraft);
+  }
+
+  function discardDirtyEditorState() {
+    if (adapterCreateMode) {
+      setAdapterCreateMode(false);
+      setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
+    }
+    setAdapterConfigPanelOpen(false);
+    setAdapterEditorState(adapterDraftBaseline, adapterConfigRowsBaseline);
+    setAdapterTranslationDrawerOpen(false);
+
+    if (webhookCreateMode) {
+      setWebhookCreateMode(false);
+      setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
+    }
+    setWebhookEditorState(webhookDraftBaseline);
+    setWebhookTranslationDrawerOpen(false);
+
+    if (consumerCreateMode) {
+      setConsumerCreateMode(false);
+      setSelectedConsumerId(consumersPanel.data[0]?.id || null);
+    }
+    setConsumerEditorState(consumerDraftBaseline);
+    setConsumerTranslationDrawerOpen(false);
+    setGeneratedKey(null);
+
+    if (templateCreateMode) {
+      setTemplateCreateMode(false);
+      setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
+    }
+    setTemplateEditorState(templateDraftBaseline);
+    setTemplateTranslationSection(null);
+    setTemplatePreview(null);
+
+    setEmailConfigEditorState(emailConfigDraftBaseline);
+    setEmailActionResult(null);
+  }
 
   useEffect(() => {
     setActiveTab(resolvedInitialTab);
@@ -1419,15 +1535,14 @@ export function IntegrationManagementScreen({
     setSelectedAdapterId(null);
     setAdapterConfigPanelOpen(false);
     setAdapterDetailPanel(createPanelState<IntegrationAdapterDetailRecord | null>(null, false));
-    setAdapterDraft(buildAdapterDraft());
-    setAdapterConfigRows(buildAdapterConfigRows());
+    setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
     setWebhookCreateMode(false);
     setSelectedWebhookId(null);
     setWebhookDetailPanel(createPanelState<IntegrationWebhookDetailRecord | null>(null, false));
-    setWebhookDraft(buildWebhookDraft());
+    setWebhookEditorState(buildWebhookDraft());
     setTemplateCreateMode(false);
     setSelectedTemplateCode(null);
-    setTemplateDraft(buildEmailTemplateDraft());
+    setTemplateEditorState(buildEmailTemplateDraft());
     setTemplatePreview(null);
     setEmailActionResult(null);
     setGeneratedKey(null);
@@ -1897,8 +2012,7 @@ export function IntegrationManagementScreen({
           error: null,
           unavailableReason: null,
         });
-        setAdapterDraft(buildAdapterDraft(data));
-        setAdapterConfigRows(buildAdapterConfigRows(data));
+        setAdapterEditorState(buildAdapterDraft(data), buildAdapterConfigRows(data));
       } catch (reason) {
         if (!cancelled) {
           const unavailableReason = getUnavailableReason(reason);
@@ -1954,7 +2068,7 @@ export function IntegrationManagementScreen({
           error: null,
           unavailableReason: null,
         });
-        setWebhookDraft(buildWebhookDraft(data));
+        setWebhookEditorState(buildWebhookDraft(data));
       } catch (reason) {
         if (!cancelled) {
           const unavailableReason = getUnavailableReason(reason);
@@ -1977,20 +2091,20 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     if (consumerCreateMode) {
-      setConsumerDraft(buildConsumerDraft());
+      setConsumerEditorState(buildConsumerDraft());
       return;
     }
 
     const currentConsumer = consumersPanel.data.find((item) => item.id === selectedConsumerId);
 
     if (currentConsumer) {
-      setConsumerDraft(buildConsumerDraft(currentConsumer));
+      setConsumerEditorState(buildConsumerDraft(currentConsumer));
     }
   }, [consumerCreateMode, consumersPanel.data, selectedConsumerId]);
 
   useEffect(() => {
     if (templateCreateMode) {
-      setTemplateDraft(buildEmailTemplateDraft());
+      setTemplateEditorState(buildEmailTemplateDraft());
       setTemplatePreview(null);
       return;
     }
@@ -1998,14 +2112,14 @@ export function IntegrationManagementScreen({
     const currentTemplate = emailTemplatesPanel.data.find((item) => item.code === selectedTemplateCode);
 
     if (currentTemplate) {
-      setTemplateDraft(buildEmailTemplateDraft(currentTemplate));
+      setTemplateEditorState(buildEmailTemplateDraft(currentTemplate));
       setTemplatePreview(null);
     }
   }, [emailTemplatesPanel.data, selectedTemplateCode, templateCreateMode]);
 
   useEffect(() => {
     if (emailConfigPanel.data) {
-      setEmailConfigDraft(buildEmailConfigDraft(emailConfigPanel.data));
+      setEmailConfigEditorState(buildEmailConfigDraft(emailConfigPanel.data));
     }
   }, [emailConfigPanel.data]);
 
@@ -2250,6 +2364,49 @@ export function IntegrationManagementScreen({
     () => emailTemplatesPanel.data.find((item) => item.code === selectedTemplateCode) || null,
     [emailTemplatesPanel.data, selectedTemplateCode],
   );
+  const shouldShowAdapterConfigEditor = adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
+  const adapterProfileDirty = activeTab === 'adapters'
+    && (adapterCreateMode || Boolean(adapterDetailPanel.data))
+    && hasDraftChanges(adapterDraft, adapterDraftBaseline);
+  const adapterConfigDirty = activeTab === 'adapters'
+    && shouldShowAdapterConfigEditor
+    && hasAdapterConfigRowsChanged(adapterConfigRows, adapterConfigRowsBaseline);
+  const webhookDraftDirty = activeTab === 'webhooks'
+    && (webhookCreateMode || Boolean(selectedWebhookId))
+    && hasDraftChanges(webhookDraft, webhookDraftBaseline);
+  const consumerDraftDirty = activeTab === 'api-keys'
+    && (consumerCreateMode || Boolean(selectedConsumerId))
+    && hasDraftChanges(consumerDraft, consumerDraftBaseline);
+  const emailConfigDirty = activeTab === 'email'
+    && isAcWorkspace
+    && Boolean(emailConfigPanel.data)
+    && hasDraftChanges(emailConfigDraft, emailConfigDraftBaseline);
+  const templateDraftDirty = activeTab === 'email'
+    && (templateCreateMode || Boolean(selectedTemplateCode))
+    && hasDraftChanges(templateDraft, templateDraftBaseline);
+  const hasDirtyEditor = adapterProfileDirty
+    || adapterConfigDirty
+    || webhookDraftDirty
+    || consumerDraftDirty
+    || emailConfigDirty
+    || templateDraftDirty;
+
+  useEffect(() => {
+    if (!hasDirtyEditor) {
+      return;
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasDirtyEditor]);
   const formatDateTime = (value: string | null | undefined, fallback = text('Never', '从未', 'なし')) =>
     formatIntegrationManagementDateTime(selectedLocale, value, fallback);
   const pickLocalizedName = (
@@ -2292,6 +2449,31 @@ export function IntegrationManagementScreen({
       `无效的变量条目“${line}”，请使用“key=value”格式。`,
       `無効な変数項目「${line}」です。「key=value」を使用してください。`,
     );
+
+  function requestDiscardDirtyEditor(onDiscard: () => void) {
+    if (!hasDirtyEditor) {
+      onDiscard();
+      return;
+    }
+
+    setDirtyGuardState({ onDiscard });
+  }
+
+  function requestTabChange(nextTab: IntegrationTab) {
+    if (nextTab === activeTab) {
+      return;
+    }
+
+    requestDiscardDirtyEditor(() => setTab(nextTab));
+  }
+
+  function requestScopeChange(scope: IntegrationScopeSelection) {
+    if (scopeMatches(selectedScope, scope)) {
+      return;
+    }
+
+    requestDiscardDirtyEditor(() => setSelectedScope(scope));
+  }
 
   async function handleConfirmAction() {
     if (!confirmState) {
@@ -2378,7 +2560,9 @@ export function IntegrationManagementScreen({
           error: null,
           unavailableReason: null,
         });
-        setAdapterDraft(buildAdapterDraft(updated));
+        const nextDraft = buildAdapterDraft(updated);
+        setAdapterDraft(nextDraft);
+        setAdapterDraftBaseline(nextDraft);
         setNotice({
           tone: 'success',
           message: text(
@@ -2443,7 +2627,9 @@ export function IntegrationManagementScreen({
         error: null,
         unavailableReason: null,
       });
-      setAdapterConfigRows(buildAdapterConfigRows(nextDetail));
+      const nextConfigRows = buildAdapterConfigRows(nextDetail);
+      setAdapterConfigRows(nextConfigRows);
+      setAdapterConfigRowsBaseline(nextConfigRows);
       await refreshAdapters(selectedAdapterId);
       setNotice({
         tone: 'success',
@@ -2479,6 +2665,7 @@ export function IntegrationManagementScreen({
                 ...row,
                 configValue: revealed.configValue,
                 isMasked: false,
+                valueEdited: row.valueEdited,
               }
             : row,
         ),
@@ -2555,7 +2742,7 @@ export function IntegrationManagementScreen({
           error: null,
           unavailableReason: null,
         });
-        setWebhookDraft(buildWebhookDraft(updated));
+        setWebhookEditorState(buildWebhookDraft(updated));
         await refreshWebhooks(updated.id);
         setNotice({
           tone: 'success',
@@ -2620,6 +2807,7 @@ export function IntegrationManagementScreen({
         });
         await refreshConsumers(updated.id);
         setSelectedConsumerId(updated.id);
+        setConsumerEditorState(buildConsumerDraft(updated));
         setNotice({
           tone: 'success',
           message: text(
@@ -2719,7 +2907,7 @@ export function IntegrationManagementScreen({
         error: null,
         unavailableReason: null,
       });
-      setEmailConfigDraft(buildEmailConfigDraft(nextConfig));
+      setEmailConfigEditorState(buildEmailConfigDraft(nextConfig));
       setNotice({
         tone: 'success',
         message: text('Email configuration saved.', '邮件配置已保存。', 'メール設定を保存しました。'),
@@ -3017,7 +3205,6 @@ export function IntegrationManagementScreen({
         : unavailableReason,
     };
   });
-  const shouldShowAdapterConfigEditor = adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
   const scopeAccessNotice = !selectedIntegrationScope
     ? null
     : isTenantRootScope
@@ -3049,7 +3236,7 @@ export function IntegrationManagementScreen({
       <button
         key={`${scope.ownerType}:${scope.ownerId ?? 'root'}`}
         type="button"
-        onClick={() => setSelectedScope(scope)}
+        onClick={() => requestScopeChange(scope)}
         aria-pressed={isActive}
         className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
           isActive
@@ -3359,7 +3546,7 @@ export function IntegrationManagementScreen({
                   <SectionTabs
                     items={availableTabs.map((tab) => ({ id: tab, label: tabLabel(tab) }))}
                     activeId={activeTab}
-                    onChange={(nextTab) => setTab(nextTab as IntegrationTab)}
+                    onChange={(nextTab) => requestTabChange(nextTab as IntegrationTab)}
                     ariaLabel={text('Integration sections', '集成分区', '連携セクション')}
                   />
                 ) : null}
@@ -3417,13 +3604,14 @@ export function IntegrationManagementScreen({
                   </SecondaryButton>
                   <SecondaryButton
                     tone="primary"
-                    onClick={() => {
-                      setAdapterCreateMode(true);
-                      setSelectedAdapterId(null);
-                      setAdapterConfigPanelOpen(true);
-                      setAdapterDraft(buildAdapterDraft());
-                      setAdapterConfigRows(buildAdapterConfigRows());
-                    }}
+                    onClick={() =>
+                      requestDiscardDirtyEditor(() => {
+                        setAdapterCreateMode(true);
+                        setSelectedAdapterId(null);
+                        setAdapterConfigPanelOpen(true);
+                        setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
+                      })
+                    }
                   >
                     <Plus className="h-4 w-4" />
                     {text({
@@ -3487,20 +3675,24 @@ export function IntegrationManagementScreen({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           <SecondaryButton
-                            onClick={() => {
-                              setAdapterCreateMode(false);
-                              setSelectedAdapterId(adapter.id);
-                              setAdapterConfigPanelOpen(false);
-                            }}
+                            onClick={() =>
+                              requestDiscardDirtyEditor(() => {
+                                setAdapterCreateMode(false);
+                                setSelectedAdapterId(adapter.id);
+                                setAdapterConfigPanelOpen(false);
+                              })
+                            }
                           >
                             {text('Open', '打开', '開く')}
                           </SecondaryButton>
                           <SecondaryButton
-                            onClick={() => {
-                              setAdapterCreateMode(false);
-                              setSelectedAdapterId(adapter.id);
-                              setAdapterConfigPanelOpen(true);
-                            }}
+                            onClick={() =>
+                              requestDiscardDirtyEditor(() => {
+                                setAdapterCreateMode(false);
+                                setSelectedAdapterId(adapter.id);
+                                setAdapterConfigPanelOpen(true);
+                              })
+                            }
                           >
                             {text('Configure', '配置', '設定')}
                           </SecondaryButton>
@@ -3618,23 +3810,26 @@ export function IntegrationManagementScreen({
                 <>
                   {!adapterCreateMode ? (
                     <SecondaryButton
-                      onClick={() => {
-                        setAdapterCreateMode(true);
-                        setSelectedAdapterId(null);
-                        setAdapterConfigPanelOpen(true);
-                        setAdapterDraft(buildAdapterDraft());
-                        setAdapterConfigRows(buildAdapterConfigRows());
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setAdapterCreateMode(true);
+                          setSelectedAdapterId(null);
+                          setAdapterConfigPanelOpen(true);
+                          setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
+                        })
+                      }
                     >
                       {text('Start new', '新建', '新規作成')}
                     </SecondaryButton>
                   ) : (
                     <SecondaryButton
-                      onClick={() => {
-                        setAdapterCreateMode(false);
-                        setAdapterConfigPanelOpen(false);
-                        setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setAdapterCreateMode(false);
+                          setAdapterConfigPanelOpen(false);
+                          setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
+                        })
+                      }
                     >
                       {text('Cancel', '取消', 'キャンセル')}
                     </SecondaryButton>
@@ -3783,7 +3978,7 @@ export function IntegrationManagementScreen({
                 shouldShowAdapterConfigEditor ? (
                   <>
                     {!adapterCreateMode ? (
-                      <SecondaryButton onClick={() => setAdapterConfigPanelOpen(false)}>
+                      <SecondaryButton onClick={() => requestDiscardDirtyEditor(() => setAdapterConfigPanelOpen(false))}>
                         {text('Done configuring', '完成配置', '設定を完了')}
                       </SecondaryButton>
                     ) : null}
@@ -3837,6 +4032,7 @@ export function IntegrationManagementScreen({
                                       ...item,
                                       configValue: value,
                                       isMasked: false,
+                                      valueEdited: true,
                                     }
                                   : item,
                               ),
@@ -3898,6 +4094,7 @@ export function IntegrationManagementScreen({
                           isSecret: false,
                           isMasked: false,
                           isNew: true,
+                          valueEdited: false,
                         },
                       ])
                     }
@@ -3941,11 +4138,13 @@ export function IntegrationManagementScreen({
                   </SecondaryButton>
                   <SecondaryButton
                     tone="primary"
-                    onClick={() => {
-                      setWebhookCreateMode(true);
-                      setSelectedWebhookId(null);
-                      setWebhookDraft(buildWebhookDraft());
-                    }}
+                    onClick={() =>
+                      requestDiscardDirtyEditor(() => {
+                        setWebhookCreateMode(true);
+                        setSelectedWebhookId(null);
+                        setWebhookEditorState(buildWebhookDraft());
+                      })
+                    }
                   >
                     <Plus className="h-4 w-4" />
                     {text('New webhook', '新建 Webhook', '新しい Webhook')}
@@ -3991,10 +4190,12 @@ export function IntegrationManagementScreen({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           <SecondaryButton
-                            onClick={() => {
-                              setWebhookCreateMode(false);
-                              setSelectedWebhookId(webhook.id);
-                            }}
+                            onClick={() =>
+                              requestDiscardDirtyEditor(() => {
+                                setWebhookCreateMode(false);
+                                setSelectedWebhookId(webhook.id);
+                              })
+                            }
                           >
                             {text('Open', '打开', '開く')}
                           </SecondaryButton>
@@ -4079,20 +4280,24 @@ export function IntegrationManagementScreen({
                 <>
                   {!webhookCreateMode ? (
                     <SecondaryButton
-                      onClick={() => {
-                        setWebhookCreateMode(true);
-                        setSelectedWebhookId(null);
-                        setWebhookDraft(buildWebhookDraft());
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setWebhookCreateMode(true);
+                          setSelectedWebhookId(null);
+                          setWebhookEditorState(buildWebhookDraft());
+                        })
+                      }
                     >
                       {text('Start new', '新建', '新規作成')}
                     </SecondaryButton>
                   ) : (
                     <SecondaryButton
-                      onClick={() => {
-                        setWebhookCreateMode(false);
-                        setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setWebhookCreateMode(false);
+                          setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
+                        })
+                      }
                     >
                       {text('Cancel', '取消', 'キャンセル')}
                     </SecondaryButton>
@@ -4289,11 +4494,13 @@ export function IntegrationManagementScreen({
                   </SecondaryButton>
                   <SecondaryButton
                     tone="primary"
-                    onClick={() => {
-                      setConsumerCreateMode(true);
-                      setSelectedConsumerId(null);
-                      setConsumerDraft(buildConsumerDraft());
-                    }}
+                    onClick={() =>
+                      requestDiscardDirtyEditor(() => {
+                        setConsumerCreateMode(true);
+                        setSelectedConsumerId(null);
+                        setConsumerEditorState(buildConsumerDraft());
+                      })
+                    }
                   >
                     <Plus className="h-4 w-4" />
                     {text('New API client', '新建 API 客户端', '新しい API クライアント')}
@@ -4346,10 +4553,12 @@ export function IntegrationManagementScreen({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           <SecondaryButton
-                            onClick={() => {
-                              setConsumerCreateMode(false);
-                              setSelectedConsumerId(consumer.id);
-                            }}
+                            onClick={() =>
+                              requestDiscardDirtyEditor(() => {
+                                setConsumerCreateMode(false);
+                                setSelectedConsumerId(consumer.id);
+                              })
+                            }
                           >
                             {text('Open', '打开', '開く')}
                           </SecondaryButton>
@@ -4434,20 +4643,24 @@ export function IntegrationManagementScreen({
                 <>
                   {!consumerCreateMode ? (
                     <SecondaryButton
-                      onClick={() => {
-                        setConsumerCreateMode(true);
-                        setSelectedConsumerId(null);
-                        setConsumerDraft(buildConsumerDraft());
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setConsumerCreateMode(true);
+                          setSelectedConsumerId(null);
+                          setConsumerEditorState(buildConsumerDraft());
+                        })
+                      }
                     >
                       {text('Start new', '新建', '新規作成')}
                     </SecondaryButton>
                   ) : (
                     <SecondaryButton
-                      onClick={() => {
-                        setConsumerCreateMode(false);
-                        setSelectedConsumerId(consumersPanel.data[0]?.id || null);
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setConsumerCreateMode(false);
+                          setSelectedConsumerId(consumersPanel.data[0]?.id || null);
+                        })
+                      }
                     >
                       {text('Cancel', '取消', 'キャンセル')}
                     </SecondaryButton>
@@ -4930,12 +5143,14 @@ export function IntegrationManagementScreen({
                   </SecondaryButton>
                   <SecondaryButton
                     tone="primary"
-                    onClick={() => {
-                      setTemplateCreateMode(true);
-                      setSelectedTemplateCode(null);
-                      setTemplateDraft(buildEmailTemplateDraft());
-                      setTemplatePreview(null);
-                    }}
+                    onClick={() =>
+                      requestDiscardDirtyEditor(() => {
+                        setTemplateCreateMode(true);
+                        setSelectedTemplateCode(null);
+                        setTemplateEditorState(buildEmailTemplateDraft());
+                        setTemplatePreview(null);
+                      })
+                    }
                   >
                     <Plus className="h-4 w-4" />
                     {text('New template', '新建模板', '新しいテンプレート')}
@@ -4988,10 +5203,12 @@ export function IntegrationManagementScreen({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           <SecondaryButton
-                            onClick={() => {
-                              setTemplateCreateMode(false);
-                              setSelectedTemplateCode(template.code);
-                            }}
+                            onClick={() =>
+                              requestDiscardDirtyEditor(() => {
+                                setTemplateCreateMode(false);
+                                setSelectedTemplateCode(template.code);
+                              })
+                            }
                           >
                             {text('Open', '打开', '開く')}
                           </SecondaryButton>
@@ -5076,21 +5293,25 @@ export function IntegrationManagementScreen({
                 <>
                   {!templateCreateMode ? (
                     <SecondaryButton
-                      onClick={() => {
-                        setTemplateCreateMode(true);
-                        setSelectedTemplateCode(null);
-                        setTemplateDraft(buildEmailTemplateDraft());
-                        setTemplatePreview(null);
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setTemplateCreateMode(true);
+                          setSelectedTemplateCode(null);
+                          setTemplateEditorState(buildEmailTemplateDraft());
+                          setTemplatePreview(null);
+                        })
+                      }
                     >
                       {text('Start new', '新建', '新規作成')}
                     </SecondaryButton>
                   ) : (
                     <SecondaryButton
-                      onClick={() => {
-                        setTemplateCreateMode(false);
-                        setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
-                      }}
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setTemplateCreateMode(false);
+                          setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
+                        })
+                      }
                     >
                       {text('Cancel', '取消', 'キャンセル')}
                     </SecondaryButton>
@@ -5312,7 +5533,7 @@ export function IntegrationManagementScreen({
                     ko: '공유 통합 작업 영역 열기',
                     fr: 'Ouvrir l’espace d’intégration partagé',
                   })}
-                  onClick={() => setSelectedScope(tenantRootSelection)}
+                  onClick={() => requestScopeChange(tenantRootSelection)}
                   className="rounded-2xl border border-indigo-200 bg-indigo-50/90 p-4 text-left text-indigo-950 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-indigo-600">
@@ -5585,6 +5806,42 @@ export function IntegrationManagementScreen({
         }
         emptyTranslationsText={translationDrawerLabels.emptyTranslationsText}
         baseValueSuffix={translationDrawerLabels.baseValueSuffix}
+      />
+      <ConfirmActionDialog
+        open={dirtyGuardState !== null}
+        title={text({
+          en: 'Discard unsaved changes?',
+          zh_HANS: '放弃未保存的更改？',
+          zh_HANT: '放棄未儲存的變更？',
+          ja: '未保存の変更を破棄しますか？',
+          ko: '저장하지 않은 변경 사항을 버리시겠어요?',
+          fr: 'Abandonner les modifications non enregistrées ?',
+        })}
+        description={text({
+          en: 'This Integration editor has unsaved draft changes. Discard them before continuing?',
+          zh_HANS: '当前集成编辑器中有未保存的草稿更改。继续前要放弃这些更改吗？',
+          zh_HANT: '目前整合編輯器中有未儲存的草稿變更。繼續前要放棄這些變更嗎？',
+          ja: 'この統合エディターには未保存の下書き変更があります。続行前に破棄しますか？',
+          ko: '현재 통합 편집기에 저장하지 않은 초안 변경 사항이 있습니다. 계속하기 전에 버리시겠어요?',
+          fr: 'Cet éditeur d’intégration contient des brouillons non enregistrés. Les abandonner avant de continuer ?',
+        })}
+        confirmText={text({
+          en: 'Discard changes',
+          zh_HANS: '放弃更改',
+          zh_HANT: '放棄變更',
+          ja: '変更を破棄',
+          ko: '변경 사항 버리기',
+          fr: 'Abandonner les modifications',
+        })}
+        cancelText={text({ en: 'Keep editing', zh_HANS: '继续编辑', zh_HANT: '繼續編輯', ja: '編集を続ける', ko: '계속 편집', fr: 'Continuer la modification' })}
+        intent="danger"
+        onCancel={() => setDirtyGuardState(null)}
+        onConfirm={() => {
+          const nextAction = dirtyGuardState?.onDiscard;
+          discardDirtyEditorState();
+          setDirtyGuardState(null);
+          nextAction?.();
+        }}
       />
       <ConfirmActionDialog
         open={Boolean(confirmState)}

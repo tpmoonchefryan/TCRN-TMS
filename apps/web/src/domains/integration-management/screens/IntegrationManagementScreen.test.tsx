@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -1074,6 +1074,305 @@ describe('IntegrationManagementScreen', () => {
 
     expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
     expect(await screen.findByDisplayValue('https://new.example.com')).toBeInTheDocument();
+  });
+
+  it('guards dirty adapter metadata before switching adapter rows', async () => {
+    const user = userEvent.setup();
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [
+          {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            name: 'PII Platform',
+            nameEn: 'PII Platform',
+            sortOrder: 0,
+            isActive: true,
+            version: 1,
+            displayName: 'PII Platform',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [
+          {
+            id: 'adapter-1',
+            ownerType: 'tenant',
+            ownerId: null,
+            platformId: 'platform-1',
+            platform: {
+              code: 'PII_PLATFORM',
+              displayName: 'PII Platform',
+              iconUrl: null,
+            },
+            code: 'TCRN_PII_PLATFORM',
+            nameEn: 'PII Relay',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: 1,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: 3,
+          },
+          {
+            id: 'adapter-2',
+            ownerType: 'tenant',
+            ownerId: null,
+            platformId: 'platform-1',
+            platform: {
+              code: 'PII_PLATFORM',
+              displayName: 'PII Platform',
+              iconUrl: null,
+            },
+            code: 'CHAT_EXPORT',
+            nameEn: 'Chat Relay',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: 0,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: 1,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1') {
+        return {
+          id: 'adapter-1',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            displayName: 'PII Platform',
+          },
+          code: 'TCRN_PII_PLATFORM',
+          nameEn: 'PII Relay',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-2') {
+        return {
+          id: 'adapter-2',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            displayName: 'PII Platform',
+          },
+          code: 'CHAT_EXPORT',
+          nameEn: 'Chat Relay',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+
+    const adapterNameInput = await screen.findByLabelText('Name (EN)');
+    await user.clear(adapterNameInput);
+    await user.type(adapterNameInput, 'Changed PII Relay');
+
+    await user.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
+    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
+
+    const chatRow = screen.getByText('CHAT_EXPORT').closest('tr');
+    expect(chatRow).not.toBeNull();
+    await user.click(within(chatRow as HTMLTableRowElement).getByRole('button', { name: 'Open' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
+
+    await user.click(within(chatRow as HTMLTableRowElement).getByRole('button', { name: 'Open' }));
+    await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
+
+    expect(await screen.findByDisplayValue('Chat Relay')).toBeInTheDocument();
+  });
+
+  it('does not treat reveal-only adapter config inspection as dirty but guards typed config changes', async () => {
+    const user = userEvent.setup();
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [
+          {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            name: 'PII Platform',
+            nameEn: 'PII Platform',
+            sortOrder: 0,
+            isActive: true,
+            version: 1,
+            displayName: 'PII Platform',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [
+          {
+            id: 'adapter-1',
+            ownerType: 'tenant',
+            ownerId: null,
+            platformId: 'platform-1',
+            platform: {
+              code: 'PII_PLATFORM',
+              displayName: 'PII Platform',
+              iconUrl: null,
+            },
+            code: 'TCRN_PII_PLATFORM',
+            nameEn: 'PII Relay',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: 2,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: 3,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1') {
+        return {
+          id: 'adapter-1',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            displayName: 'PII Platform',
+          },
+          code: 'TCRN_PII_PLATFORM',
+          nameEn: 'PII Relay',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [
+            {
+              id: 'config-1',
+              configKey: 'client_secret',
+              configValue: '******',
+              isSecret: true,
+            },
+            {
+              id: 'config-2',
+              configKey: 'base_url',
+              configValue: 'https://old.example.com',
+              isSecret: false,
+            },
+          ],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1/configs/client_secret/reveal' && init?.method === 'POST') {
+        return {
+          configKey: 'client_secret',
+          configValue: 'revealed-secret-value',
+          revealedAt: '2026-04-17T10:00:00.000Z',
+          expiresInSeconds: 60,
+        };
+      }
+
+      if (path === '/api/v1/integration/webhooks') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/webhooks/events') {
+        return [];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reveal' }));
+    expect(await screen.findByDisplayValue('revealed-secret-value')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Adapters' }));
+    await screen.findByRole('button', { name: 'Configure' });
+    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+
+    const baseUrlInput = await screen.findByDisplayValue('https://old.example.com');
+    await user.clear(baseUrlInput);
+    await user.type(baseUrlInput, 'https://new.example.com');
+
+    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('https://new.example.com')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
+    expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
   });
 
   it('renders localized integration management copy for zh locale', async () => {
