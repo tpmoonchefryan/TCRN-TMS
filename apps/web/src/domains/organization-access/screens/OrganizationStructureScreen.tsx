@@ -15,7 +15,8 @@ import {
   Search,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, useDeferredValue, useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, startTransition, useDeferredValue, useEffect, useState } from 'react';
 
 import {
   listProfileStores,
@@ -46,6 +47,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -197,6 +200,46 @@ function findNodeById(nodes: OrganizationNode[], id: string): OrganizationNode |
 
 function collectTalents(nodes: OrganizationNode[]): OrganizationTalent[] {
   return nodes.flatMap((node) => [...node.talents, ...collectTalents(node.children)]);
+}
+
+
+function buildOrganizationStructureQueryState({
+  scopeId,
+  search,
+  showInactive,
+  page,
+  pageSize,
+}: {
+  scopeId: string | null;
+  search: string;
+  showInactive: boolean;
+  page: number;
+  pageSize: PageSizeOption;
+}) {
+  const params = new URLSearchParams();
+  const normalizedSearch = search.trim();
+
+  if (scopeId) {
+    params.set('scopeId', scopeId);
+  }
+
+  if (normalizedSearch) {
+    params.set('search', normalizedSearch);
+  }
+
+  if (showInactive) {
+    params.set('inactive', 'true');
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function getErrorMessage(reason: unknown, fallback: string) {
@@ -459,16 +502,24 @@ export function OrganizationStructureScreen({
 }: Readonly<{
   tenantId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSelectedSubsidiaryId = searchParams.get('scopeId') || null;
+  const urlSearch = searchParams.get('search') ?? '';
+  const urlShowInactive = searchParams.get('inactive') === 'true';
+  const urlInventoryPage = parsePageParam(searchParams.get('page'));
+  const urlInventoryPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { currentLocale, selectedLocale, copy } = useOrganizationStructureCopy();
   const { request, requestEnvelope, session } = useSession();
   const [data, setData] = useState<OrganizationTreeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadVersion, setReloadVersion] = useState(0);
-  const [selectedSubsidiaryId, setSelectedSubsidiaryId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [selectedSubsidiaryId, setSelectedSubsidiaryId] = useState<string | null>(urlSelectedSubsidiaryId);
+  const [search, setSearch] = useState(urlSearch);
   const deferredSearch = useDeferredValue(search);
-  const [showInactive, setShowInactive] = useState(false);
+  const [showInactive, setShowInactive] = useState(urlShowInactive);
   const [profileStoresPanel, setProfileStoresPanel] = useState<AsyncPanelState<ProfileStoreListResponse>>({
     data: null,
     error: null,
@@ -486,14 +537,92 @@ export function OrganizationStructureScreen({
   const [lifecycleDialogState, setLifecycleDialogState] = useState<LifecycleDialogState | null>(null);
   const [lifecycleDialogPending, setLifecycleDialogPending] = useState(false);
   const [preparingTalentId, setPreparingTalentId] = useState<string | null>(null);
-  const [inventoryPage, setInventoryPage] = useState(1);
-  const [inventoryPageSize, setInventoryPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [inventoryPage, setInventoryPage] = useState(urlInventoryPage);
+  const [inventoryPageSize, setInventoryPageSize] = useState<PageSizeOption>(urlInventoryPageSize);
   const [translationOptionsState, setTranslationOptionsState] = useState<TranslationOptionsState>({
     data: [],
     error: null,
     loading: false,
   });
   const [translationDrawerTarget, setTranslationDrawerTarget] = useState<TranslationDrawerTarget>(null);
+
+  useEffect(() => {
+    setSelectedSubsidiaryId((current) => (
+      current === urlSelectedSubsidiaryId ? current : urlSelectedSubsidiaryId
+    ));
+    setSearch((current) => (current === urlSearch ? current : urlSearch));
+    setShowInactive((current) => (current === urlShowInactive ? current : urlShowInactive));
+    setInventoryPage((current) => (current === urlInventoryPage ? current : urlInventoryPage));
+    setInventoryPageSize((current) => (
+      current === urlInventoryPageSize ? current : urlInventoryPageSize
+    ));
+  }, [
+    urlInventoryPage,
+    urlInventoryPageSize,
+    urlSearch,
+    urlSelectedSubsidiaryId,
+    urlShowInactive,
+  ]);
+
+  function applyQueryState(
+    nextState: Partial<{
+      selectedSubsidiaryId: string | null;
+      search: string;
+      showInactive: boolean;
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextSelectedSubsidiaryId = nextState.selectedSubsidiaryId ?? selectedSubsidiaryId;
+    const nextSearch = nextState.search ?? search;
+    const nextShowInactive = nextState.showInactive ?? showInactive;
+    const nextPage = nextState.page ?? inventoryPage;
+    const nextPageSize = nextState.pageSize ?? inventoryPageSize;
+
+    if (nextState.selectedSubsidiaryId !== undefined) {
+      setSelectedSubsidiaryId(nextSelectedSubsidiaryId);
+    }
+
+    if (nextState.search !== undefined) {
+      setSearch(nextSearch);
+    }
+
+    if (nextState.showInactive !== undefined) {
+      setShowInactive(nextShowInactive);
+    }
+
+    if (nextState.page !== undefined) {
+      setInventoryPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setInventoryPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildOrganizationStructureQueryState({
+      scopeId: nextSelectedSubsidiaryId,
+      search: nextSearch,
+      showInactive: nextShowInactive,
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildOrganizationStructureQueryState({
+      scopeId: selectedSubsidiaryId,
+      search,
+      showInactive,
+      page: inventoryPage,
+      pageSize: inventoryPageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     if (!translationDrawerTarget) {
@@ -618,9 +747,44 @@ export function OrganizationStructureScreen({
     }
 
     if (!findNodeById(data.subsidiaries, selectedSubsidiaryId)) {
+      const nextPage = 1;
       setSelectedSubsidiaryId(null);
+      setInventoryPage(nextPage);
+
+      const nextQueryString = buildOrganizationStructureQueryState({
+        scopeId: null,
+        search,
+        showInactive,
+        page: nextPage,
+        pageSize: inventoryPageSize,
+      });
+      const currentQueryString = buildOrganizationStructureQueryState({
+        scopeId: selectedSubsidiaryId,
+        search,
+        showInactive,
+        page: inventoryPage,
+        pageSize: inventoryPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
     }
-  }, [data, selectedSubsidiaryId]);
+  }, [
+    data,
+    data,
+    inventoryPage,
+    inventoryPageSize,
+    loading,
+    pathname,
+    router,
+    search,
+    selectedSubsidiaryId,
+    showInactive,
+  ]);
 
   useEffect(() => {
     const defaultProfileStoreId = resolveDefaultProfileStoreId(profileStoresPanel.data);
@@ -640,10 +804,6 @@ export function OrganizationStructureScreen({
       };
     });
   }, [profileStoresPanel.data]);
-
-  useEffect(() => {
-    setInventoryPage(1);
-  }, [deferredSearch, selectedSubsidiaryId, showInactive]);
 
   async function handleCreateTalentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -851,10 +1011,44 @@ export function OrganizationStructureScreen({
   );
 
   useEffect(() => {
-    if (inventoryPage > inventoryPagination.totalPages) {
-      setInventoryPage(inventoryPagination.totalPages);
+    if (!loading && data && inventoryPage > inventoryPagination.totalPages) {
+      const nextPage = inventoryPagination.totalPages;
+      setInventoryPage(nextPage);
+
+      const nextQueryString = buildOrganizationStructureQueryState({
+        scopeId: selectedSubsidiaryId,
+        search,
+        showInactive,
+        page: nextPage,
+        pageSize: inventoryPageSize,
+      });
+      const currentQueryString = buildOrganizationStructureQueryState({
+        scopeId: selectedSubsidiaryId,
+        search,
+        showInactive,
+        page: inventoryPage,
+        pageSize: inventoryPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
     }
-  }, [inventoryPage, inventoryPagination.totalPages]);
+  }, [
+    data,
+    inventoryPage,
+    inventoryPageSize,
+    inventoryPagination.totalPages,
+    loading,
+    pathname,
+    router,
+    search,
+    selectedSubsidiaryId,
+    showInactive,
+  ]);
 
   if (loading && !data) {
     return (
@@ -995,7 +1189,12 @@ export function OrganizationStructureScreen({
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    applyQueryState({
+                      page: 1,
+                      search: event.target.value,
+                    });
+                  }}
                   placeholder={copy.tree.searchPlaceholder}
                   className="w-full rounded-full border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                 />
@@ -1011,7 +1210,12 @@ export function OrganizationStructureScreen({
                 )}`}
                 depth={0}
                 isActive={!selectedNode}
-                onSelect={() => setSelectedSubsidiaryId(null)}
+                onSelect={() => {
+                  applyQueryState({
+                    page: 1,
+                    selectedSubsidiaryId: null,
+                  });
+                }}
                 settingsHref={`/tenant/${tenantId}/settings`}
                 settingsLabel={copy.actions.editTenantSettings}
               />
@@ -1022,7 +1226,12 @@ export function OrganizationStructureScreen({
                   hint={`${entry.node.code} · ${formatOrganizationTalentCount(currentLocale, collectTalents([entry.node]).length)}`}
                   depth={entry.depth + 1}
                   isActive={selectedSubsidiaryId === entry.node.id}
-                  onSelect={() => setSelectedSubsidiaryId(entry.node.id)}
+                  onSelect={() => {
+                    applyQueryState({
+                      page: 1,
+                      selectedSubsidiaryId: entry.node.id,
+                    });
+                  }}
                   settingsHref={`/tenant/${tenantId}/subsidiary/${entry.node.id}/settings`}
                   settingsLabel={`${copy.actions.editSubsidiarySettings}: ${entry.node.displayName}`}
                 />
@@ -1059,7 +1268,12 @@ export function OrganizationStructureScreen({
               <div className="flex flex-wrap justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowInactive((current) => !current)}
+                  onClick={() => {
+                    applyQueryState({
+                      page: 1,
+                      showInactive: !showInactive,
+                    });
+                  }}
                   className={`${HEADER_ACTION_BUTTON_BASE_CLASS} ${
                     showInactive
                       ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-400'
@@ -1155,10 +1369,12 @@ export function OrganizationStructureScreen({
                     previousLabel: inventoryPaginationCopy.previous,
                     nextLabel: inventoryPaginationCopy.next,
                   }}
-                  onPageChange={setInventoryPage}
+                  onPageChange={(nextPage) => applyQueryState({ page: nextPage })}
                   onPageSizeChange={(nextPageSize) => {
-                    setInventoryPageSize(nextPageSize as PageSizeOption);
-                    setInventoryPage(1);
+                    applyQueryState({
+                      page: 1,
+                      pageSize: nextPageSize as PageSizeOption,
+                    });
                   }}
                   className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
                 />

@@ -3,9 +3,21 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { OrganizationStructureScreen } from '@/domains/organization-access/screens/OrganizationStructureScreen';
 
 const mockRequest = vi.fn();
+const replace = vi.fn();
+let pathname = '/tenant/tenant-1/organization-structure';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
 };
+
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -59,6 +71,9 @@ describe('OrganizationStructureScreen', () => {
   beforeEach(() => {
     localeState.currentLocale = 'en';
     mockRequest.mockReset();
+    replace.mockReset();
+    pathname = '/tenant/tenant-1/organization-structure';
+    currentSearch = '';
   });
 
   it('passes localized close labels to create drawers', async () => {
@@ -724,7 +739,62 @@ describe('OrganizationStructureScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
+    expect(replace).toHaveBeenCalledWith('/tenant/tenant-1/organization-structure?page=2');
     expect(await screen.findByText('Talent 21')).toBeInTheDocument();
     expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
   });
+
+  it('hydrates organization scope, filters, and inventory pagination from the URL', async () => {
+    currentSearch = 'scopeId=subsidiary-1&inactive=true&page=2';
+
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=true') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [
+            {
+              id: 'subsidiary-1',
+              code: 'TOKYO',
+              displayName: 'Tokyo Branch',
+              parentId: null,
+              path: '/TOKYO/',
+              depth: 1,
+              sortOrder: 1,
+              isActive: true,
+              version: 1,
+              children: [],
+              talents: Array.from({ length: 21 }, (_, index) => ({
+                id: `talent-${index + 1}`,
+                code: `TALENT_${index + 1}`,
+                name: `Talent ${String(index + 1).padStart(2, '0')}`,
+                displayName: `Talent ${String(index + 1).padStart(2, '0')}`,
+                avatarUrl: null,
+                subsidiaryId: 'subsidiary-1',
+                path: `/TOKYO/TALENT_${index + 1}/`,
+                homepagePath: `talent-${index + 1}`,
+                lifecycleStatus: 'published' as const,
+                publishedAt: '2026-04-17T12:00:00.000Z',
+                isActive: true,
+              })),
+            },
+          ],
+          directTalents: [],
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tokyo Branch' })).toBeInTheDocument();
+    expect(mockRequest).toHaveBeenCalledWith('/api/v1/organization/tree?includeInactive=true');
+    expect(screen.getByText('Talent 21')).toBeInTheDocument();
+    expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
+  });
+
 });

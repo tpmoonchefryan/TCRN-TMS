@@ -3,7 +3,8 @@
 import { buildSharedHomepagePath } from '@tcrn/shared';
 import { ArrowRight, LayoutPanelTop, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 
 import {
   type OrganizationNode,
@@ -23,6 +24,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { GlassSurface, PaginationFooter, StateView } from '@/platform/ui';
@@ -33,6 +36,26 @@ function collectTalents(nodes: OrganizationNode[]): OrganizationTalent[] {
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
+}
+
+function buildTenantWorkspaceLandingQueryState({
+  page,
+  pageSize,
+}: {
+  page: number;
+  pageSize: PageSizeOption;
+}) {
+  const params = new URLSearchParams();
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function getLandingPaginationCopy(
@@ -102,13 +125,59 @@ export function TenantWorkspaceLandingScreen({
 }: Readonly<{
   tenantId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlPage = parsePageParam(searchParams.get('page'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { selectedLocale } = useRuntimeLocale();
   const { request, session } = useSession();
   const [talents, setTalents] = useState<OrganizationTalent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
+
+  useEffect(() => {
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [urlPage, urlPageSize]);
+
+  function applyQueryState(
+    nextState: Partial<{
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildTenantWorkspaceLandingQueryState({
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildTenantWorkspaceLandingQueryState({
+      page,
+      pageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -183,10 +252,27 @@ export function TenantWorkspaceLandingScreen({
   );
 
   useEffect(() => {
-    if (page > pagination.totalPages) {
-      setPage(pagination.totalPages);
+    if (!loading && page > pagination.totalPages) {
+      const nextPage = pagination.totalPages;
+      setPage(nextPage);
+
+      const nextQueryString = buildTenantWorkspaceLandingQueryState({
+        page: nextPage,
+        pageSize,
+      });
+      const currentQueryString = buildTenantWorkspaceLandingQueryState({
+        page,
+        pageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
     }
-  }, [page, pagination.totalPages]);
+  }, [loading, page, pageSize, pagination.totalPages, pathname, router]);
 
   const tenantName = session?.tenantName
     || pickLocaleText(selectedLocale, {
@@ -430,10 +516,12 @@ export function TenantWorkspaceLandingScreen({
             previousLabel: paginationCopy.previous,
             nextLabel: paginationCopy.next,
           }}
-          onPageChange={setPage}
+          onPageChange={(nextPage) => applyQueryState({ page: nextPage })}
           onPageSizeChange={(nextPageSize) => {
-            setPageSize(nextPageSize as PageSizeOption);
-            setPage(1);
+            applyQueryState({
+              page: 1,
+              pageSize: nextPageSize as PageSizeOption,
+            });
           }}
           className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
         />

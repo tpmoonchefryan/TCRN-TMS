@@ -4,9 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TenantWorkspaceLandingScreen } from '@/domains/talent-workspace/screens/TenantWorkspaceLandingScreen';
 
 const mockRequest = vi.fn();
+const replace = vi.fn();
+let pathname = '/tenant/tenant-1';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
 };
+
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -26,6 +38,9 @@ describe('TenantWorkspaceLandingScreen', () => {
   beforeEach(() => {
     localeState.currentLocale = 'en';
     mockRequest.mockReset();
+    replace.mockReset();
+    pathname = '/tenant/tenant-1';
+    currentSearch = '';
   });
 
   it('paginates published talents at 20 cards by default and lets the user expand the page size', async () => {
@@ -62,6 +77,7 @@ describe('TenantWorkspaceLandingScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
+    expect(replace).toHaveBeenCalledWith('/tenant/tenant-1?page=2');
     expect(await screen.findByText('Talent 21')).toBeInTheDocument();
     expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
 
@@ -69,7 +85,40 @@ describe('TenantWorkspaceLandingScreen', () => {
       target: { value: '50' },
     });
 
+    expect(replace).toHaveBeenLastCalledWith('/tenant/tenant-1?pageSize=50');
     expect(await screen.findByText('Talent 01')).toBeInTheDocument();
     expect(screen.getByText('Talent 21')).toBeInTheDocument();
+  });
+
+  it('hydrates pagination from the URL so support can replay a shared landing view', async () => {
+    currentSearch = 'page=2';
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: Array.from({ length: 21 }, (_, index) => ({
+            id: `talent-${index + 1}`,
+            code: `TALENT_${String(index + 1).padStart(2, '0')}`,
+            displayName: `Talent ${String(index + 1).padStart(2, '0')}`,
+            avatarUrl: null,
+            subsidiaryId: null,
+            subsidiaryName: null,
+            path: `/TALENT_${String(index + 1).padStart(2, '0')}/`,
+            homepagePath: `talent-${String(index + 1).padStart(2, '0')}`,
+            lifecycleStatus: 'published' as const,
+            publishedAt: '2026-04-17T12:00:00.000Z',
+            isActive: true,
+          })),
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<TenantWorkspaceLandingScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByText('Talent 21')).toBeInTheDocument();
+    expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
   });
 });
