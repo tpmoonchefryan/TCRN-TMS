@@ -55,6 +55,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
   StateView,
   TableShell,
 } from '@/platform/ui';
@@ -728,6 +729,22 @@ export function MarshmallowManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
+  const previousPageLabel = pickLocaleText(selectedLocale, {
+    en: 'Previous',
+    zh_HANS: '上一页',
+    zh_HANT: '上一頁',
+    ja: '前へ',
+    ko: '이전',
+    fr: 'Précédent',
+  });
+  const nextPageLabel = pickLocaleText(selectedLocale, {
+    en: 'Next',
+    zh_HANS: '下一页',
+    zh_HANT: '下一頁',
+    ja: '次へ',
+    ko: '다음',
+    fr: 'Suivant',
+  });
 
   return (
     <div className="space-y-6">
@@ -1075,65 +1092,25 @@ export function MarshmallowManagementScreen({
             )}
 
             {!messagesPanel.error ? (
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-700">{paginationLabel}</p>
-                  <p className="text-xs text-slate-500">{paginationRangeLabel}</p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                    <span className="font-medium text-slate-700">{pageSizeLabel}</span>
-                    <select
-                      value={pageSize}
-                      onChange={(event) => {
-                        setPageSize(Number(event.target.value) as PageSizeOption);
-                        setPage(1);
-                      }}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-                    >
-                      {PAGE_SIZE_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="flex items-center gap-2">
-                    <SecondaryButton
-                      disabled={!messagesPanel.pagination.hasPrev || messagesPanel.loading}
-                      onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    >
-                      {pickLocaleText(selectedLocale, {
-                        en: 'Previous',
-                        zh_HANS: '上一页',
-                        zh_HANT: '上一頁',
-                        ja: '前へ',
-                        ko: '이전',
-                        fr: 'Précédent',
-                      })}
-                    </SecondaryButton>
-                    <SecondaryButton
-                      disabled={!messagesPanel.pagination.hasNext || messagesPanel.loading}
-                      onClick={() =>
-                        setPage((current) =>
-                          Math.min(messagesPanel.pagination.totalPages, current + 1),
-                        )
-                      }
-                    >
-                      {pickLocaleText(selectedLocale, {
-                        en: 'Next',
-                        zh_HANS: '下一页',
-                        zh_HANT: '下一頁',
-                        ja: '次へ',
-                        ko: '다음',
-                        fr: 'Suivant',
-                      })}
-                    </SecondaryButton>
-                  </div>
-                </div>
-              </div>
+              <PaginationFooter
+                pagination={messagesPanel.pagination}
+                itemCount={messagesPanel.data.length}
+                labels={{
+                  pageLabel: paginationLabel,
+                  rangeLabel: paginationRangeLabel,
+                  rowsPerPageLabel: pageSizeLabel,
+                  pageSizeAriaLabel: pageSizeLabel,
+                  previousLabel: previousPageLabel,
+                  nextLabel: nextPageLabel,
+                }}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPageSize(nextPageSize as PageSizeOption);
+                  setPage(1);
+                }}
+                isLoading={messagesPanel.loading}
+                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70"
+              />
             ) : null}
           </div>
         </FormSection>
