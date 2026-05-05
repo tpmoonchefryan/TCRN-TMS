@@ -25,7 +25,7 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { GlassSurface, StateView } from '@/platform/ui';
+import { GlassSurface, PaginationFooter, StateView } from '@/platform/ui';
 
 function collectTalents(nodes: OrganizationNode[]): OrganizationTalent[] {
   return nodes.flatMap((node) => [...node.talents, ...collectTalents(node.children)]);
@@ -419,50 +419,24 @@ export function TenantWorkspaceLandingScreen({
           );
           })}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-slate-700">{paginationCopy.page}</p>
-            <p className="text-xs text-slate-500">{paginationCopy.range}</p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <span className="font-medium text-slate-700">{paginationCopy.pageSize}</span>
-              <select
-                aria-label={paginationCopy.pageSize}
-                value={pageSize}
-                onChange={(event) => {
-                  setPageSize(Number(event.target.value) as PageSizeOption);
-                  setPage(1);
-                }}
-                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-              >
-                {PAGE_SIZE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={!pagination.hasPrev}
-                className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {paginationCopy.previous}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
-                disabled={!pagination.hasNext}
-                className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {paginationCopy.next}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PaginationFooter
+          pagination={pagination}
+          itemCount={paginatedTalents.length}
+          labels={{
+            pageLabel: paginationCopy.page,
+            rangeLabel: paginationCopy.range,
+            rowsPerPageLabel: paginationCopy.pageSize,
+            pageSizeAriaLabel: paginationCopy.pageSize,
+            previousLabel: paginationCopy.previous,
+            nextLabel: paginationCopy.next,
+          }}
+          onPageChange={setPage}
+          onPageSizeChange={(nextPageSize) => {
+            setPageSize(nextPageSize as PageSizeOption);
+            setPage(1);
+          }}
+          className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+        />
       </div>
     </div>
   );
