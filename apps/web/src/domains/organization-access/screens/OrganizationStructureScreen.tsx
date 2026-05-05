@@ -61,6 +61,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
   StateView,
   TranslationDrawer,
 } from '@/platform/ui';
@@ -1143,52 +1144,24 @@ export function OrganizationStructureScreen({
                     />
                   ))}
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-slate-700">{inventoryPaginationCopy.page}</p>
-                    <p className="text-xs text-slate-500">{inventoryPaginationCopy.range}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-end gap-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                      <span className="font-medium text-slate-700">{inventoryPaginationCopy.pageSize}</span>
-                      <select
-                        aria-label={inventoryPaginationCopy.pageSize}
-                        value={inventoryPageSize}
-                        onChange={(event) => {
-                          setInventoryPageSize(Number(event.target.value) as PageSizeOption);
-                          setInventoryPage(1);
-                        }}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                      >
-                        {PAGE_SIZE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setInventoryPage((current) => Math.max(1, current - 1))}
-                        disabled={!inventoryPagination.hasPrev}
-                        className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {inventoryPaginationCopy.previous}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setInventoryPage((current) => Math.min(inventoryPagination.totalPages, current + 1))
-                        }
-                        disabled={!inventoryPagination.hasNext}
-                        className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {inventoryPaginationCopy.next}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <PaginationFooter
+                  pagination={inventoryPagination}
+                  itemCount={paginatedScopedTalents.length}
+                  labels={{
+                    pageLabel: inventoryPaginationCopy.page,
+                    rangeLabel: inventoryPaginationCopy.range,
+                    rowsPerPageLabel: inventoryPaginationCopy.pageSize,
+                    pageSizeAriaLabel: inventoryPaginationCopy.pageSize,
+                    previousLabel: inventoryPaginationCopy.previous,
+                    nextLabel: inventoryPaginationCopy.next,
+                  }}
+                  onPageChange={setInventoryPage}
+                  onPageSizeChange={(nextPageSize) => {
+                    setInventoryPageSize(nextPageSize as PageSizeOption);
+                    setInventoryPage(1);
+                  }}
+                  className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+                />
               </div>
             ) : (
               <StateView
