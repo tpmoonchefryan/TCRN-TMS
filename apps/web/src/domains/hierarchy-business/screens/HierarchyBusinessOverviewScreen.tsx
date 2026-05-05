@@ -22,7 +22,7 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { GlassSurface, StateView } from '@/platform/ui';
+import { GlassSurface, PaginationFooter, StateView } from '@/platform/ui';
 
 interface HierarchyBusinessOverviewScreenProps {
   tenantId: string;
@@ -541,98 +541,58 @@ export function HierarchyBusinessOverviewScreen({
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-700">
-                  {pickLocaleText(selectedLocale, {
-                    en: `Page ${pagination.page} of ${pagination.totalPages}`,
-                    zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
-                    zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 頁`,
-                    ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
-                    ko: `${pagination.totalPages}페이지 중 ${pagination.page}페이지`,
-                    fr: `Page ${pagination.page} sur ${pagination.totalPages}`,
-                  })}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {pickLocaleText(selectedLocale, {
-                    en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
-                    zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
-                    zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${pagination.totalCount} 筆`,
-                    ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
-                    ko: `${pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
-                    fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${pagination.totalCount}`,
-                  })}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <span className="font-medium text-slate-700">
-                    {pickLocaleText(selectedLocale, {
-                      en: 'Rows per page',
-                      zh_HANS: '每页条目',
-                      zh_HANT: '每頁項目',
-                      ja: '表示件数',
-                      ko: '페이지당 행 수',
-                      fr: 'Lignes par page',
-                    })}
-                  </span>
-                  <select
-                    aria-label={pickLocaleText(selectedLocale, {
-                      en: 'Rows per page',
-                      zh_HANS: '每页条目',
-                      zh_HANT: '每頁項目',
-                      ja: '表示件数',
-                      ko: '페이지당 행 수',
-                      fr: 'Lignes par page',
-                    })}
-                    value={pageSize}
-                    onChange={(event) => {
-                      setPageSize(Number(event.target.value) as PageSizeOption);
-                      setPage(1);
-                    }}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
-                  >
-                    {PAGE_SIZE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    disabled={!pagination.hasPrev}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {pickLocaleText(selectedLocale, {
-                      en: 'Previous',
-                      zh_HANS: '上一页',
-                      zh_HANT: '上一頁',
-                      ja: '前へ',
-                      ko: '이전',
-                      fr: 'Précédent',
-                    })}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
-                    disabled={!pagination.hasNext}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {pickLocaleText(selectedLocale, {
-                      en: 'Next',
-                      zh_HANS: '下一页',
-                      zh_HANT: '下一頁',
-                      ja: '次へ',
-                      ko: '다음',
-                      fr: 'Suivant',
-                    })}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <PaginationFooter
+              pagination={pagination}
+              itemCount={paginatedTalents.length}
+              labels={{
+                pageLabel: pickLocaleText(selectedLocale, {
+                  en: `Page ${pagination.page} of ${pagination.totalPages}`,
+                  zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
+                  zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 頁`,
+                  ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
+                  ko: `${pagination.totalPages}페이지 중 ${pagination.page}페이지`,
+                  fr: `Page ${pagination.page} sur ${pagination.totalPages}`,
+                }),
+                rangeLabel: pickLocaleText(selectedLocale, {
+                  en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+                  zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
+                  zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${pagination.totalCount} 筆`,
+                  ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
+                  ko: `${pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
+                  fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${pagination.totalCount}`,
+                }),
+                rowsPerPageLabel: pickLocaleText(selectedLocale, {
+                  en: 'Rows per page',
+                  zh_HANS: '每页条目',
+                  zh_HANT: '每頁項目',
+                  ja: '表示件数',
+                  ko: '페이지당 행 수',
+                  fr: 'Lignes par page',
+                }),
+                previousLabel: pickLocaleText(selectedLocale, {
+                  en: 'Previous',
+                  zh_HANS: '上一页',
+                  zh_HANT: '上一頁',
+                  ja: '前へ',
+                  ko: '이전',
+                  fr: 'Précédent',
+                }),
+                nextLabel: pickLocaleText(selectedLocale, {
+                  en: 'Next',
+                  zh_HANS: '下一页',
+                  zh_HANT: '下一頁',
+                  ja: '次へ',
+                  ko: '다음',
+                  fr: 'Suivant',
+                }),
+              }}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize as PageSizeOption);
+                setPage(1);
+              }}
+              className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+            />
           </div>
         )}
       </GlassSurface>
