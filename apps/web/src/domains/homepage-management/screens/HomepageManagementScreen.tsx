@@ -2,7 +2,8 @@
 
 import { Globe2, History, Pencil, Rocket, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useState } from 'react';
 
 import {
   type HomepageResponse,
@@ -34,6 +35,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { ConfirmActionDialog, FormSection, GlassSurface, PaginationFooter, StateView, TableShell } from '@/platform/ui';
@@ -97,6 +100,36 @@ function extractPathnameFromUrl(url: string) {
   } catch {
     return url;
   }
+}
+
+function parseVersionFilter(value: string | null): VersionFilter {
+  return value === 'draft' || value === 'published' || value === 'archived' ? value : 'all';
+}
+
+function buildHomepageManagementQueryState({
+  filter,
+  page,
+  pageSize,
+}: {
+  filter: VersionFilter;
+  page: number;
+  pageSize: PageSizeOption;
+}) {
+  const params = new URLSearchParams();
+
+  if (filter !== 'all') {
+    params.set('status', filter);
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function SummaryCard({
@@ -192,6 +225,12 @@ export function HomepageManagementScreen({
   tenantId: string;
   talentId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlFilter = parseVersionFilter(searchParams.get('status'));
+  const urlPage = parsePageParam(searchParams.get('page'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
   const { selectedLocale, copy } = useHomepageManagementCopy();
   const [homepage, setHomepage] = useState<HomepageResponse | null>(null);
@@ -202,14 +241,64 @@ export function HomepageManagementScreen({
     loading: true,
     error: null,
   });
-  const [filter, setFilter] = useState<VersionFilter>('all');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [filter, setFilter] = useState<VersionFilter>(urlFilter);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [dialogPending, setDialogPending] = useState(false);
+
+  useEffect(() => {
+    setFilter((current) => (current === urlFilter ? current : urlFilter));
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [urlFilter, urlPage, urlPageSize]);
+
+  function applyQueryState(
+    nextState: Partial<{
+      filter: VersionFilter;
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextFilter = nextState.filter ?? filter;
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.filter !== undefined) {
+      setFilter(nextFilter);
+    }
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildHomepageManagementQueryState({
+      filter: nextFilter,
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildHomepageManagementQueryState({
+      filter,
+      page,
+      pageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -544,8 +633,10 @@ export function HomepageManagementScreen({
                     type="button"
                     aria-pressed={isActive}
                     onClick={() => {
-                      setFilter(candidate);
-                      setPage(1);
+                      applyQueryState({
+                        filter: candidate,
+                        page: 1,
+                      });
                     }}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition ${
                       isActive
@@ -651,10 +742,14 @@ export function HomepageManagementScreen({
                   previousLabel: previousPageLabel,
                   nextLabel: nextPageLabel,
                 }}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  applyQueryState({ page: nextPage });
+                }}
                 onPageSizeChange={(nextPageSize) => {
-                  setPageSize(nextPageSize as PageSizeOption);
-                  setPage(1);
+                  applyQueryState({
+                    page: 1,
+                    pageSize: nextPageSize as PageSizeOption,
+                  });
                 }}
                 isLoading={versionsPanel.loading}
                 className="mt-4 rounded-2xl border border-slate-200"

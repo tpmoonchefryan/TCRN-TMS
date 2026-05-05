@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomepageManagementScreen } from '@/domains/homepage-management/screens/HomepageManagementScreen';
 
 const mockRequest = vi.fn();
+const replace = vi.fn();
+let pathname = '/tenant/tenant-1/talent/talent-1/homepage';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
 };
@@ -28,10 +31,26 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
 }));
 
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
+
 describe('HomepageManagementScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
+    replace.mockReset();
     localeState.currentLocale = 'en';
+    pathname = '/tenant/tenant-1/talent/talent-1/homepage';
+    currentSearch = '';
+    replace.mockImplementation((href: string) => {
+      const resolved = new URL(href, 'https://tcrn.local');
+      pathname = resolved.pathname;
+      currentSearch = resolved.search.startsWith('?') ? resolved.search.slice(1) : resolved.search;
+    });
   });
 
   it('loads the homepage workspace and filters version history', async () => {
@@ -163,6 +182,113 @@ describe('HomepageManagementScreen', () => {
 
     expect(await screen.findByText('ProfileCard, Schedule')).toBeInTheDocument();
     expect(screen.queryByText('HeroBanner, ProfileCard')).not.toBeInTheDocument();
+  });
+
+  it('hydrates version ledger pagination from the URL and keeps filter changes shareable', async () => {
+    currentSearch = 'status=published&page=2&pageSize=50';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/homepage') {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: true,
+          publishedVersion: {
+            id: 'version-2',
+            versionNumber: 2,
+            createdAt: '2026-04-17T10:00:00.000Z',
+            publishedAt: '2026-04-17T11:00:00.000Z',
+            publishedBy: {
+              id: 'user-1',
+              username: 'publisher',
+            },
+          },
+          draftVersion: null,
+          customDomain: null,
+          customDomainVerified: false,
+          seoTitle: 'Tokino Sora',
+          seoDescription: 'Official homepage',
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T09:00:00.000Z',
+          updatedAt: '2026-04-17T12:00:00.000Z',
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions?page=2&pageSize=50&status=published') {
+        return {
+          items: [
+            {
+              id: 'version-2',
+              versionNumber: 2,
+              status: 'published',
+              contentPreview: 'ProfileCard, Schedule',
+              componentCount: 2,
+              publishedAt: '2026-04-17T11:00:00.000Z',
+              publishedBy: {
+                id: 'user-1',
+                username: 'publisher',
+              },
+              createdAt: '2026-04-17T10:00:00.000Z',
+              createdBy: {
+                id: 'user-1',
+                username: 'publisher',
+              },
+            },
+          ],
+          meta: {
+            total: 51,
+          },
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=50&status=draft') {
+        return {
+          items: [
+            {
+              id: 'version-3',
+              versionNumber: 3,
+              status: 'draft',
+              contentPreview: 'HeroBanner, ProfileCard',
+              componentCount: 2,
+              publishedAt: null,
+              publishedBy: null,
+              createdAt: '2026-04-17T12:00:00.000Z',
+              createdBy: {
+                id: 'user-2',
+                username: 'editor',
+              },
+            },
+          ],
+          meta: {
+            total: 1,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<HomepageManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByText('ProfileCard, Schedule')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Published' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Draft' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=50&status=draft',
+      );
+      expect(replace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/talent/talent-1/homepage?status=draft&pageSize=50',
+      );
+    });
+
+    expect(await screen.findByText('HeroBanner, ProfileCard')).toBeInTheDocument();
   });
 
   it('renders localized homepage management copy for zh locale', async () => {
