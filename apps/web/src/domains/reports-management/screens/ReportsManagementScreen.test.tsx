@@ -286,6 +286,44 @@ describe('ReportsManagementScreen', () => {
     expect(await screen.findByText('Pending file assignment')).toBeInTheDocument();
   });
 
+  it('explains external PII platform handoff after creating portal-delivered reports', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: {
+            total: 0,
+          },
+        };
+      }
+
+      if (path === '/api/v1/reports/mfr/jobs' && init?.method === 'POST') {
+        return {
+          deliveryMode: 'pii_platform_portal',
+          redirectUrl: 'https://pii.example.com/reports/session-1',
+          expiresAt: '2026-04-17T12:10:00.000Z',
+          estimatedRows: 42,
+          customerCount: 42,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Draft report' }))[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Create MFR job' }));
+
+    expect(await screen.findByText('PII platform handoff ready')).toBeInTheDocument();
+    expect(screen.getByText('2. Complete in PII platform')).toBeInTheDocument();
+    expect(screen.getByText('3. Track in history')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open PII platform' })).toHaveAttribute(
+      'href',
+      'https://pii.example.com/reports/session-1',
+    );
+  });
+
   it('downloads completed jobs and cancels pending jobs through the shared dialog', async () => {
     let pendingStatus: 'pending' | 'cancelled' = 'pending';
 

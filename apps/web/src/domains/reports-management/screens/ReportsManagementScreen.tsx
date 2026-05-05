@@ -799,10 +799,24 @@ export function ReportsManagementScreen({
               <h2 className="text-lg font-semibold text-slate-950">{copy.portal.title}</h2>
               <p className="max-w-2xl text-sm leading-6 text-slate-600">{copy.portal.description}</p>
               <p className="text-sm text-slate-600">
-                {copy.portal.expiresPrefix} {formatReportsDateTime(selectedLocale, portalHandoff.expiresAt, copy.common.never)}{' '}
+                {copy.portal.expiresPrefix} {formatReportsDateTime(selectedLocale, portalHandoff.expiresAt, copy.common.never)};{' '}
                 {copy.portal.estimatedPrefix} {formatReportsNumber(selectedLocale, portalHandoff.estimatedRows, copy.ledger.pendingRows)}{' '}
                 {copy.portal.estimatedSuffix}
               </p>
+              <div className="grid gap-3 pt-2 md:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">{copy.portal.draftStepLabel}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{copy.portal.draftStepHint}</p>
+                </div>
+                <div className="rounded-2xl border border-indigo-200 bg-indigo-50/75 px-4 py-3">
+                  <p className="text-sm font-semibold text-indigo-950">{copy.portal.platformStepLabel}</p>
+                  <p className="mt-1 text-xs leading-5 text-indigo-800">{copy.portal.platformStepHint}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">{copy.portal.historyStepLabel}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{copy.portal.historyStepHint}</p>
+                </div>
+              </div>
             </div>
             <a
               href={portalHandoff.redirectUrl}
