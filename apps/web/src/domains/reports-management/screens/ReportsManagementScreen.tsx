@@ -49,6 +49,8 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
+  SectionTabs,
   StateView,
   TableShell,
 } from '@/platform/ui';
@@ -388,7 +390,6 @@ export function ReportsManagementScreen({
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [portalHandoff, setPortalHandoff] = useState<PiiPlatformReportCreateResponse | null>(null);
   const [activeView, setActiveView] = useState<ReportsView>('directory');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'operational'>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -633,14 +634,28 @@ export function ReportsManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
+  const previousPageLabel = pickLocaleText(selectedLocale, {
+    en: 'Previous',
+    zh_HANS: '上一页',
+    zh_HANT: '上一頁',
+    ja: '前へ',
+    ko: '이전',
+    fr: 'Précédent',
+  });
+  const nextPageLabel = pickLocaleText(selectedLocale, {
+    en: 'Next',
+    zh_HANS: '下一页',
+    zh_HANT: '下一頁',
+    ja: '次へ',
+    ko: '다음',
+    fr: 'Suivant',
+  });
   const reportsViewCopy =
     resolveTrilingualLocaleFamily(selectedLocale) === 'zh'
       ? selectedLocale === 'zh_HANT'
         ? {
             directory: '報表目錄',
             history: '執行紀錄',
-            categoryAll: '全部',
-            categoryOperational: '營運',
             directoryTitle: '報表中心',
             directoryDescription: '在這裡瀏覽並執行可用報表。',
             cardBadge: '可用',
@@ -652,8 +667,6 @@ export function ReportsManagementScreen({
         : {
             directory: '报表目录',
             history: '运行历史',
-            categoryAll: '全部',
-            categoryOperational: '运营',
             directoryTitle: '报表中心',
             directoryDescription: '在这里浏览和运行可用报表。',
             cardBadge: '已上线',
@@ -666,8 +679,6 @@ export function ReportsManagementScreen({
         ? {
             directory: '보고서 디렉터리',
             history: '실행 기록',
-            categoryAll: '전체',
-            categoryOperational: '운영',
             directoryTitle: '보고서 센터',
             directoryDescription: '여기에서 사용 가능한 보고서를 찾아 실행하세요.',
             cardBadge: '사용 가능',
@@ -680,8 +691,6 @@ export function ReportsManagementScreen({
           ? {
               directory: 'Répertoire des rapports',
               history: "Historique d'exécution",
-              categoryAll: 'Tous',
-              categoryOperational: 'Opérationnel',
               directoryTitle: 'Centre de rapports',
               directoryDescription: 'Parcourez et lancez les rapports disponibles ici.',
               cardBadge: 'Disponible',
@@ -694,8 +703,6 @@ export function ReportsManagementScreen({
         ? {
             directory: 'レポートディレクトリ',
             history: '実行履歴',
-            categoryAll: 'すべて',
-            categoryOperational: '運用',
             directoryTitle: 'レポートセンター',
             directoryDescription: '利用できるレポートをここから確認して実行します。',
             cardBadge: '利用可能',
@@ -707,8 +714,6 @@ export function ReportsManagementScreen({
         : {
             directory: 'Report Directory',
             history: 'Run History',
-            categoryAll: 'All',
-            categoryOperational: 'Operational',
             directoryTitle: 'Report Center',
             directoryDescription: 'Browse and run available reports here.',
             cardBadge: 'Available now',
@@ -814,28 +819,15 @@ export function ReportsManagementScreen({
 
       <GlassSurface className="p-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-[1.4rem] border border-slate-200 bg-white/80 p-1.5 shadow-sm">
-            {([
+          <SectionTabs
+            items={[
               { id: 'directory', label: reportsViewCopy.directory },
               { id: 'history', label: reportsViewCopy.history },
-            ] as const).map((view) => {
-              const isActive = activeView === view.id;
-
-              return (
-                <button
-                  key={view.id}
-                  type="button"
-                  onClick={() => setActiveView(view.id)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`rounded-[1rem] px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                    isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  {view.label}
-                </button>
-              );
-            })}
-          </div>
+            ]}
+            activeId={activeView}
+            onChange={(nextView) => setActiveView(nextView as ReportsView)}
+            ariaLabel={copy.header.title}
+          />
 
           <p className="text-sm text-slate-500">
             {activeView === 'directory' ? reportsViewCopy.directoryDescription : reportsViewCopy.historyDescription}
@@ -848,27 +840,9 @@ export function ReportsManagementScreen({
           <GlassSurface className="p-6">
             <FormSection title={reportsViewCopy.directoryTitle} description={reportsViewCopy.directoryDescription}>
               <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  {([
-                    { id: 'all', label: reportsViewCopy.categoryAll },
-                    { id: 'operational', label: reportsViewCopy.categoryOperational },
-                  ] as const).map((category) => {
-                    const isActive = activeCategory === category.id;
-
-                    return (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => setActiveCategory(category.id)}
-                        aria-pressed={isActive}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                          isActive ? 'bg-slate-950 text-white shadow-sm' : 'border border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-white'
-                        }`}
-                      >
-                        {category.label}
-                      </button>
-                    );
-                  })}
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">{copy.summary.catalogValue}</p>
+                  <p className="mt-1 leading-6">{copy.summary.catalogHint}</p>
                 </div>
 
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(20rem,1fr)]">
@@ -1099,61 +1073,24 @@ export function ReportsManagementScreen({
               )}
 
               {!jobsPanel.error ? (
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-slate-700">{paginationLabel}</p>
-                    <p className="text-xs text-slate-500">{paginationRangeLabel}</p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                      <span className="font-medium text-slate-700">{pageSizeLabel}</span>
-                      <select
-                        value={pageSize}
-                        onChange={(event) => {
-                          setPageSize(Number(event.target.value) as PageSizeOption);
-                          setPage(1);
-                        }}
-                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-                      >
-                        {PAGE_SIZE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <div className="flex items-center gap-2">
-                      <SecondaryButton
-                        disabled={!jobsPagination.hasPrev || jobsPanel.loading}
-                        onClick={() => setPage((current) => Math.max(1, current - 1))}
-                      >
-                        {pickLocaleText(selectedLocale, {
-                          en: 'Previous',
-                          zh_HANS: '上一页',
-                          zh_HANT: '上一頁',
-                          ja: '前へ',
-                          ko: '이전',
-                          fr: 'Précédent',
-                        })}
-                      </SecondaryButton>
-                      <SecondaryButton
-                        disabled={!jobsPagination.hasNext || jobsPanel.loading}
-                        onClick={() => setPage((current) => Math.min(jobsPagination.totalPages, current + 1))}
-                      >
-                        {pickLocaleText(selectedLocale, {
-                          en: 'Next',
-                          zh_HANS: '下一页',
-                          zh_HANT: '下一頁',
-                          ja: '次へ',
-                          ko: '다음',
-                          fr: 'Suivant',
-                        })}
-                      </SecondaryButton>
-                    </div>
-                  </div>
-                </div>
+                <PaginationFooter
+                  pagination={jobsPagination}
+                  itemCount={jobsPanel.data.length}
+                  labels={{
+                    pageLabel: paginationLabel,
+                    rangeLabel: paginationRangeLabel,
+                    rowsPerPageLabel: pageSizeLabel,
+                    previousLabel: previousPageLabel,
+                    nextLabel: nextPageLabel,
+                  }}
+                  onPageChange={setPage}
+                  onPageSizeChange={(nextPageSize) => {
+                    setPageSize(nextPageSize as PageSizeOption);
+                    setPage(1);
+                  }}
+                  isLoading={jobsPanel.loading}
+                  className="rounded-2xl"
+                />
               ) : null}
             </div>
           </FormSection>

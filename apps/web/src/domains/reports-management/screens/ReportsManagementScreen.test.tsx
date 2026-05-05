@@ -110,7 +110,7 @@ describe('ReportsManagementScreen', () => {
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Reports Management' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Run History' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Run History' }));
     expect(await screen.findByText('Pending file assignment')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Job status filter'), {
@@ -253,7 +253,7 @@ describe('ReportsManagementScreen', () => {
 
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Run History' }));
+    fireEvent.click(await screen.findByRole('tab', { name: 'Run History' }));
     expect(await screen.findByText('No MFR jobs found')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Create MFR Job' })).not.toBeInTheDocument();
 
@@ -337,7 +337,7 @@ describe('ReportsManagementScreen', () => {
 
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Run History' }));
+    fireEvent.click(await screen.findByRole('tab', { name: 'Run History' }));
     expect(await screen.findByText('MFR_ready.xlsx')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Download MFR_ready.xlsx' }));
