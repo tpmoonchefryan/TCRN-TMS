@@ -7,6 +7,9 @@ import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider
 
 const mockRequest = vi.fn();
 const mockUpdateSessionUser = vi.fn();
+const mockRouterReplace = vi.fn();
+let currentPathname = '/tenant/tenant-1/profile/security';
+let currentSearch = '';
 let currentSession: {
   tenantName: string;
   user?: {
@@ -37,6 +40,14 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
     updateSessionUser: mockUpdateSessionUser,
     session: currentSession,
   }),
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => currentPathname,
+  useRouter: () => ({
+    replace: mockRouterReplace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 vi.mock('@/domains/profile/screens/profile.copy', () => ({
@@ -227,6 +238,9 @@ describe('ProfileScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockUpdateSessionUser.mockReset();
+    mockRouterReplace.mockReset();
+    currentPathname = '/tenant/tenant-1/profile/security';
+    currentSearch = '';
     currentSession = {
       tenantName: 'Moonshot Tenant',
     };
@@ -395,10 +409,63 @@ describe('ProfileScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
+    expect(mockRouterReplace).toHaveBeenCalledWith('/tenant/tenant-1/profile/security?sessionsPage=2');
     expect(await screen.findByText('Device 21')).toBeInTheDocument();
     expect(screen.queryByText('Device 1')).not.toBeInTheDocument();
     expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('Showing 21-25 of 25')).toBeInTheDocument();
+  });
+
+  it('hydrates security sessions pagination from URL and preserves unrelated query params', async () => {
+    currentSearch = 'foo=1&sessionsPage=2&sessionsPageSize=50';
+    const sessions = Array.from({ length: 55 }, (_, index) => ({
+      id: `sess-${index + 1}`,
+      deviceInfo: `Device ${index + 1}`,
+      ipAddress: `203.0.113.${index + 1}`,
+      createdAt: `2026-04-${String((index % 9) + 10).padStart(2, '0')}T09:00:00.000Z`,
+      lastActiveAt: `2026-04-${String((index % 9) + 10).padStart(2, '0')}T10:00:00.000Z`,
+      isCurrent: index === 0,
+    }));
+
+    currentSession = {
+      tenantName: 'Moonshot Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: true,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
+        return buildProfile({ totpEnabled: true });
+      }
+
+      if (path === '/api/v1/users/me/sessions') {
+        return sessions;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
+
+    expect(await screen.findByText('Device 51')).toBeInTheDocument();
+    expect(screen.queryByText('Device 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Showing 51-55 of 55')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '20' } });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith('/tenant/tenant-1/profile/security?foo=1');
+    expect(await screen.findByText('Device 1')).toBeInTheDocument();
+    expect(screen.queryByText('Device 51')).not.toBeInTheDocument();
   });
 
   it('does not rewrite the global session on initial load when profile data already matches', async () => {

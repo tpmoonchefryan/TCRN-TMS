@@ -2,7 +2,8 @@
 
 import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { MonitorSmartphone, Trash2, UserRound } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   changeCurrentPassword,
@@ -30,6 +31,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -136,6 +139,32 @@ function hasSessionUserDrift(
   );
 }
 
+function buildProfileSessionsQueryState(
+  searchParams: { toString(): string },
+  {
+    page,
+    pageSize,
+  }: {
+    page: number;
+    pageSize: PageSizeOption;
+  },
+) {
+  const params = new URLSearchParams(searchParams.toString());
+
+  params.delete('sessionsPage');
+  params.delete('sessionsPageSize');
+
+  if (page > 1) {
+    params.set('sessionsPage', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('sessionsPageSize', String(pageSize));
+  }
+
+  return params.toString();
+}
+
 function SummaryCard({
   label,
   value,
@@ -166,6 +195,11 @@ export function ProfileScreen({
   workspaceKind?: 'tenant' | 'ac';
   mode?: 'profile' | 'security';
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSessionsPage = parsePageParam(searchParams.get('sessionsPage'));
+  const urlSessionsPageSize = parsePageSizeParam(searchParams.get('sessionsPageSize'));
   const { request, session, updateSessionUser } = useSession();
   const { copy, currentLocale } = useProfileCopy();
   const { selectedLocale } = useRuntimeLocale();
@@ -199,8 +233,8 @@ export function ProfileScreen({
   const [profile, setProfile] = useState<CurrentProfile | null>(null);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft | null>(null);
   const [sessions, setSessions] = useState<UserSessionRecord[]>([]);
-  const [sessionsPage, setSessionsPage] = useState(1);
-  const [sessionsPageSize, setSessionsPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [sessionsPage, setSessionsPage] = useState(urlSessionsPage);
+  const [sessionsPageSize, setSessionsPageSize] = useState<PageSizeOption>(urlSessionsPageSize);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
@@ -251,10 +285,76 @@ export function ProfileScreen({
   }, [sessions, sessionsPagination.page, sessionsPagination.pageSize]);
 
   useEffect(() => {
-    if (sessionsPage !== sessionsPagination.page) {
-      setSessionsPage(sessionsPagination.page);
+    setSessionsPage((current) => (current === urlSessionsPage ? current : urlSessionsPage));
+    setSessionsPageSize((current) => (current === urlSessionsPageSize ? current : urlSessionsPageSize));
+  }, [urlSessionsPage, urlSessionsPageSize]);
+
+  function applySessionsQueryState(
+    nextState: Partial<{
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextPage = nextState.page ?? sessionsPage;
+    const nextPageSize = nextState.pageSize ?? sessionsPageSize;
+
+    if (nextState.page !== undefined) {
+      setSessionsPage(nextPage);
     }
-  }, [sessionsPage, sessionsPagination.page]);
+
+    if (nextState.pageSize !== undefined) {
+      setSessionsPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildProfileSessionsQueryState(searchParams, {
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildProfileSessionsQueryState(searchParams, {
+      page: sessionsPage,
+      pageSize: sessionsPageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
+
+  useEffect(() => {
+    if (!loading && sessionsPage > sessionsPagination.totalPages) {
+      const nextPage = sessionsPagination.totalPages;
+      setSessionsPage(nextPage);
+
+      const nextQueryString = buildProfileSessionsQueryState(searchParams, {
+        page: nextPage,
+        pageSize: sessionsPageSize,
+      });
+      const currentQueryString = buildProfileSessionsQueryState(searchParams, {
+        page: sessionsPage,
+        pageSize: sessionsPageSize,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
+    }
+  }, [
+    loading,
+    pathname,
+    router,
+    searchParams,
+    sessionsPage,
+    sessionsPageSize,
+    sessionsPagination.totalPages,
+  ]);
 
   const applyProfileState = useCallback((nextProfile: CurrentProfile) => {
     setProfile(nextProfile);
@@ -1177,10 +1277,12 @@ export function ProfileScreen({
                     previousLabel: sessionsPaginationCopy.previous,
                     nextLabel: sessionsPaginationCopy.next,
                   }}
-                  onPageChange={setSessionsPage}
+                  onPageChange={(nextPage) => applySessionsQueryState({ page: nextPage })}
                   onPageSizeChange={(nextPageSize) => {
-                    setSessionsPageSize(nextPageSize as PageSizeOption);
-                    setSessionsPage(1);
+                    applySessionsQueryState({
+                      page: 1,
+                      pageSize: nextPageSize as PageSizeOption,
+                    });
                   }}
                   className="mt-5 rounded-2xl border border-slate-200 bg-white/80"
                 />
