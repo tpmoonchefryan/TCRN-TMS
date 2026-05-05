@@ -236,6 +236,9 @@ describe('IntegrationManagementScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Integration Management' })).toBeInTheDocument();
     expect(await screen.findByText('Select a scope first')).toBeInTheDocument();
+    expect(screen.getByText('Start with tenant root')).toBeInTheDocument();
+    expect(screen.getByText('Need a scoped override?')).toBeInTheDocument();
+    expect(screen.getByText('Looking for API clients?')).toBeInTheDocument();
     expect(screen.queryByText('BILI_EXPORT')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'API Keys' })).not.toBeInTheDocument();
 
@@ -245,7 +248,7 @@ describe('IntegrationManagementScreen', () => {
     expect(adapterCalls).toBe(0);
     expect(platformCalls).toBe(0);
 
-    await selectTenantRootScope(user);
+    await user.click(screen.getByRole('button', { name: /Start shared integration workspace/i }));
 
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
     expect(

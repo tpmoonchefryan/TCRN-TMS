@@ -4839,6 +4839,97 @@ export function IntegrationManagementScreen({
             status="empty"
             title={text('Select a scope first', '请先选择一个范围', '先にスコープを選択してください')}
             description={noScopeTreeDescription}
+            action={
+              <div className="grid max-w-3xl gap-3 text-left md:grid-cols-3">
+                <button
+                  type="button"
+                  aria-label={text({
+                    en: 'Start shared integration workspace',
+                    zh_HANS: '打开共享集成工作区',
+                    zh_HANT: '開啟共用整合工作區',
+                    ja: '共有統合ワークスペースを開く',
+                    ko: '공유 통합 작업 영역 열기',
+                    fr: 'Ouvrir l’espace d’intégration partagé',
+                  })}
+                  onClick={() => setSelectedScope(tenantRootSelection)}
+                  className="rounded-2xl border border-indigo-200 bg-indigo-50/90 p-4 text-left text-indigo-950 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-indigo-600">
+                    <Cable className="h-4 w-4" />
+                  </span>
+                  <span className="block text-sm font-semibold">
+                    {text({
+                      en: 'Start with tenant root',
+                      zh_HANS: '从租户根开始',
+                      zh_HANT: '從租戶根開始',
+                      ja: 'テナントルートから開始',
+                      ko: '테넌트 루트부터 시작',
+                      fr: 'Commencer par la racine tenant',
+                    })}
+                  </span>
+                  <span className="mt-2 block text-xs leading-5 text-indigo-800">
+                    {text({
+                      en: 'Use tenant root for shared adapters, webhooks, and email before narrowing to subsidiary or talent overrides.',
+                      zh_HANS: '先在租户根管理共享适配器、Webhook 与邮件，再按需下钻到分目录或艺人覆盖。',
+                      zh_HANT: '先在租戶根管理共用適配器、Webhook 與郵件，再依需要下鑽到分目錄或藝人覆寫。',
+                      ja: '共有アダプター、Webhook、メールはテナントルートで管理し、必要に応じて配下スコープやタレントへ絞り込みます。',
+                      ko: '공유 어댑터, 웹훅, 메일은 테넌트 루트에서 관리한 뒤 필요할 때 하위 범위나 탤런트 오버라이드로 좁히세요.',
+                      fr: 'Utilisez la racine tenant pour les adaptateurs partagés, les webhooks et l’e-mail avant de descendre vers les overrides filiale ou talent.',
+                    })}
+                  </span>
+                </button>
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
+                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {text({
+                      en: 'Need a scoped override?',
+                      zh_HANS: '需要范围覆盖？',
+                      zh_HANT: '需要範圍覆寫？',
+                      ja: 'スコープ別の上書きが必要ですか？',
+                      ko: '범위별 오버라이드가 필요한가요?',
+                      fr: 'Besoin d’un override ciblé ?',
+                    })}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    {text({
+                      en: 'Choose a subsidiary or talent in the tree when the change belongs to that business scope; only adapters are editable there.',
+                      zh_HANS: '当变更属于具体业务范围时，从左侧树选择分目录或艺人；这些范围只编辑适配器。',
+                      zh_HANT: '當變更屬於具體業務範圍時，從左側樹選擇分目錄或藝人；這些範圍只編輯適配器。',
+                      ja: '変更が特定の業務スコープに属する場合は左のツリーで配下スコープまたはタレントを選びます。そこで編集できるのはアダプターのみです。',
+                      ko: '변경이 특정 비즈니스 범위에 속하면 왼쪽 트리에서 하위 범위나 탤런트를 선택하세요. 해당 범위에서는 어댑터만 편집합니다.',
+                      fr: 'Choisissez une filiale ou un talent dans l’arborescence lorsque le changement appartient à ce périmètre métier ; seuls les adaptateurs y sont modifiables.',
+                    })}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
+                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                    <KeyRound className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {text({
+                      en: 'Looking for API clients?',
+                      zh_HANS: '在找 API 客户端？',
+                      zh_HANT: '在找 API 用戶端？',
+                      ja: 'API クライアントを探していますか？',
+                      ko: 'API 클라이언트를 찾고 있나요?',
+                      fr: 'Vous cherchez les clients API ?',
+                    })}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    {text({
+                      en: 'Managed API clients live in Account Center, so tenant users see the availability note instead of an unavailable tab.',
+                      zh_HANS: '受管 API 客户端位于账户中心；租户用户会看到可用性说明，而不是不可用 tab。',
+                      zh_HANT: '受管 API 用戶端位於帳戶中心；租戶使用者會看到可用性說明，而不是不可用 tab。',
+                      ja: '管理対象 API クライアントはアカウントセンターにあるため、テナントユーザーには利用不可タブではなく可用性の説明を表示します。',
+                      ko: '관리형 API 클라이언트는 계정 센터에 있으므로 테넌트 사용자는 사용할 수 없는 탭 대신 가용성 안내를 봅니다.',
+                      fr: 'Les clients API gérés vivent dans l’Account Center ; les utilisateurs tenant voient donc une note de disponibilité plutôt qu’un onglet indisponible.',
+                    })}
+                  </p>
+                </div>
+              </div>
+            }
           />
         </GlassSurface>
       )}
