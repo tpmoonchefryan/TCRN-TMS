@@ -5,6 +5,9 @@ import { ReportsManagementScreen } from '@/domains/reports-management/screens/Re
 
 const mockRequest = vi.fn();
 const openSpy = vi.fn();
+const replace = vi.fn();
+let pathname = '/tenant/tenant-1/talent/talent-1/reports';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
 };
@@ -29,11 +32,27 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
 }));
 
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
+
 describe('ReportsManagementScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     openSpy.mockReset();
+    replace.mockReset();
     localeState.currentLocale = 'en';
+    pathname = '/tenant/tenant-1/talent/talent-1/reports';
+    currentSearch = '';
+    replace.mockImplementation((href: string) => {
+      const resolved = new URL(href, 'https://tcrn.local');
+      pathname = resolved.pathname;
+      currentSearch = resolved.search.startsWith('?') ? resolved.search.slice(1) : resolved.search;
+    });
     vi.stubGlobal('open', openSpy);
   });
 
@@ -125,6 +144,75 @@ describe('ReportsManagementScreen', () => {
 
     expect(await screen.findByText('MFR_talent-1_success.xlsx')).toBeInTheDocument();
     expect(screen.queryByText('Pending file assignment')).not.toBeInTheDocument();
+  });
+
+  it('hydrates run history from the URL and keeps status changes shareable', async () => {
+    currentSearch = 'view=history&status=success&page=2&pageSize=50';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=2&pageSize=50&status=success') {
+        return {
+          items: [
+            {
+              id: 'job-2',
+              reportType: 'mfr',
+              status: 'success',
+              totalRows: 52,
+              fileName: 'MFR_talent-1_success.xlsx',
+              createdAt: '2026-04-17T11:00:00.000Z',
+              completedAt: '2026-04-17T11:02:00.000Z',
+              expiresAt: '2026-04-17T11:10:00.000Z',
+            },
+          ],
+          meta: {
+            total: 51,
+          },
+        };
+      }
+
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=50&status=failed') {
+        return {
+          items: [
+            {
+              id: 'job-3',
+              reportType: 'mfr',
+              status: 'failed',
+              totalRows: null,
+              fileName: null,
+              createdAt: '2026-04-17T12:00:00.000Z',
+              completedAt: '2026-04-17T12:02:00.000Z',
+              expiresAt: null,
+            },
+          ],
+          meta: {
+            total: 1,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByText('MFR_talent-1_success.xlsx')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Run History' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByLabelText('Job status filter')).toHaveValue('success');
+
+    fireEvent.change(screen.getByLabelText('Job status filter'), {
+      target: { value: 'failed' },
+    });
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=50&status=failed',
+      );
+      expect(replace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/talent/talent-1/reports?view=history&status=failed&pageSize=50',
+      );
+    });
+
+    expect(await screen.findByText('Pending file assignment')).toBeInTheDocument();
   });
 
   it('locks report draft filters while preview is pending', async () => {

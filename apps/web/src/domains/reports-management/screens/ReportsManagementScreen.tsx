@@ -16,7 +16,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type ReactNode, startTransition, useEffect, useState } from 'react';
 
 import {
   cancelMfrJob,
@@ -41,6 +42,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -155,6 +158,55 @@ function buildMfrFilters(draft: ReportFilterDraft): MfrFilterCriteria | undefine
   });
 
   return hasValues ? filters : undefined;
+}
+
+function parseReportsView(value: string | null): ReportsView {
+  return value === 'history' ? 'history' : 'directory';
+}
+
+function parseJobStatusFilter(value: string | null): JobStatusFilter {
+  return value === 'pending'
+    || value === 'running'
+    || value === 'retrying'
+    || value === 'success'
+    || value === 'consumed'
+    || value === 'failed'
+    || value === 'expired'
+    || value === 'cancelled'
+    ? value
+    : 'all';
+}
+
+function buildReportsManagementQueryState({
+  activeView,
+  jobStatusFilter,
+  page,
+  pageSize,
+}: {
+  activeView: ReportsView;
+  jobStatusFilter: JobStatusFilter;
+  page: number;
+  pageSize: PageSizeOption;
+}) {
+  const params = new URLSearchParams();
+
+  if (activeView !== 'directory') {
+    params.set('view', activeView);
+  }
+
+  if (jobStatusFilter !== 'all') {
+    params.set('status', jobStatusFilter);
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('pageSize', String(pageSize));
+  }
+
+  return params.toString();
 }
 
 function buildStatusTone(status: ReportJobStatus) {
@@ -362,6 +414,13 @@ export function ReportsManagementScreen({
   tenantId: string;
   talentId: string;
 }>) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlActiveView = parseReportsView(searchParams.get('view'));
+  const urlJobStatusFilter = parseJobStatusFilter(searchParams.get('status'));
+  const urlPage = parsePageParam(searchParams.get('page'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
   const { selectedLocale, copy, jobStatusOptions, reportFormatOptions } = useReportsManagementCopy();
   const [draft, setDraft] = useState<ReportFilterDraft>(DEFAULT_FILTER_DRAFT);
@@ -378,9 +437,9 @@ export function ReportsManagementScreen({
     loading: true,
     error: null,
   });
-  const [jobStatusFilter, setJobStatusFilter] = useState<JobStatusFilter>('all');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [jobStatusFilter, setJobStatusFilter] = useState<JobStatusFilter>(urlJobStatusFilter);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [previewPending, setPreviewPending] = useState(false);
   const [createPending, setCreatePending] = useState(false);
   const [downloadJobId, setDownloadJobId] = useState<string | null>(null);
@@ -389,7 +448,66 @@ export function ReportsManagementScreen({
   const [isDraftDrawerOpen, setIsDraftDrawerOpen] = useState(false);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [portalHandoff, setPortalHandoff] = useState<PiiPlatformReportCreateResponse | null>(null);
-  const [activeView, setActiveView] = useState<ReportsView>('directory');
+  const [activeView, setActiveView] = useState<ReportsView>(urlActiveView);
+
+  useEffect(() => {
+    setActiveView((current) => (current === urlActiveView ? current : urlActiveView));
+    setJobStatusFilter((current) => (current === urlJobStatusFilter ? current : urlJobStatusFilter));
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [urlActiveView, urlJobStatusFilter, urlPage, urlPageSize]);
+
+  function applyReportsQueryState(
+    nextState: Partial<{
+      activeView: ReportsView;
+      jobStatusFilter: JobStatusFilter;
+      page: number;
+      pageSize: PageSizeOption;
+    }>,
+  ) {
+    const nextActiveView = nextState.activeView ?? activeView;
+    const nextJobStatusFilter = nextState.jobStatusFilter ?? jobStatusFilter;
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.activeView !== undefined) {
+      setActiveView(nextActiveView);
+    }
+
+    if (nextState.jobStatusFilter !== undefined) {
+      setJobStatusFilter(nextJobStatusFilter);
+    }
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildReportsManagementQueryState({
+      activeView: nextActiveView,
+      jobStatusFilter: nextJobStatusFilter,
+      page: nextPage,
+      pageSize: nextPageSize,
+    });
+    const currentQueryString = buildReportsManagementQueryState({
+      activeView,
+      jobStatusFilter,
+      page,
+      pageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -839,7 +957,9 @@ export function ReportsManagementScreen({
               { id: 'history', label: reportsViewCopy.history },
             ]}
             activeId={activeView}
-            onChange={(nextView) => setActiveView(nextView as ReportsView)}
+            onChange={(nextView) => {
+              applyReportsQueryState({ activeView: nextView as ReportsView });
+            }}
             ariaLabel={copy.header.title}
           />
 
@@ -1001,8 +1121,10 @@ export function ReportsManagementScreen({
                   value={jobStatusFilter}
                   options={jobStatusOptions}
                   onChange={(value) => {
-                    setJobStatusFilter(value as JobStatusFilter);
-                    setPage(1);
+                    applyReportsQueryState({
+                      jobStatusFilter: value as JobStatusFilter,
+                      page: 1,
+                    });
                   }}
                 />
                 <div className="flex flex-wrap items-center gap-3">
@@ -1099,10 +1221,14 @@ export function ReportsManagementScreen({
                     previousLabel: previousPageLabel,
                     nextLabel: nextPageLabel,
                   }}
-                  onPageChange={setPage}
+                  onPageChange={(nextPage) => {
+                    applyReportsQueryState({ page: nextPage });
+                  }}
                   onPageSizeChange={(nextPageSize) => {
-                    setPageSize(nextPageSize as PageSizeOption);
-                    setPage(1);
+                    applyReportsQueryState({
+                      page: 1,
+                      pageSize: nextPageSize as PageSizeOption,
+                    });
                   }}
                   isLoading={jobsPanel.loading}
                   className="rounded-2xl"
