@@ -1,4 +1,4 @@
-import { act,fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ActionDrawer } from '../patterns/ActionDrawer';
@@ -88,4 +88,64 @@ describe('ActionDrawer', () => {
     
     expect(document.body.style.overflow).toBe('');
   });
+
+  it('traps focus inside the drawer and returns focus to the trigger on close', () => {
+    const drawerBody = (
+      <>
+        <button type="button">First action</button>
+        <button type="button">Last action</button>
+      </>
+    );
+    const { rerender } = render(
+      <>
+        <button type="button">Open drawer</button>
+        <ActionDrawer {...defaultProps} open={false}>
+          {drawerBody}
+        </ActionDrawer>
+      </>,
+    );
+
+    screen.getByRole('button', { name: 'Open drawer' }).focus();
+
+    act(() => {
+      rerender(
+        <>
+          <button type="button">Open drawer</button>
+          <ActionDrawer {...defaultProps}>{drawerBody}</ActionDrawer>
+        </>,
+      );
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    const closeButton = screen.getByLabelText('关闭抽屉');
+    const lastAction = screen.getByRole('button', { name: 'Last action' });
+    expect(closeButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(lastAction).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(closeButton).toHaveFocus();
+
+    act(() => {
+      rerender(
+        <>
+          <button type="button">Open drawer</button>
+          <ActionDrawer {...defaultProps} open={false}>
+            {drawerBody}
+          </ActionDrawer>
+        </>,
+      );
+    });
+
+    expect(screen.getByRole('button', { name: 'Open drawer' })).toHaveFocus();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+  });
+
 });

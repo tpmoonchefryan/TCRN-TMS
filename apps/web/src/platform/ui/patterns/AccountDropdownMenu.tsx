@@ -32,6 +32,7 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const focusTimerRef = useRef<number | null>(null);
   const triggerId = useId();
 
   const toggleMenu = () => {
@@ -81,12 +82,18 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
 
   useEffect(() => {
     if (isOpen && menuRef.current) {
-      // Small delay to ensure DOM is ready after mount
-      setTimeout(() => {
+      focusTimerRef.current = window.setTimeout(() => {
         const firstItem = menuRef.current?.querySelector('[role="menuitem"]') as HTMLElement;
         firstItem?.focus();
       }, 0);
     }
+
+    return () => {
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -103,6 +110,12 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
       e.preventDefault();
       const prevIndex = (index - 1 + items.length) % items.length;
       items[prevIndex]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       closeMenu();
@@ -162,6 +175,7 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
           </div>
           <div className="py-1">
             <button
+              type="button"
               onClick={() => { onNavigateProfile(); closeMenu(); }}
               role="menuitem"
               className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
@@ -169,6 +183,7 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
               {resolvedLabels.profile}
             </button>
             <button
+              type="button"
               onClick={() => { onNavigateSecurity(); closeMenu(); }}
               role="menuitem"
               className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
@@ -178,6 +193,7 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
           </div>
           <div className="border-t border-slate-200/50 py-1">
             <button
+              type="button"
               onClick={() => {
                 onSignOut();
                 if (!isSignOutPending) closeMenu();

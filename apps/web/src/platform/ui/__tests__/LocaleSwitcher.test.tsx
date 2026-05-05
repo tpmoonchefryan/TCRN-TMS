@@ -179,4 +179,23 @@ describe('LocaleSwitcher', () => {
     
     expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
+
+  it('supports Home and End keyboard navigation', async () => {
+    render(<LocaleSwitcher {...defaultProps} />);
+
+    const trigger = screen.getByLabelText('切换语言，当前语言为 English');
+    fireEvent.click(trigger);
+
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    const options = screen.getAllByRole('option');
+    fireEvent.keyDown(options[0], { key: 'End' });
+    expect(options[options.length - 1]).toHaveFocus();
+
+    fireEvent.keyDown(options[options.length - 1], { key: 'Home' });
+    expect(options[0]).toHaveFocus();
+  });
+
 });

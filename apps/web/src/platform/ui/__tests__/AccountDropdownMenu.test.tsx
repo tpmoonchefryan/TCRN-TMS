@@ -172,4 +172,22 @@ describe('AccountDropdownMenu', () => {
     // It should STILL be in the DOM because the old unmount was canceled
     expect(screen.getByRole('menu')).toBeInTheDocument();
   });
+
+  it('supports Home and End keyboard navigation', async () => {
+    render(<AccountDropdownMenu {...defaultProps} />);
+
+    fireEvent.click(screen.getByLabelText('Account menu'));
+
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    const menuItems = screen.getAllByRole('menuitem');
+    fireEvent.keyDown(menuItems[0], { key: 'End' });
+    expect(menuItems[menuItems.length - 1]).toHaveFocus();
+
+    fireEvent.keyDown(menuItems[menuItems.length - 1], { key: 'Home' });
+    expect(menuItems[0]).toHaveFocus();
+  });
+
 });

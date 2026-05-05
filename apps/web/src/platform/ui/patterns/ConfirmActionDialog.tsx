@@ -1,7 +1,8 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { motionConstants, tokens } from '../foundations/tokens';
+import { useBodyScrollLock, useModalFocus } from './overlay-behavior';
 
 export interface ConfirmActionDialogProps {
   open: boolean;
@@ -34,6 +35,8 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
   const descId = useId();
   const [internalIsPending, setInternalIsPending] = useState(false);
   const isPending = externalIsPending || internalIsPending;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   
   // Presence helper
   const [isMounted, setIsMounted] = useState(false);
@@ -62,6 +65,10 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
   }, [open, isMounted]);
 
   const handleCancel = () => {
+    if (isPending) {
+      return;
+    }
+
     if (onCancel) onCancel();
     if (onOpenChange) onOpenChange(false);
   };
@@ -71,16 +78,8 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
       return undefined;
     }
 
-    const previousOverflow = document.body.style.overflow;
-    const scrollbarCompensation = window.innerWidth - document.documentElement.clientWidth;
-
-    document.body.style.overflow = 'hidden';
-    if (scrollbarCompensation > 0) {
-      document.body.style.paddingRight = `${scrollbarCompensation}px`;
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isPending) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isPending) {
         handleCancel();
       }
     };
@@ -88,11 +87,16 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.paddingRight = '';
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMounted, open, isExiting, isPending, onOpenChange, onCancel]);
+
+  useBodyScrollLock(isMounted && (open || isExiting));
+  useModalFocus({
+    active: isMounted && open,
+    containerRef: dialogRef,
+    initialFocusRef: cancelButtonRef,
+  });
 
   if (!isMounted) return null;
 
@@ -121,7 +125,9 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
         onClick={() => !isPending && handleCancel()}
       />
       <div
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
@@ -138,6 +144,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-3">
           <button
+            ref={cancelButtonRef}
             type="button"
             className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto disabled:opacity-50"
             onClick={handleCancel}

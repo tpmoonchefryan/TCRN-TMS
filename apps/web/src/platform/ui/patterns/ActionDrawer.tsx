@@ -1,7 +1,8 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { motionConstants, tokens } from '../foundations/tokens';
+import { useBodyScrollLock, useModalFocus } from './overlay-behavior';
 
 export interface ActionDrawerProps {
   open: boolean;
@@ -12,6 +13,10 @@ export interface ActionDrawerProps {
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   closeButtonAriaLabel: string;
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
+  restoreFocus?: boolean;
+  closeOnBackdropClick?: boolean;
+  closeOnEscape?: boolean;
 }
 
 const sizeClasses = {
@@ -31,9 +36,14 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
   footer,
   size = 'md',
   closeButtonAriaLabel,
+  initialFocusRef,
+  restoreFocus = true,
+  closeOnBackdropClick = true,
+  closeOnEscape = true,
 }) => {
   const titleId = useId();
   const descId = useId();
+  const drawerRef = useRef<HTMLDivElement>(null);
   
   // Presence helper logic
   const [isMounted, setIsMounted] = useState(false);
@@ -68,7 +78,7 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && closeOnEscape) {
         event.preventDefault();
         onOpenChange(false);
       }
@@ -79,27 +89,15 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onOpenChange, open, isExiting]);
+  }, [closeOnEscape, onOpenChange, open, isExiting]);
 
-  useEffect(() => {
-    if (!isMounted || (!open && !isExiting)) {
-      return undefined;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    const scrollbarCompensation = window.innerWidth - document.documentElement.clientWidth;
-
-    document.body.style.overflow = 'hidden';
-    if (scrollbarCompensation > 0) {
-      document.body.style.paddingRight = `${scrollbarCompensation}px`;
-    }
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-    };
-  }, [isMounted, open, isExiting]);
+  useBodyScrollLock(isMounted && (open || isExiting));
+  useModalFocus({
+    active: isMounted && open,
+    containerRef: drawerRef,
+    initialFocusRef,
+    restoreFocus,
+  });
 
   if (!isMounted) {
     return null;
@@ -114,14 +112,20 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
         type="button"
         aria-hidden="true"
         tabIndex={-1}
-        onClick={() => onOpenChange(false)}
+        onClick={() => {
+          if (closeOnBackdropClick) {
+            onOpenChange(false);
+          }
+        }}
         className={`absolute inset-0 border-0 bg-slate-900/55 p-0 backdrop-blur-sm ${isExiting ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'} ${tokens.motion.reduced}`}
       />
 
       {/* Drawer */}
       <div className="absolute inset-y-0 right-0 flex h-[100dvh] w-full justify-end overflow-hidden">
         <div
+          ref={drawerRef}
           role="dialog"
+          tabIndex={-1}
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={description ? descId : undefined}

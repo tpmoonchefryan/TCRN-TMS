@@ -27,6 +27,7 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const focusTimerRef = useRef<number | null>(null);
   const triggerId = useId();
 
   const toggleMenu = () => {
@@ -76,12 +77,19 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
 
   useEffect(() => {
     if (isOpen && menuRef.current) {
-      setTimeout(() => {
+      focusTimerRef.current = window.setTimeout(() => {
         const activeItem = menuRef.current?.querySelector('[aria-selected="true"]') as HTMLElement;
         const firstItem = menuRef.current?.querySelector('[role="option"]') as HTMLElement;
         (activeItem || firstItem)?.focus();
       }, 0);
     }
+
+    return () => {
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -98,6 +106,12 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
       e.preventDefault();
       const prevIndex = (index - 1 + items.length) % items.length;
       items[prevIndex]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       closeMenu();

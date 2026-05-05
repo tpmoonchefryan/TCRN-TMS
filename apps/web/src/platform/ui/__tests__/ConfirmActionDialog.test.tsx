@@ -77,4 +77,54 @@ describe('ConfirmActionDialog', () => {
     expect(screen.getByText('Deleting...')).toBeInTheDocument();
     expect(screen.queryByText('Working...')).not.toBeInTheDocument();
   });
+
+  it('initially focuses cancel, traps focus, and returns focus when closed', () => {
+    const { rerender } = render(
+      <>
+        <button type="button">Delete trigger</button>
+        <ConfirmActionDialog {...defaultProps} open={false} />
+      </>,
+    );
+
+    screen.getByRole('button', { name: 'Delete trigger' }).focus();
+
+    act(() => {
+      rerender(
+        <>
+          <button type="button">Delete trigger</button>
+          <ConfirmActionDialog {...defaultProps} />
+        </>,
+      );
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    const cancelButton = screen.getByText('Cancel');
+    const confirmButton = screen.getByText('Confirm');
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(confirmButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(cancelButton).toHaveFocus();
+
+    act(() => {
+      rerender(
+        <>
+          <button type="button">Delete trigger</button>
+          <ConfirmActionDialog {...defaultProps} open={false} />
+        </>,
+      );
+    });
+
+    expect(screen.getByRole('button', { name: 'Delete trigger' })).toHaveFocus();
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+  });
+
 });
