@@ -615,6 +615,16 @@ describe('SecurityManagementScreen', () => {
     render(<SecurityManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByText('Discord Invite Filter')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Pattern')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add pattern' }));
+    const patternDrawer = await screen.findByRole('dialog', { name: 'Create External Pattern' });
+    expect(within(patternDrawer).getByLabelText('Pattern')).toBeInTheDocument();
+
+    fireEvent.click(within(patternDrawer).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Create External Pattern' })).not.toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Batch deactivate' }));
 

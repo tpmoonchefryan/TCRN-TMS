@@ -584,6 +584,7 @@ export function SecurityManagementScreen({
 
   const [externalMode, setExternalMode] = useState<EntryMode>('create');
   const [selectedExternalId, setSelectedExternalId] = useState<string | null>(null);
+  const [externalDrawerOpen, setExternalDrawerOpen] = useState(false);
   const [externalDetailLoading, setExternalDetailLoading] = useState(false);
   const [externalTranslationDrawerOpen, setExternalTranslationDrawerOpen] = useState(false);
   const [externalDraft, setExternalDraft] = useState<ExternalBlocklistDraft>(() =>
@@ -1037,7 +1038,27 @@ export function SecurityManagementScreen({
   function resetExternalEditor() {
     setExternalMode('create');
     setSelectedExternalId(null);
+    setExternalDetailLoading(false);
+    setExternalTranslationDrawerOpen(false);
+    setExternalDrawerOpen(false);
     setExternalDraft(createEmptyExternalDraft(scopeType, scopeId));
+  }
+
+  function openExternalCreateDrawer() {
+    resetExternalEditor();
+    setExternalDrawerOpen(true);
+  }
+
+  function setExternalDrawerOpenSafely(open: boolean) {
+    if (!open && externalSavePending) {
+      return;
+    }
+
+    if (!open) {
+      setExternalTranslationDrawerOpen(false);
+    }
+
+    setExternalDrawerOpen(open);
   }
 
   async function openBlocklistEditor(entryId: string) {
@@ -1064,6 +1085,7 @@ export function SecurityManagementScreen({
   }
 
   async function openExternalEditor(entryId: string) {
+    setExternalDrawerOpen(true);
     setExternalDetailLoading(true);
 
     try {
@@ -1072,6 +1094,7 @@ export function SecurityManagementScreen({
       setSelectedExternalId(entryId);
       setExternalDraft(mapExternalToDraft(detail));
     } catch (error) {
+      setExternalDrawerOpen(false);
       setNotice({
         tone: 'error',
         message: getErrorMessage(error, copy.sections.externalEditor.loadingTitle),
@@ -1212,6 +1235,7 @@ export function SecurityManagementScreen({
       setExternalMode('edit');
       setSelectedExternalId(saved.id);
       setExternalDraft(mapExternalToDraft(saved));
+      setExternalDrawerOpen(false);
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -2045,6 +2069,15 @@ export function SecurityManagementScreen({
                 ) : null
               }
             >
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={openExternalCreateDrawer}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {copy.sections.externalEditor.newPattern}
+                </button>
+              </div>
               {externalPanel.error ? (
                 <StateView status="denied" title={copy.sections.externalList.unavailable} description={externalPanel.error} />
               ) : (
@@ -2192,290 +2225,306 @@ export function SecurityManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={externalMode === 'create' ? copy.sections.externalEditor.createTitle : copy.sections.externalEditor.updateTitle}
-              description={copy.sections.externalEditor.description}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={resetExternalEditor}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                  >
-                    {copy.sections.externalEditor.createTitle}
-                  </button>
-                  <AsyncSubmitButton
-                    onClick={() => void submitExternalBlocklist()}
-                    isPending={externalSavePending}
-                    pendingText={externalMode === 'create' ? copy.sections.externalEditor.creating : copy.sections.externalEditor.saving}
-                  >
-                    {externalMode === 'create' ? copy.sections.externalEditor.create : copy.sections.externalEditor.update}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {externalDetailLoading ? (
-                <StateView
-                  status="unavailable"
-                  title={copy.sections.externalEditor.loadingTitle}
-                  description={copy.sections.externalEditor.loadingDescription}
-                />
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label={copy.fields.ownerType}>
-                    <select
-                      aria-label={copy.fields.ownerType}
-                      value={externalDraft.ownerType}
-                      onChange={(event) =>
-                        setExternalDraft((current) => {
-                          const nextType = event.target.value as SecurityScopeType;
-                          const nextOwnerId = isScopedSecurityScopeType(nextType)
-                            ? getScopeOptions(nextType)[0]?.id ?? ''
-                            : '';
-
-                          return {
-                            ...current,
-                            ownerType: nextType,
-                            ownerId: nextOwnerId,
-                          };
-                        })
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="tenant">{copy.options.scopeType.tenant}</option>
-                      <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
-                      <option value="talent">{copy.options.scopeType.talent}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.ownerId}>
-                    {externalDraft.ownerType === 'tenant' ? (
-                      <input
-                        aria-label={copy.fields.ownerId}
-                        value={copy.scopeLens.tenantPlaceholder}
-                        disabled
-                        className={inputClassName}
-                      />
-                    ) : (
-                      <select
-                        aria-label={copy.fields.ownerId}
-                        value={externalDraft.ownerId}
-                        onChange={(event) =>
-                          setExternalDraft((current) => ({
-                            ...current,
-                            ownerId: event.target.value,
-                          }))
-                        }
-                        disabled={
-                          organizationScopesPanel.loading
-                          || getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0
-                        }
-                        className={inputClassName}
-                      >
-                        {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0 ? (
-                          <option value="">{copy.scopeLens.emptyOptions}</option>
-                        ) : null}
-                        {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).map((option) => (
-                          <option key={`${option.type}-${option.id}`} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </Field>
-                  <div className="space-y-3 md:col-span-2">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <Field label={copy.fields.ruleName}>
-                        <input
-                          aria-label={copy.fields.ruleName}
-                          value={externalDraft.nameEn}
-                          onChange={(event) =>
-                            setExternalDraft((current) => ({
-                              ...current,
-                              nameEn: event.target.value,
-                            }))
-                          }
-                          placeholder={copy.placeholders.externalRuleName}
-                          className={inputClassName}
-                        />
-                      </Field>
-                      <button
-                        type="button"
-                        onClick={() => setExternalTranslationDrawerOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                        aria-label={copy.sections.externalEditor.translationManagement.trigger}
-                      >
-                        <Languages className="h-4 w-4" />
-                        <span>{copy.sections.externalEditor.translationManagement.trigger}</span>
-                        {configuredExternalTranslationCount > 0 ? (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                            {configuredExternalTranslationCount}
-                          </span>
-                        ) : null}
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {configuredExternalTranslationCount > 0
-                        ? copy.sections.externalEditor.translationManagement.summary(configuredExternalTranslationCount)
-                        : copy.sections.externalEditor.translationManagement.empty}
-                    </p>
-                    {translationOptionsState.error ? (
-                      <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
-                    ) : null}
-                  </div>
-                  <Field label={copy.fields.category}>
-                    <input
-                      aria-label={copy.fields.category}
-                      value={externalDraft.category}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          category: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.externalCategory}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.pattern}>
-                    <input
-                      aria-label={copy.fields.pattern}
-                      value={externalDraft.pattern}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          pattern: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.externalPattern}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.patternType}>
-                    <select
-                      aria-label={copy.fields.patternType}
-                      value={externalDraft.patternType}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          patternType: event.target.value as ExternalPatternType,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="domain">{copy.options.externalPatternType.domain}</option>
-                      <option value="url_regex">{copy.options.externalPatternType.url_regex}</option>
-                      <option value="keyword">{copy.options.externalPatternType.keyword}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.severity}>
-                    <select
-                      aria-label={copy.fields.severity}
-                      value={externalDraft.severity}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          severity: event.target.value as BlocklistSeverity,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="low">{copy.options.severity.low}</option>
-                      <option value="medium">{copy.options.severity.medium}</option>
-                      <option value="high">{copy.options.severity.high}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.action}>
-                    <select
-                      aria-label={copy.fields.action}
-                      value={externalDraft.action}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          action: event.target.value as BlocklistAction,
-                        }))
-                      }
-                      className={inputClassName}
-                    >
-                      <option value="reject">{copy.options.action.reject}</option>
-                      <option value="flag">{copy.options.action.flag}</option>
-                      <option value="replace">{copy.options.action.replace}</option>
-                    </select>
-                  </Field>
-                  <Field label={copy.fields.replacement}>
-                    <input
-                      aria-label={copy.fields.replacement}
-                      value={externalDraft.replacement}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          replacement: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.externalReplacement}
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.sortOrder}>
-                    <input
-                      aria-label={copy.fields.sortOrder}
-                      type="number"
-                      value={externalDraft.sortOrder}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          sortOrder: event.target.value,
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label={copy.fields.description}>
-                    <textarea
-                      aria-label={copy.fields.description}
-                      value={externalDraft.description}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          description: event.target.value,
-                        }))
-                      }
-                      rows={4}
-                      className={`${inputClassName} resize-y`}
-                    />
-                  </Field>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={externalDraft.inherit}
-                        onChange={(event) =>
-                          setExternalDraft((current) => ({
-                            ...current,
-                            inherit: event.target.checked,
-                          }))
-                        }
-                      />
-                      {copy.fields.inherit}
-                    </label>
-                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={externalDraft.isForceUse}
-                        onChange={(event) =>
-                          setExternalDraft((current) => ({
-                            ...current,
-                            isForceUse: event.target.checked,
-                          }))
-                        }
-                      />
-                      {copy.fields.forceUse}
-                    </label>
-                  </div>
+          <ActionDrawer
+            open={externalDrawerOpen}
+            onOpenChange={setExternalDrawerOpenSafely}
+            title={externalMode === 'create' ? copy.sections.externalEditor.createTitle : copy.sections.externalEditor.updateTitle}
+            description={copy.sections.externalEditor.description}
+            size="xl"
+            closeButtonAriaLabel={copy.sections.externalEditor.closeButtonAriaLabel}
+            closeOnBackdropClick={!externalSavePending}
+            closeOnEscape={!externalSavePending}
+            footer={
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setExternalDrawerOpenSafely(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {copy.common.cancel}
+                </button>
+                <AsyncSubmitButton
+                  onClick={() => void submitExternalBlocklist()}
+                  isPending={externalSavePending}
+                  pendingText={externalMode === 'create' ? copy.sections.externalEditor.creating : copy.sections.externalEditor.saving}
+                >
+                  {externalMode === 'create' ? copy.sections.externalEditor.create : copy.sections.externalEditor.update}
+                </AsyncSubmitButton>
+              </div>
+            }
+          >
+            <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+              <div className="flex flex-wrap items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-semibold">{scopeLockTitle}</p>
+                  <p className="leading-6">{scopeLockDescription}</p>
+                  <p className="text-xs text-indigo-800/80">
+                    {copy.options.scopeType[scopeType]} · {activeScopeLabel}
+                  </p>
                 </div>
-              )}
-            </FormSection>
-          </GlassSurface>
+              </div>
+            </div>
+            {externalDetailLoading ? (
+              <StateView
+                status="unavailable"
+                title={copy.sections.externalEditor.loadingTitle}
+                description={copy.sections.externalEditor.loadingDescription}
+              />
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={copy.fields.ownerType}>
+                  <select
+                    aria-label={copy.fields.ownerType}
+                    value={externalDraft.ownerType}
+                    onChange={(event) =>
+                      setExternalDraft((current) => {
+                        const nextType = event.target.value as SecurityScopeType;
+                        const nextOwnerId = isScopedSecurityScopeType(nextType)
+                          ? getScopeOptions(nextType)[0]?.id ?? ''
+                          : '';
+
+                        return {
+                          ...current,
+                          ownerType: nextType,
+                          ownerId: nextOwnerId,
+                        };
+                      })
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="tenant">{copy.options.scopeType.tenant}</option>
+                    <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
+                    <option value="talent">{copy.options.scopeType.talent}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.ownerId}>
+                  {externalDraft.ownerType === 'tenant' ? (
+                    <input
+                      aria-label={copy.fields.ownerId}
+                      value={copy.scopeLens.tenantPlaceholder}
+                      disabled
+                      className={inputClassName}
+                    />
+                  ) : (
+                    <select
+                      aria-label={copy.fields.ownerId}
+                      value={externalDraft.ownerId}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          ownerId: event.target.value,
+                        }))
+                      }
+                      disabled={
+                        organizationScopesPanel.loading
+                        || getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0
+                      }
+                      className={inputClassName}
+                    >
+                      {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0 ? (
+                        <option value="">{copy.scopeLens.emptyOptions}</option>
+                      ) : null}
+                      {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).map((option) => (
+                        <option key={`${option.type}-${option.id}`} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <div className="space-y-3 md:col-span-2">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <Field label={copy.fields.ruleName}>
+                      <input
+                        aria-label={copy.fields.ruleName}
+                        value={externalDraft.nameEn}
+                        onChange={(event) =>
+                          setExternalDraft((current) => ({
+                            ...current,
+                            nameEn: event.target.value,
+                          }))
+                        }
+                        placeholder={copy.placeholders.externalRuleName}
+                        className={inputClassName}
+                      />
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={() => setExternalTranslationDrawerOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                      aria-label={copy.sections.externalEditor.translationManagement.trigger}
+                    >
+                      <Languages className="h-4 w-4" />
+                      <span>{copy.sections.externalEditor.translationManagement.trigger}</span>
+                      {configuredExternalTranslationCount > 0 ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                          {configuredExternalTranslationCount}
+                        </span>
+                      ) : null}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {configuredExternalTranslationCount > 0
+                      ? copy.sections.externalEditor.translationManagement.summary(configuredExternalTranslationCount)
+                      : copy.sections.externalEditor.translationManagement.empty}
+                  </p>
+                  {translationOptionsState.error ? (
+                    <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
+                  ) : null}
+                </div>
+                <Field label={copy.fields.category}>
+                  <input
+                    aria-label={copy.fields.category}
+                    value={externalDraft.category}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        category: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.externalCategory}
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.pattern}>
+                  <input
+                    aria-label={copy.fields.pattern}
+                    value={externalDraft.pattern}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        pattern: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.externalPattern}
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.patternType}>
+                  <select
+                    aria-label={copy.fields.patternType}
+                    value={externalDraft.patternType}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        patternType: event.target.value as ExternalPatternType,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="domain">{copy.options.externalPatternType.domain}</option>
+                    <option value="url_regex">{copy.options.externalPatternType.url_regex}</option>
+                    <option value="keyword">{copy.options.externalPatternType.keyword}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.severity}>
+                  <select
+                    aria-label={copy.fields.severity}
+                    value={externalDraft.severity}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        severity: event.target.value as BlocklistSeverity,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="low">{copy.options.severity.low}</option>
+                    <option value="medium">{copy.options.severity.medium}</option>
+                    <option value="high">{copy.options.severity.high}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.action}>
+                  <select
+                    aria-label={copy.fields.action}
+                    value={externalDraft.action}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        action: event.target.value as BlocklistAction,
+                      }))
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="reject">{copy.options.action.reject}</option>
+                    <option value="flag">{copy.options.action.flag}</option>
+                    <option value="replace">{copy.options.action.replace}</option>
+                  </select>
+                </Field>
+                <Field label={copy.fields.replacement}>
+                  <input
+                    aria-label={copy.fields.replacement}
+                    value={externalDraft.replacement}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        replacement: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.placeholders.externalReplacement}
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.sortOrder}>
+                  <input
+                    aria-label={copy.fields.sortOrder}
+                    type="number"
+                    value={externalDraft.sortOrder}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        sortOrder: event.target.value,
+                      }))
+                    }
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label={copy.fields.description}>
+                  <textarea
+                    aria-label={copy.fields.description}
+                    value={externalDraft.description}
+                    onChange={(event) =>
+                      setExternalDraft((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    rows={4}
+                    className={`${inputClassName} resize-y`}
+                  />
+                </Field>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={externalDraft.inherit}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          inherit: event.target.checked,
+                        }))
+                      }
+                    />
+                    {copy.fields.inherit}
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={externalDraft.isForceUse}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          isForceUse: event.target.checked,
+                        }))
+                      }
+                    />
+                    {copy.fields.forceUse}
+                  </label>
+                </div>
+              </div>
+            )}
+          </ActionDrawer>
         </>
       ) : null}
 
