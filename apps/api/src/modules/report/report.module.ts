@@ -5,11 +5,12 @@ import { Module } from '@nestjs/common';
 import { IntegrationModule } from '../integration/integration.module';
 import { MinioModule } from '../minio';
 import { MfrReportApplicationService } from './application/mfr-report.service';
+import { ReportCatalogApplicationService } from './application/report-catalog.service';
 import { ReportJobReadApplicationService } from './application/report-job-read.service';
 import { ReportJobStateApplicationService } from './application/report-job-state.service';
 import { ReportJobWriteApplicationService } from './application/report-job-write.service';
 import { ReportPiiPlatformApplicationService } from './application/report-pii-platform.service';
-import { ReportController } from './controllers';
+import { ReportCatalogController, ReportController } from './controllers';
 import { MfrReportRepository } from './infrastructure/mfr-report.repository';
 import { ReportJobReadRepository } from './infrastructure/report-job-read.repository';
 import { ReportJobStateRepository } from './infrastructure/report-job-state.repository';
@@ -23,10 +24,11 @@ import {
 
 @Module({
   imports: [MinioModule, IntegrationModule],
-  controllers: [ReportController],
+  controllers: [ReportController, ReportCatalogController],
   providers: [
     MfrReportRepository,
     MfrReportApplicationService,
+    ReportCatalogApplicationService,
     ReportPiiPlatformApplicationService,
     ReportJobReadRepository,
     ReportJobReadApplicationService,

@@ -2,19 +2,60 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { AVAILABLE_REPORTS } from '../../../index';
+import { AVAILABLE_REPORTS, REPORT_CATALOG } from '../../../index';
 import { AVAILABLE_REPORTS as legacyAvailableReports } from '../../../types/report/schema';
 import type { MfrFilterCriteria } from './report';
 
 describe('reporting-dataflow shared contracts', () => {
-  it('keeps the canonical report catalog stable at the shared root entry', () => {
+  it('keeps MFR as the first real API-backed catalog item', () => {
+    expect(REPORT_CATALOG).toHaveLength(1);
+    expect(REPORT_CATALOG[0]).toMatchObject({
+      id: 'mfr',
+      name: {
+        en: 'Member Feedback Report',
+      },
+      availability: {
+        status: 'available',
+        requiredPermissions: [
+          {
+            resource: 'report.mfr',
+            actions: ['read', 'export'],
+          },
+        ],
+      },
+      artifactKinds: ['xlsx', 'csv', 'pii_platform_portal'],
+      filterSchema: {
+        version: 1,
+      },
+    });
+
+    expect(REPORT_CATALOG[0].filterSchema.fields.map((field) => field.type)).toEqual([
+      'config-multi-select',
+      'config-multi-select',
+      'config-multi-select',
+      'config-multi-select',
+      'config-multi-select',
+      'date-range',
+      'date-range',
+      'boolean',
+      'boolean',
+      'raw-code-list',
+    ]);
+    expect(REPORT_CATALOG[0].filterSchema.fields.at(-1)).toMatchObject({
+      id: 'platformCodesRaw',
+      type: 'raw-code-list',
+      advanced: true,
+      fallbackForFieldId: 'platformCodes',
+    });
+  });
+
+  it('keeps the legacy report definition entry as a thin compatibility view', () => {
     expect(AVAILABLE_REPORTS).toEqual([
       {
         code: 'mfr',
-        name: 'Member Feedback Report',
-        description:
-          'Export membership data including PII for physical gift delivery or digital rewards.',
-        icon: 'Gift',
+        name: REPORT_CATALOG[0].name.en,
+        description: REPORT_CATALOG[0].description.en,
+        icon: REPORT_CATALOG[0].icon,
       },
     ]);
   });

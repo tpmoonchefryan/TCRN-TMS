@@ -15,6 +15,7 @@ import {
   ExportJobQueryDto,
 } from '../modules/export/dto/export.dto';
 import { ReportController } from '../modules/report/controllers/report.controller';
+import { ReportCatalogController } from '../modules/report/controllers/report-catalog.controller';
 import {
   CreateMfrJobDto,
   MfrFilterCriteriaDto,
@@ -161,6 +162,18 @@ describe('Swagger ops and async family contract', () => {
   });
 
   it('documents response status coverage for report routes', () => {
+    expect(getResponseStatuses(ReportCatalogController, 'listCatalog')).toEqual([
+      '200',
+      '401',
+      '403',
+    ]);
+    expect(getResponseStatuses(ReportCatalogController, 'getCatalogItem')).toEqual([
+      '200',
+      '401',
+      '403',
+      '404',
+    ]);
+
     expect(getResponseStatuses(ReportController, 'searchMfr')).toEqual([
       '200',
       '400',
@@ -205,6 +218,10 @@ describe('Swagger ops and async family contract', () => {
   });
 
   it('documents explicit path params across async ops routes', () => {
+    expect(getPathParamNames(ReportCatalogController, 'getCatalogItem')).toEqual([
+      'reportId',
+    ]);
+
     expect(getPathParamNames(EmailTemplateController, 'findOne')).toEqual(['code']);
     expect(getPathParamNames(EmailTemplateController, 'update')).toEqual(['code']);
     expect(getPathParamNames(EmailTemplateController, 'deactivate')).toEqual(['code']);

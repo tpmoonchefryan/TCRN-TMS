@@ -11,13 +11,18 @@ export type {
   LocalReportJobCreateResponse,
   MfrFilterCriteria,
   PiiPlatformReportCreateResponse,
+  ReportArtifactKind,
+  ReportCatalogItem,
   ReportCreateResponse,
   ReportDefinition,
+  ReportFilterField,
+  ReportFilterSchema,
   ReportFormat,
   ReportJobStatus,
+  ReportLocalizedText,
   ReportType,
 } from '../../domains/reporting-dataflow';
-export { AVAILABLE_REPORTS } from '../../domains/reporting-dataflow';
+export { AVAILABLE_REPORTS, REPORT_CATALOG } from '../../domains/reporting-dataflow';
 
 /**
  * @deprecated Legacy DB-shaped compatibility type. Prefer the canonical
