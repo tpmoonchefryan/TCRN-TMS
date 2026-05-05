@@ -180,6 +180,9 @@ describe('HomepageEditorScreen', () => {
     expect(screen.queryByLabelText('Profile card JSON')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add block' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('button', { name: /Link button/i })).not.toBeInTheDocument();
+    expect(screen.getByText('Preview viewport')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
+    expect(screen.getByRole('button', { name: 'Mobile' })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Profile card block' }));
 

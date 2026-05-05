@@ -57,6 +57,11 @@ export interface HomepageEditorCopy {
     emptyBlocksTitle: string;
     previewDescription: string;
     previewTitle: string;
+    previewViewportDesktop: string;
+    previewViewportHint: string;
+    previewViewportLabel: string;
+    previewViewportMobile: string;
+    previewViewportTablet: string;
     editThemeJson: string;
     hideThemeJson: string;
     themeDescription: string;
@@ -148,6 +153,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: 'No homepage blocks yet',
       previewDescription: 'Review the current draft as visitors would see it after publication.',
       previewTitle: 'Draft preview',
+      previewViewportDesktop: 'Desktop',
+      previewViewportHint: 'Resize the preview frame without changing the saved draft or public renderer.',
+      previewViewportLabel: 'Preview viewport',
+      previewViewportMobile: 'Mobile',
+      previewViewportTablet: 'Tablet',
       editThemeJson: 'Edit theme JSON',
       hideThemeJson: 'Hide theme JSON',
       themeDescription: 'Theme JSON is an advanced editor for visual tokens. Public access settings are managed separately.',
@@ -296,6 +306,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: '还没有主页区块',
       previewDescription: '按发布后用户看到的方式预览当前草稿。',
       previewTitle: '草稿预览',
+      previewViewportDesktop: '桌面',
+      previewViewportHint: '只调整预览框宽度，不改变已保存草稿或公开渲染器。',
+      previewViewportLabel: '预览视口',
+      previewViewportMobile: '移动端',
+      previewViewportTablet: '平板',
       editThemeJson: '编辑主题 JSON',
       hideThemeJson: '收起主题 JSON',
       themeDescription: '主题 JSON 是视觉 token 的高级编辑入口。公开访问设置会在单独页面管理。',
@@ -444,6 +459,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       emptyBlocksTitle: 'ホームページブロックはまだありません',
       previewDescription: '公開後に訪問者が見る形で現在の下書きを確認します。',
       previewTitle: '下書きプレビュー',
+      previewViewportDesktop: 'デスクトップ',
+      previewViewportHint: '保存済み下書きや公開レンダラーを変更せず、プレビュー枠の幅だけを切り替えます。',
+      previewViewportLabel: 'プレビュービューポート',
+      previewViewportMobile: 'モバイル',
+      previewViewportTablet: 'タブレット',
       editThemeJson: 'テーマ JSON を編集',
       hideThemeJson: 'テーマ JSON を閉じる',
       themeDescription: 'テーマ JSON はビジュアル token 用の高度な編集入口です。公開アクセス設定は別画面で管理します。',

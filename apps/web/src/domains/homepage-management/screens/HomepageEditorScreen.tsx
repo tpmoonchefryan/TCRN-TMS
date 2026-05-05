@@ -47,6 +47,13 @@ import {
 
 type ComponentCategory = 'content' | 'core' | 'interactive' | 'layout' | 'media';
 type SourceMode = 'draft' | 'empty' | 'published';
+type PreviewViewport = 'desktop' | 'tablet' | 'mobile';
+
+const PREVIEW_VIEWPORT_CLASSES: Record<PreviewViewport, string> = {
+  desktop: 'max-w-none',
+  tablet: 'max-w-3xl',
+  mobile: 'max-w-sm',
+};
 
 interface ComponentCatalogEntry {
   category: ComponentCategory;
@@ -431,6 +438,7 @@ export function HomepageEditorScreen({
   const [componentErrors, setComponentErrors] = useState<Record<string, string>>({});
   const [activeComponentEditorId, setActiveComponentEditorId] = useState<string | null>(null);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop');
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
   const [sourceVersion, setSourceVersion] = useState<{ id: string; versionNumber: number } | null>(null);
@@ -1032,13 +1040,47 @@ export function HomepageEditorScreen({
               description={copy.sections.previewDescription}
             >
               <div className="space-y-4">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <PublicHomepageRenderer
-                    content={content}
-                    theme={theme}
-                    updatedAt={homepage.updatedAt}
-                    hero={previewHero}
-                  />
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">{copy.sections.previewViewportLabel}</p>
+                    <p className="text-xs leading-5 text-slate-500">{copy.sections.previewViewportHint}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2" role="group" aria-label={copy.sections.previewViewportLabel}>
+                    {(['desktop', 'tablet', 'mobile'] as const).map((viewport) => {
+                      const isActive = previewViewport === viewport;
+                      const label = viewport === 'desktop'
+                        ? copy.sections.previewViewportDesktop
+                        : viewport === 'tablet'
+                          ? copy.sections.previewViewportTablet
+                          : copy.sections.previewViewportMobile;
+
+                      return (
+                        <button
+                          key={viewport}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => setPreviewViewport(viewport)}
+                          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                            isActive
+                              ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className={`mx-auto transition-[max-width] duration-200 ${PREVIEW_VIEWPORT_CLASSES[previewViewport]}`}>
+                    <PublicHomepageRenderer
+                      content={content}
+                      theme={theme}
+                      updatedAt={homepage.updatedAt}
+                      hero={previewHero}
+                    />
+                  </div>
                 </div>
               </div>
             </FormSection>
