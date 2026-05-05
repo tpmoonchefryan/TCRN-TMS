@@ -7,11 +7,25 @@ export interface AppFrameProps {
   commandBar: React.ReactNode;
   banner?: React.ReactNode;
   children: React.ReactNode;
+  skipToMainLabel?: string;
 }
 
-export const AppFrame: React.FC<AppFrameProps> = ({ sidebar, commandBar, banner, children }) => {
+export const AppFrame: React.FC<AppFrameProps> = ({
+  sidebar,
+  commandBar,
+  banner,
+  children,
+  skipToMainLabel = 'Skip to main content',
+}) => {
   return (
     <div className={`flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden ${tokens.colors.bgBase}`}>
+      <a
+        href="#app-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-slate-950 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+      >
+        {skipToMainLabel}
+      </a>
+
       {banner && (
         <div className="z-50 w-full flex-none" role="banner">
           {banner}
@@ -32,7 +46,12 @@ export const AppFrame: React.FC<AppFrameProps> = ({ sidebar, commandBar, banner,
             {commandBar}
           </header>
 
-          <main className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain p-6" role="main">
+          <main
+            id="app-main-content"
+            className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain p-6"
+            role="main"
+            tabIndex={-1}
+          >
             {children}
           </main>
         </div>

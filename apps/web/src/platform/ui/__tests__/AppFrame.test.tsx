@@ -15,10 +15,14 @@ describe('AppFrame', () => {
     );
 
     const main = screen.getByRole('main');
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' });
     const sidebar = screen.getByText('Sidebar content').closest('aside');
     const frameRoot = main.parentElement?.parentElement?.parentElement;
 
     expect(main).toBeInTheDocument();
+    expect(skipLink).toHaveAttribute('href', '#app-main-content');
+    expect(main).toHaveAttribute('id', 'app-main-content');
+    expect(main).toHaveAttribute('tabindex', '-1');
     expect(sidebar).toBeInTheDocument();
     expect(main.parentElement?.previousElementSibling).toBe(sidebar);
     expect(sidebar).toHaveClass('border-r');
