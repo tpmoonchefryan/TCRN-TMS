@@ -494,6 +494,19 @@ describe('SecurityManagementScreen', () => {
       '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1',
     );
 
+    fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
+    expect(await screen.findByRole('button', { name: 'Add IP rule' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('IP / CIDR')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add IP rule' }));
+    const ipRuleDrawer = await screen.findByRole('dialog', { name: 'Create IP Rule' });
+    expect(within(ipRuleDrawer).getByLabelText('IP / CIDR')).toBeInTheDocument();
+
+    fireEvent.click(within(ipRuleDrawer).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Create IP Rule' })).not.toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByRole('tab', { name: 'Security Activity' }));
 
     await waitFor(() => {

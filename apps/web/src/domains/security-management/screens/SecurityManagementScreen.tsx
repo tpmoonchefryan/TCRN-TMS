@@ -598,6 +598,7 @@ export function SecurityManagementScreen({
   });
 
   const [ipRuleDraft, setIpRuleDraft] = useState<IpRuleDraft>(createEmptyIpRuleDraft);
+  const [ipRuleDrawerOpen, setIpRuleDrawerOpen] = useState(false);
   const [ipRuleSavePending, setIpRuleSavePending] = useState(false);
   const [ipCheckIp, setIpCheckIp] = useState('');
   const [ipCheckScope, setIpCheckScope] = useState<IpRuleScope>('admin');
@@ -1061,6 +1062,19 @@ export function SecurityManagementScreen({
     setExternalDrawerOpen(open);
   }
 
+  function openIpRuleCreateDrawer() {
+    setIpRuleDraft(createEmptyIpRuleDraft());
+    setIpRuleDrawerOpen(true);
+  }
+
+  function setIpRuleDrawerOpenSafely(open: boolean) {
+    if (!open && ipRuleSavePending) {
+      return;
+    }
+
+    setIpRuleDrawerOpen(open);
+  }
+
   async function openBlocklistEditor(entryId: string) {
     setBlocklistDrawerOpen(true);
     setBlocklistDetailLoading(true);
@@ -1313,6 +1327,7 @@ export function SecurityManagementScreen({
         message: formatSecurityIpRuleCreateSuccess(selectedLocale),
       });
       setIpRuleDraft(createEmptyIpRuleDraft());
+      setIpRuleDrawerOpen(false);
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -2535,6 +2550,15 @@ export function SecurityManagementScreen({
               title={copy.sections.ipRules.listTitle}
               description={copy.sections.ipRules.listDescription}
             >
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={openIpRuleCreateDrawer}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {copy.sections.ipRules.newRule}
+                </button>
+              </div>
               {ipRulesPanel.error ? (
                 <StateView status="denied" title={copy.sections.ipRules.unavailable} description={ipRulesPanel.error} />
               ) : (
@@ -2618,97 +2642,110 @@ export function SecurityManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.ipRules.createTitle}
-              description={copy.sections.ipRules.createDescription}
-              actions={
+          <ActionDrawer
+            open={ipRuleDrawerOpen}
+            onOpenChange={setIpRuleDrawerOpenSafely}
+            title={copy.sections.ipRules.createTitle}
+            description={copy.sections.ipRules.createDescription}
+            size="lg"
+            closeButtonAriaLabel={copy.sections.ipRules.closeButtonAriaLabel}
+            closeOnBackdropClick={!ipRuleSavePending}
+            closeOnEscape={!ipRuleSavePending}
+            footer={
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIpRuleDrawerOpenSafely(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {copy.common.cancel}
+                </button>
                 <AsyncSubmitButton onClick={() => void submitIpRule()} isPending={ipRuleSavePending} pendingText={copy.sections.ipRules.creating}>
                   {copy.sections.ipRules.create}
                 </AsyncSubmitButton>
-              }
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label={copy.fields.ipRuleType}>
-                  <select
-                    aria-label={copy.fields.ipRuleType}
-                    value={ipRuleDraft.ruleType}
-                    onChange={(event) =>
-                      setIpRuleDraft((current) => ({
-                        ...current,
-                        ruleType: event.target.value as IpRuleType,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="blacklist">{copy.options.ipRuleType.blacklist}</option>
-                    <option value="whitelist">{copy.options.ipRuleType.whitelist}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.ipRuleScope}>
-                  <select
-                    aria-label={copy.fields.ipRuleScope}
-                    value={ipRuleDraft.scope}
-                    onChange={(event) =>
-                      setIpRuleDraft((current) => ({
-                        ...current,
-                        scope: event.target.value as IpRuleScope,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="admin">{copy.options.ipRuleScope.admin}</option>
-                    <option value="api">{copy.options.ipRuleScope.api}</option>
-                    <option value="public">{copy.options.ipRuleScope.public}</option>
-                    <option value="global">{copy.options.ipRuleScope.global}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.ipPattern}>
-                  <input
-                    aria-label={copy.fields.ipPattern}
-                    value={ipRuleDraft.ipPattern}
-                    onChange={(event) =>
-                      setIpRuleDraft((current) => ({
-                        ...current,
-                        ipPattern: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.ipPattern}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.expiresAt}>
-                  <input
-                    aria-label={copy.fields.expiresAt}
-                    type="datetime-local"
-                    value={ipRuleDraft.expiresAt}
-                    onChange={(event) =>
-                      setIpRuleDraft((current) => ({
-                        ...current,
-                        expiresAt: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.reason}>
-                  <textarea
-                    aria-label={copy.fields.reason}
-                    value={ipRuleDraft.reason}
-                    onChange={(event) =>
-                      setIpRuleDraft((current) => ({
-                        ...current,
-                        reason: event.target.value,
-                      }))
-                    }
-                    rows={4}
-                    placeholder={copy.placeholders.ipReason}
-                    className={`${inputClassName} resize-y`}
-                  />
-                </Field>
               </div>
-            </FormSection>
-          </GlassSurface>
+            }
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label={copy.fields.ipRuleType}>
+                <select
+                  aria-label={copy.fields.ipRuleType}
+                  value={ipRuleDraft.ruleType}
+                  onChange={(event) =>
+                    setIpRuleDraft((current) => ({
+                      ...current,
+                      ruleType: event.target.value as IpRuleType,
+                    }))
+                  }
+                  className={inputClassName}
+                >
+                  <option value="blacklist">{copy.options.ipRuleType.blacklist}</option>
+                  <option value="whitelist">{copy.options.ipRuleType.whitelist}</option>
+                </select>
+              </Field>
+              <Field label={copy.fields.ipRuleScope}>
+                <select
+                  aria-label={copy.fields.ipRuleScope}
+                  value={ipRuleDraft.scope}
+                  onChange={(event) =>
+                    setIpRuleDraft((current) => ({
+                      ...current,
+                      scope: event.target.value as IpRuleScope,
+                    }))
+                  }
+                  className={inputClassName}
+                >
+                  <option value="admin">{copy.options.ipRuleScope.admin}</option>
+                  <option value="api">{copy.options.ipRuleScope.api}</option>
+                  <option value="public">{copy.options.ipRuleScope.public}</option>
+                  <option value="global">{copy.options.ipRuleScope.global}</option>
+                </select>
+              </Field>
+              <Field label={copy.fields.ipPattern}>
+                <input
+                  aria-label={copy.fields.ipPattern}
+                  value={ipRuleDraft.ipPattern}
+                  onChange={(event) =>
+                    setIpRuleDraft((current) => ({
+                      ...current,
+                      ipPattern: event.target.value,
+                    }))
+                  }
+                  placeholder={copy.placeholders.ipPattern}
+                  className={inputClassName}
+                />
+              </Field>
+              <Field label={copy.fields.expiresAt}>
+                <input
+                  aria-label={copy.fields.expiresAt}
+                  type="datetime-local"
+                  value={ipRuleDraft.expiresAt}
+                  onChange={(event) =>
+                    setIpRuleDraft((current) => ({
+                      ...current,
+                      expiresAt: event.target.value,
+                    }))
+                  }
+                  className={inputClassName}
+                />
+              </Field>
+              <Field label={copy.fields.reason}>
+                <textarea
+                  aria-label={copy.fields.reason}
+                  value={ipRuleDraft.reason}
+                  onChange={(event) =>
+                    setIpRuleDraft((current) => ({
+                      ...current,
+                      reason: event.target.value,
+                    }))
+                  }
+                  rows={4}
+                  placeholder={copy.placeholders.ipReason}
+                  className={`${inputClassName} resize-y`}
+                />
+              </Field>
+            </div>
+          </ActionDrawer>
 
           <GlassSurface className="p-6">
             <FormSection
