@@ -16,6 +16,8 @@ export interface SettingsLayoutProps {
   onSectionChange: (sectionId: string) => void;
   children: React.ReactNode;
   ariaLabel?: string;
+  help?: React.ReactNode;
+  sectionNavId?: string;
 }
 
 export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
@@ -26,6 +28,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   onSectionChange,
   children,
   ariaLabel,
+  help,
+  sectionNavId,
 }) => {
   const buttonRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
   const focusableSectionId = sections.some((section) => section.id === activeSectionId)
@@ -69,12 +73,15 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 
   return (
     <div className="w-full space-y-6">
-      <header className="space-y-3">
-        <h1 className={`text-3xl font-bold ${tokens.colors.text}`}>{title}</h1>
-        {description ? <p className={`max-w-4xl text-sm leading-6 ${tokens.colors.textMuted}`}>{description}</p> : null}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 space-y-3">
+          <h1 className={`text-3xl font-bold ${tokens.colors.text}`}>{title}</h1>
+          {description ? <p className={`max-w-4xl text-sm leading-6 ${tokens.colors.textMuted}`}>{description}</p> : null}
+        </div>
+        {help ? <div className="flex flex-none justify-start lg:justify-end">{help}</div> : null}
       </header>
 
-      <nav className="-mx-1 overflow-x-auto pb-1" aria-label={ariaLabel}>
+      <nav id={sectionNavId} className="-mx-1 overflow-x-auto pb-1" aria-label={ariaLabel}>
         <div
           className="flex min-w-max gap-2 rounded-[1.75rem] border border-slate-200 bg-white/72 p-2 shadow-sm"
           onKeyDown={handleSectionNavKeyDown}

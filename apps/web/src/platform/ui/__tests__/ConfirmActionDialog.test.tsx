@@ -80,6 +80,19 @@ describe('ConfirmActionDialog', () => {
     expect(screen.queryByText('Working...')).not.toBeInTheDocument();
   });
 
+  it('keeps cancel before confirm in DOM and stacked visual order', () => {
+    render(<ConfirmActionDialog {...defaultProps} />);
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    const footer = cancelButton.parentElement;
+    expect(footer).toHaveClass('flex-col');
+    expect(footer).not.toHaveClass('flex-col-reverse');
+    expect(Array.from(footer?.children ?? []).indexOf(cancelButton)).toBeLessThan(
+      Array.from(footer?.children ?? []).indexOf(confirmButton),
+    );
+  });
+
   it('initially focuses cancel, traps focus, and returns focus when closed', () => {
     const { rerender } = render(
       <>

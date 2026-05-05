@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ActionDrawer } from '../patterns/ActionDrawer';
+import { ActionDrawer, ActionDrawerFooter } from '../patterns/ActionDrawer';
 
 describe('ActionDrawer', () => {
   const defaultProps = {
@@ -146,6 +146,23 @@ describe('ActionDrawer', () => {
     act(() => {
       vi.advanceTimersByTime(300);
     });
+  });
+
+  it('renders the standard footer with secondary before primary in DOM order', () => {
+    render(
+      <ActionDrawer {...defaultProps} footer={
+        <ActionDrawerFooter
+          secondary={<button type="button">Cancel</button>}
+          primary={<button type="button">Save</button>}
+        />
+      } />,
+    );
+
+    const buttons = screen.getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label'));
+    expect(buttons).toContain('Cancel');
+    expect(buttons.indexOf('Cancel')).toBeLessThan(buttons.indexOf('Save'));
+    expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).toHaveClass('flex-col');
+    expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).not.toHaveClass('flex-col-reverse');
   });
 
 });

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AppFrame } from '../patterns/AppFrame';
 
@@ -9,6 +9,8 @@ describe('AppFrame', () => {
       <AppFrame
         sidebar={<div>Sidebar content</div>}
         commandBar={<div>Command bar</div>}
+        mobileSidebarLabel="Mobile workspace navigation"
+        mobileSidebarCloseLabel="Close workspace navigation"
       >
         <div>Main content</div>
       </AppFrame>,
@@ -16,7 +18,7 @@ describe('AppFrame', () => {
 
     const main = screen.getByRole('main');
     const skipLink = screen.getByRole('link', { name: 'Skip to main content' });
-    const sidebar = screen.getByText('Sidebar content').closest('aside');
+    const sidebar = screen.getAllByText('Sidebar content')[0].closest('aside');
     const frameRoot = main.parentElement?.parentElement?.parentElement;
 
     expect(main).toBeInTheDocument();
@@ -27,9 +29,55 @@ describe('AppFrame', () => {
     expect(main.parentElement?.previousElementSibling).toBe(sidebar);
     expect(sidebar).toHaveClass('border-r');
     expect(sidebar).toHaveClass('min-h-0');
+    expect(sidebar).toHaveClass('hidden');
+    expect(sidebar).toHaveClass('md:flex');
     expect(main).toHaveClass('overflow-y-auto');
     expect(main).toHaveClass('overscroll-contain');
     expect(frameRoot).toHaveClass('h-[100dvh]');
     expect(frameRoot).toHaveClass('overflow-hidden');
+  });
+
+  it('renders a dismissible mobile sidebar drawer when opened', async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <AppFrame
+        sidebar={<div>Mobile navigation</div>}
+        commandBar={<div>Command bar</div>}
+        isMobileSidebarOpen
+        onMobileSidebarOpenChange={onOpenChange}
+        mobileSidebarLabel="Mobile workspace navigation"
+        mobileSidebarCloseLabel="Close workspace navigation"
+      >
+        <div>Main content</div>
+      </AppFrame>,
+    );
+
+    const mobileDialog = screen.getByRole('dialog', { name: 'Mobile workspace navigation' });
+    expect(mobileDialog).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('hidden');
+
+    const closeButton = screen.getByRole('button', { name: 'Close workspace navigation' });
+    await waitFor(() => expect(closeButton).toHaveFocus());
+    fireEvent.click(closeButton);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('closes the mobile sidebar drawer on Escape', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <AppFrame
+        sidebar={<a href="/workspace">Workspace</a>}
+        commandBar={<div>Command bar</div>}
+        isMobileSidebarOpen
+        onMobileSidebarOpenChange={onOpenChange}
+        mobileSidebarLabel="Mobile workspace navigation"
+        mobileSidebarCloseLabel="Close workspace navigation"
+      >
+        <div>Main content</div>
+      </AppFrame>,
+    );
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

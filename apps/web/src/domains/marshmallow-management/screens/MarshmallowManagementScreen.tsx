@@ -1327,6 +1327,23 @@ export function MarshmallowManagementScreen({
               status="empty"
               title={copy.export.noJobTitle}
               description={copy.export.noJobDescription}
+              actions={
+                <AsyncSubmitButton
+                  onClick={() => void handleCreateExport()}
+                  isPending={exportPending}
+                  pendingText={copy.actions.queueExportPending}
+                  aria-label={pickLocaleText(selectedLocale, {
+                    en: 'Create export job from empty state',
+                    zh_HANS: '从空状态创建导出任务',
+                    zh_HANT: '從空狀態建立匯出任務',
+                    ja: '空の状態からエクスポートジョブを作成',
+                    ko: '빈 상태에서 내보내기 작업 만들기',
+                    fr: 'Creer une tache d export depuis l etat vide',
+                  })}
+                >
+                  {copy.actions.createExportJob}
+                </AsyncSubmitButton>
+              }
             />
           )}
         </FormSection>

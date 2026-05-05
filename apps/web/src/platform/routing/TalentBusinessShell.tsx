@@ -83,6 +83,7 @@ export function TalentBusinessShell({
   const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
   const { request } = useSession();
   const [talentName, setTalentName] = useState<string | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,6 +149,7 @@ export function TalentBusinessShell({
 
   const organizationHref = `/tenant/${tenantId}/organization-structure`;
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const pageTitle = getTalentBusinessTitle(section, copy.talentBusiness.titles);
   const resolvedTalentName =
     talentName ||
     pickLocaleText(selectedLocale, {
@@ -158,14 +160,52 @@ export function TalentBusinessShell({
       ko: '탤런트 워크스페이스',
       fr: 'Espace de travail talent',
     });
+  const shellA11y = {
+    breadcrumb: pickLocaleText(selectedLocale, {
+      en: 'Workspace breadcrumb',
+      zh_HANS: '工作区面包屑',
+      zh_HANT: '工作區麵包屑',
+      ja: 'ワークスペースのパンくず',
+      ko: '워크스페이스 이동 경로',
+      fr: 'Fil d’Ariane de l’espace de travail',
+    }),
+    openNavigation: pickLocaleText(selectedLocale, {
+      en: 'Open workspace navigation',
+      zh_HANS: '打开工作区导航',
+      zh_HANT: '開啟工作區導覽',
+      ja: 'ワークスペースナビゲーションを開く',
+      ko: '워크스페이스 탐색 열기',
+      fr: 'Ouvrir la navigation de l’espace de travail',
+    }),
+    closeNavigation: pickLocaleText(selectedLocale, {
+      en: 'Close workspace navigation',
+      zh_HANS: '关闭工作区导航',
+      zh_HANT: '關閉工作區導覽',
+      ja: 'ワークスペースナビゲーションを閉じる',
+      ko: '워크스페이스 탐색 닫기',
+      fr: 'Fermer la navigation de l’espace de travail',
+    }),
+  };
+  const breadcrumbItems = [
+    { label: session.tenantName || copy.common.currentTenant, href: `/tenant/${tenantId}` },
+    { label: resolvedTalentName, href: buildTalentWorkspacePath(tenantId, talentId) },
+    { label: pageTitle, isCurrent: true },
+  ];
+
 
   return (
     <AppFrame
+      isMobileSidebarOpen={isMobileNavOpen}
+      onMobileSidebarOpenChange={setIsMobileNavOpen}
+      mobileSidebarLabel={copy.common.mainNavigationLabel}
+      mobileSidebarCloseLabel={shellA11y.closeNavigation}
       sidebar={
         <SidebarNav
           items={navItems}
           onNavigate={onNavigate}
           ariaLabel={copy.common.mainNavigationLabel}
+          isMobileOpen={isMobileNavOpen}
+          onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
@@ -192,13 +232,18 @@ export function TalentBusinessShell({
       }
       commandBar={
         <TopCommandBar
+          breadcrumbItems={breadcrumbItems}
+          breadcrumbAriaLabel={shellA11y.breadcrumb}
+          onBreadcrumbNavigate={onNavigate}
+          onMobileMenuOpen={() => setIsMobileNavOpen(true)}
+          mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 {copy.talentBusiness.shellLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">
-                {getTalentBusinessTitle(section, copy.talentBusiness.titles)}
+                {pageTitle}
               </p>
             </div>
           }

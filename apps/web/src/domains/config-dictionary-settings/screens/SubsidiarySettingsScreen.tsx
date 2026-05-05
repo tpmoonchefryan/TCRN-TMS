@@ -27,7 +27,7 @@ import { ApiRequestError } from '@/platform/http/api';
 import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
+import { FormSection, GlassSurface, HelpLink, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
   data: T | null;
@@ -424,6 +424,28 @@ export function SubsidiarySettingsScreen({
       ]}
       activeSectionId={activeSectionId}
       ariaLabel={common.settingsSectionsAriaLabel}
+      sectionNavId="subsidiary-settings-sections"
+      help={
+        <HelpLink
+          href="#subsidiary-settings-sections"
+          label={text({
+            en: 'Settings guide',
+            zh_HANS: '设置指引',
+            zh_HANT: '設定指引',
+            ja: '設定ガイド',
+            ko: '설정 가이드',
+            fr: 'Guide des paramètres',
+          })}
+          ariaLabel={text({
+            en: 'Jump to subsidiary settings sections',
+            zh_HANS: '跳转到分目录设置分区',
+            zh_HANT: '跳轉到分目錄設定分區',
+            ja: '配下スコープ設定セクションへ移動',
+            ko: '하위 조직 설정 섹션으로 이동',
+            fr: 'Aller aux sections des paramètres du périmètre',
+          })}
+        />
+      }
       onSectionChange={(sectionId) => {
         setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
       }}

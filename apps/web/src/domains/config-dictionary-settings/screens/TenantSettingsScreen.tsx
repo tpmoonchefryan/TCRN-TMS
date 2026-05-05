@@ -60,6 +60,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  HelpLink,
   PaginationFooter,
   SettingsLayout,
   StateView,
@@ -1150,6 +1151,28 @@ export function TenantSettingsScreen({
         ]}
         activeSectionId={activeSectionId}
         ariaLabel={common.settingsSectionsAriaLabel}
+        sectionNavId="tenant-settings-sections"
+        help={
+          <HelpLink
+            href="#tenant-settings-sections"
+            label={text({
+              en: 'Settings guide',
+              zh_HANS: '设置指引',
+              zh_HANT: '設定指引',
+              ja: '設定ガイド',
+              ko: '설정 가이드',
+              fr: 'Guide des paramètres',
+            })}
+            ariaLabel={text({
+              en: 'Jump to tenant settings sections',
+              zh_HANS: '跳转到租户设置分区',
+              zh_HANT: '跳轉到租戶設定分區',
+              ja: 'テナント設定セクションへ移動',
+              ko: '테넌트 설정 섹션으로 이동',
+              fr: 'Aller aux sections des paramètres du tenant',
+            })}
+          />
+        }
         onSectionChange={(sectionId) => {
           setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
         }}

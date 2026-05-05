@@ -19,6 +19,34 @@ export interface ActionDrawerProps {
   closeOnEscape?: boolean;
 }
 
+
+export interface ActionDrawerFooterProps {
+  secondary?: React.ReactNode;
+  primary?: React.ReactNode;
+  destructive?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export const ActionDrawerFooter: React.FC<ActionDrawerFooterProps> = ({
+  secondary,
+  primary,
+  destructive,
+  children,
+  className = '',
+}) => {
+  if (children) {
+    return <div className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}>{children}</div>;
+  }
+
+  return (
+    <div className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}>
+      {secondary}
+      {destructive || primary}
+    </div>
+  );
+};
+
 const sizeClasses = {
   sm: 'max-w-sm',
   md: 'max-w-md',
@@ -160,8 +188,8 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
           </div>
 
           {footer ? (
-            <footer className="flex flex-none items-center border-t border-slate-200 bg-slate-50 px-6 py-4">
-              <div className="w-full">{footer}</div>
+            <footer className="flex flex-none items-center justify-end border-t border-slate-200 bg-slate-50 px-6 py-4">
+              <div className="flex w-full justify-end">{footer}</div>
             </footer>
           ) : null}
         </div>

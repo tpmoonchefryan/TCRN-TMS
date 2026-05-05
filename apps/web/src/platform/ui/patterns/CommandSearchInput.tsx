@@ -21,6 +21,7 @@ export interface CommandSearchInputProps {
   onShortcut?: () => void;
   disabled?: boolean;
   className?: string;
+  autoFocus?: boolean;
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: CommandShortcut) {
@@ -44,6 +45,7 @@ export const CommandSearchInput: React.FC<CommandSearchInputProps> = ({
   onShortcut,
   disabled = false,
   className = '',
+  autoFocus = false,
 }) => {
   const inputId = useId();
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
@@ -102,6 +104,7 @@ export const CommandSearchInput: React.FC<CommandSearchInputProps> = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         aria-label={ariaLabel}
+        autoFocus={autoFocus}
       />
       {shortcutKey ? (
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">

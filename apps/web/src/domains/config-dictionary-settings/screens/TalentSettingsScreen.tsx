@@ -68,7 +68,7 @@ import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
-import { ConfirmActionDialog, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
+import { ConfirmActionDialog, FormSection, GlassSurface, HelpLink, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
   data: T | null;
@@ -1395,6 +1395,28 @@ export function TalentSettingsScreen({
         ]}
         activeSectionId={activeSectionId}
         ariaLabel={common.settingsSectionsAriaLabel}
+        sectionNavId="talent-settings-sections"
+        help={
+          <HelpLink
+            href="#talent-settings-sections"
+            label={text({
+              en: 'Settings guide',
+              zh_HANS: '设置指引',
+              zh_HANT: '設定指引',
+              ja: '設定ガイド',
+              ko: '설정 가이드',
+              fr: 'Guide des paramètres',
+            })}
+            ariaLabel={text({
+              en: 'Jump to talent settings sections',
+              zh_HANS: '跳转到艺人设置分区',
+              zh_HANT: '跳轉到藝人設定分區',
+              ja: 'タレント設定セクションへ移動',
+              ko: '아티스트 설정 섹션으로 이동',
+              fr: 'Aller aux sections des paramètres du talent',
+            })}
+          />
+        }
         onSectionChange={(sectionId) => {
           applySettingsRouteState(
             sectionId as TalentSettingsSection,

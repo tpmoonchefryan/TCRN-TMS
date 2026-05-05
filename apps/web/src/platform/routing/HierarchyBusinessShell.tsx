@@ -1,6 +1,6 @@
 'use client';
 
-import { BriefcaseBusiness,Building2 } from 'lucide-react';
+import { BriefcaseBusiness, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -72,6 +72,7 @@ export function HierarchyBusinessShell({
   const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
   const { request } = useSession();
   const [scopeName, setScopeName] = useState<string | null>(scopeType === 'tenant' ? session.tenantName : null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,7 +108,6 @@ export function HierarchyBusinessShell({
     };
   }, [request, scopeType, session.tenantName, subsidiaryId]);
 
-  const scopeLabel = getScopeLabel(selectedLocale, scopeType);
   const navItems = [
     {
       key: 'overview',
@@ -128,26 +128,65 @@ export function HierarchyBusinessShell({
   ];
   const organizationHref = `/tenant/${tenantId}/organization-structure`;
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const scopeLabel = getScopeLabel(selectedLocale, scopeType);
   const resolvedScopeName =
-    scopeName ||
-    (scopeType === 'tenant'
-      ? session.tenantName
-      : pickLocaleText(selectedLocale, {
-          en: 'Selected subsidiary',
-          zh_HANS: '当前分目录',
-          zh_HANT: '目前分目錄',
-          ja: '選択中の配下スコープ',
-          ko: '선택한 하위 조직',
-          fr: 'Périmètre sélectionné',
-        }));
+    scopeName
+    || session.tenantName
+    || copy.common.currentTenant;
+  const pageTitle = pickLocaleText(selectedLocale, {
+    en: 'Business workspace',
+    zh_HANS: '业务工作区',
+    zh_HANT: '業務工作區',
+    ja: '業務ワークスペース',
+    ko: '비즈니스 워크스페이스',
+    fr: 'Espace métier',
+  });
+  const shellA11y = {
+    breadcrumb: pickLocaleText(selectedLocale, {
+      en: 'Workspace breadcrumb',
+      zh_HANS: '工作区面包屑',
+      zh_HANT: '工作區麵包屑',
+      ja: 'ワークスペースのパンくず',
+      ko: '워크스페이스 이동 경로',
+      fr: 'Fil d’Ariane de l’espace de travail',
+    }),
+    openNavigation: pickLocaleText(selectedLocale, {
+      en: 'Open workspace navigation',
+      zh_HANS: '打开工作区导航',
+      zh_HANT: '開啟工作區導覽',
+      ja: 'ワークスペースナビゲーションを開く',
+      ko: '워크스페이스 탐색 열기',
+      fr: 'Ouvrir la navigation de l’espace de travail',
+    }),
+    closeNavigation: pickLocaleText(selectedLocale, {
+      en: 'Close workspace navigation',
+      zh_HANS: '关闭工作区导航',
+      zh_HANT: '關閉工作區導覽',
+      ja: 'ワークスペースナビゲーションを閉じる',
+      ko: '워크스페이스 탐색 닫기',
+      fr: 'Fermer la navigation de l’espace de travail',
+    }),
+  };
+  const breadcrumbItems = [
+    { label: session.tenantName || copy.common.currentTenant, href: buildTenantBusinessPath(tenantId) },
+    { label: scopeLabel, href: scopeType === 'subsidiary' && subsidiaryId ? buildSubsidiaryBusinessPath(tenantId, subsidiaryId) : undefined },
+    { label: pageTitle, isCurrent: true },
+  ];
+
 
   return (
     <AppFrame
+      isMobileSidebarOpen={isMobileNavOpen}
+      onMobileSidebarOpenChange={setIsMobileNavOpen}
+      mobileSidebarLabel={copy.common.mainNavigationLabel}
+      mobileSidebarCloseLabel={shellA11y.closeNavigation}
       sidebar={
         <SidebarNav
           items={navItems}
           onNavigate={onNavigate}
           ariaLabel={copy.common.mainNavigationLabel}
+          isMobileOpen={isMobileNavOpen}
+          onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
@@ -174,20 +213,18 @@ export function HierarchyBusinessShell({
       }
       commandBar={
         <TopCommandBar
+          breadcrumbItems={breadcrumbItems}
+          breadcrumbAriaLabel={shellA11y.breadcrumb}
+          onBreadcrumbNavigate={onNavigate}
+          onMobileMenuOpen={() => setIsMobileNavOpen(true)}
+          mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 {scopeLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">
-                {pickLocaleText(selectedLocale, {
-                  en: 'Business workspace',
-                  zh_HANS: '业务工作区',
-                  zh_HANT: '業務工作區',
-                  ja: '業務ワークスペース',
-                  ko: '비즈니스 워크스페이스',
-                  fr: 'Espace métier',
-                })}
+                {pageTitle}
               </p>
             </div>
           }

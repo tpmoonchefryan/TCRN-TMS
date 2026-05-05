@@ -22,6 +22,25 @@ describe('SettingsLayout', () => {
     expect(screen.getByRole('navigation')).toHaveAttribute('aria-label', customLabel);
   });
 
+  it('renders a caller-provided help affordance in the page header', () => {
+    render(
+      <SettingsLayout
+        title="Settings"
+        sections={[{ id: '1', label: 'Section 1' }]}
+        activeSectionId="1"
+        onSectionChange={vi.fn()}
+        ariaLabel="Settings sections"
+        help={<a href="#settings-sections">Settings guide</a>}
+        sectionNavId="settings-sections"
+      >
+        <div>Content</div>
+      </SettingsLayout>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Settings guide' })).toHaveAttribute('href', '#settings-sections');
+    expect(screen.getByRole('navigation')).toHaveAttribute('id', 'settings-sections');
+  });
+
   it('supports arrow, home, and end keyboard navigation across setting sections', async () => {
     const user = userEvent.setup();
     const onSectionChange = vi.fn();

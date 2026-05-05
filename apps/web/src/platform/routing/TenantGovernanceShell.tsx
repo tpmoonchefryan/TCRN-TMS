@@ -1,12 +1,14 @@
 'use client';
 
 import { Activity, Building2, Cable, ShieldCheck, Users } from 'lucide-react';
+import { useState } from 'react';
 
 import {
   buildTenantProfilePath,
   buildTenantProfileSecurityPath,
 } from '@/platform/routing/workspace-paths';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 import {
   AccountDropdownMenu,
@@ -86,6 +88,7 @@ export function TenantGovernanceShell({
   isSignOutPending = false,
 }: Readonly<TenantGovernanceShellProps>) {
   const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const navItems = [
     {
@@ -126,14 +129,52 @@ export function TenantGovernanceShell({
   ];
 
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const pageTitle = getTenantGovernancePageTitle(tenantId, pathname, copy.tenantGovernance.titles);
+  const shellA11y = {
+    breadcrumb: pickLocaleText(selectedLocale, {
+      en: 'Workspace breadcrumb',
+      zh_HANS: '工作区面包屑',
+      zh_HANT: '工作區麵包屑',
+      ja: 'ワークスペースのパンくず',
+      ko: '워크스페이스 이동 경로',
+      fr: 'Fil d’Ariane de l’espace de travail',
+    }),
+    openNavigation: pickLocaleText(selectedLocale, {
+      en: 'Open workspace navigation',
+      zh_HANS: '打开工作区导航',
+      zh_HANT: '開啟工作區導覽',
+      ja: 'ワークスペースナビゲーションを開く',
+      ko: '워크스페이스 탐색 열기',
+      fr: 'Ouvrir la navigation de l’espace de travail',
+    }),
+    closeNavigation: pickLocaleText(selectedLocale, {
+      en: 'Close workspace navigation',
+      zh_HANS: '关闭工作区导航',
+      zh_HANT: '關閉工作區導覽',
+      ja: 'ワークスペースナビゲーションを閉じる',
+      ko: '워크스페이스 탐색 닫기',
+      fr: 'Fermer la navigation de l’espace de travail',
+    }),
+  };
+  const breadcrumbItems = [
+    { label: session.tenantName || copy.common.currentTenant, href: `/tenant/${tenantId}` },
+    { label: copy.tenantGovernance.shellLabel },
+    { label: pageTitle, isCurrent: true },
+  ];
 
   return (
     <AppFrame
+      isMobileSidebarOpen={isMobileNavOpen}
+      onMobileSidebarOpenChange={setIsMobileNavOpen}
+      mobileSidebarLabel={copy.common.mainNavigationLabel}
+      mobileSidebarCloseLabel={shellA11y.closeNavigation}
       sidebar={
         <SidebarNav
           items={navItems}
           onNavigate={onNavigate}
           ariaLabel={copy.common.mainNavigationLabel}
+          isMobileOpen={isMobileNavOpen}
+          onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
@@ -149,13 +190,18 @@ export function TenantGovernanceShell({
       }
       commandBar={
         <TopCommandBar
+          breadcrumbItems={breadcrumbItems}
+          breadcrumbAriaLabel={shellA11y.breadcrumb}
+          onBreadcrumbNavigate={onNavigate}
+          onMobileMenuOpen={() => setIsMobileNavOpen(true)}
+          mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 {copy.tenantGovernance.shellLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">
-                {getTenantGovernancePageTitle(tenantId, pathname, copy.tenantGovernance.titles)}
+                {pageTitle}
               </p>
             </div>
           }
