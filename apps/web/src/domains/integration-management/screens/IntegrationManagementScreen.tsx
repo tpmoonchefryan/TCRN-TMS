@@ -111,6 +111,8 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
+  type PaginationFooterLabels,
   SectionTabs,
   StateView,
   TableShell,
@@ -698,27 +700,13 @@ function resolvePageForIndex(index: number, pageSize: PageSizeOption) {
   return Math.floor(index / pageSize) + 1;
 }
 
-function PaginationFooter({
-  locale,
-  pagination,
-  itemCount,
-  pageSize,
-  onPageSizeChange,
-  onPrevious,
-  onNext,
-  isLoading,
-}: Readonly<{
-  locale: SupportedUiLocale | 'en' | 'zh' | 'ja';
-  pagination: ApiPaginationMeta;
-  itemCount: number;
-  pageSize: PageSizeOption;
-  onPageSizeChange: (pageSize: PageSizeOption) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  isLoading: boolean;
-}>) {
+function buildPaginationFooterLabels(
+  locale: SupportedUiLocale | 'en' | 'zh' | 'ja',
+  pagination: ApiPaginationMeta,
+  itemCount: number,
+): PaginationFooterLabels {
   const pageRange = getPaginationRange(pagination, itemCount);
-  const pageSizeLabel = pickLocaleText(locale, {
+  const rowsPerPageLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页条数',
     zh_HANT: '每頁筆數',
@@ -726,7 +714,7 @@ function PaginationFooter({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const paginationLabel = pickLocaleText(locale, {
+  const pageLabel = pickLocaleText(locale, {
     en: `Page ${pagination.page} of ${pagination.totalPages}`,
     zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
     zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 頁`,
@@ -734,7 +722,7 @@ function PaginationFooter({
     ko: `${pagination.totalPages}페이지 중 ${pagination.page}페이지`,
     fr: `Page ${pagination.page} sur ${pagination.totalPages}`,
   });
-  const paginationRangeLabel =
+  const rangeLabel =
     pagination.totalCount === 0
       ? pickLocaleText(locale, {
           en: 'No records are currently visible.',
@@ -752,67 +740,29 @@ function PaginationFooter({
           ko: `${pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
           fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${pagination.totalCount}`,
         });
-  const previousLabel = pickLocaleText(locale, {
-    en: 'Previous',
-    zh_HANS: '上一页',
-    zh_HANT: '上一頁',
-    ja: '前へ',
-    ko: '이전',
-    fr: 'Précédent',
-  });
-  const nextLabel = pickLocaleText(locale, {
-    en: 'Next',
-    zh_HANS: '下一页',
-    zh_HANT: '下一頁',
-    ja: '次へ',
-    ko: '다음',
-    fr: 'Suivant',
-  });
 
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-slate-700">{paginationLabel}</p>
-        <p className="text-xs text-slate-500">{paginationRangeLabel}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <span className="font-medium text-slate-700">{pageSizeLabel}</span>
-          <select
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSizeOption)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onPrevious}
-            disabled={!pagination.hasPrev || isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {previousLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!pagination.hasNext || isLoading}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {nextLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return {
+    pageLabel,
+    rangeLabel,
+    rowsPerPageLabel,
+    pageSizeAriaLabel: rowsPerPageLabel,
+    previousLabel: pickLocaleText(locale, {
+      en: 'Previous',
+      zh_HANS: '上一页',
+      zh_HANT: '上一頁',
+      ja: '前へ',
+      ko: '이전',
+      fr: 'Précédent',
+    }),
+    nextLabel: pickLocaleText(locale, {
+      en: 'Next',
+      zh_HANS: '下一页',
+      zh_HANT: '下一頁',
+      ja: '次へ',
+      ko: '다음',
+      fr: 'Suivant',
+    }),
+  };
 }
 
 function TextField({
@@ -3211,17 +3161,20 @@ export function IntegrationManagementScreen({
                   </TableShell>
                   {adaptersPanel.data.length > 0 ? (
                     <PaginationFooter
-                      locale={selectedLocale}
                       pagination={paginatedAdapters.pagination}
                       itemCount={paginatedAdapters.items.length}
-                      pageSize={adapterPageSize}
+                      labels={buildPaginationFooterLabels(
+                        selectedLocale,
+                        paginatedAdapters.pagination,
+                        paginatedAdapters.items.length,
+                      )}
+                      onPageChange={setAdapterPage}
                       onPageSizeChange={(pageSize) => {
-                        setAdapterPageSize(pageSize);
+                        setAdapterPageSize(pageSize as PageSizeOption);
                         setAdapterPage(1);
                       }}
-                      onPrevious={() => setAdapterPage((current) => Math.max(current - 1, 1))}
-                      onNext={() => setAdapterPage((current) => current + 1)}
                       isLoading={adaptersPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
                     />
                   ) : null}
                   </>
@@ -3638,17 +3591,20 @@ export function IntegrationManagementScreen({
                   </TableShell>
                   {webhooksPanel.data.length > 0 ? (
                     <PaginationFooter
-                      locale={selectedLocale}
                       pagination={paginatedWebhooks.pagination}
                       itemCount={paginatedWebhooks.items.length}
-                      pageSize={webhookPageSize}
+                      labels={buildPaginationFooterLabels(
+                        selectedLocale,
+                        paginatedWebhooks.pagination,
+                        paginatedWebhooks.items.length,
+                      )}
+                      onPageChange={setWebhookPage}
                       onPageSizeChange={(pageSize) => {
-                        setWebhookPageSize(pageSize);
+                        setWebhookPageSize(pageSize as PageSizeOption);
                         setWebhookPage(1);
                       }}
-                      onPrevious={() => setWebhookPage((current) => Math.max(current - 1, 1))}
-                      onNext={() => setWebhookPage((current) => current + 1)}
                       isLoading={webhooksPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
                     />
                   ) : null}
                 </>
@@ -3987,17 +3943,20 @@ export function IntegrationManagementScreen({
                   </TableShell>
                   {consumersPanel.data.length > 0 ? (
                     <PaginationFooter
-                      locale={selectedLocale}
                       pagination={paginatedConsumers.pagination}
                       itemCount={paginatedConsumers.items.length}
-                      pageSize={consumerPageSize}
+                      labels={buildPaginationFooterLabels(
+                        selectedLocale,
+                        paginatedConsumers.pagination,
+                        paginatedConsumers.items.length,
+                      )}
+                      onPageChange={setConsumerPage}
                       onPageSizeChange={(pageSize) => {
-                        setConsumerPageSize(pageSize);
+                        setConsumerPageSize(pageSize as PageSizeOption);
                         setConsumerPage(1);
                       }}
-                      onPrevious={() => setConsumerPage((current) => Math.max(current - 1, 1))}
-                      onNext={() => setConsumerPage((current) => current + 1)}
                       isLoading={consumersPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
                     />
                   ) : null}
                 </>
@@ -4623,17 +4582,20 @@ export function IntegrationManagementScreen({
                   </TableShell>
                   {emailTemplatesPanel.data.length > 0 ? (
                     <PaginationFooter
-                      locale={selectedLocale}
                       pagination={paginatedEmailTemplates.pagination}
                       itemCount={paginatedEmailTemplates.items.length}
-                      pageSize={emailTemplatePageSize}
+                      labels={buildPaginationFooterLabels(
+                        selectedLocale,
+                        paginatedEmailTemplates.pagination,
+                        paginatedEmailTemplates.items.length,
+                      )}
+                      onPageChange={setEmailTemplatePage}
                       onPageSizeChange={(pageSize) => {
-                        setEmailTemplatePageSize(pageSize);
+                        setEmailTemplatePageSize(pageSize as PageSizeOption);
                         setEmailTemplatePage(1);
                       }}
-                      onPrevious={() => setEmailTemplatePage((current) => Math.max(current - 1, 1))}
-                      onNext={() => setEmailTemplatePage((current) => current + 1)}
                       isLoading={emailTemplatesPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
                     />
                   ) : null}
                 </>
