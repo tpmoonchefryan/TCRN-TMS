@@ -296,6 +296,11 @@ describe('SecurityManagementScreen', () => {
     render(<SecurityManagementScreen tenantId="tenant-1" />);
 
     await screen.findByRole('heading', { name: 'Security' });
+    expect(screen.getByText('Scope lock')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Scopes')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit advanced scopes' }));
+    expect(screen.getByLabelText('Scopes')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Translation management' }));
     const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });

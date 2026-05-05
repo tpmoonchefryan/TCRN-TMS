@@ -945,6 +945,11 @@ describe('IntegrationManagementScreen', () => {
     await selectTenantRootScope(user);
 
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
+    expect(screen.getByText('Scope capability matrix')).toBeInTheDocument();
+    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Reveal' }));

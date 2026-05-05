@@ -1097,6 +1097,7 @@ export function IntegrationManagementScreen({
 
   const [adapterCreateMode, setAdapterCreateMode] = useState(false);
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
+  const [adapterConfigPanelOpen, setAdapterConfigPanelOpen] = useState(false);
   const [adapterDraft, setAdapterDraft] = useState<AdapterDraft>(() => buildAdapterDraft());
   const [adapterTranslationDrawerOpen, setAdapterTranslationDrawerOpen] = useState(false);
   const [adapterConfigRows, setAdapterConfigRows] = useState<AdapterConfigDraftRow[]>(() => buildAdapterConfigRows());
@@ -1268,6 +1269,7 @@ export function IntegrationManagementScreen({
 
     setAdapterCreateMode(false);
     setSelectedAdapterId(null);
+    setAdapterConfigPanelOpen(false);
     setAdapterDetailPanel(createPanelState<IntegrationAdapterDetailRecord | null>(null, false));
     setAdapterDraft(buildAdapterDraft());
     setAdapterConfigRows(buildAdapterConfigRows());
@@ -1336,6 +1338,7 @@ export function IntegrationManagementScreen({
       adaptersScopeRef.current = null;
       setAdaptersPanel(createPanelState<IntegrationAdapterListItemRecord[]>([], false));
       setSelectedAdapterId(null);
+      setAdapterConfigPanelOpen(false);
       setAdapterPage(1);
       return;
     }
@@ -1979,6 +1982,7 @@ export function IntegrationManagementScreen({
             : await createScopedAdapter(request, selectedIntegrationScope, payload);
 
         setAdapterCreateMode(false);
+        setAdapterConfigPanelOpen(false);
         await refreshAdapters(created.id);
         setSelectedAdapterId(created.id);
         setNotice({
@@ -2620,6 +2624,29 @@ export function IntegrationManagementScreen({
           `管理 ${selectedIntegrationScope.label} 范围内继承或自有的适配器。API 客户端保留在账户中心，Webhook 与邮件保留在租户根范围。`,
           `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。API クライアントはアカウントセンター、Webhook とメールはテナントルートに保持されます。`,
         );
+  const integrationCapabilityItems = ([
+    'adapters',
+    'webhooks',
+    'api-keys',
+    'email',
+  ] as const).map((tab) => {
+    const available = availableTabs.includes(tab);
+    const unavailableReason = tab === 'api-keys'
+      ? text('Account Center only', '仅账户中心', 'アカウントセンターのみ')
+      : selectedIntegrationScope && !isTenantRootScope
+        ? text('Tenant root only', '仅租户根范围', 'テナントルートのみ')
+        : text('Unavailable here', '当前不可用', 'ここでは利用不可');
+
+    return {
+      id: tab,
+      label: tabLabel(tab),
+      available,
+      status: available
+        ? text('Available here', '当前可用', 'ここで利用可能')
+        : unavailableReason,
+    };
+  });
+  const shouldShowAdapterConfigEditor = adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
   const scopeAccessNotice = !selectedIntegrationScope
     ? null
     : isTenantRootScope
@@ -2974,6 +3001,26 @@ export function IntegrationManagementScreen({
                   {scopeAccessNotice}
                 </div>
               ) : null}
+              <div className="space-y-2" aria-label={text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
+                </p>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {integrationCapabilityItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-2xl border px-4 py-3 ${
+                        item.available
+                          ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
+                          : 'border-slate-200 bg-white/70 text-slate-600'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">{item.label}</p>
+                      <p className="mt-1 text-xs">{item.status}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </GlassSurface>
 
@@ -3002,6 +3049,7 @@ export function IntegrationManagementScreen({
                     onClick={() => {
                       setAdapterCreateMode(true);
                       setSelectedAdapterId(null);
+                      setAdapterConfigPanelOpen(true);
                       setAdapterDraft(buildAdapterDraft());
                       setAdapterConfigRows(buildAdapterConfigRows());
                     }}
@@ -3070,9 +3118,19 @@ export function IntegrationManagementScreen({
                             onClick={() => {
                               setAdapterCreateMode(false);
                               setSelectedAdapterId(adapter.id);
+                              setAdapterConfigPanelOpen(false);
                             }}
                           >
                             {text('Open', '打开', '開く')}
+                          </SecondaryButton>
+                          <SecondaryButton
+                            onClick={() => {
+                              setAdapterCreateMode(false);
+                              setSelectedAdapterId(adapter.id);
+                              setAdapterConfigPanelOpen(true);
+                            }}
+                          >
+                            {text('Configure', '配置', '設定')}
                           </SecondaryButton>
                           {adapter.isActive ? (
                             <SecondaryButton
@@ -3186,6 +3244,7 @@ export function IntegrationManagementScreen({
                       onClick={() => {
                         setAdapterCreateMode(true);
                         setSelectedAdapterId(null);
+                        setAdapterConfigPanelOpen(true);
                         setAdapterDraft(buildAdapterDraft());
                         setAdapterConfigRows(buildAdapterConfigRows());
                       }}
@@ -3196,6 +3255,7 @@ export function IntegrationManagementScreen({
                     <SecondaryButton
                       onClick={() => {
                         setAdapterCreateMode(false);
+                        setAdapterConfigPanelOpen(false);
                         setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
                       }}
                     >
@@ -3322,25 +3382,44 @@ export function IntegrationManagementScreen({
             </FormSection>
 
             <FormSection
-              title={text('Config Values', '配置值', '設定値')}
-              description={text(
-                'Add or update config rows here. Reveal masked secret values before replacing them.',
-                '可在这里新增或更新配置行。若要替换已遮罩的密钥值，请先显式显示其内容。',
-                'ここで設定行を追加・更新できます。マスク済みシークレットを置き換える前に内容を表示してください。',
-              )}
+              title={text('Configuration & secrets', '配置与密钥', '設定とシークレット')}
+              description={
+                shouldShowAdapterConfigEditor
+                  ? text(
+                      'Add or update config rows here. Reveal masked secret values before replacing them.',
+                      '可在这里新增或更新配置行。若要替换已遮罩的密钥值，请先显式显示其内容。',
+                      'ここで設定行を追加・更新できます。マスク済みシークレットを置き換える前に内容を表示してください。',
+                    )
+                  : text(
+                      'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter.',
+                      '配置值与已遮罩密钥默认收起，只有显式配置所选适配器时才展开。',
+                      '設定値とマスク済みシークレットは、選択中のアダプターを明示的に設定するまで折りたたまれます。',
+                    )
+              }
               actions={
-                adapterCreateMode || adapterDetailPanel.data ? (
-                  <AsyncSubmitButton
-                    onClick={() => void handleAdapterConfigSave()}
-                    isPending={adapterConfigSubmitting}
-                    pendingText={text('Saving configs...', '正在保存配置...', '設定を保存しています...')}
-                  >
-                    {text('Save config changes', '保存配置更改', '設定変更を保存')}
-                  </AsyncSubmitButton>
+                shouldShowAdapterConfigEditor ? (
+                  <>
+                    {!adapterCreateMode ? (
+                      <SecondaryButton onClick={() => setAdapterConfigPanelOpen(false)}>
+                        {text('Done configuring', '完成配置', '設定を完了')}
+                      </SecondaryButton>
+                    ) : null}
+                    <AsyncSubmitButton
+                      onClick={() => void handleAdapterConfigSave()}
+                      isPending={adapterConfigSubmitting}
+                      pendingText={text('Saving configs...', '正在保存配置...', '設定を保存しています...')}
+                    >
+                      {text('Save config changes', '保存配置更改', '設定変更を保存')}
+                    </AsyncSubmitButton>
+                  </>
+                ) : adapterDetailPanel.data ? (
+                  <SecondaryButton tone="primary" onClick={() => setAdapterConfigPanelOpen(true)}>
+                    {text('Configure', '配置', '設定')}
+                  </SecondaryButton>
                 ) : undefined
               }
             >
-              {adapterCreateMode || adapterDetailPanel.data ? (
+              {shouldShowAdapterConfigEditor ? (
                 <div className="space-y-4">
                   {adapterConfigRows.map((row, index) => (
                     <div key={row.rowKey} className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]">
@@ -3421,6 +3500,16 @@ export function IntegrationManagementScreen({
                     {text('Add config row', '新增配置行', '設定行を追加')}
                   </SecondaryButton>
                 </div>
+              ) : adapterDetailPanel.data ? (
+                <StateView
+                  status="empty"
+                  title={text('Configuration is collapsed', '配置已收起', '設定は折りたたまれています')}
+                  description={text(
+                    'Use Configure when you are ready to reveal or edit adapter config values and secrets.',
+                    '准备查看或编辑适配器配置值与密钥时，再点击配置。',
+                    'アダプターの設定値やシークレットを表示・編集する準備ができたら「設定」を使用してください。',
+                  )}
+                />
               ) : (
                 <p className="text-sm text-slate-500">{text('Select or create an adapter to manage config values.', '请选择或创建一个适配器来管理配置值。', '設定値を管理するにはアダプターを選択または作成してください。')}</p>
               )}

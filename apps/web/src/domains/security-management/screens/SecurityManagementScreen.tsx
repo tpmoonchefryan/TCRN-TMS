@@ -621,6 +621,7 @@ export function SecurityManagementScreen({
   const [selectedBlocklistId, setSelectedBlocklistId] = useState<string | null>(null);
   const [blocklistDetailLoading, setBlocklistDetailLoading] = useState(false);
   const [blocklistTranslationDrawerOpen, setBlocklistTranslationDrawerOpen] = useState(false);
+  const [blocklistAdvancedOpen, setBlocklistAdvancedOpen] = useState(false);
   const [blocklistDraft, setBlocklistDraft] = useState<BlocklistDraft>(() =>
     createEmptyBlocklistDraft(currentScopeType, currentScopeId),
   );
@@ -811,6 +812,47 @@ export function SecurityManagementScreen({
     ? workspaceName
     : activeScopeOptions.find((option) => option.id === scopeId)?.label
       || `${copy.options.scopeType[scopeType]} · ${copy.scopeLens.unresolvedSelection}`;
+  const scopeLockTitle = pickLocaleText(selectedLocale, {
+    en: 'Scope lock',
+    zh_HANS: '范围锁定',
+    zh_HANT: '範圍鎖定',
+    ja: 'スコープロック',
+    ko: '범위 잠금',
+    fr: 'Verrou de périmètre',
+  });
+  const scopeLockDescription = pickLocaleText(selectedLocale, {
+    en: `Policy edits below are locked to ${activeScopeLabel}. Change the level before opening or creating rules.`,
+    zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。请先切换层级，再打开或创建规则。`,
+    zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。請先切換層級，再開啟或建立規則。`,
+    ja: `以下のポリシー編集は ${activeScopeLabel} にロックされています。ルールを開く・作成する前に階層を切り替えてください。`,
+    ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
+    fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau avant d’ouvrir ou de créer des règles.`,
+  });
+  const advancedScopeTitle = pickLocaleText(selectedLocale, {
+    en: 'Advanced usage scopes',
+    zh_HANS: '高级使用范围',
+    zh_HANT: '進階使用範圍',
+    ja: '高度な利用スコープ',
+    ko: '고급 사용 범위',
+    fr: 'Périmètres d’usage avancés',
+  });
+  const advancedScopeToggle = blocklistAdvancedOpen
+    ? pickLocaleText(selectedLocale, {
+        en: 'Hide advanced scopes',
+        zh_HANS: '收起高级范围',
+        zh_HANT: '收合進階範圍',
+        ja: '高度なスコープを隠す',
+        ko: '고급 범위 숨기기',
+        fr: 'Masquer les périmètres avancés',
+      })
+    : pickLocaleText(selectedLocale, {
+        en: 'Edit advanced scopes',
+        zh_HANS: '编辑高级范围',
+        zh_HANT: '編輯進階範圍',
+        ja: '高度なスコープを編集',
+        ko: '고급 범위 편집',
+        fr: 'Modifier les périmètres avancés',
+      });
 
   const scopeLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -1017,6 +1059,7 @@ export function SecurityManagementScreen({
   function resetBlocklistEditor() {
     setBlocklistMode('create');
     setSelectedBlocklistId(null);
+    setBlocklistAdvancedOpen(false);
     setBlocklistDraft(createEmptyBlocklistDraft(scopeType, scopeId));
   }
 
@@ -1035,6 +1078,7 @@ export function SecurityManagementScreen({
       const detail = await getBlocklistEntry(request, entryId);
       setBlocklistMode('edit');
       setSelectedBlocklistId(entryId);
+      setBlocklistAdvancedOpen(false);
       setBlocklistDraft(mapBlocklistToDraft(detail));
     } catch (error) {
       setNotice({
@@ -1347,6 +1391,19 @@ export function SecurityManagementScreen({
             <SummaryCard label={copy.summary.blocklistLabel} value={String(blocklistCount)} hint={copy.summary.blocklistHint} />
             <SummaryCard label={copy.summary.externalLabel} value={String(externalCount)} hint={copy.summary.externalHint} />
             <SummaryCard label={copy.summary.blockedIpsLabel} value={String(blockedIpCount)} hint={copy.summary.blockedIpsHint} />
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+          <div className="flex flex-wrap items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+            <div className="min-w-0 space-y-1">
+              <p className="font-semibold">{scopeLockTitle}</p>
+              <p className="leading-6">{scopeLockDescription}</p>
+              <p className="text-xs text-indigo-800/80">
+                {copy.options.scopeType[scopeType]} · {activeScopeLabel}
+              </p>
+            </div>
           </div>
         </div>
       </GlassSurface>
@@ -1821,20 +1878,41 @@ export function SecurityManagementScreen({
                       className={inputClassName}
                     />
                   </Field>
-                  <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
-                    <input
-                      aria-label={copy.fields.scopes}
-                      value={blocklistDraft.scopeCsv}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          scopeCsv: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.placeholders.scopes}
-                      className={inputClassName}
-                    />
-                  </Field>
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-900">{advancedScopeTitle}</p>
+                        <p className="text-xs leading-5 text-slate-500">{copy.fields.scopesHint}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBlocklistAdvancedOpen((current) => !current)}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                      >
+                        {advancedScopeToggle}
+                      </button>
+                    </div>
+                    {blocklistAdvancedOpen ? (
+                      <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
+                        <input
+                          aria-label={copy.fields.scopes}
+                          value={blocklistDraft.scopeCsv}
+                          onChange={(event) =>
+                            setBlocklistDraft((current) => ({
+                              ...current,
+                              scopeCsv: event.target.value,
+                            }))
+                          }
+                          placeholder={copy.placeholders.scopes}
+                          className={inputClassName}
+                        />
+                      </Field>
+                    ) : (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                        {blocklistDraft.scopeCsv || copy.common.all}
+                      </div>
+                    )}
+                  </div>
                   <Field label={copy.fields.sortOrder}>
                     <input
                       aria-label={copy.fields.sortOrder}
