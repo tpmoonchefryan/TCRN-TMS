@@ -7,6 +7,9 @@ import { SubsidiarySettingsScreen } from '@/domains/config-dictionary-settings/s
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
+const mockRouterReplace = vi.fn();
+let currentPathname = '/tenant/tenant-1/subsidiary/sub-1/settings';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as RuntimeLocale,
   selectedLocale: undefined as SupportedUiLocale | undefined,
@@ -35,6 +38,14 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
 }));
 
+vi.mock('next/navigation', () => ({
+  usePathname: () => currentPathname,
+  useRouter: () => ({
+    replace: mockRouterReplace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
+
 const dictionaryItemsResponse = [
   {
     id: 'dictionary-item-1',
@@ -59,6 +70,9 @@ const dictionaryItemsResponse = [
 describe('SubsidiarySettingsScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
+    mockRouterReplace.mockReset();
+    currentSearch = '';
+    currentPathname = '/tenant/tenant-1/subsidiary/sub-1/settings';
     localeState.currentLocale = 'en';
     localeState.selectedLocale = undefined;
   });

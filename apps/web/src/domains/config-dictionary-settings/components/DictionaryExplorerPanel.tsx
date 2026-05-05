@@ -2,7 +2,8 @@
 
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { Search } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Fragment, startTransition, useEffect, useMemo, useState } from 'react';
 
 import {
   type DictionaryItemRecord,
@@ -22,6 +23,8 @@ import {
   getPaginationRange,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
+  parsePageParam,
+  parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { PaginationFooter, StateView, TableShell } from '@/platform/ui';
 
@@ -91,6 +94,81 @@ const DEFAULT_COPY: DictionaryExplorerPanelCopy = {
   japaneseLabel: 'JA',
 };
 
+function resolveDictionaryExplorerTypeCode(
+  types: readonly DictionaryTypeSummary[],
+  requestedTypeCode: string | null,
+) {
+  if (requestedTypeCode && types.some((entry) => entry.type === requestedTypeCode)) {
+    return requestedTypeCode;
+  }
+
+  return types[0]?.type ?? null;
+}
+
+function parseDictionaryIncludeInactiveParam(value: string | null, fallback: boolean) {
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  return fallback;
+}
+
+function buildDictionaryExplorerQueryState(
+  searchParams: { toString(): string },
+  {
+    defaultTypeCode,
+    includeInactive,
+    includeInactiveDefault,
+    page,
+    pageSize,
+    search,
+    typeCode,
+  }: {
+    defaultTypeCode: string | null;
+    includeInactive: boolean;
+    includeInactiveDefault: boolean;
+    page: number;
+    pageSize: PageSizeOption;
+    search: string;
+    typeCode: string | null;
+  },
+) {
+  const params = new URLSearchParams(searchParams.toString());
+  const normalizedSearch = search.trim();
+
+  params.delete('dictionaryType');
+  params.delete('dictionarySearch');
+  params.delete('dictionaryInactive');
+  params.delete('dictionaryPage');
+  params.delete('dictionaryPageSize');
+
+  if (typeCode && typeCode !== defaultTypeCode) {
+    params.set('dictionaryType', typeCode);
+  }
+
+  if (normalizedSearch) {
+    params.set('dictionarySearch', normalizedSearch);
+  }
+
+  if (includeInactive !== includeInactiveDefault) {
+    params.set('dictionaryInactive', String(includeInactive));
+  }
+
+  if (page > 1) {
+    params.set('dictionaryPage', String(page));
+  }
+
+  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+    params.set('dictionaryPageSize', String(pageSize));
+  }
+
+  return params.toString();
+}
+
 export interface DictionaryExplorerPanelProps {
   request: RequestFn;
   requestEnvelope: RequestEnvelopeFn;
@@ -124,11 +202,23 @@ export function DictionaryExplorerPanel({
   includeInactiveByDefault = false,
   allowIncludeInactiveToggle = false,
 }: Readonly<DictionaryExplorerPanelProps>) {
-  const [selectedTypeCode, setSelectedTypeCode] = useState<string | null>(types[0]?.type ?? null);
-  const [search, setSearch] = useState('');
-  const [includeInactive, setIncludeInactive] = useState(includeInactiveByDefault);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultTypeCode = types[0]?.type ?? null;
+  const urlSelectedTypeCode = resolveDictionaryExplorerTypeCode(types, searchParams.get('dictionaryType'));
+  const urlSearch = searchParams.get('dictionarySearch') ?? '';
+  const urlIncludeInactive = parseDictionaryIncludeInactiveParam(
+    searchParams.get('dictionaryInactive'),
+    includeInactiveByDefault,
+  );
+  const urlPage = parsePageParam(searchParams.get('dictionaryPage'));
+  const urlPageSize = parsePageSizeParam(searchParams.get('dictionaryPageSize'));
+  const [selectedTypeCode, setSelectedTypeCode] = useState<string | null>(urlSelectedTypeCode);
+  const [search, setSearch] = useState(urlSearch);
+  const [includeInactive, setIncludeInactive] = useState(urlIncludeInactive);
+  const [page, setPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [itemsPanel, setItemsPanel] = useState<DictionaryItemsState>({
     dictionaryTypeCode: null,
     data: [],
@@ -143,25 +233,135 @@ export function DictionaryExplorerPanel({
   );
 
   useEffect(() => {
-    if (types.length === 0) {
-      setSelectedTypeCode(null);
+    setSelectedTypeCode((current) => (current === urlSelectedTypeCode ? current : urlSelectedTypeCode));
+    setSearch((current) => (current === urlSearch ? current : urlSearch));
+    setIncludeInactive((current) => (current === urlIncludeInactive ? current : urlIncludeInactive));
+    setPage((current) => (current === urlPage ? current : urlPage));
+    setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
+  }, [urlIncludeInactive, urlPage, urlPageSize, urlSearch, urlSelectedTypeCode]);
+
+  function applyDictionaryQueryState(
+    nextState: Partial<{
+      includeInactive: boolean;
+      page: number;
+      pageSize: PageSizeOption;
+      search: string;
+      typeCode: string | null;
+    }>,
+  ) {
+    const nextTypeCode = resolveDictionaryExplorerTypeCode(
+      types,
+      nextState.typeCode !== undefined ? nextState.typeCode : selectedTypeCode,
+    );
+    const nextSearch = nextState.search ?? search;
+    const nextIncludeInactive = nextState.includeInactive ?? includeInactive;
+    const nextPage = nextState.page ?? page;
+    const nextPageSize = nextState.pageSize ?? pageSize;
+
+    if (nextState.typeCode !== undefined) {
+      setSelectedTypeCode(nextTypeCode);
+    }
+
+    if (nextState.search !== undefined) {
+      setSearch(nextSearch);
+    }
+
+    if (nextState.includeInactive !== undefined) {
+      setIncludeInactive(nextIncludeInactive);
+    }
+
+    if (nextState.page !== undefined) {
+      setPage(nextPage);
+    }
+
+    if (nextState.pageSize !== undefined) {
+      setPageSize(nextPageSize);
+    }
+
+    const nextQueryString = buildDictionaryExplorerQueryState(searchParams, {
+      defaultTypeCode,
+      includeInactive: nextIncludeInactive,
+      includeInactiveDefault: includeInactiveByDefault,
+      page: nextPage,
+      pageSize: nextPageSize,
+      search: nextSearch,
+      typeCode: nextTypeCode,
+    });
+    const currentQueryString = buildDictionaryExplorerQueryState(searchParams, {
+      defaultTypeCode,
+      includeInactive,
+      includeInactiveDefault: includeInactiveByDefault,
+      page,
+      pageSize,
+      search,
+      typeCode: selectedTypeCode,
+    });
+
+    if (nextQueryString === currentQueryString) {
       return;
     }
 
-    if (selectedTypeCode && types.some((entry) => entry.type === selectedTypeCode)) {
-      return;
-    }
-
-    setSelectedTypeCode(types[0]?.type ?? null);
-  }, [selectedTypeCode, types]);
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     onTypeSelected?.(selectedType);
   }, [onTypeSelected, selectedType]);
 
   useEffect(() => {
-    setPage(1);
-  }, [includeInactive, search, selectedTypeCode]);
+    if (
+      !itemsPanel.loading &&
+      itemsPanel.dictionaryTypeCode === selectedType?.type &&
+      page !== itemsPanel.pagination.page
+    ) {
+      const nextPage = itemsPanel.pagination.page;
+      setPage(nextPage);
+
+      const nextQueryString = buildDictionaryExplorerQueryState(searchParams, {
+        defaultTypeCode,
+        includeInactive,
+        includeInactiveDefault: includeInactiveByDefault,
+        page: nextPage,
+        pageSize,
+        search,
+        typeCode: selectedTypeCode,
+      });
+      const currentQueryString = buildDictionaryExplorerQueryState(searchParams, {
+        defaultTypeCode,
+        includeInactive,
+        includeInactiveDefault: includeInactiveByDefault,
+        page,
+        pageSize,
+        search,
+        typeCode: selectedTypeCode,
+      });
+
+      if (nextQueryString !== currentQueryString) {
+        const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+        startTransition(() => {
+          router.replace(nextHref);
+        });
+      }
+    }
+  }, [
+    defaultTypeCode,
+    includeInactive,
+    includeInactiveByDefault,
+    itemsPanel.dictionaryTypeCode,
+    itemsPanel.loading,
+    itemsPanel.pagination.page,
+    page,
+    pageSize,
+    pathname,
+    router,
+    search,
+    searchParams,
+    selectedType?.type,
+    selectedTypeCode,
+  ]);
 
   useEffect(() => {
     if (!selectedType) {
@@ -290,7 +490,7 @@ export function DictionaryExplorerPanel({
                 key={dictionaryType.type}
                 type="button"
                 onClick={() => {
-                  setSelectedTypeCode(dictionaryType.type);
+                  applyDictionaryQueryState({ page: 1, typeCode: dictionaryType.type });
                 }}
                 className={`w-full rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isActive
@@ -333,7 +533,7 @@ export function DictionaryExplorerPanel({
                 aria-label={copy.searchAriaLabel}
                 value={search}
                 onChange={(event) => {
-                  setSearch(event.target.value);
+                  applyDictionaryQueryState({ page: 1, search: event.target.value });
                 }}
                 placeholder={copy.searchPlaceholder}
                 className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
@@ -347,7 +547,7 @@ export function DictionaryExplorerPanel({
                   type="checkbox"
                   checked={includeInactive}
                   onChange={(event) => {
-                    setIncludeInactive(event.target.checked);
+                    applyDictionaryQueryState({ includeInactive: event.target.checked, page: 1 });
                   }}
                   className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 />
@@ -424,10 +624,12 @@ export function DictionaryExplorerPanel({
                   previousLabel: paginationCopy.previous,
                   nextLabel: paginationCopy.next,
                 }}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => applyDictionaryQueryState({ page: nextPage })}
                 onPageSizeChange={(nextPageSize) => {
-                  setPageSize(nextPageSize as PageSizeOption);
-                  setPage(1);
+                  applyDictionaryQueryState({
+                    page: 1,
+                    pageSize: nextPageSize as PageSizeOption,
+                  });
                 }}
                 isLoading={itemsPanel.loading}
                 className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"

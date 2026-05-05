@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -9,6 +9,9 @@ import { SystemDictionaryScreen } from '@/domains/config-dictionary-settings/scr
 import { type RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
+const mockRouterReplace = vi.fn();
+let currentPathname = '/ac/ac-tenant/system-dictionary';
+let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as RuntimeLocale,
   selectedLocale: 'en',
@@ -48,6 +51,14 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => localeState,
 }));
 
+vi.mock('next/navigation', () => ({
+  usePathname: () => currentPathname,
+  useRouter: () => ({
+    replace: mockRouterReplace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
+}));
+
 function cloneItems(items: DictionaryItemRecord[]) {
   return items.map((item) => ({
     ...item,
@@ -69,6 +80,9 @@ function getTableRowByText(text: string) {
 describe('SystemDictionaryScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
+    mockRouterReplace.mockReset();
+    currentSearch = '';
+    currentPathname = '/ac/ac-tenant/system-dictionary';
     localeState.currentLocale = 'en';
     localeState.selectedLocale = 'en';
   });
@@ -633,6 +647,95 @@ describe('SystemDictionaryScreen', () => {
     });
 
     expect(await screen.findByText('ACTIVE reactivated.')).toBeInTheDocument();
+  });
+
+
+  it('hydrates dictionary explorer state from URL and preserves unrelated query params', async () => {
+    currentSearch = 'dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true&dictionaryPage=2&dictionaryPageSize=50&foo=1';
+    const types: DictionaryTypeSummary[] = [
+      {
+        type: 'CUSTOMER_STATUS',
+        name: 'Customer Status',
+        description: 'Customer lifecycle flags',
+        count: 1,
+      },
+      {
+        type: 'MEMBERSHIP_LEVEL',
+        name: 'Membership Level',
+        description: 'Customer tier labels',
+        count: 1,
+      },
+    ];
+
+    mockRequest.mockImplementation(async (path: string) => {
+      const url = new URL(path, 'https://tcrn.local');
+
+      if (url.pathname === '/api/v1/system-dictionary') {
+        return types;
+      }
+
+      if (url.pathname === '/api/v1/system-dictionary/MEMBERSHIP_LEVEL') {
+        expect(url.searchParams.get('search')).toBe('vip');
+        expect(url.searchParams.get('includeInactive')).toBe('true');
+        expect(url.searchParams.get('page')).toBe('2');
+        expect(url.searchParams.get('pageSize')).toBe('50');
+
+        return {
+          success: true,
+          data: [
+            {
+              id: 'item-vip',
+              dictionaryCode: 'MEMBERSHIP_LEVEL',
+              code: 'VIP',
+              nameEn: 'VIP member',
+              nameZh: null,
+              nameJa: null,
+              translations: {
+                en: 'VIP member',
+              },
+              name: 'VIP member',
+              descriptionEn: 'High-value customer tier',
+              descriptionZh: null,
+              descriptionJa: null,
+              descriptionTranslations: {},
+              sortOrder: 10,
+              isActive: false,
+              extraData: null,
+              createdAt: '2026-04-17T00:00:00.000Z',
+              updatedAt: '2026-04-17T00:10:00.000Z',
+              version: 3,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 2,
+              pageSize: 50,
+              totalCount: 51,
+              totalPages: 2,
+              hasNext: false,
+              hasPrev: true,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<SystemDictionaryScreen />);
+
+    expect(await screen.findByText('VIP member')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search dictionary items')).toHaveValue('vip');
+    expect(screen.getByLabelText('Include inactive dictionary items')).toBeChecked();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '20' } });
+    });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith(
+      '/ac/ac-tenant/system-dictionary?foo=1&dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true',
+    );
   });
 
   it('renders localized system dictionary copy for zh locale', async () => {
