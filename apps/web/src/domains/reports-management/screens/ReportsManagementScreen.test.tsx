@@ -260,6 +260,10 @@ describe('ReportsManagementScreen', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Draft report' })[0]);
 
     expect(await screen.findByRole('heading', { name: 'Create MFR Job' })).toBeInTheDocument();
+    expect(screen.getByText('Preview first, then queue')).toBeInTheDocument();
+    expect(screen.getByText('Code filters')).toBeInTheDocument();
+    expect(screen.getByText('Validity window')).toBeInTheDocument();
+    expect(screen.getByText('Output')).toBeInTheDocument();
     expect(screen.getByText('No MFR jobs found')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create MFR job' }));

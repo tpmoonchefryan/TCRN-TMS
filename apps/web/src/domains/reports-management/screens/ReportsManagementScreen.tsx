@@ -1150,76 +1150,102 @@ export function ReportsManagementScreen({
           </div>
         }
       >
-        <fieldset disabled={previewPending || createPending} className="space-y-6 disabled:opacity-70">
-          <div className="grid gap-4 xl:grid-cols-2">
-            <TextField
-              label={copy.drawer.fields.platformCodes}
-              value={draft.platformCodes}
-              placeholder={copy.drawer.fields.platformCodesPlaceholder}
-              onChange={(value) => setDraft((current) => ({ ...current, platformCodes: value }))}
-            />
-            <TextField
-              label={copy.drawer.fields.membershipClassCodes}
-              value={draft.membershipClassCodes}
-              placeholder={copy.drawer.fields.membershipClassCodesPlaceholder}
-              onChange={(value) => setDraft((current) => ({ ...current, membershipClassCodes: value }))}
-            />
-            <TextField
-              label={copy.drawer.fields.membershipTypeCodes}
-              value={draft.membershipTypeCodes}
-              placeholder={copy.drawer.fields.membershipTypeCodesPlaceholder}
-              onChange={(value) => setDraft((current) => ({ ...current, membershipTypeCodes: value }))}
-            />
-            <TextField
-              label={copy.drawer.fields.membershipLevelCodes}
-              value={draft.membershipLevelCodes}
-              placeholder={copy.drawer.fields.membershipLevelCodesPlaceholder}
-              onChange={(value) => setDraft((current) => ({ ...current, membershipLevelCodes: value }))}
-            />
-            <TextField
-              label={copy.drawer.fields.customerStatusCodes}
-              value={draft.statusCodes}
-              placeholder={copy.drawer.fields.customerStatusCodesPlaceholder}
-              onChange={(value) => setDraft((current) => ({ ...current, statusCodes: value }))}
-            />
+        <fieldset disabled={previewPending || createPending} className="space-y-5 disabled:opacity-70">
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+            <p className="font-semibold">{copy.drawer.draftGuideTitle}</p>
+            <p className="mt-1 leading-6 text-indigo-900">{copy.drawer.draftGuideDescription}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+            <div className="mb-4 space-y-1">
+              <p className="text-sm font-semibold text-slate-900">{copy.drawer.codeFiltersTitle}</p>
+              <p className="text-xs leading-5 text-slate-500">{copy.drawer.codeFiltersDescription}</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <TextField
+                label={copy.drawer.fields.platformCodes}
+                value={draft.platformCodes}
+                placeholder={copy.drawer.fields.platformCodesPlaceholder}
+                onChange={(value) => setDraft((current) => ({ ...current, platformCodes: value }))}
+              />
+              <TextField
+                label={copy.drawer.fields.membershipClassCodes}
+                value={draft.membershipClassCodes}
+                placeholder={copy.drawer.fields.membershipClassCodesPlaceholder}
+                onChange={(value) => setDraft((current) => ({ ...current, membershipClassCodes: value }))}
+              />
+              <TextField
+                label={copy.drawer.fields.membershipTypeCodes}
+                value={draft.membershipTypeCodes}
+                placeholder={copy.drawer.fields.membershipTypeCodesPlaceholder}
+                onChange={(value) => setDraft((current) => ({ ...current, membershipTypeCodes: value }))}
+              />
+              <TextField
+                label={copy.drawer.fields.membershipLevelCodes}
+                value={draft.membershipLevelCodes}
+                placeholder={copy.drawer.fields.membershipLevelCodesPlaceholder}
+                onChange={(value) => setDraft((current) => ({ ...current, membershipLevelCodes: value }))}
+              />
+              <TextField
+                label={copy.drawer.fields.customerStatusCodes}
+                value={draft.statusCodes}
+                placeholder={copy.drawer.fields.customerStatusCodesPlaceholder}
+                onChange={(value) => setDraft((current) => ({ ...current, statusCodes: value }))}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+            <div className="mb-4 space-y-1">
+              <p className="text-sm font-semibold text-slate-900">{copy.drawer.validityTitle}</p>
+              <p className="text-xs leading-5 text-slate-500">{copy.drawer.validityDescription}</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <DateField
+                label={copy.drawer.fields.validFromStart}
+                value={draft.validFromStart}
+                onChange={(value) => setDraft((current) => ({ ...current, validFromStart: value }))}
+              />
+              <DateField
+                label={copy.drawer.fields.validFromEnd}
+                value={draft.validFromEnd}
+                onChange={(value) => setDraft((current) => ({ ...current, validFromEnd: value }))}
+              />
+              <DateField
+                label={copy.drawer.fields.validToStart}
+                value={draft.validToStart}
+                onChange={(value) => setDraft((current) => ({ ...current, validToStart: value }))}
+              />
+              <DateField
+                label={copy.drawer.fields.validToEnd}
+                value={draft.validToEnd}
+                onChange={(value) => setDraft((current) => ({ ...current, validToEnd: value }))}
+              />
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <CheckboxField
+                label={copy.drawer.fields.includeExpired}
+                checked={draft.includeExpired}
+                onChange={(next) => setDraft((current) => ({ ...current, includeExpired: next }))}
+              />
+              <CheckboxField
+                label={copy.drawer.fields.includeInactive}
+                checked={draft.includeInactive}
+                onChange={(next) => setDraft((current) => ({ ...current, includeInactive: next }))}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+            <div className="mb-4 space-y-1">
+              <p className="text-sm font-semibold text-slate-900">{copy.drawer.outputTitle}</p>
+              <p className="text-xs leading-5 text-slate-500">{copy.drawer.outputDescription}</p>
+            </div>
             <SelectField
               label={copy.drawer.fields.downloadFormat}
               value={draft.format}
               options={reportFormatOptions}
               onChange={(value) => setDraft((current) => ({ ...current, format: value as ReportFormat }))}
-            />
-            <DateField
-              label={copy.drawer.fields.validFromStart}
-              value={draft.validFromStart}
-              onChange={(value) => setDraft((current) => ({ ...current, validFromStart: value }))}
-            />
-            <DateField
-              label={copy.drawer.fields.validFromEnd}
-              value={draft.validFromEnd}
-              onChange={(value) => setDraft((current) => ({ ...current, validFromEnd: value }))}
-            />
-            <DateField
-              label={copy.drawer.fields.validToStart}
-              value={draft.validToStart}
-              onChange={(value) => setDraft((current) => ({ ...current, validToStart: value }))}
-            />
-            <DateField
-              label={copy.drawer.fields.validToEnd}
-              value={draft.validToEnd}
-              onChange={(value) => setDraft((current) => ({ ...current, validToEnd: value }))}
-            />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <CheckboxField
-              label={copy.drawer.fields.includeExpired}
-              checked={draft.includeExpired}
-              onChange={(next) => setDraft((current) => ({ ...current, includeExpired: next }))}
-            />
-            <CheckboxField
-              label={copy.drawer.fields.includeInactive}
-              checked={draft.includeInactive}
-              onChange={(next) => setDraft((current) => ({ ...current, includeInactive: next }))}
             />
           </div>
         </fieldset>
