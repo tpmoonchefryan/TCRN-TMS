@@ -1187,6 +1187,7 @@ export function TenantSettingsScreen({
                         <button
                           key={candidate}
                           type="button"
+                          aria-pressed={isActive}
                           onClick={() => {
                             setProfileStoreActivityFilter(candidate);
                             setProfileStorePage(1);

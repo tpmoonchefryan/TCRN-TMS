@@ -542,6 +542,7 @@ export function HomepageManagementScreen({
                   <button
                     key={candidate}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() => {
                       setFilter(candidate);
                       setPage(1);

@@ -733,6 +733,7 @@ export function CustomerManagementScreen({
                   <button
                     key={candidate}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() =>
                       applyQueryState({
                         activityFilter: candidate,
@@ -767,6 +768,7 @@ export function CustomerManagementScreen({
                   <button
                     key={candidate.key}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() =>
                       applyQueryState({
                         membershipFilter: candidate.key,
