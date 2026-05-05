@@ -138,6 +138,10 @@ interface DialogState {
   onConfirm: () => Promise<void>;
 }
 
+interface DirtyGuardState {
+  onDiscard: () => void;
+}
+
 interface TranslationOptionsState {
   data: TranslationLanguageOption[];
   error: string | null;
@@ -394,6 +398,10 @@ function createEmptyIpRuleDraft(): IpRuleDraft {
   };
 }
 
+function hasDraftChanges<Draft>(draft: Draft, baseline: Draft) {
+  return JSON.stringify(draft) !== JSON.stringify(baseline);
+}
+
 function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
   return {
     ownerType: entry.ownerType,
@@ -641,6 +649,9 @@ export function SecurityManagementScreen({
   const [blocklistDraft, setBlocklistDraft] = useState<BlocklistDraft>(() =>
     createEmptyBlocklistDraft(currentScopeType, currentScopeId),
   );
+  const [blocklistDraftBaseline, setBlocklistDraftBaseline] = useState<BlocklistDraft>(() =>
+    createEmptyBlocklistDraft(currentScopeType, currentScopeId),
+  );
   const [blocklistSavePending, setBlocklistSavePending] = useState(false);
   const [blocklistTestText, setBlocklistTestText] = useState('');
   const [blocklistTestPending, setBlocklistTestPending] = useState(false);
@@ -655,6 +666,9 @@ export function SecurityManagementScreen({
   const [externalDraft, setExternalDraft] = useState<ExternalBlocklistDraft>(() =>
     createEmptyExternalDraft(currentScopeType, currentScopeId),
   );
+  const [externalDraftBaseline, setExternalDraftBaseline] = useState<ExternalBlocklistDraft>(() =>
+    createEmptyExternalDraft(currentScopeType, currentScopeId),
+  );
   const [externalSavePending, setExternalSavePending] = useState(false);
   const [translationOptionsState, setTranslationOptionsState] = useState<TranslationOptionsState>({
     data: [],
@@ -663,6 +677,7 @@ export function SecurityManagementScreen({
   });
 
   const [ipRuleDraft, setIpRuleDraft] = useState<IpRuleDraft>(createEmptyIpRuleDraft);
+  const [ipRuleDraftBaseline, setIpRuleDraftBaseline] = useState<IpRuleDraft>(createEmptyIpRuleDraft);
   const [ipRuleDrawerOpen, setIpRuleDrawerOpen] = useState(false);
   const [ipRuleSavePending, setIpRuleSavePending] = useState(false);
   const [ipCheckIp, setIpCheckIp] = useState('');
@@ -672,6 +687,7 @@ export function SecurityManagementScreen({
   const [ipCheckError, setIpCheckError] = useState<string | null>(null);
 
   const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [dirtyGuardState, setDirtyGuardState] = useState<DirtyGuardState | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [dialogPending, setDialogPending] = useState(false);
 
@@ -932,6 +948,32 @@ export function SecurityManagementScreen({
         ko: '고급 범위 편집',
         fr: 'Modifier les périmètres avancés',
       });
+  const blocklistDraftDirty = blocklistDrawerOpen
+    && !blocklistDetailLoading
+    && hasDraftChanges(blocklistDraft, blocklistDraftBaseline);
+  const externalDraftDirty = externalDrawerOpen
+    && !externalDetailLoading
+    && hasDraftChanges(externalDraft, externalDraftBaseline);
+  const ipRuleDraftDirty = ipRuleDrawerOpen
+    && hasDraftChanges(ipRuleDraft, ipRuleDraftBaseline);
+  const hasDirtyEditor = blocklistDraftDirty || externalDraftDirty || ipRuleDraftDirty;
+
+  useEffect(() => {
+    if (!hasDirtyEditor) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasDirtyEditor]);
 
   const scopeLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -1143,13 +1185,15 @@ export function SecurityManagementScreen({
   }, [scopeId, scopeType]);
 
   function resetBlocklistEditor() {
+    const nextDraft = createEmptyBlocklistDraft(scopeType, scopeId);
     setBlocklistMode('create');
     setSelectedBlocklistId(null);
     setBlocklistAdvancedOpen(false);
     setBlocklistDetailLoading(false);
     setBlocklistTranslationDrawerOpen(false);
     setBlocklistDrawerOpen(false);
-    setBlocklistDraft(createEmptyBlocklistDraft(scopeType, scopeId));
+    setBlocklistDraft(nextDraft);
+    setBlocklistDraftBaseline(nextDraft);
   }
 
   function openBlocklistCreateDrawer() {
@@ -1162,6 +1206,14 @@ export function SecurityManagementScreen({
       return;
     }
 
+    if (!open && blocklistDraftDirty) {
+      requestDiscardDirtyEditor(() => {
+        setBlocklistTranslationDrawerOpen(false);
+        setBlocklistDrawerOpen(false);
+      });
+      return;
+    }
+
     if (!open) {
       setBlocklistTranslationDrawerOpen(false);
     }
@@ -1170,12 +1222,14 @@ export function SecurityManagementScreen({
   }
 
   function resetExternalEditor() {
+    const nextDraft = createEmptyExternalDraft(scopeType, scopeId);
     setExternalMode('create');
     setSelectedExternalId(null);
     setExternalDetailLoading(false);
     setExternalTranslationDrawerOpen(false);
     setExternalDrawerOpen(false);
-    setExternalDraft(createEmptyExternalDraft(scopeType, scopeId));
+    setExternalDraft(nextDraft);
+    setExternalDraftBaseline(nextDraft);
   }
 
   function openExternalCreateDrawer() {
@@ -1188,6 +1242,14 @@ export function SecurityManagementScreen({
       return;
     }
 
+    if (!open && externalDraftDirty) {
+      requestDiscardDirtyEditor(() => {
+        setExternalTranslationDrawerOpen(false);
+        setExternalDrawerOpen(false);
+      });
+      return;
+    }
+
     if (!open) {
       setExternalTranslationDrawerOpen(false);
     }
@@ -1196,7 +1258,9 @@ export function SecurityManagementScreen({
   }
 
   function openIpRuleCreateDrawer() {
-    setIpRuleDraft(createEmptyIpRuleDraft());
+    const nextDraft = createEmptyIpRuleDraft();
+    setIpRuleDraft(nextDraft);
+    setIpRuleDraftBaseline(nextDraft);
     setIpRuleDrawerOpen(true);
   }
 
@@ -1205,7 +1269,31 @@ export function SecurityManagementScreen({
       return;
     }
 
+    if (!open && ipRuleDraftDirty) {
+      requestDiscardDirtyEditor(() => {
+        setIpRuleDrawerOpen(false);
+      });
+      return;
+    }
+
     setIpRuleDrawerOpen(open);
+  }
+
+  function closeSecurityEditors() {
+    setBlocklistTranslationDrawerOpen(false);
+    setBlocklistDrawerOpen(false);
+    setExternalTranslationDrawerOpen(false);
+    setExternalDrawerOpen(false);
+    setIpRuleDrawerOpen(false);
+  }
+
+  function requestDiscardDirtyEditor(onDiscard: () => void) {
+    if (!hasDirtyEditor) {
+      onDiscard();
+      return;
+    }
+
+    setDirtyGuardState({ onDiscard });
   }
 
   async function openBlocklistEditor(entryId: string) {
@@ -1216,10 +1304,12 @@ export function SecurityManagementScreen({
 
     try {
       const detail = await getBlocklistEntry(request, entryId);
+      const nextDraft = mapBlocklistToDraft(detail);
       setBlocklistMode('edit');
       setSelectedBlocklistId(entryId);
       setBlocklistAdvancedOpen(false);
-      setBlocklistDraft(mapBlocklistToDraft(detail));
+      setBlocklistDraft(nextDraft);
+      setBlocklistDraftBaseline(nextDraft);
     } catch (error) {
       setBlocklistDrawerOpen(false);
       setNotice({
@@ -1237,9 +1327,11 @@ export function SecurityManagementScreen({
 
     try {
       const detail = await getExternalBlocklistEntry(request, entryId);
+      const nextDraft = mapExternalToDraft(detail);
       setExternalMode('edit');
       setSelectedExternalId(entryId);
-      setExternalDraft(mapExternalToDraft(detail));
+      setExternalDraft(nextDraft);
+      setExternalDraftBaseline(nextDraft);
     } catch (error) {
       setExternalDrawerOpen(false);
       setNotice({
@@ -1301,9 +1393,11 @@ export function SecurityManagementScreen({
         tone: 'success',
         message: formatSecurityBlocklistSaveSuccess(selectedLocale, blocklistMode),
       });
+      const savedDraft = mapBlocklistToDraft(saved);
       setBlocklistMode('edit');
       setSelectedBlocklistId(saved.id);
-      setBlocklistDraft(mapBlocklistToDraft(saved));
+      setBlocklistDraft(savedDraft);
+      setBlocklistDraftBaseline(savedDraft);
       setBlocklistDrawerOpen(false);
     } catch (error) {
       setNotice({
@@ -1379,9 +1473,11 @@ export function SecurityManagementScreen({
         tone: 'success',
         message: formatSecurityExternalSaveSuccess(selectedLocale, externalMode),
       });
+      const savedDraft = mapExternalToDraft(saved);
       setExternalMode('edit');
       setSelectedExternalId(saved.id);
-      setExternalDraft(mapExternalToDraft(saved));
+      setExternalDraft(savedDraft);
+      setExternalDraftBaseline(savedDraft);
       setExternalDrawerOpen(false);
     } catch (error) {
       setNotice({
@@ -1459,7 +1555,9 @@ export function SecurityManagementScreen({
         tone: 'success',
         message: formatSecurityIpRuleCreateSuccess(selectedLocale),
       });
-      setIpRuleDraft(createEmptyIpRuleDraft());
+      const nextDraft = createEmptyIpRuleDraft();
+      setIpRuleDraft(nextDraft);
+      setIpRuleDraftBaseline(nextDraft);
       setIpRuleDrawerOpen(false);
     } catch (error) {
       setNotice({
@@ -1564,7 +1662,12 @@ export function SecurityManagementScreen({
               { id: 'runtime-signals', label: copy.tabs.runtimeSignals },
             ]}
             activeId={activeTab}
-            onChange={(nextTab) => setActiveTab(nextTab as SecurityTab)}
+            onChange={(nextTab) => {
+              requestDiscardDirtyEditor(() => {
+                closeSecurityEditors();
+                setActiveTab(nextTab as SecurityTab);
+              });
+            }}
             ariaLabel={copy.header.title}
           />
 
@@ -1575,12 +1678,15 @@ export function SecurityManagementScreen({
                 value={scopeType}
                 onChange={(event) => {
                   const nextScope = event.target.value as SecurityScopeType;
-                  setScopeType(nextScope);
-                  if (nextScope === 'tenant') {
-                    setScopeId('');
-                  }
-                  resetBlocklistEditor();
-                  resetExternalEditor();
+                  requestDiscardDirtyEditor(() => {
+                    closeSecurityEditors();
+                    setScopeType(nextScope);
+                    if (nextScope === 'tenant') {
+                      setScopeId('');
+                    }
+                    resetBlocklistEditor();
+                    resetExternalEditor();
+                  });
                 }}
                 className={inputClassName}
               >
@@ -1609,9 +1715,13 @@ export function SecurityManagementScreen({
                   aria-label={copy.scopeLens.scopeIdAriaLabel}
                   value={scopeId}
                   onChange={(event) => {
-                    setScopeId(event.target.value);
-                    resetBlocklistEditor();
-                    resetExternalEditor();
+                    const nextScopeId = event.target.value;
+                    requestDiscardDirtyEditor(() => {
+                      closeSecurityEditors();
+                      setScopeId(nextScopeId);
+                      resetBlocklistEditor();
+                      resetExternalEditor();
+                    });
                   }}
                   disabled={
                     organizationScopesPanel.loading
@@ -3135,6 +3245,22 @@ export function SecurityManagementScreen({
       ) : null}
       </div>
 
+      <ConfirmActionDialog
+        open={dirtyGuardState !== null}
+        title={copy.dialogs.discardChangesTitle}
+        description={copy.dialogs.discardChangesDescription}
+        confirmText={copy.dialogs.discardChangesConfirm}
+        cancelText={copy.common.cancel}
+        intent="danger"
+        onCancel={() => {
+          setDirtyGuardState(null);
+        }}
+        onConfirm={() => {
+          const nextAction = dirtyGuardState?.onDiscard;
+          setDirtyGuardState(null);
+          nextAction?.();
+        }}
+      />
       <ConfirmActionDialog
         open={dialogState !== null}
         title={dialogState?.title || copy.common.confirmAction}

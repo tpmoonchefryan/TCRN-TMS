@@ -278,6 +278,9 @@ const COPY = {
       deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
       deleting: 'Deleting…',
       deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      discardChangesTitle: 'Discard unsaved security changes?',
+      discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
+      discardChangesConfirm: 'Discard changes',
     },
     options: {
       scopeType: {
@@ -568,6 +571,9 @@ const COPY = {
       deletePatternDescription: '这会从当前范围永久移除该外链模式。',
       deleting: '删除中…',
       deleteIpDescription: '这会停用 IP 访问规则，并从内存缓存中清除。',
+      discardChangesTitle: '放弃未保存的安全更改？',
+      discardChangesDescription: '当前编辑器有未保存的更改。要放弃这些更改并继续吗？',
+      discardChangesConfirm: '放弃更改',
     },
     options: {
       scopeType: {
@@ -860,6 +866,9 @@ const COPY = {
       deletePatternDescription: 'このスコープから外部パターンを完全に削除します。',
       deleting: '削除中…',
       deleteIpDescription: 'IP アクセスルールを無効化し、メモリキャッシュから削除します。',
+      discardChangesTitle: '未保存のセキュリティ変更を破棄しますか？',
+      discardChangesDescription: 'このエディターには未保存の変更があります。破棄して続行しますか？',
+      discardChangesConfirm: '変更を破棄',
     },
     options: {
       scopeType: {

@@ -353,6 +353,105 @@ describe('SecurityManagementScreen', () => {
     });
   });
 
+  it('guards dirty security editors before closing or switching tabs', async () => {
+    searchQuery = 'tab=blocklist&scopeType=tenant';
+
+    mockRequest.mockImplementation(async (requestPath: string, init?: RequestInit) => {
+      if (requestPath === '/api/v1/organization/tree?includeInactive=true') {
+        return organizationTreeResponse;
+      }
+
+      if (requestPath.startsWith('/api/v1/blocklist-entries?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (requestPath.startsWith('/api/v1/ip-access-rules?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (requestPath === '/api/v1/security/fingerprint' && init?.method === 'POST') {
+        return {
+          fingerprint: 'tenant-user-fingerprint',
+          shortFingerprint: 'abc123',
+          version: 'v1',
+          generatedAt: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (requestPath === '/api/v1/rate-limit/stats') {
+        return {
+          summary: {
+            totalRequests24h: 0,
+            blockedRequests24h: 0,
+            uniqueIPs24h: 0,
+            currentlyBlocked: 0,
+          },
+          topEndpoints: [],
+          topIPs: [],
+          lastUpdated: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (requestPath === '/api/v1/profile-stores?page=1&pageSize=8') {
+        return {
+          items: [],
+        };
+      }
+
+      throw new Error(`Unhandled request: ${requestPath}`);
+    });
+
+    mockRequestEnvelope.mockImplementation(async (requestPath: string) => {
+      if (requestPath.startsWith('/api/v1/external-blocklist?')) {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled envelope request: ${requestPath}`);
+    });
+
+    render(<SecurityManagementScreen tenantId="tenant-1" />);
+
+    await screen.findByRole('heading', { name: 'Security' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+
+    const ruleDrawer = await screen.findByRole('dialog', { name: 'Create Blocklist Rule' });
+    fireEvent.change(within(ruleDrawer).getByLabelText('Rule name'), {
+      target: { value: 'Unsaved rule' },
+    });
+
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Cancel' }));
+    const closeGuard = await screen.findByRole('dialog', { name: 'Discard unsaved security changes?' });
+    fireEvent.click(within(closeGuard).getByRole('button', { name: 'Cancel' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Create Blocklist Rule' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
+    const tabGuard = await screen.findByRole('dialog', { name: 'Discard unsaved security changes?' });
+    fireEvent.click(within(tabGuard).getByRole('button', { name: 'Discard changes' }));
+
+    expect(await screen.findByRole('button', { name: 'Add IP rule' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Create Blocklist Rule' })).not.toBeInTheDocument();
+  });
+
   it('renders the scoped external blocklist workspace and switches to runtime signals', async () => {
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/organization/tree?includeInactive=true') {
