@@ -37,6 +37,7 @@ import {
   ConfirmActionDialog,
   FormSection,
   GlassSurface,
+  PaginationFooter,
   StateView,
   TableShell,
 } from '@/platform/ui';
@@ -1164,52 +1165,24 @@ export function ProfileScreen({
                 ))}
               </TableShell>
               {sessions.length > 0 ? (
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-slate-700">{sessionsPaginationCopy.page}</p>
-                    <p className="text-xs text-slate-500">{sessionsPaginationCopy.range}</p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-600">
-                      <span className="font-medium text-slate-700">{sessionsPaginationCopy.pageSize}</span>
-                      <select
-                        aria-label={sessionsPaginationCopy.pageSize}
-                        value={sessionsPageSize}
-                        onChange={(event) => {
-                          setSessionsPageSize(Number(event.target.value) as PageSizeOption);
-                          setSessionsPage(1);
-                        }}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 outline-none transition focus:border-slate-400"
-                      >
-                        {PAGE_SIZE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() => setSessionsPage((current) => Math.max(1, current - 1))}
-                      disabled={!sessionsPagination.hasPrev}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {sessionsPaginationCopy.previous}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSessionsPage((current) => Math.min(sessionsPagination.totalPages, current + 1))
-                      }
-                      disabled={!sessionsPagination.hasNext}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {sessionsPaginationCopy.next}
-                    </button>
-                  </div>
-                </div>
+                <PaginationFooter
+                  pagination={sessionsPagination}
+                  itemCount={paginatedSessions.length}
+                  labels={{
+                    pageLabel: sessionsPaginationCopy.page,
+                    rangeLabel: sessionsPaginationCopy.range,
+                    rowsPerPageLabel: sessionsPaginationCopy.pageSize,
+                    pageSizeAriaLabel: sessionsPaginationCopy.pageSize,
+                    previousLabel: sessionsPaginationCopy.previous,
+                    nextLabel: sessionsPaginationCopy.next,
+                  }}
+                  onPageChange={setSessionsPage}
+                  onPageSizeChange={(nextPageSize) => {
+                    setSessionsPageSize(nextPageSize as PageSizeOption);
+                    setSessionsPage(1);
+                  }}
+                  className="mt-5 rounded-2xl border border-slate-200 bg-white/80"
+                />
               ) : null}
             </FormSection>
           </GlassSurface>
