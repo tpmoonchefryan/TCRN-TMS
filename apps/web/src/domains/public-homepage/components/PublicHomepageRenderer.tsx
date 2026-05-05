@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  DEFAULT_THEME,
-  normalizeTheme,
-  type ThemeConfig,
-} from '@tcrn/shared';
+import { DEFAULT_THEME, normalizeTheme, type ThemeConfig } from '@tcrn/shared';
 import {
   Activity,
   CalendarRange,
@@ -23,10 +19,7 @@ import {
   type PublicHomepageContent,
 } from '@/domains/public-homepage/api/public-homepage.api';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleDateTime,
-  formatLocaleNumber,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, formatLocaleNumber } from '@/platform/runtime/locale/locale-text';
 import { GlassSurface } from '@/platform/ui';
 
 type VisibleHomepageComponent = PublicHomepageComponentRecord;
@@ -143,11 +136,31 @@ function sanitizeRichText(html: string) {
 function RichTextCard({
   html,
   textAlign,
+  theme,
 }: Readonly<{
   html: string;
   textAlign: CSSProperties['textAlign'];
+  theme: ThemeConfig;
 }>) {
   const sanitized = useMemo(() => sanitizeRichText(html), [html]);
+  const richTextStyle = useMemo(
+    () =>
+      ({
+        textAlign,
+        color: theme.colors.text,
+        '--tw-prose-body': theme.colors.text,
+        '--tw-prose-headings': theme.colors.text,
+        '--tw-prose-links': theme.colors.text,
+        '--tw-prose-bold': theme.colors.text,
+        '--tw-prose-counters': theme.colors.textSecondary,
+        '--tw-prose-bullets': theme.colors.textSecondary,
+        '--tw-prose-hr': theme.colors.textSecondary,
+        '--tw-prose-quotes': theme.colors.text,
+        '--tw-prose-captions': theme.colors.textSecondary,
+        '--tw-prose-code': theme.colors.text,
+      }) as CSSProperties,
+    [textAlign, theme.colors.text, theme.colors.textSecondary]
+  );
 
   if (!sanitized.trim()) {
     return null;
@@ -155,8 +168,8 @@ function RichTextCard({
 
   return (
     <div
-      className="prose prose-slate max-w-none prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7"
-      style={{ textAlign }}
+      className="prose prose-slate prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7 max-w-none"
+      style={richTextStyle}
       dangerouslySetInnerHTML={{ __html: sanitized }}
     />
   );
@@ -256,10 +269,12 @@ function UnsupportedComponent({
   type,
   props,
   description,
+  descriptionStyle,
 }: Readonly<{
   type: string;
   props: Record<string, unknown>;
   description: string;
+  descriptionStyle?: CSSProperties;
 }>) {
   return (
     <div className="space-y-3">
@@ -267,12 +282,24 @@ function UnsupportedComponent({
         <Sparkles className="h-3.5 w-3.5" />
         {type}
       </div>
-      <p className="text-sm leading-6 text-slate-600">{description}</p>
+      <p className="text-sm leading-6" style={descriptionStyle}>
+        {description}
+      </p>
       <pre className="overflow-x-auto rounded-2xl bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
         {JSON.stringify(props, null, 2)}
       </pre>
     </div>
   );
+}
+
+function getThemeTextStyles(
+  theme: ThemeConfig
+): Record<'primary' | 'secondary' | 'link', CSSProperties> {
+  return {
+    primary: { color: theme.colors.text },
+    secondary: { color: theme.colors.textSecondary },
+    link: { color: theme.colors.text },
+  };
 }
 
 function HomepageComponentCard({
@@ -285,6 +312,7 @@ function HomepageComponentCard({
   copy: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'];
 }>) {
   const props = asRecord(component.props);
+  const textStyles = getThemeTextStyles(theme);
 
   switch (component.type) {
     case 'ProfileCard': {
@@ -293,14 +321,22 @@ function HomepageComponentCard({
       const avatarUrl = asString(props.avatarUrl);
       const avatarShape = asString(props.avatarShape, 'circle');
       const avatarClassName =
-        avatarShape === 'square' ? 'rounded-3xl' : avatarShape === 'rounded' ? 'rounded-[28px]' : 'rounded-full';
+        avatarShape === 'square'
+          ? 'rounded-3xl'
+          : avatarShape === 'rounded'
+            ? 'rounded-[28px]'
+            : 'rounded-full';
 
       return (
         <SectionSurface theme={theme} className="p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className={`h-28 w-28 overflow-hidden bg-slate-200 ${avatarClassName}`}>
               {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName || copy.profileAvatar} className="h-full w-full object-cover" />
+                <img
+                  src={avatarUrl}
+                  alt={displayName || copy.profileAvatar}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-slate-500">
                   {(displayName || '?').charAt(0).toUpperCase()}
@@ -308,10 +344,14 @@ function HomepageComponentCard({
               )}
             </div>
             <div className="space-y-3">
-              <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+              <h2 className="text-3xl font-semibold tracking-tight" style={textStyles.primary}>
                 {displayName || copy.untitledProfile}
               </h2>
-              {bio ? <p className="max-w-3xl text-sm leading-7 text-slate-600">{bio}</p> : null}
+              {bio ? (
+                <p className="max-w-3xl text-sm leading-7" style={textStyles.secondary}>
+                  {bio}
+                </p>
+              ) : null}
             </div>
           </div>
         </SectionSurface>
@@ -319,7 +359,9 @@ function HomepageComponentCard({
     }
     case 'SocialLinks': {
       const platforms = Array.isArray(props.platforms)
-        ? props.platforms.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+        ? props.platforms.filter(
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+          )
         : [];
 
       if (platforms.length === 0) {
@@ -328,7 +370,10 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <ExternalLink className="h-4 w-4" />
             {copy.socialLinks}
           </div>
@@ -362,7 +407,9 @@ function HomepageComponentCard({
     }
     case 'ImageGallery': {
       const images = Array.isArray(props.images)
-        ? props.images.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+        ? props.images.filter(
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+          )
         : [];
 
       if (images.length === 0) {
@@ -373,11 +420,17 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <ImageIcon className="h-4 w-4" />
             {copy.gallery}
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+          <div
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          >
             {images.map((entry, index) => {
               const url = asString(entry.url);
 
@@ -389,9 +442,16 @@ function HomepageComponentCard({
               const caption = asString(entry.caption);
 
               return (
-                <figure key={`${url}-${index}`} className="overflow-hidden rounded-[24px] bg-slate-900/5">
+                <figure
+                  key={`${url}-${index}`}
+                  className="overflow-hidden rounded-[24px] bg-slate-900/5"
+                >
                   <img src={url} alt={alt} className="h-64 w-full object-cover" />
-                  {caption ? <figcaption className="px-4 py-3 text-sm text-slate-600">{caption}</figcaption> : null}
+                  {caption ? (
+                    <figcaption className="px-4 py-3 text-sm" style={textStyles.secondary}>
+                      {caption}
+                    </figcaption>
+                  ) : null}
                 </figure>
               );
             })}
@@ -410,13 +470,17 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <PlayCircle className="h-4 w-4" />
             {copy.video}
           </div>
           <div className="space-y-4">
             <div className="overflow-hidden rounded-[24px] bg-slate-950">
-              {embedUrl.includes('youtube.com/embed') || embedUrl.includes('open.spotify.com/embed') ? (
+              {embedUrl.includes('youtube.com/embed') ||
+              embedUrl.includes('open.spotify.com/embed') ? (
                 <iframe
                   title={asFilledString(props.title, copy.embeddedVideo)}
                   src={embedUrl}
@@ -440,7 +504,8 @@ function HomepageComponentCard({
               href={videoUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline"
+              style={textStyles.link}
             >
               <ExternalLink className="h-4 w-4" />
               {videoUrl}
@@ -458,7 +523,11 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-8">
-          <RichTextCard html={contentHtml} textAlign={toCssTextAlign(props.textAlign)} />
+          <RichTextCard
+            html={contentHtml}
+            textAlign={toCssTextAlign(props.textAlign)}
+            theme={theme}
+          />
         </SectionSurface>
       );
     }
@@ -492,7 +561,9 @@ function HomepageComponentCard({
               <MessageCircleMore className="h-4 w-4" />
               {copy.marshmallow}
             </div>
-            <p className="text-sm leading-7 text-slate-600">{copy.marshmallowDescription}</p>
+            <p className="text-sm leading-7" style={textStyles.secondary}>
+              {copy.marshmallowDescription}
+            </p>
           </div>
         </SectionSurface>
       );
@@ -500,21 +571,31 @@ function HomepageComponentCard({
     case 'Schedule': {
       const title = asFilledString(props.title, copy.schedule);
       const events = Array.isArray(props.events)
-        ? props.events.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+        ? props.events.filter(
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+          )
         : [];
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <CalendarRange className="h-4 w-4" />
             {title}
           </div>
           <div className="space-y-3">
             {events.length === 0 ? (
-              <p className="text-sm text-slate-500">{copy.noScheduleEntries}</p>
+              <p className="text-sm" style={textStyles.secondary}>
+                {copy.noScheduleEntries}
+              </p>
             ) : (
               events.map((event, index) => (
-                <div key={`${asString(event.day)}-${asString(event.time)}-${index}`} className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3">
+                <div
+                  key={`${asString(event.day)}-${asString(event.time)}-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3"
+                >
                   <div className="flex flex-wrap items-center gap-3 text-sm">
                     <span className="font-semibold uppercase tracking-[0.16em] text-slate-500">
                       {asFilledString(event.day, copy.dayLabel)}
@@ -522,7 +603,9 @@ function HomepageComponentCard({
                     <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
                       {asString(event.time, '--:--')}
                     </span>
-                    <span className="font-medium text-slate-900">{asFilledString(event.title, copy.untitledEvent)}</span>
+                    <span className="font-medium text-slate-900">
+                      {asFilledString(event.title, copy.untitledEvent)}
+                    </span>
                   </div>
                 </div>
               ))
@@ -539,14 +622,23 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <Music4 className="h-4 w-4" />
             {copy.music}
           </div>
           <div className="space-y-4">
             <div>
-              <p className="text-lg font-semibold text-slate-950">{title}</p>
-              {artist ? <p className="text-sm text-slate-500">{artist}</p> : null}
+              <p className="text-lg font-semibold" style={textStyles.primary}>
+                {title}
+              </p>
+              {artist ? (
+                <p className="text-sm" style={textStyles.secondary}>
+                  {artist}
+                </p>
+              ) : null}
             </div>
             {embedUrl ? (
               <iframe
@@ -569,23 +661,40 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <Radio className="h-4 w-4" />
             {copy.liveStatus}
           </div>
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white" style={{ backgroundColor: isLive ? '#dc2626' : '#475569' }}>
-              <span className={`inline-block h-2.5 w-2.5 rounded-full ${isLive ? 'bg-white' : 'bg-slate-300'}`} />
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white"
+              style={{ backgroundColor: isLive ? '#dc2626' : '#475569' }}
+            >
+              <span
+                className={`inline-block h-2.5 w-2.5 rounded-full ${isLive ? 'bg-white' : 'bg-slate-300'}`}
+              />
               {isLive ? copy.liveNow : copy.currentlyOffline}
             </div>
-            {title ? <p className="text-lg font-semibold text-slate-950">{title}</p> : null}
-            {viewers ? <p className="text-sm text-slate-500">{viewers} {copy.watchingSuffix}</p> : null}
+            {title ? (
+              <p className="text-lg font-semibold" style={textStyles.primary}>
+                {title}
+              </p>
+            ) : null}
+            {viewers ? (
+              <p className="text-sm" style={textStyles.secondary}>
+                {viewers} {copy.watchingSuffix}
+              </p>
+            ) : null}
             {streamUrl ? (
               <a
                 href={streamUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline"
+                style={textStyles.link}
               >
                 <ExternalLink className="h-4 w-4" />
                 {copy.openStream}
@@ -600,11 +709,24 @@ function HomepageComponentCard({
       const borderStyle =
         dividerStyle === 'dotted' ? 'dotted' : dividerStyle === 'dashed' ? 'dashed' : 'solid';
 
-      return <div aria-hidden="true" className="mx-4 border-t border-slate-300/80" style={{ borderTopStyle: borderStyle }} />;
+      return (
+        <div
+          aria-hidden="true"
+          className="mx-4 border-t border-slate-300/80"
+          style={{ borderTopStyle: borderStyle }}
+        />
+      );
     }
     case 'Spacer': {
       const height = asString(props.height, 'medium');
-      const size = height === 'small' ? '1.5rem' : height === 'large' ? '4rem' : height === 'xlarge' ? '6rem' : '2.5rem';
+      const size =
+        height === 'small'
+          ? '1.5rem'
+          : height === 'large'
+            ? '4rem'
+            : height === 'xlarge'
+              ? '6rem'
+              : '2.5rem';
       return <div aria-hidden="true" style={{ height: size }} />;
     }
     case 'BilibiliDynamic': {
@@ -613,17 +735,23 @@ function HomepageComponentCard({
 
       return (
         <SectionSurface theme={theme} className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            style={textStyles.secondary}
+          >
             <Activity className="h-4 w-4" />
             {title}
           </div>
-          <p className="text-sm leading-7 text-slate-600">{copy.bilibiliDescription}</p>
+          <p className="text-sm leading-7" style={textStyles.secondary}>
+            {copy.bilibiliDescription}
+          </p>
           {uid ? (
             <a
               href={`https://space.bilibili.com/${uid}/dynamic`}
               target="_blank"
               rel="noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline"
+              style={textStyles.link}
             >
               <ExternalLink className="h-4 w-4" />
               {copy.viewBilibiliDynamics}
@@ -635,7 +763,12 @@ function HomepageComponentCard({
     default:
       return (
         <SectionSurface theme={theme} className="p-6">
-          <UnsupportedComponent type={component.type} props={props} description={copy.unsupportedDescription} />
+          <UnsupportedComponent
+            type={component.type}
+            props={props}
+            description={copy.unsupportedDescription}
+            descriptionStyle={textStyles.secondary}
+          />
         </SectionSurface>
       );
   }
@@ -668,7 +801,10 @@ export function PublicHomepageRenderer({
   const theme = useMemo(() => normalizeTheme(rawTheme || DEFAULT_THEME), [rawTheme]);
   const components = useMemo(() => extractVisibleComponents(content), [content]);
   const publicCopy = copy.publicHomepage;
-  const heroAvatarAlt = hero.displayName ? `${hero.displayName} ${publicCopy.avatarSuffix}` : publicCopy.profileAvatar;
+  const heroAvatarAlt = hero.displayName
+    ? `${hero.displayName} ${publicCopy.avatarSuffix}`
+    : publicCopy.profileAvatar;
+  const textStyles = getThemeTextStyles(theme);
 
   return (
     <div className="space-y-8">
@@ -680,8 +816,17 @@ export function PublicHomepageRenderer({
               {publicCopy.badge}
             </div>
             <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">{hero.displayName}</h1>
-              {hero.description ? <p className="max-w-3xl text-base leading-8 text-slate-600">{hero.description}</p> : null}
+              <h1
+                className="text-4xl font-semibold tracking-tight md:text-5xl"
+                style={textStyles.primary}
+              >
+                {hero.displayName}
+              </h1>
+              {hero.description ? (
+                <p className="max-w-3xl text-base leading-8" style={textStyles.secondary}>
+                  {hero.description}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               {hero.timezone ? (
@@ -690,17 +835,23 @@ export function PublicHomepageRenderer({
                 </span>
               ) : null}
               <span className="rounded-full bg-white/70 px-3 py-2">
-                {publicCopy.updatedLabel}: {formatLocaleDateTime(selectedLocale, updatedAt, updatedAt)}
+                {publicCopy.updatedLabel}:{' '}
+                {formatLocaleDateTime(selectedLocale, updatedAt, updatedAt)}
               </span>
               <span className="rounded-full bg-white/70 px-3 py-2">
-                {publicCopy.publishedBlocksLabel}: {formatLocaleNumber(selectedLocale, components.length)}
+                {publicCopy.publishedBlocksLabel}:{' '}
+                {formatLocaleNumber(selectedLocale, components.length)}
               </span>
             </div>
           </div>
           <div className="flex justify-start lg:justify-end">
             <div className="h-48 w-48 overflow-hidden rounded-[38px] border border-white/80 bg-slate-200 shadow-xl md:h-56 md:w-56">
               {hero.avatarUrl ? (
-                <img src={hero.avatarUrl} alt={heroAvatarAlt} className="h-full w-full object-cover" />
+                <img
+                  src={hero.avatarUrl}
+                  alt={heroAvatarAlt}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-6xl font-semibold text-slate-500">
                   {hero.displayName.charAt(0).toUpperCase()}
@@ -712,7 +863,12 @@ export function PublicHomepageRenderer({
       </SectionSurface>
 
       {components.map((component) => (
-        <HomepageComponentCard key={component.id} component={component} theme={theme} copy={publicCopy} />
+        <HomepageComponentCard
+          key={component.id}
+          component={component}
+          theme={theme}
+          copy={publicCopy}
+        />
       ))}
     </div>
   );

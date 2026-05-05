@@ -94,7 +94,9 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
 
 async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10) {
   for (let index = 0; index < maxTabs; index += 1) {
-    if (await locator.evaluate((element) => document.activeElement === element).catch(() => false)) {
+    if (
+      await locator.evaluate((element) => document.activeElement === element).catch(() => false)
+    ) {
       return;
     }
 
@@ -107,6 +109,7 @@ async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10) {
 const visualQaFixture = {
   displayName: 'Playwright Public Talent',
   homepagePath: 'browser-visual-homepage',
+  darkHomepagePath: 'browser-visual-homepage-dark',
   marshmallowPath: 'browser-visual-marshmallow',
   marshmallowTitle: 'Ask The Talent',
   welcomeText: 'Drop a thoughtful question.',
@@ -129,6 +132,58 @@ const visualQaTheme = {
   decorations: { type: 'none' },
 };
 
+const visualQaDarkTheme = {
+  preset: 'dark',
+  visualStyle: 'simple',
+  colors: {
+    primary: '#5599FF',
+    accent: '#FF88CC',
+    background: '#1A1A1A',
+    text: '#FFFFFF',
+    textSecondary: '#AAAAAA',
+  },
+  background: { type: 'solid', value: '#0D0D0D' },
+  card: { background: '#2A2A2A', borderRadius: 'medium', shadow: 'medium' },
+  typography: { fontFamily: 'system', headingWeight: 'bold' },
+  animation: { enableEntrance: true, enableHover: true, intensity: 'medium' },
+  decorations: { type: 'none' },
+};
+
+function buildHomepageResponse(input: { displayName: string; theme: typeof visualQaTheme }) {
+  return {
+    success: true,
+    data: {
+      talent: {
+        displayName: input.displayName,
+        avatarUrl: null,
+        timezone: 'UTC',
+      },
+      content: {
+        version: '1.0.0',
+        components: [
+          {
+            id: 'profile-card',
+            type: 'ProfileCard',
+            props: {
+              displayName: input.displayName,
+              bio: 'Visual profile card bio',
+            },
+            order: 0,
+            visible: true,
+          },
+        ],
+      },
+      theme: input.theme,
+      seo: {
+        title: input.displayName,
+        description: 'Visual homepage hero description',
+        ogImageUrl: null,
+      },
+      updatedAt: '2026-05-06T00:00:00.000Z',
+    },
+  };
+}
+
 async function mockPublicRuntimeApi(page: Page) {
   await page.route('**/api/v1/public/**', async (route) => {
     const url = new URL(route.request().url());
@@ -137,38 +192,26 @@ async function mockPublicRuntimeApi(page: Page) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            talent: {
-              displayName: visualQaFixture.displayName,
-              avatarUrl: null,
-              timezone: 'UTC',
-            },
-            content: {
-              version: '1.0.0',
-              components: [
-                {
-                  id: 'profile-card',
-                  type: 'ProfileCard',
-                  props: {
-                    displayName: visualQaFixture.displayName,
-                    bio: 'Public homepage visual QA fixture',
-                  },
-                  order: 0,
-                  visible: true,
-                },
-              ],
-            },
+        body: JSON.stringify(
+          buildHomepageResponse({
+            displayName: visualQaFixture.displayName,
             theme: visualQaTheme,
-            seo: {
-              title: visualQaFixture.displayName,
-              description: 'Public homepage visual QA fixture',
-              ogImageUrl: null,
-            },
-            updatedAt: '2026-05-06T00:00:00.000Z',
-          },
-        }),
+          })
+        ),
+      });
+      return;
+    }
+
+    if (url.pathname === `/api/v1/public/homepage/${visualQaFixture.darkHomepagePath}`) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          buildHomepageResponse({
+            displayName: `${visualQaFixture.displayName} Dark`,
+            theme: visualQaDarkTheme,
+          })
+        ),
       });
       return;
     }
@@ -232,20 +275,67 @@ test.describe('public runtime browser visual QA', () => {
       { name: 'desktop', width: 1280, height: 900 },
       { name: 'mobile', width: 390, height: 844 },
     ];
+    const homepageCases = [
+      {
+        name: 'default theme',
+        path: visualQaFixture.homepagePath,
+        displayName: visualQaFixture.displayName,
+      },
+      {
+        name: 'dark theme',
+        path: visualQaFixture.darkHomepagePath,
+        displayName: `${visualQaFixture.displayName} Dark`,
+      },
+    ];
 
-    for (const breakpoint of breakpoints) {
-      await page.setViewportSize({ width: breakpoint.width, height: breakpoint.height });
-      await page.goto(`/p/${visualQaFixture.homepagePath}`);
+    for (const homepageCase of homepageCases) {
+      for (const breakpoint of breakpoints) {
+        await page.setViewportSize({ width: breakpoint.width, height: breakpoint.height });
+        await page.goto(`/p/${homepageCase.path}`);
 
-      const heroHeading = page.getByRole('heading', { name: visualQaFixture.displayName, level: 1 });
-      await expect(heroHeading, `${breakpoint.name} hero heading`).toBeVisible();
-      await expectReadableContrast(heroHeading, `${breakpoint.name} homepage hero`);
-      await expectNoHorizontalOverflow(page, `${breakpoint.name} homepage`);
+        const heroHeading = page.getByRole('heading', { name: homepageCase.displayName, level: 1 });
+        const heroDescription = page.getByText('Visual homepage hero description');
+        const profileHeading = page.getByRole('heading', {
+          name: homepageCase.displayName,
+          level: 2,
+        });
+        const profileBio = page.getByText('Visual profile card bio');
 
-      await expect(
-        page.getByRole('heading', { name: visualQaFixture.displayName, level: 2 }),
-        `${breakpoint.name} profile card heading`,
-      ).toBeVisible();
+        await expect(
+          heroHeading,
+          `${homepageCase.name} ${breakpoint.name} hero heading`
+        ).toBeVisible();
+        await expect(
+          heroDescription,
+          `${homepageCase.name} ${breakpoint.name} hero description`
+        ).toBeVisible();
+        await expectReadableContrast(
+          heroHeading,
+          `${homepageCase.name} ${breakpoint.name} homepage hero`
+        );
+        await expectReadableContrast(
+          heroDescription,
+          `${homepageCase.name} ${breakpoint.name} homepage hero description`
+        );
+        await expectNoHorizontalOverflow(page, `${homepageCase.name} ${breakpoint.name} homepage`);
+
+        await expect(
+          profileHeading,
+          `${homepageCase.name} ${breakpoint.name} profile card heading`
+        ).toBeVisible();
+        await expect(
+          profileBio,
+          `${homepageCase.name} ${breakpoint.name} profile card bio`
+        ).toBeVisible();
+        await expectReadableContrast(
+          profileHeading,
+          `${homepageCase.name} ${breakpoint.name} profile heading`
+        );
+        await expectReadableContrast(
+          profileBio,
+          `${homepageCase.name} ${breakpoint.name} profile bio`
+        );
+      }
     }
   });
 
