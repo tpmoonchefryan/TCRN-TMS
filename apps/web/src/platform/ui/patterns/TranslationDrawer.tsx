@@ -2,15 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { tokens } from '../foundations/tokens';
 import { ActionDrawer } from './ActionDrawer';
+import {
+  buildTranslationSavePayload,
+  createTranslationDraftState,
+  resolveTranslationFields,
+  sortActiveLocaleCodes,
+  splitUnselectedLocaleOptions,
+  type TranslationField,
+  type TranslationLocalData,
+} from './translation-drawer-model';
 
-export interface TranslationField {
-  id: string;
-  label: string;
-  type?: 'text' | 'textarea';
-  baseValue: string;
-  translations: Record<string, string>;
-  placeholder?: string;
-}
+export type { TranslationField } from './translation-drawer-model';
 
 export interface TranslationDrawerProps {
   open: boolean;
@@ -33,8 +35,6 @@ export interface TranslationDrawerProps {
   legacyFieldLabel?: string;
 }
 
-const PRIORITY_LOCALES = ['en', 'zh_HANS', 'zh_HANT', 'ja', 'ko', 'fr'];
-
 export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
   open,
   onOpenChange,
@@ -55,27 +55,19 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
   baseValueSuffix,
   legacyFieldLabel,
 }) => {
-  const normalizedFields: TranslationField[] = useMemo(() => {
-    if (fields) {
-      return fields;
-    }
-
-    if (baseValue !== undefined && translations !== undefined) {
-      return [
-        {
-          id: 'default',
-          label: legacyFieldLabel ?? title,
-          baseValue,
-          translations,
-        },
-      ];
-    }
-
-    return [];
-  }, [baseValue, fields, legacyFieldLabel, title, translations]);
+  const normalizedFields = useMemo(
+    () => resolveTranslationFields({
+      baseValue,
+      fallbackLabel: title,
+      fields,
+      legacyFieldLabel,
+      translations,
+    }),
+    [baseValue, fields, legacyFieldLabel, title, translations],
+  );
 
   const isLegacyMode = !fields && baseValue !== undefined && translations !== undefined;
-  const [localData, setLocalData] = useState<Record<string, Record<string, string>>>({});
+  const [localData, setLocalData] = useState<TranslationLocalData>({});
   const [activeLocales, setActiveLocales] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   
@@ -87,21 +79,10 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
       return;
     }
 
-    const initialData: Record<string, Record<string, string>> = {};
-    const initialActiveLocales = new Set<string>();
+    const initialState = createTranslationDraftState(normalizedFields);
 
-    normalizedFields.forEach((field) => {
-      Object.entries(field.translations ?? {}).forEach(([localeCode, value]) => {
-        initialActiveLocales.add(localeCode);
-        if (!initialData[localeCode]) {
-          initialData[localeCode] = {};
-        }
-        initialData[localeCode][field.id] = value;
-      });
-    });
-
-    setLocalData(initialData);
-    setActiveLocales(initialActiveLocales);
+    setLocalData(initialState.localData);
+    setActiveLocales(initialState.activeLocales);
     setLastAddedLocale(null);
   }, [normalizedFields, open]);
 
@@ -117,43 +98,19 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
     [availableLocales],
   );
 
-  const activeLocaleList = useMemo(() => {
-    const availableOrder = new Map(
-      availableLocales.map((locale, index) => [locale.code, index]),
-    );
-
-    return Array.from(activeLocales).sort((left, right) => {
-      const leftOrder = availableOrder.get(left);
-      const rightOrder = availableOrder.get(right);
-
-      if (leftOrder !== undefined && rightOrder !== undefined && leftOrder !== rightOrder) {
-        return leftOrder - rightOrder;
-      }
-
-      if (leftOrder !== undefined) {
-        return -1;
-      }
-
-      if (rightOrder !== undefined) {
-        return 1;
-      }
-
-      return left.localeCompare(right);
-    });
-  }, [activeLocales, availableLocales]);
-
-  const unselectedLocales = useMemo(
-    () => availableLocales.filter((locale) => !activeLocales.has(locale.code)),
+  const activeLocaleList = useMemo(
+    () => sortActiveLocaleCodes(activeLocales, availableLocales),
     [activeLocales, availableLocales],
   );
 
-  const priorityUnselectedLocales = useMemo(() => {
-    return unselectedLocales.filter((locale) => PRIORITY_LOCALES.includes(locale.code));
-  }, [unselectedLocales]);
-
-  const longTailUnselectedLocales = useMemo(() => {
-    return unselectedLocales.filter((locale) => !PRIORITY_LOCALES.includes(locale.code));
-  }, [unselectedLocales]);
+  const {
+    longTailUnselectedLocales,
+    priorityUnselectedLocales,
+    unselectedLocales,
+  } = useMemo(
+    () => splitUnselectedLocaleOptions(availableLocales, activeLocales),
+    [activeLocales, availableLocales],
+  );
 
   const handleChange = (localeCode: string, fieldId: string, value: string) => {
     setLocalData((current) => ({
@@ -192,34 +149,12 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
     setIsSaving(true);
 
     try {
-      if (isLegacyMode) {
-        const payload: Record<string, string> = {};
-
-        activeLocaleList.forEach((localeCode) => {
-          const value = localData[localeCode]?.default;
-          if (value?.trim()) {
-            payload[localeCode] = value;
-          }
-        });
-
-        await onSave(payload);
-      } else {
-        const payload: Record<string, Record<string, string>> = {};
-        normalizedFields.forEach((field) => {
-          payload[field.id] = {};
-        });
-
-        activeLocaleList.forEach((localeCode) => {
-          normalizedFields.forEach((field) => {
-            const value = localData[localeCode]?.[field.id];
-            if (value?.trim()) {
-              payload[field.id][localeCode] = value;
-            }
-          });
-        });
-
-        await onSave(payload);
-      }
+      await onSave(buildTranslationSavePayload({
+        activeLocaleList,
+        fields: normalizedFields,
+        isLegacyMode,
+        localData,
+      }));
 
       onOpenChange(false);
     } finally {
