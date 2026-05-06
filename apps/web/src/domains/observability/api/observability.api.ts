@@ -19,7 +19,7 @@ export interface ChangeLogRecord {
   objectType: string;
   objectId: string;
   objectName: string | null;
-  diff: Record<string, { old: unknown; new: unknown }> | null;
+  diff: Record<string, unknown> | null;
   ipAddress: string | null;
   userAgent: string | null;
   requestId: string | null;

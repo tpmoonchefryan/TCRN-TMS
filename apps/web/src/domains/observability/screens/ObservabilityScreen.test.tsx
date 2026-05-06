@@ -63,8 +63,29 @@ describe('ObservabilityScreen', () => {
               userAgent: 'Vitest',
               requestId: 'req_change_1',
             },
+            {
+              id: 'change-2',
+              occurredAt: '2026-04-17T10:01:00.000Z',
+              operatorId: null,
+              operatorName: null,
+              action: 'approve',
+              objectType: 'marshmallow_message',
+              objectId: 'message-1',
+              objectName: 'Marshmallow Message',
+              diff: {
+                old: {
+                  status: 'pending',
+                },
+                new: {
+                  status: 'approved',
+                },
+              },
+              ipAddress: null,
+              userAgent: null,
+              requestId: 'req_change_2',
+            },
           ],
-          total: 1,
+          total: 2,
           page: 1,
           pageSize: 20,
           totalPages: 1,
@@ -98,6 +119,9 @@ describe('ObservabilityScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Observability' })).toBeInTheDocument();
     expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
     expect(screen.getByText('Operator Alice')).toBeInTheDocument();
+    expect(screen.getAllByText('displayName: Old Name -> Tokino Sora')).toHaveLength(2);
+    expect(screen.getAllByText('status: pending -> approved')).toHaveLength(2);
+    expect(screen.queryByText('new, old')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Log Search' }));
 

@@ -503,7 +503,7 @@ export function DictionaryExplorerPanel({
                     <p className="text-sm font-semibold">{dictionaryType.name}</p>
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{dictionaryType.type}</p>
                   </div>
-                  <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                  <span className="whitespace-nowrap rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
                     {dictionaryType.count}
                   </span>
                 </div>
@@ -601,7 +601,7 @@ export function DictionaryExplorerPanel({
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
                           item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
                         }`}
                       >

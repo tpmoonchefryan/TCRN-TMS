@@ -486,6 +486,103 @@ export class ConfigController {
   ) {}
 
   /**
+   * GET /api/v1/configuration-entity/membership-tree
+   * Get full membership tree structure (Class -> Type -> Level)
+  */
+  @Get('membership-tree')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
+  @ApiOperation({ summary: 'Get membership tree' })
+  async getMembershipTree(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: { scopeType?: OwnerType; scopeId?: string; includeInactive?: boolean },
+    @Req() req: Request,
+  ) {
+    const language = getPrimaryAcceptLanguage(req);
+
+    const tree = await this.configService.getMembershipTree(
+      user.tenantSchema,
+      {
+        scopeType: query.scopeType,
+        scopeId: query.scopeId,
+        includeInactive: query.includeInactive === true,
+        language,
+      }
+    );
+
+    return success(tree);
+  }
+
+  /**
+   * GET /api/v1/configuration-entity/membership-classes/:classId/types
+   * Get types under a specific membership class
+  */
+  @Get('membership-classes/:classId/types')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
+  @ApiOperation({ summary: 'Get membership types by class' })
+  async getMembershipTypesByClass(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('classId') classId: string,
+    @Query() query: ListConfigQueryDto,
+    @Req() req: Request,
+  ) {
+    const language = getPrimaryAcceptLanguage(req);
+
+    const { data, total } = await this.configService.list(
+      'membership-type',
+      user.tenantSchema,
+      {
+        parentId: classId,
+        includeInactive: query.includeInactive,
+        page: query.page,
+        pageSize: query.pageSize,
+        sort: query.sort,
+        language,
+      }
+    );
+
+    return paginated(data, {
+      page: query.page || 1,
+      pageSize: query.pageSize || 50,
+      totalCount: total,
+    });
+  }
+
+  /**
+   * GET /api/v1/configuration-entity/membership-types/:typeId/levels
+   * Get levels under a specific membership type
+  */
+  @Get('membership-types/:typeId/levels')
+  @RequirePermissions({ resource: 'config.membership', action: 'read' })
+  @ApiOperation({ summary: 'Get membership levels by type' })
+  async getMembershipLevelsByType(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('typeId') typeId: string,
+    @Query() query: ListConfigQueryDto,
+    @Req() req: Request,
+  ) {
+    const language = getPrimaryAcceptLanguage(req);
+
+    const { data, total } = await this.configService.list(
+      'membership-level',
+      user.tenantSchema,
+      {
+        parentId: typeId,
+        includeInactive: query.includeInactive,
+        page: query.page,
+        pageSize: query.pageSize,
+        sort: query.sort,
+        language,
+      }
+    );
+
+    return paginated(data, {
+      page: query.page || 1,
+      pageSize: query.pageSize || 50,
+      totalCount: total,
+    });
+  }
+
+  /**
    * GET /api/v1/config/:entityType
    * List config entities
   */
@@ -747,103 +844,6 @@ export class ConfigController {
 
     return success({
       message: 'Config enabled in current scope',
-    });
-  }
-
-  /**
-   * GET /api/v1/configuration-entity/membership-tree
-   * Get full membership tree structure (Class -> Type -> Level)
-  */
-  @Get('membership-tree')
-  @RequirePermissions({ resource: 'config.membership', action: 'read' })
-  @ApiOperation({ summary: 'Get membership tree' })
-  async getMembershipTree(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: { scopeType?: OwnerType; scopeId?: string; includeInactive?: boolean },
-    @Req() req: Request,
-  ) {
-    const language = getPrimaryAcceptLanguage(req);
-    
-    const tree = await this.configService.getMembershipTree(
-      user.tenantSchema,
-      {
-        scopeType: query.scopeType,
-        scopeId: query.scopeId,
-        includeInactive: query.includeInactive === true,
-        language,
-      }
-    );
-
-    return success(tree);
-  }
-
-  /**
-   * GET /api/v1/configuration-entity/membership-classes/:classId/types
-   * Get types under a specific membership class
-  */
-  @Get('membership-classes/:classId/types')
-  @RequirePermissions({ resource: 'config.membership', action: 'read' })
-  @ApiOperation({ summary: 'Get membership types by class' })
-  async getMembershipTypesByClass(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('classId') classId: string,
-    @Query() query: ListConfigQueryDto,
-    @Req() req: Request,
-  ) {
-    const language = getPrimaryAcceptLanguage(req);
-
-    const { data, total } = await this.configService.list(
-      'membership-type',
-      user.tenantSchema,
-      {
-        parentId: classId,
-        includeInactive: query.includeInactive,
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: query.sort,
-        language,
-      }
-    );
-
-    return paginated(data, {
-      page: query.page || 1,
-      pageSize: query.pageSize || 50,
-      totalCount: total,
-    });
-  }
-
-  /**
-   * GET /api/v1/configuration-entity/membership-types/:typeId/levels
-   * Get levels under a specific membership type
-  */
-  @Get('membership-types/:typeId/levels')
-  @RequirePermissions({ resource: 'config.membership', action: 'read' })
-  @ApiOperation({ summary: 'Get membership levels by type' })
-  async getMembershipLevelsByType(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('typeId') typeId: string,
-    @Query() query: ListConfigQueryDto,
-    @Req() req: Request,
-  ) {
-    const language = getPrimaryAcceptLanguage(req);
-
-    const { data, total } = await this.configService.list(
-      'membership-level',
-      user.tenantSchema,
-      {
-        parentId: typeId,
-        includeInactive: query.includeInactive,
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: query.sort,
-        language,
-      }
-    );
-
-    return paginated(data, {
-      page: query.page || 1,
-      pageSize: query.pageSize || 50,
-      totalCount: total,
     });
   }
 

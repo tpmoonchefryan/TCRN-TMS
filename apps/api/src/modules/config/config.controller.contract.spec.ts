@@ -107,6 +107,23 @@ describe('ConfigController configuration-entity route contract', () => {
     );
   });
 
+  it('registers membership helper reads before generic entity GET routes', () => {
+    const routes = getControllerRoutes(ConfigController).filter(
+      (route) => route.requestMethod === RequestMethod.GET,
+    );
+    const routeIndex = (path: string) => routes.findIndex((route) => route.path === path);
+
+    expect(routeIndex('membership-tree')).toBeGreaterThanOrEqual(0);
+    expect(routeIndex('membership-classes/:classId/types')).toBeGreaterThanOrEqual(0);
+    expect(routeIndex('membership-types/:typeId/levels')).toBeGreaterThanOrEqual(0);
+    expect(routeIndex(':entityType')).toBeGreaterThanOrEqual(0);
+    expect(routeIndex(':entityType/:id')).toBeGreaterThanOrEqual(0);
+
+    expect(routeIndex('membership-tree')).toBeLessThan(routeIndex(':entityType'));
+    expect(routeIndex('membership-classes/:classId/types')).toBeLessThan(routeIndex(':entityType/:id'));
+    expect(routeIndex('membership-types/:typeId/levels')).toBeLessThan(routeIndex(':entityType/:id'));
+  });
+
   it('does not expose a DELETE /:entityType/:id hard-delete route for configuration entities', () => {
     const routes = getControllerRoutes(ConfigController);
     const methodNames = Object.getOwnPropertyNames(ConfigController.prototype);

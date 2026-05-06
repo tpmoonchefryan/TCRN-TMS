@@ -438,14 +438,22 @@ export function UserEditorScreen({
       return;
     }
 
+    const selectedRole = availableRoles.find((role) => role.id === assignmentComposer.roleId);
+
+    if (!selectedRole) {
+      setNotice({
+        tone: 'error',
+        message: editorCopy.assignmentSelectRoleError,
+      });
+      return;
+    }
+
     setAssignmentSubmittingId('create');
     setNotice(null);
 
     try {
-      const selectedRole = roles.find((role) => role.id === assignmentComposer.roleId);
-
       await createUserRoleAssignment(request, systemUserId, {
-        roleId: assignmentComposer.roleId,
+        roleCode: selectedRole.code,
         scopeType: assignmentComposer.scopeType,
         scopeId: assignmentComposer.scopeType === 'tenant' ? null : assignmentComposer.scopeId,
         inherit: assignmentComposer.inherit,

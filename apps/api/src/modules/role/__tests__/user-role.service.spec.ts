@@ -150,6 +150,62 @@ describe('UserRoleService', () => {
   });
 
   describe('assignRole', () => {
+    it('resolves roleCode inside the tenant schema before writing the assignment', async () => {
+      const assignment = {
+        id: 'assignment-1',
+        userId: 'user-2',
+        roleId: 'tenant-role-admin',
+        roleCode: 'ADMIN',
+        roleName: 'Administrator',
+        scopeType: 'tenant',
+        scopeId: null,
+        scopeName: null,
+        scopePath: null,
+        inherit: false,
+        grantedAt: new Date('2026-04-17T00:00:00.000Z'),
+        grantedById: grantorUserId,
+        grantedByUsername: 'grantor',
+        expiresAt: null,
+      };
+
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([{ id: 'tenant-role-admin', code: 'ADMIN' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([assignment]);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+      (mockSnapshotService.refreshUserSnapshots as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
+      mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
+
+      const result = await service.assignRole(
+        'user-2',
+        testSchema,
+        {
+          roleCode: 'ADMIN',
+          scopeType: 'tenant',
+          inherit: false,
+        },
+        grantorUserId,
+      );
+
+      expect(result).toEqual(assignment);
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('WHERE code = $1 AND is_active = true'),
+        'ADMIN',
+      );
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO "tenant_test123".user_role'),
+        'user-2',
+        'tenant-role-admin',
+        'tenant',
+        null,
+        false,
+        grantorUserId,
+        null,
+      );
+      expect(mockSnapshotService.refreshUserSnapshots).toHaveBeenCalledWith(testSchema, 'user-2');
+    });
+
     it('rejects workspace-incompatible roles before writing assignments', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
         { id: 'role-1', code: 'PLATFORM_ADMIN' },

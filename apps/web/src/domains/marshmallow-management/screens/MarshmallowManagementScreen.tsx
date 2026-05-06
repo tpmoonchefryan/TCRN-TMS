@@ -197,10 +197,10 @@ function SummaryCard({
   hint: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
+      <p className="mt-2 break-words text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 break-words text-xs leading-5 text-slate-500 [overflow-wrap:anywhere]">{hint}</p>
     </div>
   );
 }
@@ -220,7 +220,7 @@ function StatusBadge({
         : 'bg-rose-100 text-rose-800';
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
       {label}
     </span>
   );

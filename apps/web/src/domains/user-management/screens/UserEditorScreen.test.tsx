@@ -262,7 +262,7 @@ describe('UserEditorScreen', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            roleId: 'role-1',
+            roleCode: 'ADMIN',
             scopeType: 'tenant',
             scopeId: null,
             inherit: false,
@@ -294,6 +294,23 @@ describe('UserEditorScreen', () => {
       tenantId: 'tenant-ac',
       tenantName: 'AC Tenant',
       tenantTier: 'ac',
+    };
+    const detail = {
+      id: 'user-1',
+      username: 'alice',
+      email: 'alice@example.com',
+      displayName: 'Alice',
+      phone: null,
+      avatarUrl: null,
+      preferredLanguage: 'en',
+      isActive: true,
+      isTotpEnabled: false,
+      forceReset: false,
+      lastLoginAt: null,
+      createdAt: '2026-04-17T03:00:00.000Z',
+      updatedAt: '2026-04-17T03:30:00.000Z',
+      roleAssignments: [] as Array<Record<string, unknown>>,
+      scopeAccess: [],
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
@@ -335,22 +352,38 @@ describe('UserEditorScreen', () => {
       }
 
       if (path === '/api/v1/system-users/user-1' && !init) {
+        return detail;
+      }
+
+      if (path === '/api/v1/users/user-1/roles' && init?.method === 'POST') {
+        detail.roleAssignments = [
+          {
+            id: 'assignment-1',
+            roleId: 'tenant-role-platform-admin',
+            roleCode: 'PLATFORM_ADMIN',
+            roleNameEn: 'Platform Administrator',
+            roleNameZh: '平台管理员',
+            roleNameJa: null,
+            roleIsActive: true,
+            scopeType: 'tenant',
+            scopeId: null,
+            scopeName: 'AC Tenant',
+            scopePath: null,
+            inherit: false,
+            grantedAt: '2026-04-18T09:00:00.000Z',
+            expiresAt: null,
+          },
+        ];
+
         return {
-          id: 'user-1',
-          username: 'alice',
-          email: 'alice@example.com',
-          displayName: 'Alice',
-          phone: null,
-          avatarUrl: null,
-          preferredLanguage: 'en',
-          isActive: true,
-          isTotpEnabled: false,
-          forceReset: false,
-          lastLoginAt: null,
-          createdAt: '2026-04-17T03:00:00.000Z',
-          updatedAt: '2026-04-17T03:30:00.000Z',
-          roleAssignments: [],
-          scopeAccess: [],
+          id: 'assignment-1',
+          userId: 'user-1',
+          roleId: 'tenant-role-platform-admin',
+          scopeType: 'tenant',
+          scopeId: null,
+          inherit: false,
+          grantedAt: '2026-04-18T09:00:00.000Z',
+          snapshotUpdateQueued: true,
         };
       }
 
@@ -369,5 +402,23 @@ describe('UserEditorScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Platform Administrator' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Talent Manager' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/users/user-1/roles',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            roleCode: 'PLATFORM_ADMIN',
+            scopeType: 'tenant',
+            scopeId: null,
+            inherit: false,
+            expiresAt: null,
+          }),
+        }),
+      );
+    });
   });
 });

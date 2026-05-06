@@ -73,8 +73,10 @@ describe('MembershipRecordApplicationService', () => {
     vi.mocked(mockDatabaseService.calculatePaginationMeta).mockReturnValue({
       page: 1,
       pageSize: 20,
-      totalItems: 1,
+      totalCount: 1,
       totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
     } as never);
   });
 
@@ -155,8 +157,10 @@ describe('MembershipRecordApplicationService', () => {
         pagination: {
           page: 1,
           pageSize: 20,
-          totalItems: 1,
+          totalCount: 1,
           totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
         },
         summary: {
           activeCount: 1,

@@ -5,6 +5,30 @@ import { DatabaseService } from './database.service';
 describe('DatabaseService', () => {
   const service = new DatabaseService();
 
+  describe('calculatePaginationMeta', () => {
+    it('returns the standard meta.pagination shape used by API envelopes', () => {
+      expect(service.calculatePaginationMeta(51, 2, 50)).toEqual({
+        page: 2,
+        pageSize: 50,
+        totalCount: 51,
+        totalPages: 2,
+        hasNext: false,
+        hasPrev: true,
+      });
+    });
+
+    it('keeps empty collections on a valid first page instead of exposing zero pages', () => {
+      expect(service.calculatePaginationMeta(0, 1, 20)).toEqual({
+        page: 1,
+        pageSize: 20,
+        totalCount: 0,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
+  });
+
   describe('getLocalizedField', () => {
     const entity = {
       nameEn: 'English name',

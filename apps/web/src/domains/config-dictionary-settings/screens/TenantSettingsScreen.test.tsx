@@ -194,6 +194,7 @@ function createDeferred<T>(_sample?: T) {
 
 describe('TenantSettingsScreen', () => {
   beforeEach(() => {
+    currentSearch = '';
     mockRequest.mockReset();
     localeState.currentLocale = 'en';
   });
@@ -916,6 +917,72 @@ describe('TenantSettingsScreen', () => {
     expect(replace).toHaveBeenCalledWith(
       '/tenant/tenant-1/settings?profileStoreSearch=Default&profileStoreStatus=inactive&profileStorePageSize=50',
     );
+  });
+
+  it('renders profile-store pagination from legacy totalItems metadata without undefined labels', async () => {
+    currentSearch = 'profileStorePage=2&profileStorePageSize=50';
+
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/organization/settings') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'en',
+            timezone: 'Asia/Shanghai',
+            allowCustomHomepage: true,
+          },
+          overrides: [],
+          inheritedFrom: {},
+          version: 1,
+        });
+      }
+
+      if (path === '/api/v1/profile-stores?page=2&pageSize=50&includeInactive=true') {
+        return Promise.resolve({
+          items: [
+            {
+              id: 'store-51',
+              code: 'ARCHIVE_STORE',
+              name: 'Archive Store',
+              nameZh: null,
+              nameJa: null,
+              translations: { en: 'Archive Store' },
+              talentCount: 1,
+              customerCount: 4,
+              isDefault: false,
+              isActive: true,
+              createdAt: '2026-04-17T00:00:00.000Z',
+              version: 1,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 2,
+              pageSize: 50,
+              totalItems: 51,
+              totalPages: 2,
+            },
+          },
+        });
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return Promise.resolve([]);
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
+
+    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Showing 51-51 of 51')).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument();
   });
 
   it('includes a tenant business workspace shortcut in the details section', async () => {

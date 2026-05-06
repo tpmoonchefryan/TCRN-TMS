@@ -27,8 +27,10 @@ export interface ApiError {
 export interface ApiMeta {
   page: number;
   pageSize: number;
-  totalItems: number;
+  totalCount: number;
   totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 /**

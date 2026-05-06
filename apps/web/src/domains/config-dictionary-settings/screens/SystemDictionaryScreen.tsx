@@ -1,6 +1,6 @@
 'use client';
 
-import { BookText, Plus, ShieldCheck, Tags } from 'lucide-react';
+import { BookText, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -622,36 +622,6 @@ export function SystemDictionaryScreen() {
             refreshToken={refreshToken}
             allowIncludeInactiveToggle
             onTypeSelected={setSelectedType}
-            intro={
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Tags className="h-4 w-4" />
-                    <p className="text-sm font-semibold">{text('Stable Dictionary Codes', '稳定词典代码', '安定した辞書コード')}</p>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {text(
-                      'Use stable dictionary codes so labels can be updated without changing downstream pages.',
-                      '使用稳定的词典代码，这样更新标签时无需改动下游页面。',
-                      '安定した辞書コードを使うことで、下流ページを変更せずにラベルを更新できます。',
-                    )}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <ShieldCheck className="h-4 w-4" />
-                    <p className="text-sm font-semibold">{text('Shared Dictionary Source', '共享词典来源', '共通辞書ソース')}</p>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {text(
-                      'Changes made here become the shared dictionary source used across the platform.',
-                      '这里的更改会成为平台共用的词典来源。',
-                      'ここでの変更は、プラットフォーム全体で共有される辞書ソースになります。',
-                    )}
-                  </p>
-                </div>
-              </div>
-            }
             renderToolbar={(activeType) => (
               <>
                 <button

@@ -51,6 +51,8 @@ type PagedPanelState<T> = {
   error: string | null;
 };
 
+type ObservabilityLocale = 'en' | 'zh' | 'ja' | 'zh_HANS' | 'zh_HANT' | 'ko' | 'fr';
+
 type SearchPanelState = {
   data: LogSearchEntry[];
   loading: boolean;
@@ -118,23 +120,150 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
-function summarizeDiff(diff: ChangeLogRecord['diff'], locale: 'en' | 'zh' | 'ja' | 'zh_HANS' | 'zh_HANT' | 'ko' | 'fr') {
-  if (!diff) {
+interface DiffEntry {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+}
+
+const TOP_LEVEL_DIFF_KEYS = ['old', 'new', 'oldValue', 'newValue'];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readDiffPair(value: Record<string, unknown>) {
+  const hasOld =
+    Object.prototype.hasOwnProperty.call(value, 'old') ||
+    Object.prototype.hasOwnProperty.call(value, 'oldValue');
+  const hasNew =
+    Object.prototype.hasOwnProperty.call(value, 'new') ||
+    Object.prototype.hasOwnProperty.call(value, 'newValue');
+
+  if (!hasOld && !hasNew) {
     return null;
+  }
+
+  return {
+    oldValue: Object.prototype.hasOwnProperty.call(value, 'old') ? value.old : value.oldValue,
+    newValue: Object.prototype.hasOwnProperty.call(value, 'new') ? value.new : value.newValue,
+  };
+}
+
+function buildSnapshotDiffEntries(oldValue: unknown, newValue: unknown): DiffEntry[] {
+  if (isRecord(oldValue) || isRecord(newValue)) {
+    const oldRecord = isRecord(oldValue) ? oldValue : {};
+    const newRecord = isRecord(newValue) ? newValue : {};
+    const fields = Array.from(new Set([...Object.keys(oldRecord), ...Object.keys(newRecord)]));
+
+    return fields.map((field) => ({
+      field,
+      oldValue: oldRecord[field],
+      newValue: newRecord[field],
+    }));
+  }
+
+  return [
+    {
+      field: 'value',
+      oldValue,
+      newValue,
+    },
+  ];
+}
+
+function buildDiffEntries(diff: ChangeLogRecord['diff']): DiffEntry[] {
+  if (!diff) {
+    return [];
   }
 
   const changedKeys = Object.keys(diff);
 
   if (changedKeys.length === 0) {
+    return [];
+  }
+
+  const topLevelPair = changedKeys.every((key) => TOP_LEVEL_DIFF_KEYS.includes(key))
+    ? readDiffPair(diff)
+    : null;
+
+  if (topLevelPair) {
+    return buildSnapshotDiffEntries(topLevelPair.oldValue, topLevelPair.newValue);
+  }
+
+  return Object.entries(diff).map(([field, value]) => {
+    if (isRecord(value)) {
+      const pair = readDiffPair(value);
+
+      if (pair) {
+        return {
+          field,
+          oldValue: pair.oldValue,
+          newValue: pair.newValue,
+        };
+      }
+    }
+
+    return {
+      field,
+      oldValue: undefined,
+      newValue: value,
+    };
+  });
+}
+
+function formatEmptyDiffValue(locale: ObservabilityLocale) {
+  return pickLocaleText(locale, {
+    en: 'empty',
+    zh_HANS: '空',
+    zh_HANT: '空',
+    ja: '空',
+    ko: '비어 있음',
+    fr: 'vide',
+  });
+}
+
+function formatDiffValue(value: unknown, locale: ObservabilityLocale) {
+  if (value === null || value === undefined || value === '') {
+    return formatEmptyDiffValue(locale);
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function truncateDiffValue(value: string) {
+  return value.length > 80 ? `${value.slice(0, 77)}...` : value;
+}
+
+function formatDiffEntry(entry: DiffEntry, locale: ObservabilityLocale) {
+  const oldValue = truncateDiffValue(formatDiffValue(entry.oldValue, locale));
+  const newValue = truncateDiffValue(formatDiffValue(entry.newValue, locale));
+
+  return `${entry.field}: ${oldValue} -> ${newValue}`;
+}
+
+function summarizeDiff(diff: ChangeLogRecord['diff'], locale: ObservabilityLocale) {
+  const entries = buildDiffEntries(diff);
+
+  if (entries.length === 0) {
     return null;
   }
 
-  if (changedKeys.length <= 3) {
-    return changedKeys.join(', ');
+  const summary = entries.slice(0, 3).map((entry) => formatDiffEntry(entry, locale)).join('; ');
+
+  if (entries.length <= 3) {
+    return summary;
   }
 
-  const summary = changedKeys.slice(0, 3).join(', ');
-  const extraCount = changedKeys.length - 3;
+  const extraCount = entries.length - 3;
 
   return pickLocaleText(locale, {
     en: `${summary} +${extraCount} more`,
@@ -144,6 +273,12 @@ function summarizeDiff(diff: ChangeLogRecord['diff'], locale: 'en' | 'zh' | 'ja'
     ko: `${summary} 외 ${extraCount}건`,
     fr: `${summary} et ${extraCount} de plus`,
   });
+}
+
+function formatDiffDetails(diff: ChangeLogRecord['diff'], locale: ObservabilityLocale) {
+  const entries = buildDiffEntries(diff);
+
+  return entries.length === 0 ? null : entries.map((entry) => formatDiffEntry(entry, locale)).join('\n');
 }
 
 function resolveInitialTab(value: string | null): ObservabilityTab {
@@ -694,7 +829,7 @@ export function ObservabilityScreen({
       <div className={tabTransitionClassName}>
       {displayedTab === 'change-logs' ? (
         <>
-          <GlassSurface className="p-6">
+          <GlassSurface className="space-y-6 p-6">
             <FormSection
               title={copy.changeFilters.title}
               description={copy.changeFilters.description}
@@ -756,9 +891,6 @@ export function ObservabilityScreen({
                 </Field>
               </div>
             </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
             <FormSection
               title={copy.changeTable.title}
               description={copy.changeTable.description}
@@ -775,27 +907,41 @@ export function ObservabilityScreen({
                   emptyTitle={copy.changeTable.emptyTitle}
                   emptyDescription={copy.changeTable.emptyDescription}
                 >
-                  {changePanel.data.map((entry) => (
-                    <tr key={entry.id} className="align-top">
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">{entry.objectName || entry.objectType}</p>
-                          <p className="text-xs text-slate-500">
-                            {entry.objectType} / {entry.objectId}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{getObservabilityActionLabel(selectedLocale, entry.action)}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{entry.operatorName || copy.common.system}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">
-                        {summarizeDiff(entry.diff, selectedLocale) || copy.common.noMessage}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{entry.requestId || copy.common.noRequest}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">
-                        {formatObservabilityDateTime(selectedLocale, entry.occurredAt, copy.common.timeNever)}
-                      </td>
-                    </tr>
-                  ))}
+                  {changePanel.data.map((entry) => {
+                    const diffSummary = summarizeDiff(entry.diff, selectedLocale);
+                    const diffDetails = formatDiffDetails(entry.diff, selectedLocale);
+
+                    return (
+                      <tr key={entry.id} className="align-top">
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-slate-900">{entry.objectName || entry.objectType}</p>
+                            <p className="text-xs text-slate-500">
+                              {entry.objectType} / {entry.objectId}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{getObservabilityActionLabel(selectedLocale, entry.action)}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{entry.operatorName || copy.common.system}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          {diffSummary && diffDetails ? (
+                            <details className="max-w-[28rem]">
+                              <summary className="cursor-pointer break-words font-medium text-slate-800">
+                                {diffSummary}
+                              </summary>
+                              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">{diffDetails}</pre>
+                            </details>
+                          ) : (
+                            copy.common.noMessage
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{entry.requestId || copy.common.noRequest}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          {formatObservabilityDateTime(selectedLocale, entry.occurredAt, copy.common.timeNever)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </TableShell>
               )}
             </FormSection>
@@ -824,7 +970,7 @@ export function ObservabilityScreen({
 
       {displayedTab === 'tech-events' ? (
         <>
-          <GlassSurface className="p-6">
+          <GlassSurface className="space-y-6 p-6">
             <FormSection
               title={copy.techFilters.title}
               description={copy.techFilters.description}
@@ -899,9 +1045,6 @@ export function ObservabilityScreen({
                 </Field>
               </div>
             </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
             <FormSection
               title={copy.techTable.title}
               description={copy.techTable.description}
@@ -958,7 +1101,7 @@ export function ObservabilityScreen({
 
       {displayedTab === 'integration-logs' ? (
         <>
-          <GlassSurface className="p-6">
+          <GlassSurface className="space-y-6 p-6">
             <FormSection
               title={copy.integrationFilters.title}
               description={copy.integrationFilters.description}
@@ -1047,9 +1190,6 @@ export function ObservabilityScreen({
                 {copy.integrationFilters.failedOnly}
               </label>
             </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
             <FormSection
               title={copy.integrationTable.title}
               description={copy.integrationTable.description}
@@ -1114,7 +1254,7 @@ export function ObservabilityScreen({
 
       {displayedTab === 'log-search' ? (
         <>
-          <GlassSurface className="p-6">
+          <GlassSurface className="space-y-6 p-6">
             <FormSection
               title={copy.searchFilters.title}
               description={copy.searchFilters.description}
@@ -1211,9 +1351,6 @@ export function ObservabilityScreen({
                 </label>
               </div>
             </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
         <FormSection
           title={copy.searchTable.title}
           description={copy.searchTable.description}

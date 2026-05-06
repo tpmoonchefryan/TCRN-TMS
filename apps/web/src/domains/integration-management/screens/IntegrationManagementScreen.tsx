@@ -1078,6 +1078,14 @@ export function IntegrationManagementScreen({
     ko: '현재 테넌트',
     fr: 'Tenant actuel',
   });
+  const translationLanguageLoadError = text({
+    en: 'Failed to load translation languages.',
+    zh_HANS: '加载翻译语言失败。',
+    zh_HANT: '載入翻譯語言失敗。',
+    ja: '翻訳言語の読み込みに失敗しました。',
+    ko: '번역 언어를 불러오지 못했습니다.',
+    fr: 'Impossible de charger les langues de traduction.',
+  });
   const tenantRootSelection = useMemo(
     () => buildScopeSelection('tenant', null, tenantRootLabel, tenantRootHint),
     [tenantRootHint, tenantRootLabel],
@@ -1444,11 +1452,7 @@ export function IntegrationManagementScreen({
         request,
         requestEnvelope,
         selectedLocale,
-        text(
-          'Failed to load translation languages.',
-          '加载翻译语言失败。',
-          '翻訳言語の読み込みに失敗しました。',
-        ),
+        translationLanguageLoadError,
       );
 
       if (cancelled) {
@@ -1467,7 +1471,7 @@ export function IntegrationManagementScreen({
     return () => {
       cancelled = true;
     };
-  }, [isAnyTranslationDrawerOpen, request, requestEnvelope, selectedLocale, text]);
+  }, [isAnyTranslationDrawerOpen, request, requestEnvelope, selectedLocale, translationLanguageLoadError]);
 
   useEffect(() => {
     if (isAcWorkspace) {

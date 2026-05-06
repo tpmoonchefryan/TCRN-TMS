@@ -32,8 +32,10 @@ describe('ProfileStoreService', () => {
         pagination: {
           page: 1,
           pageSize: 20,
-          totalItems: 0,
-          totalPages: 0,
+          totalCount: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
         },
       },
     });

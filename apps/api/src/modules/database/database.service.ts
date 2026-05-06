@@ -161,14 +161,21 @@ export class DatabaseService {
   ): {
     page: number;
     pageSize: number;
-    totalItems: number;
+    totalCount: number;
     totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   } {
+    const totalCount = Math.max(0, totalItems);
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
     return {
       page,
       pageSize,
-      totalItems,
-      totalPages: Math.ceil(totalItems / pageSize),
+      totalCount,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     };
   }
 

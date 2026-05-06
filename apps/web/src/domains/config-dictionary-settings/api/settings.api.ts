@@ -1,7 +1,9 @@
 import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
 
 import {
+  type ApiPaginationMeta,
   type ApiSuccessEnvelope,
+  buildFallbackPagination,
   type PaginatedResult,
   resolveApiPagination,
 } from '@/platform/http/api';
@@ -35,13 +37,15 @@ export interface ProfileStoreListItem {
 export interface ProfileStoreListResponse {
   items: ProfileStoreListItem[];
   meta: {
-    pagination: {
-      page: number;
-      pageSize: number;
-      totalCount: number;
-      totalPages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
+    pagination: ApiPaginationMeta;
+  };
+}
+
+interface ProfileStoreListApiResponse {
+  items: ProfileStoreListItem[];
+  meta?: {
+    pagination?: Partial<ApiPaginationMeta> & {
+      totalItems?: number;
     };
   };
 }
@@ -391,6 +395,64 @@ function buildQueryString(params: Record<string, string | number | boolean | und
   return serialized ? `?${serialized}` : '';
 }
 
+function readFiniteNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function readPositiveNumber(value: unknown) {
+  const parsed = readFiniteNumber(value);
+
+  return parsed !== null && parsed > 0 ? parsed : null;
+}
+
+function readNonNegativeNumber(value: unknown) {
+  const parsed = readFiniteNumber(value);
+
+  return parsed !== null && parsed >= 0 ? parsed : null;
+}
+
+function normalizeProfileStoreListResponse(
+  response: ProfileStoreListApiResponse,
+  page: number,
+  pageSize: number,
+): ProfileStoreListResponse {
+  const items = response.items ?? [];
+  const pagination = response.meta?.pagination;
+
+  if (!pagination) {
+    return {
+      items,
+      meta: {
+        pagination: buildFallbackPagination(items.length, page, pageSize),
+      },
+    };
+  }
+
+  const normalizedPage = readPositiveNumber(pagination.page) ?? page;
+  const normalizedPageSize = readPositiveNumber(pagination.pageSize) ?? pageSize;
+  const totalCount =
+    readNonNegativeNumber(pagination.totalCount) ??
+    readNonNegativeNumber(pagination.totalItems) ??
+    items.length;
+  const totalPages =
+    readPositiveNumber(pagination.totalPages) ??
+    Math.max(1, Math.ceil(totalCount / normalizedPageSize));
+
+  return {
+    items,
+    meta: {
+      pagination: {
+        page: normalizedPage,
+        pageSize: normalizedPageSize,
+        totalCount,
+        totalPages,
+        hasNext: typeof pagination.hasNext === 'boolean' ? pagination.hasNext : normalizedPage < totalPages,
+        hasPrev: typeof pagination.hasPrev === 'boolean' ? pagination.hasPrev : normalizedPage > 1,
+      },
+    },
+  };
+}
+
 export function buildTenantSettingsDraft(settings: Record<string, unknown>): TenantSettingsDraft {
   return {
     defaultLanguage: normalizeSupportedUiLocale(readString(settings.defaultLanguage, 'zh_HANS')) ?? 'zh_HANS',
@@ -432,10 +494,12 @@ export function updateTenantSettings(request: RequestFn, input: UpdateSettingsIn
   return request<ScopeSettingsResponse>('/api/v1/organization/settings', buildJsonRequestInit('PATCH', input));
 }
 
-export function listProfileStores(request: RequestFn, options: ProfileStoreListOptions = {}) {
+export async function listProfileStores(request: RequestFn, options: ProfileStoreListOptions = {}) {
+  const page = options.page ?? 1;
+  const pageSize = options.pageSize ?? 20;
   const params = new URLSearchParams();
-  params.set('page', String(options.page ?? 1));
-  params.set('pageSize', String(options.pageSize ?? 20));
+  params.set('page', String(page));
+  params.set('pageSize', String(pageSize));
   if (options.includeInactive !== undefined) {
     params.set('includeInactive', String(options.includeInactive));
   }
@@ -443,7 +507,9 @@ export function listProfileStores(request: RequestFn, options: ProfileStoreListO
     params.set('search', options.search.trim());
   }
 
-  return request<ProfileStoreListResponse>(`/api/v1/profile-stores?${params.toString()}`);
+  const response = await request<ProfileStoreListApiResponse>(`/api/v1/profile-stores?${params.toString()}`);
+
+  return normalizeProfileStoreListResponse(response, page, pageSize);
 }
 
 export function readProfileStoreDetail(request: RequestFn, profileStoreId: string) {
