@@ -52,6 +52,8 @@ interface ProfileCopy {
   password: {
     title: string;
     description: string;
+    openAction: string;
+    closeDrawerLabel: string;
     action: string;
     pending: string;
     currentLabel: string;
@@ -62,6 +64,8 @@ interface ProfileCopy {
   totp: {
     title: string;
     description: string;
+    manageAction: string;
+    closeDrawerLabel: string;
     disabledTitle: string;
     disabledDescription: string;
     prepareAction: string;
@@ -207,6 +211,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     password: {
       title: 'Password',
       description: 'Change the current password.',
+      openAction: 'Open password change',
+      closeDrawerLabel: 'Close password drawer',
       action: 'Change password',
       pending: 'Changing…',
       currentLabel: 'Current password',
@@ -217,6 +223,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     totp: {
       title: 'TOTP & Recovery Codes',
       description: 'Prepare, enable, disable, and rotate second-factor settings.',
+      manageAction: 'Manage TOTP',
+      closeDrawerLabel: 'Close TOTP drawer',
       disabledTitle: 'TOTP is currently disabled',
       disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
       prepareAction: 'Prepare TOTP setup',
@@ -358,6 +366,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     password: {
       title: '密码',
       description: '修改当前密码。',
+      openAction: '打开密码修改',
+      closeDrawerLabel: '关闭密码抽屉',
       action: '修改密码',
       pending: '修改中…',
       currentLabel: '当前密码',
@@ -368,6 +378,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     totp: {
       title: 'TOTP 与恢复码',
       description: '在同一页面中完成双重验证准备、启用、停用与恢复码轮换。',
+      manageAction: '管理 TOTP',
+      closeDrawerLabel: '关闭 TOTP 抽屉',
       disabledTitle: '当前未启用 TOTP',
       disabledDescription: '先生成设置密钥，再输入一次认证器验证码即可启用。',
       prepareAction: '准备 TOTP 设置',
@@ -510,6 +522,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     password: {
       title: 'パスワード',
       description: '現在のパスワードを変更できます。',
+      openAction: 'パスワード変更を開く',
+      closeDrawerLabel: 'パスワードドロワーを閉じる',
       action: 'パスワードを変更',
       pending: '変更中…',
       currentLabel: '現在のパスワード',
@@ -520,6 +534,8 @@ const COPY: Record<RuntimeLocale, ProfileCopy> = {
     totp: {
       title: 'TOTP と回復コード',
       description: '二要素認証の準備、有効化、無効化、回復コード再発行を行います。',
+      manageAction: 'TOTP を管理',
+      closeDrawerLabel: 'TOTP ドロワーを閉じる',
       disabledTitle: '現在 TOTP は無効です',
       disabledDescription: 'まず設定シークレットを生成し、その後認証アプリのコードで有効化してください。',
       prepareAction: 'TOTP 設定を準備',

@@ -19,4 +19,20 @@ describe('HelpLink', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open help panel' }));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it('focuses hash targets so guide links provide visible feedback', () => {
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    render(
+      <>
+        <HelpLink href="#settings-sections" label="Help" ariaLabel="Jump to settings sections" />
+        <nav id="settings-sections" tabIndex={-1} aria-label="Settings sections" />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('link', { name: 'Jump to settings sections' }));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
+    expect(screen.getByRole('navigation', { name: 'Settings sections' })).toHaveFocus();
+  });
 });

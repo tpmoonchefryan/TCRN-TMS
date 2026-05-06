@@ -99,6 +99,8 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
       password: {
         title: 'Password',
         description: 'Change the current password.',
+        openAction: 'Open password change',
+        closeDrawerLabel: 'Close password drawer',
         action: 'Change password',
         pending: 'Changing…',
         currentLabel: 'Current password',
@@ -109,6 +111,8 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
       totp: {
         title: 'TOTP & Recovery Codes',
         description: 'Prepare, enable, disable, and rotate second-factor material from the same workspace.',
+        manageAction: 'Manage TOTP',
+        closeDrawerLabel: 'Close TOTP drawer',
         disabledTitle: 'TOTP is currently disabled',
         disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
         prepareAction: 'Prepare TOTP setup',
@@ -200,6 +204,7 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
         emailDescription: 'Email description',
       },
       dialog: {
+        cancelAction: 'Cancel',
         confirmAction: 'Confirm',
       },
     },
@@ -359,6 +364,9 @@ describe('ProfileScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
     expect(document.getElementById('security-controls')).toBeInTheDocument();
     expect(screen.getByText('Password')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open password change' }));
+    expect(await screen.findByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Active Sessions')).toBeInTheDocument();
     expect(screen.queryByText('Avatar & Email')).not.toBeInTheDocument();
   });
@@ -547,6 +555,7 @@ describe('ProfileScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Manage TOTP' }));
     fireEvent.click(screen.getByRole('button', { name: 'Prepare TOTP setup' }));
 
     const qrCode = await screen.findByAltText('TOTP setup QR code');

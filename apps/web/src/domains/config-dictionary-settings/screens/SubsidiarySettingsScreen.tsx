@@ -174,7 +174,7 @@ export function SubsidiarySettingsScreen({
         const [detailResult, settingsResult, dictionaryResult] = await Promise.allSettled([
           readSubsidiaryDetail(request, subsidiaryId),
           readSubsidiarySettings(request, subsidiaryId),
-          listDictionaryTypes(request),
+          listDictionaryTypes(request, selectedLocale),
         ]);
 
         if (cancelled) {
@@ -249,7 +249,7 @@ export function SubsidiarySettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [request, subsidiaryId]);
+  }, [request, selectedLocale, subsidiaryId]);
 
   if (loading) {
     return (

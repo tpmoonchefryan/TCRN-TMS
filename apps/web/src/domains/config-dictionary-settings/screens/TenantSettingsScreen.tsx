@@ -490,7 +490,7 @@ export function TenantSettingsScreen({
 
       try {
         const nextSettings = await readTenantSettings(request);
-        const dictionaryResult = await Promise.allSettled([listDictionaryTypes(request)]);
+        const dictionaryResult = await Promise.allSettled([listDictionaryTypes(request, selectedLocale)]);
 
         if (cancelled) {
           return;
@@ -528,7 +528,7 @@ export function TenantSettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [request]);
+  }, [request, selectedLocale]);
 
   useEffect(() => {
     let cancelled = false;

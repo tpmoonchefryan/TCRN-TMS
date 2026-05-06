@@ -1001,14 +1001,23 @@ export function SecurityManagementScreen({
     ko: '범위 잠금',
     fr: 'Verrou de périmètre',
   });
-  const scopeLockDescription = pickLocaleText(selectedLocale, {
-    en: `Policy edits below are locked to ${activeScopeLabel}. Change the level before opening or creating rules.`,
-    zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。请先切换层级，再打开或创建规则。`,
-    zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。請先切換層級，再開啟或建立規則。`,
-    ja: `以下のポリシー編集は ${activeScopeLabel} にロックされています。ルールを開く・作成する前に階層を切り替えてください。`,
-    ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
-    fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau avant d’ouvrir ou de créer des règles.`,
-  });
+  const scopeLockDescription = scopeType === 'tenant'
+    ? pickLocaleText(selectedLocale, {
+        en: `Policy edits below will be created at the tenant-wide level for ${activeScopeLabel}.`,
+        zh_HANS: `下方策略编辑将按租户级生效，当前范围是 ${activeScopeLabel}。`,
+        zh_HANT: `下方策略編輯將按租戶級生效，目前範圍是 ${activeScopeLabel}。`,
+        ja: `以下のポリシー編集は ${activeScopeLabel} のテナント全体レベルで作成されます。`,
+        ko: `아래 정책 편집은 ${activeScopeLabel}의 테넌트 전체 수준에 생성됩니다.`,
+        fr: `Les modifications de règles ci-dessous seront créées au niveau tenant pour ${activeScopeLabel}.`,
+      })
+    : pickLocaleText(selectedLocale, {
+        en: `Policy edits below are locked to ${activeScopeLabel}. Change the level only if you need a different owner before opening or creating rules.`,
+        zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。只有需要更换归属范围时，才需要先切换层级。`,
+        zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。只有需要更換歸屬範圍時，才需要先切換層級。`,
+        ja: `以下のポリシー編集は ${activeScopeLabel} にロックされています。別の所有範囲が必要な場合のみ、ルールを開く・作成する前に階層を切り替えてください。`,
+        ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 다른 소유 범위가 필요할 때만 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
+        fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau seulement si vous devez choisir un autre propriétaire avant d’ouvrir ou de créer des règles.`,
+      });
   const advancedScopeTitle = pickLocaleText(selectedLocale, {
     en: 'Advanced usage scopes',
     zh_HANS: '高级使用范围',
@@ -1050,12 +1059,12 @@ export function SecurityManagementScreen({
     fr: 'Anciens jetons non pris en charge',
   });
   const unsupportedScopeDescription = pickLocaleText(selectedLocale, {
-    en: 'These values stay visible in Advanced mode so existing rules are not hidden during migration.',
-    zh_HANS: '这些值会保留在高级模式中，迁移期间不会隐藏既有规则。',
-    zh_HANT: '這些值會保留在進階模式中，遷移期間不會隱藏既有規則。',
-    ja: '移行中に既存ルールを隠さないよう、これらの値は高度な設定に表示されます。',
-    ko: '마이그레이션 중 기존 규칙이 숨겨지지 않도록 이 값은 고급 모드에 표시됩니다.',
-    fr: 'Ces valeurs restent visibles en mode avancé afin de ne pas masquer les règles existantes pendant la migration.',
+    en: 'This rule still contains scope tokens created before the structured builder existed. They are preserved in Advanced mode for auditability; replace them only when you intentionally migrate the rule.',
+    zh_HANS: '这条规则仍包含结构化范围构建器上线前创建的旧 token。系统会把它们保留在高级模式中用于审计；只有在有意迁移规则时才需要替换。',
+    zh_HANT: '這條規則仍包含結構化範圍建構器上線前建立的舊 token。系統會把它們保留在進階模式中用於稽核；只有在有意遷移規則時才需要替換。',
+    ja: 'このルールには、構造化ビルダー導入前に作成されたスコープトークンが残っています。監査できるよう高度な設定に保持されます。意図的に移行するときだけ置き換えてください。',
+    ko: '이 규칙에는 구조화된 범위 빌더가 도입되기 전에 만들어진 범위 토큰이 남아 있습니다. 감사 가능성을 위해 고급 모드에 보존되며, 규칙을 의도적으로 마이그레이션할 때만 교체하세요.',
+    fr: 'Cette règle contient encore des jetons de périmètre créés avant le générateur structuré. Ils restent en mode avancé pour l’audit; remplacez-les seulement lors d’une migration volontaire de la règle.',
   });
   const ownerScopeCategoryLabels: Record<StructuredOwnerScopeCategory, string> = {
     tenant: copy.options.scopeType.tenant,

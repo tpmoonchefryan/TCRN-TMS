@@ -136,6 +136,172 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/users/me') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: visualQaSession.user.id,
+            username: visualQaSession.user.username,
+            email: visualQaSession.user.email,
+            phone: null,
+            displayName: visualQaSession.user.displayName,
+            avatarUrl: null,
+            preferredLanguage: 'en',
+            totpEnabled: false,
+            forceReset: false,
+            lastLoginAt: '2026-05-06T04:00:00.000Z',
+            passwordChangedAt: '2026-05-01T04:00:00.000Z',
+            passwordExpiresAt: null,
+            createdAt: '2026-05-01T00:00:00.000Z',
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/users/me/sessions') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'session-current',
+              deviceInfo: 'Visual QA browser',
+              ipAddress: '127.0.0.1',
+              createdAt: '2026-05-06T03:00:00.000Z',
+              lastActiveAt: '2026-05-06T04:00:00.000Z',
+              isCurrent: true,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'talent-visual',
+            code: 'VISUAL_TALENT',
+            displayName: 'Visual Talent',
+            lifecycleStatus: 'published',
+            isActive: true,
+            profileStore: null,
+            stats: {
+              customerCount: 0,
+              homepageVersionCount: 0,
+              marshmallowMessageCount: 1,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/marshmallow/config') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'marshmallow-config-visual',
+            talentId: 'talent-visual',
+            isEnabled: true,
+            title: 'Visual Mailbox',
+            welcomeText: 'Leave a deterministic message.',
+            placeholderText: 'Write your message...',
+            thankYouText: 'Thanks for your message.',
+            allowAnonymous: true,
+            captchaMode: 'auto',
+            moderationEnabled: true,
+            autoApprove: false,
+            profanityFilterEnabled: true,
+            externalBlocklistEnabled: true,
+            maxMessageLength: 500,
+            minMessageLength: 1,
+            rateLimitPerIp: 5,
+            rateLimitWindowHours: 1,
+            reactionsEnabled: true,
+            allowedReactions: ['heart', 'star'],
+            theme: {},
+            avatarUrl: null,
+            termsContentEn: null,
+            termsContentZh: null,
+            termsContentJa: null,
+            privacyContentEn: null,
+            privacyContentZh: null,
+            privacyContentJa: null,
+            stats: {
+              totalMessages: 1,
+              pendingCount: 1,
+              approvedCount: 0,
+              rejectedCount: 0,
+              unreadCount: 1,
+            },
+            marshmallowUrl: 'https://example.test/m/visual-mailbox',
+            createdAt: '2026-05-06T03:00:00.000Z',
+            updatedAt: '2026-05-06T04:00:00.000Z',
+            version: 1,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/marshmallow/messages') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [
+              {
+                id: 'message-visual',
+                content: 'Visual moderation message',
+                senderName: 'Visual Fan',
+                isAnonymous: false,
+                status: 'pending',
+                rejectionReason: null,
+                isRead: false,
+                isStarred: false,
+                isPinned: false,
+                replyContent: null,
+                repliedAt: null,
+                repliedBy: null,
+                reactionCounts: {},
+                profanityFlags: [],
+                imageUrl: null,
+                imageUrls: [],
+                socialLink: null,
+                createdAt: '2026-05-06T04:00:00.000Z',
+              },
+            ],
+            meta: {
+              total: 1,
+              stats: {
+                pendingCount: 1,
+                approvedCount: 0,
+                rejectedCount: 0,
+                unreadCount: 1,
+              },
+            },
+          },
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/system-users') {
       await route.fulfill({
         status: 200,
@@ -268,4 +434,38 @@ test.describe('private shell browser visual QA', () => {
       await expectNoHorizontalOverflow(page, `${localeCase.name} private shell user table`);
     });
   }
+
+  test('mobile profile security gates mutating forms behind action drawers', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/profile/security');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Account Security' })).toBeVisible();
+    await expect(page.getByText('Active Sessions')).toBeVisible();
+    await expect(page.getByLabel('Current password')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile profile security gated first level');
+
+    await page.getByRole('button', { name: 'Open password change' }).click();
+    const passwordDrawer = page.getByRole('dialog', { name: 'Password' });
+    await expect(passwordDrawer).toBeVisible();
+    await expect(passwordDrawer.getByLabel('Current password')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile profile security password drawer');
+  });
+
+  test('mobile marshmallow management keeps configuration behind a drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/marshmallow');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Marshmallow Management' })).toBeVisible();
+    await expect(page.getByText('Visual moderation message')).toBeVisible();
+    await expect(page.getByLabel('Title')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile marshmallow gated first level');
+
+    await page.getByRole('button', { name: 'Configure mailbox' }).click();
+    const configDrawer = page.getByRole('dialog', { name: 'Configuration' });
+    await expect(configDrawer).toBeVisible();
+    await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
+    await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
+  });
 });

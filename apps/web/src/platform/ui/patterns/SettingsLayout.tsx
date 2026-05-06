@@ -81,7 +81,12 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         {help ? <div className="flex flex-none justify-start lg:justify-end">{help}</div> : null}
       </header>
 
-      <nav id={sectionNavId} className="-mx-1 overflow-x-auto pb-1" aria-label={ariaLabel}>
+      <nav
+        id={sectionNavId}
+        tabIndex={-1}
+        className="-mx-1 overflow-x-auto pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+        aria-label={ariaLabel}
+      >
         <div
           className="flex min-w-max gap-2 rounded-[1.75rem] border border-slate-200 bg-white/72 p-2 shadow-sm"
           onKeyDown={handleSectionNavKeyDown}

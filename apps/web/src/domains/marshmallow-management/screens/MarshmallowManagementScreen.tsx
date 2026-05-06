@@ -6,6 +6,7 @@ import {
   RefreshCcw,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   Sparkles,
   Star,
 } from 'lucide-react';
@@ -54,6 +55,8 @@ import {
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
+  ActionDrawer,
+  ActionDrawerFooter,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -432,6 +435,7 @@ export function MarshmallowManagementScreen({
   const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [savePending, setSavePending] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [dialogPending, setDialogPending] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
@@ -679,6 +683,7 @@ export function MarshmallowManagementScreen({
       setConfig(nextConfig);
       setDraft(buildConfigDraft(nextConfig));
       setSaveSuccess(copy.state.saveSuccess);
+      setConfigDrawerOpen(false);
     } catch (reason) {
       setNotice({
         tone: 'error',
@@ -927,109 +932,19 @@ export function MarshmallowManagementScreen({
           title={copy.config.title}
           description={copy.config.description}
           actions={
-            <AsyncSubmitButton
-              onClick={() => void handleSaveConfig()}
-              isPending={savePending}
-              pendingText={copy.actions.savePending}
+            <button
+              type="button"
+              onClick={() => setConfigDrawerOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              {copy.actions.saveConfig}
-            </AsyncSubmitButton>
+              <SlidersHorizontal className="h-4 w-4" />
+              {copy.actions.openConfig}
+            </button>
           }
         >
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4 shadow-sm">
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4">
             <p className="text-sm font-semibold text-indigo-950">{copy.config.publicRouteTitle}</p>
             <p className="mt-2 text-sm leading-6 text-indigo-900">{copy.config.publicRouteDescription}</p>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <TextField
-              label={copy.config.fields.title}
-              value={draft.title}
-              onChange={(value) => setDraft((current) => (current ? { ...current, title: value } : current))}
-            />
-            <TextField
-              label={copy.config.fields.allowedReactions}
-              value={draft.allowedReactions}
-              onChange={(value) => setDraft((current) => (current ? { ...current, allowedReactions: value } : current))}
-            />
-            <TextareaField
-              label={copy.config.fields.welcomeText}
-              value={draft.welcomeText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, welcomeText: value } : current))}
-            />
-            <TextareaField
-              label={copy.config.fields.thankYouText}
-              value={draft.thankYouText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, thankYouText: value } : current))}
-            />
-            <TextField
-              label={copy.config.fields.placeholderText}
-              value={draft.placeholderText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, placeholderText: value } : current))}
-            />
-            <SelectField
-              label={copy.config.fields.captchaMode}
-              value={draft.captchaMode}
-              options={captchaOptions}
-              onChange={(value) => setDraft((current) => (current ? { ...current, captchaMode: value as MarshmallowConfigDraft['captchaMode'] } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.minMessageLength}
-              value={draft.minMessageLength}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, minMessageLength: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.maxMessageLength}
-              value={draft.maxMessageLength}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, maxMessageLength: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.rateLimitPerIp}
-              value={draft.rateLimitPerIp}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitPerIp: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.rateLimitWindowHours}
-              value={draft.rateLimitWindowHours}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitWindowHours: value } : current))}
-            />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <CheckboxField
-              label={copy.config.fields.allowAnonymous}
-              checked={draft.allowAnonymous}
-              onChange={(next) => setDraft((current) => (current ? { ...current, allowAnonymous: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.requireModeration}
-              checked={draft.moderationEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, moderationEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.autoApprove}
-              checked={draft.autoApprove}
-              onChange={(next) => setDraft((current) => (current ? { ...current, autoApprove: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.profanityFilter}
-              checked={draft.profanityFilterEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, profanityFilterEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.externalBlocklist}
-              checked={draft.externalBlocklistEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, externalBlocklistEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.enablePublicReactions}
-              checked={draft.reactionsEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, reactionsEnabled: next } : current))}
-            />
           </div>
 
           <div className="grid gap-4 xl:grid-cols-3">
@@ -1348,6 +1263,135 @@ export function MarshmallowManagementScreen({
           )}
         </FormSection>
       </GlassSurface>
+
+      <ActionDrawer
+        open={configDrawerOpen}
+        onOpenChange={setConfigDrawerOpen}
+        title={copy.config.title}
+        description={copy.config.description}
+        closeButtonAriaLabel={copy.actions.closeConfigDrawer}
+        size="xl"
+        footer={
+          <ActionDrawerFooter
+            secondary={
+              <button
+                type="button"
+                onClick={() => setConfigDrawerOpen(false)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                {pickLocaleText(selectedLocale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+              </button>
+            }
+            primary={
+              <AsyncSubmitButton
+                onClick={() => void handleSaveConfig()}
+                isPending={savePending}
+                pendingText={copy.actions.savePending}
+              >
+                {copy.actions.saveConfig}
+              </AsyncSubmitButton>
+            }
+          />
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4">
+            <p className="text-sm font-semibold text-indigo-950">{copy.config.publicRouteTitle}</p>
+            <p className="mt-2 text-sm leading-6 text-indigo-900">{copy.config.publicRouteDescription}</p>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <TextField
+              label={copy.config.fields.title}
+              value={draft.title}
+              onChange={(value) => setDraft((current) => (current ? { ...current, title: value } : current))}
+            />
+            <TextField
+              label={copy.config.fields.allowedReactions}
+              value={draft.allowedReactions}
+              onChange={(value) => setDraft((current) => (current ? { ...current, allowedReactions: value } : current))}
+            />
+            <TextareaField
+              label={copy.config.fields.welcomeText}
+              value={draft.welcomeText}
+              onChange={(value) => setDraft((current) => (current ? { ...current, welcomeText: value } : current))}
+            />
+            <TextareaField
+              label={copy.config.fields.thankYouText}
+              value={draft.thankYouText}
+              onChange={(value) => setDraft((current) => (current ? { ...current, thankYouText: value } : current))}
+            />
+            <TextField
+              label={copy.config.fields.placeholderText}
+              value={draft.placeholderText}
+              onChange={(value) => setDraft((current) => (current ? { ...current, placeholderText: value } : current))}
+            />
+            <SelectField
+              label={copy.config.fields.captchaMode}
+              value={draft.captchaMode}
+              options={captchaOptions}
+              onChange={(value) => setDraft((current) => (current ? { ...current, captchaMode: value as MarshmallowConfigDraft['captchaMode'] } : current))}
+            />
+            <NumberField
+              label={copy.config.fields.minMessageLength}
+              value={draft.minMessageLength}
+              min={1}
+              onChange={(value) => setDraft((current) => (current ? { ...current, minMessageLength: value } : current))}
+            />
+            <NumberField
+              label={copy.config.fields.maxMessageLength}
+              value={draft.maxMessageLength}
+              min={1}
+              onChange={(value) => setDraft((current) => (current ? { ...current, maxMessageLength: value } : current))}
+            />
+            <NumberField
+              label={copy.config.fields.rateLimitPerIp}
+              value={draft.rateLimitPerIp}
+              min={1}
+              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitPerIp: value } : current))}
+            />
+            <NumberField
+              label={copy.config.fields.rateLimitWindowHours}
+              value={draft.rateLimitWindowHours}
+              min={1}
+              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitWindowHours: value } : current))}
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <CheckboxField
+              label={copy.config.fields.allowAnonymous}
+              checked={draft.allowAnonymous}
+              onChange={(next) => setDraft((current) => (current ? { ...current, allowAnonymous: next } : current))}
+            />
+            <CheckboxField
+              label={copy.config.fields.requireModeration}
+              checked={draft.moderationEnabled}
+              onChange={(next) => setDraft((current) => (current ? { ...current, moderationEnabled: next } : current))}
+            />
+            <CheckboxField
+              label={copy.config.fields.autoApprove}
+              checked={draft.autoApprove}
+              onChange={(next) => setDraft((current) => (current ? { ...current, autoApprove: next } : current))}
+            />
+            <CheckboxField
+              label={copy.config.fields.profanityFilter}
+              checked={draft.profanityFilterEnabled}
+              onChange={(next) => setDraft((current) => (current ? { ...current, profanityFilterEnabled: next } : current))}
+            />
+            <CheckboxField
+              label={copy.config.fields.externalBlocklist}
+              checked={draft.externalBlocklistEnabled}
+              onChange={(next) => setDraft((current) => (current ? { ...current, externalBlocklistEnabled: next } : current))}
+            />
+            <CheckboxField
+              label={copy.config.fields.enablePublicReactions}
+              checked={draft.reactionsEnabled}
+              onChange={(next) => setDraft((current) => (current ? { ...current, reactionsEnabled: next } : current))}
+            />
+          </div>
+        </div>
+      </ActionDrawer>
 
       <ConfirmActionDialog
         open={dialogState !== null}

@@ -572,7 +572,7 @@ export function TalentSettingsScreen({
             readTalentCustomDomainConfig(request, talentId),
             readMarshmallowConfig(request, talentId),
             readTalentPublishReadiness(request, talentId),
-            listDictionaryTypes(request),
+            listDictionaryTypes(request, selectedLocale),
           ]);
 
         if (cancelled) {
@@ -683,7 +683,7 @@ export function TalentSettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [currentLocale, request, talentId]);
+  }, [currentLocale, request, selectedLocale, talentId]);
 
   if (loading) {
     return (

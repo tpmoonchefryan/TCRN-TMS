@@ -160,7 +160,7 @@ function parseExtraData(value: string, invalidMessage: string) {
 
 export function SystemDictionaryScreen() {
   const { request, requestEnvelope } = useSession();
-  const { currentLocale, dictionaryExplorerCopy, text } = useSystemDictionaryCopy();
+  const { dictionaryExplorerCopy, text } = useSystemDictionaryCopy();
   const { selectedLocale } = useRuntimeLocale();
   const [typesPanel, setTypesPanel] = useState<AsyncPanelState<DictionaryTypeSummary[]>>({
     data: null,
@@ -617,7 +617,7 @@ export function SystemDictionaryScreen() {
             request={request}
             requestEnvelope={requestEnvelope}
             types={typesPanel.data}
-            locale={currentLocale}
+            locale={selectedLocale}
             copy={dictionaryExplorerCopy}
             refreshToken={refreshToken}
             allowIncludeInactiveToggle

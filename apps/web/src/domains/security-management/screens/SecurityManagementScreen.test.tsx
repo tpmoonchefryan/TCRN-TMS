@@ -304,6 +304,8 @@ describe('SecurityManagementScreen', () => {
 
     await screen.findByRole('heading', { name: 'Security' });
     expect(screen.getByText('Scope lock')).toBeInTheDocument();
+    expect(screen.getByText(/tenant-wide level/)).toBeInTheDocument();
+    expect(screen.queryByText(/Change the level before opening/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Rule name')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));

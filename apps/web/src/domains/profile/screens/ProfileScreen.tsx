@@ -36,6 +36,8 @@ import {
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
+  ActionDrawer,
+  ActionDrawerFooter,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -70,6 +72,8 @@ interface DialogState {
   confirmText: string;
   onConfirm: () => Promise<void>;
 }
+
+type SecurityDrawer = 'password' | 'totp' | null;
 
 interface SessionUserSnapshot {
   id: string;
@@ -183,6 +187,37 @@ function SummaryCard({
   );
 }
 
+function SecurityActionCard({
+  title,
+  description,
+  meta,
+  actionLabel,
+  onAction,
+}: Readonly<{
+  title: string;
+  description: string;
+  meta: string;
+  actionLabel: string;
+  onAction: () => void;
+}>) {
+  return (
+    <div className="flex min-w-0 flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+      <div className="min-w-0 space-y-2">
+        <p className="text-sm font-semibold text-slate-950">{title}</p>
+        <p className="text-sm leading-6 text-slate-600">{description}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{meta}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onAction}
+        className="inline-flex w-fit items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
 const inputClassName =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40';
 
@@ -256,6 +291,7 @@ export function ProfileScreen({
   const [isEnablingTotp, setIsEnablingTotp] = useState(false);
   const [isDisablingTotp, setIsDisablingTotp] = useState(false);
   const [isRegeneratingRecoveryCodes, setIsRegeneratingRecoveryCodes] = useState(false);
+  const [securityDrawer, setSecurityDrawer] = useState<SecurityDrawer>(null);
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -492,6 +528,31 @@ export function ProfileScreen({
     setSessions(nextSessions);
   }
 
+  function resetSecurityDrawerDraft(drawer: Exclude<SecurityDrawer, null>) {
+    if (drawer === 'password') {
+      setPasswordDraft({
+        currentPassword: '',
+        newPassword: '',
+        newPasswordConfirm: '',
+      });
+      return;
+    }
+
+    setTotpSetupState(null);
+    setTotpCode('');
+    setTotpDisablePassword('');
+    setRecoveryCodePassword('');
+    setRecoveryCodes([]);
+  }
+
+  function closeSecurityDrawer() {
+    if (securityDrawer) {
+      resetSecurityDrawerDraft(securityDrawer);
+    }
+
+    setSecurityDrawer(null);
+  }
+
   async function handleSaveProfile() {
     if (!hasDirtyProfile || isSavingProfile || !profileDraft) {
       return;
@@ -541,6 +602,7 @@ export function ProfileScreen({
         tone: 'success',
         message: result.message,
       });
+      closeSecurityDrawer();
     } catch (reason) {
       setNotice({
         tone: 'error',
@@ -1021,193 +1083,23 @@ export function ProfileScreen({
           </h2>
 
           <GlassSurface className="p-6">
-            <FormSection
-              title={copy.password.title}
-              description={copy.password.description}
-              actions={
-                <AsyncSubmitButton onClick={() => void handleChangePassword()} isPending={isSavingPassword} pendingText={copy.password.pending}>
-                  {copy.password.action}
-                </AsyncSubmitButton>
-              }
-            >
-              <div className="grid gap-4 md:grid-cols-3">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.password.currentLabel}</span>
-                  <input
-                    aria-label={copy.password.currentLabel}
-                    type="password"
-                    value={passwordDraft.currentPassword}
-                    onChange={(event) =>
-                      setPasswordDraft((current) => ({
-                        ...current,
-                        currentPassword: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.password.newLabel}</span>
-                  <input
-                    aria-label={copy.password.newLabel}
-                    type="password"
-                    value={passwordDraft.newPassword}
-                    onChange={(event) =>
-                      setPasswordDraft((current) => ({
-                        ...current,
-                        newPassword: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.password.confirmLabel}</span>
-                  <input
-                    aria-label={copy.password.confirmLabel}
-                    type="password"
-                    value={passwordDraft.newPasswordConfirm}
-                    onChange={(event) =>
-                      setPasswordDraft((current) => ({
-                        ...current,
-                        newPasswordConfirm: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </label>
+            <FormSection title={copy.cards.securityTitle} description={copy.cards.securityDescription}>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SecurityActionCard
+                  title={copy.password.title}
+                  description={copy.password.description}
+                  meta={formatProfileDateTime(profile.passwordExpiresAt, currentLocale, copy.details.notScheduled)}
+                  actionLabel={copy.password.openAction}
+                  onAction={() => setSecurityDrawer('password')}
+                />
+                <SecurityActionCard
+                  title={copy.totp.title}
+                  description={profile.totpEnabled ? copy.totp.description : copy.totp.disabledDescription}
+                  meta={profile.totpEnabled ? copy.header.summaryTotpEnabled : copy.header.summaryTotpDisabled}
+                  actionLabel={copy.totp.manageAction}
+                  onAction={() => setSecurityDrawer('totp')}
+                />
               </div>
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection title={copy.totp.title} description={copy.totp.description}>
-              {!profile.totpEnabled ? (
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{copy.totp.disabledTitle}</p>
-                        <p className="text-sm leading-6 text-slate-600">{copy.totp.disabledDescription}</p>
-                      </div>
-                      <AsyncSubmitButton onClick={() => void handlePrepareTotp()} isPending={isPreparingTotp} pendingText={copy.totp.preparePending}>
-                        {copy.totp.prepareAction}
-                      </AsyncSubmitButton>
-                    </div>
-                  </div>
-
-                  {totpSetup ? (
-                    <div className="grid gap-4 xl:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                        <p className="text-sm font-semibold text-slate-950">{copy.totp.setupMaterialTitle}</p>
-                        <div className="mt-3 space-y-4">
-                          {totpSetup.qrCode ? (
-                            <div className="space-y-3">
-                              <p className="text-sm font-semibold text-slate-900">{copy.totp.qrCodeLabel}</p>
-                              <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                                <img
-                                  src={totpSetup.qrCode}
-                                  alt={copy.totp.qrCodeAlt}
-                                  className="h-44 w-44 rounded-xl object-contain"
-                                />
-                              </div>
-                              <p className="text-sm leading-6 text-slate-600">{copy.totp.qrCodeHint}</p>
-                            </div>
-                          ) : null}
-                          <div className="space-y-2 text-sm text-slate-700">
-                          <p>
-                            <span className="font-semibold text-slate-900">{copy.totp.accountLabel}:</span> {totpSetup.account}
-                          </p>
-                          <p className="break-all">
-                            <span className="font-semibold text-slate-900">{copy.totp.secretLabel}:</span> {totpSetup.secret}
-                          </p>
-                          <p className="break-all">
-                            <span className="font-semibold text-slate-900">{copy.totp.otpAuthUrlLabel}:</span> {totpSetup.otpauthUrl}
-                          </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <p className="text-sm font-semibold text-slate-950">{copy.totp.enableTitle}</p>
-                            <p className="text-sm leading-6 text-slate-600">{copy.totp.enableDescription}</p>
-                          </div>
-                          <input
-                            aria-label={copy.totp.codeLabel}
-                            value={totpCode}
-                            onChange={(event) => setTotpCode(event.target.value)}
-                            placeholder={copy.totp.codePlaceholder}
-                            className={inputClassName}
-                          />
-                          <AsyncSubmitButton onClick={() => void handleEnableTotp()} isPending={isEnablingTotp} pendingText={copy.totp.enablePending}>
-                            {copy.totp.enableAction}
-                          </AsyncSubmitButton>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{copy.totp.disableTitle}</p>
-                        <p className="text-sm leading-6 text-slate-600">{copy.totp.disableDescription}</p>
-                      </div>
-                      <input
-                        aria-label={copy.totp.disablePasswordLabel}
-                        type="password"
-                        value={totpDisablePassword}
-                        onChange={(event) => setTotpDisablePassword(event.target.value)}
-                        className={inputClassName}
-                      />
-                      <AsyncSubmitButton onClick={() => void handleDisableTotp()} isPending={isDisablingTotp} pendingText={copy.totp.disablePending}>
-                        {copy.totp.disableAction}
-                      </AsyncSubmitButton>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{copy.totp.regenerateTitle}</p>
-                        <p className="text-sm leading-6 text-slate-600">{copy.totp.regenerateDescription}</p>
-                      </div>
-                      <input
-                        aria-label={copy.totp.regeneratePasswordLabel}
-                        type="password"
-                        value={recoveryCodePassword}
-                        onChange={(event) => setRecoveryCodePassword(event.target.value)}
-                        className={inputClassName}
-                      />
-                      <AsyncSubmitButton
-                        onClick={() => void handleRegenerateRecoveryCodes()}
-                        isPending={isRegeneratingRecoveryCodes}
-                        pendingText={copy.totp.regeneratePending}
-                      >
-                        {copy.totp.regenerateAction}
-                      </AsyncSubmitButton>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {recoveryCodes.length > 0 ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-5">
-                  <p className="text-sm font-semibold text-amber-900">{copy.totp.recoveryCodesTitle}</p>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-                    {recoveryCodes.map((code) => (
-                      <div
-                        key={code}
-                        className="rounded-xl border border-amber-200 bg-white/80 px-3 py-2 text-sm font-medium text-slate-900"
-                      >
-                        {code}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </FormSection>
           </GlassSurface>
 
@@ -1291,6 +1183,223 @@ export function ProfileScreen({
           </GlassSurface>
         </section>
       ) : null}
+
+      <ActionDrawer
+        open={securityDrawer === 'password'}
+        onOpenChange={(open) => (open ? setSecurityDrawer('password') : closeSecurityDrawer())}
+        title={copy.password.title}
+        description={copy.password.description}
+        closeButtonAriaLabel={copy.password.closeDrawerLabel}
+        size="lg"
+        footer={
+          <ActionDrawerFooter
+            secondary={
+              <button
+                type="button"
+                onClick={closeSecurityDrawer}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                {copy.dialog.cancelAction}
+              </button>
+            }
+            primary={
+              <AsyncSubmitButton
+                onClick={() => void handleChangePassword()}
+                isPending={isSavingPassword}
+                pendingText={copy.password.pending}
+              >
+                {copy.password.action}
+              </AsyncSubmitButton>
+            }
+          />
+        }
+      >
+        <div className="grid gap-4">
+          <label className="space-y-2">
+            <span className="text-sm font-semibold text-slate-900">{copy.password.currentLabel}</span>
+            <input
+              aria-label={copy.password.currentLabel}
+              type="password"
+              value={passwordDraft.currentPassword}
+              onChange={(event) =>
+                setPasswordDraft((current) => ({
+                  ...current,
+                  currentPassword: event.target.value,
+                }))
+              }
+              className={inputClassName}
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-semibold text-slate-900">{copy.password.newLabel}</span>
+            <input
+              aria-label={copy.password.newLabel}
+              type="password"
+              value={passwordDraft.newPassword}
+              onChange={(event) =>
+                setPasswordDraft((current) => ({
+                  ...current,
+                  newPassword: event.target.value,
+                }))
+              }
+              className={inputClassName}
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-semibold text-slate-900">{copy.password.confirmLabel}</span>
+            <input
+              aria-label={copy.password.confirmLabel}
+              type="password"
+              value={passwordDraft.newPasswordConfirm}
+              onChange={(event) =>
+                setPasswordDraft((current) => ({
+                  ...current,
+                  newPasswordConfirm: event.target.value,
+                }))
+              }
+              className={inputClassName}
+            />
+          </label>
+        </div>
+      </ActionDrawer>
+
+      <ActionDrawer
+        open={securityDrawer === 'totp'}
+        onOpenChange={(open) => (open ? setSecurityDrawer('totp') : closeSecurityDrawer())}
+        title={copy.totp.title}
+        description={copy.totp.description}
+        closeButtonAriaLabel={copy.totp.closeDrawerLabel}
+        size="xl"
+      >
+        <div className="space-y-5">
+          {!profile.totpEnabled ? (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-950">{copy.totp.disabledTitle}</p>
+                    <p className="text-sm leading-6 text-slate-600">{copy.totp.disabledDescription}</p>
+                  </div>
+                  <AsyncSubmitButton onClick={() => void handlePrepareTotp()} isPending={isPreparingTotp} pendingText={copy.totp.preparePending}>
+                    {copy.totp.prepareAction}
+                  </AsyncSubmitButton>
+                </div>
+              </div>
+
+              {totpSetup ? (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-950">{copy.totp.setupMaterialTitle}</p>
+                    <div className="mt-3 space-y-4">
+                      {totpSetup.qrCode ? (
+                        <div className="space-y-3">
+                          <p className="text-sm font-semibold text-slate-900">{copy.totp.qrCodeLabel}</p>
+                          <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <img
+                              src={totpSetup.qrCode}
+                              alt={copy.totp.qrCodeAlt}
+                              className="h-44 w-44 rounded-xl object-contain"
+                            />
+                          </div>
+                          <p className="text-sm leading-6 text-slate-600">{copy.totp.qrCodeHint}</p>
+                        </div>
+                      ) : null}
+                      <div className="space-y-2 text-sm text-slate-700">
+                        <p>
+                          <span className="font-semibold text-slate-900">{copy.totp.accountLabel}:</span> {totpSetup.account}
+                        </p>
+                        <p className="break-all">
+                          <span className="font-semibold text-slate-900">{copy.totp.secretLabel}:</span> {totpSetup.secret}
+                        </p>
+                        <p className="break-all">
+                          <span className="font-semibold text-slate-900">{copy.totp.otpAuthUrlLabel}:</span> {totpSetup.otpauthUrl}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-slate-950">{copy.totp.enableTitle}</p>
+                        <p className="text-sm leading-6 text-slate-600">{copy.totp.enableDescription}</p>
+                      </div>
+                      <input
+                        aria-label={copy.totp.codeLabel}
+                        value={totpCode}
+                        onChange={(event) => setTotpCode(event.target.value)}
+                        placeholder={copy.totp.codePlaceholder}
+                        className={inputClassName}
+                      />
+                      <AsyncSubmitButton onClick={() => void handleEnableTotp()} isPending={isEnablingTotp} pendingText={copy.totp.enablePending}>
+                        {copy.totp.enableAction}
+                      </AsyncSubmitButton>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-950">{copy.totp.disableTitle}</p>
+                    <p className="text-sm leading-6 text-slate-600">{copy.totp.disableDescription}</p>
+                  </div>
+                  <input
+                    aria-label={copy.totp.disablePasswordLabel}
+                    type="password"
+                    value={totpDisablePassword}
+                    onChange={(event) => setTotpDisablePassword(event.target.value)}
+                    className={inputClassName}
+                  />
+                  <AsyncSubmitButton onClick={() => void handleDisableTotp()} isPending={isDisablingTotp} pendingText={copy.totp.disablePending}>
+                    {copy.totp.disableAction}
+                  </AsyncSubmitButton>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-950">{copy.totp.regenerateTitle}</p>
+                    <p className="text-sm leading-6 text-slate-600">{copy.totp.regenerateDescription}</p>
+                  </div>
+                  <input
+                    aria-label={copy.totp.regeneratePasswordLabel}
+                    type="password"
+                    value={recoveryCodePassword}
+                    onChange={(event) => setRecoveryCodePassword(event.target.value)}
+                    className={inputClassName}
+                  />
+                  <AsyncSubmitButton
+                    onClick={() => void handleRegenerateRecoveryCodes()}
+                    isPending={isRegeneratingRecoveryCodes}
+                    pendingText={copy.totp.regeneratePending}
+                  >
+                    {copy.totp.regenerateAction}
+                  </AsyncSubmitButton>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {recoveryCodes.length > 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-5">
+              <p className="text-sm font-semibold text-amber-900">{copy.totp.recoveryCodesTitle}</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {recoveryCodes.map((code) => (
+                  <div
+                    key={code}
+                    className="rounded-xl border border-amber-200 bg-white/80 px-3 py-2 text-sm font-medium text-slate-900"
+                  >
+                    {code}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </ActionDrawer>
 
       <ConfirmActionDialog
         open={dialogState !== null}

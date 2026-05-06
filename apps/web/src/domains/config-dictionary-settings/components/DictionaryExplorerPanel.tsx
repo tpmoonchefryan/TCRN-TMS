@@ -397,7 +397,7 @@ export function DictionaryExplorerPanel({
           page,
           pageSize,
           search: search.trim() || undefined,
-        });
+        }, locale);
 
         if (cancelled) {
           return;
@@ -430,7 +430,7 @@ export function DictionaryExplorerPanel({
     return () => {
       cancelled = true;
     };
-  }, [copy.itemsUnavailableFallback, includeInactive, page, pageSize, refreshToken, requestEnvelope, search, selectedType]);
+  }, [copy.itemsUnavailableFallback, includeInactive, locale, page, pageSize, refreshToken, requestEnvelope, search, selectedType]);
 
   if (types.length === 0) {
     return <StateView status="empty" title={emptyTitle} description={emptyDescription} />;

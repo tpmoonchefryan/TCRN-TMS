@@ -10,6 +10,7 @@ let pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
 let currentSearch = '';
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  selectedLocale: 'en',
 };
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -89,6 +90,7 @@ describe('MarshmallowManagementScreen', () => {
     openSpy.mockReset();
     replace.mockReset();
     localeState.currentLocale = 'en';
+    localeState.selectedLocale = 'en';
     pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
     currentSearch = '';
     replace.mockImplementation((href: string) => {
@@ -384,6 +386,9 @@ describe('MarshmallowManagementScreen', () => {
 
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
+    expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Aki Mailbox')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Configure mailbox' }));
     expect(await screen.findByDisplayValue('Aki Mailbox')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Title'), {
