@@ -258,6 +258,7 @@ interface EmailTemplateDraft {
 }
 
 type TemplateTranslationSection = 'name' | 'subject' | 'bodyHtml' | 'bodyText';
+type AdapterConfigureSection = 'basics' | 'secrets' | 'webhook-api-client' | 'email-templates';
 
 interface EmailConfigPanelState {
   data: EmailConfigResponse | null;
@@ -1204,6 +1205,7 @@ export function IntegrationManagementScreen({
   const [adapterCreateMode, setAdapterCreateMode] = useState(false);
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
   const [adapterConfigPanelOpen, setAdapterConfigPanelOpen] = useState(false);
+  const [adapterConfigureSection, setAdapterConfigureSection] = useState<AdapterConfigureSection>('basics');
   const [adapterDraft, setAdapterDraft] = useState<AdapterDraft>(() => buildAdapterDraft());
   const [adapterDraftBaseline, setAdapterDraftBaseline] = useState<AdapterDraft>(() => buildAdapterDraft());
   const [adapterTranslationDrawerOpen, setAdapterTranslationDrawerOpen] = useState(false);
@@ -1285,6 +1287,7 @@ export function IntegrationManagementScreen({
       setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
     }
     setAdapterConfigPanelOpen(false);
+    setAdapterConfigureSection('basics');
     setAdapterEditorState(adapterDraftBaseline, adapterConfigRowsBaseline);
     setAdapterTranslationDrawerOpen(false);
 
@@ -1549,6 +1552,7 @@ export function IntegrationManagementScreen({
     setAdapterCreateMode(false);
     setSelectedAdapterId(null);
     setAdapterConfigPanelOpen(false);
+    setAdapterConfigureSection('basics');
     setAdapterDetailPanel(createPanelState<IntegrationAdapterDetailRecord | null>(null, false));
     setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
     setWebhookCreateMode(false);
@@ -2482,6 +2486,14 @@ export function IntegrationManagementScreen({
     requestDiscardDirtyEditor(() => setTab(nextTab));
   }
 
+  function setAdapterConfigureSectionRequest(nextSection: AdapterConfigureSection) {
+    if (nextSection === adapterConfigureSection) {
+      return;
+    }
+
+    setAdapterConfigureSection(nextSection);
+  }
+
   function requestScopeChange(scope: IntegrationScopeSelection) {
     if (scopeMatches(selectedScope, scope)) {
       return;
@@ -2548,6 +2560,7 @@ export function IntegrationManagementScreen({
 
         setAdapterCreateMode(false);
         setAdapterConfigPanelOpen(false);
+        setAdapterConfigureSection('basics');
         await refreshAdapters(created.id);
         setSelectedAdapterId(created.id);
         setNotice({
@@ -3265,6 +3278,12 @@ export function IntegrationManagementScreen({
           ko: `API 클라이언트는 계정 센터에서 관리됩니다. ${selectedIntegrationScope.label}은 해당 계약을 상속하므로 여기서는 어댑터만 편집할 수 있습니다.`,
           fr: `Les clients API restent gérés dans l’Account Center. ${selectedIntegrationScope.label} hérite de ce contrat, donc seuls les adaptateurs sont modifiables ici.`,
         });
+  const adapterConfigureItems = [
+    { id: 'basics', label: text('Basics', '基础信息', '基本情報') },
+    { id: 'secrets', label: text('Secrets', '密钥', 'シークレット') },
+    { id: 'webhook-api-client', label: text('Webhook/API Client', 'Webhook/API 客户端', 'Webhook/API クライアント') },
+    { id: 'email-templates', label: text('Email Templates', '邮件模板', 'メールテンプレート') },
+  ] satisfies Array<{ id: AdapterConfigureSection; label: string }>;
 
   function renderScopeButton(
     scope: IntegrationScopeSelection,
@@ -3650,6 +3669,7 @@ export function IntegrationManagementScreen({
                         setAdapterCreateMode(true);
                         setSelectedAdapterId(null);
                         setAdapterConfigPanelOpen(true);
+                        setAdapterConfigureSection('basics');
                         setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
                       })
                     }
@@ -3721,6 +3741,7 @@ export function IntegrationManagementScreen({
                                 setAdapterCreateMode(false);
                                 setSelectedAdapterId(adapter.id);
                                 setAdapterConfigPanelOpen(false);
+                                setAdapterConfigureSection('basics');
                               })
                             }
                           >
@@ -3732,6 +3753,7 @@ export function IntegrationManagementScreen({
                                 setAdapterCreateMode(false);
                                 setSelectedAdapterId(adapter.id);
                                 setAdapterConfigPanelOpen(true);
+                                setAdapterConfigureSection('secrets');
                               })
                             }
                           >
@@ -3840,6 +3862,31 @@ export function IntegrationManagementScreen({
             </GlassSurface>
 
           <GlassSurface className="p-6">
+            <div className="space-y-4 border-b border-slate-200/50 pb-6">
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-slate-950">
+                  {text('Configure Adapter', '配置适配器', 'アダプター設定')}
+                </h3>
+                <p className="text-sm leading-6 text-slate-600">
+                  {text({
+                    en: 'Use sections to keep adapter basics, secrets, related inbound surfaces, and email templates separated.',
+                    zh_HANS: '通过分区拆开适配器基础信息、密钥、相关入站能力与邮件模板。',
+                    zh_HANT: '透過分區拆開適配器基本資訊、密鑰、相關入站能力與郵件範本。',
+                    ja: 'セクションを使って、アダプター基本情報、シークレット、関連する受信面、メールテンプレートを分けて扱います。',
+                    ko: '섹션으로 어댑터 기본 정보, 시크릿, 관련 인바운드 영역, 이메일 템플릿을 나눕니다.',
+                    fr: 'Utilisez les sections pour séparer les informations adaptateur, les secrets, les surfaces entrantes liées et les modèles e-mail.',
+                  })}
+                </p>
+              </div>
+              <SectionTabs
+                items={adapterConfigureItems}
+                activeId={adapterConfigureSection}
+                onChange={(nextSection) => setAdapterConfigureSectionRequest(nextSection as AdapterConfigureSection)}
+                ariaLabel={text('Adapter configure sections', '适配器配置分区', 'アダプター設定セクション')}
+              />
+            </div>
+
+            {adapterConfigureSection === 'basics' ? (
             <FormSection
               title={adapterCreateMode ? text('New Adapter', '新建适配器', '新しいアダプター') : text('Adapter Profile', '适配器资料', 'アダプタープロファイル')}
               description={
@@ -3868,6 +3915,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setAdapterCreateMode(false);
                           setAdapterConfigPanelOpen(false);
+                          setAdapterConfigureSection('basics');
                           setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
                         })
                       }
@@ -3993,7 +4041,9 @@ export function IntegrationManagementScreen({
                 />
               )}
             </FormSection>
+            ) : null}
 
+            {adapterConfigureSection === 'secrets' ? (
             <FormSection
               title={text('Configuration & secrets', '配置与密钥', '設定とシークレット')}
               description={
@@ -4019,7 +4069,14 @@ export function IntegrationManagementScreen({
                 shouldShowAdapterConfigEditor ? (
                   <>
                     {!adapterCreateMode ? (
-                      <SecondaryButton onClick={() => requestDiscardDirtyEditor(() => setAdapterConfigPanelOpen(false))}>
+                      <SecondaryButton
+                        onClick={() =>
+                          requestDiscardDirtyEditor(() => {
+                            setAdapterConfigPanelOpen(false);
+                            setAdapterConfigureSection('basics');
+                          })
+                        }
+                      >
                         {text('Done configuring', '完成配置', '設定を完了')}
                       </SecondaryButton>
                     ) : null}
@@ -4032,7 +4089,13 @@ export function IntegrationManagementScreen({
                     </AsyncSubmitButton>
                   </>
                 ) : adapterDetailPanel.data ? (
-                  <SecondaryButton tone="primary" onClick={() => setAdapterConfigPanelOpen(true)}>
+                  <SecondaryButton
+                    tone="primary"
+                    onClick={() => {
+                      setAdapterConfigPanelOpen(true);
+                      setAdapterConfigureSection('secrets');
+                    }}
+                  >
                     {text('Configure', '配置', '設定')}
                   </SecondaryButton>
                 ) : undefined
@@ -4212,6 +4275,70 @@ export function IntegrationManagementScreen({
                 <p className="text-sm text-slate-500">{text('Select or create an adapter to manage config values.', '请选择或创建一个适配器来管理配置值。', '設定値を管理するにはアダプターを選択または作成してください。')}</p>
               )}
             </FormSection>
+            ) : null}
+
+            {adapterConfigureSection === 'webhook-api-client' ? (
+              <FormSection
+                title={text('Webhook/API Client', 'Webhook/API 客户端', 'Webhook/API クライアント')}
+                description={text({
+                  en: 'Related inbound surfaces stay in their existing top-level workspaces so list state, lifecycle controls, and key handling remain visible.',
+                  zh_HANS: '相关入站能力保留在现有一级工作区，确保列表状态、生命周期控制与密钥处理保持可见。',
+                  zh_HANT: '相關入站能力保留在現有一級工作區，確保列表狀態、生命週期控制與密鑰處理保持可見。',
+                  ja: '関連する受信面は既存のトップレベルワークスペースに保持し、一覧状態、ライフサイクル制御、キー処理を見える状態にします。',
+                  ko: '관련 인바운드 영역은 기존 최상위 작업 영역에 유지되어 목록 상태, 수명 주기 제어, 키 처리를 계속 볼 수 있습니다.',
+                  fr: 'Les surfaces entrantes liées restent dans leurs espaces de premier niveau afin que l’état de liste, le cycle de vie et les clés restent visibles.',
+                })}
+              >
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <StateView
+                    status={availableTabs.includes('webhooks') ? 'empty' : 'unavailable'}
+                    title={text('Webhooks stay list-first', 'Webhook 保持列表优先', 'Webhook は一覧優先')}
+                    description={
+                      availableTabs.includes('webhooks')
+                        ? text('Use the top-level Webhooks section for endpoint URLs, retry settings, headers, and lifecycle actions.', '请使用一级 Webhook 分区管理端点地址、重试策略、请求头与生命周期操作。', 'エンドポイント URL、再試行設定、ヘッダー、ライフサイクル操作はトップレベルの Webhook セクションで管理します。')
+                        : text('Webhook management is available at tenant root or Account Center scope.', 'Webhook 管理仅在租户根或账户中心范围可用。', 'Webhook 管理はテナントルートまたはアカウントセンターのスコープで利用できます。')
+                    }
+                  />
+                  <StateView
+                    status={availableTabs.includes('api-keys') ? 'empty' : 'unavailable'}
+                    title={text('API clients stay in Account Center', 'API 客户端保留在账户中心', 'API クライアントはアカウントセンターに保持')}
+                    description={
+                      availableTabs.includes('api-keys')
+                        ? text('Use the API Clients section for managed client records, key generation, rotation, and revocation.', '请使用 API 客户端分区管理受管客户端记录、密钥生成、轮换与撤销。', '管理対象クライアント記録、キー生成、ローテーション、失効は API クライアントセクションで管理します。')
+                        : text('Tenant, subsidiary, and talent workspaces inherit API client configuration from Account Center.', '租户、分目录与艺人工作区继承账户中心的 API 客户端配置。', 'テナント、配下スコープ、タレントのワークスペースはアカウントセンターの API クライアント設定を継承します。')
+                    }
+                  />
+                </div>
+              </FormSection>
+            ) : null}
+
+            {adapterConfigureSection === 'email-templates' ? (
+              <FormSection
+                title={text('Email Templates', '邮件模板', 'メールテンプレート')}
+                description={text({
+                  en: 'Notification copy and provider settings stay in the Email workspace so template content, sender identity, and delivery checks are reviewed together.',
+                  zh_HANS: '通知文案与服务商设置保留在邮件工作区，便于一起检查模板内容、发信身份与投递测试。',
+                  zh_HANT: '通知文案與服務商設定保留在郵件工作區，便於一起檢查範本內容、發信身分與投遞測試。',
+                  ja: '通知文面とプロバイダー設定はメールワークスペースに保持し、テンプレート内容、送信者情報、配信チェックをまとめて確認します。',
+                  ko: '알림 문구와 제공자 설정은 이메일 작업 영역에 유지되어 템플릿 내용, 발신자 ID, 전달 검사를 함께 검토합니다.',
+                  fr: 'Le contenu des notifications et les paramètres fournisseur restent dans l’espace E-mail afin de réviser ensemble les modèles, l’identité d’expédition et les tests de livraison.',
+                })}
+              >
+                <StateView
+                  status={availableTabs.includes('email') ? 'empty' : 'unavailable'}
+                  title={
+                    availableTabs.includes('email')
+                      ? text('Email workspace owns templates', '邮件工作区负责模板', 'メールワークスペースがテンプレートを管理')
+                      : text('Email templates unavailable for this scope', '当前范围无法使用邮件模板', 'このスコープではメールテンプレートを利用できません')
+                  }
+                  description={
+                    availableTabs.includes('email')
+                      ? text('Use the top-level Email section for template list, editor, preview, and provider configuration.', '请使用一级邮件分区管理模板列表、编辑器、预览与服务商配置。', 'テンプレート一覧、エディター、プレビュー、プロバイダー設定はトップレベルのメールセクションで管理します。')
+                      : text('Email templates are available at tenant root and Account Center scope, not inside subsidiary or talent adapter overrides.', '邮件模板在租户根与账户中心范围可用，不在分目录或艺人适配器覆盖中编辑。', 'メールテンプレートはテナントルートとアカウントセンターのスコープで利用できます。配下スコープやタレントのアダプター上書き内では編集しません。')
+                  }
+                />
+              </FormSection>
+            ) : null}
           </GlassSurface>
         </>
       ) : null}

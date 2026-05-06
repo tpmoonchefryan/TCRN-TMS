@@ -1046,12 +1046,22 @@ describe('IntegrationManagementScreen', () => {
 
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(screen.getByText('Scope capability matrix')).toBeInTheDocument();
-    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
 
     await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
 
+    expect(screen.getByRole('tab', { name: 'Basics' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Webhook/API Client' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Email Templates' })).toBeInTheDocument();
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
     expect(screen.getByText(/Required masked secret stays unchanged unless you type a replacement/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Basics' }));
+    expect(screen.getByRole('tab', { name: 'Basics' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByLabelText('Name (EN)')).toHaveValue('PII Relay');
+
+    await user.click(screen.getByRole('tab', { name: 'Secrets' }));
 
     await user.click(screen.getByRole('button', { name: 'Reveal' }));
 
@@ -1223,7 +1233,7 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
 
     expect(screen.getByText(/Required masked secret stays unchanged/i)).toBeInTheDocument();
@@ -1247,6 +1257,109 @@ describe('IntegrationManagementScreen', () => {
     });
 
     expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
+  });
+
+  it('keeps related configure sections as guidance without embedding top-level editors', async () => {
+    const user = userEvent.setup();
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+        return [
+          {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            name: 'PII Platform',
+            nameEn: 'PII Platform',
+            sortOrder: 0,
+            isActive: true,
+            version: 1,
+            displayName: 'PII Platform',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [
+          {
+            id: 'adapter-1',
+            ownerType: 'tenant',
+            ownerId: null,
+            platformId: 'platform-1',
+            platform: {
+              code: 'PII_PLATFORM',
+              displayName: 'PII Platform',
+              iconUrl: null,
+            },
+            code: 'TCRN_PII_PLATFORM',
+            nameEn: 'PII Relay',
+            nameZh: null,
+            nameJa: null,
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            isInherited: false,
+            configCount: 1,
+            createdAt: '2026-04-17T08:00:00.000Z',
+            updatedAt: '2026-04-17T09:00:00.000Z',
+            version: 3,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-1') {
+        return {
+          id: 'adapter-1',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-1',
+            code: 'PII_PLATFORM',
+            displayName: 'PII Platform',
+          },
+          code: 'TCRN_PII_PLATFORM',
+          nameEn: 'PII Relay',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'api_key',
+          inherit: true,
+          isActive: true,
+          configs: [
+            {
+              id: 'config-1',
+              configKey: 'api_key',
+              configValue: '******',
+              isSecret: true,
+            },
+          ],
+          createdAt: '2026-04-17T08:00:00.000Z',
+          updatedAt: '2026-04-17T09:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 3,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+
+    await user.click(screen.getByRole('tab', { name: 'Webhook/API Client' }));
+    expect(screen.getByText('Webhooks stay list-first')).toBeInTheDocument();
+    expect(screen.getByText('API clients stay in Account Center')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New webhook' })).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('******')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Email Templates' }));
+    expect(screen.getByText('Email workspace owns templates')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New template' })).not.toBeInTheDocument();
   });
 
   it('guards dirty adapter metadata before switching adapter rows', async () => {
@@ -1518,7 +1631,7 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    expect(await screen.findByText('Configuration is collapsed')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
 
     await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
