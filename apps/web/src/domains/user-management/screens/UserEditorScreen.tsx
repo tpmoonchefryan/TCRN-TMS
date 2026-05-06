@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { readOrganizationTree } from '@/domains/organization-access/api/organization.api';
 import {
+  checkCurrentUserPermission,
   createSystemUser,
   createUserRoleAssignment,
   listSystemRoles,
@@ -18,6 +19,7 @@ import {
   updateSystemUser,
   updateUserRoleAssignment,
 } from '@/domains/user-management/api/user-management.api';
+import { ApiRequestError } from '@/platform/http/api';
 import {
   buildAcUserEditorPath,
   buildAcUserManagementPath,
@@ -196,6 +198,9 @@ export function UserEditorScreen({
   const [loading, setLoading] = useState(mode === 'edit');
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [assignmentNotice, setAssignmentNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [canAssignTenantRoles, setCanAssignTenantRoles] = useState<boolean | null>(null);
+  const [blockedAssignmentScopeKey, setBlockedAssignmentScopeKey] = useState<string | null>(null);
   const [roles, setRoles] = useState<SystemRoleListItem[]>([]);
   const [roleLoadError, setRoleLoadError] = useState<string | null>(null);
   const [scopeOptions, setScopeOptions] = useState<OrganizationScopeOption[]>([
@@ -225,9 +230,15 @@ export function UserEditorScreen({
 
     async function loadSupportingData() {
       try {
-        const [availableRoles, organizationTree] = await Promise.all([
+        const [availableRoles, organizationTree, canAssignTenantRole] = await Promise.all([
           listSystemRoles(request, { isActive: true }),
           readOrganizationTree(request),
+          checkCurrentUserPermission(request, {
+            resource: 'system_user',
+            action: 'admin',
+            scopeType: 'tenant',
+            scopeId: null,
+          }).catch(() => null),
         ]);
 
         if (cancelled) {
@@ -235,6 +246,7 @@ export function UserEditorScreen({
         }
 
         setRoles(availableRoles);
+        setCanAssignTenantRoles(canAssignTenantRole);
         setScopeOptions(
           buildOrganizationScopeOptions(
             organizationTree,
@@ -295,11 +307,33 @@ export function UserEditorScreen({
     };
   }, [editorCopy.loadError, mode, request, systemUserId]);
 
-  const availableRoles = useMemo(
-    () => filterAssignableRoles(roles, session?.tenantTier, assignmentComposer.scopeType),
-    [assignmentComposer.scopeType, roles, session?.tenantTier],
-  );
   const roleAssignments = detail?.roleAssignments ?? [];
+  const availableRoles = useMemo(() => {
+    const normalizedScopeId = assignmentComposer.scopeType === 'tenant' ? null : assignmentComposer.scopeId;
+    const assignedRoleCodes = new Set(
+      roleAssignments
+        .filter((assignment) => {
+          if (assignment.scopeType !== assignmentComposer.scopeType) {
+            return false;
+          }
+
+          if (assignmentComposer.scopeType === 'tenant') {
+            return true;
+          }
+
+          return assignment.scopeId === normalizedScopeId;
+        })
+        .map((assignment) => assignment.roleCode),
+    );
+
+    return filterAssignableRoles(roles, session?.tenantTier, assignmentComposer.scopeType).filter(
+      (role) => !assignedRoleCodes.has(role.code),
+    );
+  }, [assignmentComposer.scopeId, assignmentComposer.scopeType, roleAssignments, roles, session?.tenantTier]);
+  const assignmentScopeKey = `${assignmentComposer.scopeType}:${assignmentComposer.scopeId}`;
+  const isTenantAssignmentBlocked =
+    assignmentComposer.scopeType === 'tenant' && canAssignTenantRoles === false;
+  const isAssignmentComposerBlocked = isTenantAssignmentBlocked || blockedAssignmentScopeKey === assignmentScopeKey;
   const scopeAccess = detail?.scopeAccess ?? [];
   const assignmentPagination = buildPaginationMeta(roleAssignments.length, assignmentPage, assignmentPageSize);
   const paginatedRoleAssignments = roleAssignments.slice(
@@ -431,7 +465,7 @@ export function UserEditorScreen({
     }
 
     if (!assignmentComposer.roleId) {
-      setNotice({
+      setAssignmentNotice({
         tone: 'error',
         message: editorCopy.assignmentSelectRoleError,
       });
@@ -441,15 +475,23 @@ export function UserEditorScreen({
     const selectedRole = availableRoles.find((role) => role.id === assignmentComposer.roleId);
 
     if (!selectedRole) {
-      setNotice({
+      setAssignmentNotice({
         tone: 'error',
         message: editorCopy.assignmentSelectRoleError,
       });
       return;
     }
 
+    if (isAssignmentComposerBlocked) {
+      setAssignmentNotice({
+        tone: 'error',
+        message: editorCopy.assignmentPermissionDescription,
+      });
+      return;
+    }
+
     setAssignmentSubmittingId('create');
-    setNotice(null);
+    setAssignmentNotice(null);
 
     try {
       await createUserRoleAssignment(request, systemUserId, {
@@ -466,7 +508,7 @@ export function UserEditorScreen({
         inherit: false,
         expiresAt: '',
       }));
-      setNotice({
+      setAssignmentNotice({
         tone: 'success',
         message: editorCopy.assignmentCreated(
           selectedRole
@@ -482,7 +524,11 @@ export function UserEditorScreen({
         ),
       });
     } catch (reason) {
-      setNotice({
+      if (reason instanceof ApiRequestError && reason.status === 403) {
+        setBlockedAssignmentScopeKey(assignmentScopeKey);
+      }
+
+      setAssignmentNotice({
         tone: 'error',
         message: getErrorMessage(reason, editorCopy.assignmentCreateError),
       });
@@ -503,7 +549,7 @@ export function UserEditorScreen({
     }
 
     setAssignmentSubmittingId(assignmentId);
-    setNotice(null);
+    setAssignmentNotice(null);
 
     try {
       await updateUserRoleAssignment(request, systemUserId, assignmentId, {
@@ -511,12 +557,12 @@ export function UserEditorScreen({
         expiresAt: toIsoOrNull(assignmentDraft.expiresAt),
       });
       await refreshDetail();
-      setNotice({
+      setAssignmentNotice({
         tone: 'success',
         message: editorCopy.assignmentUpdated,
       });
     } catch (reason) {
-      setNotice({
+      setAssignmentNotice({
         tone: 'error',
         message: getErrorMessage(reason, editorCopy.assignmentUpdateError),
       });
@@ -531,17 +577,17 @@ export function UserEditorScreen({
     }
 
     setAssignmentSubmittingId(assignmentId);
-    setNotice(null);
+    setAssignmentNotice(null);
 
     try {
       await removeUserRoleAssignment(request, systemUserId, assignmentId);
       await refreshDetail();
-      setNotice({
+      setAssignmentNotice({
         tone: 'success',
         message: editorCopy.assignmentRemoved,
       });
     } catch (reason) {
-      setNotice({
+      setAssignmentNotice({
         tone: 'error',
         message: getErrorMessage(reason, editorCopy.assignmentRemoveError),
       });
@@ -767,6 +813,16 @@ export function UserEditorScreen({
               </div>
 
               {roleLoadError ? <NoticeBanner tone="error" message={roleLoadError} /> : null}
+              {assignmentNotice ? <NoticeBanner tone={assignmentNotice.tone} message={assignmentNotice.message} /> : null}
+
+              {isAssignmentComposerBlocked ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-amber-900">{editorCopy.assignmentPermissionTitle}</p>
+                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                    {editorCopy.assignmentPermissionDescription}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="grid gap-4 xl:grid-cols-[1.2fr,1fr,1fr]">
                 <label className="space-y-2">
@@ -792,82 +848,88 @@ export function UserEditorScreen({
                   </select>
                 </label>
 
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{editorCopy.roleField}</span>
-                  <select
-                    aria-label={editorCopy.roleField}
-                    value={assignmentComposer.roleId}
-                    onChange={(event) =>
-                      setAssignmentComposer((current) => ({
-                        ...current,
-                        roleId: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
+                {!isAssignmentComposerBlocked ? (
+                  <>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-900">{editorCopy.roleField}</span>
+                      <select
+                        aria-label={editorCopy.roleField}
+                        value={assignmentComposer.roleId}
+                        onChange={(event) =>
+                          setAssignmentComposer((current) => ({
+                            ...current,
+                            roleId: event.target.value,
+                          }))
+                        }
+                        className={inputClassName}
+                      >
+                        {availableRoles.length === 0 ? <option value="">{sharedCopy.noCompatibleRoles}</option> : null}
+                        {availableRoles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {pickLocalizedName(
+                              {
+                                nameEn: role.nameEn || role.code,
+                                nameZh: role.nameZh,
+                                nameJa: role.nameJa,
+                              },
+                              currentLocale,
+                            )}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-900">{editorCopy.expiresAtField}</span>
+                      <input
+                        aria-label={editorCopy.expiresAtField}
+                        type="datetime-local"
+                        value={assignmentComposer.expiresAt}
+                        onChange={(event) =>
+                          setAssignmentComposer((current) => ({
+                            ...current,
+                            expiresAt: event.target.value,
+                          }))
+                        }
+                        className={inputClassName}
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </div>
+
+              {!isAssignmentComposerBlocked ? (
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-800">
+                    <input
+                      aria-label={sharedCopy.inherit}
+                      type="checkbox"
+                      checked={assignmentComposer.inherit}
+                      onChange={(event) =>
+                        setAssignmentComposer((current) => ({
+                          ...current,
+                          inherit: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                    />
+                    {editorCopy.assignmentInheritLabel}
+                  </label>
+
+                  <AsyncSubmitButton
+                    type="button"
+                    isPending={assignmentSubmittingId === 'create'}
+                    pendingText={editorCopy.assignmentPending}
+                    onClick={() => {
+                      void handleCreateAssignment();
+                    }}
+                    disabled={availableRoles.length === 0}
                   >
-                    {availableRoles.length === 0 ? <option value="">{sharedCopy.noCompatibleRoles}</option> : null}
-                    {availableRoles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {pickLocalizedName(
-                          {
-                            nameEn: role.nameEn || role.code,
-                            nameZh: role.nameZh,
-                            nameJa: role.nameJa,
-                          },
-                          currentLocale,
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{editorCopy.expiresAtField}</span>
-                  <input
-                    aria-label={editorCopy.expiresAtField}
-                    type="datetime-local"
-                    value={assignmentComposer.expiresAt}
-                    onChange={(event) =>
-                      setAssignmentComposer((current) => ({
-                        ...current,
-                        expiresAt: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </label>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-800">
-                  <input
-                    aria-label={sharedCopy.inherit}
-                    type="checkbox"
-                    checked={assignmentComposer.inherit}
-                    onChange={(event) =>
-                      setAssignmentComposer((current) => ({
-                        ...current,
-                        inherit: event.target.checked,
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                  />
-                  {editorCopy.assignmentInheritLabel}
-                </label>
-
-                <AsyncSubmitButton
-                  type="button"
-                  isPending={assignmentSubmittingId === 'create'}
-                  pendingText={editorCopy.assignmentPending}
-                  onClick={() => {
-                    void handleCreateAssignment();
-                  }}
-                  disabled={availableRoles.length === 0}
-                >
-                  <UserRoundPlus className="h-4 w-4" />
-                  {editorCopy.assignmentSubmit}
-                </AsyncSubmitButton>
-              </div>
+                    <UserRoundPlus className="h-4 w-4" />
+                    {editorCopy.assignmentSubmit}
+                  </AsyncSubmitButton>
+                </div>
+              ) : null}
 
               {roleAssignments.length === 0 ? (
                 <StateView

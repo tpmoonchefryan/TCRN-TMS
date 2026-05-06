@@ -49,33 +49,11 @@ export class PermissionSnapshotService {
     return `perm:${tenantSchema}:${userId}`;
   }
 
-  /**
-   * Check if user has permission
-   * 
-   * Returns true only if permission is explicitly granted and not denied.
-   * Deny takes precedence over grant.
-   */
-  async checkPermission(
-    tenantSchema: string,
-    userId: string,
+  private async readPermissionFromSnapshot(
+    key: string,
     resource: string,
     action: string,
-    scopeType?: ScopeType,
-    scopeId?: string | null
   ): Promise<boolean> {
-    // Default to tenant scope if not specified (most common case for API endpoints)
-    const effectiveScopeType = scopeType || 'tenant';
-    const effectiveScopeId = scopeType ? scopeId : null;
-    const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
-    
-    // Lazy load: Check if snapshot exists, if not calculate it
-    // This handles cases where Redis was flushed or user permissions haven't been cached yet
-    const exists = await this.redisService.exists(key);
-    if (!exists) {
-      this.logger.log(`Snapshot missing for ${key}, calculating...`);
-      await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
-    }
-
     const permKey = `${resource}:${action}`;
     
     // Check specific permission
@@ -125,6 +103,53 @@ export class PermissionSnapshotService {
     }
 
     return false;
+  }
+
+  /**
+   * Check if user has permission
+   *
+   * Returns true only if permission is explicitly granted and not denied.
+   * Deny takes precedence over grant.
+   */
+  async checkPermission(
+    tenantSchema: string,
+    userId: string,
+    resource: string,
+    action: string,
+    scopeType?: ScopeType,
+    scopeId?: string | null
+  ): Promise<boolean> {
+    // Default to tenant scope if not specified (most common case for API endpoints)
+    const effectiveScopeType = scopeType || 'tenant';
+    const effectiveScopeId = scopeType ? scopeId : null;
+    const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+
+    // Lazy load: Check if snapshot exists, if not calculate it
+    // This handles cases where Redis was flushed or user permissions haven't been cached yet
+    const exists = await this.redisService.exists(key);
+    if (!exists) {
+      this.logger.log(`Snapshot missing for ${key}, calculating...`);
+      await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+    }
+
+    return this.readPermissionFromSnapshot(key, resource, action);
+  }
+
+  async refreshAndCheckPermission(
+    tenantSchema: string,
+    userId: string,
+    resource: string,
+    action: string,
+    scopeType?: ScopeType,
+    scopeId?: string | null
+  ): Promise<boolean> {
+    const effectiveScopeType = scopeType || 'tenant';
+    const effectiveScopeId = scopeType ? scopeId : null;
+    const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+
+    await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+
+    return this.readPermissionFromSnapshot(key, resource, action);
   }
 
   /**

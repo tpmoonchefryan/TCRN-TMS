@@ -198,7 +198,7 @@ export class PermissionController {
           );
         }
 
-        const allowed = await this.snapshotService.checkPermission(
+        const cachedAllowed = await this.snapshotService.checkPermission(
           user.tenantSchema,
           user.id,
           resolvedPermission.resourceCode,
@@ -206,6 +206,16 @@ export class PermissionController {
           check.scopeType,
           check.scopeId,
         );
+        const allowed = cachedAllowed
+          ? true
+          : await this.snapshotService.refreshAndCheckPermission(
+              user.tenantSchema,
+              user.id,
+              resolvedPermission.resourceCode,
+              resolvedPermission.checkedAction,
+              check.scopeType,
+              check.scopeId,
+            );
         return {
           resource: resolvedPermission.resourceCode,
           action: check.action,

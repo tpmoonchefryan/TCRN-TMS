@@ -84,6 +84,19 @@ describe('UserEditorScreen', () => {
         return organizationTreeResponse;
       }
 
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: true,
+            },
+          ],
+        };
+      }
+
       if (path === '/api/v1/system-users' && init?.method === 'POST') {
         return {
           id: 'user-2',
@@ -196,6 +209,19 @@ describe('UserEditorScreen', () => {
 
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: true,
+            },
+          ],
+        };
       }
 
       if (path === '/api/v1/system-users/user-1' && !init) {
@@ -351,6 +377,19 @@ describe('UserEditorScreen', () => {
         return organizationTreeResponse;
       }
 
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: true,
+            },
+          ],
+        };
+      }
+
       if (path === '/api/v1/system-users/user-1' && !init) {
         return detail;
       }
@@ -402,6 +441,9 @@ describe('UserEditorScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Platform Administrator' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Talent Manager' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Role')).toHaveValue('role-1');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
 
@@ -420,5 +462,81 @@ describe('UserEditorScreen', () => {
         }),
       );
     });
+
+    expect(await screen.findByText('Platform Administrator was assigned.')).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Platform Administrator' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'No compatible roles' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assign role' })).toBeDisabled();
+  });
+
+  it('keeps role permission denial compact inside the role assignment section', async () => {
+    const detail = {
+      id: 'user-1',
+      username: 'alice',
+      email: 'alice@example.com',
+      displayName: 'Alice',
+      phone: null,
+      avatarUrl: null,
+      preferredLanguage: 'en',
+      isActive: true,
+      isTotpEnabled: false,
+      forceReset: false,
+      lastLoginAt: null,
+      createdAt: '2026-04-17T03:00:00.000Z',
+      updatedAt: '2026-04-17T03:30:00.000Z',
+      roleAssignments: [] as Array<Record<string, unknown>>,
+      scopeAccess: [],
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/system-roles?isActive=true') {
+        return [
+          {
+            id: 'role-1',
+            code: 'ADMIN',
+            nameEn: 'Administrator',
+            nameZh: '管理员',
+            nameJa: null,
+            description: 'Full access',
+            isSystem: true,
+            isActive: true,
+            permissionCount: 1,
+            userCount: 1,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: false,
+            },
+          ],
+        };
+      }
+
+      if (path === '/api/v1/system-users/user-1' && !init) {
+        return detail;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserEditorScreen tenantId="tenant-1" systemUserId="user-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
+    expect(screen.getByText('Role assignment unavailable for this scope')).toBeInTheDocument();
+    expect(screen.getByLabelText('Display name')).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Assign role' })).not.toBeInTheDocument();
   });
 });

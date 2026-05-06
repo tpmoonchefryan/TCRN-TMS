@@ -29,6 +29,7 @@ describe('PermissionController', () => {
 
     mockSnapshotService = {
       checkPermission: vi.fn(),
+      refreshAndCheckPermission: vi.fn(),
     };
 
     controller = new PermissionController(
@@ -64,14 +65,23 @@ describe('PermissionController', () => {
   });
 
   describe('checkPermissions', () => {
-    it('normalizes alias actions before snapshot permission checks', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+    it('normalizes alias actions before refreshing stale denied snapshot checks', async () => {
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
 
       const result = await controller.checkPermissions(user, {
         checks: [{ resource: 'report.mfr', action: 'export' }],
       });
 
       expect(mockSnapshotService.checkPermission).toHaveBeenCalledWith(
+        'tenant_test',
+        'user-1',
+        'report.mfr',
+        'execute',
+        undefined,
+        undefined,
+      );
+      expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledWith(
         'tenant_test',
         'user-1',
         'report.mfr',
@@ -95,12 +105,29 @@ describe('PermissionController', () => {
       });
     });
 
+    it('does not force refresh when the existing snapshot already allows the check', async () => {
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+
+      const result = await controller.checkPermissions(user, {
+        checks: [{ resource: 'system_user', action: 'admin' }],
+      });
+
+      expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
+      expect(result.data.results[0]).toMatchObject({
+        resource: 'system_user',
+        action: 'admin',
+        checkedAction: 'admin',
+        allowed: true,
+      });
+    });
+
     it('rejects unsupported resource/action combinations with bad request', async () => {
       await expect(controller.checkPermissions(user, {
         checks: [{ resource: 'log.search', action: 'delete' as const }],
       })).rejects.toThrow(BadRequestException);
 
       expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
     });
 
     it('rejects unknown resource codes even if DTO validation is bypassed', async () => {
@@ -109,6 +136,7 @@ describe('PermissionController', () => {
       })).rejects.toThrow(BadRequestException);
 
       expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
     });
   });
 });

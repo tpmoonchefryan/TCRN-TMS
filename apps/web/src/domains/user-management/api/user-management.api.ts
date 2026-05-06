@@ -167,6 +167,13 @@ export interface UpdateUserRoleAssignmentInput {
   expiresAt?: string | null;
 }
 
+export interface CheckCurrentUserPermissionInput {
+  resource: string;
+  action: string;
+  scopeType?: 'tenant' | 'subsidiary' | 'talent';
+  scopeId?: string | null;
+}
+
 export interface CreateDelegatedAdminInput {
   scopeType: 'subsidiary' | 'talent';
   scopeId: string;
@@ -362,6 +369,22 @@ export async function removeUserRoleAssignment(
       method: 'DELETE',
     },
   );
+}
+
+export async function checkCurrentUserPermission(
+  request: <T>(path: string, init?: RequestInit) => Promise<T>,
+  input: CheckCurrentUserPermissionInput,
+) {
+  const result = await request<{
+    results: Array<{
+      resource: string;
+      action: string;
+      checkedAction: string;
+      allowed: boolean;
+    }>;
+  }>('/api/v1/permissions/check', buildJsonRequestInit('POST', { checks: [input] }));
+
+  return result.results[0]?.allowed ?? false;
 }
 
 export async function listSystemRoles(

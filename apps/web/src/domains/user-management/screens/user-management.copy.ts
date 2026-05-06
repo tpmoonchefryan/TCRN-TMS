@@ -319,6 +319,9 @@ const COPY = {
       assignmentCreateError: 'Failed to assign role.',
       assignmentUpdateError: 'Failed to update role assignment.',
       assignmentRemoveError: 'Failed to remove role assignment.',
+      assignmentPermissionTitle: 'Role assignment unavailable for this scope',
+      assignmentPermissionDescription:
+        'Your current session cannot assign roles at the selected scope. Profile editing remains available.',
       validation: {
         username: 'Username must be at least 3 characters.',
         email: 'Email address is required.',
@@ -617,6 +620,8 @@ const COPY = {
       assignmentCreateError: '分配角色失败。',
       assignmentUpdateError: '更新角色分配失败。',
       assignmentRemoveError: '移除角色分配失败。',
+      assignmentPermissionTitle: '当前范围不可分配角色',
+      assignmentPermissionDescription: '当前会话无权在所选范围分配角色，账户资料编辑仍可继续。',
       validation: {
         username: '用户名至少需要 3 个字符。',
         email: '必须填写有效邮箱。',
@@ -906,6 +911,9 @@ const COPY = {
       assignmentCreateError: 'ロールの割当てに失敗しました。',
       assignmentUpdateError: 'ロール割当ての更新に失敗しました。',
       assignmentRemoveError: 'ロール割当ての削除に失敗しました。',
+      assignmentPermissionTitle: 'この範囲ではロールを割り当てられません',
+      assignmentPermissionDescription:
+        '現在のセッションでは選択した範囲にロールを割り当てられません。プロフィール編集は引き続き利用できます。',
       validation: {
         username: 'ユーザー名は 3 文字以上必要です。',
         email: '有効なメールアドレスを入力してください。',

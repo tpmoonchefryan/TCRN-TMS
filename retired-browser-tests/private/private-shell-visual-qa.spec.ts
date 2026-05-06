@@ -162,6 +162,40 @@ const visualQaSession = {
   },
 };
 
+const privateVisualPlatformAdminAssignment = {
+  id: 'assignment-platform-admin',
+  roleId: 'role-platform-admin',
+  roleCode: 'PLATFORM_ADMIN',
+  roleNameEn: 'Platform Administrator',
+  roleNameZh: '平台管理员',
+  roleNameJa: null,
+  roleIsActive: true,
+  scopeType: 'tenant',
+  scopeId: null,
+  scopeName: 'AC Visual Tenant',
+  scopePath: null,
+  inherit: false,
+  grantedAt: '2026-05-06T03:00:00.000Z',
+  expiresAt: null,
+};
+
+let privateVisualRoleAssignments: Array<Record<string, unknown>> = [privateVisualPlatformAdminAssignment];
+
+const visualQaAcSession = {
+  ...visualQaSession,
+  tenantId: 'tenant-ac-visual',
+  tenantName: 'AC Visual Tenant',
+  tenantTier: 'ac',
+  tenantCode: 'ACVISUAL',
+  user: {
+    ...visualQaSession.user,
+    id: 'user-ac-visual',
+    username: 'ac.visual',
+    email: 'ac.visual@example.com',
+    displayName: 'AC Visual Operator',
+  },
+};
+
 const privateLocaleVisualQaCases = [
   {
     name: 'English',
@@ -235,12 +269,12 @@ async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10) {
   await expect(locator).toBeFocused();
 }
 
-async function usePrivateSession(page: Page) {
+async function usePrivateSession(page: Page, session = visualQaSession) {
   await page.addInitScript(
     ({ key, value }) => {
       window.sessionStorage.setItem(key, JSON.stringify(value));
     },
-    { key: sessionStorageKey, value: visualQaSession }
+    { key: sessionStorageKey, value: session }
   );
 }
 
@@ -607,13 +641,143 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/system-users/user-visual-operator') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'user-visual-operator',
+            username: 'visual.operator',
+            email: 'visual.operator@example.com',
+            displayName: 'Visual Operator',
+            phone: null,
+            avatarUrl: null,
+            preferredLanguage: 'en',
+            isActive: true,
+            isTotpEnabled: true,
+            forceReset: false,
+            lastLoginAt: '2026-05-06T04:00:00.000Z',
+            createdAt: '2026-05-06T03:00:00.000Z',
+            updatedAt: '2026-05-06T04:00:00.000Z',
+            roleAssignments: privateVisualRoleAssignments,
+            scopeAccess: [],
+          },
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/system-roles') {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: [],
+          data: [
+            {
+              id: 'role-viewer',
+              code: 'VIEWER',
+              nameEn: 'Viewer',
+              nameZh: '只读访问者',
+              nameJa: null,
+              description: 'Read-only access',
+              isSystem: true,
+              isActive: true,
+              permissionCount: 1,
+              userCount: 0,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+            },
+            {
+              id: 'role-platform-admin',
+              code: 'PLATFORM_ADMIN',
+              nameEn: 'Platform Administrator',
+              nameZh: '平台管理员',
+              nameJa: null,
+              description: 'AC administrator',
+              isSystem: true,
+              isActive: true,
+              permissionCount: 1,
+              userCount: 1,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+            },
+            {
+              id: 'role-talent-manager',
+              code: 'TALENT_MANAGER',
+              nameEn: 'Talent Manager',
+              nameZh: '艺人经理',
+              nameJa: null,
+              description: 'Standard tenant role',
+              isSystem: false,
+              isActive: true,
+              permissionCount: 1,
+              userCount: 0,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/permissions/check' && route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            results: [
+              {
+                resource: 'system_user',
+                action: 'admin',
+                checkedAction: 'admin',
+                allowed: true,
+              },
+            ],
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/users/user-visual-operator/roles' && route.request().method() === 'POST') {
+      privateVisualRoleAssignments.push({
+        id: 'assignment-viewer',
+        roleId: 'role-viewer',
+        roleCode: 'VIEWER',
+        roleNameEn: 'Viewer',
+        roleNameZh: '只读访问者',
+        roleNameJa: null,
+        roleIsActive: true,
+        scopeType: 'tenant',
+        scopeId: null,
+        scopeName: 'AC Visual Tenant',
+        scopePath: null,
+        inherit: false,
+        grantedAt: '2026-05-06T04:30:00.000Z',
+        expiresAt: null,
+      });
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'assignment-viewer',
+            userId: 'user-visual-operator',
+            roleId: 'role-viewer',
+            scopeType: 'tenant',
+            scopeId: null,
+            inherit: false,
+            grantedAt: '2026-05-06T04:30:00.000Z',
+            snapshotUpdateQueued: true,
+          },
         }),
       });
       return;
@@ -637,13 +801,14 @@ async function mockPrivateRuntimeApi(page: Page) {
 
 test.describe('private shell browser visual QA', () => {
   test.beforeEach(async ({ page }) => {
-    await usePrivateSession(page);
+    privateVisualRoleAssignments = [privateVisualPlatformAdminAssignment];
     await mockPrivateRuntimeApi(page);
   });
 
   test('mobile hierarchy shell navigation is reachable and traps keyboard focus', async ({
     page,
   }) => {
+    await usePrivateSession(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/tenant/tenant-visual/business');
     await hideFrameworkDevTools(page);
@@ -688,6 +853,7 @@ test.describe('private shell browser visual QA', () => {
     test(`private shell and dense user table keep mobile layout for ${localeCase.name} copy`, async ({
       page,
     }) => {
+      await usePrivateSession(page);
       await useLocaleOverride(page, localeCase.locale);
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto('/tenant/tenant-visual/user-management');
@@ -705,7 +871,32 @@ test.describe('private shell browser visual QA', () => {
     });
   }
 
+  test('AC user editor keeps role assignment usable without a page-level permission error', async ({
+    page,
+  }) => {
+    await usePrivateSession(page, visualQaAcSession);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/ac/tenant-ac-visual/user-management/user-visual-operator');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Visual Operator' })).toBeVisible();
+    await expect(page.getByText('You do not have permission to assign roles at this scope')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Assign role' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Assign role' }).click();
+
+    await expect(page.getByText('Viewer was assigned.')).toBeVisible();
+    await expect(page.getByText('VIEWER', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Display name')).toBeEnabled();
+    await expectNoHorizontalOverflow(page, 'AC user editor role assignment');
+    await expect(page).toHaveScreenshot('private-ac-user-editor-role-assignment-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
   test('mobile profile security gates mutating forms behind action drawers', async ({ page }) => {
+    await usePrivateSession(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/tenant/tenant-visual/profile/security');
     await hideFrameworkDevTools(page);
@@ -723,6 +914,7 @@ test.describe('private shell browser visual QA', () => {
   });
 
   test('mobile marshmallow management keeps configuration behind a drawer', async ({ page }) => {
+    await usePrivateSession(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/marshmallow');
     await hideFrameworkDevTools(page);
@@ -748,6 +940,7 @@ test.describe('private shell browser visual QA', () => {
   });
 
   test('desktop reports draft drawer loads config-backed filters without stale membership-tree errors', async ({ page }) => {
+    await usePrivateSession(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/reports');
     await hideFrameworkDevTools(page);

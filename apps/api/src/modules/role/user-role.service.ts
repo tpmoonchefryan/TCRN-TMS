@@ -50,7 +50,20 @@ export class UserRoleService {
     tenantSchema: string,
     grantorUserId: string,
   ): Promise<boolean> {
-    return this.snapshotService.checkPermission(
+    const snapshotAllowsAdmin = await this.snapshotService.checkPermission(
+      tenantSchema,
+      grantorUserId,
+      'system_user',
+      'admin',
+      'tenant',
+      null,
+    );
+
+    if (snapshotAllowsAdmin) {
+      return true;
+    }
+
+    return this.snapshotService.refreshAndCheckPermission(
       tenantSchema,
       grantorUserId,
       'system_user',

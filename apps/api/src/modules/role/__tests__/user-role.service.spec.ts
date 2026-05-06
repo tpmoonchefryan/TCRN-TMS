@@ -34,6 +34,7 @@ describe('UserRoleService', () => {
 
     mockSnapshotService = {
       checkPermission: vi.fn(),
+      refreshAndCheckPermission: vi.fn(),
       refreshUserSnapshots: vi.fn(),
     };
 
@@ -81,10 +82,36 @@ describe('UserRoleService', () => {
         'tenant',
         null,
       );
+      expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
     });
 
-    it('rejects tenant-scope assignment when neither canonical nor legacy admin grant exists', async () => {
+    it('refreshes a stale tenant admin snapshot before accepting role assignment', async () => {
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+
+      const result = await service.canAssignRoleAtScope(
+        testSchema,
+        grantorUserId,
+        'VIEWER',
+        'tenant',
+        null,
+      );
+
+      expect(result).toBe(true);
+      expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledWith(
+        testSchema,
+        grantorUserId,
+        'system_user',
+        'admin',
+        'tenant',
+        null,
+      );
+      expect(mockDelegatedAdminService.hasDelegationForScope).not.toHaveBeenCalled();
+    });
+
+    it('rejects tenant-scope assignment when a refreshed canonical admin grant is still absent', async () => {
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
@@ -96,11 +123,13 @@ describe('UserRoleService', () => {
 
       expect(result).toBe(false);
       expect(mockSnapshotService.checkPermission).toHaveBeenCalledTimes(1);
+      expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledTimes(1);
       expect(mockDelegatedAdminService.hasDelegationForScope).not.toHaveBeenCalled();
     });
 
     it('does not allow delegated assignment of high-privilege roles without tenant admin permission', async () => {
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
@@ -116,6 +145,7 @@ describe('UserRoleService', () => {
 
     it('uses delegated admin checks for non-tenant scopes after canonical admin check fails', async () => {
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
       (mockDelegatedAdminService.hasDelegationForScope as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
 
       const result = await service.canAssignRoleAtScope(
@@ -173,6 +203,7 @@ describe('UserRoleService', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([assignment]);
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
       (mockSnapshotService.refreshUserSnapshots as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 

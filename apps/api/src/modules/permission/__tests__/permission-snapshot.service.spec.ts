@@ -179,6 +179,35 @@ describe('PermissionSnapshotService', () => {
     });
   });
 
+  describe('refreshAndCheckPermission', () => {
+    it('recalculates a stale tenant snapshot before checking permission', async () => {
+      redisHashes.set(getKey(testUserId, 'tenant'), {});
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([{ roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true }])
+        .mockResolvedValueOnce([{ resourceCode: 'system_user', action: 'admin', effect: 'grant' }]);
+
+      const result = await service.refreshAndCheckPermission(
+        testTenantSchema,
+        testUserId,
+        'system_user',
+        'admin',
+        'tenant',
+        null,
+      );
+
+      expect(result).toBe(true);
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+      );
+      expect(mockRedisService.hmset).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+        {
+          'system_user:admin': 'grant',
+        },
+      );
+    });
+  });
+
   describe('getUserPermissions', () => {
     it('should return all permissions for a user', async () => {
       redisHashes.set(getKey(testUserId), {
