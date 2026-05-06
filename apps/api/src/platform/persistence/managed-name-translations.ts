@@ -1,5 +1,5 @@
-import { Prisma } from '@tcrn/database';
 import { BadRequestException } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
 import { normalizeSupportedUiLocale, resolveTrilingualLocaleFamily } from '@tcrn/shared';
 
 export type ManagedTranslationMap = Record<string, string>;

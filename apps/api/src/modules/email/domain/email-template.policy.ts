@@ -2,12 +2,9 @@
 
 import { normalizeSupportedUiLocale } from '@tcrn/shared';
 
-import type {
-  EmailTemplateTranslationCarrier,
-  EmailTemplateTranslationMaps,
-} from './email-template-translation.policy';
-import { buildEmailTemplateTranslationMaps } from './email-template-translation.policy';
 import type { RenderedEmail, SupportedLocale } from '../interfaces/email.interface';
+import type { EmailTemplateTranslationCarrier } from './email-template-translation.policy';
+import { buildEmailTemplateTranslationMaps } from './email-template-translation.policy';
 
 export interface EmailTemplateStoredRecord extends EmailTemplateTranslationCarrier {
   code: string;
