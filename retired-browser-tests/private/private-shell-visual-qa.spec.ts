@@ -196,6 +196,58 @@ const visualQaAcSession = {
   },
 };
 
+const privateVisualEmptyOrganizationTree = {
+  tenantId: visualQaSession.tenantId,
+  subsidiaries: [],
+  directTalents: [],
+};
+
+const privateVisualIntegrationOrganizationTree = {
+  tenantId: visualQaSession.tenantId,
+  subsidiaries: [
+    {
+      id: 'subsidiary-visual',
+      code: 'TOKYO',
+      displayName: 'Tokyo Branch',
+      parentId: null,
+      path: '/tokyo',
+      talents: [
+        {
+          id: 'talent-visual',
+          code: 'VISUAL_TALENT',
+          displayName: 'Visual Talent',
+          avatarUrl: null,
+          subsidiaryId: 'subsidiary-visual',
+          subsidiaryName: 'Tokyo Branch',
+          path: '/tokyo/visual',
+          homepagePath: 'visual',
+          lifecycleStatus: 'published',
+          publishedAt: '2026-05-06T03:00:00.000Z',
+          isActive: true,
+        },
+      ],
+      children: [],
+    },
+  ],
+  directTalents: [
+    {
+      id: 'talent-root-visual',
+      code: 'ROOT_VISUAL',
+      displayName: 'Root Visual Talent',
+      avatarUrl: null,
+      subsidiaryId: null,
+      subsidiaryName: null,
+      path: '/root-visual',
+      homepagePath: 'root-visual',
+      lifecycleStatus: 'published',
+      publishedAt: '2026-05-06T03:00:00.000Z',
+      isActive: true,
+    },
+  ],
+};
+
+let privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
+
 const privateLocaleVisualQaCases = [
   {
     name: 'English',
@@ -297,11 +349,7 @@ async function mockPrivateRuntimeApi(page: Page) {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: {
-            tenantId: visualQaSession.tenantId,
-            subsidiaries: [],
-            directTalents: [],
-          },
+          data: privateVisualOrganizationTree,
         }),
       });
       return;
@@ -606,6 +654,306 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/integration/adapters') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'adapter-pii',
+              ownerType: 'tenant',
+              ownerId: null,
+              platformId: 'platform-pii',
+              platform: {
+                code: 'tcrn_pii',
+                displayName: 'TCRN PII Platform',
+                iconUrl: null,
+              },
+              code: 'TCRN_PII_PLATFORM',
+              nameEn: 'TCRN PII Platform',
+              nameZh: null,
+              nameJa: null,
+              translations: {},
+              adapterType: 'api_key',
+              inherit: true,
+              isActive: true,
+              isInherited: false,
+              configCount: 2,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+              version: 3,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/integration/adapters/adapter-pii') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'adapter-pii',
+            ownerType: 'tenant',
+            ownerId: null,
+            platform: {
+              id: 'platform-pii',
+              code: 'tcrn_pii',
+              displayName: 'TCRN PII Platform',
+            },
+            code: 'TCRN_PII_PLATFORM',
+            nameEn: 'TCRN PII Platform',
+            nameZh: null,
+            nameJa: null,
+            translations: {},
+            adapterType: 'api_key',
+            inherit: true,
+            isActive: true,
+            configs: [
+              {
+                id: 'config-base-url',
+                configKey: 'baseUrl',
+                configValue: 'https://pii.visual.example',
+                isSecret: false,
+              },
+              {
+                id: 'config-secret',
+                configKey: 'apiSecret',
+                configValue: '******',
+                isSecret: true,
+              },
+            ],
+            createdAt: '2026-05-06T03:00:00.000Z',
+            updatedAt: '2026-05-06T04:00:00.000Z',
+            createdBy: 'user-ac-visual',
+            updatedBy: 'user-ac-visual',
+            version: 3,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/integration/webhooks') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'webhook-customer',
+              code: 'CUSTOMER_EVENTS',
+              nameEn: 'Customer Events',
+              nameZh: null,
+              nameJa: null,
+              translations: {},
+              url: 'https://webhook.visual.example/customer',
+              events: ['customer.created'],
+              isActive: true,
+              lastTriggeredAt: '2026-05-06T04:00:00.000Z',
+              lastStatus: 200,
+              consecutiveFailures: 0,
+              createdAt: '2026-05-06T03:00:00.000Z',
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/integration/webhooks/events') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              event: 'customer.created',
+              name: 'Customer created',
+              description: 'A customer was created.',
+              category: 'customer',
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/integration/webhooks/webhook-customer') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'webhook-customer',
+            code: 'CUSTOMER_EVENTS',
+            nameEn: 'Customer Events',
+            nameZh: null,
+            nameJa: null,
+            translations: {},
+            url: 'https://webhook.visual.example/customer',
+            events: ['customer.created'],
+            isActive: true,
+            lastTriggeredAt: '2026-05-06T04:00:00.000Z',
+            lastStatus: 200,
+            consecutiveFailures: 0,
+            secret: '******',
+            headers: {
+              'X-Visual': 'QA',
+            },
+            retryPolicy: {
+              maxRetries: 3,
+              backoffMs: 1000,
+            },
+            disabledAt: null,
+            createdAt: '2026-05-06T03:00:00.000Z',
+            updatedAt: '2026-05-06T04:00:00.000Z',
+            createdBy: 'user-ac-visual',
+            updatedBy: 'user-ac-visual',
+            version: 2,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/configuration-entity/consumer') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'consumer-crm',
+              ownerType: 'tenant',
+              ownerId: null,
+              code: 'CRM_SYNC',
+              name: 'CRM Sync',
+              nameEn: 'CRM Sync',
+              nameZh: null,
+              nameJa: null,
+              translations: {},
+              description: 'Deterministic API client for browser QA.',
+              sortOrder: 0,
+              isActive: true,
+              isForceUse: false,
+              isSystem: false,
+              isInherited: false,
+              isDisabledHere: false,
+              canDisable: true,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+              version: 2,
+              consumerCategory: 'external',
+              contactName: 'CRM Owner',
+              contactEmail: 'crm@example.test',
+              apiKeyHash: null,
+              apiKeyPrefix: null,
+              allowedIps: ['127.0.0.1'],
+              rateLimit: 120,
+              notes: 'Visual QA client',
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/email/config') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            provider: 'tencent_ses',
+            tencentSes: {
+              secretId: 'visual-secret-id',
+              secretKey: '******',
+              region: 'ap-shanghai',
+              fromAddress: 'noreply@example.test',
+              fromName: 'Visual Mailer',
+              replyTo: 'support@example.test',
+            },
+            smtp: null,
+            isConfigured: true,
+            lastUpdated: '2026-05-06T04:00:00.000Z',
+            tenantSenderOverrides: {
+              'tenant-visual': {
+                fromAddress: 'visual@example.test',
+                fromName: 'Visual Tenant',
+                replyTo: 'reply@example.test',
+              },
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/tenants') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'tenant-visual',
+              code: 'VISUAL',
+              name: 'Visual Tenant',
+              schemaName: 'tenant_visual',
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/email-templates') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              code: 'WELCOME',
+              nameEn: 'Welcome',
+              nameZh: null,
+              nameJa: null,
+              translations: {},
+              subjectEn: 'Welcome',
+              subjectZh: null,
+              subjectJa: null,
+              subjectTranslations: {},
+              bodyHtmlEn: '<p>Welcome</p>',
+              bodyHtmlZh: null,
+              bodyHtmlJa: null,
+              bodyHtmlTranslations: {},
+              bodyTextEn: 'Welcome',
+              bodyTextZh: null,
+              bodyTextJa: null,
+              bodyTextTranslations: {},
+              variables: ['displayName'],
+              category: 'system',
+              isActive: true,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/system-users') {
       await route.fulfill({
         status: 200,
@@ -802,6 +1150,7 @@ async function mockPrivateRuntimeApi(page: Page) {
 test.describe('private shell browser visual QA', () => {
   test.beforeEach(async ({ page }) => {
     privateVisualRoleAssignments = [privateVisualPlatformAdminAssignment];
+    privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
     await mockPrivateRuntimeApi(page);
   });
 
@@ -890,6 +1239,71 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByLabel('Display name')).toBeEnabled();
     await expectNoHorizontalOverflow(page, 'AC user editor role assignment');
     await expect(page).toHaveScreenshot('private-ac-user-editor-role-assignment-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop AC integration keeps API key lifecycle behind the API client drawer', async ({
+    page,
+  }) => {
+    await usePrivateSession(page, visualQaAcSession);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/ac/tenant-ac-visual/integration-management?tab=api-keys');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Integration Management' })).toBeVisible();
+    const apiClientTable = page.getByRole('table', { name: 'API clients' });
+    await expect(apiClientTable).toBeVisible();
+    await expect(apiClientTable.getByText('CRM_SYNC')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Generate key' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop AC integration API clients first level');
+
+    await apiClientTable.getByRole('row', { name: /CRM_SYNC/ }).getByRole('button', { name: 'Open' }).click();
+    const apiClientDrawer = page.getByRole('dialog', { name: 'API Client Detail' });
+    await expect(apiClientDrawer).toBeVisible();
+    await expect(apiClientDrawer.getByRole('button', { name: 'Generate key' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop AC integration API client drawer');
+    await expect(page).toHaveScreenshot('private-ac-integration-api-clients-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile tenant integration keeps scope tree and adapter configuration drawer gated', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/integration-management');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Integration Management' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Tenant root/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tokyo Branch Subsidiary Tokyo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Visual Talent Talent Tokyo' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile tenant integration scope tree');
+    await expect(page).toHaveScreenshot('private-tenant-integration-mobile-scope-tree.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: /Tenant root/ }).click();
+    const adaptersTable = page.getByRole('table', { name: 'Tenant Adapters' });
+    await expect(adaptersTable).toBeVisible();
+    await expect(adaptersTable.getByText('TCRN_PII_PLATFORM')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Adapter Profile' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Configuration & secrets' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter first level');
+
+    await adaptersTable.getByRole('row', { name: /TCRN_PII_PLATFORM/ }).getByRole('button', { name: 'Configure' }).click();
+    const adapterDrawer = page.getByRole('dialog', { name: 'Configure Adapter' });
+    await expect(adapterDrawer).toBeVisible();
+    await expect(adapterDrawer.getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
+    await expect(adapterDrawer.getByRole('heading', { name: 'Configuration & secrets' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter drawer');
+    await expect(page).toHaveScreenshot('private-tenant-integration-mobile-adapter-drawer.png', {
       animations: 'disabled',
       fullPage: true,
     });

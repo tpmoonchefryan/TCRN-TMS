@@ -70,6 +70,28 @@ async function selectSubsidiaryScope(user: ReturnType<typeof userEvent.setup>) {
   await user.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
 }
 
+async function openRowAction(
+  user: ReturnType<typeof userEvent.setup>,
+  rowText: string,
+  actionName: string | RegExp,
+) {
+  const row = (await screen.findByText(rowText)).closest('tr');
+  expect(row).not.toBeNull();
+  await user.click(within(row as HTMLTableRowElement).getByRole('button', { name: actionName }));
+}
+
+async function openAdapterBasics(user: ReturnType<typeof userEvent.setup>, adapterCode = 'TCRN_PII_PLATFORM') {
+  await openRowAction(user, adapterCode, 'Open');
+  const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
+  expect(within(drawer).getByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
+}
+
+async function openAdapterSecrets(user: ReturnType<typeof userEvent.setup>, adapterCode = 'TCRN_PII_PLATFORM') {
+  await openRowAction(user, adapterCode, 'Configure');
+  const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
+  expect(within(drawer).getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
+}
+
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
   this.setAttribute('open', '');
 });
@@ -667,11 +689,15 @@ describe('IntegrationManagementScreen', () => {
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=api-keys');
     expect(await screen.findByText('CRM_SYNC')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generate key' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Generate key' }));
+    await openRowAction(user, 'CRM_SYNC', 'Open');
+    expect(await screen.findByRole('dialog', { name: 'API Client Detail' })).toBeInTheDocument();
+
+    await user.click(await screen.findByRole('button', { name: 'Generate key' }));
     expect(await screen.findByText('Generate API key for CRM_SYNC?')).toBeInTheDocument();
 
-    await user.click(screen.getAllByRole('button', { name: 'Generate key' })[1]);
+    await user.click(within(screen.getByRole('dialog', { name: 'Generate API key for CRM_SYNC?' })).getByRole('button', { name: 'Generate key' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -1046,9 +1072,10 @@ describe('IntegrationManagementScreen', () => {
 
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(screen.getByText('Scope capability matrix')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Configuration & secrets' })).not.toBeInTheDocument();
 
-    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    await openAdapterSecrets(user);
 
     expect(screen.getByRole('tab', { name: 'Basics' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
@@ -1233,8 +1260,10 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
-    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Configuration & secrets' })).not.toBeInTheDocument();
+    await openAdapterSecrets(user);
 
     expect(screen.getByText(/Required masked secret stays unchanged/i)).toBeInTheDocument();
     expect(screen.getByText(/Masked optional secret stays unchanged/i)).toBeInTheDocument();
@@ -1349,7 +1378,7 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    await openAdapterSecrets(user);
 
     await user.click(screen.getByRole('tab', { name: 'Webhook/API Client' }));
     expect(screen.getByText('Webhooks stay list-first')).toBeInTheDocument();
@@ -1494,6 +1523,7 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
+    await openAdapterBasics(user);
 
     const adapterNameInput = await screen.findByLabelText('Name (EN)');
     await user.clear(adapterNameInput);
@@ -1631,9 +1661,10 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    expect(await screen.findByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
+    expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
 
-    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    await openAdapterSecrets(user);
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Reveal' }));
@@ -1644,8 +1675,7 @@ describe('IntegrationManagementScreen', () => {
     expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Adapters' }));
-    await screen.findByRole('button', { name: 'Configure' });
-    await user.click(screen.getAllByRole('button', { name: 'Configure' })[0]);
+    await openAdapterSecrets(user);
 
     const baseUrlInput = await screen.findByDisplayValue('https://old.example.com');
     await user.clear(baseUrlInput);

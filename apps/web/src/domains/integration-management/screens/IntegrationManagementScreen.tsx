@@ -4,6 +4,7 @@ import { ADAPTER_CONFIG_KEYS, type SupportedUiLocale } from '@tcrn/shared';
 import {
   Cable,
   ChevronRight,
+  Circle,
   KeyRound,
   Languages,
   Mail,
@@ -109,6 +110,7 @@ import {
   type TranslationLanguageOption,
 } from '@/platform/runtime/translations/managed-translations';
 import {
+  ActionDrawer,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -1212,6 +1214,7 @@ export function IntegrationManagementScreen({
 
   const [adapterCreateMode, setAdapterCreateMode] = useState(false);
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
+  const [adapterDrawerOpen, setAdapterDrawerOpen] = useState(false);
   const [adapterConfigPanelOpen, setAdapterConfigPanelOpen] = useState(false);
   const [adapterConfigureSection, setAdapterConfigureSection] = useState<AdapterConfigureSection>('basics');
   const [adapterDraft, setAdapterDraft] = useState<AdapterDraft>(() => buildAdapterDraft());
@@ -1224,6 +1227,7 @@ export function IntegrationManagementScreen({
 
   const [webhookCreateMode, setWebhookCreateMode] = useState(false);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
+  const [webhookDrawerOpen, setWebhookDrawerOpen] = useState(false);
   const [webhookDraft, setWebhookDraft] = useState<WebhookDraft>(() => buildWebhookDraft());
   const [webhookDraftBaseline, setWebhookDraftBaseline] = useState<WebhookDraft>(() => buildWebhookDraft());
   const [webhookTranslationDrawerOpen, setWebhookTranslationDrawerOpen] = useState(false);
@@ -1231,6 +1235,7 @@ export function IntegrationManagementScreen({
 
   const [consumerCreateMode, setConsumerCreateMode] = useState(false);
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null);
+  const [consumerDrawerOpen, setConsumerDrawerOpen] = useState(false);
   const [consumerDraft, setConsumerDraft] = useState<ConsumerDraft>(() => buildConsumerDraft());
   const [consumerDraftBaseline, setConsumerDraftBaseline] = useState<ConsumerDraft>(() => buildConsumerDraft());
   const [consumerTranslationDrawerOpen, setConsumerTranslationDrawerOpen] = useState(false);
@@ -1244,6 +1249,7 @@ export function IntegrationManagementScreen({
 
   const [templateCreateMode, setTemplateCreateMode] = useState(false);
   const [selectedTemplateCode, setSelectedTemplateCode] = useState<string | null>(null);
+  const [templateDrawerOpen, setTemplateDrawerOpen] = useState(false);
   const [templateDraft, setTemplateDraft] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
   const [templateDraftBaseline, setTemplateDraftBaseline] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
   const [templateTranslationSection, setTemplateTranslationSection] = useState<TemplateTranslationSection | null>(null);
@@ -1254,6 +1260,7 @@ export function IntegrationManagementScreen({
 
   const [emailConfigDraft, setEmailConfigDraft] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
   const [emailConfigDraftBaseline, setEmailConfigDraftBaseline] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
+  const [emailConfigDrawerOpen, setEmailConfigDrawerOpen] = useState(false);
   const [emailConfigSubmitting, setEmailConfigSubmitting] = useState(false);
   const [emailActionPending, setEmailActionPending] = useState<'connection' | 'test-email' | null>(null);
   const [emailActionResult, setEmailActionResult] = useState<EmailActionResult | null>(null);
@@ -1294,6 +1301,7 @@ export function IntegrationManagementScreen({
       setAdapterCreateMode(false);
       setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
     }
+    setAdapterDrawerOpen(false);
     setAdapterConfigPanelOpen(false);
     setAdapterConfigureSection('basics');
     setAdapterEditorState(adapterDraftBaseline, adapterConfigRowsBaseline);
@@ -1303,6 +1311,7 @@ export function IntegrationManagementScreen({
       setWebhookCreateMode(false);
       setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
     }
+    setWebhookDrawerOpen(false);
     setWebhookEditorState(webhookDraftBaseline);
     setWebhookTranslationDrawerOpen(false);
 
@@ -1310,6 +1319,7 @@ export function IntegrationManagementScreen({
       setConsumerCreateMode(false);
       setSelectedConsumerId(consumersPanel.data[0]?.id || null);
     }
+    setConsumerDrawerOpen(false);
     setConsumerEditorState(consumerDraftBaseline);
     setConsumerTranslationDrawerOpen(false);
     setGeneratedKey(null);
@@ -1318,11 +1328,13 @@ export function IntegrationManagementScreen({
       setTemplateCreateMode(false);
       setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
     }
+    setTemplateDrawerOpen(false);
     setTemplateEditorState(templateDraftBaseline);
     setTemplateTranslationSection(null);
     setTemplatePreview(null);
 
     setEmailConfigEditorState(emailConfigDraftBaseline);
+    setEmailConfigDrawerOpen(false);
     setEmailActionResult(null);
   }
 
@@ -1555,18 +1567,26 @@ export function IntegrationManagementScreen({
 
     setAdapterCreateMode(false);
     setSelectedAdapterId(null);
+    setAdapterDrawerOpen(false);
     setAdapterConfigPanelOpen(false);
     setAdapterConfigureSection('basics');
     setAdapterDetailPanel(createPanelState<IntegrationAdapterDetailRecord | null>(null, false));
     setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
     setWebhookCreateMode(false);
     setSelectedWebhookId(null);
+    setWebhookDrawerOpen(false);
     setWebhookDetailPanel(createPanelState<IntegrationWebhookDetailRecord | null>(null, false));
     setWebhookEditorState(buildWebhookDraft());
+    setConsumerCreateMode(false);
+    setSelectedConsumerId(null);
+    setConsumerDrawerOpen(false);
+    setConsumerEditorState(buildConsumerDraft());
     setTemplateCreateMode(false);
     setSelectedTemplateCode(null);
+    setTemplateDrawerOpen(false);
     setTemplateEditorState(buildEmailTemplateDraft());
     setTemplatePreview(null);
+    setEmailConfigDrawerOpen(false);
     setEmailActionResult(null);
     setGeneratedKey(null);
   }, [isAcWorkspace, selectedIntegrationScope]);
@@ -1577,6 +1597,11 @@ export function IntegrationManagementScreen({
     }
 
     setActiveTab(nextTab);
+    setAdapterDrawerOpen(false);
+    setWebhookDrawerOpen(false);
+    setConsumerDrawerOpen(false);
+    setEmailConfigDrawerOpen(false);
+    setTemplateDrawerOpen(false);
 
     const params = new URLSearchParams(searchParams.toString());
 
@@ -2482,6 +2507,15 @@ export function IntegrationManagementScreen({
     setDirtyGuardState({ onDiscard });
   }
 
+  function requestDrawerOpenChange(setOpen: (open: boolean) => void, open: boolean) {
+    if (open) {
+      setOpen(true);
+      return;
+    }
+
+    requestDiscardDirtyEditor(() => setOpen(false));
+  }
+
   function requestTabChange(nextTab: IntegrationTab) {
     if (nextTab === activeTab) {
       return;
@@ -2563,6 +2597,7 @@ export function IntegrationManagementScreen({
             : await createScopedAdapter(request, selectedIntegrationScope, payload);
 
         setAdapterCreateMode(false);
+        setAdapterDrawerOpen(false);
         setAdapterConfigPanelOpen(false);
         setAdapterConfigureSection('basics');
         await refreshAdapters(created.id);
@@ -2770,6 +2805,7 @@ export function IntegrationManagementScreen({
       if (webhookCreateMode) {
         const created = await createWebhook(request, payload);
         setWebhookCreateMode(false);
+        setWebhookDrawerOpen(false);
         await refreshWebhooks(created.id);
         setSelectedWebhookId(created.id);
         setNotice({
@@ -2848,6 +2884,7 @@ export function IntegrationManagementScreen({
       if (consumerCreateMode) {
         const created = await createConsumer(request, payload);
         setConsumerCreateMode(false);
+        setConsumerDrawerOpen(false);
         await refreshConsumers(created.id);
         setSelectedConsumerId(created.id);
         setNotice({
@@ -2966,6 +3003,7 @@ export function IntegrationManagementScreen({
         unavailableReason: null,
       });
       setEmailConfigEditorState(buildEmailConfigDraft(nextConfig));
+      setEmailConfigDrawerOpen(false);
       setNotice({
         tone: 'success',
         message: text('Email configuration saved.', '邮件配置已保存。', 'メール設定を保存しました。'),
@@ -3044,6 +3082,7 @@ export function IntegrationManagementScreen({
       if (templateCreateMode) {
         const created = await createEmailTemplate(request, payload);
         setTemplateCreateMode(false);
+        setTemplateDrawerOpen(false);
         await refreshEmailTemplates(created.code);
         setSelectedTemplateCode(created.code);
         setNotice({
@@ -3293,6 +3332,7 @@ export function IntegrationManagementScreen({
     scope: IntegrationScopeSelection,
     depth: number,
     kindLabel: string,
+    options: { leaf?: boolean } = {},
   ) {
     const isActive = scopeMatches(selectedScope, scope);
 
@@ -3310,7 +3350,7 @@ export function IntegrationManagementScreen({
         style={{ marginLeft: `${depth * 16}px` }}
       >
         <div className="mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border border-current/20 bg-white/70">
-          <ChevronRight className="h-3.5 w-3.5" />
+          {options.leaf ? <Circle className="h-2.5 w-2.5 fill-current" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </div>
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -3339,6 +3379,7 @@ export function IntegrationManagementScreen({
       ),
       depth,
       text('Talent', '艺人', 'タレント'),
+      { leaf: true },
     );
   }
 
@@ -3398,8 +3439,8 @@ export function IntegrationManagementScreen({
   };
 
   return (
-    <div className="space-y-6">
-      <GlassSurface className="p-8">
+    <div className="space-y-5">
+      <GlassSurface className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
@@ -3444,9 +3485,6 @@ export function IntegrationManagementScreen({
                           ko: `${selectedIntegrationScope.label}의 어댑터를 관리합니다.`,
                           fr: `Gérez les adaptateurs de ${selectedIntegrationScope.label}.`,
                         })}
-              </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                {selectedScopeDisplayName}
               </p>
             </div>
           </div>
@@ -3672,6 +3710,7 @@ export function IntegrationManagementScreen({
                       requestDiscardDirtyEditor(() => {
                         setAdapterCreateMode(true);
                         setSelectedAdapterId(null);
+                        setAdapterDrawerOpen(true);
                         setAdapterConfigPanelOpen(true);
                         setAdapterConfigureSection('basics');
                         setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
@@ -3744,6 +3783,7 @@ export function IntegrationManagementScreen({
                               requestDiscardDirtyEditor(() => {
                                 setAdapterCreateMode(false);
                                 setSelectedAdapterId(adapter.id);
+                                setAdapterDrawerOpen(true);
                                 setAdapterConfigPanelOpen(false);
                                 setAdapterConfigureSection('basics');
                               })
@@ -3756,6 +3796,7 @@ export function IntegrationManagementScreen({
                               requestDiscardDirtyEditor(() => {
                                 setAdapterCreateMode(false);
                                 setSelectedAdapterId(adapter.id);
+                                setAdapterDrawerOpen(true);
                                 setAdapterConfigPanelOpen(true);
                                 setAdapterConfigureSection('secrets');
                               })
@@ -3865,7 +3906,28 @@ export function IntegrationManagementScreen({
               </FormSection>
             </GlassSurface>
 
-          <GlassSurface className="p-6">
+          <ActionDrawer
+            open={adapterDrawerOpen}
+            onOpenChange={(open) => requestDrawerOpenChange(setAdapterDrawerOpen, open)}
+            title={text('Configure Adapter', '配置适配器', 'アダプター設定')}
+            description={text({
+              en: 'Edit profile, translations, secrets, and related adapter configuration.',
+              zh_HANS: '编辑资料、翻译、密钥与相关适配器配置。',
+              zh_HANT: '編輯資料、翻譯、密鑰與相關適配器設定。',
+              ja: 'プロファイル、翻訳、シークレット、関連するアダプター設定を編集します。',
+              ko: '프로필, 번역, 시크릿 및 관련 어댑터 설정을 편집합니다.',
+              fr: 'Modifiez le profil, les traductions, les secrets et la configuration associée.',
+            })}
+            size="xl"
+            closeButtonAriaLabel={text({
+              en: 'Close adapter configure drawer',
+              zh_HANS: '关闭适配器配置抽屉',
+              zh_HANT: '關閉適配器設定抽屜',
+              ja: 'アダプター設定ドロワーを閉じる',
+              ko: '어댑터 설정 서랍 닫기',
+              fr: 'Fermer le panneau de configuration de l’adaptateur',
+            })}
+          >
             <div className="space-y-4 border-b border-slate-200/50 pb-6">
               <div className="space-y-1.5">
                 <h3 className="text-lg font-bold text-slate-950">
@@ -3906,6 +3968,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setAdapterCreateMode(true);
                           setSelectedAdapterId(null);
+                          setAdapterDrawerOpen(true);
                           setAdapterConfigPanelOpen(true);
                           setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
                         })
@@ -3921,6 +3984,7 @@ export function IntegrationManagementScreen({
                           setAdapterConfigPanelOpen(false);
                           setAdapterConfigureSection('basics');
                           setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
+                          setAdapterDrawerOpen(false);
                         })
                       }
                     >
@@ -4078,6 +4142,7 @@ export function IntegrationManagementScreen({
                           requestDiscardDirtyEditor(() => {
                             setAdapterConfigPanelOpen(false);
                             setAdapterConfigureSection('basics');
+                            setAdapterDrawerOpen(false);
                           })
                         }
                       >
@@ -4096,6 +4161,7 @@ export function IntegrationManagementScreen({
                   <SecondaryButton
                     tone="primary"
                     onClick={() => {
+                      setAdapterDrawerOpen(true);
                       setAdapterConfigPanelOpen(true);
                       setAdapterConfigureSection('secrets');
                     }}
@@ -4343,7 +4409,7 @@ export function IntegrationManagementScreen({
                 />
               </FormSection>
             ) : null}
-          </GlassSurface>
+          </ActionDrawer>
         </>
       ) : null}
 
@@ -4365,6 +4431,7 @@ export function IntegrationManagementScreen({
                       requestDiscardDirtyEditor(() => {
                         setWebhookCreateMode(true);
                         setSelectedWebhookId(null);
+                        setWebhookDrawerOpen(true);
                         setWebhookEditorState(buildWebhookDraft());
                       })
                     }
@@ -4417,6 +4484,7 @@ export function IntegrationManagementScreen({
                               requestDiscardDirtyEditor(() => {
                                 setWebhookCreateMode(false);
                                 setSelectedWebhookId(webhook.id);
+                                setWebhookDrawerOpen(true);
                               })
                             }
                           >
@@ -4495,7 +4563,21 @@ export function IntegrationManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
+          <ActionDrawer
+            open={webhookDrawerOpen}
+            onOpenChange={(open) => requestDrawerOpenChange(setWebhookDrawerOpen, open)}
+            title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
+            description={text('Edit endpoint URL, retry settings, headers, events, and lifecycle details.', '编辑端点 URL、重试策略、请求头、事件与生命周期详情。', 'エンドポイント URL、再試行設定、ヘッダー、イベント、ライフサイクル詳細を編集します。')}
+            size="xl"
+            closeButtonAriaLabel={text({
+              en: 'Close webhook detail drawer',
+              zh_HANS: '关闭 Webhook 详情抽屉',
+              zh_HANT: '關閉 Webhook 詳情抽屜',
+              ja: 'Webhook 詳細ドロワーを閉じる',
+              ko: '웹훅 상세 서랍 닫기',
+              fr: 'Fermer le panneau de détail du webhook',
+            })}
+          >
             <FormSection
               title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
               description={text('The stored secret remains masked in detail reads. Leave the secret field blank during update to preserve the current secret.', '详情读取时，已存储的密钥会保持遮罩。更新时将密钥字段留空即可保留当前值。', '保存済みシークレットは詳細取得時にマスクされたままです。更新時にシークレット欄を空欄にすると現在の値を保持します。')}
@@ -4507,6 +4589,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setWebhookCreateMode(true);
                           setSelectedWebhookId(null);
+                          setWebhookDrawerOpen(true);
                           setWebhookEditorState(buildWebhookDraft());
                         })
                       }
@@ -4519,6 +4602,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setWebhookCreateMode(false);
                           setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
+                          setWebhookDrawerOpen(false);
                         })
                       }
                     >
@@ -4699,7 +4783,7 @@ export function IntegrationManagementScreen({
                 />
               )}
             </FormSection>
-          </GlassSurface>
+          </ActionDrawer>
         </>
       ) : null}
 
@@ -4721,6 +4805,7 @@ export function IntegrationManagementScreen({
                       requestDiscardDirtyEditor(() => {
                         setConsumerCreateMode(true);
                         setSelectedConsumerId(null);
+                        setConsumerDrawerOpen(true);
                         setConsumerEditorState(buildConsumerDraft());
                       })
                     }
@@ -4780,6 +4865,7 @@ export function IntegrationManagementScreen({
                               requestDiscardDirtyEditor(() => {
                                 setConsumerCreateMode(false);
                                 setSelectedConsumerId(consumer.id);
+                                setConsumerDrawerOpen(true);
                               })
                             }
                           >
@@ -4858,7 +4944,21 @@ export function IntegrationManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
+          <ActionDrawer
+            open={consumerDrawerOpen}
+            onOpenChange={(open) => requestDrawerOpenChange(setConsumerDrawerOpen, open)}
+            title={consumerCreateMode ? text('New API Client', '新建 API 客户端', '新しい API クライアント') : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')}
+            description={text('Edit client metadata and manage key generation, rotation, and revocation.', '编辑客户端元数据，并管理密钥生成、轮换与撤销。', 'クライアント情報を編集し、キー生成、ローテーション、失効を管理します。')}
+            size="xl"
+            closeButtonAriaLabel={text({
+              en: 'Close API client detail drawer',
+              zh_HANS: '关闭 API 客户端详情抽屉',
+              zh_HANT: '關閉 API 用戶端詳情抽屜',
+              ja: 'API クライアント詳細ドロワーを閉じる',
+              ko: 'API 클라이언트 상세 서랍 닫기',
+              fr: 'Fermer le panneau de détail du client API',
+            })}
+          >
             <FormSection
               title={consumerCreateMode ? text('New API Client', '新建 API 客户端', '新しい API クライアント') : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')}
               description={text('Review consumer metadata, contact data, IP allowlists, and managed key status.', '查看消费者元数据、联系信息、IP 白名单与受管密钥状态。', 'コンシューマーメタデータ、連絡先、IP 許可リスト、管理キー状態を確認します。')}
@@ -4870,6 +4970,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setConsumerCreateMode(true);
                           setSelectedConsumerId(null);
+                          setConsumerDrawerOpen(true);
                           setConsumerEditorState(buildConsumerDraft());
                         })
                       }
@@ -4882,6 +4983,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setConsumerCreateMode(false);
                           setSelectedConsumerId(consumersPanel.data[0]?.id || null);
+                          setConsumerDrawerOpen(false);
                         })
                       }
                     >
@@ -5095,14 +5197,89 @@ export function IntegrationManagementScreen({
                 <p className="text-sm text-slate-500">{text('Select an API client to review its details and manage keys.', '请选择一个 API 客户端以查看详情并管理密钥。', 'API クライアントを選択して詳細確認とキー管理を行ってください。')}</p>
               )}
             </FormSection>
-          </GlassSurface>
+          </ActionDrawer>
         </>
       ) : null}
 
       {displayedTab === 'email' ? (
         <>
           {isAcWorkspace ? (
-            <GlassSurface className="p-6">
+            <>
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={text('Email Configuration', '邮件配置', 'メール設定')}
+                  description={text(
+                    'Review provider status, tenant overrides, and delivery-test readiness.',
+                    '查看服务商状态、租户覆盖与投递测试准备情况。',
+                    'プロバイダー状態、テナント上書き、配信テストの準備状況を確認します。',
+                  )}
+                  actions={
+                    <>
+                      <SecondaryButton onClick={() => void refreshEmailConfig()}>
+                        <RefreshCcw className="h-4 w-4" />
+                        {text('Refresh', '刷新', '更新')}
+                      </SecondaryButton>
+                      <SecondaryButton
+                        tone="primary"
+                        onClick={() => setEmailConfigDrawerOpen(true)}
+                      >
+                        {text('Configure email', '配置邮件', 'メールを設定')}
+                      </SecondaryButton>
+                    </>
+                  }
+                >
+                  {emailConfigPanel.loading ? (
+                    <p className="text-sm text-slate-500">{text('Loading email configuration…', '正在加载邮件配置…', 'メール設定を読み込んでいます…')}</p>
+                  ) : emailConfigPanel.unavailableReason ? (
+                    <StateView
+                      status="unavailable"
+                      title={text('AC-only email configuration', '仅 AC 可用的邮件配置', 'AC 限定のメール設定')}
+                      description={emailConfigPanel.unavailableReason}
+                    />
+                  ) : emailConfigPanel.error ? (
+                    <StateView status="error" title={text('Email configuration unavailable', '邮件配置不可用', 'メール設定を利用できません')} description={emailConfigPanel.error} />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <SummaryCard
+                        label={text('Provider', '服务提供商', 'プロバイダー')}
+                        value={emailProviderLabel(emailConfigDraft.provider)}
+                        hint={text('Current global delivery provider.', '当前全局投递服务商。', '現在のグローバル配信プロバイダーです。')}
+                      />
+                      <SummaryCard
+                        label={text('Configured', '配置状态', '設定状態')}
+                        value={emailConfigPanel.data?.isConfigured ? text('Configured', '已配置', '設定済み') : text('Not configured', '未配置', '未設定')}
+                        hint={text('Credential edits stay inside the drawer.', '凭据编辑保留在抽屉内。', '認証情報の編集はドロワー内で行います。')}
+                      />
+                      <SummaryCard
+                        label={text('Tenant overrides', '租户覆盖', 'テナント上書き')}
+                        value={String(emailSenderTenantsPanel.data.length)}
+                        hint={text('Active standard tenants available for sender identity overrides.', '可配置发信身份覆盖的活跃普通租户数量。', '送信者情報の上書き対象となる有効な標準テナント数です。')}
+                      />
+                      <SummaryCard
+                        label={text('Test address', '测试邮箱', 'テスト宛先')}
+                        value={emailConfigDraft.testEmail || text('Unset', '未设置', '未設定')}
+                        hint={text('Used only when sending a test email from the drawer.', '仅在抽屉中发送测试邮件时使用。', 'ドロワーからテストメールを送信するときだけ使用します。')}
+                      />
+                    </div>
+                  )}
+                </FormSection>
+              </GlassSurface>
+
+              <ActionDrawer
+                open={emailConfigDrawerOpen}
+                onOpenChange={(open) => requestDrawerOpenChange(setEmailConfigDrawerOpen, open)}
+                title={text('Email Configuration', '邮件配置', 'メール設定')}
+                description={text('Edit provider credentials, sender identity, tenant overrides, and delivery checks.', '编辑服务商凭据、发信身份、租户覆盖与投递检查。', 'プロバイダー認証情報、送信者情報、テナント上書き、配信チェックを編集します。')}
+                size="xl"
+                closeButtonAriaLabel={text({
+                  en: 'Close email configuration drawer',
+                  zh_HANS: '关闭邮件配置抽屉',
+                  zh_HANT: '關閉郵件設定抽屜',
+                  ja: 'メール設定ドロワーを閉じる',
+                  ko: '이메일 설정 서랍 닫기',
+                  fr: 'Fermer le panneau de configuration e-mail',
+                })}
+              >
               <FormSection
                 title={text('Email Configuration', '邮件配置', 'メール設定')}
                 description={text(
@@ -5351,7 +5528,8 @@ export function IntegrationManagementScreen({
                 </>
               )}
               </FormSection>
-            </GlassSurface>
+              </ActionDrawer>
+            </>
           ) : null}
 
           <GlassSurface className="p-6">
@@ -5370,6 +5548,7 @@ export function IntegrationManagementScreen({
                       requestDiscardDirtyEditor(() => {
                         setTemplateCreateMode(true);
                         setSelectedTemplateCode(null);
+                        setTemplateDrawerOpen(true);
                         setTemplateEditorState(buildEmailTemplateDraft());
                         setTemplatePreview(null);
                       })
@@ -5430,6 +5609,7 @@ export function IntegrationManagementScreen({
                               requestDiscardDirtyEditor(() => {
                                 setTemplateCreateMode(false);
                                 setSelectedTemplateCode(template.code);
+                                setTemplateDrawerOpen(true);
                               })
                             }
                           >
@@ -5508,7 +5688,21 @@ export function IntegrationManagementScreen({
             </FormSection>
           </GlassSurface>
 
-          <GlassSurface className="p-6">
+          <ActionDrawer
+            open={templateDrawerOpen}
+            onOpenChange={(open) => requestDrawerOpenChange(setTemplateDrawerOpen, open)}
+            title={templateCreateMode ? text('New Template', '新建模板', '新しいテンプレート') : text('Template Detail', '模板详情', 'テンプレート詳細')}
+            description={text('Edit template copy, translations, preview variables, and activation state.', '编辑模板内容、翻译、预览变量与启用状态。', 'テンプレート本文、翻訳、プレビュー変数、有効状態を編集します。')}
+            size="xl"
+            closeButtonAriaLabel={text({
+              en: 'Close email template detail drawer',
+              zh_HANS: '关闭邮件模板详情抽屉',
+              zh_HANT: '關閉郵件範本詳情抽屜',
+              ja: 'メールテンプレート詳細ドロワーを閉じる',
+              ko: '이메일 템플릿 상세 서랍 닫기',
+              fr: 'Fermer le panneau de détail du modèle e-mail',
+            })}
+          >
             <FormSection
               title={templateCreateMode ? text('New Template', '新建模板', '新しいテンプレート') : text('Template Detail', '模板详情', 'テンプレート詳細')}
               description={text('Create or edit multilingual email copy. Preview uses the stored template content.', '创建或编辑多语言邮件内容。预览使用已保存的模板内容。', '多言語メール内容を作成・編集します。プレビューは保存済みテンプレートを使用します。')}
@@ -5520,6 +5714,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setTemplateCreateMode(true);
                           setSelectedTemplateCode(null);
+                          setTemplateDrawerOpen(true);
                           setTemplateEditorState(buildEmailTemplateDraft());
                           setTemplatePreview(null);
                         })
@@ -5533,6 +5728,7 @@ export function IntegrationManagementScreen({
                         requestDiscardDirtyEditor(() => {
                           setTemplateCreateMode(false);
                           setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
+                          setTemplateDrawerOpen(false);
                         })
                       }
                     >
@@ -5733,13 +5929,13 @@ export function IntegrationManagementScreen({
                 />
               )}
             </FormSection>
-          </GlassSurface>
+          </ActionDrawer>
         </>
       ) : null}
           </div>
         </>
       ) : (
-        <GlassSurface className="p-8">
+        <GlassSurface className="p-6">
           <StateView
             status="empty"
             title={text('Select a scope first', '请先选择一个范围', '先にスコープを選択してください')}
