@@ -239,7 +239,7 @@ export function TalentBusinessShell({
           mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {copy.talentBusiness.shellLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">
@@ -249,13 +249,6 @@ export function TalentBusinessShell({
           }
           rightArea={
             <div className="flex items-center gap-3">
-              <div className="hidden rounded-full border border-white/70 bg-white/70 px-4 py-2 shadow-sm lg:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {copy.common.talentScope}
-                </p>
-                <p className="text-sm font-semibold text-slate-900">{resolvedTalentName}</p>
-              </div>
-
               <LocaleSwitcher
                 currentLocale={selectedLocale}
                 options={localeOptions}

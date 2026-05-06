@@ -167,11 +167,17 @@ export function HierarchyBusinessShell({
       fr: 'Fermer la navigation de l’espace de travail',
     }),
   };
-  const breadcrumbItems = [
-    { label: session.tenantName || copy.common.currentTenant, href: buildTenantBusinessPath(tenantId) },
-    { label: scopeLabel, href: scopeType === 'subsidiary' && subsidiaryId ? buildSubsidiaryBusinessPath(tenantId, subsidiaryId) : undefined },
-    { label: pageTitle, isCurrent: true },
-  ];
+  const breadcrumbItems =
+    scopeType === 'subsidiary' && subsidiaryId
+      ? [
+          { label: session.tenantName || copy.common.currentTenant, href: buildTenantBusinessPath(tenantId) },
+          { label: resolvedScopeName, href: buildSubsidiaryBusinessPath(tenantId, subsidiaryId) },
+          { label: pageTitle, isCurrent: true },
+        ]
+      : [
+          { label: session.tenantName || copy.common.currentTenant, href: buildTenantBusinessPath(tenantId) },
+          { label: pageTitle, isCurrent: true },
+        ];
 
 
   return (
@@ -220,7 +226,7 @@ export function HierarchyBusinessShell({
           mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {scopeLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">
@@ -230,13 +236,6 @@ export function HierarchyBusinessShell({
           }
           rightArea={
             <div className="flex items-center gap-3">
-              <div className="hidden rounded-full border border-white/70 bg-white/70 px-4 py-2 shadow-sm lg:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {scopeLabel}
-                </p>
-                <p className="text-sm font-semibold text-slate-900">{resolvedScopeName}</p>
-              </div>
-
               <LocaleSwitcher
                 currentLocale={selectedLocale}
                 options={localeOptions}

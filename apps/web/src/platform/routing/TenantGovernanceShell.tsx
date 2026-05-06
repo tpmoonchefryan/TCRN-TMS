@@ -197,7 +197,7 @@ export function TenantGovernanceShell({
           mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {copy.tenantGovernance.shellLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">

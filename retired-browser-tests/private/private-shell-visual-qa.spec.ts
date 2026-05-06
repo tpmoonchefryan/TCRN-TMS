@@ -446,6 +446,22 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
   expect(overflow, `${label} horizontal overflow`).toBeLessThanOrEqual(1);
 }
 
+async function expectVisibleExactTextCount(root: Locator, text: string, expected: number, label: string) {
+  const count = await root.getByText(text, { exact: true }).evaluateAll((elements) =>
+    elements.filter((element) => {
+      const style = window.getComputedStyle(element);
+
+      return (
+        style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && element.getClientRects().length > 0
+      );
+    }).length,
+  );
+
+  expect(count, label).toBe(expected);
+}
+
 async function hideFrameworkDevTools(page: Page) {
   await page.addStyleTag({
     content: `
@@ -1684,6 +1700,7 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Integration Management' })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Platform', 1, 'desktop AC shell Platform label');
     const apiClientTable = page.getByRole('table', { name: 'API clients' });
     await expect(apiClientTable).toBeVisible();
     await expect(apiClientTable.getByText('CRM_SYNC')).toBeVisible();
@@ -1760,6 +1777,7 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Observability' })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Tenant', 1, 'desktop tenant shell label');
     await expect(page.getByRole('table', { name: 'Change Logs' })).toBeVisible();
     await expect(
       page.getByText(/displayName: Old Visual Talent -> Visual Talent/).first()
@@ -1866,6 +1884,7 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Tenant Settings' })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Tenant', 1, 'desktop tenant settings shell label');
     await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Settings' }).click();
@@ -1903,6 +1922,7 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: /Tokyo Branch.*Subsidiary Settings/ })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Tenant', 1, 'desktop subsidiary settings shell label');
     await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Settings' }).click();
@@ -1975,6 +1995,7 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Visual Tenant' })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Tenant', 1, 'desktop organization shell label');
     await expect(page.getByRole('button', { name: /Visual Tenant/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Tokyo Branch/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Visual Talent.*Talent/ })).toHaveCount(0);
@@ -1996,6 +2017,9 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Reports Management' })).toBeVisible();
+    await expect(page.locator('header').getByText('Visual Talent', { exact: true })).toBeVisible();
+    await expectVisibleExactTextCount(page.locator('header'), 'Visual Talent', 1, 'desktop talent breadcrumb name');
+    await expectVisibleExactTextCount(page.locator('header'), 'Talent Scope', 0, 'desktop talent scope chip');
     await expect(page.getByRole('heading', { name: 'Member Feedback Report' })).toBeVisible();
     await expect(page.getByText('Catalog filters')).toHaveCount(0);
     await expect(page.getByRole('group', { name: 'Platforms' })).toHaveCount(0);
