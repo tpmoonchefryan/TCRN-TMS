@@ -3,6 +3,143 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const sessionStorageKey = 'tcrn.web.session';
 const localeOverrideStorageKey = 'tcrn.web.locale.override';
 
+const privateVisualReportCatalog = [
+  {
+    id: 'mfr',
+    name: {
+      en: 'Member Feedback Report',
+    },
+    description: {
+      en: 'Export membership data for physical gift delivery or digital rewards through the approved PII handoff flow.',
+    },
+    icon: 'Gift',
+    availability: {
+      status: 'available',
+      requiredPermissions: [
+        {
+          resource: 'report.mfr',
+          actions: ['read', 'export'],
+        },
+      ],
+    },
+    artifactKinds: ['xlsx', 'csv', 'pii_platform_portal'],
+    filterSchema: {
+      version: 1,
+      fields: [
+        {
+          id: 'platformCodes',
+          type: 'config-multi-select',
+          targetField: 'platformCodes',
+          label: {
+            en: 'Platforms',
+          },
+          description: {
+            en: 'Limit the report to configured social platform codes.',
+          },
+          source: {
+            kind: 'config-entity',
+            entityType: 'social-platform',
+          },
+        },
+        {
+          id: 'membershipClassCodes',
+          type: 'config-multi-select',
+          targetField: 'membershipClassCodes',
+          label: {
+            en: 'Membership classes',
+          },
+          source: {
+            kind: 'config-entity',
+            entityType: 'membership-class',
+          },
+        },
+        {
+          id: 'membershipTypeCodes',
+          type: 'config-multi-select',
+          targetField: 'membershipTypeCodes',
+          label: {
+            en: 'Membership types',
+          },
+          source: {
+            kind: 'config-entity',
+            entityType: 'membership-type',
+          },
+        },
+        {
+          id: 'membershipLevelCodes',
+          type: 'config-multi-select',
+          targetField: 'membershipLevelCodes',
+          label: {
+            en: 'Membership levels',
+          },
+          source: {
+            kind: 'config-entity',
+            entityType: 'membership-level',
+          },
+        },
+        {
+          id: 'statusCodes',
+          type: 'config-multi-select',
+          targetField: 'statusCodes',
+          label: {
+            en: 'Customer statuses',
+          },
+          source: {
+            kind: 'config-entity',
+            entityType: 'customer-status',
+          },
+        },
+        {
+          id: 'validFrom',
+          type: 'date-range',
+          fromField: 'validFromStart',
+          toField: 'validFromEnd',
+          label: {
+            en: 'Valid from',
+          },
+        },
+        {
+          id: 'validTo',
+          type: 'date-range',
+          fromField: 'validToStart',
+          toField: 'validToEnd',
+          label: {
+            en: 'Valid to',
+          },
+        },
+        {
+          id: 'includeExpired',
+          type: 'boolean',
+          targetField: 'includeExpired',
+          label: {
+            en: 'Include expired memberships',
+          },
+          defaultValue: false,
+        },
+        {
+          id: 'includeInactive',
+          type: 'boolean',
+          targetField: 'includeInactive',
+          label: {
+            en: 'Include inactive customers',
+          },
+          defaultValue: false,
+        },
+        {
+          id: 'platformCodesRaw',
+          type: 'raw-code-list',
+          targetField: 'platformCodes',
+          fallbackForFieldId: 'platformCodes',
+          label: {
+            en: 'Raw platform codes',
+          },
+          advanced: true,
+        },
+      ],
+    },
+  },
+];
+
 const visualQaSession = {
   accessToken: 'visual-qa-token',
   tokenType: 'Bearer',
@@ -302,6 +439,139 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/reports/catalog') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: privateVisualReportCatalog,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/reports/mfr/jobs') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [],
+            meta: {
+              total: 0,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/reports/mfr/search') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            totalCount: 1,
+            preview: [
+              {
+                nickname: 'Visual Fan',
+                platformName: 'YouTube',
+                membershipLevelName: 'VIP / Monthly / Gold',
+                validFrom: '2026-05-01',
+                validTo: null,
+                statusName: 'Active',
+              },
+            ],
+            filterSummary: {
+              platforms: ['YouTube'],
+              dateRange: null,
+              includeExpired: false,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/configuration-entity/social-platform') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'platform-youtube',
+              code: 'youtube',
+              name: 'YouTube',
+              isActive: true,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/configuration-entity/customer-status') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'status-active',
+              code: 'active',
+              name: 'Active',
+              isActive: true,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/configuration-entity/membership-tree') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'class-vip',
+              code: 'vip',
+              name: 'VIP',
+              isActive: true,
+              types: [
+                {
+                  id: 'type-monthly',
+                  code: 'monthly',
+                  name: 'Monthly',
+                  isActive: true,
+                  levels: [
+                    {
+                      id: 'level-gold',
+                      code: 'gold',
+                      name: 'Gold',
+                      isActive: true,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/system-users') {
       await route.fulfill({
         status: 200,
@@ -461,11 +731,48 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Visual moderation message')).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'mobile marshmallow gated first level');
+    await expect(page).toHaveScreenshot('private-marshmallow-mobile-first-level.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
 
     await page.getByRole('button', { name: 'Configure mailbox' }).click();
     const configDrawer = page.getByRole('dialog', { name: 'Configuration' });
     await expect(configDrawer).toBeVisible();
     await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
     await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
+    await expect(page).toHaveScreenshot('private-marshmallow-mobile-config-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop reports draft drawer loads config-backed filters without stale membership-tree errors', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/reports');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Reports Management' })).toBeVisible();
+    await expect(page.getByText('Member Feedback Report')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop reports directory');
+    await expect(page).toHaveScreenshot('private-reports-desktop-directory.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Draft report' }).first().click();
+    const draftDrawer = page.getByRole('dialog', { name: 'Create MFR job' });
+    await expect(draftDrawer).toBeVisible();
+    await expect(draftDrawer.getByText('YouTube', { exact: true }).first()).toBeVisible();
+    await expect(draftDrawer.getByText('VIP / Monthly / Gold')).toBeVisible();
+    await expect(draftDrawer.getByText("Entity type 'membership-tree' not found")).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop reports draft drawer');
+
+    await draftDrawer.getByRole('button', { name: 'Preview rows' }).click();
+    await expect(page.getByText('Visual Fan')).toBeVisible();
+    await expect(page).toHaveScreenshot('private-reports-desktop-draft-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
   });
 });
