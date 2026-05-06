@@ -92,6 +92,17 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
   expect(overflow, `${label} horizontal overflow`).toBeLessThanOrEqual(1);
 }
 
+async function hideFrameworkDevTools(page: Page) {
+  await page.addStyleTag({
+    content: `
+      nextjs-portal,
+      button[aria-label="Open Next.js Dev Tools"] {
+        display: none !important;
+      }
+    `,
+  });
+}
+
 async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10) {
   for (let index = 0; index < maxTabs; index += 1) {
     if (
@@ -119,12 +130,36 @@ const visualQaFixture = {
 
 const localeVisualQaCases = [
   {
+    name: 'English',
+    locale: 'en',
+    homepageBadge: 'Public Homepage',
+    messageLabel: 'Message',
+    anonymousLabel: 'Submit anonymously',
+    sendButton: 'Send message',
+  },
+  {
+    name: 'Simplified Chinese',
+    locale: 'zh_HANS',
+    homepageBadge: '公开主页',
+    messageLabel: '消息内容',
+    anonymousLabel: '匿名提交',
+    sendButton: '发送消息',
+  },
+  {
     name: 'Traditional Chinese',
     locale: 'zh_HANT',
     homepageBadge: '公開主頁',
     messageLabel: '訊息內容',
     anonymousLabel: '匿名提交',
     sendButton: '送出訊息',
+  },
+  {
+    name: 'Japanese',
+    locale: 'ja',
+    homepageBadge: '公開ホームページ',
+    messageLabel: 'メッセージ',
+    anonymousLabel: '匿名で送信',
+    sendButton: 'メッセージを送信',
   },
   {
     name: 'Korean',
@@ -175,6 +210,23 @@ const visualQaDarkTheme = {
   card: { background: '#2A2A2A', borderRadius: 'medium', shadow: 'medium' },
   typography: { fontFamily: 'system', headingWeight: 'bold' },
   animation: { enableEntrance: true, enableHover: true, intensity: 'medium' },
+  decorations: { type: 'none' },
+};
+
+const visualQaHighContrastTheme = {
+  preset: 'minimal',
+  visualStyle: 'flat',
+  colors: {
+    primary: '#FFFF00',
+    accent: '#00FFFF',
+    background: '#000000',
+    text: '#FFFFFF',
+    textSecondary: '#F5F5F5',
+  },
+  background: { type: 'solid', value: '#000000' },
+  card: { background: '#111111', borderRadius: 'medium', shadow: 'none' },
+  typography: { fontFamily: 'system', headingWeight: 'bold' },
+  animation: { enableEntrance: false, enableHover: false, intensity: 'low' },
   decorations: { type: 'none' },
 };
 
@@ -318,11 +370,13 @@ test.describe('public runtime browser visual QA', () => {
         name: 'default theme',
         path: visualQaFixture.homepagePath,
         displayName: visualQaFixture.displayName,
+        snapshotName: 'default',
       },
       {
         name: 'dark theme',
         path: visualQaFixture.darkHomepagePath,
         displayName: `${visualQaFixture.displayName} Dark`,
+        snapshotName: 'dark',
       },
     ];
 
@@ -330,6 +384,7 @@ test.describe('public runtime browser visual QA', () => {
       for (const breakpoint of breakpoints) {
         await page.setViewportSize({ width: breakpoint.width, height: breakpoint.height });
         await page.goto(`/p/${homepageCase.path}`);
+        await hideFrameworkDevTools(page);
 
         const heroHeading = page.getByRole('heading', { name: homepageCase.displayName, level: 1 });
         const heroDescription = page.getByText('Visual homepage hero description');
@@ -373,7 +428,85 @@ test.describe('public runtime browser visual QA', () => {
           profileBio,
           `${homepageCase.name} ${breakpoint.name} profile bio`
         );
+
+        await expect(page).toHaveScreenshot(
+          `public-homepage-${homepageCase.snapshotName}-${breakpoint.name}.png`,
+          {
+            animations: 'disabled',
+            fullPage: true,
+          }
+        );
       }
+    }
+  });
+
+  test('public homepage high-contrast theme keeps readable core copy', async ({ page }) => {
+    await page.route('**/api/v1/public/**', async (route) => {
+      const url = new URL(route.request().url());
+
+      if (url.pathname === `/api/v1/public/homepage/browser-visual-homepage-high-contrast`) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(
+            buildHomepageResponse({
+              displayName: `${visualQaFixture.displayName} High Contrast`,
+              theme: visualQaHighContrastTheme,
+            })
+          ),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    const breakpoints = [
+      { name: 'desktop', width: 1280, height: 900 },
+      { name: 'mobile', width: 390, height: 844 },
+    ];
+
+    for (const breakpoint of breakpoints) {
+      await page.setViewportSize({ width: breakpoint.width, height: breakpoint.height });
+      await page.goto('/p/browser-visual-homepage-high-contrast');
+      await hideFrameworkDevTools(page);
+
+      const heroHeading = page.getByRole('heading', {
+        name: `${visualQaFixture.displayName} High Contrast`,
+        level: 1,
+      });
+      const heroDescription = page.getByText('Visual homepage hero description');
+      const profileHeading = page.getByRole('heading', {
+        name: `${visualQaFixture.displayName} High Contrast`,
+        level: 2,
+      });
+      const profileBio = page.getByText('Visual profile card bio');
+
+      await expect(heroHeading).toBeVisible();
+      await expect(heroDescription).toBeVisible();
+      await expect(profileHeading).toBeVisible();
+      await expect(profileBio).toBeVisible();
+      await expectReadableContrast(heroHeading, `high contrast ${breakpoint.name} homepage hero`);
+      await expectReadableContrast(
+        heroDescription,
+        `high contrast ${breakpoint.name} homepage hero description`
+      );
+      await expectReadableContrast(
+        profileHeading,
+        `high contrast ${breakpoint.name} homepage profile heading`
+      );
+      await expectReadableContrast(
+        profileBio,
+        `high contrast ${breakpoint.name} homepage profile bio`
+      );
+      await expectNoHorizontalOverflow(page, `high contrast homepage ${breakpoint.name}`);
+      await expect(page).toHaveScreenshot(
+        `public-homepage-high-contrast-${breakpoint.name}.png`,
+        {
+          animations: 'disabled',
+          fullPage: true,
+        }
+      );
     }
   });
 
@@ -403,6 +536,7 @@ test.describe('public runtime browser visual QA', () => {
   test('public marshmallow keeps mobile form controls reachable by keyboard', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/m/${visualQaFixture.marshmallowPath}`);
+    await hideFrameworkDevTools(page);
 
     const title = page.getByRole('heading', { name: visualQaFixture.marshmallowTitle, level: 1 });
     const messageInput = page.getByLabel('Message');
@@ -414,6 +548,10 @@ test.describe('public runtime browser visual QA', () => {
     await expectNoHorizontalOverflow(page, 'mobile marshmallow');
     await expectReadableContrast(title, 'mobile marshmallow title');
     await expectReadableContrast(sendButton, 'mobile marshmallow send button');
+    await expect(page).toHaveScreenshot('public-marshmallow-mobile.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
 
     await tabUntilFocused(page, messageInput);
     await page.keyboard.type('Hello from browser QA');
