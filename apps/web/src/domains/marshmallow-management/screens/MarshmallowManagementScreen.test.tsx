@@ -190,6 +190,9 @@ describe('MarshmallowManagementScreen', () => {
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Moderation Queue' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Configuration' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
     expect(await screen.findByText('Happy birthday!')).toBeInTheDocument();
     expect(screen.queryByLabelText('Enable public marshmallow route')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /routing in settings/i })).not.toBeInTheDocument();
@@ -481,6 +484,7 @@ describe('MarshmallowManagementScreen', () => {
 
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
+    fireEvent.click(await screen.findByRole('tab', { name: 'Export' }));
     expect(await screen.findByText('No export job created in this session')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create export job' }));

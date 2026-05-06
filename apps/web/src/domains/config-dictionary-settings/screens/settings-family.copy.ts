@@ -577,10 +577,10 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
   },
 };
 
-const CONFIG_ENTITY_COPY: Record<
-  RuntimeLocale,
-  Partial<Record<ScopedConfigEntityType, Partial<ConfigEntityCatalogEntry>>>
-> = {
+type ConfigEntityCopyMap = Partial<Record<ScopedConfigEntityType, Partial<ConfigEntityCatalogEntry>>>;
+type ConfigFieldCopyMap = Partial<Record<string, Partial<ConfigEntityFieldDefinition>>>;
+
+const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<Record<SupportedUiLocale, ConfigEntityCopyMap>> = {
   en: {},
   zh: {
     'business-segment': { label: '业务分段', description: '当前范围拥有的客户域业务线分段。' },
@@ -610,9 +610,37 @@ const CONFIG_ENTITY_COPY: Record<
     'profile-store': { label: 'プロフィールストア', description: 'タレント公開と顧客アクセスに使うテナント単位の顧客アーカイブ境界です。' },
     consent: { label: '同意契約', description: 'ローカライズ済み内容と有効期間を持つ同意契約です。' },
   },
+  ko: {
+    'business-segment': { label: '비즈니스 세그먼트', description: '현재 범위가 소유한 고객 도메인 사업 구분입니다.' },
+    'customer-status': { label: '고객 상태', description: '하위 고객 흐름의 필터와 수명주기 표시에 쓰는 상태 라벨입니다.' },
+    'address-type': { label: '주소 유형', description: '고객 및 프로필 양식에서 재사용하는 주소 분류입니다.' },
+    'channel-category': { label: '채널 카테고리', description: '연락 방식이 상속하는 상위 채널 분류입니다.' },
+    'communication-type': { label: '연락 방식', description: '하위 고객 연락 흐름에서 사용하는 연락 방법입니다.' },
+    'reason-category': { label: '사유 카테고리', description: '고객 비활성화 사유의 상위 분류입니다.' },
+    'inactivation-reason': { label: '비활성화 사유', description: '사유 카테고리에 속한 구체적인 고객 비활성화 사유입니다.' },
+    'membership-class': { label: '멤버십 카테고리', description: '테넌트가 관리하는 멤버십 최상위 분류입니다.' },
+    'membership-type': { label: '멤버십 유형', description: '멤버십 카테고리 아래에서 관리하는 유형입니다.' },
+    'membership-level': { label: '멤버십 레벨', description: '멤버십 유형 아래의 구체적인 레벨입니다.' },
+    'profile-store': { label: '프로필 저장소', description: '탤런트 공개와 고객 접근에 쓰는 테넌트 단위 고객 아카이브 경계입니다.' },
+    consent: { label: '동의 계약', description: '현지화된 내용과 유효 기간을 가진 동의 계약입니다.' },
+  },
+  fr: {
+    'business-segment': { label: 'Segment metier', description: 'Segmentation metier du domaine client detenue par le perimetre actuel.' },
+    'customer-status': { label: 'Statut client', description: 'Libelles de statut utilises par les filtres et cycles client.' },
+    'address-type': { label: 'Type d adresse', description: 'Classification d adresse reutilisee dans les formulaires client et profil.' },
+    'channel-category': { label: 'Categorie de canal', description: 'Groupe de canal parent herite par les modes de contact.' },
+    'communication-type': { label: 'Mode de contact', description: 'Methode de contact utilisee par les flux client aval.' },
+    'reason-category': { label: 'Categorie de motif', description: 'Classification parent pour les motifs de desactivation client.' },
+    'inactivation-reason': { label: 'Motif de desactivation', description: 'Motif concret rattache a une categorie de motif.' },
+    'membership-class': { label: 'Categorie d adhesion', description: 'Definition de plus haut niveau des adhesions gerees par le tenant.' },
+    'membership-type': { label: 'Type d adhesion', description: 'Type gere sous une categorie d adhesion.' },
+    'membership-level': { label: 'Niveau d adhesion', description: 'Niveau concret gere sous un type d adhesion.' },
+    'profile-store': { label: 'Archive client', description: 'Frontiere d archive client au niveau tenant pour la publication talent et l acces client.' },
+    consent: { label: 'Accord de consentement', description: 'Accord avec contenu localise et fenetre de validite.' },
+  },
 };
 
-const CONFIG_FIELD_COPY: Record<RuntimeLocale, Partial<Record<string, Partial<ConfigEntityFieldDefinition>>>> = {
+const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Record<SupportedUiLocale, ConfigFieldCopyMap>> = {
   en: {},
   zh: {
     color: { label: '徽标颜色' },
@@ -651,6 +679,44 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, Partial<Record<string, Partial<Co
     contentMarkdownEn: { label: '内容（英語）' },
     contentMarkdownZh: { label: '内容（中国語）' },
     contentMarkdownJa: { label: '内容（日本語）' },
+  },
+  ko: {
+    color: { label: '배지 색상' },
+    channelCategoryId: { label: '채널 카테고리' },
+    reasonCategoryId: { label: '사유 카테고리' },
+    membershipClassId: { label: '멤버십 카테고리' },
+    membershipTypeId: { label: '멤버십 유형' },
+    externalControl: { label: '외부 제어', description: '이 멤버십 유형이 외부 시스템 동기화로 관리되는지 표시합니다.' },
+    defaultRenewalDays: { label: '기본 갱신 일수' },
+    rank: { label: '레벨 정렬' },
+    badgeUrl: { label: '배지 URL' },
+    consentVersion: { label: '동의 버전' },
+    effectiveFrom: { label: '유효 시작' },
+    expiresAt: { label: '유효 종료' },
+    contentUrl: { label: '호스팅 콘텐츠 URL' },
+    isRequired: { label: '진행 전 필수', description: '관련 흐름을 계속하기 전에 이 동의 확인이 필요한지 제어합니다.' },
+    contentMarkdownEn: { label: '내용(영어)' },
+    contentMarkdownZh: { label: '내용(중국어)' },
+    contentMarkdownJa: { label: '내용(일본어)' },
+  },
+  fr: {
+    color: { label: 'Couleur du badge' },
+    channelCategoryId: { label: 'Categorie de canal' },
+    reasonCategoryId: { label: 'Categorie de motif' },
+    membershipClassId: { label: 'Categorie d adhesion' },
+    membershipTypeId: { label: 'Type d adhesion' },
+    externalControl: { label: 'Controle externe', description: 'Indique si ce type d adhesion est gere par synchronisation externe.' },
+    defaultRenewalDays: { label: 'Jours de renouvellement par defaut' },
+    rank: { label: 'Ordre du niveau' },
+    badgeUrl: { label: 'URL du badge' },
+    consentVersion: { label: 'Version du consentement' },
+    effectiveFrom: { label: 'Debut de validite' },
+    expiresAt: { label: 'Fin de validite' },
+    contentUrl: { label: 'URL du contenu heberge' },
+    isRequired: { label: 'Obligatoire avant de continuer', description: 'Controle si ce consentement doit etre confirme avant de poursuivre le flux associe.' },
+    contentMarkdownEn: { label: 'Contenu (anglais)' },
+    contentMarkdownZh: { label: 'Contenu (chinois)' },
+    contentMarkdownJa: { label: 'Contenu (japonais)' },
   },
 };
 

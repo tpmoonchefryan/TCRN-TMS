@@ -1051,20 +1051,20 @@ export function SecurityManagementScreen({
     fr: 'Surface Marshmallow',
   });
   const unsupportedScopeTitle = pickLocaleText(selectedLocale, {
-    en: 'Unsupported legacy tokens',
-    zh_HANS: '不支持的旧范围 token',
-    zh_HANT: '不支援的舊範圍 token',
-    ja: '未対応のレガシートークン',
-    ko: '지원되지 않는 레거시 토큰',
-    fr: 'Anciens jetons non pris en charge',
+    en: 'Older scope format retained',
+    zh_HANS: '已保留旧版范围格式',
+    zh_HANT: '已保留舊版範圍格式',
+    ja: '旧形式のスコープを保持中',
+    ko: '이전 범위 형식 유지됨',
+    fr: 'Ancien format de perimetre conserve',
   });
   const unsupportedScopeDescription = pickLocaleText(selectedLocale, {
-    en: 'This rule still contains scope tokens created before the structured builder existed. They are preserved in Advanced mode for auditability; replace them only when you intentionally migrate the rule.',
-    zh_HANS: '这条规则仍包含结构化范围构建器上线前创建的旧 token。系统会把它们保留在高级模式中用于审计；只有在有意迁移规则时才需要替换。',
-    zh_HANT: '這條規則仍包含結構化範圍建構器上線前建立的舊 token。系統會把它們保留在進階模式中用於稽核；只有在有意遷移規則時才需要替換。',
-    ja: 'このルールには、構造化ビルダー導入前に作成されたスコープトークンが残っています。監査できるよう高度な設定に保持されます。意図的に移行するときだけ置き換えてください。',
-    ko: '이 규칙에는 구조화된 범위 빌더가 도입되기 전에 만들어진 범위 토큰이 남아 있습니다. 감사 가능성을 위해 고급 모드에 보존되며, 규칙을 의도적으로 마이그레이션할 때만 교체하세요.',
-    fr: 'Cette règle contient encore des jetons de périmètre créés avant le générateur structuré. Ils restent en mode avancé pour l’audit; remplacez-les seulement lors d’une migration volontaire de la règle.',
+    en: 'This rule was created before the structured builder existed. The old scope text stays in Advanced mode for audit history; replace it only when you intentionally migrate the rule.',
+    zh_HANS: '这条规则创建时还没有结构化范围构建器。旧范围文本会保留在高级模式中作为审计历史；只有在有意迁移规则时才需要替换。',
+    zh_HANT: '這條規則建立時還沒有結構化範圍建構器。舊範圍文字會保留在進階模式中作為稽核歷史；只有在有意遷移規則時才需要替換。',
+    ja: 'このルールは構造化ビルダー導入前に作成されました。旧形式のスコープ文は監査履歴として高度な設定に保持されます。意図的に移行するときだけ置き換えてください。',
+    ko: '이 규칙은 구조화된 범위 빌더가 도입되기 전에 만들어졌습니다. 이전 범위 문구는 감사 이력을 위해 고급 모드에 보존되며, 규칙을 의도적으로 마이그레이션할 때만 교체하세요.',
+    fr: 'Cette regle a ete creee avant le constructeur structure. L ancien texte de perimetre reste en mode avance pour l historique d audit; remplacez-le seulement lors d une migration volontaire.',
   });
   const ownerScopeCategoryLabels: Record<StructuredOwnerScopeCategory, string> = {
     tenant: copy.options.scopeType.tenant,

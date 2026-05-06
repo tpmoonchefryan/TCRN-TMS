@@ -62,12 +62,14 @@ import {
   FormSection,
   GlassSurface,
   PaginationFooter,
+  SectionTabs,
   StateView,
   TableShell,
 } from '@/platform/ui';
 
 type MessageStatusFilter = 'all' | MarshmallowMessageStatus;
 type ReplyFilter = 'all' | 'replied' | 'unreplied';
+type MarshmallowManagementView = 'configuration' | 'moderation' | 'export';
 
 interface MarshmallowConfigDraft {
   title: string;
@@ -130,13 +132,19 @@ function parseReplyFilter(value: string | null): ReplyFilter {
   return value === 'replied' || value === 'unreplied' ? value : 'all';
 }
 
+function parseMarshmallowManagementView(value: string | null): MarshmallowManagementView {
+  return value === 'configuration' || value === 'export' ? value : 'moderation';
+}
+
 function buildMarshmallowManagementQueryState({
+  view,
   keyword,
   messageStatusFilter,
   replyFilter,
   page,
   pageSize,
 }: {
+  view: MarshmallowManagementView;
   keyword: string;
   messageStatusFilter: MessageStatusFilter;
   replyFilter: ReplyFilter;
@@ -145,6 +153,10 @@ function buildMarshmallowManagementQueryState({
 }) {
   const params = new URLSearchParams();
   const normalizedKeyword = keyword.trim();
+
+  if (view !== 'moderation') {
+    params.set('view', view);
+  }
 
   if (normalizedKeyword) {
     params.set('keyword', normalizedKeyword);
@@ -405,6 +417,7 @@ export function MarshmallowManagementScreen({
   const urlKeyword = searchParams.get('keyword') ?? '';
   const urlMessageStatusFilter = parseMessageStatusFilter(searchParams.get('status'));
   const urlReplyFilter = parseReplyFilter(searchParams.get('reply'));
+  const urlView = parseMarshmallowManagementView(searchParams.get('view'));
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
@@ -431,6 +444,7 @@ export function MarshmallowManagementScreen({
   const [messageStatusFilter, setMessageStatusFilter] = useState<MessageStatusFilter>(urlMessageStatusFilter);
   const [replyFilter, setReplyFilter] = useState<ReplyFilter>(urlReplyFilter);
   const [keyword, setKeyword] = useState(urlKeyword);
+  const [activeView, setActiveView] = useState<MarshmallowManagementView>(urlView);
   const [page, setPage] = useState(urlPage);
   const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [savePending, setSavePending] = useState(false);
@@ -450,9 +464,44 @@ export function MarshmallowManagementScreen({
     setKeyword((current) => (current === urlKeyword ? current : urlKeyword));
     setMessageStatusFilter((current) => (current === urlMessageStatusFilter ? current : urlMessageStatusFilter));
     setReplyFilter((current) => (current === urlReplyFilter ? current : urlReplyFilter));
+    setActiveView((current) => (current === urlView ? current : urlView));
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
-  }, [urlKeyword, urlMessageStatusFilter, urlPage, urlPageSize, urlReplyFilter]);
+  }, [urlKeyword, urlMessageStatusFilter, urlPage, urlPageSize, urlReplyFilter, urlView]);
+
+  function replaceWorkspaceQuery(nextView: MarshmallowManagementView) {
+    const nextQueryString = buildMarshmallowManagementQueryState({
+      view: nextView,
+      keyword,
+      messageStatusFilter,
+      replyFilter,
+      page,
+      pageSize,
+    });
+    const currentQueryString = buildMarshmallowManagementQueryState({
+      view: activeView,
+      keyword,
+      messageStatusFilter,
+      replyFilter,
+      page,
+      pageSize,
+    });
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
+
+  function handleViewChange(nextView: string) {
+    const parsedView = parseMarshmallowManagementView(nextView);
+    setActiveView(parsedView);
+    replaceWorkspaceQuery(parsedView);
+  }
 
   function applyMessageQueryState(
     nextState: Partial<{
@@ -490,6 +539,7 @@ export function MarshmallowManagementScreen({
     }
 
     const nextQueryString = buildMarshmallowManagementQueryState({
+      view: activeView,
       keyword: nextKeyword,
       messageStatusFilter: nextMessageStatusFilter,
       replyFilter: nextReplyFilter,
@@ -497,6 +547,7 @@ export function MarshmallowManagementScreen({
       pageSize: nextPageSize,
     });
     const currentQueryString = buildMarshmallowManagementQueryState({
+      view: activeView,
       keyword,
       messageStatusFilter,
       replyFilter,
@@ -893,6 +944,14 @@ export function MarshmallowManagementScreen({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setConfigDrawerOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {copy.actions.openConfig}
+            </button>
             <SecondaryButton onClick={() => void handleRefreshWorkspace()} disabled={messagesPanel.loading}>
               <RefreshCcw className="h-3.5 w-3.5" />
               {copy.actions.refreshWorkspace}
@@ -927,7 +986,21 @@ export function MarshmallowManagementScreen({
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
       {saveSuccess ? <NoticeBanner tone="success" message={saveSuccess} /> : null}
 
-      <GlassSurface className="p-6">
+      <GlassSurface className="p-2">
+        <SectionTabs
+          items={[
+            { id: 'moderation', label: copy.moderation.title, panelId: 'marshmallow-panel-moderation' },
+            { id: 'configuration', label: copy.config.title, panelId: 'marshmallow-panel-configuration' },
+            { id: 'export', label: copy.export.title, panelId: 'marshmallow-panel-export' },
+          ]}
+          activeId={activeView}
+          onChange={handleViewChange}
+          ariaLabel={copy.header.title}
+        />
+      </GlassSurface>
+
+      {activeView === 'configuration' ? (
+      <GlassSurface id="marshmallow-panel-configuration" role="tabpanel" className="p-6">
         <FormSection
           title={copy.config.title}
           description={copy.config.description}
@@ -962,8 +1035,10 @@ export function MarshmallowManagementScreen({
           </div>
         </FormSection>
       </GlassSurface>
+      ) : null}
 
-      <GlassSurface className="p-6">
+      {activeView === 'moderation' ? (
+      <GlassSurface id="marshmallow-panel-moderation" role="tabpanel" className="p-6">
         <FormSection
           title={copy.moderation.title}
           description={copy.moderation.description}
@@ -1167,8 +1242,10 @@ export function MarshmallowManagementScreen({
           </div>
         </FormSection>
       </GlassSurface>
+      ) : null}
 
-      <GlassSurface className="p-6">
+      {activeView === 'export' ? (
+      <GlassSurface id="marshmallow-panel-export" role="tabpanel" className="p-6">
         <FormSection
           title={copy.export.title}
           description={copy.export.description}
@@ -1263,6 +1340,7 @@ export function MarshmallowManagementScreen({
           )}
         </FormSection>
       </GlassSurface>
+      ) : null}
 
       <ActionDrawer
         open={configDrawerOpen}
