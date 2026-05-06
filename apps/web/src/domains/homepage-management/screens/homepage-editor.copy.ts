@@ -88,6 +88,44 @@ export interface HomepageEditorCopy {
     remove: string;
     visible: string;
   };
+  structured: {
+    addImage: string;
+    addSocialLink: string;
+    advancedJson: string;
+    bio: string;
+    bioMaxLines: string;
+    bold: string;
+    bulletList: string;
+    caption: string;
+    columns: string;
+    content: string;
+    displayMode: string;
+    displayName: string;
+    fullWidth: string;
+    gap: string;
+    hideAdvancedJson: string;
+    imageAlt: string;
+    imageUrl: string;
+    italic: string;
+    label: string;
+    layout: string;
+    layoutMode: string;
+    link: string;
+    nameFontSize: string;
+    numberedList: string;
+    platformCode: string;
+    removeImage: (index: number) => string;
+    removeSocialLink: (index: number) => string;
+    shape: string;
+    showCaptions: string;
+    showRecentCount: string;
+    showSubmitButton: string;
+    style: string;
+    textAlign: string;
+    unsupportedAdvancedOnly: string;
+    url: string;
+    options: Record<string, string>;
+  };
   dialogs: {
     leaveConfirm: string;
     leaveCancel: string;
@@ -243,6 +281,68 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       remove: 'Remove',
       visible: 'Visible',
     },
+    structured: {
+      addImage: 'Add image',
+      addSocialLink: 'Add social link',
+      advancedJson: 'Advanced JSON',
+      bio: 'Bio',
+      bioMaxLines: 'Bio lines',
+      bold: 'Bold',
+      bulletList: 'Bullet list',
+      caption: 'Caption',
+      columns: 'Columns',
+      content: 'Content',
+      displayMode: 'Display mode',
+      displayName: 'Display name',
+      fullWidth: 'Full width',
+      gap: 'Gap',
+      hideAdvancedJson: 'Hide Advanced JSON',
+      imageAlt: 'Image alt text',
+      imageUrl: 'Image URL',
+      italic: 'Italic',
+      label: 'Label',
+      layout: 'Layout',
+      layoutMode: 'Layout mode',
+      link: 'Link',
+      nameFontSize: 'Name size',
+      numberedList: 'Numbered list',
+      platformCode: 'Platform code',
+      removeImage: (index) => `Remove image ${index}`,
+      removeSocialLink: (index) => `Remove social link ${index}`,
+      shape: 'Shape',
+      showCaptions: 'Show captions',
+      showRecentCount: 'Recent count',
+      showSubmitButton: 'Show submit button',
+      style: 'Style',
+      textAlign: 'Text align',
+      unsupportedAdvancedOnly: 'This block type stays in Advanced JSON for now.',
+      url: 'URL',
+      options: {
+        button: 'Button',
+        carousel: 'Carousel',
+        center: 'Center',
+        circle: 'Circle',
+        compact: 'Compact',
+        full: 'Full',
+        ghost: 'Ghost',
+        grid: 'Grid',
+        horizontal: 'Horizontal',
+        icon: 'Icon',
+        large: 'Large',
+        left: 'Left',
+        masonry: 'Masonry',
+        medium: 'Medium',
+        outline: 'Outline',
+        pill: 'Pill',
+        primary: 'Primary',
+        right: 'Right',
+        rounded: 'Rounded',
+        secondary: 'Secondary',
+        small: 'Small',
+        square: 'Square',
+        vertical: 'Vertical',
+      },
+    },
     dialogs: {
       leaveConfirm: 'Leave editor',
       leaveCancel: 'Cancel',
@@ -396,6 +496,68 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       remove: '移除',
       visible: '可见',
     },
+    structured: {
+      addImage: '添加图片',
+      addSocialLink: '添加社交链接',
+      advancedJson: '高级 JSON',
+      bio: '简介',
+      bioMaxLines: '简介行数',
+      bold: '加粗',
+      bulletList: '项目列表',
+      caption: '说明',
+      columns: '列数',
+      content: '内容',
+      displayMode: '展示模式',
+      displayName: '显示名称',
+      fullWidth: '占满宽度',
+      gap: '间距',
+      hideAdvancedJson: '收起高级 JSON',
+      imageAlt: '图片替代文本',
+      imageUrl: '图片 URL',
+      italic: '斜体',
+      label: '标签',
+      layout: '排列方式',
+      layoutMode: '布局模式',
+      link: '链接',
+      nameFontSize: '名称字号',
+      numberedList: '编号列表',
+      platformCode: '平台代码',
+      removeImage: (index) => `移除图片 ${index}`,
+      removeSocialLink: (index) => `移除社交链接 ${index}`,
+      shape: '形状',
+      showCaptions: '显示说明',
+      showRecentCount: '近期数量',
+      showSubmitButton: '显示提交按钮',
+      style: '样式',
+      textAlign: '对齐',
+      unsupportedAdvancedOnly: '该区块类型暂时保留在高级 JSON 中编辑。',
+      url: 'URL',
+      options: {
+        button: '按钮',
+        carousel: '轮播',
+        center: '居中',
+        circle: '圆形',
+        compact: '紧凑',
+        full: '完整',
+        ghost: '弱化',
+        grid: '网格',
+        horizontal: '横向',
+        icon: '图标',
+        large: '大',
+        left: '左对齐',
+        masonry: '瀑布流',
+        medium: '中',
+        outline: '描边',
+        pill: '胶囊',
+        primary: '主要',
+        right: '右对齐',
+        rounded: '圆角',
+        secondary: '次要',
+        small: '小',
+        square: '方形',
+        vertical: '纵向',
+      },
+    },
     dialogs: {
       leaveConfirm: '离开编辑器',
       leaveCancel: '取消',
@@ -548,6 +710,68 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       moveUp: (label) => `${label} を上へ移動`,
       remove: '削除',
       visible: '表示中',
+    },
+    structured: {
+      addImage: '画像を追加',
+      addSocialLink: 'SNS リンクを追加',
+      advancedJson: '高度な JSON',
+      bio: '紹介文',
+      bioMaxLines: '紹介文の行数',
+      bold: '太字',
+      bulletList: '箇条書き',
+      caption: 'キャプション',
+      columns: '列数',
+      content: '本文',
+      displayMode: '表示モード',
+      displayName: '表示名',
+      fullWidth: '全幅',
+      gap: '間隔',
+      hideAdvancedJson: '高度な JSON を閉じる',
+      imageAlt: '画像の代替テキスト',
+      imageUrl: '画像 URL',
+      italic: '斜体',
+      label: 'ラベル',
+      layout: '配置',
+      layoutMode: 'レイアウト',
+      link: 'リンク',
+      nameFontSize: '名前サイズ',
+      numberedList: '番号付きリスト',
+      platformCode: 'プラットフォームコード',
+      removeImage: (index) => `画像 ${index} を削除`,
+      removeSocialLink: (index) => `SNS リンク ${index} を削除`,
+      shape: '形状',
+      showCaptions: 'キャプションを表示',
+      showRecentCount: '最近の件数',
+      showSubmitButton: '送信ボタンを表示',
+      style: 'スタイル',
+      textAlign: 'テキスト揃え',
+      unsupportedAdvancedOnly: 'このブロックタイプは現時点では高度な JSON で編集します。',
+      url: 'URL',
+      options: {
+        button: 'ボタン',
+        carousel: 'カルーセル',
+        center: '中央',
+        circle: '円形',
+        compact: 'コンパクト',
+        full: 'フル',
+        ghost: 'ゴースト',
+        grid: 'グリッド',
+        horizontal: '横並び',
+        icon: 'アイコン',
+        large: '大',
+        left: '左',
+        masonry: 'メイソンリー',
+        medium: '中',
+        outline: 'アウトライン',
+        pill: 'ピル',
+        primary: 'プライマリ',
+        right: '右',
+        rounded: '角丸',
+        secondary: 'セカンダリ',
+        small: '小',
+        square: '四角',
+        vertical: '縦並び',
+      },
     },
     dialogs: {
       leaveConfirm: 'エディタを離れる',

@@ -9,15 +9,20 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  Bold,
   Eye,
   EyeOff,
   Globe2,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   Plus,
   Save,
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import {
   type HomepageDraftComponentRecord,
@@ -48,6 +53,13 @@ import {
 type ComponentCategory = 'content' | 'core' | 'interactive' | 'layout' | 'media';
 type SourceMode = 'draft' | 'empty' | 'published';
 type PreviewViewport = 'desktop' | 'tablet' | 'mobile';
+type StructuredBlockType =
+  | 'ImageGallery'
+  | 'LinkButton'
+  | 'MarshmallowWidget'
+  | 'ProfileCard'
+  | 'RichText'
+  | 'SocialLinks';
 
 const PREVIEW_VIEWPORT_CLASSES: Record<PreviewViewport, string> = {
   desktop: 'max-w-none',
@@ -77,6 +89,38 @@ interface NoticeState {
 interface LeaveGuardState {
   href: string;
   label: string;
+}
+
+interface BlockPropsEditorProps {
+  component: HomepageDraftComponentRecord;
+  copy: HomepageEditorCopy;
+  error?: string;
+  isAdvancedJsonOpen: boolean;
+  jsonValue: string;
+  onAdvancedJsonOpenChange: (isOpen: boolean) => void;
+  onJsonChange: (nextValue: string) => void;
+  onPropsChange: (nextProps: Record<string, unknown>) => void;
+}
+
+interface FieldFrameProps {
+  label: string;
+  children: ReactNode;
+}
+
+interface TextInputProps {
+  label: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  type?: 'number' | 'text' | 'url';
+  min?: number;
+}
+
+interface SelectInputProps {
+  label: string;
+  value: string;
+  options: readonly string[];
+  optionCopy: Record<string, string>;
+  onChange: (nextValue: string) => void;
 }
 
 const EMPTY_HOMEPAGE_CONTENT: HomepageDraftContent = {
@@ -289,6 +333,51 @@ function parseJsonObject(input: string) {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asString(value: unknown, fallback = '') {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function asBoolean(value: unknown, fallback = false) {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function isStructuredBlockType(type: string): type is StructuredBlockType {
+  return (
+    type === 'ProfileCard' ||
+    type === 'SocialLinks' ||
+    type === 'ImageGallery' ||
+    type === 'RichText' ||
+    type === 'LinkButton' ||
+    type === 'MarshmallowWidget'
+  );
+}
+
+function insertTextAtSelection(
+  value: string,
+  prefix: string,
+  suffix = '',
+) {
+  const selection = typeof document === 'undefined' ? null : document.activeElement;
+
+  if (!(selection instanceof HTMLTextAreaElement)) {
+    return `${value}${prefix}${suffix}`;
+  }
+
+  const start = selection.selectionStart;
+  const end = selection.selectionEnd;
+  const selected = value.slice(start, end);
+
+  return `${value.slice(0, start)}${prefix}${selected}${suffix}${value.slice(end)}`;
+}
+
 function getCatalogEntryCopy(copy: HomepageEditorCopy, type: string) {
   return copy.catalog.entries[type] || { description: type, label: type };
 }
@@ -419,6 +508,452 @@ function SummaryCard({
   );
 }
 
+function FieldFrame({
+  label,
+  children,
+}: Readonly<FieldFrameProps>) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-slate-800">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function TextInput({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  min,
+}: Readonly<TextInputProps>) {
+  return (
+    <FieldFrame label={label}>
+      <input
+        type={type}
+        value={value}
+        min={min}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+      />
+    </FieldFrame>
+  );
+}
+
+function TextAreaInput({
+  label,
+  value,
+  onChange,
+  rows = 4,
+}: Readonly<{
+  label: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  rows?: number;
+}>) {
+  return (
+    <FieldFrame label={label}>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+      />
+    </FieldFrame>
+  );
+}
+
+function SelectInput({
+  label,
+  value,
+  options,
+  optionCopy,
+  onChange,
+}: Readonly<SelectInputProps>) {
+  return (
+    <FieldFrame label={label}>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {optionCopy[option] || option}
+          </option>
+        ))}
+      </select>
+    </FieldFrame>
+  );
+}
+
+function CheckboxInput({
+  label,
+  checked,
+  onChange,
+}: Readonly<{
+  label: string;
+  checked: boolean;
+  onChange: (nextValue: boolean) => void;
+}>) {
+  return (
+    <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+      />
+      {label}
+    </label>
+  );
+}
+
+function AdvancedJsonEditor({
+  component,
+  copy,
+  error,
+  jsonValue,
+  onJsonChange,
+}: Readonly<{
+  component: HomepageDraftComponentRecord;
+  copy: HomepageEditorCopy;
+  error?: string;
+  jsonValue: string;
+  onJsonChange: (nextValue: string) => void;
+}>) {
+  const entryCopy = getCatalogEntryCopy(copy, component.type);
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor={`component-json-${component.id}`} className="text-sm font-medium text-slate-800">
+        {copy.block.jsonLabel(entryCopy.label)}
+      </label>
+      <textarea
+        id={`component-json-${component.id}`}
+        name={`component-json-${component.id}`}
+        value={jsonValue || '{}'}
+        onChange={(event) => onJsonChange(event.target.value)}
+        rows={10}
+        className="min-h-[220px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        aria-invalid={error ? 'true' : 'false'}
+        spellCheck={false}
+      />
+      {error ? (
+        <p className="text-sm font-medium text-rose-700">{error}</p>
+      ) : (
+        <p className="text-xs leading-5 text-slate-500">{copy.block.jsonHint}</p>
+      )}
+    </div>
+  );
+}
+
+function StructuredToolbarButton({
+  label,
+  children,
+  onClick,
+}: Readonly<{
+  label: string;
+  children: ReactNode;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      aria-label={label}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    >
+      {children}
+    </button>
+  );
+}
+
+function BlockPropsEditor({
+  component,
+  copy,
+  error,
+  isAdvancedJsonOpen,
+  jsonValue,
+  onAdvancedJsonOpenChange,
+  onJsonChange,
+  onPropsChange,
+}: Readonly<BlockPropsEditorProps>) {
+  const props = asRecord(component.props);
+  const optionCopy = copy.structured.options;
+
+  function mergeProps(nextPartialProps: Record<string, unknown>) {
+    onPropsChange({
+      ...props,
+      ...nextPartialProps,
+    });
+  }
+
+  function renderStructuredFields() {
+    switch (component.type) {
+      case 'ProfileCard':
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput label={copy.structured.displayName} value={asString(props.displayName)} onChange={(value) => mergeProps({ displayName: value })} />
+            <TextInput label={copy.structured.imageUrl} value={asString(props.avatarUrl)} onChange={(value) => mergeProps({ avatarUrl: value })} type="url" />
+            <SelectInput label={copy.structured.shape} value={asString(props.avatarShape, 'circle')} options={['circle', 'rounded', 'square']} optionCopy={optionCopy} onChange={(value) => mergeProps({ avatarShape: value })} />
+            <SelectInput label={copy.structured.nameFontSize} value={asString(props.nameFontSize, 'large')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ nameFontSize: value })} />
+            <div className="md:col-span-2">
+              <TextAreaInput label={copy.structured.bio} value={asString(props.bio)} onChange={(value) => mergeProps({ bio: value })} />
+            </div>
+            <TextInput
+              label={copy.structured.bioMaxLines}
+              value={String(asNumber(props.bioMaxLines, 3))}
+              type="number"
+              min={1}
+              onChange={(value) => mergeProps({ bioMaxLines: Math.max(Number(value) || 1, 1) })}
+            />
+          </div>
+        );
+      case 'SocialLinks': {
+        const platforms = Array.isArray(props.platforms)
+          ? props.platforms.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+          : [];
+
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <SelectInput label={copy.structured.style} value={asString(props.style, 'icon')} options={['icon', 'button', 'pill']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
+              <SelectInput label={copy.structured.layout} value={asString(props.layout, 'horizontal')} options={['horizontal', 'vertical', 'grid']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layout: value })} />
+              <SelectInput label={copy.structured.nameFontSize} value={asString(props.iconSize, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ iconSize: value })} />
+            </div>
+            <div className="space-y-3">
+              {platforms.map((platform, index) => (
+                <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="grid gap-3 md:grid-cols-[1fr_1.2fr_1fr_auto] md:items-end">
+                    <TextInput
+                      label={copy.structured.platformCode}
+                      value={asString(platform.platformCode)}
+                      onChange={(value) => {
+                        const nextPlatforms = [...platforms];
+                        nextPlatforms[index] = { ...platform, platformCode: value };
+                        mergeProps({ platforms: nextPlatforms });
+                      }}
+                    />
+                    <TextInput
+                      label={copy.structured.url}
+                      value={asString(platform.url)}
+                      type="url"
+                      onChange={(value) => {
+                        const nextPlatforms = [...platforms];
+                        nextPlatforms[index] = { ...platform, url: value };
+                        mergeProps({ platforms: nextPlatforms });
+                      }}
+                    />
+                    <TextInput
+                      label={copy.structured.label}
+                      value={asString(platform.label)}
+                      onChange={(value) => {
+                        const nextPlatforms = [...platforms];
+                        nextPlatforms[index] = { ...platform, label: value };
+                        mergeProps({ platforms: nextPlatforms });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => mergeProps({ platforms: platforms.filter((_, platformIndex) => platformIndex !== index) })}
+                      aria-label={copy.structured.removeSocialLink(index + 1)}
+                      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => mergeProps({ platforms: [...platforms, { platformCode: '', url: '', label: '' }] })}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <Plus className="h-4 w-4" />
+                {copy.structured.addSocialLink}
+              </button>
+            </div>
+          </div>
+        );
+      }
+      case 'ImageGallery': {
+        const images = Array.isArray(props.images)
+          ? props.images.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+          : [];
+
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <SelectInput label={copy.structured.layoutMode} value={asString(props.layoutMode, 'grid')} options={['carousel', 'grid', 'masonry']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layoutMode: value })} />
+              <SelectInput label={copy.structured.columns} value={String(asNumber(props.columns, 3))} options={['2', '3', '4']} optionCopy={optionCopy} onChange={(value) => mergeProps({ columns: Number(value) })} />
+              <SelectInput label={copy.structured.gap} value={asString(props.gap, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ gap: value })} />
+            </div>
+            <CheckboxInput label={copy.structured.showCaptions} checked={asBoolean(props.showCaptions)} onChange={(value) => mergeProps({ showCaptions: value })} />
+            <div className="space-y-3">
+              {images.map((image, index) => (
+                <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
+                    <TextInput
+                      label={copy.structured.imageUrl}
+                      value={asString(image.url)}
+                      type="url"
+                      onChange={(value) => {
+                        const nextImages = [...images];
+                        nextImages[index] = { ...image, url: value };
+                        mergeProps({ images: nextImages });
+                      }}
+                    />
+                    <TextInput
+                      label={copy.structured.imageAlt}
+                      value={asString(image.alt)}
+                      onChange={(value) => {
+                        const nextImages = [...images];
+                        nextImages[index] = { ...image, alt: value };
+                        mergeProps({ images: nextImages });
+                      }}
+                    />
+                    <TextInput
+                      label={copy.structured.caption}
+                      value={asString(image.caption)}
+                      onChange={(value) => {
+                        const nextImages = [...images];
+                        nextImages[index] = { ...image, caption: value };
+                        mergeProps({ images: nextImages });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => mergeProps({ images: images.filter((_, imageIndex) => imageIndex !== index) })}
+                      aria-label={copy.structured.removeImage(index + 1)}
+                      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => mergeProps({ images: [...images, { url: '', alt: '', caption: '' }] })}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <Plus className="h-4 w-4" />
+                {copy.structured.addImage}
+              </button>
+            </div>
+          </div>
+        );
+      }
+      case 'RichText': {
+        const contentHtml = asString(props.contentHtml);
+        const applyRichTextPattern = (prefix: string, suffix = '') => {
+          mergeProps({ contentHtml: insertTextAtSelection(contentHtml, prefix, suffix) });
+        };
+
+        return (
+          <div className="space-y-4">
+            <SelectInput label={copy.structured.textAlign} value={asString(props.textAlign, 'left')} options={['left', 'center', 'right']} optionCopy={optionCopy} onChange={(value) => mergeProps({ textAlign: value })} />
+            <div className="flex flex-wrap gap-2" role="toolbar" aria-label={copy.structured.content}>
+              <StructuredToolbarButton label={copy.structured.bold} onClick={() => applyRichTextPattern('<strong>', '</strong>')}>
+                <Bold className="h-4 w-4" />
+              </StructuredToolbarButton>
+              <StructuredToolbarButton label={copy.structured.italic} onClick={() => applyRichTextPattern('<em>', '</em>')}>
+                <Italic className="h-4 w-4" />
+              </StructuredToolbarButton>
+              <StructuredToolbarButton label={copy.structured.link} onClick={() => applyRichTextPattern('<a href="">', '</a>')}>
+                <Link2 className="h-4 w-4" />
+              </StructuredToolbarButton>
+              <StructuredToolbarButton label={copy.structured.bulletList} onClick={() => applyRichTextPattern('<ul><li>', '</li></ul>')}>
+                <List className="h-4 w-4" />
+              </StructuredToolbarButton>
+              <StructuredToolbarButton label={copy.structured.numberedList} onClick={() => applyRichTextPattern('<ol><li>', '</li></ol>')}>
+                <ListOrdered className="h-4 w-4" />
+              </StructuredToolbarButton>
+            </div>
+            <TextAreaInput label={copy.structured.content} value={contentHtml} onChange={(value) => mergeProps({ contentHtml: value })} rows={8} />
+          </div>
+        );
+      }
+      case 'LinkButton':
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput label={copy.structured.label} value={asString(props.label)} onChange={(value) => mergeProps({ label: value })} />
+            <TextInput label={copy.structured.url} value={asString(props.url)} type="url" onChange={(value) => mergeProps({ url: value })} />
+            <SelectInput label={copy.structured.style} value={asString(props.style, 'primary')} options={['primary', 'secondary', 'outline', 'ghost']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
+            <div className="flex items-end">
+              <CheckboxInput label={copy.structured.fullWidth} checked={asBoolean(props.fullWidth)} onChange={(value) => mergeProps({ fullWidth: value })} />
+            </div>
+          </div>
+        );
+      case 'MarshmallowWidget':
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <SelectInput label={copy.structured.displayMode} value={asString(props.displayMode, 'compact')} options={['compact', 'full']} optionCopy={optionCopy} onChange={(value) => mergeProps({ displayMode: value })} />
+            <TextInput
+              label={copy.structured.showRecentCount}
+              value={String(asNumber(props.showRecentCount, 3))}
+              type="number"
+              min={0}
+              onChange={(value) => mergeProps({ showRecentCount: Math.max(Number(value) || 0, 0) })}
+            />
+            <CheckboxInput label={copy.structured.showSubmitButton} checked={asBoolean(props.showSubmitButton, true)} onChange={(value) => mergeProps({ showSubmitButton: value })} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
+
+  if (!isStructuredBlockType(component.type)) {
+    return (
+      <div className="mt-4 space-y-3">
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          {copy.structured.unsupportedAdvancedOnly}
+        </p>
+        <AdvancedJsonEditor
+          component={component}
+          copy={copy}
+          error={error}
+          jsonValue={jsonValue}
+          onJsonChange={onJsonChange}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+        {renderStructuredFields()}
+      </div>
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => onAdvancedJsonOpenChange(!isAdvancedJsonOpen)}
+          aria-expanded={isAdvancedJsonOpen}
+          aria-controls={`component-json-panel-${component.id}`}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        >
+          {isAdvancedJsonOpen ? copy.structured.hideAdvancedJson : copy.structured.advancedJson}
+        </button>
+        {isAdvancedJsonOpen ? (
+          <div id={`component-json-panel-${component.id}`}>
+            <AdvancedJsonEditor
+              component={component}
+              copy={copy}
+              error={error}
+              jsonValue={jsonValue}
+              onJsonChange={onJsonChange}
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function HomepageEditorScreen({
   tenantId,
   talentId,
@@ -437,6 +972,7 @@ export function HomepageEditorScreen({
   const [componentJsonMap, setComponentJsonMap] = useState<Record<string, string>>({});
   const [componentErrors, setComponentErrors] = useState<Record<string, string>>({});
   const [activeComponentEditorId, setActiveComponentEditorId] = useState<string | null>(null);
+  const [advancedJsonOpenMap, setAdvancedJsonOpenMap] = useState<Record<string, boolean>>({});
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop');
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
@@ -473,6 +1009,7 @@ export function HomepageEditorScreen({
         setComponentJsonMap(buildComponentTextMap(nextState.content));
         setComponentErrors({});
         setActiveComponentEditorId(null);
+        setAdvancedJsonOpenMap({});
         setIsCatalogOpen(false);
         setIsThemeEditorOpen(false);
         setSourceMode(nextState.sourceMode);
@@ -575,6 +1112,11 @@ export function HomepageEditorScreen({
       delete nextErrors[componentId];
       return nextErrors;
     });
+    setAdvancedJsonOpenMap((current) => {
+      const nextMap = { ...current };
+      delete nextMap[componentId];
+      return nextMap;
+    });
     setActiveComponentEditorId((current) => (current === componentId ? null : current));
   }
 
@@ -620,6 +1162,31 @@ export function HomepageEditorScreen({
           ? {
               ...component,
               props: parsed.value,
+            }
+          : component,
+      ),
+    }));
+  }
+
+  function handleComponentPropsChange(componentId: string, nextProps: Record<string, unknown>) {
+    const normalizedProps = cloneObject(nextProps);
+
+    setComponentJsonMap((current) => ({
+      ...current,
+      [componentId]: asPrettyJson(normalizedProps),
+    }));
+    setComponentErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors[componentId];
+      return nextErrors;
+    });
+    setContent((current) => ({
+      ...current,
+      components: current.components.map((component) =>
+        component.id === componentId
+          ? {
+              ...component,
+              props: normalizedProps,
             }
           : component,
       ),
@@ -673,6 +1240,7 @@ export function HomepageEditorScreen({
 
       setActiveComponentEditorId(null);
       setIsThemeEditorOpen(false);
+      setAdvancedJsonOpenMap({});
       setHomepage(nextState.homepage);
       setContent(nextState.content);
       setTheme(nextState.theme);
@@ -680,6 +1248,7 @@ export function HomepageEditorScreen({
       setThemeError(null);
       setComponentJsonMap(buildComponentTextMap(nextState.content));
       setComponentErrors({});
+      setAdvancedJsonOpenMap({});
       setSourceMode(nextState.sourceMode);
       setSourceVersion(nextState.sourceVersion);
       setBaselineSignature(buildEditorLoadedStateSignature(nextState.content, nextState.theme));
@@ -925,7 +1494,7 @@ export function HomepageEditorScreen({
                               type="button"
                               onClick={() => setActiveComponentEditorId(isEditing ? null : component.id)}
                               aria-expanded={isEditing}
-                              aria-controls={`component-json-panel-${component.id}`}
+                              aria-controls={`component-editor-panel-${component.id}`}
                               aria-label={isEditing ? copy.block.doneEditingAriaLabel(entryCopy.label) : copy.block.editAriaLabel(entryCopy.label)}
                               className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
                             >
@@ -960,25 +1529,22 @@ export function HomepageEditorScreen({
                         </div>
 
                         {isEditing ? (
-                          <div id={`component-json-panel-${component.id}`} className="mt-4 space-y-2">
-                            <label htmlFor={`component-json-${component.id}`} className="text-sm font-medium text-slate-800">
-                              {copy.block.jsonLabel(entryCopy.label)}
-                            </label>
-                            <textarea
-                              id={`component-json-${component.id}`}
-                              name={`component-json-${component.id}`}
-                              value={componentJsonMap[component.id] || '{}'}
-                              onChange={(event) => handleComponentJsonChange(component.id, event.target.value)}
-                              rows={10}
-                              className="min-h-[220px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                              aria-invalid={componentErrors[component.id] ? 'true' : 'false'}
-                              spellCheck={false}
+                          <div id={`component-editor-panel-${component.id}`}>
+                            <BlockPropsEditor
+                              component={component}
+                              copy={copy}
+                              error={componentErrors[component.id]}
+                              isAdvancedJsonOpen={advancedJsonOpenMap[component.id] === true}
+                              jsonValue={componentJsonMap[component.id] || '{}'}
+                              onAdvancedJsonOpenChange={(isOpen) =>
+                                setAdvancedJsonOpenMap((current) => ({
+                                  ...current,
+                                  [component.id]: isOpen,
+                                }))
+                              }
+                              onJsonChange={(nextValue) => handleComponentJsonChange(component.id, nextValue)}
+                              onPropsChange={(nextProps) => handleComponentPropsChange(component.id, nextProps)}
                             />
-                            {componentErrors[component.id] ? (
-                              <p className="text-sm font-medium text-rose-700">{componentErrors[component.id]}</p>
-                            ) : (
-                              <p className="text-xs leading-5 text-slate-500">{copy.block.jsonHint}</p>
-                            )}
                           </div>
                         ) : null}
                       </div>
