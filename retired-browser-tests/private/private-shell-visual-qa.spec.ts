@@ -250,6 +250,154 @@ const privateVisualIntegrationOrganizationTree = {
 
 let privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
 
+const privateVisualScopeSettings = {
+  scopeType: 'tenant',
+  scopeId: null,
+  settings: {
+    defaultLanguage: 'en',
+    timezone: 'Asia/Shanghai',
+    allowCustomHomepage: true,
+  },
+  overrides: ['defaultLanguage', 'timezone'],
+  inheritedFrom: {
+    defaultLanguage: 'tenant',
+    timezone: 'tenant',
+    allowCustomHomepage: 'tenant',
+  },
+  version: 3,
+};
+
+const privateVisualSubsidiaryDetail = {
+  id: 'subsidiary-visual',
+  parentId: null,
+  code: 'TOKYO',
+  path: '/tokyo',
+  depth: 1,
+  nameEn: 'Tokyo Branch',
+  nameZh: null,
+  nameJa: null,
+  name: 'Tokyo Branch',
+  descriptionEn: 'Deterministic subsidiary for visual QA.',
+  descriptionZh: null,
+  descriptionJa: null,
+  sortOrder: 10,
+  isActive: true,
+  childrenCount: 0,
+  talentCount: 1,
+  createdAt: '2026-05-06T03:00:00.000Z',
+  updatedAt: '2026-05-06T04:00:00.000Z',
+  version: 2,
+};
+
+const privateVisualSubsidiarySettings = {
+  scopeType: 'subsidiary',
+  scopeId: 'subsidiary-visual',
+  settings: {
+    defaultLanguage: 'en',
+    timezone: 'Asia/Tokyo',
+    allowCustomHomepage: true,
+  },
+  overrides: ['timezone'],
+  inheritedFrom: {
+    defaultLanguage: 'tenant',
+    timezone: 'subsidiary',
+    allowCustomHomepage: 'tenant',
+  },
+  version: 4,
+};
+
+const privateVisualTalentSettings = {
+  scopeType: 'talent',
+  scopeId: 'talent-visual',
+  settings: {
+    defaultLanguage: 'en',
+    timezone: 'Asia/Tokyo',
+    allowCustomHomepage: true,
+  },
+  overrides: ['timezone'],
+  inheritedFrom: {
+    defaultLanguage: 'tenant',
+    timezone: 'talent',
+    allowCustomHomepage: 'tenant',
+  },
+  version: 5,
+};
+
+const privateVisualProfileStore = {
+  id: 'profile-store-visual',
+  code: 'DEFAULT_STORE',
+  name: 'Default Store',
+  nameEn: 'Default Store',
+  nameZh: null,
+  nameJa: null,
+  translations: {},
+  talentCount: 1,
+  customerCount: 0,
+  isDefault: true,
+  isActive: true,
+  createdAt: '2026-05-06T03:00:00.000Z',
+  version: 1,
+  piiProxyUrl: 'https://pii.visual.example',
+};
+
+const privateVisualTalentDetail = {
+  id: 'talent-visual',
+  subsidiaryId: 'subsidiary-visual',
+  profileStoreId: 'profile-store-visual',
+  profileStore: privateVisualProfileStore,
+  code: 'VISUAL_TALENT',
+  path: '/TOKYO/VISUAL_TALENT/',
+  nameEn: 'Visual Talent',
+  nameZh: null,
+  nameJa: null,
+  name: 'Visual Talent',
+  displayName: 'Visual Talent',
+  descriptionEn: null,
+  descriptionZh: null,
+  descriptionJa: null,
+  avatarUrl: null,
+  homepagePath: 'visual',
+  timezone: 'Asia/Tokyo',
+  lifecycleStatus: 'published',
+  publishedAt: '2026-05-06T03:00:00.000Z',
+  publishedBy: 'user-visual',
+  isActive: true,
+  settings: privateVisualTalentSettings.settings,
+  stats: {
+    customerCount: 0,
+    homepageVersionCount: 1,
+    marshmallowMessageCount: 1,
+  },
+  externalPagesDomain: {
+    homepage: {
+      isPublished: true,
+    },
+    marshmallow: {
+      isEnabled: true,
+    },
+  },
+  createdAt: '2026-05-06T03:00:00.000Z',
+  updatedAt: '2026-05-06T04:00:00.000Z',
+  version: 5,
+};
+
+const privateVisualInheritedTalentDomain = {
+  id: 'domain-tenant-visual',
+  hostname: 'visual.example.test',
+  ownerType: 'tenant',
+  ownerId: visualQaSession.tenantId,
+  ownerDepth: 0,
+  inherited: true,
+  selected: true,
+  customDomainVerified: true,
+  customDomainSslMode: 'auto',
+  isActive: true,
+  routeMode: 'scoped_talent_path',
+  routePrefix: 'visual',
+  homepagePath: 'homepage',
+  marshmallowPath: 'marshmallow',
+};
+
 const privateLocaleVisualQaCases = [
   {
     name: 'English',
@@ -357,6 +505,128 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/organization/settings') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualScopeSettings,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/subsidiaries/subsidiary-visual') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualSubsidiaryDetail,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/subsidiaries/subsidiary-visual/settings') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualSubsidiarySettings,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/profile-stores') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [privateVisualProfileStore],
+            meta: {
+              pagination: {
+                page: 1,
+                pageSize: 20,
+                totalCount: 1,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+              },
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/system-dictionary') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              type: 'CUSTOMER_STATUS',
+              name: 'Customer Status',
+              description: 'Customer status labels',
+              count: 1,
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 'dictionary-item-active',
+              dictionaryCode: 'CUSTOMER_STATUS',
+              code: 'ACTIVE',
+              nameEn: 'Active customer',
+              nameZh: null,
+              nameJa: null,
+              translations: {},
+              name: 'Active customer',
+              descriptionEn: null,
+              descriptionZh: null,
+              descriptionJa: null,
+              descriptionTranslations: {},
+              sortOrder: 0,
+              isActive: true,
+              extraData: null,
+              createdAt: '2026-05-06T03:00:00.000Z',
+              updatedAt: '2026-05-06T04:00:00.000Z',
+              version: 1,
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 1,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/users/me') {
       await route.fulfill({
         status: 200,
@@ -410,18 +680,90 @@ async function mockPrivateRuntimeApi(page: Page) {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
+          data: privateVisualTalentDetail,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/settings') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualTalentSettings,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/homepage') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'homepage-visual',
+            talentId: 'talent-visual',
+            isPublished: true,
+            publishedVersion: null,
+            draftVersion: null,
+            customDomain: null,
+            customDomainVerified: false,
+            seoTitle: null,
+            seoDescription: null,
+            ogImageUrl: null,
+            analyticsId: null,
+            homepagePath: 'visual',
+            homepageUrl: 'https://example.test/VISUAL/VISUAL_TALENT/homepage',
+            createdAt: '2026-05-06T03:00:00.000Z',
+            updatedAt: '2026-05-06T04:00:00.000Z',
+            version: 2,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/custom-domain') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            customDomain: null,
+            customDomainVerified: false,
+            customDomainVerificationToken: null,
+            customDomainSslMode: 'auto',
+            homepageCustomPath: null,
+            marshmallowCustomPath: null,
+            domains: [privateVisualInheritedTalentDomain],
+            inheritedDomains: [privateVisualInheritedTalentDomain],
+            selectedInheritedDomainIds: ['domain-tenant-visual'],
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/publish-readiness') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
           data: {
             id: 'talent-visual',
-            code: 'VISUAL_TALENT',
-            displayName: 'Visual Talent',
             lifecycleStatus: 'published',
-            isActive: true,
-            profileStore: null,
-            stats: {
-              customerCount: 0,
-              homepageVersionCount: 0,
-              marshmallowMessageCount: 1,
-            },
+            targetState: 'published',
+            recommendedAction: 'none',
+            canEnterPublishedState: true,
+            blockers: [],
+            warnings: [],
+            version: 5,
           },
         }),
       });
@@ -1510,6 +1852,136 @@ test.describe('private shell browser visual QA', () => {
     await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
     await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
     await expect(page).toHaveScreenshot('private-marshmallow-mobile-config-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop tenant settings keeps defaults summary-first and drawer-scoped', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/settings');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Tenant Settings' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(
+      page.getByText('Review tenant defaults before opening the edit workflow.')
+    ).toBeVisible();
+    await expect(page.getByLabel('Default language')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save tenant defaults' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit defaults' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant settings summary first level');
+    await expect(page).toHaveScreenshot('private-tenant-settings-desktop-summary.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Edit defaults' }).click();
+    const defaultsDrawer = page.getByRole('dialog', { name: 'Edit tenant defaults' });
+    await expect(defaultsDrawer).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Default language')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Default timezone')).toBeVisible();
+    await expect(defaultsDrawer.getByRole('button', { name: 'Save tenant defaults' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant settings defaults drawer');
+    await expect(page).toHaveScreenshot('private-tenant-settings-desktop-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop subsidiary settings keeps defaults summary-first and drawer-scoped', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/subsidiary/subsidiary-visual/settings');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: /Tokyo Branch.*Subsidiary Settings/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(
+      page.getByText('Review subsidiary defaults before opening the edit workflow.')
+    ).toBeVisible();
+    await expect(page.getByLabel('Default language')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save subsidiary settings' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit defaults' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop subsidiary settings summary first level');
+    await expect(page).toHaveScreenshot('private-subsidiary-settings-desktop-summary.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Edit defaults' }).click();
+    const defaultsDrawer = page.getByRole('dialog', { name: 'Edit subsidiary defaults' });
+    await expect(defaultsDrawer).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Default language')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Default timezone')).toBeVisible();
+    await expect(defaultsDrawer.getByRole('button', { name: 'Save subsidiary settings' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop subsidiary settings defaults drawer');
+    await expect(page).toHaveScreenshot('private-subsidiary-settings-desktop-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile talent settings keeps route configuration out of the first level', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/settings?section=settings');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: /Visual Talent.*Talent Settings/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
+    await expect(page.getByText('Public Marshmallow Route')).toBeVisible();
+    await expect(page.getByLabel('Enable public marshmallow route')).toHaveCount(0);
+    await expect(page.getByLabel('Custom domain')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Configure routes' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile talent settings summary first level');
+    await expect(page).toHaveScreenshot('private-talent-settings-mobile-summary.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/settings?section=settings&focus=marshmallow-routing');
+    await hideFrameworkDevTools(page);
+    const settingsDrawer = page.getByRole('dialog', { name: 'Configure talent settings' });
+    await expect(settingsDrawer).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Enable public marshmallow route')).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Custom domain')).toBeVisible();
+    await expect(settingsDrawer.getByText('visual.example.test', { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile talent settings route drawer');
+    await expect(page).toHaveScreenshot('private-talent-settings-mobile-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop organization structure keeps talents as inventory leaves, not expandable tree rows', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/organization-structure');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Visual Tenant' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Visual Tenant/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Tokyo Branch/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Visual Talent.*Talent/ })).toHaveCount(0);
+    await expect(page.getByText('Visual Talent').first()).toBeVisible();
+    await expect(page.getByText('/tokyo/visual')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop organization structure branch and leaf review');
+    await expect(page).toHaveScreenshot('private-organization-structure-desktop-leaf-review.png', {
       animations: 'disabled',
       fullPage: true,
     });

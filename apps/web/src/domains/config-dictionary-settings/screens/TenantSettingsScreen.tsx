@@ -29,9 +29,10 @@ import { buildTenantBusinessPath } from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
+  ActionDrawer,
+  ActionDrawerFooter,
   FormSection,
   GlassSurface,
-  HelpLink,
   SettingsLayout,
   StateView,
 } from '@/platform/ui';
@@ -163,6 +164,7 @@ export function TenantSettingsScreen({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -361,27 +363,6 @@ export function TenantSettingsScreen({
         activeSectionId={activeSectionId}
         ariaLabel={common.settingsSectionsAriaLabel}
         sectionNavId="tenant-settings-sections"
-        help={
-          <HelpLink
-            href="#tenant-settings-sections"
-            label={text({
-              en: 'Settings guide',
-              zh_HANS: '设置指引',
-              zh_HANT: '設定指引',
-              ja: '設定ガイド',
-              ko: '설정 가이드',
-              fr: 'Guide des paramètres',
-            })}
-            ariaLabel={text({
-              en: 'Jump to tenant settings sections',
-              zh_HANS: '跳转到租户设置分区',
-              zh_HANT: '跳轉到租戶設定分區',
-              ja: 'テナント設定セクションへ移動',
-              ko: '테넌트 설정 섹션으로 이동',
-              fr: 'Aller aux sections des paramètres du tenant',
-            })}
-          />
-        }
         onSectionChange={(sectionId) => {
           setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
         }}
@@ -516,83 +497,35 @@ export function TenantSettingsScreen({
               <FormSection
                 title={common.settings}
                 description={text(
-                  'Adjust tenant defaults for language and timezone.',
-                  '调整租户的语言和时区默认值。',
-                  'テナントの言語とタイムゾーン既定値を調整します。',
+                  'Review tenant defaults before opening the edit workflow.',
+                  '先查看租户默认值，再进入编辑流程。',
+                  '編集ワークフローを開く前にテナント既定値を確認します。',
                 )}
-              actions={(
-                <>
+                actions={(
                   <button
                     type="button"
-                    onClick={handleReset}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => setIsDefaultsDrawerOpen(true)}
+                    className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                   >
-                    {common.reset}
+                    {text('Edit defaults', '编辑默认值', '既定値を編集')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSave()}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSaving ? common.saving : text('Save tenant defaults', '保存租户默认值', 'テナント既定値を保存')}
-                  </button>
-                </>
-              )}
+                )}
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
-                  <select
-                    aria-label={text('Default language', '默认语言', '既定言語')}
-                    value={draft.defaultLanguage}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        defaultLanguage: event.target.value as SupportedUiLocale,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {LANGUAGE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-                  </p>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text('Default timezone', '默认时区', '既定タイムゾーン')}</span>
-                  <select
-                    aria-label={text('Default timezone', '默认时区', '既定タイムゾーン')}
-                    value={draft.timezone}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        timezone: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {TIMEZONE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-                  </p>
-                </label>
+                <FieldRow
+                  label={text('Default language', '默认语言', '既定言語')}
+                  value={initialDraft.defaultLanguage}
+                  hint={formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
+                />
+                <FieldRow
+                  label={text('Default timezone', '默认时区', '既定タイムゾーン')}
+                  value={initialDraft.timezone}
+                  hint={formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
+                />
               </div>
 
-              {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-              {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+              {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+              {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
             </FormSection>
           </GlassSurface>
         ) : null}
@@ -657,6 +590,113 @@ export function TenantSettingsScreen({
         ) : null}
         </div>
       </SettingsLayout>
+
+      <ActionDrawer
+        open={isDefaultsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSaving) {
+            handleReset();
+          }
+          setIsDefaultsDrawerOpen(open);
+        }}
+        title={text('Edit tenant defaults', '编辑租户默认值', 'テナント既定値を編集')}
+        description={text(
+          'Change the default language and timezone used by this tenant scope.',
+          '修改当前租户范围使用的默认语言和时区。',
+          'このテナントスコープで使用する既定言語とタイムゾーンを変更します。',
+        )}
+        size="lg"
+        closeButtonAriaLabel={text('Close tenant defaults editor', '关闭租户默认值编辑器', 'テナント既定値エディターを閉じる')}
+        footer={(
+          <ActionDrawerFooter
+            secondary={(
+              <button
+                type="button"
+                onClick={() => {
+                  handleReset();
+                  setIsDefaultsDrawerOpen(false);
+                }}
+                disabled={isSaving}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {text('Cancel', '取消', 'キャンセル')}
+              </button>
+            )}
+            primary={(
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={isSaving || !hasDirtyDraft}
+                className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? common.saving : text('Save tenant defaults', '保存租户默认值', 'テナント既定値を保存')}
+              </button>
+            )}
+          />
+        )}
+      >
+        <FormSection
+          title={common.settings}
+          description={text(
+            'Adjust tenant defaults for language and timezone.',
+            '调整租户的语言和时区默认值。',
+            'テナントの言語とタイムゾーン既定値を調整します。',
+          )}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
+              <select
+                aria-label={text('Default language', '默认语言', '既定言語')}
+                value={draft.defaultLanguage}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    defaultLanguage: event.target.value as SupportedUiLocale,
+                  }))
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              >
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
+              </p>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-900">{text('Default timezone', '默认时区', '既定タイムゾーン')}</span>
+              <select
+                aria-label={text('Default timezone', '默认时区', '既定タイムゾーン')}
+                value={draft.timezone}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    timezone: event.target.value,
+                  }))
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              >
+                {TIMEZONE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
+              </p>
+            </label>
+          </div>
+
+          {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+          {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+        </FormSection>
+      </ActionDrawer>
     </div>
   );
 }

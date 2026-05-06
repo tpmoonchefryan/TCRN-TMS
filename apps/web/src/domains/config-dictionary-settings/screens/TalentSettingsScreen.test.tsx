@@ -738,6 +738,8 @@ describe('TalentSettingsScreen', () => {
     expect((await screen.findAllByText(/Disabled here/i)).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
     });

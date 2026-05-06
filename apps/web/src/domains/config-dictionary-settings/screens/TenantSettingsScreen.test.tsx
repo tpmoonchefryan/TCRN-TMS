@@ -281,6 +281,8 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByText('Active customer')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
     });
@@ -341,6 +343,8 @@ describe('TenantSettingsScreen', () => {
 
     expect(await screen.findByRole('heading', { name: '租户设置' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    expect(screen.queryByRole('button', { name: '保存租户默认值' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));
     expect(await screen.findByRole('button', { name: '保存租户默认值' })).toBeInTheDocument();
   });
 

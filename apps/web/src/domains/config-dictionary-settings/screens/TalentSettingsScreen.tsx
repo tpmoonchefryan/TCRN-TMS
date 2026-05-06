@@ -68,7 +68,7 @@ import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
-import { ConfirmActionDialog, FormSection, GlassSurface, HelpLink, SettingsLayout, StateView } from '@/platform/ui';
+import { ActionDrawer, ActionDrawerFooter, ConfirmActionDialog, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
   data: T | null;
@@ -463,6 +463,7 @@ export function TalentSettingsScreen({
   const [lifecycleNotice, setLifecycleNotice] = useState<NoticeState | null>(null);
   const [lifecycleDialogState, setLifecycleDialogState] = useState<LifecycleDialogState | null>(null);
   const [lifecyclePending, setLifecyclePending] = useState(false);
+  const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
   const homepageRoutingRef = useRef<HTMLDivElement | null>(null);
   const marshmallowRoutingRef = useRef<HTMLDivElement | null>(null);
   const customDomainSslModeOptions = [
@@ -505,6 +506,14 @@ export function TalentSettingsScreen({
       return;
     }
 
+    setIsSettingsDrawerOpen(true);
+  }, [activeFocus, activeSectionId]);
+
+  useEffect(() => {
+    if (activeSectionId !== 'settings' || !activeFocus || !isSettingsDrawerOpen) {
+      return;
+    }
+
     const target = activeFocus === 'homepage-routing' ? homepageRoutingRef.current : marshmallowRoutingRef.current;
 
     if (!target) {
@@ -521,7 +530,7 @@ export function TalentSettingsScreen({
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [activeFocus, activeSectionId]);
+  }, [activeFocus, activeSectionId, isSettingsDrawerOpen]);
 
   function applySettingsRouteState(nextSectionId: TalentSettingsSection, nextFocus: TalentSettingsFocus | null = null) {
     setActiveSectionId(nextSectionId);
@@ -1396,27 +1405,6 @@ export function TalentSettingsScreen({
         activeSectionId={activeSectionId}
         ariaLabel={common.settingsSectionsAriaLabel}
         sectionNavId="talent-settings-sections"
-        help={
-          <HelpLink
-            href="#talent-settings-sections"
-            label={text({
-              en: 'Settings guide',
-              zh_HANS: '设置指引',
-              zh_HANT: '設定指引',
-              ja: '設定ガイド',
-              ko: '설정 가이드',
-              fr: 'Guide des paramètres',
-            })}
-            ariaLabel={text({
-              en: 'Jump to talent settings sections',
-              zh_HANS: '跳转到艺人设置分区',
-              zh_HANT: '跳轉到藝人設定分區',
-              ja: 'タレント設定セクションへ移動',
-              ko: '아티스트 설정 섹션으로 이동',
-              fr: 'Aller aux sections des paramètres du talent',
-            })}
-          />
-        }
         onSectionChange={(sectionId) => {
           applySettingsRouteState(
             sectionId as TalentSettingsSection,
@@ -1811,35 +1799,132 @@ export function TalentSettingsScreen({
         ) : null}
 
         {displayedSectionId === 'settings' ? (
-          <GlassSurface className="p-6">
-            <FormSection
-              title={common.settings}
+          <>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={common.settings}
+                description={text(
+                  'Review talent defaults and public routes before opening the configure workflow.',
+                  '先查看艺人默认值和公开路由，再进入配置流程。',
+                  '設定ワークフローを開く前に、タレント既定値と公開ルートを確認します。',
+                )}
+                actions={(
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsSettingsDrawerOpen(true)}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      {text('Edit defaults', '编辑默认值', '既定値を編集')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsSettingsDrawerOpen(true)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                    >
+                      {text('Configure routes', '配置公开路由', '公開ルートを設定')}
+                    </button>
+                  </div>
+                )}
+              >
+                <div className="grid gap-4 xl:grid-cols-3">
+                  <FieldRow
+                    label={text('Default language', '默认语言', '既定言語')}
+                    value={initialDraft.defaultLanguage}
+                    hint={inheritedSourceLabel(
+                      settings.inheritedFrom.defaultLanguage,
+                      talentOverrideLabel,
+                      overrideSet.has('defaultLanguage'),
+                    )}
+                  />
+                  <FieldRow
+                    label={text('Default timezone', '默认时区', '既定タイムゾーン')}
+                    value={initialDraft.timezone}
+                    hint={inheritedSourceLabel(settings.inheritedFrom.timezone, talentOverrideLabel, overrideSet.has('timezone'))}
+                  />
+                  <FieldRow
+                    label={text('Current Homepage URL', '当前主页 URL', '現在のホームページ URL')}
+                    value={sharedHomepageUrl}
+                    valueClassName="font-mono text-sm leading-7"
+                  />
+                  <FieldRow
+                    label={text('Custom Domain', '自定义域名', 'カスタムドメイン')}
+                    value={customDomainPanel.data?.customDomain || common.notConfigured}
+                    valueClassName="font-mono text-sm leading-7"
+                  />
+                  <FieldRow
+                    label={text('Public Marshmallow Route', '公开棉花糖路由', '公開マシュマロルート')}
+                    value={formatBoolean(
+                      marshmallowPanel.data?.isEnabled ?? detail.externalPagesDomain.marshmallow?.isEnabled,
+                      common.active,
+                      common.inactive,
+                    )}
+                  />
+                  <FieldRow
+                    label={text('Profile Store', '档案库', 'プロフィールストア')}
+                    value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
+                  />
+                </div>
+
+                {!isSettingsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+                {!isSettingsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+                {!isSettingsDrawerOpen && marshmallowSaveError ? <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p> : null}
+                {!isSettingsDrawerOpen && marshmallowSaveSuccess ? <p className="text-sm font-medium text-emerald-700">{marshmallowSaveSuccess}</p> : null}
+              </FormSection>
+            </GlassSurface>
+
+            <ActionDrawer
+              open={isSettingsDrawerOpen}
+              onOpenChange={(open) => {
+                if (!open && !isSaving) {
+                  handleReset();
+                }
+                setIsSettingsDrawerOpen(open);
+              }}
+              title={text('Configure talent settings', '配置艺人设置', 'タレント設定を構成')}
               description={text(
-                'Adjust talent defaults and public route settings.',
-                '调整艺人默认值和公开路由设置。',
-                'タレント既定値と公開ルート設定を調整します。',
+                'Edit scoped defaults, homepage routing, custom domains, and public marshmallow availability.',
+                '编辑范围默认值、主页路由、自定义域名和公开棉花糖可用性。',
+                'スコープ既定値、ホームページルート、カスタムドメイン、公開マシュマロの可用性を編集します。',
               )}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {common.reset}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSave()}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSaving ? common.saving : text('Save talent settings', '保存艺人设置', 'タレント設定を保存')}
-                  </button>
-                </>
-              }
+              size="xl"
+              closeButtonAriaLabel={text('Close talent settings drawer', '关闭艺人设置抽屉', 'タレント設定ドロワーを閉じる')}
+              footer={(
+                <ActionDrawerFooter
+                  secondary={(
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleReset();
+                        setIsSettingsDrawerOpen(false);
+                      }}
+                      disabled={isSaving}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {text('Cancel', '取消', 'キャンセル')}
+                    </button>
+                  )}
+                  primary={(
+                    <button
+                      type="button"
+                      onClick={() => void handleSave()}
+                      disabled={isSaving || !hasDirtyDraft}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isSaving ? common.saving : text('Save talent settings', '保存艺人设置', 'タレント設定を保存')}
+                    </button>
+                  )}
+                />
+              )}
             >
+              <FormSection
+                title={common.settings}
+                description={text(
+                  'Adjust talent defaults and public route settings.',
+                  '调整艺人默认值和公开路由设置。',
+                  'タレント既定値と公開ルート設定を調整します。',
+                )}
+              >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
@@ -2466,7 +2551,8 @@ export function TalentSettingsScreen({
               {marshmallowSaveError ? <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p> : null}
               {marshmallowSaveSuccess ? <p className="text-sm font-medium text-emerald-700">{marshmallowSaveSuccess}</p> : null}
             </FormSection>
-          </GlassSurface>
+            </ActionDrawer>
+          </>
         ) : null}
 
         {displayedSectionId === 'dictionary' ? (

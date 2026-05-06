@@ -372,6 +372,8 @@ describe('SubsidiarySettingsScreen', () => {
     expect(await screen.findByText('LOCAL_SEGMENT')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
     });
@@ -475,6 +477,8 @@ describe('SubsidiarySettingsScreen', () => {
 
     expect(await screen.findByRole('heading', { name: '东京分部 分目录设置' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    expect(screen.queryByRole('button', { name: '保存分目录设置' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));
     expect(await screen.findByRole('button', { name: '保存分目录设置' })).toBeInTheDocument();
   });
 

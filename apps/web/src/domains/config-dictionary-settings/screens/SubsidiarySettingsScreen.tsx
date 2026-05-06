@@ -27,7 +27,7 @@ import { ApiRequestError } from '@/platform/http/api';
 import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { FormSection, GlassSurface, HelpLink, SettingsLayout, StateView } from '@/platform/ui';
+import { ActionDrawer, ActionDrawerFooter, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
   data: T | null;
@@ -162,6 +162,7 @@ export function SubsidiarySettingsScreen({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -399,6 +400,7 @@ export function SubsidiarySettingsScreen({
   }
 
   return (
+    <>
     <SettingsLayout
       title={`${detail.name} ${text({
         en: 'Subsidiary Settings',
@@ -425,27 +427,6 @@ export function SubsidiarySettingsScreen({
       activeSectionId={activeSectionId}
       ariaLabel={common.settingsSectionsAriaLabel}
       sectionNavId="subsidiary-settings-sections"
-      help={
-        <HelpLink
-          href="#subsidiary-settings-sections"
-          label={text({
-            en: 'Settings guide',
-            zh_HANS: '设置指引',
-            zh_HANT: '設定指引',
-            ja: '設定ガイド',
-            ko: '설정 가이드',
-            fr: 'Guide des paramètres',
-          })}
-          ariaLabel={text({
-            en: 'Jump to subsidiary settings sections',
-            zh_HANS: '跳转到分目录设置分区',
-            zh_HANT: '跳轉到分目錄設定分區',
-            ja: '配下スコープ設定セクションへ移動',
-            ko: '하위 조직 설정 섹션으로 이동',
-            fr: 'Aller aux sections des paramètres du périmètre',
-          })}
-        />
-      }
       onSectionChange={(sectionId) => {
         setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
       }}
@@ -633,95 +614,45 @@ export function SubsidiarySettingsScreen({
           <FormSection
             title={common.settings}
             description={text({
-              en: 'Adjust subsidiary defaults for language and timezone.',
-              zh_HANS: '调整分目录的语言和时区默认值。',
-              zh_HANT: '調整分目錄的語言與時區預設值。',
-              ja: '配下スコープの言語とタイムゾーン既定値を調整します。',
-              ko: '하위 조직의 기본 언어와 시간대를 조정합니다.',
-              fr: 'Ajustez les valeurs par defaut de langue et de fuseau horaire pour ce perimetre.',
+              en: 'Review subsidiary defaults before opening the edit workflow.',
+              zh_HANS: '先查看分目录默认值，再进入编辑流程。',
+              zh_HANT: '先查看分目錄預設值，再進入編輯流程。',
+              ja: '編集ワークフローを開く前に配下スコープ既定値を確認します。',
+              ko: '편집 흐름을 열기 전에 하위 조직 기본값을 확인합니다.',
+              fr: 'Consultez les valeurs par defaut du perimetre avant d ouvrir l edition.',
             })}
               actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {common.reset}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSave()}
-                    disabled={isSaving || !hasDirtyDraft}
-                    className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSaving
-                      ? common.saving
-                      : text({
-                          en: 'Save subsidiary settings',
-                          zh_HANS: '保存分目录设置',
-                          zh_HANT: '儲存分目錄設定',
-                          ja: '配下スコープ設定を保存',
-                          ko: '하위 조직 설정 저장',
-                          fr: 'Enregistrer les parametres du perimetre',
-                        })}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => setIsDefaultsDrawerOpen(true)}
+                  className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  {text({
+                    en: 'Edit defaults',
+                    zh_HANS: '编辑默认值',
+                    zh_HANT: '編輯預設值',
+                    ja: '既定値を編集',
+                    ko: '기본값 편집',
+                    fr: 'Modifier les valeurs par defaut',
+                  })}
+                </button>
               }
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}</span>
-                  <select
-                    aria-label={text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}
-                    value={draft.defaultLanguage}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        defaultLanguage: event.target.value as SupportedUiLocale,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {LANGUAGE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-                  </p>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}</span>
-                  <select
-                    aria-label={text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}
-                    value={draft.timezone}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        timezone: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {TIMEZONE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-                  </p>
-                </label>
+                <FieldRow
+                  label={text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}
+                  value={initialDraft.defaultLanguage}
+                  hint={formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
+                />
+                <FieldRow
+                  label={text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}
+                  value={initialDraft.timezone}
+                  hint={formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
+                />
               </div>
 
-              {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-              {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+              {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+              {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
             </FormSection>
           </GlassSurface>
         </div>
@@ -825,5 +756,142 @@ export function SubsidiarySettingsScreen({
       ) : null}
       </div>
     </SettingsLayout>
+
+    <ActionDrawer
+      open={isDefaultsDrawerOpen}
+      onOpenChange={(open) => {
+        if (!open && !isSaving) {
+          handleReset();
+        }
+        setIsDefaultsDrawerOpen(open);
+      }}
+      title={text({
+        en: 'Edit subsidiary defaults',
+        zh_HANS: '编辑分目录默认值',
+        zh_HANT: '編輯分目錄預設值',
+        ja: '配下スコープ既定値を編集',
+        ko: '하위 조직 기본값 편집',
+        fr: 'Modifier les valeurs par defaut du perimetre',
+      })}
+      description={text({
+        en: 'Change the default language and timezone used by this subsidiary scope.',
+        zh_HANS: '修改当前分目录范围使用的默认语言和时区。',
+        zh_HANT: '修改目前分目錄範圍使用的預設語言與時區。',
+        ja: 'この配下スコープで使用する既定言語とタイムゾーンを変更します。',
+        ko: '이 하위 조직 범위에서 사용할 기본 언어와 시간대를 변경합니다.',
+        fr: 'Modifiez la langue et le fuseau horaire par defaut utilises par ce perimetre.',
+      })}
+      size="lg"
+      closeButtonAriaLabel={text({
+        en: 'Close subsidiary defaults editor',
+        zh_HANS: '关闭分目录默认值编辑器',
+        zh_HANT: '關閉分目錄預設值編輯器',
+        ja: '配下スコープ既定値エディターを閉じる',
+        ko: '하위 조직 기본값 편집기 닫기',
+        fr: 'Fermer l editeur des valeurs par defaut du perimetre',
+      })}
+      footer={(
+        <ActionDrawerFooter
+          secondary={(
+            <button
+              type="button"
+              onClick={() => {
+                handleReset();
+                setIsDefaultsDrawerOpen(false);
+              }}
+              disabled={isSaving}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+            </button>
+          )}
+          primary={(
+            <button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={isSaving || !hasDirtyDraft}
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving
+                ? common.saving
+                : text({
+                    en: 'Save subsidiary settings',
+                    zh_HANS: '保存分目录设置',
+                    zh_HANT: '儲存分目錄設定',
+                    ja: '配下スコープ設定を保存',
+                    ko: '하위 조직 설정 저장',
+                    fr: 'Enregistrer les parametres du perimetre',
+                  })}
+            </button>
+          )}
+        />
+      )}
+    >
+      <FormSection
+        title={common.settings}
+        description={text({
+          en: 'Adjust subsidiary defaults for language and timezone.',
+          zh_HANS: '调整分目录的语言和时区默认值。',
+          zh_HANT: '調整分目錄的語言與時區預設值。',
+          ja: '配下スコープの言語とタイムゾーン既定値を調整します。',
+          ko: '하위 조직의 기본 언어와 시간대를 조정합니다.',
+          fr: 'Ajustez les valeurs par defaut de langue et de fuseau horaire pour ce perimetre.',
+        })}
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-2">
+            <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}</span>
+            <select
+              aria-label={text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}
+              value={draft.defaultLanguage}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  defaultLanguage: event.target.value as SupportedUiLocale,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+            >
+              {LANGUAGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500">
+              {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
+            </p>
+          </label>
+
+          <label className="space-y-2">
+            <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}</span>
+            <select
+              aria-label={text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}
+              value={draft.timezone}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  timezone: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+            >
+              {TIMEZONE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500">
+              {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
+            </p>
+          </label>
+        </div>
+
+        {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+        {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+      </FormSection>
+    </ActionDrawer>
+    </>
   );
 }
