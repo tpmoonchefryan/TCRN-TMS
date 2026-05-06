@@ -5,7 +5,7 @@ import {
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import { Send, Sparkles } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type PublicMarshmallowConfigResponse,
@@ -32,12 +32,16 @@ interface NoticeState {
 
 type MarshmallowLocale = SupportedUiLocale | RuntimeLocale;
 
-function getErrorMessage(reason: unknown, fallback: string) {
+function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
-    return fallback;
+    return null;
   }
 
-  return reason.message && reason.message !== 'Request failed' ? reason.message : fallback;
+  return reason.message && reason.message !== 'Request failed' ? reason.message : null;
+}
+
+function getErrorMessage(reason: unknown, fallback: string) {
+  return getApiErrorMessage(reason) ?? fallback;
 }
 
 function isUnavailableError(reason: unknown) {
@@ -320,10 +324,15 @@ export function PublicMarshmallowScreen({
   const [fingerprint, setFingerprint] = useState(() => readOrCreateFingerprint(path));
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const messageFeedFailedRef = useRef(copy.publicMarshmallow.messageFeedFailed);
 
   useEffect(() => {
     setFingerprint(readOrCreateFingerprint(path));
   }, [path]);
+
+  useEffect(() => {
+    messageFeedFailedRef.current = copy.publicMarshmallow.messageFeedFailed;
+  }, [copy.publicMarshmallow.messageFeedFailed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -352,12 +361,7 @@ export function PublicMarshmallowScreen({
         setCursor(null);
         setHasMore(false);
         setIsUnavailable(unavailable);
-        setError(
-          getErrorMessage(
-            configResult.reason,
-            unavailable ? copy.publicMarshmallow.unavailableDescription : copy.publicMarshmallow.failedDescription,
-          ),
-        );
+        setError(getApiErrorMessage(configResult.reason));
         setLoading(false);
         return;
       }
@@ -375,7 +379,7 @@ export function PublicMarshmallowScreen({
         setHasMore(false);
         setNotice({
           tone: 'error',
-          message: getErrorMessage(messagesResult.reason, copy.publicMarshmallow.messageFeedFailed),
+          message: getApiErrorMessage(messagesResult.reason) ?? messageFeedFailedRef.current,
         });
       }
 
@@ -387,13 +391,7 @@ export function PublicMarshmallowScreen({
     return () => {
       cancelled = true;
     };
-  }, [
-    copy.publicMarshmallow.failedDescription,
-    copy.publicMarshmallow.messageFeedFailed,
-    copy.publicMarshmallow.unavailableDescription,
-    fingerprint,
-    path,
-  ]);
+  }, [fingerprint, path]);
 
   const theme = useMemo(() => deriveThemeSurface(config?.theme || {}), [config?.theme]);
   const localizedTerms = useMemo(

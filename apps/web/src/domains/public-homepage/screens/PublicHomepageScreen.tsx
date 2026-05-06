@@ -19,12 +19,12 @@ import { ApiRequestError } from '@/platform/http/api';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { GlassSurface, StateView } from '@/platform/ui';
 
-function getErrorMessage(reason: unknown, fallback: string) {
+function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
-    return fallback;
+    return null;
   }
 
-  return reason.message && reason.message !== 'Request failed' ? reason.message : fallback;
+  return reason.message && reason.message !== 'Request failed' ? reason.message : null;
 }
 
 function isUnavailableError(reason: unknown) {
@@ -70,12 +70,7 @@ export function PublicHomepageScreen({
         const unavailable = isUnavailableError(reason);
         setData(null);
         setIsUnavailable(unavailable);
-        setError(
-          getErrorMessage(
-            reason,
-            unavailable ? copy.publicHomepage.unavailableDescription : copy.publicHomepage.failedDescription,
-          ),
-        );
+        setError(getApiErrorMessage(reason));
       } finally {
         if (!cancelled) {
           setLoading(false);
