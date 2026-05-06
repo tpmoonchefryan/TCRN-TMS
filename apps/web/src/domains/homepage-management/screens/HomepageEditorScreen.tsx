@@ -102,6 +102,15 @@ interface BlockPropsEditorProps {
   onPropsChange: (nextProps: Record<string, unknown>) => void;
 }
 
+interface StructuredBlockEditorContext {
+  copy: HomepageEditorCopy;
+  mergeProps: (nextPartialProps: Record<string, unknown>) => void;
+  optionCopy: HomepageEditorCopy['structured']['options'];
+  props: Record<string, unknown>;
+}
+
+type StructuredBlockEditorAdapter = (context: Readonly<StructuredBlockEditorContext>) => ReactNode;
+
 interface FieldFrameProps {
   label: string;
   children: ReactNode;
@@ -260,6 +269,15 @@ const COMPONENT_CATALOG: ComponentCatalogEntry[] = [
   },
 ];
 
+const STRUCTURED_BLOCK_TYPES = [
+  'ImageGallery',
+  'LinkButton',
+  'MarshmallowWidget',
+  'ProfileCard',
+  'RichText',
+  'SocialLinks',
+] as const satisfies readonly StructuredBlockType[];
+
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
@@ -350,14 +368,7 @@ function asBoolean(value: unknown, fallback = false) {
 }
 
 function isStructuredBlockType(type: string): type is StructuredBlockType {
-  return (
-    type === 'ProfileCard' ||
-    type === 'SocialLinks' ||
-    type === 'ImageGallery' ||
-    type === 'RichText' ||
-    type === 'LinkButton' ||
-    type === 'MarshmallowWidget'
-  );
+  return (STRUCTURED_BLOCK_TYPES as readonly string[]).includes(type);
 }
 
 function insertTextAtSelection(
@@ -670,6 +681,215 @@ function StructuredToolbarButton({
   );
 }
 
+const STRUCTURED_BLOCK_EDITOR_REGISTRY = {
+  ProfileCard: ({ copy, mergeProps, optionCopy, props }) => (
+    <div className="grid gap-4 md:grid-cols-2">
+      <TextInput label={copy.structured.displayName} value={asString(props.displayName)} onChange={(value) => mergeProps({ displayName: value })} />
+      <TextInput label={copy.structured.imageUrl} value={asString(props.avatarUrl)} onChange={(value) => mergeProps({ avatarUrl: value })} type="url" />
+      <SelectInput label={copy.structured.shape} value={asString(props.avatarShape, 'circle')} options={['circle', 'rounded', 'square']} optionCopy={optionCopy} onChange={(value) => mergeProps({ avatarShape: value })} />
+      <SelectInput label={copy.structured.nameFontSize} value={asString(props.nameFontSize, 'large')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ nameFontSize: value })} />
+      <div className="md:col-span-2">
+        <TextAreaInput label={copy.structured.bio} value={asString(props.bio)} onChange={(value) => mergeProps({ bio: value })} />
+      </div>
+      <TextInput
+        label={copy.structured.bioMaxLines}
+        value={String(asNumber(props.bioMaxLines, 3))}
+        type="number"
+        min={1}
+        onChange={(value) => mergeProps({ bioMaxLines: Math.max(Number(value) || 1, 1) })}
+      />
+    </div>
+  ),
+  SocialLinks: ({ copy, mergeProps, optionCopy, props }) => {
+    const platforms = Array.isArray(props.platforms)
+      ? props.platforms.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+      : [];
+
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          <SelectInput label={copy.structured.style} value={asString(props.style, 'icon')} options={['icon', 'button', 'pill']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
+          <SelectInput label={copy.structured.layout} value={asString(props.layout, 'horizontal')} options={['horizontal', 'vertical', 'grid']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layout: value })} />
+          <SelectInput label={copy.structured.nameFontSize} value={asString(props.iconSize, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ iconSize: value })} />
+        </div>
+        <div className="space-y-3">
+          {platforms.map((platform, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="grid gap-3 md:grid-cols-[1fr_1.2fr_1fr_auto] md:items-end">
+                <TextInput
+                  label={copy.structured.platformCode}
+                  value={asString(platform.platformCode)}
+                  onChange={(value) => {
+                    const nextPlatforms = [...platforms];
+                    nextPlatforms[index] = { ...platform, platformCode: value };
+                    mergeProps({ platforms: nextPlatforms });
+                  }}
+                />
+                <TextInput
+                  label={copy.structured.url}
+                  value={asString(platform.url)}
+                  type="url"
+                  onChange={(value) => {
+                    const nextPlatforms = [...platforms];
+                    nextPlatforms[index] = { ...platform, url: value };
+                    mergeProps({ platforms: nextPlatforms });
+                  }}
+                />
+                <TextInput
+                  label={copy.structured.label}
+                  value={asString(platform.label)}
+                  onChange={(value) => {
+                    const nextPlatforms = [...platforms];
+                    nextPlatforms[index] = { ...platform, label: value };
+                    mergeProps({ platforms: nextPlatforms });
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => mergeProps({ platforms: platforms.filter((_, platformIndex) => platformIndex !== index) })}
+                  aria-label={copy.structured.removeSocialLink(index + 1)}
+                  className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => mergeProps({ platforms: [...platforms, { platformCode: '', url: '', label: '' }] })}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <Plus className="h-4 w-4" />
+            {copy.structured.addSocialLink}
+          </button>
+        </div>
+      </div>
+    );
+  },
+  ImageGallery: ({ copy, mergeProps, optionCopy, props }) => {
+    const images = Array.isArray(props.images)
+      ? props.images.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+      : [];
+
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          <SelectInput label={copy.structured.layoutMode} value={asString(props.layoutMode, 'grid')} options={['carousel', 'grid', 'masonry']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layoutMode: value })} />
+          <SelectInput label={copy.structured.columns} value={String(asNumber(props.columns, 3))} options={['2', '3', '4']} optionCopy={optionCopy} onChange={(value) => mergeProps({ columns: Number(value) })} />
+          <SelectInput label={copy.structured.gap} value={asString(props.gap, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ gap: value })} />
+        </div>
+        <CheckboxInput label={copy.structured.showCaptions} checked={asBoolean(props.showCaptions)} onChange={(value) => mergeProps({ showCaptions: value })} />
+        <div className="space-y-3">
+          {images.map((image, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
+                <TextInput
+                  label={copy.structured.imageUrl}
+                  value={asString(image.url)}
+                  type="url"
+                  onChange={(value) => {
+                    const nextImages = [...images];
+                    nextImages[index] = { ...image, url: value };
+                    mergeProps({ images: nextImages });
+                  }}
+                />
+                <TextInput
+                  label={copy.structured.imageAlt}
+                  value={asString(image.alt)}
+                  onChange={(value) => {
+                    const nextImages = [...images];
+                    nextImages[index] = { ...image, alt: value };
+                    mergeProps({ images: nextImages });
+                  }}
+                />
+                <TextInput
+                  label={copy.structured.caption}
+                  value={asString(image.caption)}
+                  onChange={(value) => {
+                    const nextImages = [...images];
+                    nextImages[index] = { ...image, caption: value };
+                    mergeProps({ images: nextImages });
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => mergeProps({ images: images.filter((_, imageIndex) => imageIndex !== index) })}
+                  aria-label={copy.structured.removeImage(index + 1)}
+                  className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => mergeProps({ images: [...images, { url: '', alt: '', caption: '' }] })}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <Plus className="h-4 w-4" />
+            {copy.structured.addImage}
+          </button>
+        </div>
+      </div>
+    );
+  },
+  RichText: ({ copy, mergeProps, optionCopy, props }) => {
+    const contentHtml = asString(props.contentHtml);
+    const applyRichTextPattern = (prefix: string, suffix = '') => {
+      mergeProps({ contentHtml: insertTextAtSelection(contentHtml, prefix, suffix) });
+    };
+
+    return (
+      <div className="space-y-4">
+        <SelectInput label={copy.structured.textAlign} value={asString(props.textAlign, 'left')} options={['left', 'center', 'right']} optionCopy={optionCopy} onChange={(value) => mergeProps({ textAlign: value })} />
+        <div className="flex flex-wrap gap-2" role="toolbar" aria-label={copy.structured.content}>
+          <StructuredToolbarButton label={copy.structured.bold} onClick={() => applyRichTextPattern('<strong>', '</strong>')}>
+            <Bold className="h-4 w-4" />
+          </StructuredToolbarButton>
+          <StructuredToolbarButton label={copy.structured.italic} onClick={() => applyRichTextPattern('<em>', '</em>')}>
+            <Italic className="h-4 w-4" />
+          </StructuredToolbarButton>
+          <StructuredToolbarButton label={copy.structured.link} onClick={() => applyRichTextPattern('<a href="">', '</a>')}>
+            <Link2 className="h-4 w-4" />
+          </StructuredToolbarButton>
+          <StructuredToolbarButton label={copy.structured.bulletList} onClick={() => applyRichTextPattern('<ul><li>', '</li></ul>')}>
+            <List className="h-4 w-4" />
+          </StructuredToolbarButton>
+          <StructuredToolbarButton label={copy.structured.numberedList} onClick={() => applyRichTextPattern('<ol><li>', '</li></ol>')}>
+            <ListOrdered className="h-4 w-4" />
+          </StructuredToolbarButton>
+        </div>
+        <TextAreaInput label={copy.structured.content} value={contentHtml} onChange={(value) => mergeProps({ contentHtml: value })} rows={8} />
+      </div>
+    );
+  },
+  LinkButton: ({ copy, mergeProps, optionCopy, props }) => (
+    <div className="grid gap-4 md:grid-cols-2">
+      <TextInput label={copy.structured.label} value={asString(props.label)} onChange={(value) => mergeProps({ label: value })} />
+      <TextInput label={copy.structured.url} value={asString(props.url)} type="url" onChange={(value) => mergeProps({ url: value })} />
+      <SelectInput label={copy.structured.style} value={asString(props.style, 'primary')} options={['primary', 'secondary', 'outline', 'ghost']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
+      <div className="flex items-end">
+        <CheckboxInput label={copy.structured.fullWidth} checked={asBoolean(props.fullWidth)} onChange={(value) => mergeProps({ fullWidth: value })} />
+      </div>
+    </div>
+  ),
+  MarshmallowWidget: ({ copy, mergeProps, optionCopy, props }) => (
+    <div className="grid gap-4 md:grid-cols-2">
+      <SelectInput label={copy.structured.displayMode} value={asString(props.displayMode, 'compact')} options={['compact', 'full']} optionCopy={optionCopy} onChange={(value) => mergeProps({ displayMode: value })} />
+      <TextInput
+        label={copy.structured.showRecentCount}
+        value={String(asNumber(props.showRecentCount, 3))}
+        type="number"
+        min={0}
+        onChange={(value) => mergeProps({ showRecentCount: Math.max(Number(value) || 0, 0) })}
+      />
+      <CheckboxInput label={copy.structured.showSubmitButton} checked={asBoolean(props.showSubmitButton, true)} onChange={(value) => mergeProps({ showSubmitButton: value })} />
+    </div>
+  ),
+} satisfies Record<StructuredBlockType, StructuredBlockEditorAdapter>;
+
 function BlockPropsEditor({
   component,
   copy,
@@ -691,219 +911,16 @@ function BlockPropsEditor({
   }
 
   function renderStructuredFields() {
-    switch (component.type) {
-      case 'ProfileCard':
-        return (
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextInput label={copy.structured.displayName} value={asString(props.displayName)} onChange={(value) => mergeProps({ displayName: value })} />
-            <TextInput label={copy.structured.imageUrl} value={asString(props.avatarUrl)} onChange={(value) => mergeProps({ avatarUrl: value })} type="url" />
-            <SelectInput label={copy.structured.shape} value={asString(props.avatarShape, 'circle')} options={['circle', 'rounded', 'square']} optionCopy={optionCopy} onChange={(value) => mergeProps({ avatarShape: value })} />
-            <SelectInput label={copy.structured.nameFontSize} value={asString(props.nameFontSize, 'large')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ nameFontSize: value })} />
-            <div className="md:col-span-2">
-              <TextAreaInput label={copy.structured.bio} value={asString(props.bio)} onChange={(value) => mergeProps({ bio: value })} />
-            </div>
-            <TextInput
-              label={copy.structured.bioMaxLines}
-              value={String(asNumber(props.bioMaxLines, 3))}
-              type="number"
-              min={1}
-              onChange={(value) => mergeProps({ bioMaxLines: Math.max(Number(value) || 1, 1) })}
-            />
-          </div>
-        );
-      case 'SocialLinks': {
-        const platforms = Array.isArray(props.platforms)
-          ? props.platforms.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
-          : [];
-
-        return (
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <SelectInput label={copy.structured.style} value={asString(props.style, 'icon')} options={['icon', 'button', 'pill']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
-              <SelectInput label={copy.structured.layout} value={asString(props.layout, 'horizontal')} options={['horizontal', 'vertical', 'grid']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layout: value })} />
-              <SelectInput label={copy.structured.nameFontSize} value={asString(props.iconSize, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ iconSize: value })} />
-            </div>
-            <div className="space-y-3">
-              {platforms.map((platform, index) => (
-                <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="grid gap-3 md:grid-cols-[1fr_1.2fr_1fr_auto] md:items-end">
-                    <TextInput
-                      label={copy.structured.platformCode}
-                      value={asString(platform.platformCode)}
-                      onChange={(value) => {
-                        const nextPlatforms = [...platforms];
-                        nextPlatforms[index] = { ...platform, platformCode: value };
-                        mergeProps({ platforms: nextPlatforms });
-                      }}
-                    />
-                    <TextInput
-                      label={copy.structured.url}
-                      value={asString(platform.url)}
-                      type="url"
-                      onChange={(value) => {
-                        const nextPlatforms = [...platforms];
-                        nextPlatforms[index] = { ...platform, url: value };
-                        mergeProps({ platforms: nextPlatforms });
-                      }}
-                    />
-                    <TextInput
-                      label={copy.structured.label}
-                      value={asString(platform.label)}
-                      onChange={(value) => {
-                        const nextPlatforms = [...platforms];
-                        nextPlatforms[index] = { ...platform, label: value };
-                        mergeProps({ platforms: nextPlatforms });
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => mergeProps({ platforms: platforms.filter((_, platformIndex) => platformIndex !== index) })}
-                      aria-label={copy.structured.removeSocialLink(index + 1)}
-                      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => mergeProps({ platforms: [...platforms, { platformCode: '', url: '', label: '' }] })}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <Plus className="h-4 w-4" />
-                {copy.structured.addSocialLink}
-              </button>
-            </div>
-          </div>
-        );
-      }
-      case 'ImageGallery': {
-        const images = Array.isArray(props.images)
-          ? props.images.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
-          : [];
-
-        return (
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <SelectInput label={copy.structured.layoutMode} value={asString(props.layoutMode, 'grid')} options={['carousel', 'grid', 'masonry']} optionCopy={optionCopy} onChange={(value) => mergeProps({ layoutMode: value })} />
-              <SelectInput label={copy.structured.columns} value={String(asNumber(props.columns, 3))} options={['2', '3', '4']} optionCopy={optionCopy} onChange={(value) => mergeProps({ columns: Number(value) })} />
-              <SelectInput label={copy.structured.gap} value={asString(props.gap, 'medium')} options={['small', 'medium', 'large']} optionCopy={optionCopy} onChange={(value) => mergeProps({ gap: value })} />
-            </div>
-            <CheckboxInput label={copy.structured.showCaptions} checked={asBoolean(props.showCaptions)} onChange={(value) => mergeProps({ showCaptions: value })} />
-            <div className="space-y-3">
-              {images.map((image, index) => (
-                <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
-                    <TextInput
-                      label={copy.structured.imageUrl}
-                      value={asString(image.url)}
-                      type="url"
-                      onChange={(value) => {
-                        const nextImages = [...images];
-                        nextImages[index] = { ...image, url: value };
-                        mergeProps({ images: nextImages });
-                      }}
-                    />
-                    <TextInput
-                      label={copy.structured.imageAlt}
-                      value={asString(image.alt)}
-                      onChange={(value) => {
-                        const nextImages = [...images];
-                        nextImages[index] = { ...image, alt: value };
-                        mergeProps({ images: nextImages });
-                      }}
-                    />
-                    <TextInput
-                      label={copy.structured.caption}
-                      value={asString(image.caption)}
-                      onChange={(value) => {
-                        const nextImages = [...images];
-                        nextImages[index] = { ...image, caption: value };
-                        mergeProps({ images: nextImages });
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => mergeProps({ images: images.filter((_, imageIndex) => imageIndex !== index) })}
-                      aria-label={copy.structured.removeImage(index + 1)}
-                      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-3 py-2 text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => mergeProps({ images: [...images, { url: '', alt: '', caption: '' }] })}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <Plus className="h-4 w-4" />
-                {copy.structured.addImage}
-              </button>
-            </div>
-          </div>
-        );
-      }
-      case 'RichText': {
-        const contentHtml = asString(props.contentHtml);
-        const applyRichTextPattern = (prefix: string, suffix = '') => {
-          mergeProps({ contentHtml: insertTextAtSelection(contentHtml, prefix, suffix) });
-        };
-
-        return (
-          <div className="space-y-4">
-            <SelectInput label={copy.structured.textAlign} value={asString(props.textAlign, 'left')} options={['left', 'center', 'right']} optionCopy={optionCopy} onChange={(value) => mergeProps({ textAlign: value })} />
-            <div className="flex flex-wrap gap-2" role="toolbar" aria-label={copy.structured.content}>
-              <StructuredToolbarButton label={copy.structured.bold} onClick={() => applyRichTextPattern('<strong>', '</strong>')}>
-                <Bold className="h-4 w-4" />
-              </StructuredToolbarButton>
-              <StructuredToolbarButton label={copy.structured.italic} onClick={() => applyRichTextPattern('<em>', '</em>')}>
-                <Italic className="h-4 w-4" />
-              </StructuredToolbarButton>
-              <StructuredToolbarButton label={copy.structured.link} onClick={() => applyRichTextPattern('<a href="">', '</a>')}>
-                <Link2 className="h-4 w-4" />
-              </StructuredToolbarButton>
-              <StructuredToolbarButton label={copy.structured.bulletList} onClick={() => applyRichTextPattern('<ul><li>', '</li></ul>')}>
-                <List className="h-4 w-4" />
-              </StructuredToolbarButton>
-              <StructuredToolbarButton label={copy.structured.numberedList} onClick={() => applyRichTextPattern('<ol><li>', '</li></ol>')}>
-                <ListOrdered className="h-4 w-4" />
-              </StructuredToolbarButton>
-            </div>
-            <TextAreaInput label={copy.structured.content} value={contentHtml} onChange={(value) => mergeProps({ contentHtml: value })} rows={8} />
-          </div>
-        );
-      }
-      case 'LinkButton':
-        return (
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextInput label={copy.structured.label} value={asString(props.label)} onChange={(value) => mergeProps({ label: value })} />
-            <TextInput label={copy.structured.url} value={asString(props.url)} type="url" onChange={(value) => mergeProps({ url: value })} />
-            <SelectInput label={copy.structured.style} value={asString(props.style, 'primary')} options={['primary', 'secondary', 'outline', 'ghost']} optionCopy={optionCopy} onChange={(value) => mergeProps({ style: value })} />
-            <div className="flex items-end">
-              <CheckboxInput label={copy.structured.fullWidth} checked={asBoolean(props.fullWidth)} onChange={(value) => mergeProps({ fullWidth: value })} />
-            </div>
-          </div>
-        );
-      case 'MarshmallowWidget':
-        return (
-          <div className="grid gap-4 md:grid-cols-2">
-            <SelectInput label={copy.structured.displayMode} value={asString(props.displayMode, 'compact')} options={['compact', 'full']} optionCopy={optionCopy} onChange={(value) => mergeProps({ displayMode: value })} />
-            <TextInput
-              label={copy.structured.showRecentCount}
-              value={String(asNumber(props.showRecentCount, 3))}
-              type="number"
-              min={0}
-              onChange={(value) => mergeProps({ showRecentCount: Math.max(Number(value) || 0, 0) })}
-            />
-            <CheckboxInput label={copy.structured.showSubmitButton} checked={asBoolean(props.showSubmitButton, true)} onChange={(value) => mergeProps({ showSubmitButton: value })} />
-          </div>
-        );
-      default:
-        return null;
+    if (!isStructuredBlockType(component.type)) {
+      return null;
     }
+
+    return STRUCTURED_BLOCK_EDITOR_REGISTRY[component.type]({
+      copy,
+      mergeProps,
+      optionCopy,
+      props,
+    });
   }
 
   if (!isStructuredBlockType(component.type)) {
