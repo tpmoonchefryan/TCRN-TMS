@@ -15,6 +15,7 @@ import {
     Max,
     MaxLength,
     Min,
+    ValidateNested,
 } from 'class-validator';
 
 // =============================================================================
@@ -49,6 +50,52 @@ export enum IpRuleScope {
   ADMIN = 'admin',
   PUBLIC = 'public',
   API = 'api',
+}
+
+export enum BlocklistScopeCategory {
+  TENANT = 'tenant',
+  SUBSIDIARY = 'subsidiary',
+  TALENT = 'talent',
+  PROFILE_STORE = 'profile-store',
+  SURFACE = 'surface',
+}
+
+export enum BlocklistSurfaceScope {
+  MARSHMALLOW = 'marshmallow',
+}
+
+export class BlocklistStructuredScopeEntryDto {
+  @ApiProperty({
+    description: 'Structured scope category. Only surface entries affect the current runtime matcher.',
+    enum: BlocklistScopeCategory,
+    example: BlocklistScopeCategory.SURFACE,
+  })
+  @IsEnum(BlocklistScopeCategory)
+  category!: BlocklistScopeCategory;
+
+  @ApiPropertyOptional({
+    description: 'Runtime surface token. Required when category=surface.',
+    enum: BlocklistSurfaceScope,
+    example: BlocklistSurfaceScope.MARSHMALLOW,
+  })
+  @IsOptional()
+  @IsEnum(BlocklistSurfaceScope)
+  value?: BlocklistSurfaceScope;
+}
+
+export class BlocklistStructuredScopeDto {
+  @ApiProperty({
+    description: 'Allow-list structured scope entries. Owner categories are descriptive; surface entries normalize to scope[].',
+    type: [BlocklistStructuredScopeEntryDto],
+    example: [
+      { category: BlocklistScopeCategory.TENANT },
+      { category: BlocklistScopeCategory.SURFACE, value: BlocklistSurfaceScope.MARSHMALLOW },
+    ],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BlocklistStructuredScopeEntryDto)
+  entries!: BlocklistStructuredScopeEntryDto[];
 }
 
 // =============================================================================
@@ -199,7 +246,16 @@ export class CreateBlocklistDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  scope?: string[] = ['marshmallow'];
+  scope?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
+    type: BlocklistStructuredScopeDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlocklistStructuredScopeDto)
+  structuredScope?: BlocklistStructuredScopeDto;
 
   @IsOptional()
   @IsBoolean()
@@ -281,6 +337,15 @@ export class UpdateBlocklistDto {
   @IsArray()
   @IsString({ each: true })
   scope?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
+    type: BlocklistStructuredScopeDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlocklistStructuredScopeDto)
+  structuredScope?: BlocklistStructuredScopeDto;
 
   @IsOptional()
   @IsBoolean()

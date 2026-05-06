@@ -34,9 +34,19 @@ const BLOCKLIST_ENTRY_EXAMPLE = {
   description: 'Masks prohibited words in public messages',
   category: 'profanity',
   severity: 'medium',
-  action: 'mask',
+  action: 'reject',
   replacement: '***',
   scope: ['marshmallow'],
+  scopeSummary: {
+    tokens: ['tenant', 'marshmallow'],
+    structuredScope: {
+      entries: [
+        { category: 'tenant' },
+        { category: 'surface', value: 'marshmallow' },
+      ],
+    },
+    unsupported: [],
+  },
   inherit: true,
   sortOrder: 0,
   isActive: true,
@@ -69,6 +79,50 @@ const BLOCKLIST_ENTRY_SCHEMA = {
     action: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.action },
     replacement: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.replacement },
     scope: { type: 'array', items: { type: 'string' }, example: BLOCKLIST_ENTRY_EXAMPLE.scope },
+    scopeSummary: {
+      type: 'object',
+      properties: {
+        tokens: {
+          type: 'array',
+          items: { type: 'string' },
+          example: BLOCKLIST_ENTRY_EXAMPLE.scopeSummary.tokens,
+        },
+        structuredScope: {
+          type: 'object',
+          properties: {
+            entries: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  category: {
+                    type: 'string',
+                    enum: ['tenant', 'subsidiary', 'talent', 'profile-store', 'surface'],
+                    example: 'surface',
+                  },
+                  value: {
+                    type: 'string',
+                    enum: ['marshmallow'],
+                    nullable: true,
+                    example: 'marshmallow',
+                  },
+                },
+                required: ['category'],
+              },
+              example: BLOCKLIST_ENTRY_EXAMPLE.scopeSummary.structuredScope.entries,
+            },
+          },
+          required: ['entries'],
+        },
+        unsupported: {
+          type: 'array',
+          items: { type: 'string' },
+          example: BLOCKLIST_ENTRY_EXAMPLE.scopeSummary.unsupported,
+        },
+      },
+      required: ['tokens', 'structuredScope', 'unsupported'],
+      example: BLOCKLIST_ENTRY_EXAMPLE.scopeSummary,
+    },
     inherit: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.inherit },
     sortOrder: { type: 'integer', example: BLOCKLIST_ENTRY_EXAMPLE.sortOrder },
     isActive: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.isActive },
@@ -94,6 +148,7 @@ const BLOCKLIST_ENTRY_SCHEMA = {
     'action',
     'replacement',
     'scope',
+    'scopeSummary',
     'inherit',
     'sortOrder',
     'isActive',

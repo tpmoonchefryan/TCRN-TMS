@@ -146,6 +146,13 @@ describe('SecurityManagementScreen', () => {
             action: 'reject',
             replacement: '***',
             scope: ['marshmallow'],
+            scopeSummary: {
+              tokens: ['marshmallow'],
+              structuredScope: {
+                entries: [{ category: 'surface', value: 'marshmallow' }],
+              },
+              unsupported: [],
+            },
             inherit: true,
             sortOrder: 0,
             isActive: true,
@@ -303,9 +310,15 @@ describe('SecurityManagementScreen', () => {
 
     const ruleDrawer = await screen.findByRole('dialog', { name: 'Create Blocklist Rule' });
     expect(within(ruleDrawer).queryByLabelText('Scopes')).not.toBeInTheDocument();
+    expect(within(ruleDrawer).getByText('Structured scope builder')).toBeInTheDocument();
+    expect(within(ruleDrawer).getByLabelText('Tenant')).toBeChecked();
+    expect(within(ruleDrawer).getByLabelText('Marshmallow surface')).toBeChecked();
 
     fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Edit advanced scopes' }));
     expect(within(ruleDrawer).getByLabelText('Scopes')).toBeInTheDocument();
+    fireEvent.change(within(ruleDrawer).getByLabelText('Scopes'), {
+      target: { value: 'legacy-surface' },
+    });
 
     fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Translation management' }));
     const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });
@@ -348,6 +361,13 @@ describe('SecurityManagementScreen', () => {
             zh_HANS: '敏感词规则',
             ko: '비속어 규칙',
           },
+          structuredScope: {
+            entries: [
+              { category: 'tenant' },
+              { category: 'surface', value: 'marshmallow' },
+            ],
+          },
+          scope: ['legacy-surface'],
         }),
       );
     });
@@ -606,7 +626,7 @@ describe('SecurityManagementScreen', () => {
       expect(screen.queryByRole('dialog', { name: 'Create IP Rule' })).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Security Activity' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith(
@@ -614,6 +634,9 @@ describe('SecurityManagementScreen', () => {
       );
     });
 
+    expect(await screen.findByText('Security Overview')).toBeInTheDocument();
+    expect(await screen.findByText('Active blocks')).toBeInTheDocument();
+    expect(await screen.findByText('Read-only policy probe')).toBeInTheDocument();
     expect(await screen.findByText('Device fingerprint')).toBeInTheDocument();
     expect(await screen.findByText('abc123')).toBeInTheDocument();
     expect(await screen.findByText('Primary Store')).toBeInTheDocument();

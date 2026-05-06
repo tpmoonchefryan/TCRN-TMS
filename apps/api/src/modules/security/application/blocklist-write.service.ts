@@ -6,11 +6,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import {
+  type BlocklistStructuredScopeInput,
+  ErrorCodes,
+  normalizeBlocklistScopeInput,
+  type RequestContext,
+} from '@tcrn/shared';
 
+import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
-import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import {
   buildBlocklistCreateLogPayload,
   buildBlocklistUpdateData,
@@ -38,9 +43,11 @@ export class BlocklistWriteService {
   ) {}
 
   async create(dto: CreateBlocklistDto, context: RequestContext) {
+    const normalizedDto = this.normalizeCreateDto(dto);
+
     if (
-      dto.patternType === 'regex' &&
-      !isValidBlocklistRegexPattern(dto.pattern)
+      normalizedDto.patternType === 'regex' &&
+      !isValidBlocklistRegexPattern(normalizedDto.pattern)
     ) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
@@ -56,7 +63,7 @@ export class BlocklistWriteService {
         tx,
         tenantSchema,
         {
-          ...dto,
+          ...normalizedDto,
           extraData: translationPayload.extraData,
           nameEn: translationPayload.nameEn,
           nameJa: translationPayload.nameJa,
@@ -71,8 +78,8 @@ export class BlocklistWriteService {
           action: 'create',
           objectType: 'blocklist_entry',
           objectId: newEntry.id,
-          objectName: dto.nameEn,
-          newValue: buildBlocklistCreateLogPayload(dto),
+          objectName: normalizedDto.nameEn,
+          newValue: buildBlocklistCreateLogPayload(normalizedDto),
         },
         context,
       );
@@ -121,14 +128,15 @@ export class BlocklistWriteService {
     }
 
     const prisma = this.databaseService.getPrisma();
-    const translationPayload = buildManagedNameTranslationPayload(dto, entry);
+    const normalizedDto = this.normalizeUpdateDto(dto);
+    const translationPayload = buildManagedNameTranslationPayload(normalizedDto, entry);
     await prisma.$transaction(async (tx) => {
       await this.blocklistWriteRepository.update(
         tx,
         tenantSchema,
         id,
         {
-          ...buildBlocklistUpdateData(dto),
+          ...buildBlocklistUpdateData(normalizedDto),
           extraData: translationPayload.extraData,
           nameEn: translationPayload.nameEn,
           nameJa: translationPayload.nameJa,
@@ -151,6 +159,48 @@ export class BlocklistWriteService {
 
     await this.matcherService.rebuildMatcher();
     return this.blocklistReadService.findById(tenantSchema, id);
+  }
+
+  private normalizeCreateDto(dto: CreateBlocklistDto): CreateBlocklistDto {
+    return {
+      ...dto,
+      structuredScope: undefined,
+      scope: this.normalizeScope(dto.scope, dto.structuredScope),
+    };
+  }
+
+  private normalizeUpdateDto(dto: UpdateBlocklistDto): UpdateBlocklistDto {
+    if (dto.scope === undefined && dto.structuredScope === undefined) {
+      return {
+        ...dto,
+        structuredScope: undefined,
+      };
+    }
+
+    return {
+      ...dto,
+      structuredScope: undefined,
+      scope: this.normalizeScope(dto.scope, dto.structuredScope),
+    };
+  }
+
+  private normalizeScope(
+    scope: string[] | undefined,
+    structuredScope: CreateBlocklistDto['structuredScope'] | UpdateBlocklistDto['structuredScope'],
+  ): string[] {
+    try {
+      return normalizeBlocklistScopeInput({
+        scope,
+        structuredScope: structuredScope as BlocklistStructuredScopeInput | undefined,
+      });
+    } catch (error) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: error instanceof Error
+          ? error.message
+          : 'Invalid blocklist structured scope',
+      });
+    }
   }
 
   async delete(id: string, context: RequestContext) {

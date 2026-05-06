@@ -35,6 +35,7 @@ export const isValidBlocklistRegexPattern = (pattern: string): boolean => {
 export const buildBlocklistCreateLogPayload = (dto: CreateBlocklistDto) => ({
   pattern: dto.pattern,
   patternType: dto.patternType,
+  scope: dto.scope,
 });
 
 export const buildBlocklistUpdateData = (dto: UpdateBlocklistDto) => {

@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { summarizeBlocklistScopes } from '@tcrn/shared';
+
 import { decorateManagedNameTranslations } from '../../../platform/persistence/managed-name-translations';
 import type { BlocklistListQueryDto } from '../dto/security.dto';
 
@@ -39,6 +41,7 @@ export interface BlocklistListRow {
   action: string;
   replacement: string;
   scope: string[];
+  scopeSummary?: ReturnType<typeof summarizeBlocklistScopes>;
   inherit: boolean;
   sortOrder: number;
   isActive: boolean;
@@ -97,6 +100,7 @@ export interface BlocklistEntryWithMeta {
   action: string;
   replacement: string;
   scope: string[];
+  scopeSummary: ReturnType<typeof summarizeBlocklistScopes>;
   inherit: boolean;
   sortOrder: number;
   isActive: boolean;
@@ -138,6 +142,7 @@ export const buildBlocklistListItem = (
 
   return {
     ...decoratedRow,
+    scopeSummary: summarizeBlocklistScopes(row.scope),
     lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     isInherited,
@@ -151,6 +156,7 @@ export const buildBlocklistDetailResponse = (row: BlocklistDetailRow) => {
 
   return {
     ...decoratedRow,
+    scopeSummary: summarizeBlocklistScopes(row.scope),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,

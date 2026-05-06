@@ -1,7 +1,16 @@
 'use client';
 
 import type { SupportedUiLocale } from '@tcrn/shared';
-import { Activity, Fingerprint, Languages, ShieldCheck, ShieldEllipsis, Trash2 } from 'lucide-react';
+import {
+  Activity,
+  Fingerprint,
+  Languages,
+  SearchCheck,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldEllipsis,
+  Trash2,
+} from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,6 +25,8 @@ import {
   type BlocklistEntryRecord,
   type BlocklistPatternType,
   type BlocklistSeverity,
+  type BlocklistStructuredScope,
+  type BlocklistStructuredScopeEntry,
   checkIpAccess,
   createBlocklistEntry,
   createExternalBlocklistEntry,
@@ -162,6 +173,9 @@ interface BlocklistDraft {
   severity: BlocklistSeverity;
   action: BlocklistAction;
   replacement: string;
+  structuredScopeCategories: StructuredOwnerScopeCategory[];
+  surfaceScopes: Array<Extract<BlocklistStructuredScopeEntry, { category: 'surface' }>['value']>;
+  unsupportedScopeTokens: string[];
   scopeCsv: string;
   inherit: boolean;
   isForceUse: boolean;
@@ -196,6 +210,15 @@ interface IpRuleDraft {
 }
 
 type ScopedSecurityScopeType = Exclude<SecurityScopeType, 'tenant'>;
+type StructuredOwnerScopeCategory = Exclude<BlocklistStructuredScopeEntry['category'], 'surface'>;
+
+const STRUCTURED_SCOPE_CATEGORY_TOKENS: readonly StructuredOwnerScopeCategory[] = [
+  'tenant',
+  'subsidiary',
+  'talent',
+  'profile-store',
+];
+const SURFACE_SCOPE_TOKENS = ['marshmallow'] as const;
 
 interface OrganizationScopeOption {
   id: string;
@@ -360,7 +383,10 @@ function createEmptyBlocklistDraft(scopeType: SecurityScopeType, scopeId: string
     severity: 'medium',
     action: 'reject',
     replacement: '***',
-    scopeCsv: 'marshmallow',
+    structuredScopeCategories: [scopeType],
+    surfaceScopes: ['marshmallow'],
+    unsupportedScopeTokens: [],
+    scopeCsv: '',
     inherit: true,
     isForceUse: false,
     sortOrder: '0',
@@ -402,7 +428,62 @@ function hasDraftChanges<Draft>(draft: Draft, baseline: Draft) {
   return JSON.stringify(draft) !== JSON.stringify(baseline);
 }
 
+function uniqueTokens<T extends string>(tokens: T[]): T[] {
+  return [...new Set(tokens)];
+}
+
+function buildStructuredScopePayload(draft: BlocklistDraft): BlocklistStructuredScope {
+  return {
+    entries: [
+      ...uniqueTokens(draft.structuredScopeCategories).map((category) => ({ category })),
+      ...uniqueTokens(draft.surfaceScopes).map((value) => ({
+        category: 'surface' as const,
+        value,
+      })),
+    ],
+  };
+}
+
+function buildAdvancedScopeTokens(draft: BlocklistDraft) {
+  return uniqueTokens(
+    draft.scopeCsv
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+}
+
 function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
+  const derivedStructuredEntries = entry.scope
+    .flatMap((token): BlocklistStructuredScopeEntry[] => {
+      if ((STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token)) {
+        return [{ category: token as StructuredOwnerScopeCategory }];
+      }
+
+      if ((SURFACE_SCOPE_TOKENS as readonly string[]).includes(token)) {
+        return [{ category: 'surface', value: token as (typeof SURFACE_SCOPE_TOKENS)[number] }];
+      }
+
+      return [];
+    });
+  const structuredEntries = entry.scopeSummary?.structuredScope.entries ?? derivedStructuredEntries;
+  const structuredScopeCategories = structuredEntries
+    .filter((item): item is Extract<BlocklistStructuredScopeEntry, { category: Exclude<BlocklistStructuredScopeEntry['category'], 'surface'> }> =>
+      item.category !== 'surface',
+    )
+    .map((item) => item.category);
+  const surfaceScopes = structuredEntries
+    .filter((item): item is Extract<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
+      item.category === 'surface',
+    )
+    .map((item) => item.value);
+  const unsupportedScopeTokens = entry.scopeSummary?.unsupported
+    ?? entry.scope.filter(
+      (token) =>
+        !(STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token)
+        && !(SURFACE_SCOPE_TOKENS as readonly string[]).includes(token),
+    );
+
   return {
     ownerType: entry.ownerType,
     ownerId: entry.ownerId || '',
@@ -420,7 +501,12 @@ function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
     severity: entry.severity,
     action: entry.action,
     replacement: entry.replacement,
-    scopeCsv: entry.scope.join(', '),
+    structuredScopeCategories: structuredScopeCategories.length > 0
+      ? [...new Set(structuredScopeCategories)]
+      : [entry.ownerType],
+    surfaceScopes: [...new Set(surfaceScopes)],
+    unsupportedScopeTokens,
+    scopeCsv: unsupportedScopeTokens.join(', '),
     inherit: entry.inherit,
     isForceUse: entry.isForceUse,
     sortOrder: String(entry.sortOrder),
@@ -931,6 +1017,75 @@ export function SecurityManagementScreen({
     ko: '고급 사용 범위',
     fr: 'Périmètres d’usage avancés',
   });
+  const structuredScopeTitle = pickLocaleText(selectedLocale, {
+    en: 'Structured scope builder',
+    zh_HANS: '结构化范围构建器',
+    zh_HANT: '結構化範圍建構器',
+    ja: '構造化スコープビルダー',
+    ko: '구조화된 범위 빌더',
+    fr: 'Constructeur de périmètres',
+  });
+  const structuredScopeDescription = pickLocaleText(selectedLocale, {
+    en: 'Choose allow-list categories for this rule. Surface controls current runtime matching; other categories keep the policy intent readable.',
+    zh_HANS: '为此规则选择白名单范围。Surface 会影响当前运行时匹配，其它分类用于保留策略意图。',
+    zh_HANT: '為此規則選擇允許清單範圍。Surface 會影響目前執行時匹配，其它分類用於保留策略意圖。',
+    ja: 'このルールの許可リスト範囲を選択します。Surface は現在の実行時マッチングに影響し、その他の分類はポリシー意図を読みやすく保ちます。',
+    ko: '이 규칙의 허용 범위 분류를 선택합니다. Surface는 현재 런타임 매칭에 영향을 주고, 다른 분류는 정책 의도를 읽기 쉽게 유지합니다.',
+    fr: 'Choisissez les catégories autorisées pour cette règle. Surface pilote le filtrage actuel; les autres catégories rendent l’intention lisible.',
+  });
+  const surfaceScopeLabel = pickLocaleText(selectedLocale, {
+    en: 'Marshmallow surface',
+    zh_HANS: '棉花糖公开面',
+    zh_HANT: '棉花糖公開面',
+    ja: 'Marshmallow 公開面',
+    ko: 'Marshmallow 공개 영역',
+    fr: 'Surface Marshmallow',
+  });
+  const unsupportedScopeTitle = pickLocaleText(selectedLocale, {
+    en: 'Unsupported legacy tokens',
+    zh_HANS: '不支持的旧范围 token',
+    zh_HANT: '不支援的舊範圍 token',
+    ja: '未対応のレガシートークン',
+    ko: '지원되지 않는 레거시 토큰',
+    fr: 'Anciens jetons non pris en charge',
+  });
+  const unsupportedScopeDescription = pickLocaleText(selectedLocale, {
+    en: 'These values stay visible in Advanced mode so existing rules are not hidden during migration.',
+    zh_HANS: '这些值会保留在高级模式中，迁移期间不会隐藏既有规则。',
+    zh_HANT: '這些值會保留在進階模式中，遷移期間不會隱藏既有規則。',
+    ja: '移行中に既存ルールを隠さないよう、これらの値は高度な設定に表示されます。',
+    ko: '마이그레이션 중 기존 규칙이 숨겨지지 않도록 이 값은 고급 모드에 표시됩니다.',
+    fr: 'Ces valeurs restent visibles en mode avancé afin de ne pas masquer les règles existantes pendant la migration.',
+  });
+  const ownerScopeCategoryLabels: Record<StructuredOwnerScopeCategory, string> = {
+    tenant: copy.options.scopeType.tenant,
+    subsidiary: copy.options.scopeType.subsidiary,
+    talent: copy.options.scopeType.talent,
+    'profile-store': pickLocaleText(selectedLocale, {
+      en: 'Profile store',
+      zh_HANS: '档案库',
+      zh_HANT: '檔案庫',
+      ja: 'プロファイルストア',
+      ko: '프로필 저장소',
+      fr: 'Archive client',
+    }),
+  };
+  const toggleStructuredScopeCategory = (category: StructuredOwnerScopeCategory) => {
+    setBlocklistDraft((current) => {
+      const currentCategories = new Set(current.structuredScopeCategories);
+
+      if (currentCategories.has(category)) {
+        currentCategories.delete(category);
+      } else {
+        currentCategories.add(category);
+      }
+
+      return {
+        ...current,
+        structuredScopeCategories: Array.from(currentCategories),
+      };
+    });
+  };
   const advancedScopeToggle = blocklistAdvancedOpen
     ? pickLocaleText(selectedLocale, {
         en: 'Hide advanced scopes',
@@ -1365,10 +1520,8 @@ export function SecurityManagementScreen({
         severity: blocklistDraft.severity,
         action: blocklistDraft.action,
         replacement: blocklistDraft.replacement || undefined,
-        scope: blocklistDraft.scopeCsv
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean),
+        scope: buildAdvancedScopeTokens(blocklistDraft),
+        structuredScope: buildStructuredScopePayload(blocklistDraft),
         inherit: blocklistDraft.inherit,
         sortOrder: Number(blocklistDraft.sortOrder || 0),
         isForceUse: blocklistDraft.isForceUse,
@@ -2160,6 +2313,49 @@ export function SecurityManagementScreen({
                     className={inputClassName}
                   />
                 </Field>
+                <div className="space-y-4 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 md:col-span-2">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">{structuredScopeTitle}</p>
+                    <p className="text-xs leading-5 text-slate-600">{structuredScopeDescription}</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(['tenant', 'subsidiary', 'talent', 'profile-store'] as const).map((category) => (
+                      <label
+                        key={category}
+                        className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={blocklistDraft.structuredScopeCategories.includes(category)}
+                          onChange={() => toggleStructuredScopeCategory(category)}
+                        />
+                        {ownerScopeCategoryLabels[category]}
+                      </label>
+                    ))}
+                    <label className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={blocklistDraft.surfaceScopes.includes('marshmallow')}
+                        onChange={(event) =>
+                          setBlocklistDraft((current) => ({
+                            ...current,
+                            surfaceScopes: event.target.checked ? ['marshmallow'] : [],
+                          }))
+                        }
+                      />
+                      {surfaceScopeLabel}
+                    </label>
+                  </div>
+                  {blocklistDraft.unsupportedScopeTokens.length > 0 ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <p className="font-semibold">{unsupportedScopeTitle}</p>
+                      <p className="mt-1 text-xs leading-5">{unsupportedScopeDescription}</p>
+                      <p className="mt-2 font-mono text-xs">
+                        {blocklistDraft.unsupportedScopeTokens.join(', ')}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
                 <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="space-y-1">
@@ -2191,7 +2387,12 @@ export function SecurityManagementScreen({
                     </Field>
                   ) : (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                      {blocklistDraft.scopeCsv || copy.common.all}
+                      {[
+                        ...blocklistDraft.structuredScopeCategories,
+                        ...blocklistDraft.surfaceScopes,
+                        ...blocklistDraft.unsupportedScopeTokens,
+                        ...buildAdvancedScopeTokens(blocklistDraft),
+                      ].join(', ') || copy.common.all}
                     </div>
                   )}
                 </div>
@@ -2990,52 +3191,6 @@ export function SecurityManagementScreen({
             </div>
           </ActionDrawer>
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.ipRules.probeTitle}
-              description={copy.sections.ipRules.probeDescription}
-              actions={
-                <AsyncSubmitButton onClick={() => void runIpCheck()} isPending={ipCheckPending} pendingText={copy.sections.ipRules.probing}>
-                  {copy.sections.ipRules.probe}
-                </AsyncSubmitButton>
-              }
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label={copy.fields.probeIp}>
-                  <input
-                    aria-label={copy.fields.probeIp}
-                    value={ipCheckIp}
-                    onChange={(event) => setIpCheckIp(event.target.value)}
-                    placeholder={copy.placeholders.probeIp}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.probeScope}>
-                  <select
-                    aria-label={copy.fields.probeScope}
-                    value={ipCheckScope}
-                    onChange={(event) => setIpCheckScope(event.target.value as IpRuleScope)}
-                    className={inputClassName}
-                  >
-                    <option value="admin">{copy.options.ipRuleScope.admin}</option>
-                    <option value="api">{copy.options.ipRuleScope.api}</option>
-                    <option value="public">{copy.options.ipRuleScope.public}</option>
-                    <option value="global">{copy.options.ipRuleScope.global}</option>
-                  </select>
-                </Field>
-              </div>
-              {ipCheckResult ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
-                  {ipCheckResult}
-                </div>
-              ) : null}
-              {ipCheckError ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
-                  {ipCheckError}
-                </div>
-              ) : null}
-            </FormSection>
-          </GlassSurface>
         </>
       ) : null}
 
@@ -3046,7 +3201,88 @@ export function SecurityManagementScreen({
               title={copy.sections.runtimeSignals.title}
               description={copy.sections.runtimeSignals.description}
             >
-              <div className="grid gap-4 xl:grid-cols-3">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-2xl bg-rose-50 p-3 text-rose-700">
+                      <ShieldAlert className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.activeBlocksTitle}</p>
+                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.activeBlocksHint}</p>
+                    </div>
+                  </div>
+                  {rateLimitPanel.loading ? (
+                    <p className="mt-4 text-sm text-slate-500">{copy.sections.runtimeSignals.rateLimitLoading}</p>
+                  ) : rateLimitPanel.error ? (
+                    <p className="mt-4 text-sm text-rose-700">{rateLimitPanel.error}</p>
+                  ) : rateLimitPanel.data ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <SummaryCard
+                        label={copy.summary.blockedIpsLabel}
+                        value={String(rateLimitPanel.data.summary.currentlyBlocked)}
+                        hint={copy.summary.blockedIpsHint}
+                      />
+                      <SummaryCard
+                        label={copy.sections.runtimeSignals.blocked24h}
+                        value={String(rateLimitPanel.data.summary.blockedRequests24h)}
+                        hint={copy.sections.runtimeSignals.blocked24hHint}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
+                      <SearchCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.policyProbeTitle}</p>
+                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.policyProbeHint}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                    <Field label={copy.fields.probeIp}>
+                      <input
+                        aria-label={copy.fields.probeIp}
+                        value={ipCheckIp}
+                        onChange={(event) => setIpCheckIp(event.target.value)}
+                        placeholder={copy.placeholders.probeIp}
+                        className={inputClassName}
+                      />
+                    </Field>
+                    <Field label={copy.fields.probeScope}>
+                      <select
+                        aria-label={copy.fields.probeScope}
+                        value={ipCheckScope}
+                        onChange={(event) => setIpCheckScope(event.target.value as IpRuleScope)}
+                        className={inputClassName}
+                      >
+                        <option value="admin">{copy.options.ipRuleScope.admin}</option>
+                        <option value="api">{copy.options.ipRuleScope.api}</option>
+                        <option value="public">{copy.options.ipRuleScope.public}</option>
+                        <option value="global">{copy.options.ipRuleScope.global}</option>
+                      </select>
+                    </Field>
+                    <div className="flex items-end">
+                      <AsyncSubmitButton onClick={() => void runIpCheck()} isPending={ipCheckPending} pendingText={copy.sections.ipRules.probing}>
+                        {copy.sections.ipRules.probe}
+                      </AsyncSubmitButton>
+                    </div>
+                  </div>
+                  {ipCheckResult ? (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
+                      {ipCheckResult}
+                    </div>
+                  ) : null}
+                  {ipCheckError ? (
+                    <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
+                      {ipCheckError}
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
@@ -3101,9 +3337,9 @@ export function SecurityManagementScreen({
                         hint={copy.sections.runtimeSignals.requests24hHint}
                       />
                       <SummaryCard
-                        label={copy.sections.runtimeSignals.blocked24h}
-                        value={String(rateLimitPanel.data.summary.blockedRequests24h)}
-                        hint={copy.sections.runtimeSignals.blocked24hHint}
+                        label={copy.sections.runtimeSignals.rateLimitTitle}
+                        value={String(rateLimitPanel.data.summary.uniqueIPs24h)}
+                        hint={copy.sections.runtimeSignals.rateLimitHint}
                       />
                     </div>
                   ) : null}

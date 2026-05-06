@@ -14,6 +14,22 @@ export type BlocklistSeverity = 'low' | 'medium' | 'high';
 export type BlocklistAction = 'reject' | 'flag' | 'replace';
 export type IpRuleType = 'whitelist' | 'blacklist';
 export type IpRuleScope = 'global' | 'admin' | 'public' | 'api';
+export type BlocklistScopeCategory = 'tenant' | 'subsidiary' | 'talent' | 'profile-store' | 'surface';
+export type BlocklistSurfaceScope = 'marshmallow';
+
+export type BlocklistStructuredScopeEntry =
+  | { category: Exclude<BlocklistScopeCategory, 'surface'> }
+  | { category: 'surface'; value: BlocklistSurfaceScope };
+
+export interface BlocklistStructuredScope {
+  entries: BlocklistStructuredScopeEntry[];
+}
+
+export interface BlocklistScopeSummary {
+  tokens: string[];
+  structuredScope: BlocklistStructuredScope;
+  unsupported: string[];
+}
 
 export interface BlocklistEntryRecord {
   id: string;
@@ -31,6 +47,7 @@ export interface BlocklistEntryRecord {
   action: BlocklistAction;
   replacement: string;
   scope: string[];
+  scopeSummary?: BlocklistScopeSummary;
   inherit: boolean;
   sortOrder: number;
   isActive: boolean;
@@ -70,6 +87,7 @@ export interface CreateBlocklistPayload {
   action?: BlocklistAction;
   replacement?: string;
   scope?: string[];
+  structuredScope?: BlocklistStructuredScope;
   inherit?: boolean;
   sortOrder?: number;
   isForceUse?: boolean;
@@ -88,6 +106,7 @@ export interface UpdateBlocklistPayload {
   action?: BlocklistAction;
   replacement?: string;
   scope?: string[];
+  structuredScope?: BlocklistStructuredScope;
   inherit?: boolean;
   sortOrder?: number;
   isForceUse?: boolean;

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { BlocklistScopeSummary } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BlocklistReadService } from '../application/blocklist-read.service';
@@ -8,6 +9,14 @@ import { BlocklistPatternType } from '../dto/security.dto';
 import { BlocklistService } from './blocklist.service';
 
 describe('BlocklistService facade', () => {
+  const defaultScopeSummary: BlocklistScopeSummary = {
+    tokens: ['marshmallow'],
+    structuredScope: {
+      entries: [{ category: 'surface', value: 'marshmallow' }],
+    },
+    unsupported: [],
+  };
+
   const detailResponse = {
     id: 'entry-1',
     ownerType: 'tenant',
@@ -27,6 +36,7 @@ describe('BlocklistService facade', () => {
     action: 'reject',
     replacement: '***',
     scope: ['marshmallow'],
+    scopeSummary: defaultScopeSummary,
     inherit: true,
     sortOrder: 0,
     isActive: true,
@@ -40,7 +50,6 @@ describe('BlocklistService facade', () => {
     updatedBy: 'user-2',
     version: 2,
   };
-
   const mockReadService = {
     findMany: vi.fn(),
     findById: vi.fn(),
@@ -88,6 +97,13 @@ describe('BlocklistService facade', () => {
       action: 'reject',
       replacement: '***',
       scope: ['marshmallow'],
+      scopeSummary: {
+        tokens: ['marshmallow'],
+        structuredScope: {
+          entries: [{ category: 'surface', value: 'marshmallow' }],
+        },
+        unsupported: [],
+      },
       inherit: true,
       sortOrder: 0,
       isActive: true,

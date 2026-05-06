@@ -66,7 +66,7 @@ describe('BlocklistReadService', () => {
         severity: 'low',
         action: 'flag',
         replacement: '***',
-        scope: ['marshmallow'],
+        scope: ['tenant', 'marshmallow', 'legacy-surface'],
         inherit: true,
         sortOrder: 1,
         isActive: true,
@@ -108,7 +108,17 @@ describe('BlocklistReadService', () => {
           severity: 'low',
           action: 'flag',
           replacement: '***',
-          scope: ['marshmallow'],
+          scope: ['tenant', 'marshmallow', 'legacy-surface'],
+          scopeSummary: {
+            tokens: ['tenant', 'marshmallow', 'legacy-surface'],
+            structuredScope: {
+              entries: [
+                { category: 'tenant' },
+                { category: 'surface', value: 'marshmallow' },
+              ],
+            },
+            unsupported: ['legacy-surface'],
+          },
           inherit: true,
           sortOrder: 1,
           isActive: true,
@@ -186,6 +196,13 @@ describe('BlocklistReadService', () => {
       action: 'reject',
       replacement: '***',
       scope: ['marshmallow'],
+      scopeSummary: {
+        tokens: ['marshmallow'],
+        structuredScope: {
+          entries: [{ category: 'surface', value: 'marshmallow' }],
+        },
+        unsupported: [],
+      },
       inherit: true,
       sortOrder: 0,
       isActive: true,

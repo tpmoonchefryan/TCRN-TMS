@@ -5,12 +5,16 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import type { BlocklistScopeSummary, RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
-import { BlocklistPatternType } from '../dto/security.dto';
+import {
+  BlocklistPatternType,
+  BlocklistScopeCategory,
+  BlocklistSurfaceScope,
+} from '../dto/security.dto';
 import { BlocklistWriteRepository } from '../infrastructure/blocklist-write.repository';
 import { BlocklistMatcherService } from '../services/blocklist-matcher.service';
 import { BlocklistReadService } from './blocklist-read.service';
@@ -82,6 +86,14 @@ describe('BlocklistWriteService', () => {
     vi.clearAllMocks();
   });
 
+  const defaultScopeSummary: BlocklistScopeSummary = {
+    tokens: ['marshmallow'],
+    structuredScope: {
+      entries: [{ category: 'surface', value: 'marshmallow' }],
+    },
+    unsupported: [],
+  };
+
   const detailResponse = {
     id: 'entry-1',
     ownerType: 'tenant',
@@ -101,6 +113,7 @@ describe('BlocklistWriteService', () => {
     action: 'reject',
     replacement: '***',
     scope: ['marshmallow'],
+    scopeSummary: defaultScopeSummary,
     inherit: true,
     sortOrder: 0,
     isActive: true,
@@ -212,6 +225,80 @@ describe('BlocklistWriteService', () => {
     expect(mockReadService.findById).toHaveBeenCalledWith(
       context.tenantSchema,
       'entry-1',
+    );
+  });
+
+  it('normalizes structured scope payloads before creating an entry', async () => {
+    vi.mocked(mockRepository.create).mockResolvedValue({ id: 'entry-1' });
+    vi.mocked(mockReadService.findById).mockResolvedValue(detailResponse);
+
+    await service.create(
+      {
+        ownerType: 'tenant',
+        pattern: 'badword',
+        patternType: BlocklistPatternType.KEYWORD,
+        nameEn: 'Structured Rule',
+        structuredScope: {
+          entries: [
+            { category: BlocklistScopeCategory.TENANT },
+            { category: BlocklistScopeCategory.PROFILE_STORE },
+            { category: BlocklistScopeCategory.SURFACE, value: BlocklistSurfaceScope.MARSHMALLOW },
+          ],
+        },
+      },
+      context,
+    );
+
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      expect.anything(),
+      context.tenantSchema,
+      expect.objectContaining({
+        scope: ['tenant', 'profile-store', 'marshmallow'],
+        structuredScope: undefined,
+      }),
+      context.userId,
+    );
+  });
+
+  it('fails closed when structured scope omits a runtime surface on create', async () => {
+    await expect(
+      service.create(
+        {
+          ownerType: 'tenant',
+          pattern: 'badword',
+          patternType: BlocklistPatternType.KEYWORD,
+          nameEn: 'Structured Rule',
+          structuredScope: {
+            entries: [{ category: BlocklistScopeCategory.PROFILE_STORE }],
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('still applies the legacy marshmallow default when no scope payload is provided', async () => {
+    vi.mocked(mockRepository.create).mockResolvedValue({ id: 'entry-1' });
+    vi.mocked(mockReadService.findById).mockResolvedValue(detailResponse);
+
+    await service.create(
+      {
+        ownerType: 'tenant',
+        pattern: 'badword',
+        patternType: BlocklistPatternType.KEYWORD,
+        nameEn: 'Legacy Rule',
+      },
+      context,
+    );
+
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      expect.anything(),
+      context.tenantSchema,
+      expect.objectContaining({
+        scope: ['marshmallow'],
+        structuredScope: undefined,
+      }),
+      context.userId,
     );
   });
 

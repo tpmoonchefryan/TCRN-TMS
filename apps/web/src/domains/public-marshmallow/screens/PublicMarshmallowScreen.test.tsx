@@ -153,6 +153,7 @@ describe('PublicMarshmallowScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
     expect(screen.getByText('Public Marshmallow')).toBeInTheDocument();
+    expect(screen.getByText('1 message loaded so far')).toBeInTheDocument();
     expect(screen.getByText('What inspires your next stream theme?')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Message'), {
@@ -398,8 +399,128 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('공개 마시멜로')).toBeInTheDocument();
-    expect(screen.getByText('메시지 1개 로드됨')).toBeInTheDocument();
+    expect(screen.getByText('현재까지 불러옴 1개 메시지')).toBeInTheDocument();
     expect(screen.getByText('현재 1개 표시 중')).toBeInTheDocument();
     expect(screen.getByText('English terms fallback')).toBeInTheDocument();
+  });
+
+  it('shows a load-more affordance while keeping the public count incremental', async () => {
+    window.localStorage.setItem(
+      'tcrn.public.marshmallow.fingerprint.aki-mailbox',
+      'fp_test',
+    );
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/config')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            talent: {
+              displayName: 'Aki Rosenthal',
+              avatarUrl: null,
+            },
+            title: 'Ask Aki',
+            welcomeText: 'Leave your next question here.',
+            placeholderText: 'Type your question',
+            allowAnonymous: true,
+            captchaMode: 'never',
+            maxMessageLength: 500,
+            minMessageLength: 5,
+            reactionsEnabled: true,
+            allowedReactions: ['heart'],
+            theme: {
+              accentColor: '#ec4899',
+            },
+            terms: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+            privacy: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+          },
+        });
+      }
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&limit=20')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [
+              {
+                id: 'message-1',
+                content: 'What inspires your next stream theme?',
+                senderName: null,
+                isAnonymous: true,
+                isRead: false,
+                isStarred: false,
+                isPinned: false,
+                replyContent: null,
+                repliedAt: null,
+                repliedBy: null,
+                reactionCounts: {},
+                userReactions: [],
+                createdAt: '2026-04-17T12:00:00.000Z',
+                imageUrl: null,
+                imageUrls: [],
+              },
+            ],
+            cursor: '2026-04-17T12:00:00.000Z',
+            hasMore: true,
+          },
+        });
+      }
+
+      if (
+        url.endsWith(
+          '/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&cursor=2026-04-17T12%3A00%3A00.000Z&limit=20',
+        )
+      ) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [
+              {
+                id: 'message-2',
+                content: 'Will there be a karaoke this weekend?',
+                senderName: null,
+                isAnonymous: true,
+                isRead: false,
+                isStarred: false,
+                isPinned: false,
+                replyContent: null,
+                repliedAt: null,
+                repliedBy: null,
+                reactionCounts: {},
+                userReactions: [],
+                createdAt: '2026-04-17T11:00:00.000Z',
+                imageUrl: null,
+                imageUrls: [],
+              },
+            ],
+            cursor: null,
+            hasMore: false,
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request: ${url}`);
+    });
+
+    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
+
+    expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
+    expect(screen.getByText('1 message loaded so far')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+
+    expect(await screen.findByText('2 messages loaded so far')).toBeInTheDocument();
+    expect(screen.getByText('Will there be a karaoke this weekend?')).toBeInTheDocument();
   });
 });

@@ -109,8 +109,8 @@ function formatLoadedCount(count: number, locale: MarshmallowLocale, label: stri
     en: `${formattedCount} message${count === 1 ? '' : 's'} ${label}`,
     zh_HANS: `${label} ${formattedCount} 条消息`,
     zh_HANT: `${label} ${formattedCount} 則訊息`,
-    ja: `${formattedCount}件のメッセージを${label}`,
-    ko: `메시지 ${formattedCount}개 ${label}`,
+    ja: `${label} ${formattedCount}件のメッセージ`,
+    ko: `${label} ${formattedCount}개 메시지`,
     fr: `${formattedCount} message${count === 1 ? '' : 's'} ${label}`,
   });
 }
