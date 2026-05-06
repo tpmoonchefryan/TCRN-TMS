@@ -1700,8 +1700,8 @@ export function RuntimeLocaleProvider({
   children: React.ReactNode;
 }>) {
   const { session } = useSession();
-  const [browserLocale, setBrowserLocale] = useState<SupportedUiLocale>(() => readBrowserLocale() ?? 'en');
-  const [overrideLocale, setOverrideLocale] = useState<SupportedUiLocale | null>(() => readStoredLocaleOverride());
+  const [browserLocale, setBrowserLocale] = useState<SupportedUiLocale>('en');
+  const [overrideLocale, setOverrideLocale] = useState<SupportedUiLocale | null>(null);
   const sessionIdentityKey = session ? `${session.tenantId}:${session.user.id}` : 'anonymous';
 
   useEffect(() => {
@@ -1710,6 +1710,8 @@ export function RuntimeLocaleProvider({
     if (nextLocale) {
       setBrowserLocale(nextLocale);
     }
+
+    setOverrideLocale(readStoredLocaleOverride());
   }, []);
 
   useEffect(() => {

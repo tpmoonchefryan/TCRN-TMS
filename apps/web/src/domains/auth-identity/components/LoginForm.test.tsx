@@ -214,7 +214,7 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
   });
 
-  it('renders the login hero description as animated visual copy with screen-reader text', () => {
+  it('renders the full login hero description without typewriter clipping', () => {
     const heroDescription = 'Record every drop of sweat behind the spotlight.';
     localeState.copy.auth.login = buildLoginCopy({
       heroDescription,
@@ -225,18 +225,16 @@ describe('LoginForm', () => {
 
     expect(screen.getByText('Welcome to TCRN TMS')).toBeInTheDocument();
 
-    const visualDescription = container.querySelector('.login-hero-typewriter');
+    const visualDescription = container.querySelector('.login-hero-description');
     expect(visualDescription).toHaveAttribute('aria-hidden', 'true');
     expect(visualDescription).toHaveTextContent(heroDescription);
-    expect((visualDescription as HTMLElement).style.getPropertyValue('--hero-characters')).toBe(
-      String(heroDescription.length),
-    );
+    expect(container.querySelector('.login-hero-typewriter')).not.toBeInTheDocument();
 
     const screenReaderDescription = screen
       .getAllByText(heroDescription)
       .find((element) => element.classList.contains('sr-only'));
     expect(screenReaderDescription).toBeDefined();
-    expect(container.querySelector('style')?.textContent).toContain('prefers-reduced-motion: reduce');
+    expect(container.querySelector('style')?.textContent ?? '').not.toContain('loginHeroTyping');
   });
 
   it('uses stable form semantics for login, TOTP, and password-reset fields', async () => {
