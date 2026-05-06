@@ -179,7 +179,9 @@ const privateVisualPlatformAdminAssignment = {
   expiresAt: null,
 };
 
-let privateVisualRoleAssignments: Array<Record<string, unknown>> = [privateVisualPlatformAdminAssignment];
+let privateVisualRoleAssignments: Array<Record<string, unknown>> = [
+  privateVisualPlatformAdminAssignment,
+];
 
 const visualQaAcSession = {
   ...visualQaSession,
@@ -954,6 +956,88 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/logs/changes') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [
+              {
+                id: 'change-visual',
+                occurredAt: '2026-05-06T04:00:00.000Z',
+                operatorId: 'user-ac-visual',
+                operatorName: 'Visual Operator',
+                action: 'update',
+                objectType: 'talent',
+                objectId: 'talent-visual',
+                objectName: 'Visual Talent',
+                diff: {
+                  displayName: {
+                    old: 'Old Visual Talent',
+                    new: 'Visual Talent',
+                  },
+                  status: {
+                    old: 'draft',
+                    new: 'published',
+                  },
+                },
+                ipAddress: '203.0.113.10',
+                userAgent: 'Visual QA Browser',
+                requestId: 'req-change-visual',
+              },
+            ],
+            total: 1,
+            page: 1,
+            pageSize: 20,
+            totalPages: 1,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/logs/events') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [
+              {
+                id: 'event-login-visual',
+                occurredAt: '2026-05-06T04:05:00.000Z',
+                severity: 'info',
+                eventType: 'LOGIN_SUCCESS',
+                scope: 'auth',
+                traceId: 'trace-login-visual',
+                spanId: 'span-login-visual',
+                source: 'api',
+                message: 'Visual operator signed in',
+                payloadJson: {
+                  username: 'visual.operator@example.test',
+                  tenantName: 'Visual Tenant',
+                  requestId: 'req-login-visual',
+                  ipAddress: '203.0.113.20',
+                  sessionId: 'session-visual',
+                  fingerprint: 'fp-visual',
+                },
+                errorCode: null,
+                errorStack: null,
+              },
+            ],
+            total: 1,
+            page: 1,
+            pageSize: 20,
+            totalPages: 1,
+          },
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/system-users') {
       await route.fulfill({
         status: 200,
@@ -1093,7 +1177,10 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
-    if (url.pathname === '/api/v1/users/user-visual-operator/roles' && route.request().method() === 'POST') {
+    if (
+      url.pathname === '/api/v1/users/user-visual-operator/roles' &&
+      route.request().method() === 'POST'
+    ) {
       privateVisualRoleAssignments.push({
         id: 'assignment-viewer',
         roleId: 'role-viewer',
@@ -1229,7 +1316,9 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Visual Operator' })).toBeVisible();
-    await expect(page.getByText('You do not have permission to assign roles at this scope')).toHaveCount(0);
+    await expect(
+      page.getByText('You do not have permission to assign roles at this scope')
+    ).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Assign role' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Assign role' }).click();
@@ -1259,7 +1348,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByRole('button', { name: 'Generate key' })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop AC integration API clients first level');
 
-    await apiClientTable.getByRole('row', { name: /CRM_SYNC/ }).getByRole('button', { name: 'Open' }).click();
+    await apiClientTable
+      .getByRole('row', { name: /CRM_SYNC/ })
+      .getByRole('button', { name: 'Open' })
+      .click();
     const apiClientDrawer = page.getByRole('dialog', { name: 'API Client Detail' });
     await expect(apiClientDrawer).toBeVisible();
     await expect(apiClientDrawer.getByRole('button', { name: 'Generate key' })).toBeVisible();
@@ -1297,13 +1389,83 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByRole('heading', { name: 'Configuration & secrets' })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter first level');
 
-    await adaptersTable.getByRole('row', { name: /TCRN_PII_PLATFORM/ }).getByRole('button', { name: 'Configure' }).click();
+    await adaptersTable
+      .getByRole('row', { name: /TCRN_PII_PLATFORM/ })
+      .getByRole('button', { name: 'Configure' })
+      .click();
     const adapterDrawer = page.getByRole('dialog', { name: 'Configure Adapter' });
     await expect(adapterDrawer).toBeVisible();
-    await expect(adapterDrawer.getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
-    await expect(adapterDrawer.getByRole('heading', { name: 'Configuration & secrets' })).toBeVisible();
+    await expect(adapterDrawer.getByRole('tab', { name: 'Secrets' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(
+      adapterDrawer.getByRole('heading', { name: 'Configuration & secrets' })
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter drawer');
     await expect(page).toHaveScreenshot('private-tenant-integration-mobile-adapter-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop observability keeps change-log filters attached to the table workbench', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/observability');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Observability' })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Change Logs' })).toBeVisible();
+    await expect(
+      page.getByText(/displayName: Old Visual Talent -> Visual Talent/).first()
+    ).toBeVisible();
+    await expect(page.getByText('new, old')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'View details' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop observability change logs workbench');
+    await expect(page).toHaveScreenshot('private-observability-change-logs-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await usePrivateSession(page, visualQaAcSession);
+    await page.goto('/ac/tenant-ac-visual/observability?tab=tech-events');
+    await hideFrameworkDevTools(page);
+    await expect(page.getByRole('heading', { name: 'Observability' })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Tech Events' })).toBeVisible();
+    await expect(page.getByText('Actor: visual.operator@example.test')).toBeVisible();
+    await expect(page.getByText('Request: req-login-visual')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'AC observability tech events shared workbench');
+  });
+
+  test('mobile observability technical event detail shows actor request and network context', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/observability?tab=tech-events');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Observability' })).toBeVisible();
+    await expect(page.getByText('LOGIN_SUCCESS')).toBeVisible();
+    await expect(page.getByText('Actor: visual.operator@example.test')).toBeVisible();
+    await expect(
+      page.getByText('IP 203.0.113.20 / Session session-visual / Fingerprint fp-visual')
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile observability tech events workbench');
+
+    await page.getByRole('button', { name: 'View details' }).click();
+    const techDetailDrawer = page.getByRole('dialog', { name: 'Technical Event Detail' });
+    await expect(techDetailDrawer).toBeVisible();
+    await expect(
+      techDetailDrawer.getByText('req-login-visual', { exact: true }).first()
+    ).toBeVisible();
+    await expect(techDetailDrawer.getByText('span-login-visual', { exact: true })).toBeVisible();
+    await expect(techDetailDrawer.getByText('fp-visual', { exact: true }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile observability tech event detail drawer');
+    await expect(page).toHaveScreenshot('private-observability-tech-event-detail-mobile.png', {
       animations: 'disabled',
       fullPage: true,
     });
@@ -1353,7 +1515,9 @@ test.describe('private shell browser visual QA', () => {
     });
   });
 
-  test('desktop reports draft drawer loads config-backed filters without stale membership-tree errors', async ({ page }) => {
+  test('desktop reports draft drawer loads config-backed filters without stale membership-tree errors', async ({
+    page,
+  }) => {
     await usePrivateSession(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/reports');

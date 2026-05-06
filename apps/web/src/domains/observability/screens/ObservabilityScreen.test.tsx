@@ -119,9 +119,20 @@ describe('ObservabilityScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Observability' })).toBeInTheDocument();
     expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
     expect(screen.getByText('Operator Alice')).toBeInTheDocument();
-    expect(screen.getAllByText('displayName: Old Name -> Tokino Sora')).toHaveLength(2);
-    expect(screen.getAllByText('status: pending -> approved')).toHaveLength(2);
+    expect(screen.getByText(/displayName: Old Name -> Tokino Sora/)).toBeInTheDocument();
+    expect(screen.getByText(/status: pending -> approved/)).toBeInTheDocument();
     expect(screen.queryByText('new, old')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'View details' })[0]);
+
+    expect(await screen.findByRole('dialog', { name: 'Change Log Detail' })).toBeInTheDocument();
+    expect(screen.getAllByText(/displayName: Old Name -> Tokino Sora/)).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText('Close details drawer'));
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'View details' })[1]);
+    expect(await screen.findByRole('dialog', { name: 'Change Log Detail' })).toBeInTheDocument();
+    expect(screen.getAllByText(/status: pending -> approved/)).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText('Close details drawer'));
 
     fireEvent.click(screen.getByRole('tab', { name: 'Log Search' }));
 
@@ -202,11 +213,70 @@ describe('ObservabilityScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh integration logs' }));
 
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations/failed?page=1&pageSize=20');
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/logs/integrations/failed?page=1&pageSize=20'
+      );
     });
 
     expect(await screen.findByText('trace-failed')).toBeInTheDocument();
     expect(screen.getByText('500')).toBeInTheDocument();
+  });
+
+  it('surfaces technical event actor and network context with a detail drawer', async () => {
+    searchQuery = 'tab=tech-events';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/logs/events?page=1&pageSize=20') {
+        return {
+          items: [
+            {
+              id: 'event-login',
+              occurredAt: '2026-04-17T10:08:00.000Z',
+              severity: 'info',
+              eventType: 'LOGIN_SUCCESS',
+              scope: 'auth',
+              traceId: 'trace-login',
+              spanId: 'span-login',
+              source: 'api',
+              message: 'User signed in',
+              payloadJson: {
+                username: 'alice@example.com',
+                tenantName: 'Moonshot Tenant',
+                requestId: 'req-login',
+                ipAddress: '203.0.113.10',
+                sessionId: 'session-1',
+                fingerprint: 'fp-123',
+              },
+              errorCode: null,
+              errorStack: null,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 20,
+          totalPages: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ObservabilityScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByText('LOGIN_SUCCESS')).toBeInTheDocument();
+    expect(screen.getByText('Actor: alice@example.com')).toBeInTheDocument();
+    expect(
+      screen.getByText('IP 203.0.113.10 / Session session-1 / Fingerprint fp-123')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Request: req-login')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View details' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Technical Event Detail' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('fp-123')).toBeInTheDocument();
+    expect(screen.getByText('span-login')).toBeInTheDocument();
   });
 
   it('hydrates integration log pagination from the URL and keeps page changes shareable', async () => {
@@ -275,15 +345,19 @@ describe('ObservabilityScreen', () => {
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations?page=2&pageSize=50');
     });
-    expect(screen.getByRole('tab', { name: 'Integration Logs' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Integration Logs' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations?page=1&pageSize=50');
-      expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/observability?tab=integration-logs&pageSize=50');
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/observability?tab=integration-logs&pageSize=50'
+      );
     });
-
   });
 
   it('renders localized zh copy for the header chrome', async () => {
