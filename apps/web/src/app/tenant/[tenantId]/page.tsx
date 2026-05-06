@@ -1,4 +1,6 @@
-import { TenantWorkspaceLandingScreen } from '@/domains/talent-workspace/screens/TenantWorkspaceLandingScreen';
+import { redirect } from 'next/navigation';
+
+import { buildTenantOrganizationStructurePath } from '@/platform/routing/workspace-paths';
 
 export default async function TenantWorkspaceLandingPage({
   params,
@@ -7,5 +9,5 @@ export default async function TenantWorkspaceLandingPage({
 }>) {
   const { tenantId } = await params;
 
-  return <TenantWorkspaceLandingScreen tenantId={tenantId} />;
+  redirect(buildTenantOrganizationStructurePath(tenantId));
 }

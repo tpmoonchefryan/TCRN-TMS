@@ -593,6 +593,7 @@ const CONFIG_ENTITY_COPY: Record<
     'membership-class': { label: '会员类别', description: '当前租户维护的会员类别顶层定义。' },
     'membership-type': { label: '会员类型', description: '挂在会员类别下的会员类型定义。' },
     'membership-level': { label: '会员层级', description: '挂在会员类型下的具体会员层级。' },
+    'profile-store': { label: '档案库', description: '租户级客户档案边界，用于艺人发布与客户访问。' },
     consent: { label: '同意协议', description: '带有本地化内容与生效时间窗的同意协议。' },
   },
   ja: {
@@ -606,6 +607,7 @@ const CONFIG_ENTITY_COPY: Record<
     'membership-class': { label: '会員カテゴリ', description: 'テナントで管理する会員カテゴリの最上位定義です。' },
     'membership-type': { label: '会員タイプ', description: '会員カテゴリ配下で管理する会員タイプです。' },
     'membership-level': { label: '会員レベル', description: '会員タイプ配下で管理する具体的な会員レベルです。' },
+    'profile-store': { label: 'プロフィールストア', description: 'タレント公開と顧客アクセスに使うテナント単位の顧客アーカイブ境界です。' },
     consent: { label: '同意契約', description: 'ローカライズ済み内容と有効期間を持つ同意契約です。' },
   },
 };

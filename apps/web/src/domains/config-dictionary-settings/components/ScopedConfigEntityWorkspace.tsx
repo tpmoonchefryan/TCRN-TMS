@@ -277,6 +277,7 @@ const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
   'membership-class',
   'membership-type',
   'membership-level',
+  'profile-store',
 ]);
 
 function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {

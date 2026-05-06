@@ -314,6 +314,65 @@ describe('ScopedConfigEntityWorkspace', () => {
     expect(screen.getByText('Inherited review only')).toBeInTheDocument();
   });
 
+  it('treats profile store as a tenant-global review-only entity in subsidiary scope', async () => {
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+      ) {
+        return buildEnvelope([]);
+      }
+
+      if (
+        path ===
+        '/api/v1/configuration-entity/profile-store?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+      ) {
+        return buildEnvelope([
+          buildConfigEntityRecord({
+            id: 'store-1',
+            ownerType: 'tenant',
+            ownerId: null,
+            code: 'DEFAULT_STORE',
+            name: 'Default Store',
+            nameEn: 'Default Store',
+            description: 'Tenant-wide customer archive.',
+            descriptionEn: 'Tenant-wide customer archive.',
+            translations: { en: 'Default Store' },
+            descriptionTranslations: { en: 'Tenant-wide customer archive.' },
+            isInherited: true,
+            canDisable: true,
+          }),
+        ]);
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="subsidiary"
+        scopeId="sub-1"
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /Profile Store profile-store Tenant-level customer archive boundaries/i,
+      }),
+    );
+
+    expect(await screen.findByText('Profile Store is managed at the tenant scope and can only be reviewed here.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Current scope only')).not.toBeInTheDocument();
+    expect(await screen.findByText('DEFAULT_STORE')).toBeInTheDocument();
+    expect(screen.getByText('Inherited review only')).toBeInTheDocument();
+    expect(mockRequestEnvelope).toHaveBeenCalledWith(
+      '/api/v1/configuration-entity/profile-store?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder',
+      expect.anything(),
+    );
+  });
+
   it('opens the config entity editor inside a drawer instead of expanding inline', async () => {
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (

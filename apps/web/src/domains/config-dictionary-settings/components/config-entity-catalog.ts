@@ -39,6 +39,7 @@ export const CONFIG_ENTITY_ORDER: ScopedConfigEntityType[] = [
   'membership-class',
   'membership-type',
   'membership-level',
+  'profile-store',
   'consent',
 ];
 
@@ -176,6 +177,12 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
         placeholder: 'https://example.com/badges/gold.svg',
       },
     ],
+  },
+  'profile-store': {
+    type: 'profile-store',
+    label: 'Profile Store',
+    description: 'Tenant-level customer archive boundaries used by talent publishing and customer access.',
+    fields: [],
   },
   consent: {
     type: 'consent',

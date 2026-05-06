@@ -5,6 +5,7 @@ import {
   type SupportedUiLocale,
 } from '@tcrn/shared';
 
+import type { OrganizationTreeResponse } from '@/domains/organization-access/api/organization.api';
 import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/api';
 
 export interface AuthTenantInfo {
@@ -172,6 +173,18 @@ export async function getCurrentUser(accessToken: string): Promise<CurrentUserPr
   });
 
   return normalizeCurrentUserProfile(await readApiData<CurrentUserProfile>(response));
+}
+
+export async function readPostLoginOrganizationTree(accessToken: string): Promise<OrganizationTreeResponse> {
+  const response = await fetch('/api/v1/organization/tree?includeInactive=false', {
+    method: 'GET',
+    credentials: 'include',
+    headers: withBrowserPublicConsumerHeaders({
+      Authorization: `Bearer ${accessToken}`,
+    }),
+  });
+
+  return readApiData<OrganizationTreeResponse>(response);
 }
 
 export async function logout(accessToken: string): Promise<void> {

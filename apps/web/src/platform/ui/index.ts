@@ -9,6 +9,7 @@ export * from './patterns/EnvironmentBannerSlot';
 export * from './patterns/FormSection';
 export * from './patterns/HelpLink';
 export * from './patterns/LocaleSwitcher';
+export { useBodyScrollLock, useModalFocus } from './patterns/overlay-behavior';
 export * from './patterns/PaginationFooter';
 export * from './patterns/SectionTabs';
 export * from './patterns/SettingsLayout';

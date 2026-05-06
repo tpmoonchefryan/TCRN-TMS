@@ -2,19 +2,32 @@
 
 import { ArrowRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { startTransition, useMemo, useState } from 'react';
+import { startTransition, useMemo, useRef, useState } from 'react';
 
 import {
   type AuthenticatedSessionResult,
   forceResetPassword,
   login,
+  readPostLoginOrganizationTree,
   verifyTotp,
 } from '@/domains/auth-identity/api/auth.api';
+import type {
+  OrganizationNode,
+  OrganizationTalent,
+  OrganizationTreeResponse,
+} from '@/domains/organization-access/api/organization.api';
 import { ApiRequestError } from '@/platform/http/api';
-import { resolvePostLoginPath } from '@/platform/routing/workspace-paths';
+import {
+  buildAcWorkspacePath,
+  buildTalentWorkspacePath,
+  buildTenantOrganizationStructurePath,
+  isAcTenantTier,
+  normalizeInternalWorkspacePath,
+} from '@/platform/routing/workspace-paths';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { LocaleSwitcher } from '@/platform/ui';
+import { LocaleSwitcher, useBodyScrollLock, useModalFocus } from '@/platform/ui';
 
 type AuthStep = 'credentials' | 'totp' | 'password-reset';
 
@@ -23,6 +36,87 @@ interface FormState {
   login: string;
   password: string;
   rememberMe: boolean;
+}
+
+interface PostLoginTalentOption {
+  id: string;
+  code: string;
+  displayName: string;
+  subsidiaryName?: string | null;
+}
+
+interface TalentSelectorState {
+  tenantId: string;
+  talents: PostLoginTalentOption[];
+}
+
+function isBusinessSelectableTalent(talent: OrganizationTalent) {
+  return talent.isActive && talent.lifecycleStatus === 'published';
+}
+
+function collectBusinessSelectableTalents(tree: OrganizationTreeResponse): PostLoginTalentOption[] {
+  const talentsById = new Map<string, PostLoginTalentOption>();
+
+  function addTalent(talent: OrganizationTalent) {
+    if (!isBusinessSelectableTalent(talent)) {
+      return;
+    }
+
+    talentsById.set(talent.id, {
+      id: talent.id,
+      code: talent.code,
+      displayName: talent.displayName || talent.name || talent.code,
+      subsidiaryName: talent.subsidiaryName,
+    });
+  }
+
+  function visitNode(node: OrganizationNode) {
+    node.talents.forEach(addTalent);
+    node.children.forEach(visitNode);
+  }
+
+  tree.directTalents.forEach(addTalent);
+  tree.subsidiaries.forEach(visitNode);
+
+  return Array.from(talentsById.values());
+}
+
+function buildPostLoginSelectorCopy(locale: string) {
+  return {
+    title: pickLocaleText(locale, {
+      en: 'Choose a talent workspace',
+      zh_HANS: '选择艺人工作区',
+      zh_HANT: '選擇藝人工作區',
+      ja: 'タレントワークスペースを選択',
+      ko: '탤런트 워크스페이스 선택',
+      fr: 'Choisir un espace talent',
+    }),
+    description: pickLocaleText(locale, {
+      en: 'You have access to multiple published talents. Choose where to start.',
+      zh_HANS: '你可以进入多个已发布艺人，请选择本次要进入的工作区。',
+      zh_HANT: '你可以進入多個已發布藝人，請選擇本次要進入的工作區。',
+      ja: '複数の公開済みタレントにアクセスできます。開始するワークスペースを選択してください。',
+      ko: '여러 공개된 탤런트에 접근할 수 있습니다. 시작할 워크스페이스를 선택하세요.',
+      fr: 'Vous avez accès à plusieurs talents publiés. Choisissez par où commencer.',
+    }),
+    publishedLabel: pickLocaleText(locale, {
+      en: 'Published',
+      zh_HANS: '已发布',
+      zh_HANT: '已發布',
+      ja: '公開済み',
+      ko: '게시됨',
+      fr: 'Publié',
+    }),
+    openTalentAriaLabel: (talentName: string) =>
+      pickLocaleText(locale, {
+        en: `Open ${talentName} workspace`,
+        zh_HANS: `打开 ${talentName} 工作区`,
+        zh_HANT: `開啟 ${talentName} 工作區`,
+        ja: `${talentName} ワークスペースを開く`,
+        ko: `${talentName} 워크스페이스 열기`,
+        fr: `Ouvrir l’espace ${talentName}`,
+      }),
+  };
 }
 
 export function LoginForm() {
@@ -44,8 +138,24 @@ export function LoginForm() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [talentSelector, setTalentSelector] = useState<TalentSelectorState | null>(null);
+  const talentSelectorRef = useRef<HTMLElement | null>(null);
+  const firstTalentButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const nextHref = searchParams.get('next');
+  const postLoginSelectorCopy = useMemo(
+    () => buildPostLoginSelectorCopy(selectedLocale),
+    [selectedLocale],
+  );
+
+  useBodyScrollLock(talentSelector !== null);
+  useModalFocus({
+    active: talentSelector !== null,
+    containerRef: talentSelectorRef,
+    initialFocusRef: firstTalentButtonRef,
+    restoreFocus: false,
+  });
+
   const ctaLabel = useMemo(() => {
     if (step === 'totp') {
       return loginCopy.verifyTotp;
@@ -87,13 +197,68 @@ export function LoginForm() {
   const heroDescriptionCharacterCount = Math.max(heroDescription.length, 1);
   const surfaceNote = loginCopy.surfaceNote.trim();
 
-  function finishAuthentication(result: AuthenticatedSessionResult) {
+  async function resolvePostLoginTarget(result: AuthenticatedSessionResult) {
+    const tenantId = result.user.tenant.id;
+    const safeNextHref = normalizeInternalWorkspacePath(nextHref);
+
+    if (safeNextHref) {
+      return { kind: 'path' as const, path: safeNextHref };
+    }
+
+    if (isAcTenantTier(result.user.tenant.tier)) {
+      return { kind: 'path' as const, path: buildAcWorkspacePath(tenantId) };
+    }
+
+    try {
+      const tree = await readPostLoginOrganizationTree(result.accessToken);
+      const businessTalents = collectBusinessSelectableTalents(tree);
+
+      if (businessTalents.length === 1) {
+        return {
+          kind: 'path' as const,
+          path: buildTalentWorkspacePath(tenantId, businessTalents[0].id),
+        };
+      }
+
+      if (businessTalents.length > 1) {
+        return {
+          kind: 'selector' as const,
+          tenantId,
+          talents: businessTalents,
+        };
+      }
+    } catch {
+      // Organization tree lookup is a post-login routing enhancement; fall back to governance.
+    }
+
+    return { kind: 'path' as const, path: buildTenantOrganizationStructurePath(tenantId) };
+  }
+
+  async function finishAuthentication(result: AuthenticatedSessionResult) {
     authenticate(result, credentials.tenantCode.trim().toUpperCase());
 
-    const target = resolvePostLoginPath(nextHref, {
-      tenantId: result.user.tenant.id,
-      tenantTier: result.user.tenant.tier,
+    const target = await resolvePostLoginTarget(result);
+
+    if (target.kind === 'selector') {
+      setTalentSelector({
+        tenantId: target.tenantId,
+        talents: target.talents,
+      });
+      return;
+    }
+
+    startTransition(() => {
+      router.replace(target.path);
     });
+  }
+
+  function openSelectedTalent(talentId: string) {
+    if (!talentSelector) {
+      return;
+    }
+
+    const target = buildTalentWorkspacePath(talentSelector.tenantId, talentId);
+    setTalentSelector(null);
     startTransition(() => {
       router.replace(target);
     });
@@ -109,7 +274,7 @@ export function LoginForm() {
         const result = await login(credentials);
 
         if (result.kind === 'authenticated') {
-          finishAuthentication(result.data);
+          await finishAuthentication(result.data);
           return;
         }
 
@@ -126,12 +291,12 @@ export function LoginForm() {
 
       if (step === 'totp') {
         const result = await verifyTotp(sessionToken, totpCode);
-        finishAuthentication(result);
+        await finishAuthentication(result);
         return;
       }
 
       const result = await forceResetPassword(sessionToken, newPassword, newPasswordConfirm);
-      finishAuthentication(result);
+      await finishAuthentication(result);
     } catch (error) {
       if (error instanceof ApiRequestError) {
         setErrorMessage(error.message);
@@ -400,6 +565,54 @@ export function LoginForm() {
             }
           }
         `}</style>
+      ) : null}
+
+      {talentSelector ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+          <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" aria-hidden="true" />
+          <section
+            ref={talentSelectorRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-login-talent-selector-title"
+            aria-describedby="post-login-talent-selector-description"
+            tabIndex={-1}
+            className="relative max-h-[min(42rem,calc(100vh-3rem))] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_30px_120px_-45px_rgba(15,23,42,0.7)] outline-none sm:p-8"
+          >
+            <div className="space-y-2">
+              <h2 id="post-login-talent-selector-title" className="text-2xl font-semibold text-slate-950">
+                {postLoginSelectorCopy.title}
+              </h2>
+              <p id="post-login-talent-selector-description" className="text-sm leading-6 text-slate-600">
+                {postLoginSelectorCopy.description}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3">
+              {talentSelector.talents.map((talent, index) => (
+                <button
+                  key={talent.id}
+                  ref={index === 0 ? firstTalentButtonRef : undefined}
+                  type="button"
+                  aria-label={postLoginSelectorCopy.openTalentAriaLabel(talent.displayName)}
+                  onClick={() => openSelectedTalent(talent.id)}
+                  className="group flex w-full items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-indigo-200 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                >
+                  <span className="min-w-0 space-y-1">
+                    <span className="block truncate text-sm font-semibold text-slate-950">{talent.displayName}</span>
+                    <span className="block truncate text-xs text-slate-500">
+                      {talent.subsidiaryName ? `${talent.subsidiaryName} · ${talent.code}` : talent.code}
+                    </span>
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700">
+                    {postLoginSelectorCopy.publishedLabel}
+                    <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" aria-hidden="true" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   );

@@ -125,6 +125,7 @@ export type ScopedConfigEntityType =
   | 'membership-class'
   | 'membership-type'
   | 'membership-level'
+  | 'profile-store'
   | 'consent';
 
 export interface ConfigEntityRecord {

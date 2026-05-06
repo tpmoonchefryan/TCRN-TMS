@@ -41,6 +41,10 @@ export function buildTenantWorkspacePath(tenantId: string) {
   return `/tenant/${tenantId}`;
 }
 
+export function buildTenantOrganizationStructurePath(tenantId: string) {
+  return `${buildTenantWorkspacePath(tenantId)}/organization-structure`;
+}
+
 export function buildTenantUserManagementPath(tenantId: string) {
   return `/tenant/${tenantId}/user-management`;
 }
@@ -222,7 +226,7 @@ export function resolveRecoveryTenantId(
   return previousTenantId || requestedTenantId || null;
 }
 
-function normalizeInternalWorkspacePath(path: string | null | undefined) {
+export function normalizeInternalWorkspacePath(path: string | null | undefined) {
   if (!path) {
     return null;
   }

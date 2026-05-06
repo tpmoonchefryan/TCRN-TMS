@@ -6,6 +6,10 @@ import type {
   LoginFlowResult,
 } from '@/domains/auth-identity/api/auth.api';
 import { LoginForm } from '@/domains/auth-identity/components/LoginForm';
+import type {
+  OrganizationTalent,
+  OrganizationTreeResponse,
+} from '@/domains/organization-access/api/organization.api';
 import { ApiRequestError } from '@/platform/http/api';
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   forceResetPassword: vi.fn<
     (sessionToken: string, newPassword: string, newPasswordConfirm: string) => Promise<AuthenticatedSessionResult>
   >(),
+  readPostLoginOrganizationTree: vi.fn<(accessToken: string) => Promise<OrganizationTreeResponse>>(),
   search: {
     current: '',
   },
@@ -62,6 +67,7 @@ function buildLoginCopy(overrides: Partial<Record<string, string>> = {}) {
 
 const localeState = {
   currentLocale: 'en',
+  selectedLocale: 'en',
   copy: {
     common: {
       languageSwitcherLabel: 'Change language',
@@ -99,6 +105,7 @@ vi.mock('@/domains/auth-identity/api/auth.api', () => ({
   login: mocks.login,
   verifyTotp: mocks.verifyTotp,
   forceResetPassword: mocks.forceResetPassword,
+  readPostLoginOrganizationTree: mocks.readPostLoginOrganizationTree,
 }));
 
 function buildAuthenticatedResult(
@@ -129,6 +136,32 @@ function buildAuthenticatedResult(
   };
 }
 
+function buildTalent(overrides: Partial<OrganizationTalent> = {}): OrganizationTalent {
+  return {
+    id: 'talent-1',
+    code: 'TALENT_ONE',
+    name: 'Talent One',
+    displayName: 'Talent One',
+    avatarUrl: null,
+    subsidiaryId: null,
+    subsidiaryName: null,
+    path: '/TALENT_ONE/',
+    homepagePath: 'talent-one',
+    lifecycleStatus: 'published',
+    publishedAt: '2026-05-06T00:00:00.000Z',
+    isActive: true,
+    ...overrides,
+  };
+}
+
+function buildOrganizationTree(talents: OrganizationTalent[] = []): OrganizationTreeResponse {
+  return {
+    tenantId: 'tenant-1',
+    subsidiaries: [],
+    directTalents: talents,
+  };
+}
+
 function fillCredentials() {
   fireEvent.change(screen.getByLabelText('Tenant code'), {
     target: { value: 'moon' },
@@ -144,6 +177,7 @@ function fillCredentials() {
 describe('LoginForm', () => {
   beforeEach(() => {
     localeState.currentLocale = 'en';
+    localeState.selectedLocale = 'en';
     localeState.copy.common.languageSwitcherLabel = 'Change language';
     localeState.copy.auth.login = buildLoginCopy();
     localeState.setLocale.mockReset();
@@ -153,10 +187,13 @@ describe('LoginForm', () => {
     mocks.login.mockReset();
     mocks.verifyTotp.mockReset();
     mocks.forceResetPassword.mockReset();
+    mocks.readPostLoginOrganizationTree.mockReset();
+    mocks.readPostLoginOrganizationTree.mockResolvedValue(buildOrganizationTree());
   });
 
   it('renders localized login copy from the runtime locale contract', () => {
     localeState.currentLocale = 'zh';
+    localeState.selectedLocale = 'zh_HANS';
     localeState.copy.auth.login = buildLoginCopy({
       appName: 'TCRN TMS',
       credentialsDescription: '输入登录信息。',
@@ -274,8 +311,15 @@ describe('LoginForm', () => {
     expect(await screen.findByLabelText('New password')).toHaveFocus();
   });
 
-  it('authenticates credentials and routes to the default workspace path', async () => {
+  it('authenticates credentials and routes to a single published talent workspace', async () => {
     const result = buildAuthenticatedResult();
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
+      buildTalent({
+        id: 'talent-solo',
+        code: 'SOLO',
+        displayName: 'Solo Talent',
+      }),
+    ]));
     mocks.login.mockResolvedValueOnce({
       kind: 'authenticated',
       data: result,
@@ -297,7 +341,87 @@ describe('LoginForm', () => {
 
     await waitFor(() => {
       expect(mocks.authenticate).toHaveBeenCalledWith(result, 'MOON');
-      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1');
+      expect(mocks.readPostLoginOrganizationTree).toHaveBeenCalledWith('access-token');
+      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1/talent/talent-solo');
+    });
+  });
+
+  it('shows a post-login selector when multiple published talents are available', async () => {
+    const result = buildAuthenticatedResult();
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
+      buildTalent({
+        id: 'talent-aurora',
+        code: 'AURORA',
+        displayName: 'Aurora',
+      }),
+      buildTalent({
+        id: 'talent-luna',
+        code: 'LUNA',
+        displayName: 'Luna',
+        subsidiaryId: 'sub-1',
+        subsidiaryName: 'Tokyo Branch',
+      }),
+      buildTalent({
+        id: 'talent-draft',
+        code: 'DRAFT',
+        displayName: 'Draft Talent',
+        lifecycleStatus: 'draft',
+        publishedAt: null,
+      }),
+    ]));
+    mocks.login.mockResolvedValueOnce({
+      kind: 'authenticated',
+      data: result,
+    });
+
+    render(<LoginForm />);
+    fillCredentials();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Choose a talent workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Aurora workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Luna workspace' })).toBeInTheDocument();
+    expect(screen.queryByText('Draft Talent')).not.toBeInTheDocument();
+    expect(mocks.replace).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Luna workspace' }));
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1/talent/talent-luna');
+    });
+  });
+
+  it('falls back to organization structure when no published talent is selectable', async () => {
+    const result = buildAuthenticatedResult();
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
+      buildTalent({
+        id: 'talent-draft',
+        code: 'DRAFT',
+        displayName: 'Draft Talent',
+        lifecycleStatus: 'draft',
+        publishedAt: null,
+      }),
+      buildTalent({
+        id: 'talent-disabled',
+        code: 'DISABLED',
+        displayName: 'Disabled Talent',
+        lifecycleStatus: 'disabled',
+        isActive: false,
+      }),
+    ]));
+    mocks.login.mockResolvedValueOnce({
+      kind: 'authenticated',
+      data: result,
+    });
+
+    render(<LoginForm />);
+    fillCredentials();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1/organization-structure');
     });
   });
 
@@ -317,6 +441,7 @@ describe('LoginForm', () => {
     await waitFor(() => {
       expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1/profile');
     });
+    expect(mocks.readPostLoginOrganizationTree).not.toHaveBeenCalled();
 
     mocks.search.current = 'next=https%3A%2F%2Fevil.example%2Fsteal';
     mocks.replace.mockReset();
@@ -332,7 +457,8 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     await waitFor(() => {
-      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1');
+      expect(mocks.readPostLoginOrganizationTree).toHaveBeenCalledWith('access-token');
+      expect(mocks.replace).toHaveBeenCalledWith('/tenant/tenant-1/organization-structure');
     });
   });
 
@@ -370,6 +496,7 @@ describe('LoginForm', () => {
     await waitFor(() => {
       expect(mocks.verifyTotp).toHaveBeenCalledWith('totp-session', '123456');
       expect(mocks.authenticate).toHaveBeenCalledWith(result, 'MOON');
+      expect(mocks.readPostLoginOrganizationTree).not.toHaveBeenCalled();
       expect(mocks.replace).toHaveBeenCalledWith('/ac/tenant-ac/tenants');
     });
   });

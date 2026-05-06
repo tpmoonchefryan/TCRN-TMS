@@ -14,6 +14,7 @@ import {
   buildTalentWorkspacePath,
   buildTalentWorkspaceSectionPath,
   buildTenantBusinessPath,
+  buildTenantOrganizationStructurePath,
   buildTenantProfilePath,
   buildTenantProfileSecurityPath,
   buildTenantRoleCreatePath,
@@ -72,6 +73,7 @@ describe('workspace-paths', () => {
 
   it('exposes the explicit tenant and ac helpers', () => {
     expect(buildTenantWorkspacePath('tenant-2')).toBe('/tenant/tenant-2');
+    expect(buildTenantOrganizationStructurePath('tenant-2')).toBe('/tenant/tenant-2/organization-structure');
     expect(buildAcWorkspacePath('tenant-ac-2')).toBe('/ac/tenant-ac-2/tenants');
     expect(buildTenantBusinessPath('tenant-2')).toBe('/tenant/tenant-2/business');
     expect(buildSubsidiaryBusinessPath('tenant-2', 'sub-4')).toBe('/tenant/tenant-2/subsidiary/sub-4/business');
