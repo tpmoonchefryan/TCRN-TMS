@@ -152,6 +152,45 @@ describe('ReportsManagementScreen', () => {
     expect(await screen.findByRole('button', { name: '关闭 MFR 任务抽屉' })).toBeInTheDocument();
   });
 
+  it('keeps report filters and preview out of the first-level directory', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/reports/catalog') {
+        return reportCatalogResponse();
+      }
+
+      const filterOptions = reportFilterOptionResponse(path);
+      if (filterOptions) {
+        return filterOptions;
+      }
+
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: {
+            total: 0,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect((await screen.findAllByText('Member Feedback Report')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Catalog filters')).not.toBeInTheDocument();
+    expect(screen.queryByText('No preview requested yet')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Platforms' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Draft report' })[0]);
+
+    const drawer = await screen.findByRole('heading', { name: 'Create MFR Job' });
+    expect(drawer).toBeInTheDocument();
+    expect(await screen.findByText('Catalog filters')).toBeInTheDocument();
+    expect(await screen.findByRole('group', { name: 'Platforms' })).toBeInTheDocument();
+    expect(await screen.findByText('No preview requested yet')).toBeInTheDocument();
+  });
+
   it('loads the report ledger and applies a status filter', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/reports/catalog') {
@@ -436,6 +475,10 @@ describe('ReportsManagementScreen', () => {
     });
 
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect((await screen.findAllByText('Member Feedback Report')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Catalog filters')).not.toBeInTheDocument();
+    expect(screen.queryByText('No preview requested yet')).not.toBeInTheDocument();
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Run History' }));
     expect(await screen.findByText('No MFR jobs found')).toBeInTheDocument();

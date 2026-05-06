@@ -249,7 +249,7 @@ export function TalentBusinessShell({
           }
           rightArea={
             <div className="flex items-center gap-3">
-              <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 shadow-sm">
+              <div className="hidden rounded-full border border-white/70 bg-white/70 px-4 py-2 shadow-sm lg:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                   {copy.common.talentScope}
                 </p>

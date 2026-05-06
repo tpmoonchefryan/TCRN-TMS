@@ -1524,7 +1524,10 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Reports Management' })).toBeVisible();
-    await expect(page.getByText('Member Feedback Report')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Member Feedback Report' })).toBeVisible();
+    await expect(page.getByText('Catalog filters')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Platforms' })).toHaveCount(0);
+    await expect(page.getByText('No preview requested yet')).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop reports directory');
     await expect(page).toHaveScreenshot('private-reports-desktop-directory.png', {
       animations: 'disabled',
@@ -1542,6 +1545,37 @@ test.describe('private shell browser visual QA', () => {
     await draftDrawer.getByRole('button', { name: 'Preview rows' }).click();
     await expect(page.getByText('Visual Fan')).toBeVisible();
     await expect(page).toHaveScreenshot('private-reports-desktop-draft-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile reports keeps filters inside the draft workflow', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 820 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/reports');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Reports Management' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Member Feedback Report' })).toBeVisible();
+    await expect(page.getByText('Catalog filters')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Platforms' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile reports directory');
+    await expect(page).toHaveScreenshot('private-reports-mobile-directory.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Draft report' }).first().click();
+    const draftDrawer = page.getByRole('dialog', { name: 'Create MFR job' });
+    await expect(draftDrawer).toBeVisible();
+    await expect(draftDrawer.getByText('Catalog filters')).toBeVisible();
+    await expect(draftDrawer.getByRole('group', { name: 'Platforms' })).toBeVisible();
+    await expect(draftDrawer.getByText('No preview requested yet')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile reports draft drawer');
+    await expect(page).toHaveScreenshot('private-reports-mobile-draft-drawer.png', {
       animations: 'disabled',
       fullPage: true,
     });

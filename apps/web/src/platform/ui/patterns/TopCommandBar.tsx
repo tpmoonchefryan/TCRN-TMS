@@ -53,7 +53,9 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
 
         <div className="min-w-0 space-y-1">
           {hasBreadcrumb ? (
-            <Breadcrumb items={breadcrumbItems ?? []} ariaLabel={breadcrumbAriaLabel as string} onNavigate={onBreadcrumbNavigate} />
+            <div className="hidden min-w-0 sm:block">
+              <Breadcrumb items={breadcrumbItems ?? []} ariaLabel={breadcrumbAriaLabel as string} onNavigate={onBreadcrumbNavigate} />
+            </div>
           ) : null}
           {leftArea}
         </div>

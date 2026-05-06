@@ -373,6 +373,51 @@ function SummaryCard({
   );
 }
 
+function MetricChip({
+  label,
+  value,
+  hint,
+}: Readonly<{
+  label: string;
+  value: string;
+  hint?: string;
+}>) {
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white/80 px-3 py-2">
+      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</p>
+      {hint ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+function DrawerStep({
+  number,
+  title,
+  description,
+  children,
+}: Readonly<{
+  number: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}>) {
+  return (
+    <section className="space-y-4 rounded-lg border border-slate-200 bg-white/75 p-4">
+      <div className="flex items-start gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
+          {number}
+        </span>
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
+          <p className="text-xs leading-5 text-slate-500">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function StatusBadge({
   status,
   label,
@@ -788,27 +833,6 @@ function SchemaFilterField({
           ].filter(Boolean).join(' ')}
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function SchemaFilterSummary({
-  field,
-  locale,
-}: Readonly<{
-  field: ReportFilterField;
-  locale: string;
-}>) {
-  const label = pickLocaleText(locale, field.label);
-  const description = field.description ? pickLocaleText(locale, field.description) : null;
-  const source = describeFilterFieldSource(field);
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
-      <p className="text-sm font-semibold text-slate-900">{label}</p>
-      <p className="mt-1 text-xs leading-5 text-slate-500">
-        {[description, source].filter(Boolean).join(' ')}
-      </p>
     </div>
   );
 }
@@ -1246,9 +1270,28 @@ export function ReportsManagementScreen({
       detailPanel.data.parameterSnapshot.filters,
       detailPanel.data.parameterSnapshot.format,
     ));
+    setPreviewPanel({
+      data: null,
+      loading: false,
+      error: null,
+    });
     setDetailJobId(null);
     setIsDraftDrawerOpen(true);
     applyReportsQueryState({ activeView: 'directory' });
+  }
+
+  function openDraftReport() {
+    if (!selectedReportIsAvailable) {
+      return;
+    }
+
+    setNotice(null);
+    setPreviewPanel({
+      data: null,
+      loading: false,
+      error: null,
+    });
+    setIsDraftDrawerOpen(true);
   }
 
   async function handleConfirmCancel() {
@@ -1422,8 +1465,8 @@ export function ReportsManagementScreen({
 
   return (
     <div className="space-y-6">
-      <GlassSurface className="p-8">
-        <div className="flex flex-wrap items-start justify-between gap-6">
+      <GlassSurface className="p-6">
+        <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
               <FileSpreadsheet className="h-3.5 w-3.5" />
@@ -1445,13 +1488,7 @@ export function ReportsManagementScreen({
             </Link>
             <button
               type="button"
-              onClick={() => {
-                if (!selectedReportIsAvailable) {
-                  return;
-                }
-                setNotice(null);
-                setIsDraftDrawerOpen(true);
-              }}
+              onClick={openDraftReport}
               disabled={!selectedReportIsAvailable}
               className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
@@ -1464,23 +1501,23 @@ export function ReportsManagementScreen({
             </SecondaryButton>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard
+          <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricChip
               label={copy.summary.tenantLabel}
               value={session?.tenantName || copy.summary.tenantFallback}
               hint={copy.summary.tenantHint}
             />
-            <SummaryCard
+            <MetricChip
               label={copy.summary.catalogLabel}
               value={reportCatalogCount}
               hint={copy.summary.catalogHint}
             />
-            <SummaryCard
+            <MetricChip
               label={copy.summary.jobsLabel}
               value={jobsPanel.loading ? copy.summary.jobsLoading : String(jobsPanel.total)}
               hint={copy.summary.jobsHint}
             />
-            <SummaryCard
+            <MetricChip
               label={copy.summary.activeDownloadableLabel}
               value={`${activeJobs} / ${downloadableJobs}`}
               hint={copy.summary.activeDownloadableHint}
@@ -1552,185 +1589,102 @@ export function ReportsManagementScreen({
       </GlassSurface>
 
       {activeView === 'directory' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection title={reportsViewCopy.directoryTitle} description={reportsViewCopy.directoryDescription}>
-              <div className="space-y-5">
-                {catalogPanel.error ? (
-                  <StateView status="error" title={copy.drawer.unavailableReport} description={catalogPanel.error} />
-                ) : null}
+        <GlassSurface className="p-6">
+          <FormSection title={reportsViewCopy.directoryTitle} description={reportsViewCopy.directoryDescription}>
+            <div className="space-y-5">
+              {catalogPanel.error ? (
+                <StateView status="error" title={copy.drawer.unavailableReport} description={catalogPanel.error} />
+              ) : null}
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-                  <GlassSurface variant="solid" className="p-6">
-                    {catalogPanel.loading && catalogPanel.data.length === 0 ? (
-                      <StateView
-                        status="empty"
-                        title={copy.summary.catalogLabel}
-                        description={copy.summary.catalogHint}
-                      />
-                    ) : selectedReport ? (
-                      <div className="space-y-5">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div className="space-y-3">
-                            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                              {selectedReportIsAvailable ? reportsViewCopy.cardBadge : copy.drawer.unavailableReport}
-                            </p>
-                            <div className="space-y-2">
-                              <h2 className="text-xl font-semibold text-slate-950">{selectedReportName}</h2>
-                              <p className="max-w-2xl text-sm leading-6 text-slate-600">{selectedReportDescription}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNotice(null);
-                                setIsDraftDrawerOpen(true);
-                              }}
-                              disabled={!selectedReportIsAvailable}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
-                            >
-                              <FileSpreadsheet className="h-4 w-4" />
-                              {selectedReportIsAvailable ? reportsViewCopy.cardAction : copy.drawer.unavailableReport}
-                            </button>
-                            <SecondaryButton
-                              onClick={() => applyReportsQueryState({ activeView: 'history' })}
-                              ariaLabel={reportsViewCopy.cardHistory}
-                            >
-                              <RefreshCcw className="h-3.5 w-3.5" />
-                              {reportsViewCopy.cardHistory}
-                            </SecondaryButton>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <SummaryCard
-                            label={copy.summary.catalogLabel}
-                            value={reportCatalogCount}
-                            hint={copy.summary.catalogHint}
-                          />
-                          <SummaryCard
-                            label={copy.summary.jobsLabel}
-                            value={reportDirectoryCountLabel}
-                            hint={copy.summary.jobsHint}
-                          />
-                          <SummaryCard
-                            label={copy.summary.activeDownloadableLabel}
-                            value={`${activeJobs} / ${downloadableJobs}`}
-                            hint={copy.summary.activeDownloadableHint}
-                          />
-                        </div>
-
-                        <div className="grid gap-4 xl:grid-cols-2">
-                          <div className="space-y-4">
-                            <p className="text-sm font-semibold text-slate-900">{copy.drawer.codeFiltersTitle}</p>
-                            <div className="space-y-4">
-                              {primaryFilterFields.length > 0 ? primaryFilterFields.map((field) => (
-                                <SchemaFilterSummary
-                                  key={field.id}
-                                  field={field}
-                                  locale={selectedLocale}
-                                />
-                              )) : (
-                                <StateView
-                                  status="unavailable"
-                                  title={copy.drawer.unavailableReport}
-                                  description={copy.drawer.codeFiltersDescription}
-                                />
-                              )}
-                            </div>
-                          </div>
-
+              {catalogPanel.loading && catalogPanel.data.length === 0 ? (
+                <StateView
+                  status="empty"
+                  title={copy.summary.catalogLabel}
+                  description={copy.summary.catalogHint}
+                />
+              ) : selectedReport ? (
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+                  <div className="space-y-5">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-3">
+                        <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                          {selectedReportIsAvailable ? reportsViewCopy.cardBadge : copy.drawer.unavailableReport}
+                        </p>
+                        <div className="space-y-2">
+                          <h2 className="text-xl font-semibold text-slate-950">{selectedReportName}</h2>
+                          <p className="max-w-2xl text-sm leading-6 text-slate-600">{selectedReportDescription}</p>
                         </div>
                       </div>
-                    ) : (
-                      <StateView
-                        status="empty"
-                        title={copy.summary.reportName}
-                        description={copy.summary.reportDescription}
-                      />
-                    )}
-                  </GlassSurface>
 
-                  <GlassSurface className="p-6">
-                    <FormSection title={copy.notes.title} description={copy.notes.description}>
-                      <div className="space-y-4">
-                        <SummaryCard
-                          label={copy.notes.sensitiveDeliveryLabel}
-                          value={copy.notes.sensitiveDeliveryValue}
-                          hint={copy.notes.sensitiveDeliveryHint}
-                        />
-                        <SummaryCard
-                          label={copy.notes.workflowLabel}
-                          value={copy.notes.workflowValue}
-                          hint={copy.notes.workflowHint}
-                        />
-                        <p className="text-sm leading-6 text-slate-500">{reportsViewCopy.cardEmpty}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={openDraftReport}
+                          disabled={!selectedReportIsAvailable}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
+                        >
+                          <FileSpreadsheet className="h-4 w-4" />
+                          {selectedReportIsAvailable ? reportsViewCopy.cardAction : copy.drawer.unavailableReport}
+                        </button>
+                        <SecondaryButton
+                          onClick={() => applyReportsQueryState({ activeView: 'history' })}
+                          ariaLabel={reportsViewCopy.cardHistory}
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5" />
+                          {reportsViewCopy.cardHistory}
+                        </SecondaryButton>
                       </div>
-                    </FormSection>
-                  </GlassSurface>
-                </div>
-              </div>
-            </FormSection>
-          </GlassSurface>
+                    </div>
 
-          <GlassSurface className="p-6">
-            <FormSection title={copy.preview.title} description={copy.preview.description}>
-              {previewPanel.error ? (
-                <StateView status="error" title={copy.preview.unavailableTitle} description={previewPanel.error} />
-              ) : previewPanel.data ? (
-                <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <SummaryCard
-                      label={copy.preview.matchedRowsLabel}
-                      value={formatReportsNumber(selectedLocale, previewPanel.data.totalCount, copy.ledger.pendingRows)}
-                      hint={copy.preview.matchedRowsHint}
-                    />
-                    <SummaryCard
-                      label={copy.preview.platformsLabel}
-                      value={
-                        previewPanel.data.filterSummary.platforms.length > 0
-                          ? previewPanel.data.filterSummary.platforms.join(', ')
-                          : copy.preview.allPlatforms
-                      }
-                      hint={copy.preview.platformsHint}
-                    />
-                    <SummaryCard
-                      label={copy.preview.dateRangeLabel}
-                      value={previewPanel.data.filterSummary.dateRange || copy.preview.dateRangeUnbounded}
-                      hint={previewPanel.data.filterSummary.includeExpired ? copy.preview.includeExpiredHint : copy.preview.excludeExpiredHint}
-                    />
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <MetricChip
+                        label={copy.summary.reportLabel}
+                        value={selectedReportName}
+                        hint={selectedReport.id.toUpperCase()}
+                      />
+                      <MetricChip
+                        label={copy.summary.jobsLabel}
+                        value={reportDirectoryCountLabel}
+                        hint={copy.summary.jobsHint}
+                      />
+                      <MetricChip
+                        label={copy.summary.activeDownloadableLabel}
+                        value={`${activeJobs} / ${downloadableJobs}`}
+                        hint={copy.summary.activeDownloadableHint}
+                      />
+                    </div>
                   </div>
 
-                  <TableShell
-                    ariaLabel={copy.preview.title}
-                    columns={[...copy.preview.tableColumns]}
-                    dataLength={previewPanel.data.preview.length}
-                    isLoading={previewPanel.loading}
-                    isEmpty={previewPanel.data.totalCount === 0}
-                    emptyTitle={copy.preview.emptyTitle}
-                    emptyDescription={copy.preview.emptyDescription}
-                  >
-                    {previewPanel.data.preview.map((row, index) => (
-                      <tr key={`${row.nickname || 'row'}-${row.platformName}-${index}`} className="align-top">
-                        <td className="px-6 py-4 text-sm text-slate-700">{row.nickname || copy.preview.unnamedCustomer}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{row.platformName}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{row.membershipLevelName}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {row.validFrom} {row.validTo ? `→ ${row.validTo}` : `→ ${copy.preview.openEnded}`}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{row.statusName}</td>
-                      </tr>
-                    ))}
-                  </TableShell>
+                  <div className="rounded-lg border border-slate-200 bg-white/75 p-4">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-950">{copy.notes.title}</p>
+                        <p className="text-xs leading-5 text-slate-500">{copy.notes.description}</p>
+                      </div>
+                      <MetricChip
+                        label={copy.notes.sensitiveDeliveryLabel}
+                        value={copy.notes.sensitiveDeliveryValue}
+                        hint={copy.notes.sensitiveDeliveryHint}
+                      />
+                      <MetricChip
+                        label={copy.notes.workflowLabel}
+                        value={copy.notes.workflowValue}
+                        hint={copy.notes.workflowHint}
+                      />
+                      <p className="text-sm leading-6 text-slate-500">{reportsViewCopy.cardEmpty}</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <StateView status="empty" title={copy.preview.noPreviewTitle} description={copy.preview.noPreviewDescription} />
+                <StateView
+                  status="empty"
+                  title={copy.summary.reportName}
+                  description={copy.summary.reportDescription}
+                />
               )}
-            </FormSection>
-          </GlassSurface>
-        </>
+            </div>
+          </FormSection>
+        </GlassSurface>
       ) : (
         <GlassSurface className="p-6">
           <FormSection title={copy.ledger.title} description={copy.ledger.description}>
@@ -2066,78 +2020,145 @@ export function ReportsManagementScreen({
           </div>
         }
       >
-        <fieldset disabled={previewPending || createPending} className="space-y-5 disabled:opacity-70">
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+        <div className="space-y-5">
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
             <p className="font-semibold">{copy.drawer.draftGuideTitle}</p>
             <p className="mt-1 leading-6 text-indigo-900">{copy.drawer.draftGuideDescription}</p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-            <div className="mb-4 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">{copy.drawer.codeFiltersTitle}</p>
-              <p className="text-xs leading-5 text-slate-500">{copy.drawer.codeFiltersDescription}</p>
+          <DrawerStep number="1" title={selectedReportName} description={selectedReportDescription}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <MetricChip
+                label={copy.summary.reportLabel}
+                value={selectedReportName}
+                hint={selectedReport?.id.toUpperCase() ?? copy.summary.reportDescription}
+              />
+              <MetricChip
+                label={copy.notes.workflowLabel}
+                value={copy.notes.workflowValue}
+                hint={copy.notes.workflowHint}
+              />
             </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              {primaryFilterFields.length > 0 ? (
-                primaryFilterFields.map((field) => (
-                  <SchemaFilterField
-                    key={field.id}
-                    field={field}
-                    draft={draft}
-                    locale={selectedLocale}
-                    options={filterOptionsPanel.data[field.id]}
-                    optionsLoading={filterOptionsPanel.loading}
-                    optionsError={filterOptionsPanel.error}
-                    onChange={(key, value) => {
-                      setDraft((current) => updateDraftField(current, key, value));
-                    }}
-                  />
-                ))
-              ) : (
-                <StateView status="unavailable" title={copy.drawer.unavailableReport} description={copy.drawer.codeFiltersDescription} />
-              )}
-            </div>
-          </div>
+          </DrawerStep>
 
-          <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-            <div className="mb-4 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">{copy.drawer.outputTitle}</p>
-              <p className="text-xs leading-5 text-slate-500">{copy.drawer.outputDescription}</p>
-            </div>
-            <SelectField
-              label={copy.drawer.fields.downloadFormat}
-              value={draft.format}
-              options={reportFormatOptions}
-              onChange={(value) => setDraft((current) => ({ ...current, format: value as ReportFormat }))}
-            />
-          </div>
-
-          {advancedFilterFields.length > 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-              <div className="mb-4 space-y-1">
-                <p className="text-sm font-semibold text-slate-900">{copy.drawer.advancedTitle}</p>
-                <p className="text-xs leading-5 text-slate-500">{copy.drawer.advancedDescription}</p>
-              </div>
+          <fieldset disabled={previewPending || createPending} className="space-y-5 disabled:opacity-70">
+            <DrawerStep number="2" title={copy.drawer.codeFiltersTitle} description={copy.drawer.codeFiltersDescription}>
               <div className="grid gap-4 xl:grid-cols-2">
-                {advancedFilterFields.map((field) => (
-                  <SchemaFilterField
-                    key={field.id}
-                    field={field}
-                    draft={draft}
-                    locale={selectedLocale}
-                    options={filterOptionsPanel.data[field.id]}
-                    optionsLoading={filterOptionsPanel.loading}
-                    optionsError={filterOptionsPanel.error}
-                    advanced
-                    onChange={(key, value) => {
-                      setDraft((current) => updateDraftField(current, key, value));
-                    }}
-                  />
-                ))}
+                {primaryFilterFields.length > 0 ? (
+                  primaryFilterFields.map((field) => (
+                    <SchemaFilterField
+                      key={field.id}
+                      field={field}
+                      draft={draft}
+                      locale={selectedLocale}
+                      options={filterOptionsPanel.data[field.id]}
+                      optionsLoading={filterOptionsPanel.loading}
+                      optionsError={filterOptionsPanel.error}
+                      onChange={(key, value) => {
+                        setDraft((current) => updateDraftField(current, key, value));
+                      }}
+                    />
+                  ))
+                ) : (
+                  <StateView status="unavailable" title={copy.drawer.unavailableReport} description={copy.drawer.codeFiltersDescription} />
+                )}
               </div>
-            </div>
-          ) : null}
-        </fieldset>
+            </DrawerStep>
+
+            <DrawerStep number="3" title={copy.drawer.outputTitle} description={copy.drawer.outputDescription}>
+              <div className="space-y-5">
+                <SelectField
+                  label={copy.drawer.fields.downloadFormat}
+                  value={draft.format}
+                  options={reportFormatOptions}
+                  onChange={(value) => setDraft((current) => ({ ...current, format: value as ReportFormat }))}
+                />
+
+                {advancedFilterFields.length > 0 ? (
+                  <div className="space-y-4 border-t border-slate-200 pt-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">{copy.drawer.advancedTitle}</p>
+                      <p className="text-xs leading-5 text-slate-500">{copy.drawer.advancedDescription}</p>
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      {advancedFilterFields.map((field) => (
+                        <SchemaFilterField
+                          key={field.id}
+                          field={field}
+                          draft={draft}
+                          locale={selectedLocale}
+                          options={filterOptionsPanel.data[field.id]}
+                          optionsLoading={filterOptionsPanel.loading}
+                          optionsError={filterOptionsPanel.error}
+                          advanced
+                          onChange={(key, value) => {
+                            setDraft((current) => updateDraftField(current, key, value));
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </DrawerStep>
+          </fieldset>
+
+          <DrawerStep number="4" title={copy.preview.title} description={copy.preview.description}>
+            {previewPanel.loading ? (
+              <StateView status="empty" title={copy.drawer.previewRows} description={copy.preview.description} />
+            ) : previewPanel.error ? (
+              <StateView status="error" title={copy.preview.unavailableTitle} description={previewPanel.error} />
+            ) : previewPanel.data ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MetricChip
+                    label={copy.preview.matchedRowsLabel}
+                    value={formatReportsNumber(selectedLocale, previewPanel.data.totalCount, copy.ledger.pendingRows)}
+                    hint={copy.preview.matchedRowsHint}
+                  />
+                  <MetricChip
+                    label={copy.preview.platformsLabel}
+                    value={
+                      previewPanel.data.filterSummary.platforms.length > 0
+                        ? previewPanel.data.filterSummary.platforms.join(', ')
+                        : copy.preview.allPlatforms
+                    }
+                    hint={copy.preview.platformsHint}
+                  />
+                  <MetricChip
+                    label={copy.preview.dateRangeLabel}
+                    value={previewPanel.data.filterSummary.dateRange || copy.preview.dateRangeUnbounded}
+                    hint={previewPanel.data.filterSummary.includeExpired ? copy.preview.includeExpiredHint : copy.preview.excludeExpiredHint}
+                  />
+                </div>
+
+                <TableShell
+                  ariaLabel={copy.preview.title}
+                  columns={[...copy.preview.tableColumns]}
+                  dataLength={previewPanel.data.preview.length}
+                  isLoading={previewPanel.loading}
+                  isEmpty={previewPanel.data.preview.length === 0}
+                  emptyTitle={copy.preview.emptyTitle}
+                  emptyDescription={copy.preview.emptyDescription}
+                >
+                  {previewPanel.data.preview.map((row, index) => (
+                    <tr key={`${row.nickname || 'row'}-${row.platformName}-${index}`} className="align-top">
+                      <td className="px-6 py-4 text-sm text-slate-700">{row.nickname || copy.preview.unnamedCustomer}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{row.platformName}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{row.membershipLevelName}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {row.validFrom} {row.validTo ? `→ ${row.validTo}` : `→ ${copy.preview.openEnded}`}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{row.statusName}</td>
+                    </tr>
+                  ))}
+                </TableShell>
+              </div>
+            ) : (
+              <StateView status="empty" title={copy.preview.noPreviewTitle} description={copy.preview.noPreviewDescription} />
+            )}
+          </DrawerStep>
+        </div>
       </ActionDrawer>
     </div>
   );
