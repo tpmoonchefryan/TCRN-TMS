@@ -2,7 +2,7 @@
 
 import { ArrowRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { startTransition, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, startTransition, useMemo, useRef, useState } from 'react';
 
 import {
   type AuthenticatedSessionResult,
@@ -49,6 +49,39 @@ interface TalentSelectorState {
   tenantId: string;
   talents: PostLoginTalentOption[];
 }
+
+const LOGIN_HERO_TYPEWRITER_CSS = `
+@keyframes loginHeroCharacterReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes loginHeroCaretBlink {
+  0%, 45% { opacity: 1; }
+  46%, 100% { opacity: 0; }
+}
+
+.login-hero-typewriter-character {
+  opacity: 0;
+  animation: loginHeroCharacterReveal 1ms linear forwards;
+  animation-delay: calc(var(--login-hero-character-index) * 55ms);
+}
+
+.login-hero-typewriter-caret {
+  animation: loginHeroCaretBlink 900ms steps(2, start) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-typewriter-character {
+    opacity: 1;
+    animation: none;
+  }
+
+  .login-hero-typewriter-caret {
+    display: none;
+  }
+}
+`;
 
 function isBusinessSelectableTalent(talent: OrganizationTalent) {
   return talent.isActive && talent.lifecycleStatus === 'published';
@@ -194,6 +227,7 @@ export function LoginForm() {
 
   const heroTitle = loginCopy.heroTitle.trim();
   const heroDescription = loginCopy.heroDescription.trim();
+  const heroDescriptionCharacters = useMemo(() => Array.from(heroDescription), [heroDescription]);
   const surfaceNote = loginCopy.surfaceNote.trim();
 
   async function resolvePostLoginTarget(result: AuthenticatedSessionResult) {
@@ -336,11 +370,24 @@ export function LoginForm() {
             {heroDescription ? (
               <p className="max-w-2xl text-base leading-7 text-slate-700 [text-shadow:0_1px_0_rgba(255,255,255,0.7)]">
                 <span className="sr-only">{heroDescription}</span>
+                <style>{LOGIN_HERO_TYPEWRITER_CSS}</style>
                 <span
                   aria-hidden="true"
-                  className="login-hero-description inline-block max-w-full align-bottom"
+                  className="login-hero-description login-hero-typewriter inline-flex max-w-full flex-wrap items-baseline align-bottom"
                 >
-                  {heroDescription}
+                  {heroDescriptionCharacters.map((character, index) => (
+                    <span
+                      key={`${character}-${index}`}
+                      className="login-hero-typewriter-character"
+                      style={{ '--login-hero-character-index': index } as CSSProperties}
+                    >
+                      {character === ' ' ? '\u00A0' : character}
+                    </span>
+                  ))}
+                  <span
+                    aria-hidden="true"
+                    className="login-hero-typewriter-caret ml-1 inline-block h-[1.1em] w-0.5 flex-none translate-y-0.5 rounded-full bg-current"
+                  />
                 </span>
               </p>
             ) : null}

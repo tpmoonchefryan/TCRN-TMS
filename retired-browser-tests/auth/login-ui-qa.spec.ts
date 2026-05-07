@@ -52,7 +52,8 @@ test.describe('login UI QA', () => {
     await expect(page.getByRole('button', { name: '切换语言: 简体中文' })).toBeVisible();
     await expect(page.getByText('欢迎登陆TCRN TMS')).toBeVisible();
     await expect(page.locator('.login-hero-description')).toHaveText('记录闪耀背后的每一滴汗水');
-    await expect(page.locator('.login-hero-typewriter')).toHaveCount(0);
+    await expect(page.locator('.login-hero-typewriter')).toHaveCount(1);
+    await expect(page.locator('.login-hero-typewriter-character')).toHaveCount(12);
     await expect(page.getByRole('heading', { name: '登录' })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'login desktop');
 
@@ -76,7 +77,8 @@ test.describe('login UI QA', () => {
 
     await expect(page.getByRole('button', { name: '切换语言: 简体中文' })).toBeVisible();
     await expect(page.locator('.login-hero-description')).toHaveText('记录闪耀背后的每一滴汗水');
-    await expect(page.locator('.login-hero-typewriter')).toHaveCount(0);
+    await expect(page.locator('.login-hero-typewriter')).toHaveCount(1);
+    await expect(page.locator('.login-hero-typewriter-caret')).toBeHidden();
     await expect(page.getByRole('heading', { name: '登录' })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'login mobile reduced motion');
 

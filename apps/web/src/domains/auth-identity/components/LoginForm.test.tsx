@@ -214,7 +214,7 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
   });
 
-  it('renders the full login hero description without typewriter clipping', () => {
+  it('renders the login hero description with a hydration-stable typewriter effect', () => {
     const heroDescription = 'Record every drop of sweat behind the spotlight.';
     localeState.copy.auth.login = buildLoginCopy({
       heroDescription,
@@ -228,13 +228,19 @@ describe('LoginForm', () => {
     const visualDescription = container.querySelector('.login-hero-description');
     expect(visualDescription).toHaveAttribute('aria-hidden', 'true');
     expect(visualDescription).toHaveTextContent(heroDescription);
-    expect(container.querySelector('.login-hero-typewriter')).not.toBeInTheDocument();
+    expect(visualDescription).toHaveClass('login-hero-typewriter');
+    expect(container.querySelectorAll('.login-hero-typewriter-character')).toHaveLength(
+      Array.from(heroDescription).length,
+    );
+    expect(container.querySelector('.login-hero-typewriter-caret')).toBeInTheDocument();
 
     const screenReaderDescription = screen
       .getAllByText(heroDescription)
       .find((element) => element.classList.contains('sr-only'));
     expect(screenReaderDescription).toBeDefined();
-    expect(container.querySelector('style')?.textContent ?? '').not.toContain('loginHeroTyping');
+    const typewriterCss = container.querySelector('style')?.textContent ?? '';
+    expect(typewriterCss).toContain('loginHeroCharacterReveal');
+    expect(typewriterCss).toContain('prefers-reduced-motion: reduce');
   });
 
   it('uses stable form semantics for login, TOTP, and password-reset fields', async () => {
