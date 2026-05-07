@@ -9,7 +9,7 @@ import { TalentCustomDomainService } from './application/talent-custom-domain.se
 import { TalentLifecycleService } from './application/talent-lifecycle.service';
 import { TalentReadService } from './application/talent-read.service';
 import { TalentWriteService } from './application/talent-write.service';
-import type { CustomDomainOwnerType, CustomDomainSslMode } from './domain/talent-custom-domain.policy';
+import type { CustomDomainOwnerType, CustomDomainSslMode, TalentCustomDomainBindingListOptions } from './domain/talent-custom-domain.policy';
 import type {
   TalentData,
   TalentListOptions,
@@ -313,6 +313,16 @@ export class TalentService {
     },
   ) {
     return this.talentCustomDomainService.createCustomDomainBinding(
+      tenantSchema,
+      input,
+    );
+  }
+
+  async listCustomDomainBindings(
+    tenantSchema: string,
+    input: TalentCustomDomainBindingListOptions,
+  ) {
+    return this.talentCustomDomainService.listCustomDomainBindings(
       tenantSchema,
       input,
     );

@@ -90,6 +90,11 @@ describe('TalentController lifecycle route contract', () => {
           path: ':talentId/move',
         },
         {
+          methodName: 'listCustomDomainBindings',
+          requestMethod: RequestMethod.GET,
+          path: 'custom-domain-bindings',
+        },
+        {
           methodName: 'createCustomDomainBinding',
           requestMethod: RequestMethod.POST,
           path: 'custom-domain-bindings',
@@ -143,6 +148,9 @@ describe('TalentController lifecycle route contract', () => {
     const routes = getControllerRoutes(TalentController);
     const routeKeys = routes.map((route) => `${RequestMethod[route.requestMethod]} ${route.path}`);
 
+    expect(routeKeys.indexOf('GET custom-domain-bindings')).toBeLessThan(
+      routeKeys.indexOf('GET :talentId'),
+    );
     expect(routeKeys.indexOf('POST custom-domain-bindings')).toBeLessThan(
       routeKeys.indexOf('GET :talentId'),
     );

@@ -594,6 +594,7 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
     'membership-type': { label: '会员类型', description: '挂在会员类别下的会员类型定义。' },
     'membership-level': { label: '会员层级', description: '挂在会员类型下的具体会员层级。' },
     'profile-store': { label: '档案库', description: '租户级客户档案边界，用于艺人发布与客户访问。' },
+    'custom-domain': { label: '自定义域名', description: '租户、分目录与艺人拥有的公开域名绑定，支持继承与 DNS 验证。' },
     consent: { label: '同意协议', description: '带有本地化内容与生效时间窗的同意协议。' },
   },
   ja: {
@@ -608,6 +609,7 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
     'membership-type': { label: '会員タイプ', description: '会員カテゴリ配下で管理する会員タイプです。' },
     'membership-level': { label: '会員レベル', description: '会員タイプ配下で管理する具体的な会員レベルです。' },
     'profile-store': { label: 'プロフィールストア', description: 'タレント公開と顧客アクセスに使うテナント単位の顧客アーカイブ境界です。' },
+    'custom-domain': { label: 'カスタムドメイン', description: '継承と DNS 検証に対応した、テナント・配下スコープ・タレント所有の公開ドメイン設定です。' },
     consent: { label: '同意契約', description: 'ローカライズ済み内容と有効期間を持つ同意契約です。' },
   },
   ko: {
@@ -622,6 +624,7 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
     'membership-type': { label: '멤버십 유형', description: '멤버십 카테고리 아래에서 관리하는 유형입니다.' },
     'membership-level': { label: '멤버십 레벨', description: '멤버십 유형 아래의 구체적인 레벨입니다.' },
     'profile-store': { label: '프로필 저장소', description: '탤런트 공개와 고객 접근에 쓰는 테넌트 단위 고객 아카이브 경계입니다.' },
+    'custom-domain': { label: '커스텀 도메인', description: '상속과 DNS 검증을 지원하는 테넌트, 하위 조직, 탤런트 소유 공개 도메인 바인딩입니다.' },
     consent: { label: '동의 계약', description: '현지화된 내용과 유효 기간을 가진 동의 계약입니다.' },
   },
   fr: {
@@ -636,6 +639,7 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
     'membership-type': { label: 'Type d adhesion', description: 'Type gere sous une categorie d adhesion.' },
     'membership-level': { label: 'Niveau d adhesion', description: 'Niveau concret gere sous un type d adhesion.' },
     'profile-store': { label: 'Archive client', description: 'Frontiere d archive client au niveau tenant pour la publication talent et l acces client.' },
+    'custom-domain': { label: 'Domaine personnalise', description: 'Liaisons de domaines publics detenues par le tenant, le perimetre ou le talent, avec heritage et verification DNS.' },
     consent: { label: 'Accord de consentement', description: 'Accord avec contenu localise et fenetre de validite.' },
   },
 };

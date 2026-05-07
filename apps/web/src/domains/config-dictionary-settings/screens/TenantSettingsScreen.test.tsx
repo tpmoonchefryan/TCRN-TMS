@@ -228,6 +228,27 @@ describe('TenantSettingsScreen', () => {
         ]);
       }
 
+      if (path === '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false') {
+        return {
+          domains: [
+            {
+              id: 'tenant-domain',
+              hostname: 'tenant.example.com',
+              ownerType: 'tenant',
+              ownerId: null,
+              ownerDepth: null,
+              inherited: false,
+              selected: true,
+              customDomainVerified: true,
+              customDomainVerificationToken: null,
+              customDomainSslMode: 'cloudflare',
+              isActive: true,
+              routeMode: 'scoped_talent_path',
+            },
+          ],
+        };
+      }
+
       if (path === '/api/v1/organization/settings' && init?.method === 'PATCH') {
         return {
           scopeType: 'tenant',
@@ -276,15 +297,35 @@ describe('TenantSettingsScreen', () => {
     );
     expect(screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: /Custom Domain custom-domain/i }));
+    expect(await screen.findByText('tenant.example.com')).toBeInTheDocument();
+    expect(mockRequest).toHaveBeenCalledWith(
+      '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false',
+    );
+
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
     expect((await screen.findAllByText('Customer Status')).length).toBeGreaterThan(0);
     expect(await screen.findByText('Active customer')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
+    expect(screen.getByText('Localization')).toBeInTheDocument();
+    expect(screen.getByText('Public surfaces')).toBeInTheDocument();
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getByText('Security')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
+    });
+    fireEvent.change(screen.getByLabelText('Currency'), {
+      target: { value: 'JPY' },
+    });
+    fireEvent.change(screen.getByLabelText('Max import rows'), {
+      target: { value: '25000' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save tenant defaults' }));
 
@@ -297,7 +338,18 @@ describe('TenantSettingsScreen', () => {
             settings: {
               defaultLanguage: 'ja',
               timezone: 'Asia/Shanghai',
+              dateFormat: 'YYYY-MM-DD',
+              currency: 'JPY',
+              customerImportEnabled: true,
+              maxImportRows: 25000,
+              totpRequiredForAll: false,
               allowCustomHomepage: true,
+              allowMarshmallow: true,
+              passwordPolicy: {
+                minLength: 12,
+                requireSpecial: true,
+                maxAgeDays: 90,
+              },
             },
             version: 3,
           }),

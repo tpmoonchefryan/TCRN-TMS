@@ -36,6 +36,33 @@ export interface UpsertCustomDomainBindingInput {
   isActive?: boolean;
 }
 
+export interface CustomDomainBindingCatalogItem {
+  id: string;
+  hostname: string;
+  ownerType: 'tenant' | 'subsidiary' | 'talent' | string;
+  ownerId: string | null;
+  ownerDepth?: number | null;
+  inherited: boolean;
+  selected: boolean;
+  customDomainVerified: boolean;
+  customDomainVerificationToken: string | null;
+  customDomainSslMode: 'auto' | 'self_hosted' | 'cloudflare' | string;
+  isActive: boolean;
+  routeMode: 'dedicated_talent' | 'scoped_talent_path' | string;
+}
+
+export interface CustomDomainBindingCatalogResponse {
+  domains: CustomDomainBindingCatalogItem[];
+}
+
+export interface ListCustomDomainBindingsOptions {
+  scopeType: 'tenant' | 'subsidiary' | 'talent';
+  scopeId?: string | null;
+  includeInherited?: boolean;
+  includeInactive?: boolean;
+  search?: string;
+}
+
 export interface CustomDomainBindingResponse {
   domain: {
     id: string;
@@ -131,6 +158,30 @@ export function createCustomDomainBinding(
   return request<CustomDomainBindingResponse>(
     '/api/v1/talents/custom-domain-bindings',
     buildJsonRequestInit('POST', input),
+  );
+}
+
+export function listCustomDomainBindings(
+  request: RequestFn,
+  options: ListCustomDomainBindingsOptions,
+) {
+  const query = new URLSearchParams();
+  query.set('scopeType', options.scopeType);
+  if (options.scopeType !== 'tenant' && options.scopeId) {
+    query.set('scopeId', options.scopeId);
+  }
+  if (options.includeInherited !== undefined) {
+    query.set('includeInherited', String(options.includeInherited));
+  }
+  if (options.includeInactive !== undefined) {
+    query.set('includeInactive', String(options.includeInactive));
+  }
+  if (options.search?.trim()) {
+    query.set('search', options.search.trim());
+  }
+
+  return request<CustomDomainBindingCatalogResponse>(
+    `/api/v1/talents/custom-domain-bindings?${query.toString()}`,
   );
 }
 

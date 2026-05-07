@@ -390,13 +390,31 @@ const privateVisualScopeSettings = {
   settings: {
     defaultLanguage: 'en',
     timezone: 'Asia/Shanghai',
+    dateFormat: 'YYYY-MM-DD',
+    currency: 'USD',
+    customerImportEnabled: true,
+    maxImportRows: 5000,
+    totpRequiredForAll: false,
     allowCustomHomepage: true,
+    allowMarshmallow: true,
+    passwordPolicy: {
+      minLength: 12,
+      requireSpecial: true,
+      maxAgeDays: 90,
+    },
   },
-  overrides: ['defaultLanguage', 'timezone'],
+  overrides: ['defaultLanguage', 'timezone', 'dateFormat', 'currency'],
   inheritedFrom: {
     defaultLanguage: 'tenant',
     timezone: 'tenant',
+    dateFormat: 'tenant',
+    currency: 'tenant',
+    customerImportEnabled: 'tenant',
+    maxImportRows: 'tenant',
+    totpRequiredForAll: 'tenant',
     allowCustomHomepage: 'tenant',
+    allowMarshmallow: 'tenant',
+    passwordPolicy: 'tenant',
   },
   version: 3,
 };
@@ -429,13 +447,31 @@ const privateVisualSubsidiarySettings = {
   settings: {
     defaultLanguage: 'en',
     timezone: 'Asia/Tokyo',
+    dateFormat: 'YYYY-MM-DD',
+    currency: 'JPY',
+    customerImportEnabled: true,
+    maxImportRows: 3000,
+    totpRequiredForAll: false,
     allowCustomHomepage: true,
+    allowMarshmallow: true,
+    passwordPolicy: {
+      minLength: 12,
+      requireSpecial: true,
+      maxAgeDays: 90,
+    },
   },
-  overrides: ['timezone'],
+  overrides: ['timezone', 'currency'],
   inheritedFrom: {
     defaultLanguage: 'tenant',
     timezone: 'subsidiary',
+    dateFormat: 'tenant',
+    currency: 'subsidiary',
+    customerImportEnabled: 'tenant',
+    maxImportRows: 'tenant',
+    totpRequiredForAll: 'tenant',
     allowCustomHomepage: 'tenant',
+    allowMarshmallow: 'tenant',
+    passwordPolicy: 'tenant',
   },
   version: 4,
 };
@@ -446,13 +482,31 @@ const privateVisualTalentSettings = {
   settings: {
     defaultLanguage: 'en',
     timezone: 'Asia/Tokyo',
+    dateFormat: 'YYYY-MM-DD',
+    currency: 'JPY',
+    customerImportEnabled: true,
+    maxImportRows: 2000,
+    totpRequiredForAll: false,
     allowCustomHomepage: true,
+    allowMarshmallow: true,
+    passwordPolicy: {
+      minLength: 12,
+      requireSpecial: true,
+      maxAgeDays: 90,
+    },
   },
   overrides: ['timezone'],
   inheritedFrom: {
     defaultLanguage: 'tenant',
     timezone: 'talent',
+    dateFormat: 'tenant',
+    currency: 'subsidiary',
+    customerImportEnabled: 'tenant',
+    maxImportRows: 'tenant',
+    totpRequiredForAll: 'tenant',
     allowCustomHomepage: 'tenant',
+    allowMarshmallow: 'tenant',
+    passwordPolicy: 'tenant',
   },
   version: 5,
 };
@@ -531,6 +585,93 @@ const privateVisualInheritedTalentDomain = {
   homepagePath: 'homepage',
   marshmallowPath: 'marshmallow',
 };
+
+const privateVisualTenantCustomDomainBinding = {
+  id: 'domain-tenant-brand',
+  hostname: 'tenant.example.test',
+  ownerType: 'tenant',
+  ownerId: visualQaSession.tenantId,
+  ownerDepth: 0,
+  inherited: false,
+  selected: false,
+  customDomainVerified: true,
+  customDomainVerificationToken: null,
+  customDomainSslMode: 'auto',
+  isActive: true,
+  routeMode: 'scoped_talent_path',
+};
+
+const privateVisualSubsidiaryCustomDomainBinding = {
+  id: 'domain-subsidiary-tokyo',
+  hostname: 'tokyo.example.test',
+  ownerType: 'subsidiary',
+  ownerId: 'subsidiary-visual',
+  ownerDepth: 1,
+  inherited: false,
+  selected: false,
+  customDomainVerified: true,
+  customDomainVerificationToken: null,
+  customDomainSslMode: 'auto',
+  isActive: true,
+  routeMode: 'scoped_talent_path',
+};
+
+const privateVisualTalentCustomDomainBinding = {
+  id: 'domain-talent-visual',
+  hostname: 'visual-talent.example.test',
+  ownerType: 'talent',
+  ownerId: 'talent-visual',
+  ownerDepth: 2,
+  inherited: false,
+  selected: false,
+  customDomainVerified: false,
+  customDomainVerificationToken: 'visual-talent-token',
+  customDomainSslMode: 'auto',
+  isActive: true,
+  routeMode: 'dedicated_talent',
+};
+
+function cloneCustomDomainBinding(
+  domain: typeof privateVisualTenantCustomDomainBinding,
+  inherited: boolean,
+  selected = false,
+) {
+  return {
+    ...domain,
+    inherited,
+    selected,
+  };
+}
+
+function listPrivateVisualCustomDomainBindings(url: URL) {
+  const scopeType = url.searchParams.get('scopeType');
+  const includeInherited = url.searchParams.get('includeInherited') !== 'false';
+  const search = url.searchParams.get('search')?.trim().toLowerCase();
+  let domains: Array<typeof privateVisualTenantCustomDomainBinding> = [];
+
+  if (scopeType === 'tenant') {
+    domains = [cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, false)];
+  } else if (scopeType === 'subsidiary') {
+    domains = includeInherited
+      ? [
+          cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, true),
+          cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, false),
+        ]
+      : [cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, false)];
+  } else if (scopeType === 'talent') {
+    domains = includeInherited
+      ? [
+          cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, true, true),
+          cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, true, true),
+          cloneCustomDomainBinding(privateVisualTalentCustomDomainBinding, false),
+        ]
+      : [cloneCustomDomainBinding(privateVisualTalentCustomDomainBinding, false)];
+  }
+
+  return search
+    ? domains.filter((domain) => domain.hostname.toLowerCase().includes(search))
+    : domains;
+}
 
 const privateLocaleVisualQaCases = [
   {
@@ -913,6 +1054,35 @@ async function mockPrivateRuntimeApi(page: Page) {
             meta: {
               total: 1,
             },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/custom-domain-bindings') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            domains: listPrivateVisualCustomDomainBindings(url),
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/configuration-entity/custom-domain') {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: {
+            code: 'VISUAL_QA_WRONG_ENDPOINT',
+            message: 'Custom-domain config entity must use the binding registry endpoint.',
           },
         }),
       });
@@ -2237,6 +2407,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(
       page.getByText('Review tenant defaults before opening the edit workflow.')
     ).toBeVisible();
+    await expect(page.getByText('Date format', { exact: true })).toBeVisible();
+    await expect(page.getByText('Currency', { exact: true })).toBeVisible();
+    await expect(page.getByText('Customer import', { exact: true })).toBeVisible();
+    await expect(page.getByText('Password policy', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Default language')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Save tenant defaults' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit defaults' })).toBeVisible();
@@ -2251,6 +2425,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(defaultsDrawer).toBeVisible();
     await expect(defaultsDrawer.getByLabel('Default language')).toBeVisible();
     await expect(defaultsDrawer.getByLabel('Default timezone')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Date format')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Currency')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Enable customer import')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Minimum password length')).toBeVisible();
     await expect(defaultsDrawer.getByRole('button', { name: 'Save tenant defaults' })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'desktop tenant settings defaults drawer');
     await expect(page).toHaveScreenshot('private-tenant-settings-desktop-drawer.png', {
@@ -2275,6 +2453,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(
       page.getByText('Review subsidiary defaults before opening the edit workflow.')
     ).toBeVisible();
+    await expect(page.getByText('Date format', { exact: true })).toBeVisible();
+    await expect(page.getByText('Currency', { exact: true })).toBeVisible();
+    await expect(page.getByText('Customer import', { exact: true })).toBeVisible();
+    await expect(page.getByText('Password policy', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Default language')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Save subsidiary settings' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit defaults' })).toBeVisible();
@@ -2289,6 +2471,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(defaultsDrawer).toBeVisible();
     await expect(defaultsDrawer.getByLabel('Default language')).toBeVisible();
     await expect(defaultsDrawer.getByLabel('Default timezone')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Date format')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Currency')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Enable customer import')).toBeVisible();
+    await expect(defaultsDrawer.getByLabel('Minimum password length')).toBeVisible();
     await expect(defaultsDrawer.getByRole('button', { name: 'Save subsidiary settings' })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'desktop subsidiary settings defaults drawer');
     await expect(page).toHaveScreenshot('private-subsidiary-settings-desktop-drawer.png', {
@@ -2307,6 +2493,10 @@ test.describe('private shell browser visual QA', () => {
 
     await expect(page.getByRole('heading', { name: /Visual Talent.*Talent Settings/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Settings guide' })).toHaveCount(0);
+    await expect(page.getByText('Date format', { exact: true })).toBeVisible();
+    await expect(page.getByText('Currency', { exact: true })).toBeVisible();
+    await expect(page.getByText('Customer import', { exact: true })).toBeVisible();
+    await expect(page.getByText('Password policy', { exact: true })).toBeVisible();
     await expect(page.getByText('Public Marshmallow Route')).toBeVisible();
     await expect(page.getByLabel('Enable public marshmallow route')).toHaveCount(0);
     await expect(page.getByLabel('Custom domain')).toHaveCount(0);
@@ -2321,6 +2511,10 @@ test.describe('private shell browser visual QA', () => {
     await hideFrameworkDevTools(page);
     const settingsDrawer = page.getByRole('dialog', { name: 'Configure talent settings' });
     await expect(settingsDrawer).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Date format')).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Currency')).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Enable customer import')).toBeVisible();
+    await expect(settingsDrawer.getByLabel('Minimum password length')).toBeVisible();
     await expect(settingsDrawer.getByLabel('Enable public marshmallow route')).toBeVisible();
     await expect(settingsDrawer.getByLabel('Custom domain')).toBeVisible();
     await expect(settingsDrawer.getByText('visual.example.test', { exact: true })).toBeVisible();
@@ -2355,6 +2549,98 @@ test.describe('private shell browser visual QA', () => {
     await expectNoHorizontalOverflow(page, 'mobile talent settings custom-domain storage error');
 
     privateVisualUseCustomDomainStorageError = false;
+  });
+
+  test('desktop tenant settings manages custom domains through scoped config entity records', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/settings?configEntityType=custom-domain');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Tenant Settings' })).toBeVisible();
+    await page.getByRole('button', { name: 'Configuration Entity Management' }).click();
+    await expect(page).toHaveURL(/section=config-entities/);
+    await expect(page).toHaveURL(/configEntityType=custom-domain/);
+    await expect(page.getByRole('heading', { name: 'Custom-domain records' })).toBeVisible();
+    const domainTable = page.getByRole('table', { name: 'Custom-domain records' });
+    await expect(domainTable).toBeVisible();
+    const tenantRow = domainTable.getByRole('row', { name: /tenant\.example\.test/ });
+    await expect(tenantRow).toBeVisible();
+    await expect(tenantRow.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await expect(tenantRow.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New custom domain' })).toBeVisible();
+    await expect(page.getByText('VISUAL_QA_WRONG_ENDPOINT')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop tenant settings custom-domain config entity');
+    await expect(page).toHaveScreenshot('private-tenant-settings-custom-domain-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop subsidiary settings reviews inherited custom domains and manages owned rows', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(
+      '/tenant/tenant-visual/subsidiary/subsidiary-visual/settings?configEntityType=custom-domain',
+    );
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: /Tokyo Branch.*Subsidiary Settings/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Configuration Entity Management' }).click();
+    await expect(page).toHaveURL(/section=config-entities/);
+    await expect(page).toHaveURL(/configEntityType=custom-domain/);
+    await expect(page.getByRole('heading', { name: 'Custom-domain records' })).toBeVisible();
+    await expect(page.getByText('Inherited', { exact: true }).first()).toBeVisible();
+    const domainTable = page.getByRole('table', { name: 'Custom-domain records' });
+    const inheritedTenantRow = domainTable.getByRole('row', { name: /tenant\.example\.test/ });
+    const ownedSubsidiaryRow = domainTable.getByRole('row', { name: /tokyo\.example\.test/ });
+    await expect(inheritedTenantRow).toBeVisible();
+    await expect(inheritedTenantRow.getByText('Review only')).toBeVisible();
+    await expect(inheritedTenantRow.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+    await expect(ownedSubsidiaryRow).toBeVisible();
+    await expect(ownedSubsidiaryRow.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await expect(page.getByText('VISUAL_QA_WRONG_ENDPOINT')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop subsidiary settings custom-domain config entity');
+    await expect(page).toHaveScreenshot('private-subsidiary-settings-custom-domain-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile talent settings custom-domain config entity shows inherited and owned routing records', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(
+      '/tenant/tenant-visual/talent/talent-visual/settings?configEntityType=custom-domain',
+    );
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: /Visual Talent.*Talent Settings/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Configuration Entity Management' }).click();
+    await expect(page).toHaveURL(/section=config-entities/);
+    await expect(page).toHaveURL(/configEntityType=custom-domain/);
+    await expect(page.getByRole('heading', { name: 'Custom-domain records' })).toBeVisible();
+    const domainTable = page.getByRole('table', { name: 'Custom-domain records' });
+    const inheritedTenantRow = domainTable.getByRole('row', { name: /tenant\.example\.test/ });
+    const inheritedSubsidiaryRow = domainTable.getByRole('row', { name: /tokyo\.example\.test/ });
+    const ownedTalentRow = domainTable.getByRole('row', { name: /visual-talent\.example\.test/ });
+    await expect(inheritedTenantRow.getByText('Review only')).toBeVisible();
+    await expect(inheritedSubsidiaryRow.getByText('Review only')).toBeVisible();
+    await expect(ownedTalentRow.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await expect(ownedTalentRow.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New custom domain' })).toBeVisible();
+    await expect(page.getByText('VISUAL_QA_WRONG_ENDPOINT')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile talent settings custom-domain config entity');
+    await expect(page).toHaveScreenshot('private-talent-settings-custom-domain-mobile.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
   });
 
   test('desktop organization structure keeps talents as inventory leaves, not expandable tree rows', async ({

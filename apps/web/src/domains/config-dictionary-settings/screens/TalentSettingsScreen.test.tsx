@@ -739,10 +739,22 @@ describe('TalentSettingsScreen', () => {
     expect((await screen.findAllByText(/Disabled here/i)).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
+    expect(screen.getByText('Localization')).toBeInTheDocument();
+    expect(screen.getByText('Public surfaces')).toBeInTheDocument();
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getByText('Security')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
+    });
+    fireEvent.click(screen.getByLabelText('Require special character'));
+    fireEvent.change(screen.getByLabelText('Password max age days'), {
+      target: { value: '45' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save talent settings' }));
 
@@ -755,7 +767,18 @@ describe('TalentSettingsScreen', () => {
             settings: {
               defaultLanguage: 'ja',
               timezone: 'Asia/Tokyo',
+              dateFormat: 'YYYY-MM-DD',
+              currency: 'USD',
+              customerImportEnabled: true,
+              maxImportRows: 50000,
+              totpRequiredForAll: false,
               allowCustomHomepage: true,
+              allowMarshmallow: true,
+              passwordPolicy: {
+                minLength: 12,
+                requireSpecial: false,
+                maxAgeDays: 45,
+              },
             },
             version: 5,
           }),

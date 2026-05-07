@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -335,6 +335,53 @@ export class UpsertCustomDomainBindingDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+}
+
+export class ListCustomDomainBindingsQueryDto {
+  @ApiProperty({
+    description: 'Scope that is reading custom-domain bindings',
+    enum: CUSTOM_DOMAIN_OWNER_TYPES,
+    example: 'subsidiary',
+  })
+  @IsString()
+  @IsIn(CUSTOM_DOMAIN_OWNER_TYPES)
+  scopeType: 'tenant' | 'subsidiary' | 'talent';
+
+  @ApiPropertyOptional({
+    description: 'Scope identifier. Required for subsidiary/talent; omitted for tenant.',
+    format: 'uuid',
+    nullable: true,
+    example: '550e8400-e29b-41d4-a716-446655440300',
+  })
+  @IsOptional()
+  @IsUUID()
+  scopeId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Include inherited tenant/subsidiary domains available to this scope',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  includeInherited?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include inactive custom-domain bindings',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  includeInactive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Search hostnames by substring',
+    example: 'example.com',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
 
 export class SelectInheritedCustomDomainsDto {
@@ -940,6 +987,67 @@ const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   },
 );
 
+const TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      domains: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440900' },
+            hostname: { type: 'string', example: 'brand.example.com' },
+            ownerType: { type: 'string', enum: CUSTOM_DOMAIN_OWNER_TYPES, example: 'tenant' },
+            ownerId: { type: 'string', nullable: true, example: null },
+            ownerDepth: { type: 'integer', nullable: true, example: null },
+            inherited: { type: 'boolean', example: true },
+            selected: { type: 'boolean', example: false },
+            customDomainVerified: { type: 'boolean', example: true },
+            customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+            customDomainSslMode: { type: 'string', enum: CUSTOM_DOMAIN_SSL_MODES, example: 'cloudflare' },
+            isActive: { type: 'boolean', example: true },
+            routeMode: { type: 'string', enum: ['dedicated_talent', 'scoped_talent_path'], example: 'scoped_talent_path' },
+          },
+          required: [
+            'id',
+            'hostname',
+            'ownerType',
+            'ownerId',
+            'ownerDepth',
+            'inherited',
+            'selected',
+            'customDomainVerified',
+            'customDomainVerificationToken',
+            'customDomainSslMode',
+            'isActive',
+            'routeMode',
+          ],
+        },
+      },
+    },
+    required: ['domains'],
+  },
+  {
+    domains: [
+      {
+        id: '550e8400-e29b-41d4-a716-446655440900',
+        hostname: 'brand.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        inherited: true,
+        selected: false,
+        customDomainVerified: true,
+        customDomainVerificationToken: null,
+        customDomainSslMode: 'cloudflare',
+        isActive: true,
+        routeMode: 'scoped_talent_path',
+      },
+    ],
+  },
+);
+
 const TALENT_VERIFY_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'object',
@@ -1244,6 +1352,74 @@ export class TalentController {
       createdAt: talent.createdAt.toISOString(),
       version: talent.version,
     });
+  }
+
+  /**
+   * GET /api/v1/talents/custom-domain-bindings
+   * List custom-domain bindings for tenant/subsidiary/talent configuration-entity workspaces
+   */
+  @Get('custom-domain-bindings')
+  @ApiOperation({ summary: 'List scoped custom-domain bindings' })
+  @ApiQuery({
+    name: 'scopeType',
+    enum: CUSTOM_DOMAIN_OWNER_TYPES,
+    required: true,
+    description: 'Scope type reading the custom-domain catalog',
+  })
+  @ApiQuery({
+    name: 'scopeId',
+    required: false,
+    description: 'Scope identifier for subsidiary/talent scopes',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiQuery({
+    name: 'includeInherited',
+    required: false,
+    description: 'Include inherited tenant/subsidiary bindings available to this scope',
+    schema: { type: 'boolean', default: true },
+  })
+  @ApiQuery({
+    name: 'includeInactive',
+    required: false,
+    description: 'Include inactive custom-domain bindings',
+    schema: { type: 'boolean', default: false },
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search hostnames by substring',
+    schema: { type: 'string' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns custom-domain bindings owned by or inherited into the requested scope',
+    schema: TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Custom-domain binding list request is invalid',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list custom-domain bindings',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  async listCustomDomainBindings(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: ListCustomDomainBindingsQueryDto,
+  ) {
+    const result = await this.talentService.listCustomDomainBindings(
+      user.tenantSchema,
+      {
+        scopeType: query.scopeType,
+        scopeId: query.scopeType === 'tenant' ? null : query.scopeId ?? null,
+        includeInherited: query.includeInherited ?? true,
+        includeInactive: query.includeInactive ?? false,
+        search: query.search,
+      },
+    );
+    return success(result);
   }
 
   /**

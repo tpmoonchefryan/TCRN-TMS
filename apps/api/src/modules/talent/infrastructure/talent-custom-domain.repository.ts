@@ -6,6 +6,7 @@ import { prisma } from '@tcrn/database';
 import type {
   CustomDomainOwnerType,
   CustomDomainSslMode,
+  TalentCustomDomainBindingListOptions,
   TalentCustomDomainBindingMutationInput,
   TalentCustomDomainBindingRecord,
   TalentCustomDomainPaths,
@@ -128,6 +129,157 @@ export class TalentCustomDomainRepository {
     );
 
     return rows.map((row) => row.id);
+  }
+
+  async listCustomDomainBindingsForScope(
+    tenantSchema: string,
+    options: TalentCustomDomainBindingListOptions,
+  ): Promise<TalentCustomDomainBindingRecord[]> {
+    const tenantId = await this.getTenantIdBySchema(tenantSchema);
+
+    if (!tenantId) {
+      return [];
+    }
+
+    const search = options.search?.trim().toLowerCase();
+    const activeClause = options.includeInactive ? '' : 'AND binding.is_active = true';
+    const searchClause = search ? 'AND LOWER(binding.hostname) LIKE $3' : '';
+    const searchParam = search ? `%${search}%` : undefined;
+
+    if (options.scopeType === 'tenant') {
+      const params = searchParam ? [tenantId, searchParam] : [tenantId];
+      const tenantSearchClause = search ? 'AND LOWER(binding.hostname) LIKE $2' : '';
+
+      return prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
+        `SELECT
+          binding.id,
+          binding.hostname,
+          binding.owner_type as "ownerType",
+          binding.owner_id as "ownerId",
+          binding.custom_domain_verified as "customDomainVerified",
+          binding.custom_domain_verification_token as "customDomainVerificationToken",
+          binding.custom_domain_ssl_mode as "customDomainSslMode",
+          binding.is_active as "isActive",
+          NULL::integer as "ownerDepth"
+         FROM public.custom_domain_binding binding
+         WHERE binding.tenant_id = $1::uuid
+           AND binding.owner_type = 'tenant'
+           AND binding.owner_id IS NULL
+           ${activeClause}
+           ${tenantSearchClause}
+         ORDER BY binding.hostname ASC`,
+        ...params,
+      );
+    }
+
+    if (!options.scopeId) {
+      return [];
+    }
+
+    if (options.scopeType === 'subsidiary') {
+      const params = searchParam ? [tenantId, options.scopeId, searchParam] : [tenantId, options.scopeId];
+      const ownerClause = options.includeInherited
+        ? `(
+             (binding.owner_type = 'tenant' AND binding.owner_id IS NULL)
+             OR (
+               binding.owner_type = 'subsidiary'
+               AND ancestor_subsidiaries.id IS NOT NULL
+             )
+           )`
+        : `(binding.owner_type = 'subsidiary' AND binding.owner_id = $2::uuid)`;
+
+      return prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
+        `WITH ancestor_subsidiaries AS (
+           SELECT s2.id, s2.depth
+           FROM "${tenantSchema}".subsidiary s1
+           JOIN "${tenantSchema}".subsidiary s2 ON s1.path LIKE s2.path || '%'
+           WHERE s1.id = $2::uuid
+         )
+         SELECT
+           binding.id,
+           binding.hostname,
+           binding.owner_type as "ownerType",
+           binding.owner_id as "ownerId",
+           binding.custom_domain_verified as "customDomainVerified",
+           binding.custom_domain_verification_token as "customDomainVerificationToken",
+           binding.custom_domain_ssl_mode as "customDomainSslMode",
+           binding.is_active as "isActive",
+           ancestor_subsidiaries.depth as "ownerDepth"
+         FROM public.custom_domain_binding binding
+         LEFT JOIN ancestor_subsidiaries ON (
+           binding.owner_type = 'subsidiary'
+           AND binding.owner_id = ancestor_subsidiaries.id
+         )
+         WHERE binding.tenant_id = $1::uuid
+           AND ${ownerClause}
+           ${activeClause}
+           ${searchClause}
+         ORDER BY
+           CASE binding.owner_type
+             WHEN 'subsidiary' THEN 0
+             ELSE 1
+           END,
+           ancestor_subsidiaries.depth DESC NULLS LAST,
+           binding.hostname ASC`,
+        ...params,
+      );
+    }
+
+    const params = searchParam ? [tenantId, options.scopeId, searchParam] : [tenantId, options.scopeId];
+    const ownerClause = options.includeInherited
+      ? `(
+           (binding.owner_type = 'tenant' AND binding.owner_id IS NULL)
+           OR (binding.owner_type = 'talent' AND binding.owner_id = talent_scope.id)
+           OR (
+             binding.owner_type = 'subsidiary'
+             AND talent_scope.subsidiary_id IS NOT NULL
+             AND ancestor_subsidiaries.id IS NOT NULL
+           )
+         )`
+      : `(binding.owner_type = 'talent' AND binding.owner_id = talent_scope.id)`;
+
+    return prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
+      `WITH talent_scope AS (
+         SELECT id, subsidiary_id
+         FROM "${tenantSchema}".talent
+         WHERE id = $2::uuid
+       ),
+       ancestor_subsidiaries AS (
+         SELECT s2.id, s2.depth
+         FROM talent_scope talent
+         JOIN "${tenantSchema}".subsidiary s1 ON s1.id = talent.subsidiary_id
+         JOIN "${tenantSchema}".subsidiary s2 ON s1.path LIKE s2.path || '%'
+       )
+       SELECT
+         binding.id,
+         binding.hostname,
+         binding.owner_type as "ownerType",
+         binding.owner_id as "ownerId",
+         binding.custom_domain_verified as "customDomainVerified",
+         binding.custom_domain_verification_token as "customDomainVerificationToken",
+         binding.custom_domain_ssl_mode as "customDomainSslMode",
+         binding.is_active as "isActive",
+         ancestor_subsidiaries.depth as "ownerDepth"
+       FROM public.custom_domain_binding binding
+       CROSS JOIN talent_scope
+       LEFT JOIN ancestor_subsidiaries ON (
+         binding.owner_type = 'subsidiary'
+         AND binding.owner_id = ancestor_subsidiaries.id
+       )
+       WHERE binding.tenant_id = $1::uuid
+         AND ${ownerClause}
+         ${activeClause}
+         ${searchClause}
+       ORDER BY
+         CASE binding.owner_type
+           WHEN 'talent' THEN 0
+           WHEN 'subsidiary' THEN 1
+           ELSE 2
+         END,
+         ancestor_subsidiaries.depth DESC NULLS LAST,
+         binding.hostname ASC`,
+      ...params,
+    );
   }
 
 

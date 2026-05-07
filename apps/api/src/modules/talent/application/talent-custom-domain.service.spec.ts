@@ -30,6 +30,7 @@ describe('TalentCustomDomainService', () => {
     updateServicePaths: vi.fn(),
     updateSslMode: vi.fn(),
     listCustomDomainBindingsForTalent: vi.fn(),
+    listCustomDomainBindingsForScope: vi.fn(),
     listSelectedInheritedDomainIds: vi.fn(),
     customDomainOwnerExists: vi.fn(),
     findCustomDomainBindingById: vi.fn(),
@@ -193,6 +194,75 @@ describe('TalentCustomDomainService', () => {
       ],
       inheritedDomains: [],
     });
+  });
+
+  it('lists scoped custom-domain bindings with inherited and selected state for talent settings', async () => {
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
+    vi.mocked(mockRepository.listCustomDomainBindingsForScope).mockResolvedValue([
+      {
+        id: 'talent-domain',
+        hostname: 'fans.example.com',
+        ownerType: 'talent',
+        ownerId: 'talent-123',
+        ownerDepth: null,
+        customDomainVerified: true,
+        customDomainVerificationToken: null,
+        customDomainSslMode: 'auto',
+        isActive: true,
+      },
+      {
+        id: 'tenant-domain',
+        hostname: 'brand.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        customDomainVerified: true,
+        customDomainVerificationToken: null,
+        customDomainSslMode: 'cloudflare',
+        isActive: true,
+      },
+    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue(['tenant-domain']);
+
+    await expect(
+      service.listCustomDomainBindings('tenant_test', {
+        scopeType: 'talent',
+        scopeId: 'talent-123',
+        includeInherited: true,
+        includeInactive: false,
+      }),
+    ).resolves.toEqual({
+      domains: [
+        expect.objectContaining({
+          id: 'talent-domain',
+          inherited: false,
+          selected: true,
+          routeMode: 'dedicated_talent',
+        }),
+        expect.objectContaining({
+          id: 'tenant-domain',
+          inherited: true,
+          selected: true,
+          routeMode: 'scoped_talent_path',
+        }),
+      ],
+    });
+  });
+
+  it('returns operator-safe storage errors for scoped custom-domain binding list reads', async () => {
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
+    vi.mocked(mockRepository.listCustomDomainBindingsForScope).mockRejectedValue(
+      missingBindingRelationError,
+    );
+
+    await expect(
+      service.listCustomDomainBindings('tenant_test', {
+        scopeType: 'tenant',
+        scopeId: null,
+        includeInherited: true,
+        includeInactive: false,
+      }),
+    ).rejects.toThrow(ServiceUnavailableException);
   });
 
   it('verifies the custom domain when the expected TXT record exists', async () => {

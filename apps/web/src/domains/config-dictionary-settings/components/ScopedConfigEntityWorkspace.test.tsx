@@ -373,6 +373,84 @@ describe('ScopedConfigEntityWorkspace', () => {
     );
   });
 
+  it('routes custom-domain entity family to the scoped custom-domain binding API with URL-backed filters', async () => {
+    currentSearch = 'configEntityType=custom-domain&configEntitySearch=brand&configEntityScopeOnly=true&configEntityInactive=true&foo=1';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=false&includeInactive=true&search=brand'
+      ) {
+        return {
+          domains: [
+            {
+              id: 'domain-1',
+              hostname: 'brand.example.com',
+              ownerType: 'tenant',
+              ownerId: null,
+              ownerDepth: null,
+              inherited: true,
+              selected: false,
+              customDomainVerified: true,
+              customDomainVerificationToken: null,
+              customDomainSslMode: 'cloudflare',
+              isActive: true,
+              routeMode: 'scoped_talent_path',
+            },
+          ],
+        };
+      }
+
+      if (
+        path ===
+        '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=false&includeInactive=true&search=fans'
+      ) {
+        return { domains: [] };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="subsidiary"
+        scopeId="sub-1"
+      />,
+    );
+
+    expect(await screen.findByText('brand.example.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New custom domain' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Search custom domains')).toHaveValue('brand');
+    expect(screen.getByLabelText('Current scope domains only')).toBeChecked();
+    expect(screen.getByLabelText('Include inactive custom domains')).toBeChecked();
+    expect(screen.getByText('Review only')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
+    expect(mockRequestEnvelope).not.toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/configuration-entity/custom-domain'),
+      expect.anything(),
+    );
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Search custom domains'), {
+        target: { value: 'fans' },
+      });
+    });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true',
+    );
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '50' } });
+    });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true&configEntityPageSize=50',
+    );
+  });
+
   it('opens the config entity editor inside a drawer instead of expanding inline', async () => {
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (

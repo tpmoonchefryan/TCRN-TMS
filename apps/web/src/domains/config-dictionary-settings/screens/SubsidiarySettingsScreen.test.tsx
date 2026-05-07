@@ -306,6 +306,30 @@ describe('SubsidiarySettingsScreen', () => {
         return businessSegments[businessSegments.length - 1];
       }
 
+      if (
+        path ===
+        '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeInactive=false'
+      ) {
+        return {
+          domains: [
+            {
+              id: 'tenant-domain',
+              hostname: 'tenant.example.com',
+              ownerType: 'tenant',
+              ownerId: null,
+              ownerDepth: null,
+              inherited: true,
+              selected: false,
+              customDomainVerified: true,
+              customDomainVerificationToken: null,
+              customDomainSslMode: 'cloudflare',
+              isActive: true,
+              routeMode: 'scoped_talent_path',
+            },
+          ],
+        };
+      }
+
       if (path === '/api/v1/subsidiaries/sub-1/settings' && init?.method === 'PATCH') {
         return {
           scopeType: 'subsidiary',
@@ -371,12 +395,30 @@ describe('SubsidiarySettingsScreen', () => {
 
     expect(await screen.findByText('LOCAL_SEGMENT')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: /Custom Domain custom-domain/i }));
+    expect(await screen.findByText('tenant.example.com')).toBeInTheDocument();
+    expect(mockRequest).toHaveBeenCalledWith(
+      '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeInactive=false',
+    );
+
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
+    expect(screen.getByText('Localization')).toBeInTheDocument();
+    expect(screen.getByText('Public surfaces')).toBeInTheDocument();
+    expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
+    expect(screen.getByText('Security')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Default language'), {
       target: { value: 'ja' },
     });
+    fireEvent.change(screen.getByLabelText('Date format'), {
+      target: { value: 'DD/MM/YYYY' },
+    });
+    fireEvent.click(screen.getByLabelText('Allow public marshmallow'));
     fireEvent.click(screen.getByRole('button', { name: 'Save subsidiary settings' }));
 
     await waitFor(() => {
@@ -388,7 +430,18 @@ describe('SubsidiarySettingsScreen', () => {
             settings: {
               defaultLanguage: 'ja',
               timezone: 'Asia/Tokyo',
+              dateFormat: 'DD/MM/YYYY',
+              currency: 'USD',
+              customerImportEnabled: true,
+              maxImportRows: 50000,
+              totpRequiredForAll: false,
               allowCustomHomepage: true,
+              allowMarshmallow: false,
+              passwordPolicy: {
+                minLength: 12,
+                requireSpecial: true,
+                maxAgeDays: 90,
+              },
             },
             version: 3,
           }),

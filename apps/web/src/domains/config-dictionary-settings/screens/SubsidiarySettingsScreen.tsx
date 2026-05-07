@@ -1,9 +1,9 @@
 'use client';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { Building2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useState } from 'react';
 
 import {
   buildSubsidiarySettingsDraft,
@@ -22,6 +22,10 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import {
+  SettingsDefaultsFormFields,
+  SettingsDefaultsSummaryGrid,
+} from '@/domains/config-dictionary-settings/components/SettingsDefaultsFields';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
@@ -34,29 +38,25 @@ interface AsyncPanelState<T> {
   error: string | null;
 }
 
-const LANGUAGE_LABELS = {
-  en: 'English',
-  zh_HANS: '简体中文',
-  zh_HANT: '繁體中文',
-  ja: '日本語',
-  ko: '한국어',
-  fr: 'Français',
-} as const;
+type SubsidiarySettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
 
-const LANGUAGE_OPTIONS = SUPPORTED_UI_LOCALES.map((value) => ({
-  value,
-  label: LANGUAGE_LABELS[value],
-}));
-
-const TIMEZONE_OPTIONS = [
-  'Asia/Shanghai',
-  'Asia/Tokyo',
-  'UTC',
-  'America/Los_Angeles',
+const SUBSIDIARY_SETTINGS_SECTIONS: readonly SubsidiarySettingsSection[] = [
+  'details',
+  'config-entities',
+  'settings',
+  'dictionary',
 ];
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
+}
+
+function parseSubsidiarySettingsSection(section: string | null): SubsidiarySettingsSection {
+  if (section && SUBSIDIARY_SETTINGS_SECTIONS.includes(section as SubsidiarySettingsSection)) {
+    return section as SubsidiarySettingsSection;
+  }
+
+  return 'details';
 }
 
 function resolveDescription(detail: SubsidiaryDetailResponse, fallback: string) {
@@ -132,9 +132,12 @@ export function SubsidiarySettingsScreen({
   tenantId: string;
   subsidiaryId: string;
 }>) {
-  const [activeSectionId, setActiveSectionId] = useState<'details' | 'config-entities' | 'settings' | 'dictionary'>(
-    'details',
-  );
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
+  const urlSection = parseSubsidiarySettingsSection(searchParams.get('section'));
+  const [activeSectionId, setActiveSectionId] = useState<SubsidiarySettingsSection>(urlSection);
   const {
     displayedValue: displayedSectionId,
     transitionClassName: sectionTransitionClassName,
@@ -163,6 +166,31 @@ export function SubsidiarySettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveSectionId((current) => (current === urlSection ? current : urlSection));
+  }, [urlSection]);
+
+  function applySectionRouteState(nextSectionId: SubsidiarySettingsSection) {
+    setActiveSectionId(nextSectionId);
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (nextSectionId === 'details') {
+      nextParams.delete('section');
+    } else {
+      nextParams.set('section', nextSectionId);
+    }
+
+    const nextQueryString = nextParams.toString();
+    if (nextQueryString === queryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -428,7 +456,7 @@ export function SubsidiarySettingsScreen({
       ariaLabel={common.settingsSectionsAriaLabel}
       sectionNavId="subsidiary-settings-sections"
       onSectionChange={(sectionId) => {
-        setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
+        applySectionRouteState(sectionId as SubsidiarySettingsSection);
       }}
     >
       <div className={sectionTransitionClassName}>
@@ -638,18 +666,11 @@ export function SubsidiarySettingsScreen({
                 </button>
               }
             >
-              <div className="grid gap-4 md:grid-cols-2">
-                <FieldRow
-                  label={text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}
-                  value={initialDraft.defaultLanguage}
-                  hint={formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-                />
-                <FieldRow
-                  label={text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}
-                  value={initialDraft.timezone}
-                  hint={formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-                />
-              </div>
+              <SettingsDefaultsSummaryGrid
+                draft={initialDraft}
+                getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+                text={text}
+              />
 
               {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
               {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
@@ -774,12 +795,12 @@ export function SubsidiarySettingsScreen({
         fr: 'Modifier les valeurs par defaut du perimetre',
       })}
       description={text({
-        en: 'Change the default language and timezone used by this subsidiary scope.',
-        zh_HANS: '修改当前分目录范围使用的默认语言和时区。',
-        zh_HANT: '修改目前分目錄範圍使用的預設語言與時區。',
-        ja: 'この配下スコープで使用する既定言語とタイムゾーンを変更します。',
-        ko: '이 하위 조직 범위에서 사용할 기본 언어와 시간대를 변경합니다.',
-        fr: 'Modifiez la langue et le fuseau horaire par defaut utilises par ce perimetre.',
+        en: 'Change localization, public surface, import, and security defaults used by this subsidiary scope.',
+        zh_HANS: '修改当前分目录范围使用的本地化、公开入口、导入与安全默认值。',
+        zh_HANT: '修改目前分目錄範圍使用的本地化、公開入口、匯入與安全預設值。',
+        ja: 'この配下スコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。',
+        ko: '이 하위 조직 범위에서 사용할 현지화, 공개 화면, 가져오기, 보안 기본값을 변경합니다.',
+        fr: 'Modifiez les valeurs par defaut de localisation, surface publique, import et securite utilisees par ce perimetre.',
       })}
       size="lg"
       closeButtonAriaLabel={text({
@@ -830,63 +851,20 @@ export function SubsidiarySettingsScreen({
       <FormSection
         title={common.settings}
         description={text({
-          en: 'Adjust subsidiary defaults for language and timezone.',
-          zh_HANS: '调整分目录的语言和时区默认值。',
-          zh_HANT: '調整分目錄的語言與時區預設值。',
-          ja: '配下スコープの言語とタイムゾーン既定値を調整します。',
-          ko: '하위 조직의 기본 언어와 시간대를 조정합니다.',
-          fr: 'Ajustez les valeurs par defaut de langue et de fuseau horaire pour ce perimetre.',
+          en: 'Adjust the complete subsidiary settings payload exposed by the backend defaults contract.',
+          zh_HANS: '调整后端默认设置契约中暴露的完整分目录设置。',
+          zh_HANT: '調整後端預設設定契約中暴露的完整分目錄設定。',
+          ja: 'バックエンド既定値契約で公開されている配下スコープ設定全体を調整します。',
+          ko: '백엔드 기본값 계약에 노출된 전체 하위 조직 설정을 조정합니다.',
+          fr: 'Ajustez la charge de parametres complete exposee par le contrat de valeurs par defaut backend.',
         })}
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}</span>
-            <select
-              aria-label={text({ en: 'Default language', zh_HANS: '默认语言', zh_HANT: '預設語言', ja: '既定言語', ko: '기본 언어', fr: 'Langue par defaut' })}
-              value={draft.defaultLanguage}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  defaultLanguage: event.target.value as SupportedUiLocale,
-                }))
-              }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-            >
-              {LANGUAGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-slate-500">
-              {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-            </p>
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}</span>
-            <select
-              aria-label={text({ en: 'Default timezone', zh_HANS: '默认时区', zh_HANT: '預設時區', ja: '既定タイムゾーン', ko: '기본 시간대', fr: 'Fuseau horaire par defaut' })}
-              value={draft.timezone}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  timezone: event.target.value,
-                }))
-              }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-            >
-              {TIMEZONE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-slate-500">
-              {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-            </p>
-          </label>
-        </div>
+        <SettingsDefaultsFormFields
+          draft={draft}
+          getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+          onDraftChange={setDraft}
+          text={text}
+        />
 
         {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
         {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}

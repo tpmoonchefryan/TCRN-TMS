@@ -57,6 +57,24 @@ export interface TalentCustomDomainBindingRecord {
   ownerDepth: number | null;
 }
 
+export interface TalentCustomDomainBindingCatalogItem extends TalentCustomDomainBindingRecord {
+  inherited: boolean;
+  selected: boolean;
+  routeMode: CustomDomainRouteMode;
+}
+
+export interface TalentCustomDomainBindingListOptions {
+  scopeType: CustomDomainOwnerType;
+  scopeId: string | null;
+  includeInherited: boolean;
+  includeInactive: boolean;
+  search?: string;
+}
+
+export interface TalentCustomDomainBindingListResult {
+  domains: TalentCustomDomainBindingCatalogItem[];
+}
+
 export interface TalentEffectiveCustomDomain {
   id: string;
   hostname: string;

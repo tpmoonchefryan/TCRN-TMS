@@ -5,7 +5,6 @@ import {
   buildSharedMarshmallowPath,
   FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
-  SUPPORTED_UI_LOCALES,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import { UserRound } from 'lucide-react';
@@ -43,6 +42,10 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import {
+  SettingsDefaultsFormFields,
+  SettingsDefaultsSummaryGrid,
+} from '@/domains/config-dictionary-settings/components/SettingsDefaultsFields';
 import {
   type SettingsFamilyLocalizedText,
   useSettingsFamilyCopy,
@@ -90,27 +93,6 @@ interface LifecycleDialogState {
   errorFallback: string;
   intent: 'primary' | 'danger';
 }
-
-const LANGUAGE_LABELS = {
-  en: 'English',
-  zh_HANS: '简体中文',
-  zh_HANT: '繁體中文',
-  ja: '日本語',
-  ko: '한국어',
-  fr: 'Français',
-} as const;
-
-const LANGUAGE_OPTIONS = SUPPORTED_UI_LOCALES.map((value) => ({
-  value,
-  label: LANGUAGE_LABELS[value],
-}));
-
-const TIMEZONE_OPTIONS = [
-  'Asia/Shanghai',
-  'Asia/Tokyo',
-  'UTC',
-  'America/Los_Angeles',
-];
 
 const TALENT_SETTINGS_SECTIONS: readonly TalentSettingsSection[] = ['details', 'config-entities', 'settings', 'dictionary'];
 const TALENT_SETTINGS_FOCUS_VALUES: readonly TalentSettingsFocus[] = ['homepage-routing', 'marshmallow-routing'];
@@ -1903,21 +1885,13 @@ export function TalentSettingsScreen({
                   </div>
                 )}
               >
+                <SettingsDefaultsSummaryGrid
+                  draft={initialDraft}
+                  getSourceHint={(key) => inheritedSourceLabel(settings.inheritedFrom[key], talentOverrideLabel, overrideSet.has(key))}
+                  text={text}
+                />
+
                 <div className="grid gap-4 xl:grid-cols-3">
-                  <FieldRow
-                    label={text('Default language', '默认语言', '既定言語')}
-                    value={initialDraft.defaultLanguage}
-                    hint={inheritedSourceLabel(
-                      settings.inheritedFrom.defaultLanguage,
-                      talentOverrideLabel,
-                      overrideSet.has('defaultLanguage'),
-                    )}
-                  />
-                  <FieldRow
-                    label={text('Default timezone', '默认时区', '既定タイムゾーン')}
-                    value={initialDraft.timezone}
-                    hint={inheritedSourceLabel(settings.inheritedFrom.timezone, talentOverrideLabel, overrideSet.has('timezone'))}
-                  />
                   <FieldRow
                     label={text('Current Homepage URL', '当前主页 URL', '現在のホームページ URL')}
                     value={sharedHomepageUrl}
@@ -2001,59 +1975,12 @@ export function TalentSettingsScreen({
                   'タレント既定値と公開ルート設定を調整します。',
                 )}
               >
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
-                  <select
-                    aria-label={text('Default language', '默认语言', '既定言語')}
-                    value={draft.defaultLanguage}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        defaultLanguage: event.target.value as SupportedUiLocale,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {LANGUAGE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {inheritedSourceLabel(
-                      settings.inheritedFrom.defaultLanguage,
-                      talentOverrideLabel,
-                      overrideSet.has('defaultLanguage'),
-                    )}
-                  </p>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{text('Default timezone', '默认时区', '既定タイムゾーン')}</span>
-                  <select
-                    aria-label={text('Default timezone', '默认时区', '既定タイムゾーン')}
-                    value={draft.timezone}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        timezone: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                  >
-                    {TIMEZONE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500">
-                    {inheritedSourceLabel(settings.inheritedFrom.timezone, talentOverrideLabel, overrideSet.has('timezone'))}
-                  </p>
-                </label>
-              </div>
+              <SettingsDefaultsFormFields
+                draft={draft}
+                getSourceHint={(key) => inheritedSourceLabel(settings.inheritedFrom[key], talentOverrideLabel, overrideSet.has(key))}
+                onDraftChange={setDraft}
+                text={text}
+              />
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div

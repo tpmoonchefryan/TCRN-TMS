@@ -1,12 +1,9 @@
 'use client';
 
-import {
-  SUPPORTED_UI_LOCALES,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
 import { Building2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useState } from 'react';
 
 import {
   buildTenantSettingsDraft,
@@ -23,6 +20,10 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import {
+  SettingsDefaultsFormFields,
+  SettingsDefaultsSummaryGrid,
+} from '@/domains/config-dictionary-settings/components/SettingsDefaultsFields';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildTenantBusinessPath } from '@/platform/routing/workspace-paths';
@@ -43,29 +44,25 @@ interface AsyncPanelState<T> {
   loading: boolean;
 }
 
-const LANGUAGE_LABELS = {
-  en: 'English',
-  zh_HANS: '简体中文',
-  zh_HANT: '繁體中文',
-  ja: '日本語',
-  ko: '한국어',
-  fr: 'Français',
-} as const;
+type TenantSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
 
-const LANGUAGE_OPTIONS = SUPPORTED_UI_LOCALES.map((value) => ({
-  value,
-  label: LANGUAGE_LABELS[value],
-}));
-
-const TIMEZONE_OPTIONS = [
-  'Asia/Shanghai',
-  'Asia/Tokyo',
-  'UTC',
-  'America/Los_Angeles',
+const TENANT_SETTINGS_SECTIONS: readonly TenantSettingsSection[] = [
+  'details',
+  'config-entities',
+  'settings',
+  'dictionary',
 ];
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
+}
+
+function parseTenantSettingsSection(section: string | null): TenantSettingsSection {
+  if (section && TENANT_SETTINGS_SECTIONS.includes(section as TenantSettingsSection)) {
+    return section as TenantSettingsSection;
+  }
+
+  return 'details';
 }
 
 function FieldRow({
@@ -135,9 +132,12 @@ export function TenantSettingsScreen({
 }: Readonly<{
   tenantId: string;
 }>) {
-  const [activeSectionId, setActiveSectionId] = useState<'details' | 'config-entities' | 'settings' | 'dictionary'>(
-    'details',
-  );
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
+  const urlSection = parseTenantSettingsSection(searchParams.get('section'));
+  const [activeSectionId, setActiveSectionId] = useState<TenantSettingsSection>(urlSection);
   const {
     displayedValue: displayedSectionId,
     transitionClassName: sectionTransitionClassName,
@@ -165,6 +165,31 @@ export function TenantSettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveSectionId((current) => (current === urlSection ? current : urlSection));
+  }, [urlSection]);
+
+  function applySectionRouteState(nextSectionId: TenantSettingsSection) {
+    setActiveSectionId(nextSectionId);
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (nextSectionId === 'details') {
+      nextParams.delete('section');
+    } else {
+      nextParams.set('section', nextSectionId);
+    }
+
+    const nextQueryString = nextParams.toString();
+    if (nextQueryString === queryString) {
+      return;
+    }
+
+    const nextHref = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    startTransition(() => {
+      router.replace(nextHref);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -364,7 +389,7 @@ export function TenantSettingsScreen({
         ariaLabel={common.settingsSectionsAriaLabel}
         sectionNavId="tenant-settings-sections"
         onSectionChange={(sectionId) => {
-          setActiveSectionId(sectionId as 'details' | 'config-entities' | 'settings' | 'dictionary');
+          applySectionRouteState(sectionId as TenantSettingsSection);
         }}
       >
         <div className={sectionTransitionClassName}>
@@ -511,18 +536,11 @@ export function TenantSettingsScreen({
                   </button>
                 )}
             >
-              <div className="grid gap-4 md:grid-cols-2">
-                <FieldRow
-                  label={text('Default language', '默认语言', '既定言語')}
-                  value={initialDraft.defaultLanguage}
-                  hint={formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-                />
-                <FieldRow
-                  label={text('Default timezone', '默认时区', '既定タイムゾーン')}
-                  value={initialDraft.timezone}
-                  hint={formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-                />
-              </div>
+              <SettingsDefaultsSummaryGrid
+                draft={initialDraft}
+                getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+                text={text}
+              />
 
               {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
               {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
@@ -601,9 +619,9 @@ export function TenantSettingsScreen({
         }}
         title={text('Edit tenant defaults', '编辑租户默认值', 'テナント既定値を編集')}
         description={text(
-          'Change the default language and timezone used by this tenant scope.',
-          '修改当前租户范围使用的默认语言和时区。',
-          'このテナントスコープで使用する既定言語とタイムゾーンを変更します。',
+          'Change localization, public surface, import, and security defaults used by this tenant scope.',
+          '修改当前租户范围使用的本地化、公开入口、导入与安全默认值。',
+          'このテナントスコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。',
         )}
         size="lg"
         closeButtonAriaLabel={text('Close tenant defaults editor', '关闭租户默认值编辑器', 'テナント既定値エディターを閉じる')}
@@ -638,60 +656,17 @@ export function TenantSettingsScreen({
         <FormSection
           title={common.settings}
           description={text(
-            'Adjust tenant defaults for language and timezone.',
-            '调整租户的语言和时区默认值。',
-            'テナントの言語とタイムゾーン既定値を調整します。',
+            'Adjust the complete tenant settings payload exposed by the backend defaults contract.',
+            '调整后端默认设置契约中暴露的完整租户设置。',
+            'バックエンド既定値契約で公開されているテナント設定全体を調整します。',
           )}
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
-              <select
-                aria-label={text('Default language', '默认语言', '既定言語')}
-                value={draft.defaultLanguage}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    defaultLanguage: event.target.value as SupportedUiLocale,
-                  }))
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-              >
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500">
-                {formatSourceHint(settings.inheritedFrom.defaultLanguage, overrideSet.has('defaultLanguage'))}
-              </p>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{text('Default timezone', '默认时区', '既定タイムゾーン')}</span>
-              <select
-                aria-label={text('Default timezone', '默认时区', '既定タイムゾーン')}
-                value={draft.timezone}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    timezone: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-              >
-                {TIMEZONE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500">
-                {formatSourceHint(settings.inheritedFrom.timezone, overrideSet.has('timezone'))}
-              </p>
-            </label>
-          </div>
+          <SettingsDefaultsFormFields
+            draft={draft}
+            getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+            onDraftChange={setDraft}
+            text={text}
+          />
 
           {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
           {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}

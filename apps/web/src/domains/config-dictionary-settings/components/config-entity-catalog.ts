@@ -40,6 +40,7 @@ export const CONFIG_ENTITY_ORDER: ScopedConfigEntityType[] = [
   'membership-type',
   'membership-level',
   'profile-store',
+  'custom-domain',
   'consent',
 ];
 
@@ -182,6 +183,12 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
     type: 'profile-store',
     label: 'Profile Store',
     description: 'Tenant-level customer archive boundaries used by talent publishing and customer access.',
+    fields: [],
+  },
+  'custom-domain': {
+    type: 'custom-domain',
+    label: 'Custom Domain',
+    description: 'Tenant, subsidiary, and talent owned public-domain bindings with inheritance and DNS verification.',
     fields: [],
   },
   consent: {

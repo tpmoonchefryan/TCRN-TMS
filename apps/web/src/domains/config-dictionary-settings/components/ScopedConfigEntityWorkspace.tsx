@@ -28,6 +28,7 @@ import {
   type ConfigEntityFieldDefinition,
   DEFAULT_CONFIG_ENTITY_TYPE,
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
+import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
 import {
   buildManagedTranslations,
   countManagedLocaleValues,
@@ -279,6 +280,7 @@ const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
   'membership-level',
   'profile-store',
 ]);
+const CUSTOM_DOMAIN_ENTITY_TYPE: ScopedConfigEntityType = 'custom-domain';
 
 function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {
   return TENANT_GLOBAL_ENTITY_TYPES.has(entityType);
@@ -1150,6 +1152,15 @@ export function ScopedConfigEntityWorkspace({
     let cancelled = false;
 
     async function loadRecords() {
+      if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE) {
+        recordsTypeRef.current = selectedType;
+        setRecords([]);
+        setPagination(buildPaginationMeta(0, page, pageSize));
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       const shouldRetainRecords = recordsTypeRef.current === selectedType;
       recordsTypeRef.current = selectedType;
 
@@ -1215,7 +1226,7 @@ export function ScopedConfigEntityWorkspace({
     let cancelled = false;
 
     async function loadParentOptions() {
-      if (!selectedEntry.parentType) {
+      if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE || !selectedEntry.parentType) {
         setParentOptions([]);
         return;
       }
@@ -1250,7 +1261,7 @@ export function ScopedConfigEntityWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [requestEnvelope, scopeId, scopeType, selectedEntry.parentType]);
+  }, [requestEnvelope, scopeId, scopeType, selectedEntry.parentType, selectedType]);
 
   function refreshWorkspace() {
     setRefreshTick((current) => current + 1);
@@ -1501,6 +1512,64 @@ export function ScopedConfigEntityWorkspace({
       ja: '次へ',
     }),
   };
+
+  if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE) {
+    return (
+      <div className="space-y-5">
+        <div className="grid gap-6 xl:grid-cols-[minmax(16rem,20rem)_1fr]">
+          <div className="space-y-3">
+            {CONFIG_ENTITY_ORDER.map((entityType) => {
+              const entry = catalog[entityType];
+              const isActive = entityType === selectedType;
+
+              return (
+                <button
+                  key={entityType}
+                  type="button"
+                  onClick={() => applyScopedConfigQueryState({ page: 1, selectedType: entityType })}
+                  className={`w-full rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    isActive
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-950 shadow-sm'
+                      : 'border-slate-200 bg-white/80 text-slate-900 hover:border-slate-300 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold">{entry.label}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{entry.type}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{entry.description}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          <CustomDomainConfigEntityWorkspace
+            request={request}
+            scopeType={scopeType}
+            scopeId={scopeId}
+            locale={locale}
+            search={search}
+            currentScopeOnly={effectiveCurrentScopeOnly}
+            includeInactive={includeInactive}
+            page={page}
+            pageSize={pageSize}
+            onSearchChange={(value) => applyScopedConfigQueryState({ page: 1, search: value })}
+            onCurrentScopeOnlyChange={(value) => applyScopedConfigQueryState({ currentScopeOnly: value, page: 1 })}
+            onIncludeInactiveChange={(value) => applyScopedConfigQueryState({ includeInactive: value, page: 1 })}
+            onPageChange={(nextPage) => applyScopedConfigQueryState({ page: nextPage })}
+            onPageSizeChange={(nextPageSize) => {
+              applyScopedConfigQueryState({
+                page: 1,
+                pageSize: nextPageSize,
+              });
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

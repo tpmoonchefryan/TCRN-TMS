@@ -126,7 +126,8 @@ export type ScopedConfigEntityType =
   | 'membership-type'
   | 'membership-level'
   | 'profile-store'
-  | 'consent';
+  | 'consent'
+  | 'custom-domain';
 
 export interface ConfigEntityRecord {
   id: string;
@@ -333,10 +334,23 @@ export interface TalentLifecycleMutationResponse {
   version: number;
 }
 
+export interface PasswordPolicyDraft {
+  minLength: number;
+  requireSpecial: boolean;
+  maxAgeDays: number;
+}
+
 export interface TenantSettingsDraft {
   defaultLanguage: SupportedUiLocale;
   timezone: string;
+  dateFormat: string;
+  currency: string;
+  customerImportEnabled: boolean;
+  maxImportRows: number;
+  totpRequiredForAll: boolean;
   allowCustomHomepage: boolean;
+  allowMarshmallow: boolean;
+  passwordPolicy: PasswordPolicyDraft;
 }
 
 export type SubsidiarySettingsDraft = TenantSettingsDraft;
@@ -359,6 +373,10 @@ export type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise
 
 function readString(value: unknown, fallback: string) {
   return typeof value === 'string' && value.length > 0 ? value : fallback;
+}
+
+function readBoolean(value: unknown, fallback: boolean) {
+  return typeof value === 'boolean' ? value : fallback;
 }
 
 function buildJsonRequestInit(method: 'POST' | 'PATCH', body?: unknown): RequestInit {
@@ -404,6 +422,10 @@ function readPositiveNumber(value: unknown) {
   const parsed = readFiniteNumber(value);
 
   return parsed !== null && parsed > 0 ? parsed : null;
+}
+
+function readInteger(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isInteger(value) ? value : fallback;
 }
 
 function readNonNegativeNumber(value: unknown) {
@@ -455,10 +477,26 @@ function normalizeProfileStoreListResponse(
 }
 
 export function buildTenantSettingsDraft(settings: Record<string, unknown>): TenantSettingsDraft {
+  const passwordPolicy =
+    settings.passwordPolicy && typeof settings.passwordPolicy === 'object' && !Array.isArray(settings.passwordPolicy)
+      ? settings.passwordPolicy as Record<string, unknown>
+      : {};
+
   return {
     defaultLanguage: normalizeSupportedUiLocale(readString(settings.defaultLanguage, 'zh_HANS')) ?? 'zh_HANS',
     timezone: readString(settings.timezone, 'Asia/Shanghai'),
+    dateFormat: readString(settings.dateFormat, 'YYYY-MM-DD'),
+    currency: readString(settings.currency, 'USD'),
+    customerImportEnabled: readBoolean(settings.customerImportEnabled, true),
+    maxImportRows: readInteger(settings.maxImportRows, 50000),
+    totpRequiredForAll: readBoolean(settings.totpRequiredForAll, false),
     allowCustomHomepage: settings.allowCustomHomepage !== false,
+    allowMarshmallow: settings.allowMarshmallow !== false,
+    passwordPolicy: {
+      minLength: readInteger(passwordPolicy.minLength, 12),
+      requireSpecial: readBoolean(passwordPolicy.requireSpecial, true),
+      maxAgeDays: readInteger(passwordPolicy.maxAgeDays, 90),
+    },
   };
 }
 
@@ -469,7 +507,18 @@ export function buildTenantSettingsUpdatePayload(draft: TenantSettingsDraft): Re
   return {
     defaultLanguage: draft.defaultLanguage,
     timezone: draft.timezone,
+    dateFormat: draft.dateFormat,
+    currency: draft.currency,
+    customerImportEnabled: draft.customerImportEnabled,
+    maxImportRows: draft.maxImportRows,
+    totpRequiredForAll: draft.totpRequiredForAll,
     allowCustomHomepage: draft.allowCustomHomepage,
+    allowMarshmallow: draft.allowMarshmallow,
+    passwordPolicy: {
+      minLength: draft.passwordPolicy.minLength,
+      requireSpecial: draft.passwordPolicy.requireSpecial,
+      maxAgeDays: draft.passwordPolicy.maxAgeDays,
+    },
   };
 }
 
@@ -480,7 +529,16 @@ export function isTenantSettingsDraftDirty(source: TenantSettingsDraft, draft: T
   return (
     source.defaultLanguage !== draft.defaultLanguage ||
     source.timezone !== draft.timezone ||
-    source.allowCustomHomepage !== draft.allowCustomHomepage
+    source.dateFormat !== draft.dateFormat ||
+    source.currency !== draft.currency ||
+    source.customerImportEnabled !== draft.customerImportEnabled ||
+    source.maxImportRows !== draft.maxImportRows ||
+    source.totpRequiredForAll !== draft.totpRequiredForAll ||
+    source.allowCustomHomepage !== draft.allowCustomHomepage ||
+    source.allowMarshmallow !== draft.allowMarshmallow ||
+    source.passwordPolicy.minLength !== draft.passwordPolicy.minLength ||
+    source.passwordPolicy.requireSpecial !== draft.passwordPolicy.requireSpecial ||
+    source.passwordPolicy.maxAgeDays !== draft.passwordPolicy.maxAgeDays
   );
 }
 

@@ -18,6 +18,9 @@ import {
   type CustomDomainSslMode,
   isValidCustomDomainHostname,
   normalizeCustomDomain,
+  type TalentCustomDomainBindingCatalogItem,
+  type TalentCustomDomainBindingListOptions,
+  type TalentCustomDomainBindingListResult,
   type TalentCustomDomainBindingMutationInput,
   type TalentCustomDomainBindingMutationResult,
   type TalentCustomDomainBindingRecord,
@@ -123,6 +126,27 @@ export class TalentCustomDomainService {
 
       throw error;
     }
+  }
+
+  private buildCatalogItem(
+    record: TalentCustomDomainBindingRecord,
+    scopeType: CustomDomainOwnerType,
+    scopeId: string | null,
+    selectedInheritedDomainIds: Set<string>,
+  ): TalentCustomDomainBindingCatalogItem {
+    const inherited = scopeType === 'tenant'
+      ? false
+      : record.ownerType !== scopeType || record.ownerId !== scopeId;
+    const routeMode = record.ownerType === 'talent'
+      ? 'dedicated_talent'
+      : 'scoped_talent_path';
+
+    return {
+      ...record,
+      inherited,
+      selected: inherited ? selectedInheritedDomainIds.has(record.id) : true,
+      routeMode,
+    };
   }
 
 
@@ -268,6 +292,66 @@ export class TalentCustomDomainService {
       domains,
       inheritedDomains: domains.filter((domain) => domain.inherited),
       selectedInheritedDomainIds,
+    };
+  }
+
+  async listCustomDomainBindings(
+    tenantSchema: string,
+    input: TalentCustomDomainBindingListOptions,
+  ): Promise<TalentCustomDomainBindingListResult> {
+    if (input.scopeType === 'tenant' && input.scopeId !== null) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Tenant custom-domain scope must not include scopeId',
+      });
+    }
+
+    if (input.scopeType !== 'tenant' && !input.scopeId) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Subsidiary and talent custom-domain scopes require scopeId',
+      });
+    }
+
+    await this.ensureBindingOwnerExists(
+      tenantSchema,
+      input.scopeType,
+      input.scopeId,
+    );
+
+    let records: TalentCustomDomainBindingRecord[];
+    try {
+      records = await this.talentCustomDomainRepository.listCustomDomainBindingsForScope(
+        tenantSchema,
+        input,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
+
+    let selectedInheritedDomainIds = new Set<string>();
+    if (input.scopeType === 'talent' && input.scopeId) {
+      selectedInheritedDomainIds = new Set(
+        await this.listSelectedInheritedDomainIdsOrEmpty(
+          tenantSchema,
+          input.scopeId,
+        ),
+      );
+    }
+
+    return {
+      domains: records.map((record) =>
+        this.buildCatalogItem(
+          record,
+          input.scopeType,
+          input.scopeId,
+          selectedInheritedDomainIds,
+        ),
+      ),
     };
   }
 
