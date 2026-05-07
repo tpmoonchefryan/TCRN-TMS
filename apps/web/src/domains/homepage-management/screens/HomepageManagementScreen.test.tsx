@@ -51,6 +51,10 @@ describe('HomepageManagementScreen', () => {
       pathname = resolved.pathname;
       currentSearch = resolved.search.startsWith('?') ? resolved.search.slice(1) : resolved.search;
     });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it('loads the homepage workspace and filters version history', async () => {
@@ -182,6 +186,72 @@ describe('HomepageManagementScreen', () => {
 
     expect(await screen.findByText('ProfileCard, Schedule')).toBeInTheDocument();
     expect(screen.queryByText('HeroBanner, ProfileCard')).not.toBeInTheDocument();
+  });
+
+  it('keeps long public homepage URLs inspectable without oversized summary text', async () => {
+    const longHomepageUrl =
+      'https://very-long-public-homepage.example.test/tenant/visual/subsidiary/tokyo/talent/sora/homepage/with/a/path/that/should/wrap/inside/the/summary/card';
+    const writeText = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText,
+      },
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/homepage') {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: true,
+          publishedVersion: null,
+          draftVersion: null,
+          customDomain:
+            'very-long-public-homepage-custom-domain-name-for-visual-regression.example.test',
+          customDomainVerified: false,
+          seoTitle: 'Tokino Sora',
+          seoDescription: 'Official homepage',
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath:
+            'tenant/visual/subsidiary/tokyo/talent/sora/homepage/with/a/path/that/should/wrap',
+          homepageUrl: longHomepageUrl,
+          createdAt: '2026-04-17T09:00:00.000Z',
+          updatedAt: '2026-04-17T12:00:00.000Z',
+          version: 3,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: {
+            total: 0,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<HomepageManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    const publicUrlValue = await screen.findByText(longHomepageUrl);
+    expect(publicUrlValue).toHaveAttribute('title', longHomepageUrl);
+    expect(publicUrlValue.className).toContain('[overflow-wrap:anywhere]');
+    expect(publicUrlValue.className).not.toContain('text-2xl');
+
+    const copyPublicUrl = screen.getByRole('button', { name: 'Copy value: Homepage URL' });
+    fireEvent.click(copyPublicUrl);
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(longHomepageUrl);
+    });
+    expect(
+      screen.getByRole('button', { name: 'Copied value: Homepage URL' })
+    ).toBeInTheDocument();
   });
 
   it('hydrates version ledger pagination from the URL and keeps filter changes shareable', async () => {

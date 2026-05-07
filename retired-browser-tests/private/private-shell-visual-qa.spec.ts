@@ -2,6 +2,11 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const sessionStorageKey = 'tcrn.web.session';
 const localeOverrideStorageKey = 'tcrn.web.locale.override';
+const privateVisualLongHomepageUrl =
+  'https://very-long-public-homepage.example.test/tenant/visual/subsidiary/tokyo/talent/visual/homepage/with/a/path/that/should/wrap/inside/the/summary/card';
+const privateVisualLongCustomDomain =
+  'very-long-public-homepage-custom-domain-name-for-visual-regression.example.test';
+let privateVisualUseLongHomepageFixture = false;
 
 const privateVisualReportCatalog = [
   {
@@ -715,6 +720,13 @@ async function mockPrivateRuntimeApi(page: Page) {
     }
 
     if (url.pathname === '/api/v1/talents/talent-visual/homepage') {
+      const homepageUrl = privateVisualUseLongHomepageFixture
+        ? privateVisualLongHomepageUrl
+        : 'https://example.test/VISUAL/VISUAL_TALENT/homepage';
+      const customDomain = privateVisualUseLongHomepageFixture
+        ? privateVisualLongCustomDomain
+        : null;
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -726,17 +738,52 @@ async function mockPrivateRuntimeApi(page: Page) {
             isPublished: true,
             publishedVersion: null,
             draftVersion: null,
-            customDomain: null,
+            customDomain,
             customDomainVerified: false,
             seoTitle: null,
             seoDescription: null,
             ogImageUrl: null,
             analyticsId: null,
             homepagePath: 'visual',
-            homepageUrl: 'https://example.test/VISUAL/VISUAL_TALENT/homepage',
+            homepageUrl,
             createdAt: '2026-05-06T03:00:00.000Z',
             updatedAt: '2026-05-06T04:00:00.000Z',
             version: 2,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/homepage/versions') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [
+              {
+                id: 'version-homepage-visual',
+                versionNumber: 2,
+                status: 'published',
+                contentPreview: 'ProfileCard, SocialLinks, RichText',
+                componentCount: 3,
+                publishedAt: '2026-05-06T04:00:00.000Z',
+                publishedBy: {
+                  id: 'user-visual',
+                  username: 'visual.operator@example.test',
+                },
+                createdAt: '2026-05-06T03:00:00.000Z',
+                createdBy: {
+                  id: 'user-visual',
+                  username: 'visual.operator@example.test',
+                },
+              },
+            ],
+            meta: {
+              total: 1,
+            },
           },
         }),
       });
@@ -1596,6 +1643,7 @@ test.describe('private shell browser visual QA', () => {
   test.beforeEach(async ({ page }) => {
     privateVisualRoleAssignments = [privateVisualPlatformAdminAssignment];
     privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
+    privateVisualUseLongHomepageFixture = false;
     await mockPrivateRuntimeApi(page);
   });
 
@@ -1870,6 +1918,38 @@ test.describe('private shell browser visual QA', () => {
     await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
     await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
     await expect(page).toHaveScreenshot('private-marshmallow-mobile-config-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('homepage management keeps long public URLs inside summary cards', async ({ page }) => {
+    privateVisualUseLongHomepageFixture = true;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Homepage management' })).toBeVisible();
+    await expect(page.getByText(privateVisualLongHomepageUrl, { exact: true })).toBeVisible();
+    await expect(page.getByText(privateVisualLongCustomDomain, { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy value: Homepage URL' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy value: Custom domain' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop homepage management long URL summary');
+    await expect(page).toHaveScreenshot('private-homepage-management-desktop-long-url.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Homepage management' })).toBeVisible();
+    await expect(page.getByText(privateVisualLongHomepageUrl, { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy value: Homepage URL' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile homepage management long URL summary');
+    await expect(page).toHaveScreenshot('private-homepage-management-mobile-long-url.png', {
       animations: 'disabled',
       fullPage: true,
     });

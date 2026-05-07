@@ -69,6 +69,8 @@ interface HomepageManagementCopy {
   facts: {
     title: string;
     description: string;
+    copyValue: string;
+    copiedValue: string;
     homepageUrlLabel: string;
     homepageUrlHint: string;
     customDomainLabel: string;
@@ -175,6 +177,8 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
     facts: {
       title: 'Public access',
       description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      copyValue: 'Copy value',
+      copiedValue: 'Copied value',
       homepageUrlLabel: 'Homepage URL',
       homepageUrlHint: 'Current public address for this homepage.',
       customDomainLabel: 'Custom domain',
@@ -289,6 +293,8 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
     facts: {
       title: '公开访问',
       description: '将公开地址、域名与已发布版本和发布控制放在同一处查看。',
+      copyValue: '复制值',
+      copiedValue: '已复制值',
       homepageUrlLabel: '主页链接',
       homepageUrlHint: '当前主页的公开访问地址。',
       customDomainLabel: '自定义域名',
@@ -403,6 +409,8 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
     facts: {
       title: '公開アクセス',
       description: '公開 URL、ドメイン、公開中バージョンを公開操作と並べて確認します。',
+      copyValue: '値をコピー',
+      copiedValue: '値をコピーしました',
       homepageUrlLabel: 'ホームページ URL',
       homepageUrlHint: '現在の公開 URL です。',
       customDomainLabel: 'カスタムドメイン',

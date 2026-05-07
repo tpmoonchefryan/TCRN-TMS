@@ -1,6 +1,6 @@
 'use client';
 
-import { Globe2, History, Pencil, Rocket, RotateCcw } from 'lucide-react';
+import { Check, Copy, Globe2, History, Pencil, Rocket, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useState } from 'react';
@@ -136,15 +136,74 @@ function SummaryCard({
   label,
   value,
   hint,
+  valueDisplay = 'default',
+  copyLabel,
+  copiedLabel,
 }: Readonly<{
   label: string;
   value: string;
   hint: string;
+  valueDisplay?: 'default' | 'long';
+  copyLabel?: string;
+  copiedLabel?: string;
 }>) {
+  const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+  const valueClassName =
+    valueDisplay === 'long'
+      ? 'min-w-0 flex-1 break-words font-mono text-sm font-semibold leading-6 text-slate-950 [overflow-wrap:anywhere]'
+      : 'mt-2 text-2xl font-semibold text-slate-950';
+  const canShowCopyAction = Boolean(copyLabel && copiedLabel && valueDisplay === 'long');
+  const copyButtonLabel =
+    copyState === 'copied' && copiedLabel ? `${copiedLabel}: ${label}` : `${copyLabel}: ${label}`;
+
+  useEffect(() => {
+    if (copyState !== 'copied') {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => setCopyState('idle'), 1800);
+
+    return () => window.clearTimeout(timeout);
+  }, [copyState]);
+
+  const handleCopy = async () => {
+    if (!navigator.clipboard?.writeText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(value);
+    setCopyState('copied');
+  };
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+      {canShowCopyAction ? (
+        <div className="mt-2 flex min-w-0 items-start gap-2">
+          <p className={valueClassName} title={value}>
+            {value}
+          </p>
+          <button
+            type="button"
+            aria-label={copyButtonLabel}
+            title={copyButtonLabel}
+            onClick={() => {
+              void handleCopy();
+            }}
+            className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            {copyState === 'copied' ? (
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      ) : (
+        <p className={valueClassName} title={value}>
+          {value}
+        </p>
+      )}
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
   );
@@ -587,6 +646,9 @@ export function HomepageManagementScreen({
               label={copy.facts.homepageUrlLabel}
               value={homepage.homepageUrl}
               hint={copy.facts.homepageUrlHint}
+              valueDisplay="long"
+              copyLabel={copy.facts.copyValue}
+              copiedLabel={copy.facts.copiedValue}
             />
             <SummaryCard
               label={copy.facts.customDomainLabel}
@@ -598,11 +660,17 @@ export function HomepageManagementScreen({
                     : copy.facts.customDomainPendingHint
                   : copy.facts.customDomainPathOnlyHint
               }
+              valueDisplay={homepage.customDomain ? 'long' : 'default'}
+              copyLabel={copy.facts.copyValue}
+              copiedLabel={copy.facts.copiedValue}
             />
             <SummaryCard
               label={copy.facts.homepagePathLabel}
               value={sharedHomepageRoute || copy.facts.homepagePathUnconfigured}
               hint={copy.facts.homepagePathHint}
+              valueDisplay={sharedHomepageRoute ? 'long' : 'default'}
+              copyLabel={copy.facts.copyValue}
+              copiedLabel={copy.facts.copiedValue}
             />
             <SummaryCard
               label={copy.facts.publishedVersionLabel}
