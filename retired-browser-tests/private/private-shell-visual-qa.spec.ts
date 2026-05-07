@@ -7,6 +7,7 @@ const privateVisualLongHomepageUrl =
 const privateVisualLongCustomDomain =
   'very-long-public-homepage-custom-domain-name-for-visual-regression.example.test';
 let privateVisualUseLongHomepageFixture = false;
+let privateVisualUseCustomDomainStorageError = false;
 
 const privateVisualReportCatalog = [
   {
@@ -919,6 +920,22 @@ async function mockPrivateRuntimeApi(page: Page) {
     }
 
     if (url.pathname === '/api/v1/talents/talent-visual/custom-domain') {
+      if (privateVisualUseCustomDomainStorageError) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: false,
+            error: {
+              code: 'SYS_DATABASE_ERROR',
+              message:
+                'PrismaClientKnownRequestError: Raw query failed. Code: 42P01. relation "public.custom_domain_talent_selection" does not exist in $queryRawUnsafe',
+            },
+          }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1808,6 +1825,7 @@ test.describe('private shell browser visual QA', () => {
     privateVisualRoleAssignments = [privateVisualPlatformAdminAssignment];
     privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
     privateVisualUseLongHomepageFixture = false;
+    privateVisualUseCustomDomainStorageError = false;
     await mockPrivateRuntimeApi(page);
   });
 
@@ -2292,6 +2310,32 @@ test.describe('private shell browser visual QA', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+
+  test('mobile talent settings hides raw custom-domain storage errors', async ({
+    page,
+  }) => {
+    privateVisualUseCustomDomainStorageError = true;
+
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/settings?section=settings&focus=homepage-routing');
+    await hideFrameworkDevTools(page);
+
+    const settingsDrawer = page.getByRole('dialog', { name: 'Configure talent settings' });
+    await expect(settingsDrawer).toBeVisible();
+    await expect(
+      settingsDrawer.getByText(
+        'Custom-domain routing is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/PrismaClientKnownRequestError/i)).toHaveCount(0);
+    await expect(page.getByText(/public\.custom_domain_talent_selection/i)).toHaveCount(0);
+    await expect(page.getByText(/\$queryRawUnsafe/i)).toHaveCount(0);
+    await expect(page.getByText(/relation "public/i)).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'mobile talent settings custom-domain storage error');
+
+    privateVisualUseCustomDomainStorageError = false;
   });
 
   test('desktop organization structure keeps talents as inventory leaves, not expandable tree rows', async ({

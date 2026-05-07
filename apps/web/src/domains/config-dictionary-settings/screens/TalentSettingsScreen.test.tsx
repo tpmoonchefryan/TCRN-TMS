@@ -10,6 +10,7 @@ import type {
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import { TalentSettingsScreen } from '@/domains/config-dictionary-settings/screens/TalentSettingsScreen';
 import type { HomepageResponse } from '@/domains/homepage-management/api/homepage.api';
+import { ApiRequestError } from '@/platform/http/api';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
@@ -1151,6 +1152,135 @@ describe('TalentSettingsScreen', () => {
         ([path, init]) => path === '/api/v1/talents/talent-1/custom-domain/paths' && init?.method === 'PATCH',
       ),
     ).toBe(false);
+  });
+
+  it('shows operator-safe custom-domain storage errors without raw Prisma relation text', async () => {
+    currentSearch = 'section=settings&focus=homepage-routing';
+    const rawStorageMessage =
+      'PrismaClientKnownRequestError: Raw query failed. Code: 42P01. relation "public.custom_domain_talent_selection" does not exist in $queryRawUnsafe';
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/talents/talent-1' && !init) {
+        return {
+          id: 'talent-1',
+          subsidiaryId: 'subsidiary-1',
+          profileStoreId: 'store-1',
+          profileStore: {
+            id: 'store-1',
+            code: 'DEFAULT_STORE',
+            nameEn: 'Default Store',
+            nameZh: '默认档案库',
+            nameJa: null,
+            translations: { en: 'Default Store', zh_HANS: '默认档案库' },
+            isDefault: true,
+            piiProxyUrl: 'https://pii.internal.test',
+          },
+          code: 'SORA',
+          path: '/TOKYO/SORA/',
+          nameEn: 'Tokino Sora',
+          nameZh: '时乃空',
+          nameJa: 'ときのそら',
+          name: 'Tokino Sora',
+          displayName: 'Sora',
+          descriptionEn: null,
+          descriptionZh: null,
+          descriptionJa: null,
+          avatarUrl: null,
+          homepagePath: 'sora',
+          timezone: 'Asia/Tokyo',
+          lifecycleStatus: 'published',
+          publishedAt: '2026-04-17T00:00:00.000Z',
+          publishedBy: 'user-1',
+          isActive: true,
+          settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
+          stats: { customerCount: 12, homepageVersionCount: 2, marshmallowMessageCount: 9 },
+          externalPagesDomain: { homepage: { isPublished: true }, marshmallow: { isEnabled: true } },
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:10:00.000Z',
+          version: 5,
+        } satisfies TalentDetailResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/settings' && !init) {
+        return {
+          scopeType: 'talent',
+          scopeId: 'talent-1',
+          settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
+          overrides: [],
+          inheritedFrom: { defaultLanguage: 'tenant', timezone: 'tenant', allowCustomHomepage: 'tenant' },
+          version: 5,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage' && !init) {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: true,
+          publishedVersion: null,
+          draftVersion: null,
+          customDomain: null,
+          customDomainVerified: false,
+          seoTitle: null,
+          seoDescription: null,
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:10:00.000Z',
+          version: 3,
+        } satisfies HomepageResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/custom-domain' && !init) {
+        throw new ApiRequestError(rawStorageMessage, 'SYS_DATABASE_ERROR', 503);
+      }
+
+      if (path === '/api/v1/talents/talent-1/publish-readiness') {
+        return {
+          id: 'talent-1',
+          lifecycleStatus: 'published',
+          targetState: 'disabled',
+          recommendedAction: 'disable',
+          canEnterPublishedState: true,
+          blockers: [],
+          warnings: [],
+          version: 5,
+        } satisfies TalentPublishReadinessResponse;
+      }
+
+      if (path === '/api/v1/talents/talent-1/marshmallow/config' && !init) {
+        return {
+          isEnabled: true,
+          allowAnonymous: true,
+          requireCaptcha: false,
+          moderationEnabled: true,
+          rateLimitPerMinute: 5,
+          sensitiveWordsEnabled: true,
+          notifyByEmail: false,
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Custom-domain routing is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/PrismaClientKnownRequestError/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/public\.custom_domain_talent_selection/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\$queryRawUnsafe/i)).not.toBeInTheDocument();
   });
 
 

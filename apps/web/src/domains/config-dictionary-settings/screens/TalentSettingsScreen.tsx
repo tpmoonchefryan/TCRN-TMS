@@ -119,6 +119,38 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
+function isRawCustomDomainStorageError(reason: unknown) {
+  if (!(reason instanceof ApiRequestError)) {
+    return false;
+  }
+
+  const errorText = [
+    reason.code,
+    reason.message,
+    typeof reason.details === 'string' ? reason.details : '',
+  ]
+    .join('\n')
+    .toLowerCase();
+
+  return (
+    reason.code === 'SYS_DATABASE_ERROR' ||
+    errorText.includes('public.custom_domain_talent_selection') ||
+    errorText.includes('custom_domain_talent_selection') ||
+    errorText.includes('public.custom_domain_binding') ||
+    errorText.includes('custom_domain_binding') ||
+    errorText.includes('$queryrawunsafe') ||
+    errorText.includes('prisma') ||
+    (errorText.includes('relation') && errorText.includes('does not exist')) ||
+    errorText.includes('undefined table')
+  );
+}
+
+function getCustomDomainErrorMessage(reason: unknown, fallback: string) {
+  return isRawCustomDomainStorageError(reason)
+    ? fallback
+    : getErrorMessage(reason, fallback);
+}
+
 function normalizeCustomDomainDraft(value: string) {
   const trimmed = value.trim().toLowerCase();
   return trimmed.length > 0 ? trimmed : null;
@@ -660,9 +692,16 @@ export function TalentSettingsScreen({
         } else {
           setCustomDomainPanel({
             data: null,
-            error: getErrorMessage(
+            error: getCustomDomainErrorMessage(
               customDomainResult.reason,
-              text('Custom-domain routing is currently unavailable.', '当前无法获取自定义域名配置。', '現在、カスタムドメイン設定を取得できません。'),
+              text({
+                en: 'Custom-domain routing is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+                zh_HANS: '自定义域名路由暂时不可用。请联系管理员确认自定义域名数据库迁移已应用。',
+                zh_HANT: '自訂網域路由暫時無法使用。請聯絡管理員確認自訂網域資料庫遷移已套用。',
+                ja: 'カスタムドメインルーティングは一時的に利用できません。管理者にカスタムドメインのデータベース移行の確認を依頼してください。',
+                ko: '커스텀 도메인 라우팅을 일시적으로 사용할 수 없습니다. 관리자에게 커스텀 도메인 데이터베이스 마이그레이션 적용 여부를 확인해 달라고 요청하세요.',
+                fr: 'Le routage des domaines personnalises est temporairement indisponible. Demandez a un administrateur de verifier la migration de base de donnees des domaines personnalises.',
+              }),
             ),
           });
           setCustomDomainDraft('');
@@ -878,7 +917,17 @@ export function TalentSettingsScreen({
       );
       await refreshMarshmallowRoutingSummary();
     } catch (reason) {
-      setCustomDomainError(getErrorMessage(reason, text('Failed to save custom domain.', '保存自定义域名失败。', 'カスタムドメインの保存に失敗しました。')));
+      setCustomDomainError(getCustomDomainErrorMessage(
+        reason,
+        text({
+          en: 'Custom-domain storage is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+          zh_HANS: '自定义域名存储暂时不可用。请联系管理员确认自定义域名数据库迁移已应用。',
+          zh_HANT: '自訂網域儲存暫時無法使用。請聯絡管理員確認自訂網域資料庫遷移已套用。',
+          ja: 'カスタムドメインの保存先は一時的に利用できません。管理者にカスタムドメインのデータベース移行の確認を依頼してください。',
+          ko: '커스텀 도메인 저장소를 일시적으로 사용할 수 없습니다. 관리자에게 커스텀 도메인 데이터베이스 마이그레이션 적용 여부를 확인해 달라고 요청하세요.',
+          fr: 'Le stockage des domaines personnalises est temporairement indisponible. Demandez a un administrateur de verifier la migration de base de donnees des domaines personnalises.',
+        }),
+      ));
     } finally {
       setCustomDomainPending(false);
     }
@@ -921,7 +970,17 @@ export function TalentSettingsScreen({
     } catch (reason) {
       setCustomDomainVerifyNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to verify custom domain.', '验证自定义域名失败。', 'カスタムドメインの検証に失敗しました。')),
+        message: getCustomDomainErrorMessage(
+          reason,
+          text({
+            en: 'Custom-domain verification is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+            zh_HANS: '自定义域名验证暂时不可用。请联系管理员确认自定义域名数据库迁移已应用。',
+            zh_HANT: '自訂網域驗證暫時無法使用。請聯絡管理員確認自訂網域資料庫遷移已套用。',
+            ja: 'カスタムドメイン検証は一時的に利用できません。管理者にカスタムドメインのデータベース移行の確認を依頼してください。',
+            ko: '커스텀 도메인 검증을 일시적으로 사용할 수 없습니다. 관리자에게 커스텀 도메인 데이터베이스 마이그레이션 적용 여부를 확인해 달라고 요청하세요.',
+            fr: 'La verification des domaines personnalises est temporairement indisponible. Demandez a un administrateur de verifier la migration de base de donnees des domaines personnalises.',
+          }),
+        ),
       });
     } finally {
       setCustomDomainVerifyPending(false);
@@ -969,9 +1028,16 @@ export function TalentSettingsScreen({
       );
     } catch (reason) {
       setInheritedDomainSelectionError(
-        getErrorMessage(
+        getCustomDomainErrorMessage(
           reason,
-          text('Failed to save inherited domain selections.', '保存继承域名选择失败。', '継承ドメインの選択保存に失敗しました。'),
+          text({
+            en: 'Inherited domain selection is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+            zh_HANS: '继承域名选择暂时不可用。请联系管理员确认自定义域名数据库迁移已应用。',
+            zh_HANT: '繼承網域選擇暫時無法使用。請聯絡管理員確認自訂網域資料庫遷移已套用。',
+            ja: '継承ドメインの選択は一時的に利用できません。管理者にカスタムドメインのデータベース移行の確認を依頼してください。',
+            ko: '상속 도메인 선택을 일시적으로 사용할 수 없습니다. 관리자에게 커스텀 도메인 데이터베이스 마이그레이션 적용 여부를 확인해 달라고 요청하세요.',
+            fr: 'La selection des domaines herites est temporairement indisponible. Demandez a un administrateur de verifier la migration de base de donnees des domaines personnalises.',
+          }),
         ),
       );
     } finally {
@@ -1019,7 +1085,17 @@ export function TalentSettingsScreen({
       setCustomDomainSslSuccess(text('Custom-domain SSL mode saved.', '自定义域名 SSL 模式已保存。', 'カスタムドメイン SSL モードを保存しました。'));
     } catch (reason) {
       setCustomDomainSslError(
-        getErrorMessage(reason, text('Failed to save custom-domain SSL mode.', '保存自定义域名 SSL 模式失败。', 'カスタムドメイン SSL モードの保存に失敗しました。')),
+        getCustomDomainErrorMessage(
+          reason,
+          text({
+            en: 'Custom-domain SSL settings are temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
+            zh_HANS: '自定义域名 SSL 设置暂时不可用。请联系管理员确认自定义域名数据库迁移已应用。',
+            zh_HANT: '自訂網域 SSL 設定暫時無法使用。請聯絡管理員確認自訂網域資料庫遷移已套用。',
+            ja: 'カスタムドメイン SSL 設定は一時的に利用できません。管理者にカスタムドメインのデータベース移行の確認を依頼してください。',
+            ko: '커스텀 도메인 SSL 설정을 일시적으로 사용할 수 없습니다. 관리자에게 커스텀 도메인 데이터베이스 마이그레이션 적용 여부를 확인해 달라고 요청하세요.',
+            fr: 'Les reglages SSL des domaines personnalises sont temporairement indisponibles. Demandez a un administrateur de verifier la migration de base de donnees des domaines personnalises.',
+          }),
+        ),
       );
     } finally {
       setCustomDomainSslPending(false);

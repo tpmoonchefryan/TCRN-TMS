@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('crypto', () => ({
@@ -42,6 +42,14 @@ describe('TalentCustomDomainService', () => {
   } as unknown as TalentCustomDomainRepository;
 
   const service = new TalentCustomDomainService(mockRepository);
+  const missingSelectionRelationError = {
+    code: 'P2010',
+    message: 'Raw query failed. Code: 42P01. relation "public.custom_domain_talent_selection" does not exist',
+  };
+  const missingBindingRelationError = {
+    code: 'P2010',
+    message: 'Raw query failed. Code: 42P01. relation "public.custom_domain_binding" does not exist',
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -149,6 +157,41 @@ describe('TalentCustomDomainService', () => {
       inheritedDomains: [
         expect.objectContaining({ id: 'tenant-domain' }),
       ],
+    });
+  });
+
+  it('keeps legacy custom-domain config readable when additive registry tables are missing', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
+      customDomain: 'talent.example.com',
+      customDomainVerified: true,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'auto',
+      homepageCustomPath: 'legacy-home',
+      marshmallowCustomPath: 'legacy-ask',
+    });
+    vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockRejectedValue(
+      missingBindingRelationError,
+    );
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockRejectedValue(
+      missingSelectionRelationError,
+    );
+
+    await expect(
+      service.getCustomDomainConfig('talent-123', 'tenant_test'),
+    ).resolves.toMatchObject({
+      customDomain: 'talent.example.com',
+      selectedInheritedDomainIds: [],
+      domains: [
+        expect.objectContaining({
+          hostname: 'talent.example.com',
+          routeMode: 'dedicated_talent',
+          selected: true,
+        }),
+      ],
+      inheritedDomains: [],
     });
   });
 
@@ -318,6 +361,51 @@ describe('TalentCustomDomainService', () => {
       service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', ['tenant-domain']),
     ).rejects.toThrow(BadRequestException);
     expect(mockRepository.replaceSelectedInheritedDomainIds).not.toHaveBeenCalled();
+  });
+
+  it('returns a stable unavailable error when inherited-domain selection storage is missing', async () => {
+    vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
+      talentId: 'talent-123',
+      talentCode: 'shiori',
+      subsidiaryId: null,
+      customDomain: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      homepageCustomPath: null,
+      marshmallowCustomPath: null,
+    });
+    vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockResolvedValue([
+      {
+        id: 'tenant-domain',
+        hostname: 'tenant.example.com',
+        ownerType: 'tenant',
+        ownerId: null,
+        ownerDepth: null,
+        customDomainVerified: true,
+        customDomainVerificationToken: 'token-123',
+        customDomainSslMode: 'auto',
+        isActive: true,
+      },
+    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([]);
+    vi.mocked(mockRepository.replaceSelectedInheritedDomainIds).mockRejectedValue(
+      missingSelectionRelationError,
+    );
+
+    let caught: unknown;
+    try {
+      await service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', ['tenant-domain']);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ServiceUnavailableException);
+    expect((caught as ServiceUnavailableException).getResponse()).toMatchObject({
+      code: 'SYS_DATABASE_ERROR',
+      message:
+        'Custom-domain storage is unavailable. Ask an administrator to apply the custom-domain database migration.',
+    });
   });
 
   it('replaces selected inherited domain ids when domains are verified and in scope', async () => {

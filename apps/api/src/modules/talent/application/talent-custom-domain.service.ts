@@ -3,10 +3,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { isMissingDatabaseRelationError } from '../../../platform/persistence/database-error.util';
 import {
   buildFixedCustomDomainPaths,
   buildTalentEffectiveCustomDomains,
@@ -23,14 +26,104 @@ import {
   type TalentCustomDomainSelectionResult,
   type TalentCustomDomainSetResult,
   type TalentCustomDomainVerificationResult,
+  type TalentLegacyCustomDomainConfig,
 } from '../domain/talent-custom-domain.policy';
 import { TalentCustomDomainRepository } from '../infrastructure/talent-custom-domain.repository';
 
 @Injectable()
 export class TalentCustomDomainService {
+  private readonly logger = new Logger(TalentCustomDomainService.name);
+
   constructor(
     private readonly talentCustomDomainRepository: TalentCustomDomainRepository,
   ) {}
+
+  private isMissingCustomDomainRegistryRelation(error: unknown): boolean {
+    return isMissingDatabaseRelationError(error, [
+      'public.custom_domain_binding',
+      'custom_domain_binding',
+      'public.custom_domain_talent_selection',
+      'custom_domain_talent_selection',
+    ]);
+  }
+
+  private isMissingCustomDomainSelectionRelation(error: unknown): boolean {
+    return isMissingDatabaseRelationError(error, [
+      'public.custom_domain_talent_selection',
+      'custom_domain_talent_selection',
+    ]);
+  }
+
+  private createCustomDomainStorageUnavailableException(): ServiceUnavailableException {
+    return new ServiceUnavailableException({
+      code: ErrorCodes.SYS_DATABASE_ERROR,
+      message:
+        'Custom-domain storage is unavailable. Ask an administrator to apply the custom-domain database migration.',
+    });
+  }
+
+  private async listCustomDomainBindingsForTalentOrEmpty(
+    tenantSchema: string,
+    legacyConfig: TalentLegacyCustomDomainConfig,
+  ): Promise<TalentCustomDomainBindingRecord[]> {
+    try {
+      return await this.talentCustomDomainRepository.listCustomDomainBindingsForTalent(
+        tenantSchema,
+        legacyConfig,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        this.logger.warn(
+          `Custom-domain binding registry is unavailable for tenant schema "${tenantSchema}"; returning legacy-only custom-domain config.`,
+        );
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
+  private async listSelectedInheritedDomainIdsOrEmpty(
+    tenantSchema: string,
+    talentId: string,
+  ): Promise<string[]> {
+    try {
+      return await this.talentCustomDomainRepository.listSelectedInheritedDomainIds(
+        tenantSchema,
+        talentId,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainSelectionRelation(error)) {
+        this.logger.warn(
+          `Custom-domain inherited selection registry is unavailable for talent "${talentId}" in tenant schema "${tenantSchema}"; returning no inherited selections.`,
+        );
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
+  private async findCustomDomainBindingByHostnameOrNull(
+    hostname: string,
+    excludeDomainId: string | null = null,
+  ): Promise<TalentCustomDomainBindingRecord | null> {
+    try {
+      return await this.talentCustomDomainRepository.findCustomDomainBindingByHostname(
+        hostname,
+        excludeDomainId,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        this.logger.warn(
+          `Custom-domain binding registry is unavailable while checking hostname "${hostname}"; continuing with legacy-domain collision checks only.`,
+        );
+        return null;
+      }
+
+      throw error;
+    }
+  }
 
 
   private async generateVerificationToken(): Promise<string> {
@@ -85,10 +178,7 @@ export class TalentCustomDomainService {
     excludeDomainId: string | null,
   ): Promise<void> {
     const [bindingOwner, legacyOwner] = await Promise.all([
-      this.talentCustomDomainRepository.findCustomDomainBindingByHostname(
-        hostname,
-        excludeDomainId,
-      ),
+      this.findCustomDomainBindingByHostnameOrNull(hostname, excludeDomainId),
       this.talentCustomDomainRepository.findLegacyCustomDomainOwner(hostname),
     ]);
 
@@ -151,11 +241,11 @@ export class TalentCustomDomainService {
     }
 
     const [bindingRecords, selectedInheritedDomainIds] = await Promise.all([
-      this.talentCustomDomainRepository.listCustomDomainBindingsForTalent(
+      this.listCustomDomainBindingsForTalentOrEmpty(
         tenantSchema,
         legacyConfig,
       ),
-      this.talentCustomDomainRepository.listSelectedInheritedDomainIds(
+      this.listSelectedInheritedDomainIdsOrEmpty(
         tenantSchema,
         legacyConfig.talentId,
       ),
@@ -208,9 +298,7 @@ export class TalentCustomDomainService {
         normalizedDomain,
         talentId,
       ),
-      this.talentCustomDomainRepository.findCustomDomainBindingByHostname(
-        normalizedDomain,
-      ),
+      this.findCustomDomainBindingByHostnameOrNull(normalizedDomain),
     ]);
 
     if (existingTalentId || existingBinding) {
@@ -326,11 +414,20 @@ export class TalentCustomDomainService {
     await this.ensureHostnameAvailable(normalizedInput.hostname, null);
 
     const token = await this.generateVerificationToken();
-    const domain = await this.talentCustomDomainRepository.createCustomDomainBinding(
-      tenantSchema,
-      normalizedInput,
-      token,
-    );
+    let domain: TalentCustomDomainBindingRecord | null;
+    try {
+      domain = await this.talentCustomDomainRepository.createCustomDomainBinding(
+        tenantSchema,
+        normalizedInput,
+        token,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
 
     if (!domain) {
       throw new NotFoundException({
@@ -357,10 +454,19 @@ export class TalentCustomDomainService {
       isActive?: boolean;
     },
   ): Promise<TalentCustomDomainBindingMutationResult> {
-    const current = await this.talentCustomDomainRepository.findCustomDomainBindingById(
-      tenantSchema,
-      domainId,
-    );
+    let current: TalentCustomDomainBindingRecord | null;
+    try {
+      current = await this.talentCustomDomainRepository.findCustomDomainBindingById(
+        tenantSchema,
+        domainId,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
 
     if (!current) {
       throw new NotFoundException({
@@ -389,12 +495,21 @@ export class TalentCustomDomainService {
     }
 
     const token = hostnameChanged ? await this.generateVerificationToken() : null;
-    const domain = await this.talentCustomDomainRepository.updateCustomDomainBinding(
-      tenantSchema,
-      domainId,
-      normalizedInput,
-      token,
-    );
+    let domain: TalentCustomDomainBindingRecord | null;
+    try {
+      domain = await this.talentCustomDomainRepository.updateCustomDomainBinding(
+        tenantSchema,
+        domainId,
+        normalizedInput,
+        token,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
 
     if (!domain) {
       throw new NotFoundException({
@@ -414,10 +529,19 @@ export class TalentCustomDomainService {
     tenantSchema: string,
     domainId: string,
   ): Promise<TalentCustomDomainVerificationResult> {
-    const binding = await this.talentCustomDomainRepository.findCustomDomainBindingById(
-      tenantSchema,
-      domainId,
-    );
+    let binding: TalentCustomDomainBindingRecord | null;
+    try {
+      binding = await this.talentCustomDomainRepository.findCustomDomainBindingById(
+        tenantSchema,
+        domainId,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainRegistryRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
 
     if (!binding) {
       throw new NotFoundException({
@@ -429,10 +553,18 @@ export class TalentCustomDomainService {
     const result = await this.verifyBindingDnsRecord(binding);
 
     if (result.verified) {
-      await this.talentCustomDomainRepository.markCustomDomainBindingVerified(
-        tenantSchema,
-        domainId,
-      );
+      try {
+        await this.talentCustomDomainRepository.markCustomDomainBindingVerified(
+          tenantSchema,
+          domainId,
+        );
+      } catch (error) {
+        if (this.isMissingCustomDomainRegistryRelation(error)) {
+          throw this.createCustomDomainStorageUnavailableException();
+        }
+
+        throw error;
+      }
     }
 
     return result;
@@ -473,11 +605,19 @@ export class TalentCustomDomainService {
       }
     }
 
-    await this.talentCustomDomainRepository.replaceSelectedInheritedDomainIds(
-      tenantSchema,
-      talentId,
-      uniqueDomainIds,
-    );
+    try {
+      await this.talentCustomDomainRepository.replaceSelectedInheritedDomainIds(
+        tenantSchema,
+        talentId,
+        uniqueDomainIds,
+      );
+    } catch (error) {
+      if (this.isMissingCustomDomainSelectionRelation(error)) {
+        throw this.createCustomDomainStorageUnavailableException();
+      }
+
+      throw error;
+    }
 
     const updated = await this.getCustomDomainConfig(talentId, tenantSchema);
 
