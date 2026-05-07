@@ -6,9 +6,11 @@ import {
   createTenantAdapter,
   createWebhook,
   type IntegrationConsumerRecord,
+  listAdapterDefinitions,
   listConsumers,
   listEmailSenderTenants,
   listSocialPlatforms,
+  listWebhookDefinitions,
   type SocialPlatformRecord,
   updateConsumer,
   updateEmailTemplate,
@@ -51,6 +53,23 @@ function buildEmailSenderTenant(index: number) {
 }
 
 describe('integration-management.api pagination helpers', () => {
+  it('loads supported adapter and webhook definitions from the Integration API', async () => {
+    const request = vi.fn(async (path: string) => {
+      if (path === '/api/v1/integration/adapter-definitions') {
+        return [{ key: 'openai-ai' }];
+      }
+
+      if (path === '/api/v1/integration/webhook-definitions') {
+        return [{ key: 'customer-lifecycle' }];
+      }
+
+      throw new Error(`Unexpected request path: ${path}`);
+    });
+
+    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([{ key: 'openai-ai' }]);
+    await expect(listWebhookDefinitions(request as never)).resolves.toEqual([{ key: 'customer-lifecycle' }]);
+  });
+
   it('loads additional social-platform pages when the first page is full', async () => {
     const firstPage = Array.from({ length: 100 }, (_, index) => buildSocialPlatform(`platform-${index + 1}`));
     const secondPage = [buildSocialPlatform('platform-101')];
@@ -231,6 +250,51 @@ describe('integration-management.api pagination helpers', () => {
     );
   });
 
+  it('sends definition-backed adapter create payloads without free platform/type fields', async () => {
+    const request = vi.fn(async () => ({
+      id: 'adapter-ai-1',
+      ownerType: 'tenant',
+      ownerId: null,
+      definitionKey: 'openai-ai',
+      platform: { id: 'platform-openai', code: 'OPENAI', displayName: 'OpenAI' },
+      code: 'OPENAI_AI',
+      nameEn: 'OpenAI AI Adapter',
+      adapterType: 'ai',
+      inherit: true,
+      isActive: true,
+      configs: [],
+      createdAt: '2026-04-20T00:00:00.000Z',
+      updatedAt: '2026-04-20T00:00:00.000Z',
+      createdBy: null,
+      updatedBy: null,
+      version: 1,
+    }));
+
+    await createTenantAdapter(request as never, {
+      definitionKey: 'openai-ai',
+      configs: [
+        { configKey: 'endpoint_path', configValue: '/v1/responses' },
+        { configKey: 'model', configValue: 'gpt-example' },
+        { configKey: 'token', configValue: 'provider-token' },
+      ],
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      '/api/v1/integration/adapters',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          definitionKey: 'openai-ai',
+          configs: [
+            { configKey: 'endpoint_path', configValue: '/v1/responses' },
+            { configKey: 'model', configValue: 'gpt-example' },
+            { configKey: 'token', configValue: 'provider-token' },
+          ],
+        }),
+      }),
+    );
+  });
+
   it('sends managed translation payloads when updating adapters', async () => {
     const request = vi.fn(async () => ({
       id: 'adapter-1',
@@ -321,6 +385,38 @@ describe('integration-management.api pagination helpers', () => {
           },
           url: 'https://example.com/webhook',
           events: ['customer.created'],
+        }),
+      }),
+    );
+  });
+
+  it('sends definition-backed webhook create payloads', async () => {
+    const request = vi.fn(async () => ({
+      id: 'webhook-1',
+      code: 'CUSTOMER_LIFECYCLE',
+      definitionKey: 'customer-lifecycle',
+      nameEn: 'Customer lifecycle',
+      url: 'https://example.com',
+      events: ['customer.created'],
+      isActive: true,
+      lastTriggeredAt: null,
+      lastStatus: null,
+      consecutiveFailures: 0,
+      createdAt: '2026-04-20T00:00:00.000Z',
+    }));
+
+    await createWebhook(request as never, {
+      definitionKey: 'customer-lifecycle',
+      url: 'https://example.com/webhook',
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      '/api/v1/integration/webhooks',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          definitionKey: 'customer-lifecycle',
+          url: 'https://example.com/webhook',
         }),
       }),
     );

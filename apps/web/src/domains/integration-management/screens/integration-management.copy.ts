@@ -105,6 +105,7 @@ const ADAPTER_TYPE_LABELS: Record<AdapterType, LocalizedText> = {
   api_key: buildLegacyText('API Key', 'API 密钥', 'API キー'),
   oauth: buildLegacyText('OAuth', 'OAuth', 'OAuth'),
   webhook: buildLegacyText('Webhook', 'Webhook', 'Webhook'),
+  ai: buildLegacyText('AI Adapter', 'AI 适配器', 'AI アダプター'),
 };
 
 const CONSUMER_CATEGORY_LABELS: Record<ConsumerCategory, LocalizedText> = {

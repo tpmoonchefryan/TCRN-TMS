@@ -62,6 +62,119 @@ const organizationTreeResponse = {
   ],
 };
 
+const openAiAdapterDefinition = {
+  key: 'openai-ai',
+  code: 'OPENAI_AI',
+  adapterType: 'ai',
+  aiProvider: 'OPENAI',
+  name: {
+    en: 'OpenAI AI Adapter',
+    zh_HANS: 'OpenAI AI 适配器',
+    zh_HANT: 'OpenAI AI 適配器',
+    ja: 'OpenAI AI アダプター',
+    ko: 'OpenAI AI 어댑터',
+    fr: 'Adaptateur IA OpenAI',
+  },
+  description: {
+    en: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+    zh_HANS: '使用 Token 认证的通用 OpenAI 提供商配置。当前不会执行 AI 调用。',
+    zh_HANT: '使用 Token 認證的通用 OpenAI 供應商設定。目前不會執行 AI 呼叫。',
+    ja: 'トークン認証を使う汎用 OpenAI プロバイダー設定です。AI 呼び出しはまだ実行しません。',
+    ko: '토큰 인증을 사용하는 일반 OpenAI 제공자 설정입니다. 아직 AI 호출은 실행하지 않습니다.',
+    fr: "Configuration fournisseur OpenAI générique avec authentification par jeton. Aucun appel IA n'est exécuté pour l'instant.",
+  },
+  platform: {
+    code: 'OPENAI',
+    displayName: 'OpenAI',
+    nameEn: 'OpenAI',
+    baseUrl: 'https://api.openai.com',
+    iconUrl: null,
+    color: '#10A37F',
+  },
+  configFields: [
+    {
+      key: 'endpoint_path',
+      label: {
+        en: 'Endpoint path',
+        zh_HANS: 'Endpoint 路径',
+        zh_HANT: 'Endpoint 路徑',
+        ja: 'エンドポイントパス',
+        ko: '엔드포인트 경로',
+        fr: 'Chemin endpoint',
+      },
+      input: 'text',
+      required: true,
+      secret: false,
+      defaultValue: '/v1/responses',
+    },
+    {
+      key: 'model',
+      label: {
+        en: 'Model',
+        zh_HANS: '模型',
+        zh_HANT: '模型',
+        ja: 'モデル',
+        ko: '모델',
+        fr: 'Modèle',
+      },
+      input: 'text',
+      required: true,
+      secret: false,
+    },
+    {
+      key: 'token',
+      label: {
+        en: 'Token',
+        zh_HANS: 'Token',
+        zh_HANT: 'Token',
+        ja: 'トークン',
+        ko: '토큰',
+        fr: 'Jeton',
+      },
+      input: 'password',
+      required: true,
+      secret: true,
+    },
+  ],
+  protocol: {
+    family: 'openai-responses',
+    payloadFormat: 'official-provider-protocol',
+    invocationRuntime: 'not_implemented',
+    notes: {
+      en: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+      zh_HANS: '此定义只存储提供商配置。本包不会实现 AI 调用能力。',
+      zh_HANT: '此定義只儲存供應商設定。本包不會實作 AI 呼叫能力。',
+      ja: 'この定義はプロバイダー設定のみを保存します。このパッケージでは AI 呼び出しは実装しません。',
+      ko: '이 정의는 제공자 설정만 저장합니다. 이 패키지에서는 AI 호출을 구현하지 않습니다.',
+      fr: "Cette définition stocke seulement la configuration du fournisseur. L'appel IA n'est pas implémenté dans ce package.",
+    },
+  },
+  capabilities: ['ai_provider_config'],
+};
+
+const customerLifecycleWebhookDefinition = {
+  key: 'customer-lifecycle',
+  code: 'CUSTOMER_LIFECYCLE',
+  name: {
+    en: 'Customer lifecycle webhook',
+    zh_HANS: '客户生命周期 Webhook',
+    zh_HANT: '客戶生命週期 Webhook',
+    ja: '顧客ライフサイクル Webhook',
+    ko: '고객 라이프사이클 Webhook',
+    fr: 'Webhook cycle de vie client',
+  },
+  description: {
+    en: 'Receives customer create, update, and deactivate events.',
+    zh_HANS: '接收客户创建、更新与停用事件。',
+    zh_HANT: '接收客戶建立、更新與停用事件。',
+    ja: '顧客の作成、更新、停止イベントを受信します。',
+    ko: '고객 생성, 업데이트, 비활성화 이벤트를 수신합니다.',
+    fr: 'Reçoit les événements de création, mise à jour et désactivation client.',
+  },
+  events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+  defaultRetryPolicy: { maxRetries: 3, backoffMs: 1000 },
+};
+
 async function selectTenantRootScope(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
 }
@@ -145,27 +258,16 @@ describe('IntegrationManagementScreen', () => {
     let consumerCalls = 0;
     let webhookCalls = 0;
     let adapterCalls = 0;
-    let platformCalls = 0;
+    let adapterDefinitionCalls = 0;
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
-        platformCalls += 1;
-        return [
-          {
-            id: 'platform-1',
-            code: 'BILIBILI',
-            name: 'Bilibili',
-            nameEn: 'Bilibili',
-            sortOrder: 0,
-            isActive: true,
-            version: 1,
-            displayName: 'Bilibili',
-          },
-        ];
+      if (path === '/api/v1/integration/adapter-definitions') {
+        adapterDefinitionCalls += 1;
+        return [openAiAdapterDefinition];
       }
 
       if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
@@ -268,7 +370,7 @@ describe('IntegrationManagementScreen', () => {
     expect(consumerCalls).toBe(0);
     expect(webhookCalls).toBe(0);
     expect(adapterCalls).toBe(0);
-    expect(platformCalls).toBe(0);
+    expect(adapterDefinitionCalls).toBe(0);
 
     await user.click(screen.getByRole('button', { name: /Start shared integration workspace/i }));
 
@@ -279,7 +381,7 @@ describe('IntegrationManagementScreen', () => {
       ),
     ).toBeInTheDocument();
     expect(adapterCalls).toBe(1);
-    expect(platformCalls).toBe(1);
+    expect(adapterDefinitionCalls).toBe(1);
 
     await user.click(screen.getByRole('tab', { name: 'Email' }));
 
@@ -1690,6 +1792,307 @@ describe('IntegrationManagementScreen', () => {
     await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
     expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
   }, 10_000);
+
+  it('creates adapters from supported definitions and exposes AI-specific fields only', async () => {
+    const user = userEvent.setup();
+    let created = false;
+    let createBody: unknown = null;
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/integration/adapter-definitions') {
+        return [openAiAdapterDefinition];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return created
+          ? [
+              {
+                id: 'adapter-openai',
+                ownerType: 'tenant',
+                ownerId: null,
+                platformId: 'platform-openai',
+                platform: {
+                  code: 'OPENAI',
+                  displayName: 'OpenAI',
+                  iconUrl: null,
+                },
+                definitionKey: 'openai-ai',
+                code: 'OPENAI_AI',
+                nameEn: 'OpenAI AI Adapter',
+                nameZh: null,
+                nameJa: null,
+                adapterType: 'ai',
+                inherit: true,
+                isActive: true,
+                isInherited: false,
+                configCount: 3,
+                createdAt: '2026-05-07T08:00:00.000Z',
+                updatedAt: '2026-05-07T08:00:00.000Z',
+                version: 1,
+              },
+            ]
+          : [];
+      }
+
+      if (path === '/api/v1/integration/adapters' && init?.method === 'POST') {
+        createBody = JSON.parse(String(init.body));
+        created = true;
+        return {
+          id: 'adapter-openai',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-openai',
+            code: 'OPENAI',
+            displayName: 'OpenAI',
+          },
+          definitionKey: 'openai-ai',
+          code: 'OPENAI_AI',
+          nameEn: 'OpenAI AI Adapter',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'ai',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-05-07T08:00:00.000Z',
+          updatedAt: '2026-05-07T08:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/integration/adapters/adapter-openai') {
+        return {
+          id: 'adapter-openai',
+          ownerType: 'tenant',
+          ownerId: null,
+          platform: {
+            id: 'platform-openai',
+            code: 'OPENAI',
+            displayName: 'OpenAI',
+          },
+          definitionKey: 'openai-ai',
+          code: 'OPENAI_AI',
+          nameEn: 'OpenAI AI Adapter',
+          nameZh: null,
+          nameJa: null,
+          adapterType: 'ai',
+          inherit: true,
+          isActive: true,
+          configs: [],
+          createdAt: '2026-05-07T08:00:00.000Z',
+          updatedAt: '2026-05-07T08:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    expect(await screen.findByText('No adapters configured')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'New adapter' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
+
+    expect(within(drawer).getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('openai-ai');
+    expect(within(drawer).queryByLabelText('Platform')).not.toBeInTheDocument();
+    expect(within(drawer).queryByLabelText('Adapter type')).not.toBeInTheDocument();
+    expect(within(drawer).getByText('OpenAI AI Adapter')).toBeInTheDocument();
+    expect(within(drawer).getByText('OPENAI')).toBeInTheDocument();
+    expect(within(drawer).getByText('openai-responses')).toBeInTheDocument();
+
+    await user.click(within(drawer).getByRole('tab', { name: 'Secrets' }));
+    expect(within(drawer).getByDisplayValue('/v1/responses')).toBeInTheDocument();
+
+    await user.type(within(drawer).getByLabelText(/Model/), 'gpt-4.1-mini');
+    await user.type(within(drawer).getByLabelText(/Token/), 'sk-test-token');
+    await user.click(within(drawer).getByRole('button', { name: 'Create adapter' }));
+
+    await waitFor(() => {
+      expect(createBody).toEqual({
+        definitionKey: 'openai-ai',
+        inherit: true,
+        configs: [
+          { configKey: 'endpoint_path', configValue: '/v1/responses' },
+          { configKey: 'model', configValue: 'gpt-4.1-mini' },
+          { configKey: 'token', configValue: 'sk-test-token' },
+        ],
+      });
+    });
+    expect(JSON.stringify(createBody)).not.toContain('platformId');
+    expect(JSON.stringify(createBody)).not.toContain('adapterType');
+  });
+
+  it('creates webhooks from supported definitions without free event-set selection', async () => {
+    const user = userEvent.setup();
+    let created = false;
+    let createBody: unknown = null;
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/integration/adapter-definitions') {
+        return [openAiAdapterDefinition];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/webhooks') {
+        if (init?.method === 'POST') {
+          createBody = JSON.parse(String(init.body));
+          created = true;
+          return {
+            id: 'webhook-customer',
+            code: 'CUSTOMER_LIFECYCLE',
+            nameEn: 'Customer lifecycle webhook',
+            nameZh: null,
+            nameJa: null,
+            definitionKey: 'customer-lifecycle',
+            url: 'https://example.com/webhooks/customer',
+            events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+            isActive: true,
+            lastTriggeredAt: null,
+            lastStatus: null,
+            consecutiveFailures: 0,
+            createdAt: '2026-05-07T08:00:00.000Z',
+            secret: null,
+            headers: {},
+            retryPolicy: { maxRetries: 3, backoffMs: 1000 },
+            disabledAt: null,
+            updatedAt: '2026-05-07T08:00:00.000Z',
+            createdBy: 'user-1',
+            updatedBy: 'user-1',
+            version: 1,
+          };
+        }
+
+        return created
+          ? [
+              {
+                id: 'webhook-customer',
+                code: 'CUSTOMER_LIFECYCLE',
+                nameEn: 'Customer lifecycle webhook',
+                nameZh: null,
+                nameJa: null,
+                definitionKey: 'customer-lifecycle',
+                url: 'https://example.com/webhooks/customer',
+                events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+                isActive: true,
+                lastTriggeredAt: null,
+                lastStatus: null,
+                consecutiveFailures: 0,
+                createdAt: '2026-05-07T08:00:00.000Z',
+              },
+            ]
+          : [];
+      }
+
+      if (path === '/api/v1/integration/webhooks/events') {
+        return [
+          {
+            event: 'customer.created',
+            name: 'Customer created',
+            description: 'Customer record was created.',
+            category: 'customer',
+          },
+          {
+            event: 'customer.updated',
+            name: 'Customer updated',
+            description: 'Customer record was updated.',
+            category: 'customer',
+          },
+          {
+            event: 'customer.deactivated',
+            name: 'Customer deactivated',
+            description: 'Customer record was deactivated.',
+            category: 'customer',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/webhook-definitions') {
+        return [customerLifecycleWebhookDefinition];
+      }
+
+      if (path === '/api/v1/integration/webhooks/webhook-customer') {
+        return {
+          id: 'webhook-customer',
+          code: 'CUSTOMER_LIFECYCLE',
+          nameEn: 'Customer lifecycle webhook',
+          nameZh: null,
+          nameJa: null,
+          definitionKey: 'customer-lifecycle',
+          url: 'https://example.com/webhooks/customer',
+          events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+          isActive: true,
+          lastTriggeredAt: null,
+          lastStatus: null,
+          consecutiveFailures: 0,
+          createdAt: '2026-05-07T08:00:00.000Z',
+          secret: null,
+          headers: {},
+          retryPolicy: { maxRetries: 3, backoffMs: 1000 },
+          disabledAt: null,
+          updatedAt: '2026-05-07T08:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" />);
+
+    await selectTenantRootScope(user);
+    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    expect(await screen.findByRole('heading', { name: 'Webhook Endpoints' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'New webhook' }));
+    const drawer = await screen.findByRole('dialog', { name: 'New Webhook' });
+
+    expect(within(drawer).getByRole('combobox', { name: 'Supported webhook' })).toHaveValue('customer-lifecycle');
+    expect(within(drawer).queryByLabelText('Webhook code')).not.toBeInTheDocument();
+    expect(within(drawer).queryByLabelText('Name (EN)')).not.toBeInTheDocument();
+    expect(within(drawer).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(within(drawer).getByText('Customer lifecycle webhook')).toBeInTheDocument();
+
+    await user.type(
+      within(drawer).getByLabelText('Endpoint URL'),
+      'https://example.com/webhooks/customer',
+    );
+    await user.click(within(drawer).getByRole('button', { name: 'Create webhook' }));
+
+    await waitFor(() => {
+      expect(createBody).toEqual({
+        definitionKey: 'customer-lifecycle',
+        url: 'https://example.com/webhooks/customer',
+        headers: {},
+        retryPolicy: {
+          maxRetries: 3,
+          backoffMs: 1000,
+        },
+      });
+    });
+    expect(JSON.stringify(createBody)).not.toContain('CUSTOMER_LIFECYCLE');
+    expect(JSON.stringify(createBody)).not.toContain('customer.created');
+  });
 
   it('renders localized integration management copy for zh locale', async () => {
     const user = userEvent.setup();

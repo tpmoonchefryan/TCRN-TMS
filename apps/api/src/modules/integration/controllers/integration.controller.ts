@@ -13,7 +13,11 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { RequestContext } from '@tcrn/shared';
+import {
+  INTEGRATION_ADAPTER_DEFINITIONS,
+  INTEGRATION_WEBHOOK_DEFINITIONS,
+  type RequestContext,
+} from '@tcrn/shared';
 import { Request } from 'express';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
@@ -64,6 +68,20 @@ export class IntegrationController {
     private readonly webhookService: WebhookService,
     private readonly apiKeyService: ApiKeyService,
   ) {}
+
+  @Get('adapter-definitions')
+  @RequirePermissions({ resource: 'integration.adapter', action: 'read' })
+  @ApiOperation({ summary: 'List supported adapter definitions' })
+  getAdapterDefinitions() {
+    return INTEGRATION_ADAPTER_DEFINITIONS;
+  }
+
+  @Get('webhook-definitions')
+  @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
+  @ApiOperation({ summary: 'List supported webhook definitions' })
+  getWebhookDefinitions() {
+    return INTEGRATION_WEBHOOK_DEFINITIONS;
+  }
 
   @Get('adapters')
   @RequirePermissions({ resource: 'integration.adapter', action: 'read' })

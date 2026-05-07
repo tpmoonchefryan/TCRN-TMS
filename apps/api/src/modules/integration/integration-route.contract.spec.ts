@@ -56,6 +56,16 @@ describe('Integration private route contract', () => {
     expect(Reflect.getMetadata(PATH_METADATA, IntegrationController)).toBe('integration');
     expect(getControllerRoutes(IntegrationController)).toEqual(
       expect.arrayContaining([
+        {
+          methodName: 'getAdapterDefinitions',
+          requestMethod: RequestMethod.GET,
+          path: 'adapter-definitions',
+        },
+        {
+          methodName: 'getWebhookDefinitions',
+          requestMethod: RequestMethod.GET,
+          path: 'webhook-definitions',
+        },
         { methodName: 'listTenantAdapters', requestMethod: RequestMethod.GET, path: 'adapters' },
         { methodName: 'createTenantAdapter', requestMethod: RequestMethod.POST, path: 'adapters' },
         {

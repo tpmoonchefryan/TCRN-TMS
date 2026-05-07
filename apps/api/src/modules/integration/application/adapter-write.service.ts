@@ -9,6 +9,8 @@ import {
 import { Prisma } from '@tcrn/database';
 import {
   ErrorCodes,
+  getIntegrationAdapterDefinition,
+  type IntegrationAdapterDefinition,
   LogSeverity,
   type RequestContext,
   TechEventScope,
@@ -61,7 +63,9 @@ export class AdapterWriteApplicationService {
     scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null },
   ) {
     const tenantSchema = getAdapterTenantSchema(context);
-    const translationPayload = buildNameTranslationPayload(dto);
+    const definition = this.resolveCreateDefinition(dto.definitionKey);
+    const createInput = this.buildCreateInput(dto, definition);
+    const translationPayload = buildNameTranslationPayload(createInput);
 
     if (!translationPayload.nameEn) {
       throw new BadRequestException({
@@ -71,11 +75,17 @@ export class AdapterWriteApplicationService {
     }
 
     const adapterId = await this.adapterWriteRepository.withTransaction(async (prisma) => {
-      const platform = await this.adapterWriteRepository.findPlatformById(
-        prisma,
-        tenantSchema,
-        dto.platformId,
-      );
+      const platform = definition
+        ? await this.adapterWriteRepository.ensurePlatformForDefinition(
+          prisma,
+          tenantSchema,
+          definition.platform,
+        )
+        : await this.adapterWriteRepository.findPlatformById(
+          prisma,
+          tenantSchema,
+          createInput.platformId,
+        );
 
       if (!platform) {
         throw new NotFoundException({
@@ -88,13 +98,13 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         scope,
-        dto.code,
+        createInput.code,
       );
 
       if (existing) {
         throw new ConflictException({
           code: ErrorCodes.RES_ALREADY_EXISTS,
-          message: `Adapter with code '${dto.code}' already exists`,
+          message: `Adapter with code '${createInput.code}' already exists`,
         });
       }
 
@@ -102,28 +112,28 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         scope,
-        dto.platformId,
-        dto.adapterType,
+        platform.id,
+        createInput.adapterType,
       );
 
       if (existingPlatform) {
         throw new ConflictException({
           code: ErrorCodes.RES_ALREADY_EXISTS,
-          message: `Adapter for platform '${platform.code}' with type '${dto.adapterType}' already exists`,
+          message: `Adapter for platform '${platform.code}' with type '${createInput.adapterType}' already exists`,
         });
       }
 
       const createdId = await this.adapterWriteRepository.create(prisma, tenantSchema, {
         ownerType: scope.ownerType,
         ownerId: scope.ownerId,
-        platformId: dto.platformId,
-        code: dto.code,
+        platformId: platform.id,
+        code: createInput.code,
         nameEn: translationPayload.nameEn,
         nameZh: translationPayload.nameZh,
         nameJa: translationPayload.nameJa,
-        extraData: translationPayload.extraData,
-        adapterType: dto.adapterType,
-        inherit: dto.inherit ?? true,
+        extraData: this.mergeDefinitionExtraData(translationPayload.extraData, definition),
+        adapterType: createInput.adapterType,
+        inherit: createInput.inherit,
         userId: context.userId ?? null,
       });
 
@@ -134,12 +144,12 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      if (dto.configs?.length) {
+      if (createInput.configs.length) {
         await this.adapterWriteRepository.upsertConfigs(
           prisma,
           tenantSchema,
           createdId,
-          this.toPersistenceConfigs(dto.configs),
+          this.toPersistenceConfigs(createInput.configs),
         );
       }
 
@@ -149,10 +159,11 @@ export class AdapterWriteApplicationService {
           action: 'create',
           objectType: 'integration_adapter',
           objectId: createdId,
-          objectName: dto.code,
+          objectName: createInput.code,
           newValue: {
-            code: dto.code,
-            adapterType: dto.adapterType,
+            code: createInput.code,
+            adapterType: createInput.adapterType,
+            definitionKey: definition?.key,
             ownerType: scope.ownerType,
             ownerId: scope.ownerId,
           },
@@ -164,6 +175,146 @@ export class AdapterWriteApplicationService {
     });
 
     return this.adapterReadApplicationService.findById(adapterId, context);
+  }
+
+  private resolveCreateDefinition(definitionKey: string | undefined) {
+    if (!definitionKey) {
+      return null;
+    }
+
+    const definition = getIntegrationAdapterDefinition(definitionKey);
+    if (!definition) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Unsupported adapter definition '${definitionKey}'`,
+      });
+    }
+
+    return definition;
+  }
+
+  private buildCreateInput(
+    dto: CreateAdapterDto,
+    definition: IntegrationAdapterDefinition | null,
+  ): {
+    platformId: string;
+    code: string;
+    nameEn: string;
+    nameZh?: string;
+    nameJa?: string;
+    translations?: Record<string, string>;
+    adapterType: string;
+    inherit: boolean;
+    configs: Array<{ configKey: string; configValue: string }>;
+  } {
+    if (!definition) {
+      if (!dto.platformId || !dto.adapterType || !dto.code || !dto.nameEn) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'Platform, adapter type, code, and English name are required without a definition key',
+        });
+      }
+
+      return {
+        platformId: dto.platformId,
+        code: dto.code.trim().toUpperCase(),
+        nameEn: dto.nameEn.trim(),
+        nameZh: dto.nameZh,
+        nameJa: dto.nameJa,
+        translations: dto.translations,
+        adapterType: dto.adapterType,
+        inherit: dto.inherit ?? true,
+        configs: dto.configs ?? [],
+      };
+    }
+
+    this.assertDefinitionIdentityLocked(dto, definition);
+
+    return {
+      platformId: '',
+      code: definition.code,
+      nameEn: definition.name.en,
+      nameZh: definition.name.zh_HANS,
+      nameJa: definition.name.ja,
+      translations: { ...definition.name },
+      adapterType: definition.adapterType,
+      inherit: dto.inherit ?? true,
+      configs: this.buildDefinitionConfigs(definition, dto.configs ?? []),
+    };
+  }
+
+  private assertDefinitionIdentityLocked(
+    dto: CreateAdapterDto,
+    definition: IntegrationAdapterDefinition,
+  ) {
+    const hasLockedField = Boolean(
+      dto.platformId
+      || dto.adapterType
+      || dto.code
+      || dto.nameEn
+      || dto.nameZh
+      || dto.nameJa
+      || dto.translations,
+    );
+
+    if (hasLockedField) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Adapter definition '${definition.key}' controls platform, type, code, and name fields`,
+      });
+    }
+  }
+
+  private buildDefinitionConfigs(
+    definition: IntegrationAdapterDefinition,
+    configs: Array<{ configKey: string; configValue: string }>,
+  ): Array<{ configKey: string; configValue: string }> {
+    const provided = new Map(
+      configs.map((config) => [config.configKey.trim(), config.configValue] as const),
+    );
+    const allowedKeys = new Set(definition.configFields.map((field) => field.key));
+    const unknownKey = [...provided.keys()].find((configKey) => !allowedKeys.has(configKey));
+
+    if (unknownKey) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Config '${unknownKey}' is not supported by adapter definition '${definition.key}'`,
+      });
+    }
+
+    return definition.configFields.flatMap((field) => {
+      const rawValue = provided.get(field.key) ?? field.defaultValue ?? '';
+      const normalizedValue = rawValue.trim();
+
+      if (field.required && !normalizedValue) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `Config '${field.key}' is required by adapter definition '${definition.key}'`,
+        });
+      }
+
+      return normalizedValue
+        ? [{ configKey: field.key, configValue: normalizedValue }]
+        : [];
+    });
+  }
+
+  private mergeDefinitionExtraData(
+    extraData: Record<string, unknown> | null,
+    definition: IntegrationAdapterDefinition | null,
+  ) {
+    if (!definition) {
+      return extraData;
+    }
+
+    return {
+      ...(extraData ?? {}),
+      definitionKey: definition.key,
+      definitionCode: definition.code,
+      aiProvider: definition.aiProvider ?? null,
+      capabilities: definition.capabilities,
+      protocol: definition.protocol,
+    };
   }
 
   async update(id: string, dto: UpdateAdapterDto, context: RequestContext) {

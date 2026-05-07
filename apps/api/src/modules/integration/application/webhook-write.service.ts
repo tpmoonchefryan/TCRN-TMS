@@ -3,7 +3,12 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@tcrn/database';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  getIntegrationWebhookDefinition,
+  type IntegrationWebhookDefinition,
+  type RequestContext,
+} from '@tcrn/shared';
 
 import { ChangeLogService } from '../../log';
 import { buildNameTranslationPayload } from '../domain/name-translation.policy';
@@ -27,7 +32,9 @@ export class WebhookWriteApplicationService {
   async create(dto: CreateWebhookDto, context: RequestContext) {
     this.assertHttpsUrl(dto.url);
     const tenantSchema = getWebhookTenantSchema(context);
-    const translationPayload = buildNameTranslationPayload(dto);
+    const definition = this.resolveCreateDefinition(dto.definitionKey);
+    const createInput = this.buildCreateInput(dto, definition);
+    const translationPayload = buildNameTranslationPayload(createInput);
 
     if (!translationPayload.nameEn) {
       throw new BadRequestException({
@@ -37,26 +44,26 @@ export class WebhookWriteApplicationService {
     }
 
     const webhookId = await this.webhookWriteRepository.withTransaction(async (prisma) => {
-      const existing = await this.webhookWriteRepository.findByCode(prisma, dto.code, tenantSchema);
+      const existing = await this.webhookWriteRepository.findByCode(prisma, createInput.code, tenantSchema);
 
       if (existing) {
         throw new ConflictException({
           code: ErrorCodes.RES_ALREADY_EXISTS,
-          message: `Webhook with code '${dto.code}' already exists`,
+          message: `Webhook with code '${createInput.code}' already exists`,
         });
       }
 
       const id = await this.webhookWriteRepository.create(prisma, tenantSchema, {
-        code: dto.code,
+        code: createInput.code,
         nameEn: translationPayload.nameEn,
         nameZh: translationPayload.nameZh,
         nameJa: translationPayload.nameJa,
-        extraData: translationPayload.extraData,
-        url: dto.url,
-        secret: dto.secret ? this.cryptoService.encrypt(dto.secret) : null,
-        events: dto.events,
-        headers: dto.headers ?? {},
-        retryPolicy: toRetryPolicyInput(dto.retryPolicy),
+        extraData: this.mergeDefinitionExtraData(translationPayload.extraData, definition),
+        url: createInput.url,
+        secret: createInput.secret ? this.cryptoService.encrypt(createInput.secret) : null,
+        events: createInput.events,
+        headers: createInput.headers,
+        retryPolicy: toRetryPolicyInput(createInput.retryPolicy),
         userId: context.userId ?? null,
       });
 
@@ -73,8 +80,8 @@ export class WebhookWriteApplicationService {
           action: 'create',
           objectType: 'webhook',
           objectId: id,
-          objectName: dto.code,
-          newValue: { code: dto.code, events: dto.events },
+          objectName: createInput.code,
+          newValue: { code: createInput.code, definitionKey: definition?.key, events: createInput.events },
         },
         context,
       );
@@ -83,6 +90,97 @@ export class WebhookWriteApplicationService {
     });
 
     return this.webhookReadApplicationService.findById(webhookId, context);
+  }
+
+  private resolveCreateDefinition(definitionKey: string | undefined) {
+    if (!definitionKey) {
+      return null;
+    }
+
+    const definition = getIntegrationWebhookDefinition(definitionKey);
+    if (!definition) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Unsupported webhook definition '${definitionKey}'`,
+      });
+    }
+
+    return definition;
+  }
+
+  private buildCreateInput(
+    dto: CreateWebhookDto,
+    definition: IntegrationWebhookDefinition | null,
+  ) {
+    if (!definition) {
+      if (!dto.code || !dto.nameEn || !dto.events?.length) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'Webhook code, English name, and events are required without a definition key',
+        });
+      }
+
+      return {
+        ...dto,
+        code: dto.code.trim().toUpperCase(),
+        nameEn: dto.nameEn.trim(),
+        headers: dto.headers ?? {},
+        retryPolicy: dto.retryPolicy,
+      };
+    }
+
+    this.assertDefinitionIdentityLocked(dto, definition);
+
+    return {
+      ...dto,
+      code: definition.code,
+      nameEn: definition.name.en,
+      nameZh: definition.name.zh_HANS,
+      nameJa: definition.name.ja,
+      translations: { ...definition.name },
+      headers: {
+        ...(definition.defaultHeaders ?? {}),
+        ...(dto.headers ?? {}),
+      },
+      events: definition.events,
+      retryPolicy: dto.retryPolicy ?? definition.defaultRetryPolicy,
+    };
+  }
+
+  private assertDefinitionIdentityLocked(
+    dto: CreateWebhookDto,
+    definition: IntegrationWebhookDefinition,
+  ) {
+    const hasLockedField = Boolean(
+      dto.code
+      || dto.nameEn
+      || dto.nameZh
+      || dto.nameJa
+      || dto.translations
+      || dto.events,
+    );
+
+    if (hasLockedField) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Webhook definition '${definition.key}' controls code, name, and event fields`,
+      });
+    }
+  }
+
+  private mergeDefinitionExtraData(
+    extraData: Record<string, unknown> | null,
+    definition: IntegrationWebhookDefinition | null,
+  ) {
+    if (!definition) {
+      return extraData;
+    }
+
+    return {
+      ...(extraData ?? {}),
+      definitionKey: definition.key,
+      definitionCode: definition.code,
+    };
   }
 
   async update(id: string, dto: UpdateWebhookDto, context: RequestContext) {

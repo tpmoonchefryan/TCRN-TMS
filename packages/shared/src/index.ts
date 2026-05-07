@@ -74,9 +74,22 @@ export type {
     PlatformIdentityHistory, TalentSummary
 } from './types/customer/schema';
 export type {
+    AiProvider,
+    IntegrationAdapterConfigFieldDefinition,
+    IntegrationAdapterDefinition,
+    IntegrationAdapterPlatformBindingDefinition,
+    IntegrationAdapterProtocolDefinition,
+    IntegrationLocalizedText,
+    IntegrationWebhookDefinition,
     WebhookEventDefinition
 } from './types/integration/schema';
-export { ADAPTER_CONFIG_KEYS } from './types/integration/schema';
+export {
+    ADAPTER_CONFIG_KEYS,
+    getIntegrationAdapterDefinition,
+    getIntegrationWebhookDefinition,
+    INTEGRATION_ADAPTER_DEFINITIONS,
+    INTEGRATION_WEBHOOK_DEFINITIONS,
+} from './types/integration/schema';
 export type {
     ChangeLogQueryParams, InboundLogDto, IntegrationLogQueryParams, LokiLogEntry, LokiQueryParams, LokiQueryResponse, OutboundLogDto, PersonalInfoFieldConfig,
     TechEventLogDto, TechEventLogQueryParams

@@ -205,6 +205,64 @@ describe('WebhookService', () => {
     );
   });
 
+  it('creates webhooks from supported definitions and rejects events outside that definition', async () => {
+    mockPrisma.webhook.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(
+        buildWebhookRecord({
+          code: 'CUSTOMER_LIFECYCLE',
+          events: ['customer.created', 'customer.updated'],
+          extraData: { definitionKey: 'customer-lifecycle' },
+        }),
+      );
+
+    await service.create({
+      definitionKey: 'customer-lifecycle',
+      url: 'https://example.com/webhook',
+    } as CreateWebhookDto, mockContext);
+
+    expect(mockPrisma.webhook.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          code: 'CUSTOMER_LIFECYCLE',
+          events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+          extraData: expect.objectContaining({
+            definitionKey: 'customer-lifecycle',
+            definitionCode: 'CUSTOMER_LIFECYCLE',
+          }),
+        }),
+      }),
+    );
+
+    await expect(
+      service.create({
+        definitionKey: 'customer-lifecycle',
+        code: 'CUSTOMER_LIFECYCLE_BAD',
+        nameEn: 'Bad lifecycle',
+        url: 'https://example.com/webhook',
+        events: [WebhookEventType.REPORT_FAILED],
+      } as CreateWebhookDto, mockContext),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Webhook definition 'customer-lifecycle' controls code, name, and event fields",
+      },
+    });
+
+    await expect(
+      service.create({
+        definitionKey: 'customer-lifecycle',
+        url: 'https://example.com/webhook',
+        events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+      } as CreateWebhookDto, mockContext),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Webhook definition 'customer-lifecycle' controls code, name, and event fields",
+      },
+    });
+  });
+
   it('serializes update retry policy to camelCase JSON with defaults', async () => {
     mockPrisma.webhook.findUnique
       .mockResolvedValueOnce(buildWebhookRecord({ version: 3 }))

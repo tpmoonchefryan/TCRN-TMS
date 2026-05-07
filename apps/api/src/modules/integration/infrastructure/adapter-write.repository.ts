@@ -2,6 +2,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
+import type { IntegrationAdapterPlatformBindingDefinition } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import type { IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
@@ -77,6 +78,102 @@ export class AdapterWriteRepository {
     );
 
     return rows[0] ?? null;
+  }
+
+  async findPlatformByCode(
+    prisma: Prisma.TransactionClient,
+    tenantSchema: string,
+    platformCode: string,
+  ): Promise<IntegrationAdapterPlatformRecord | null> {
+    const rows = await prisma.$queryRawUnsafe<IntegrationAdapterPlatformRecord[]>(
+      `
+        SELECT
+          id,
+          code,
+          display_name as "displayName",
+          icon_url as "iconUrl"
+        FROM "${tenantSchema}".social_platform
+        WHERE code = $1
+        LIMIT 1
+      `,
+      platformCode,
+    );
+
+    return rows[0] ?? null;
+  }
+
+  async ensurePlatformForDefinition(
+    prisma: Prisma.TransactionClient,
+    tenantSchema: string,
+    platform: IntegrationAdapterPlatformBindingDefinition,
+  ): Promise<IntegrationAdapterPlatformRecord> {
+    const rows = await prisma.$queryRawUnsafe<IntegrationAdapterPlatformRecord[]>(
+      `
+        INSERT INTO "${tenantSchema}".social_platform (
+          id,
+          code,
+          name_en,
+          name_zh,
+          name_ja,
+          display_name,
+          icon_url,
+          base_url,
+          profile_url_template,
+          color,
+          sort_order,
+          is_active,
+          is_force_use,
+          is_system,
+          created_at,
+          updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          NULL,
+          $8,
+          900,
+          true,
+          true,
+          true,
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT (code)
+        DO UPDATE SET
+          name_en = EXCLUDED.name_en,
+          name_zh = EXCLUDED.name_zh,
+          name_ja = EXCLUDED.name_ja,
+          display_name = EXCLUDED.display_name,
+          icon_url = EXCLUDED.icon_url,
+          base_url = EXCLUDED.base_url,
+          color = EXCLUDED.color,
+          is_active = true,
+          is_force_use = true,
+          is_system = true,
+          updated_at = NOW()
+        RETURNING
+          id,
+          code,
+          display_name as "displayName",
+          icon_url as "iconUrl"
+      `,
+      platform.code,
+      platform.nameEn,
+      platform.nameZh ?? null,
+      platform.nameJa ?? null,
+      platform.displayName,
+      platform.iconUrl ?? null,
+      platform.baseUrl ?? null,
+      platform.color ?? null,
+    );
+
+    return rows[0];
   }
 
   async findByCode(
@@ -161,11 +258,12 @@ export class AdapterWriteRepository {
           $7,
           $8::jsonb,
           $9,
+          $10,
           true,
           NOW(),
           NOW(),
-          $10::uuid,
-          $10::uuid
+          $11::uuid,
+          $11::uuid
         )
         RETURNING id
       `,

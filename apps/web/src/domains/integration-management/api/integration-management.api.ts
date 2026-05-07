@@ -1,10 +1,14 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
+import type {
+  IntegrationAdapterDefinition,
+  IntegrationWebhookDefinition,
+  SupportedUiLocale,
+} from '@tcrn/shared';
 
 export type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 
 export type IntegrationTab = 'adapters' | 'webhooks' | 'api-keys' | 'email';
 
-export type AdapterType = 'oauth' | 'api_key' | 'webhook';
+export type AdapterType = 'oauth' | 'api_key' | 'webhook' | 'ai';
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 export interface IntegrationAdapterScope {
   ownerType: OwnerType;
@@ -108,6 +112,7 @@ export interface IntegrationAdapterListItemRecord {
   nameZh?: string | null;
   nameJa?: string | null;
   translations?: Record<string, string>;
+  definitionKey?: string;
   adapterType: AdapterType;
   inherit: boolean;
   isActive: boolean;
@@ -139,6 +144,7 @@ export interface IntegrationAdapterDetailRecord {
   nameZh?: string | null;
   nameJa?: string | null;
   translations?: Record<string, string>;
+  definitionKey?: string;
   adapterType: AdapterType;
   inherit: boolean;
   isActive: boolean;
@@ -182,6 +188,7 @@ export interface IntegrationWebhookListItemRecord {
   nameZh?: string | null;
   nameJa?: string | null;
   translations?: Record<string, string>;
+  definitionKey?: string;
   url: string;
   events: WebhookEventType[];
   isActive: boolean;
@@ -312,13 +319,14 @@ export interface ListTenantAdaptersOptions {
 }
 
 export interface CreateTenantAdapterPayload {
-  platformId: string;
-  code: string;
-  nameEn: string;
+  definitionKey?: string;
+  platformId?: string;
+  code?: string;
+  nameEn?: string;
   nameZh?: string;
   nameJa?: string;
   translations?: Record<string, string>;
-  adapterType: AdapterType;
+  adapterType?: AdapterType;
   inherit?: boolean;
   configs?: Array<{
     configKey: string;
@@ -345,14 +353,15 @@ export interface UpdateTenantAdapterConfigsPayload {
 }
 
 export interface CreateWebhookPayload {
-  code: string;
-  nameEn: string;
+  definitionKey?: string;
+  code?: string;
+  nameEn?: string;
   nameZh?: string;
   nameJa?: string;
   translations?: Record<string, string>;
   url: string;
   secret?: string;
-  events: WebhookEventType[];
+  events?: WebhookEventType[];
   headers?: Record<string, string>;
   retryPolicy?: {
     maxRetries?: number;
@@ -519,6 +528,14 @@ export function listSocialPlatforms(request: RequestFn) {
 
 export function listConsumers(request: RequestFn) {
   return listConfigurationEntitiesAcrossPages<IntegrationConsumerRecord>(request, 'consumer', true);
+}
+
+export function listAdapterDefinitions(request: RequestFn) {
+  return request<IntegrationAdapterDefinition[]>('/api/v1/integration/adapter-definitions');
+}
+
+export function listWebhookDefinitions(request: RequestFn) {
+  return request<IntegrationWebhookDefinition[]>('/api/v1/integration/webhook-definitions');
 }
 
 export function createConsumer(request: RequestFn, payload: CreateConsumerPayload) {

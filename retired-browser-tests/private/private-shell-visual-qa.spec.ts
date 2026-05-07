@@ -145,6 +145,134 @@ const privateVisualReportCatalog = [
   },
 ];
 
+const privateVisualAdapterDefinitions = [
+  {
+    key: 'openai-ai',
+    code: 'OPENAI_AI',
+    adapterType: 'ai',
+    aiProvider: 'OPENAI',
+    name: {
+      en: 'OpenAI AI Adapter',
+      zh_HANS: 'OpenAI AI Adapter',
+      zh_HANT: 'OpenAI AI Adapter',
+      ja: 'OpenAI AI Adapter',
+      ko: 'OpenAI AI Adapter',
+      fr: 'OpenAI AI Adapter',
+    },
+    description: {
+      en: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      zh_HANS: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      zh_HANT: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      ja: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      ko: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      fr: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+    },
+    platform: {
+      code: 'OPENAI',
+      displayName: 'OpenAI',
+      nameEn: 'OpenAI',
+      baseUrl: 'https://api.openai.com',
+      iconUrl: null,
+      color: '#10A37F',
+    },
+    configFields: [
+      {
+        key: 'endpoint_path',
+        label: {
+          en: 'Endpoint path',
+          zh_HANS: 'Endpoint path',
+          zh_HANT: 'Endpoint path',
+          ja: 'Endpoint path',
+          ko: 'Endpoint path',
+          fr: 'Endpoint path',
+        },
+        description: {
+          en: 'Editable provider endpoint path.',
+          zh_HANS: 'Editable provider endpoint path.',
+          zh_HANT: 'Editable provider endpoint path.',
+          ja: 'Editable provider endpoint path.',
+          ko: 'Editable provider endpoint path.',
+          fr: 'Editable provider endpoint path.',
+        },
+        input: 'text',
+        required: true,
+        secret: false,
+        defaultValue: '/v1/responses',
+      },
+      {
+        key: 'model',
+        label: {
+          en: 'Model',
+          zh_HANS: 'Model',
+          zh_HANT: 'Model',
+          ja: 'Model',
+          ko: 'Model',
+          fr: 'Model',
+        },
+        input: 'text',
+        required: true,
+        secret: false,
+      },
+      {
+        key: 'token',
+        label: {
+          en: 'Token',
+          zh_HANS: 'Token',
+          zh_HANT: 'Token',
+          ja: 'Token',
+          ko: 'Token',
+          fr: 'Token',
+        },
+        input: 'password',
+        required: true,
+        secret: true,
+      },
+    ],
+    protocol: {
+      family: 'openai-responses',
+      payloadFormat: 'official-provider-protocol',
+      invocationRuntime: 'not_implemented',
+      notes: {
+        en: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+        zh_HANS: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+        zh_HANT: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+        ja: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+        ko: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+        fr: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
+      },
+    },
+    capabilities: ['ai_provider_config'],
+  },
+];
+
+const privateVisualWebhookDefinitions = [
+  {
+    key: 'customer-lifecycle',
+    code: 'CUSTOMER_LIFECYCLE',
+    name: {
+      en: 'Customer lifecycle webhook',
+      zh_HANS: 'Customer lifecycle webhook',
+      zh_HANT: 'Customer lifecycle webhook',
+      ja: 'Customer lifecycle webhook',
+      ko: 'Customer lifecycle webhook',
+      fr: 'Customer lifecycle webhook',
+    },
+    description: {
+      en: 'Receives customer create, update, and deactivate events.',
+      zh_HANS: 'Receives customer create, update, and deactivate events.',
+      zh_HANT: 'Receives customer create, update, and deactivate events.',
+      ja: 'Receives customer create, update, and deactivate events.',
+      ko: 'Receives customer create, update, and deactivate events.',
+      fr: 'Receives customer create, update, and deactivate events.',
+    },
+    events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+    defaultRetryPolicy: {
+      maxRetries: 3,
+      backoffMs: 1000,
+    },
+  },
+];
+
 const visualQaSession = {
   accessToken: 'visual-qa-token',
   tokenType: 'Bearer',
@@ -1098,6 +1226,18 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/integration/adapter-definitions') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualAdapterDefinitions,
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/integration/adapters/adapter-pii') {
       await route.fulfill({
         status: 200,
@@ -1187,7 +1327,31 @@ async function mockPrivateRuntimeApi(page: Page) {
               description: 'A customer was created.',
               category: 'customer',
             },
+            {
+              event: 'customer.updated',
+              name: 'Customer updated',
+              description: 'A customer was updated.',
+              category: 'customer',
+            },
+            {
+              event: 'customer.deactivated',
+              name: 'Customer deactivated',
+              description: 'A customer was deactivated.',
+              category: 'customer',
+            },
           ],
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/integration/webhook-definitions') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualWebhookDefinitions,
         }),
       });
       return;
@@ -1811,6 +1975,71 @@ test.describe('private shell browser visual QA', () => {
     ).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter drawer');
     await expect(page).toHaveScreenshot('private-tenant-integration-mobile-adapter-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile tenant integration creates adapters from supported definitions only', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/integration-management');
+    await hideFrameworkDevTools(page);
+
+    await page.getByRole('button', { name: /Tenant root/ }).click();
+    await expect(page.getByRole('table', { name: 'Tenant Adapters' })).toBeVisible();
+    await page.getByRole('button', { name: 'New adapter' }).click();
+
+    const adapterDrawer = page.getByRole('dialog', { name: 'Configure Adapter' });
+    await expect(adapterDrawer).toBeVisible();
+    await expect(adapterDrawer.getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('openai-ai');
+    await expect(adapterDrawer.getByLabel('Platform')).toHaveCount(0);
+    await expect(adapterDrawer.getByLabel('Adapter type')).toHaveCount(0);
+    await expect(adapterDrawer.getByText('OpenAI AI Adapter', { exact: true })).toBeVisible();
+    await expect(adapterDrawer.getByText('OPENAI', { exact: true })).toBeVisible();
+    await expect(adapterDrawer.getByText('openai-responses', { exact: true })).toBeVisible();
+
+    await adapterDrawer.getByRole('tab', { name: 'Secrets' }).click();
+    await expect(adapterDrawer.getByLabel(/Endpoint path/)).toHaveValue('/v1/responses');
+    await expect(adapterDrawer.getByLabel(/Model/)).toBeVisible();
+    await expect(adapterDrawer.getByLabel(/Token/)).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter definition create drawer');
+    await expect(page).toHaveScreenshot('private-tenant-integration-adapter-definition-create-mobile.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop tenant integration creates webhooks from supported definitions only', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/integration-management');
+    await hideFrameworkDevTools(page);
+
+    await page.getByRole('button', { name: /Tenant root/ }).click();
+    await page.getByRole('tab', { name: 'Webhooks' }).click();
+    await expect(page.getByRole('heading', { name: 'Webhook Endpoints' })).toBeVisible();
+    await page.getByRole('button', { name: 'New webhook' }).click();
+
+    const webhookDrawer = page.getByRole('dialog', { name: 'New Webhook' });
+    await expect(webhookDrawer).toBeVisible();
+    await expect(webhookDrawer.getByRole('combobox', { name: 'Supported webhook' })).toHaveValue('customer-lifecycle');
+    await expect(webhookDrawer.getByLabel('Webhook code')).toHaveCount(0);
+    await expect(webhookDrawer.getByLabel('Name (EN)')).toHaveCount(0);
+    await expect(webhookDrawer.getByRole('checkbox')).toHaveCount(0);
+    await expect(webhookDrawer.getByText('Customer lifecycle webhook', { exact: true })).toBeVisible();
+    await expect(webhookDrawer.getByText('Customer created')).toBeVisible();
+    await expect(webhookDrawer.getByText('Customer updated')).toBeVisible();
+    await expect(webhookDrawer.getByText('Customer deactivated')).toBeVisible();
+    await expect(webhookDrawer.getByLabel('Endpoint URL')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant integration webhook definition create drawer');
+    await expect(page).toHaveScreenshot('private-tenant-integration-webhook-definition-create-desktop.png', {
       animations: 'disabled',
       fullPage: true,
     });

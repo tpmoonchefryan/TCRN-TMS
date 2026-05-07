@@ -46,6 +46,7 @@ export interface WebhookListItem {
   nameZh: string | null;
   nameJa: string | null;
   translations: Record<string, string>;
+  definitionKey?: string;
   url: string;
   events: WebhookEventType[];
   isActive: boolean;
@@ -82,6 +83,10 @@ function getNumericProperty(
   }
 
   return null;
+}
+
+function getDefinitionKey(extraData: Record<string, unknown> | null) {
+  return typeof extraData?.definitionKey === 'string' ? extraData.definitionKey : undefined;
 }
 
 export function normalizeWebhookHeaders(value: unknown): Record<string, string> {
@@ -132,6 +137,7 @@ export function mapWebhookListItem(webhook: WebhookRecord): WebhookListItem {
     nameZh: webhook.nameZh,
     nameJa: webhook.nameJa,
     translations: buildNameTranslations(webhook),
+    definitionKey: getDefinitionKey(webhook.extraData),
     url: webhook.url,
     events: webhook.events as WebhookEventType[],
     isActive: webhook.isActive,

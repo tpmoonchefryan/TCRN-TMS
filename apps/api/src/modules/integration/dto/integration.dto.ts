@@ -16,6 +16,7 @@ import {
     Max,
     MaxLength,
     Min,
+    ValidateIf,
     ValidateNested,
 } from 'class-validator';
 
@@ -27,6 +28,7 @@ export enum AdapterType {
   OAUTH = 'oauth',
   API_KEY = 'api_key',
   WEBHOOK = 'webhook',
+  AI = 'ai',
 }
 
 export enum OwnerType {
@@ -130,16 +132,24 @@ export class AdapterConfigMutationItemDto {
 }
 
 export class CreateAdapterDto {
-  @IsUUID()
-  platformId!: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  definitionKey?: string;
 
+  @IsOptional()
+  @IsUUID()
+  platformId?: string;
+
+  @IsOptional()
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
-  code!: string;
+  code?: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(128)
-  nameEn!: string;
+  nameEn?: string;
 
   @IsOptional()
   @IsString()
@@ -155,8 +165,9 @@ export class CreateAdapterDto {
   @IsObject()
   translations?: Record<string, string>;
 
+  @IsOptional()
   @IsEnum(AdapterType)
-  adapterType!: AdapterType;
+  adapterType?: AdapterType;
 
   @IsOptional()
   @IsBoolean()
@@ -228,13 +239,20 @@ export class RetryPolicyDto {
 }
 
 export class CreateWebhookDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  definitionKey?: string;
+
+  @ValidateIf((dto: CreateWebhookDto) => !dto.definitionKey)
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
-  code!: string;
+  code?: string;
 
+  @ValidateIf((dto: CreateWebhookDto) => !dto.definitionKey)
   @IsString()
   @MaxLength(128)
-  nameEn!: string;
+  nameEn?: string;
 
   @IsOptional()
   @IsString()
@@ -259,9 +277,10 @@ export class CreateWebhookDto {
   @MaxLength(128)
   secret?: string;
 
+  @ValidateIf((dto: CreateWebhookDto) => !dto.definitionKey)
   @IsArray()
   @IsEnum(WebhookEventType, { each: true })
-  events!: WebhookEventType[];
+  events?: WebhookEventType[];
 
   @IsOptional()
   @IsObject()

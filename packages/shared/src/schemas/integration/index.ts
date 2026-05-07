@@ -8,7 +8,8 @@ const TranslationMapSchema = z.record(z.string(), z.string().max(128));
 // ============================================================================
 // Enums
 // ============================================================================
-export const AdapterTypeSchema = z.enum(['oauth', 'api_key', 'webhook']);
+export const AdapterTypeSchema = z.enum(['oauth', 'api_key', 'webhook', 'ai']);
+export const AiProviderSchema = z.enum(['OPENAI', 'ANTHROPIC', 'GEMINI']);
 export const IntegrationOwnerTypeSchema = z.enum(['tenant', 'subsidiary', 'talent']);
 export const WebhookEventTypeSchema = z.enum([
   'customer.created', 'customer.updated', 'customer.deactivated',
@@ -20,6 +21,7 @@ export const WebhookEventTypeSchema = z.enum([
 export const IntegrationDirectionSchema = z.enum(['inbound', 'outbound']);
 
 export type IntegrationAdapterType = z.infer<typeof AdapterTypeSchema>;
+export type AiProvider = z.infer<typeof AiProviderSchema>;
 export type IntegrationOwnerType = z.infer<typeof IntegrationOwnerTypeSchema>;
 export type WebhookEventType = z.infer<typeof WebhookEventTypeSchema>;
 
@@ -68,15 +70,70 @@ export const AdapterConfigMutationItemSchema = z.object({
 });
 
 export const CreateAdapterSchema = z.object({
-  platformId: z.string().uuid(),
-  code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores'),
-  nameEn: z.string().max(128),
+  definitionKey: z.string().max(64).optional(),
+  platformId: z.string().uuid().optional(),
+  code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores').optional(),
+  nameEn: z.string().max(128).optional(),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
   translations: TranslationMapSchema.optional(),
-  adapterType: AdapterTypeSchema,
+  adapterType: AdapterTypeSchema.optional(),
   inherit: z.boolean().optional().default(true),
   configs: z.array(AdapterConfigItemSchema).optional(),
+}).superRefine((value, ctx) => {
+  if (value.definitionKey) {
+    const lockedDefinitionFields = [
+      ['platformId', value.platformId],
+      ['adapterType', value.adapterType],
+      ['code', value.code],
+      ['nameEn', value.nameEn],
+      ['nameZh', value.nameZh],
+      ['nameJa', value.nameJa],
+      ['translations', value.translations],
+    ] as const;
+
+    lockedDefinitionFields.forEach(([field, fieldValue]) => {
+      if (fieldValue !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: 'Adapter definition-backed creation does not accept free platform, type, code, or name fields',
+        });
+      }
+    });
+  }
+
+  if (!value.definitionKey && !value.platformId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['platformId'],
+      message: 'Platform ID is required for legacy adapter creation without a definition key',
+    });
+  }
+
+  if (!value.definitionKey && !value.adapterType) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['adapterType'],
+      message: 'Adapter type is required for legacy adapter creation without a definition key',
+    });
+  }
+
+  if (!value.definitionKey && !value.code) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['code'],
+      message: 'Adapter code is required for legacy adapter creation without a definition key',
+    });
+  }
+
+  if (!value.definitionKey && !value.nameEn) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['nameEn'],
+      message: 'English adapter name is required for legacy adapter creation without a definition key',
+    });
+  }
 });
 
 export const UpdateAdapterSchema = z.object({
@@ -108,16 +165,62 @@ export const RetryPolicySchema = z.object({
 });
 
 export const CreateWebhookSchema = z.object({
-  code: z.string().regex(/^[A-Z0-9_]{3,32}$/),
-  nameEn: z.string().max(128),
+  definitionKey: z.string().max(64).optional(),
+  code: z.string().regex(/^[A-Z0-9_]{3,32}$/).optional(),
+  nameEn: z.string().max(128).optional(),
   nameZh: z.string().max(128).optional(),
   nameJa: z.string().max(128).optional(),
   translations: TranslationMapSchema.optional(),
   url: z.string().url().max(512),
   secret: z.string().max(128).optional(),
-  events: z.array(WebhookEventTypeSchema).min(1),
+  events: z.array(WebhookEventTypeSchema).optional(),
   headers: z.record(z.string(), z.string()).optional(),
   retryPolicy: RetryPolicySchema.optional(),
+}).superRefine((value, ctx) => {
+  if (value.definitionKey) {
+    const lockedDefinitionFields = [
+      ['code', value.code],
+      ['nameEn', value.nameEn],
+      ['nameZh', value.nameZh],
+      ['nameJa', value.nameJa],
+      ['translations', value.translations],
+      ['events', value.events],
+    ] as const;
+
+    lockedDefinitionFields.forEach(([field, fieldValue]) => {
+      if (fieldValue !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: 'Webhook definition-backed creation does not accept free code, name, or event fields',
+        });
+      }
+    });
+  }
+
+  if (!value.definitionKey && !value.code) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['code'],
+      message: 'Webhook code is required without a definition key',
+    });
+  }
+
+  if (!value.definitionKey && !value.nameEn) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['nameEn'],
+      message: 'English webhook name is required without a definition key',
+    });
+  }
+
+  if (!value.definitionKey && (!value.events || value.events.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['events'],
+      message: 'Webhook events are required without a definition key',
+    });
+  }
 });
 
 export const UpdateWebhookSchema = z.object({

@@ -60,6 +60,10 @@ export interface IntegrationAdapterConfigRow {
   isSecret: boolean;
 }
 
+function getDefinitionKey(extraData: Record<string, unknown> | null) {
+  return typeof extraData?.definitionKey === 'string' ? extraData.definitionKey : undefined;
+}
+
 export const isSameAdapterOwner = (
   ownerType: string | null,
   ownerId: string | null,
@@ -84,6 +88,7 @@ export const mapIntegrationAdapterListItem = (
   nameZh: adapter.nameZh,
   nameJa: adapter.nameJa,
   translations: buildNameTranslations(adapter),
+  definitionKey: getDefinitionKey(adapter.extraData),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,
@@ -111,6 +116,7 @@ export const mapIntegrationAdapterDetail = (
   nameZh: adapter.nameZh,
   nameJa: adapter.nameJa,
   translations: buildNameTranslations(adapter),
+  definitionKey: getDefinitionKey(adapter.extraData),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,

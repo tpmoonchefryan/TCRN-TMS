@@ -34,6 +34,8 @@ describe('AdapterWriteApplicationService', () => {
   const mockRepository = {
     withTransaction: vi.fn(),
     findPlatformById: vi.fn(),
+    findPlatformByCode: vi.fn(),
+    ensurePlatformForDefinition: vi.fn(),
     findByCode: vi.fn(),
     findByPlatformAndType: vi.fn(),
     create: vi.fn(),
@@ -79,6 +81,117 @@ describe('AdapterWriteApplicationService', () => {
     vi.mocked(mockRepository.withTransaction).mockImplementation(async (operation) =>
       operation(prisma),
     );
+  });
+
+  it('creates adapters from a supported definition and encrypts AI tokens without free platform/type input', async () => {
+    vi.mocked(mockRepository.ensurePlatformForDefinition).mockResolvedValue({
+      id: 'platform-openai',
+      code: 'OPENAI',
+      displayName: 'OpenAI',
+      iconUrl: null,
+    } as never);
+    vi.mocked(mockRepository.findByCode).mockResolvedValue(null);
+    vi.mocked(mockRepository.findByPlatformAndType).mockResolvedValue(null);
+    vi.mocked(mockRepository.create).mockResolvedValue('adapter-ai-1');
+    vi.mocked(mockReadApplicationService.findById).mockResolvedValue({
+      id: 'adapter-ai-1',
+      code: 'OPENAI_AI',
+    } as never);
+
+    await expect(
+      service.create(
+        {
+          definitionKey: 'openai-ai',
+          configs: [
+            {
+              configKey: 'endpoint_path',
+              configValue: '/v1/responses',
+            },
+            {
+              configKey: 'model',
+              configValue: 'gpt-example',
+            },
+            {
+              configKey: 'token',
+              configValue: 'provider-token',
+            },
+          ],
+        },
+        context,
+        scope,
+      ),
+    ).resolves.toEqual({
+      id: 'adapter-ai-1',
+      code: 'OPENAI_AI',
+    });
+
+    expect(mockRepository.findPlatformById).not.toHaveBeenCalled();
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      prisma,
+      'tenant_test',
+      expect.objectContaining({
+        platformId: 'platform-openai',
+        code: 'OPENAI_AI',
+        nameEn: 'OpenAI AI Adapter',
+        adapterType: 'ai',
+        extraData: expect.objectContaining({
+          definitionKey: 'openai-ai',
+          aiProvider: 'OPENAI',
+          protocol: expect.objectContaining({
+            invocationRuntime: 'not_implemented',
+          }),
+        }),
+      }),
+    );
+    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
+      prisma,
+      'tenant_test',
+      'adapter-ai-1',
+      [
+        {
+          configKey: 'endpoint_path',
+          configValue: '/v1/responses',
+          isSecret: false,
+        },
+        {
+          configKey: 'model',
+          configValue: 'gpt-example',
+          isSecret: false,
+        },
+        {
+          configKey: 'token',
+          configValue: 'encrypted:provider-token',
+          isSecret: true,
+        },
+      ],
+    );
+  });
+
+  it('rejects free adapter identity fields when using a supported definition', async () => {
+    await expect(
+      service.create(
+        {
+          definitionKey: 'openai-ai',
+          platformId: '11111111-1111-4111-8111-111111111111',
+          adapterType: AdapterType.API_KEY,
+          code: 'FREE_FORM',
+          nameEn: 'Free form adapter',
+          configs: [
+            { configKey: 'endpoint_path', configValue: '/v1/responses' },
+            { configKey: 'model', configValue: 'gpt-example' },
+            { configKey: 'token', configValue: 'provider-token' },
+          ],
+        },
+        context,
+        scope,
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Adapter definition 'openai-ai' controls platform, type, code, and name fields",
+      },
+    });
+    expect(mockRepository.ensurePlatformForDefinition).not.toHaveBeenCalled();
   });
 
   it('creates adapters through the write repository and encrypts secret configs', async () => {

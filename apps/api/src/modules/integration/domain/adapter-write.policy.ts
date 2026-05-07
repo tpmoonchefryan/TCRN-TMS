@@ -75,6 +75,7 @@ export const SECRET_CONFIG_KEYS = [
   'api_key',
   'api_secret',
   'verify_token',
+  'token',
 ] as const;
 
 export const ADAPTER_SECRET_REVEAL_EXPIRY_SECONDS = 30;

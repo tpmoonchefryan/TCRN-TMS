@@ -1,6 +1,11 @@
 'use client';
 
-import { ADAPTER_CONFIG_KEYS, type SupportedUiLocale } from '@tcrn/shared';
+import {
+  ADAPTER_CONFIG_KEYS,
+  type IntegrationAdapterDefinition,
+  type IntegrationWebhookDefinition,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 import {
   Cable,
   ChevronRight,
@@ -46,12 +51,13 @@ import {
   type IntegrationTab,
   type IntegrationWebhookDetailRecord,
   type IntegrationWebhookListItemRecord,
+  listAdapterDefinitions,
   listConsumers,
   listEmailSenderTenants,
   listEmailTemplates,
   listScopedAdapters,
-  listSocialPlatforms,
   listTenantAdapters,
+  listWebhookDefinitions,
   listWebhookEvents,
   listWebhooks,
   type OwnerType,
@@ -68,7 +74,6 @@ import {
   rotateConsumerKey,
   saveEmailConfig,
   sendEmailTest,
-  type SocialPlatformRecord,
   testEmailConnection,
   updateConsumer,
   updateEmailTemplate,
@@ -157,13 +162,14 @@ interface IntegrationScopeSelection {
 }
 
 interface AdapterDraft {
+  definitionKey: string;
   platformId: string;
   code: string;
   nameEn: string;
   nameTranslations: Record<string, string>;
   nameZh: string;
   nameJa: string;
-  adapterType: 'oauth' | 'api_key' | 'webhook';
+  adapterType: 'oauth' | 'api_key' | 'webhook' | 'ai';
   inherit: boolean;
 }
 
@@ -174,11 +180,13 @@ interface AdapterConfigDraftRow {
   isSecret: boolean;
   isMasked: boolean;
   isNew: boolean;
+  locked: boolean;
   valueEdited: boolean;
   clearRequested: boolean;
 }
 
 interface WebhookDraft {
+  definitionKey: string;
   code: string;
   nameEn: string;
   nameTranslations: Record<string, string>;
@@ -385,24 +393,53 @@ function splitCommaList(value: string) {
   return items.length > 0 ? items : undefined;
 }
 
-function buildAdapterDraft(record?: IntegrationAdapterDetailRecord): AdapterDraft {
+function definitionLocalizedTextToTranslations(
+  value?: IntegrationAdapterDefinition['name'] | IntegrationWebhookDefinition['name'] | null,
+): Record<string, string> {
+  return value ? { ...value } : {};
+}
+
+function buildAdapterDraft(
+  record?: IntegrationAdapterDetailRecord,
+  definition?: IntegrationAdapterDefinition | null,
+): AdapterDraft {
   return {
+    definitionKey: record?.definitionKey || definition?.key || '',
     platformId: record?.platform.id || '',
-    code: record?.code || '',
-    nameEn: record?.nameEn || '',
-    nameTranslations: extractManagedTranslations(record?.nameEn, record?.translations, {
-      zh_HANS: record?.nameZh,
-      ja: record?.nameJa,
-    }),
-    nameZh: record?.nameZh || '',
-    nameJa: record?.nameJa || '',
-    adapterType: record?.adapterType || 'api_key',
+    code: record?.code || definition?.code || '',
+    nameEn: record?.nameEn || definition?.name.en || '',
+    nameTranslations: record
+      ? extractManagedTranslations(record.nameEn, record.translations, {
+          zh_HANS: record.nameZh,
+          ja: record.nameJa,
+        })
+      : definitionLocalizedTextToTranslations(definition?.name),
+    nameZh: record?.nameZh || definition?.name.zh_HANS || '',
+    nameJa: record?.nameJa || definition?.name.ja || '',
+    adapterType: record?.adapterType || definition?.adapterType || 'api_key',
     inherit: record?.inherit ?? true,
   };
 }
 
-function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): AdapterConfigDraftRow[] {
+function buildAdapterConfigRows(
+  record?: IntegrationAdapterDetailRecord,
+  definition?: IntegrationAdapterDefinition | null,
+): AdapterConfigDraftRow[] {
   if (!record) {
+    if (definition) {
+      return definition.configFields.map((field) => ({
+        rowKey: `definition-${definition.key}-${field.key}`,
+        configKey: field.key,
+        configValue: field.defaultValue ?? '',
+        isSecret: field.secret,
+        isMasked: false,
+        isNew: true,
+        locked: true,
+        valueEdited: false,
+        clearRequested: false,
+      }));
+    }
+
     return [
       {
         rowKey: 'new-config-0',
@@ -411,6 +448,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
         isSecret: false,
         isMasked: false,
         isNew: true,
+        locked: false,
         valueEdited: false,
         clearRequested: false,
       },
@@ -425,6 +463,7 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isSecret: config.isSecret,
       isMasked: config.isSecret && config.configValue === '******',
       isNew: false,
+      locked: false,
       valueEdited: false,
       clearRequested: false,
     })),
@@ -435,25 +474,32 @@ function buildAdapterConfigRows(record?: IntegrationAdapterDetailRecord): Adapte
       isSecret: false,
       isMasked: false,
       isNew: true,
+      locked: false,
       valueEdited: false,
       clearRequested: false,
     },
   ];
 }
 
-function buildWebhookDraft(record?: IntegrationWebhookDetailRecord): WebhookDraft {
+function buildWebhookDraft(
+  record?: IntegrationWebhookDetailRecord,
+  definition?: IntegrationWebhookDefinition | null,
+): WebhookDraft {
   return {
-    code: record?.code || '',
-    nameEn: record?.nameEn || '',
-    nameTranslations: extractManagedTranslations(record?.nameEn, record?.translations, {
-      zh_HANS: record?.nameZh,
-      ja: record?.nameJa,
-    }),
-    nameZh: record?.nameZh || '',
-    nameJa: record?.nameJa || '',
+    definitionKey: record?.definitionKey || definition?.key || '',
+    code: record?.code || definition?.code || '',
+    nameEn: record?.nameEn || definition?.name.en || '',
+    nameTranslations: record
+      ? extractManagedTranslations(record.nameEn, record.translations, {
+          zh_HANS: record.nameZh,
+          ja: record.nameJa,
+        })
+      : definitionLocalizedTextToTranslations(definition?.name),
+    nameZh: record?.nameZh || definition?.name.zh_HANS || '',
+    nameJa: record?.nameJa || definition?.name.ja || '',
     url: record?.url || '',
     secret: '',
-    selectedEvents: record?.events || [],
+    selectedEvents: record?.events || definition?.events || [],
     headersText: record
       ? Object.entries(record.headers)
           .map(([key, value]) => `${key}: ${value}`)
@@ -1169,8 +1215,8 @@ export function IntegrationManagementScreen({
   const [confirmPending, setConfirmPending] = useState(false);
   const [dirtyGuardState, setDirtyGuardState] = useState<DirtyGuardState | null>(null);
 
-  const [platformsPanel, setPlatformsPanel] = useState<PanelState<SocialPlatformRecord[]>>(
-    createPanelState<SocialPlatformRecord[]>([]),
+  const [adapterDefinitionsPanel, setAdapterDefinitionsPanel] = useState<PanelState<IntegrationAdapterDefinition[]>>(
+    createPanelState<IntegrationAdapterDefinition[]>([]),
   );
   const [adaptersPanel, setAdaptersPanel] = useState<PanelState<IntegrationAdapterListItemRecord[]>>(
     createPanelState<IntegrationAdapterListItemRecord[]>([]),
@@ -1188,6 +1234,9 @@ export function IntegrationManagementScreen({
   const [webhookPageSize, setWebhookPageSize] = useState<PageSizeOption>(urlWebhookPageSize);
   const [webhookEventsPanel, setWebhookEventsPanel] = useState<PanelState<WebhookEventDefinition[]>>(
     createPanelState<WebhookEventDefinition[]>([]),
+  );
+  const [webhookDefinitionsPanel, setWebhookDefinitionsPanel] = useState<PanelState<IntegrationWebhookDefinition[]>>(
+    createPanelState<IntegrationWebhookDefinition[]>([]),
   );
   const [webhookDetailPanel, setWebhookDetailPanel] = useState<PanelState<IntegrationWebhookDetailRecord | null>>(
     createPanelState<IntegrationWebhookDetailRecord | null>(null, false),
@@ -1615,8 +1664,8 @@ export function IntegrationManagementScreen({
     router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
-  async function refreshPlatforms() {
-    setPlatformsPanel((current) => ({
+  async function refreshAdapterDefinitions() {
+    setAdapterDefinitionsPanel((current) => ({
       ...current,
       loading: true,
       error: null,
@@ -1624,8 +1673,8 @@ export function IntegrationManagementScreen({
     }));
 
     try {
-      const data = await listSocialPlatforms(request);
-      setPlatformsPanel({
+      const data = await listAdapterDefinitions(request);
+      setAdapterDefinitionsPanel({
         data,
         loading: false,
         error: null,
@@ -1633,10 +1682,37 @@ export function IntegrationManagementScreen({
       });
     } catch (reason) {
       const unavailableReason = getUnavailableReason(reason);
-      setPlatformsPanel((current) => ({
+      setAdapterDefinitionsPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load integration platform registry.', '加载集成平台目录失败。', '統合プラットフォーム一覧の読み込みに失敗しました。')),
+        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load supported adapter definitions.', '加载支持的适配器定义失败。', 'サポート済みアダプター定義の読み込みに失敗しました。')),
+        unavailableReason,
+      }));
+    }
+  }
+
+  async function refreshWebhookDefinitions() {
+    setWebhookDefinitionsPanel((current) => ({
+      ...current,
+      loading: true,
+      error: null,
+      unavailableReason: null,
+    }));
+
+    try {
+      const data = await listWebhookDefinitions(request);
+      setWebhookDefinitionsPanel({
+        data,
+        loading: false,
+        error: null,
+        unavailableReason: null,
+      });
+    } catch (reason) {
+      const unavailableReason = getUnavailableReason(reason);
+      setWebhookDefinitionsPanel((current) => ({
+        data: current.data,
+        loading: false,
+        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load supported webhook definitions.', '加载支持的 Webhook 定义失败。', 'サポート済み Webhook 定義の読み込みに失敗しました。')),
         unavailableReason,
       }));
     }
@@ -1967,10 +2043,11 @@ export function IntegrationManagementScreen({
 
     async function loadWorkspace() {
       if (!selectedIntegrationScope) {
-        setPlatformsPanel(createPanelState<SocialPlatformRecord[]>([], false));
+        setAdapterDefinitionsPanel(createPanelState<IntegrationAdapterDefinition[]>([], false));
         setAdaptersPanel(createPanelState<IntegrationAdapterListItemRecord[]>([], false));
         setWebhooksPanel(createPanelState<IntegrationWebhookListItemRecord[]>([], false));
         setWebhookEventsPanel(createPanelState<WebhookEventDefinition[]>([], false));
+        setWebhookDefinitionsPanel(createPanelState<IntegrationWebhookDefinition[]>([], false));
         setConsumersPanel(createPanelState<IntegrationConsumerRecord[]>([], false));
         setEmailTemplatesPanel(createPanelState<EmailTemplateRecord[]>([], false));
         setEmailConfigPanel({
@@ -1986,9 +2063,9 @@ export function IntegrationManagementScreen({
       const tasks: Array<Promise<void>> = [];
 
       if (activeTab === 'adapters') {
-        tasks.push(refreshPlatforms(), refreshAdapters());
+        tasks.push(refreshAdapterDefinitions(), refreshAdapters());
       } else if (activeTab === 'webhooks' && selectedIntegrationScope.ownerType === 'tenant') {
-        tasks.push(refreshWebhooks(), refreshWebhookEvents());
+        tasks.push(refreshWebhooks(), refreshWebhookEvents(), refreshWebhookDefinitions());
       } else if (activeTab === 'api-keys') {
         tasks.push(refreshConsumers());
       } else if (activeTab === 'email' && selectedIntegrationScope.ownerType === 'tenant') {
@@ -2412,6 +2489,18 @@ export function IntegrationManagementScreen({
     () => emailTemplatesPanel.data.find((item) => item.code === selectedTemplateCode) || null,
     [emailTemplatesPanel.data, selectedTemplateCode],
   );
+  const selectedAdapterDefinition = useMemo(
+    () => adapterDefinitionsPanel.data.find((item) => item.key === adapterDraft.definitionKey) || null,
+    [adapterDefinitionsPanel.data, adapterDraft.definitionKey],
+  );
+  const selectedAdapterDefinitionConfigFields = useMemo(
+    () => new Map((selectedAdapterDefinition?.configFields ?? []).map((field) => [field.key, field] as const)),
+    [selectedAdapterDefinition],
+  );
+  const selectedWebhookDefinition = useMemo(
+    () => webhookDefinitionsPanel.data.find((item) => item.key === webhookDraft.definitionKey) || null,
+    [webhookDefinitionsPanel.data, webhookDraft.definitionKey],
+  );
   const shouldShowAdapterConfigEditor = adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
   const adapterProfileDirty = activeTab === 'adapters'
     && (adapterCreateMode || Boolean(adapterDetailPanel.data))
@@ -2485,6 +2574,14 @@ export function IntegrationManagementScreen({
       selectedLocale,
       pickLocalizedName(template.subjectEn, template.subjectZh, template.subjectJa, template.subjectEn),
     );
+  const pickAdapterDefinitionText = (
+    value: IntegrationAdapterDefinition['name'] | IntegrationAdapterDefinition['description'] | undefined,
+    fallback = '',
+  ) => (value ? pickLocaleText(selectedLocale, value) : fallback);
+  const pickWebhookDefinitionText = (
+    value: IntegrationWebhookDefinition['name'] | IntegrationWebhookDefinition['description'] | undefined,
+    fallback = '',
+  ) => (value ? pickLocaleText(selectedLocale, value) : fallback);
   const getInvalidHeaderMessage = (line: string) =>
     text(
       `Invalid header entry "${line}". Use "Header-Name: value".`,
@@ -2569,6 +2666,36 @@ export function IntegrationManagementScreen({
       return;
     }
 
+    if (adapterCreateMode && !selectedAdapterDefinition) {
+      setNotice({
+        tone: 'error',
+        message: text('Choose a supported adapter definition before creating an adapter.', '请先选择开发者支持的适配器定义。', 'アダプター作成前にサポート済み定義を選択してください。'),
+      });
+      return;
+    }
+
+    if (adapterCreateMode && selectedAdapterDefinition) {
+      const missingRequiredField = selectedAdapterDefinition.configFields.find((field) => {
+        if (!field.required) {
+          return false;
+        }
+
+        return !adapterConfigRows.some((row) => row.configKey === field.key && row.configValue.trim());
+      });
+
+      if (missingRequiredField) {
+        setNotice({
+          tone: 'error',
+          message: text(
+            `${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} is required for ${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)}.`,
+            `${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} 是 ${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)} 的必填配置。`,
+            `${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)} には ${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} が必要です。`,
+          ),
+        });
+        return;
+      }
+    }
+
     setAdapterSubmitting(true);
     setNotice(null);
 
@@ -2576,13 +2703,7 @@ export function IntegrationManagementScreen({
       const translations = buildManagedTranslations(adapterDraft.nameEn, adapterDraft.nameTranslations);
       if (adapterCreateMode) {
         const payload = {
-          platformId: adapterDraft.platformId,
-          code: adapterDraft.code.trim().toUpperCase(),
-          nameEn: adapterDraft.nameEn.trim(),
-          nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-          nameJa: pickLegacyLocaleValue(translations, 'ja'),
-          translations,
-          adapterType: adapterDraft.adapterType,
+          definitionKey: selectedAdapterDefinition?.key,
           inherit: adapterDraft.inherit,
           configs: adapterConfigRows
             .filter((row) => row.configKey.trim() && row.configValue.trim())
@@ -2780,27 +2901,46 @@ export function IntegrationManagementScreen({
   }
 
   async function handleWebhookSave() {
+    if (webhookCreateMode && !selectedWebhookDefinition) {
+      setNotice({
+        tone: 'error',
+        message: text('Choose a supported webhook definition before creating a webhook.', '请先选择开发者支持的 Webhook 定义。', 'Webhook 作成前にサポート済み定義を選択してください。'),
+      });
+      return;
+    }
+
     setWebhookSubmitting(true);
     setNotice(null);
 
     try {
       const headers = parseHeaderLines(webhookDraft.headersText, getInvalidHeaderMessage);
       const translations = buildManagedTranslations(webhookDraft.nameEn, webhookDraft.nameTranslations);
-      const payload = {
-        code: webhookDraft.code.trim().toUpperCase(),
-        nameEn: webhookDraft.nameEn.trim(),
-        nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-        nameJa: pickLegacyLocaleValue(translations, 'ja'),
-        translations,
-        url: webhookDraft.url.trim(),
-        secret: trimToUndefined(webhookDraft.secret),
-        events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
-        headers,
-        retryPolicy: {
-          maxRetries: Number(webhookDraft.maxRetries || 3),
-          backoffMs: Number(webhookDraft.backoffMs || 1000),
-        },
-      };
+      const payload = webhookCreateMode && selectedWebhookDefinition
+        ? {
+            definitionKey: selectedWebhookDefinition.key,
+            url: webhookDraft.url.trim(),
+            secret: trimToUndefined(webhookDraft.secret),
+            headers,
+            retryPolicy: {
+              maxRetries: Number(webhookDraft.maxRetries || selectedWebhookDefinition.defaultRetryPolicy?.maxRetries || 3),
+              backoffMs: Number(webhookDraft.backoffMs || selectedWebhookDefinition.defaultRetryPolicy?.backoffMs || 1000),
+            },
+          }
+        : {
+            code: webhookDraft.code.trim().toUpperCase(),
+            nameEn: webhookDraft.nameEn.trim(),
+            nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
+            nameJa: pickLegacyLocaleValue(translations, 'ja'),
+            translations,
+            url: webhookDraft.url.trim(),
+            secret: trimToUndefined(webhookDraft.secret),
+            events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
+            headers,
+            retryPolicy: {
+              maxRetries: Number(webhookDraft.maxRetries || 3),
+              backoffMs: Number(webhookDraft.backoffMs || 1000),
+            },
+          };
 
       if (webhookCreateMode) {
         const created = await createWebhook(request, payload);
@@ -3713,7 +3853,8 @@ export function IntegrationManagementScreen({
                         setAdapterDrawerOpen(true);
                         setAdapterConfigPanelOpen(true);
                         setAdapterConfigureSection('basics');
-                        setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
+                        const definition = adapterDefinitionsPanel.data[0] ?? null;
+                        setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
                       })
                     }
                   >
@@ -3957,7 +4098,7 @@ export function IntegrationManagementScreen({
               title={adapterCreateMode ? text('New Adapter', '新建适配器', '新しいアダプター') : text('Adapter Profile', '适配器资料', 'アダプタープロファイル')}
               description={
                 adapterCreateMode
-                  ? text('Create a tenant-owned adapter against the shared platform registry.', '基于共享平台目录创建一个租户持有的适配器。', '共有プラットフォーム一覧を基にテナント所有のアダプターを作成します。')
+                  ? text('Choose a supported developer-provided adapter definition, then fill only that definition-specific configuration.', '选择开发者提供并支持的适配器定义，然后只填写该定义需要的配置。', '開発者提供のサポート済みアダプター定義を選び、その定義固有の設定だけを入力します。')
                   : text('Adapter metadata stays editable while secret config values remain masked until explicitly revealed.', '适配器元数据可随时编辑，密钥配置在显式显示前会保持遮罩。', 'アダプターのメタデータは編集でき、シークレット設定値は明示表示するまでマスクされたままです。')
               }
               actions={
@@ -3970,7 +4111,8 @@ export function IntegrationManagementScreen({
                           setSelectedAdapterId(null);
                           setAdapterDrawerOpen(true);
                           setAdapterConfigPanelOpen(true);
-                          setAdapterEditorState(buildAdapterDraft(), buildAdapterConfigRows());
+                          const definition = adapterDefinitionsPanel.data[0] ?? null;
+                          setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
                         })
                       }
                     >
@@ -3994,6 +4136,7 @@ export function IntegrationManagementScreen({
                   <AsyncSubmitButton
                     onClick={() => void handleAdapterSave()}
                     isPending={adapterSubmitting}
+                    disabled={adapterCreateMode && !selectedAdapterDefinition}
                     pendingText={
                       adapterCreateMode
                         ? text('Creating adapter...', '正在创建适配器...', 'アダプターを作成しています...')
@@ -4018,74 +4161,113 @@ export function IntegrationManagementScreen({
               ) : adapterCreateMode || adapterDetailPanel.data ? (
                 <>
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <SelectField
-                      label={text('Platform', '平台', 'プラットフォーム')}
-                      value={adapterDraft.platformId}
-                      onChange={(value) => setAdapterDraft((current) => ({ ...current, platformId: value }))}
-                      disabled={!adapterCreateMode}
-                      options={[
-                        { value: '', label: text('Select platform', '选择平台', 'プラットフォームを選択') },
-                        ...platformsPanel.data.map((platform) => ({
-                          value: platform.id,
-                          label: `${pickLocalizedName(platform.nameEn, platform.nameZh, platform.nameJa, platform.displayName || platform.name || platform.code)} (${platform.code})`,
-                        })),
-                      ]}
-                    />
-                    <TextField
-                      label={text('Adapter code', '适配器代码', 'アダプターコード')}
-                      value={adapterDraft.code}
-                      onChange={(value) =>
-                        setAdapterDraft((current) => ({
-                          ...current,
-                          code: value.toUpperCase(),
-                        }))
-                      }
-                      disabled={!adapterCreateMode}
-                      placeholder={text('BILIBILI_EXPORT', 'BILIBILI_EXPORT', 'BILIBILI_EXPORT')}
-                    />
-                    <TextField
-                      label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                      value={adapterDraft.nameEn}
-                      onChange={(value) => setAdapterDraft((current) => ({ ...current, nameEn: value }))}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Translations', '翻译', '翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setAdapterTranslationDrawerOpen(true)}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredAdapterTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredAdapterTranslationCount})`,
-                              `翻译管理（${configuredAdapterTranslationCount}）`,
-                              `翻訳管理（${configuredAdapterTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                      {consumerTranslationOptionsState.error ? (
-                        <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
-                      ) : null}
-                    </div>
-                    <SelectField
-                      label={text('Adapter type', '适配器类型', 'アダプター種別')}
-                      value={adapterDraft.adapterType}
-                      onChange={(value) =>
-                        setAdapterDraft((current) => ({
-                          ...current,
-                          adapterType: value as AdapterDraft['adapterType'],
-                        }))
-                      }
-                      disabled={!adapterCreateMode}
-                      options={[
-                        { value: 'api_key', label: adapterTypeLabel('api_key') },
-                        { value: 'oauth', label: adapterTypeLabel('oauth') },
-                        { value: 'webhook', label: adapterTypeLabel('webhook') },
-                      ]}
-                    />
+                    {adapterCreateMode ? (
+                      <>
+                        <SelectField
+                          label={text('Supported adapter', '支持的适配器', 'サポート済みアダプター')}
+                          value={adapterDraft.definitionKey}
+                          onChange={(value) => {
+                            const definition = adapterDefinitionsPanel.data.find((item) => item.key === value) ?? null;
+                            setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
+                          }}
+                          disabled={adapterDefinitionsPanel.loading}
+                          options={[
+                            { value: '', label: text('Choose a supported adapter', '选择支持的适配器', 'サポート済みアダプターを選択') },
+                            ...adapterDefinitionsPanel.data.map((definition) => ({
+                              value: definition.key,
+                              label: `${pickAdapterDefinitionText(definition.name, definition.code)} (${definition.code})`,
+                            })),
+                          ]}
+                        />
+                        {selectedAdapterDefinition ? (
+                          <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusBadge tone="info" label={adapterTypeLabel(selectedAdapterDefinition.adapterType)} />
+                              {selectedAdapterDefinition.aiProvider ? (
+                                <StatusBadge tone="warning" label={selectedAdapterDefinition.aiProvider} />
+                              ) : null}
+                              <StatusBadge tone="neutral" label={selectedAdapterDefinition.protocol.family} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)}
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">
+                                {pickAdapterDefinitionText(selectedAdapterDefinition.description)}
+                              </p>
+                            </div>
+                            <p className="text-xs leading-5 text-slate-500">
+                              {pickAdapterDefinitionText(selectedAdapterDefinition.protocol.notes)}
+                            </p>
+                          </div>
+                        ) : (
+                          <StateView
+                            status={adapterDefinitionsPanel.error ? 'error' : 'empty'}
+                            title={adapterDefinitionsPanel.error ? text('Adapter definitions unavailable', '适配器定义不可用', 'アダプター定義を表示できません') : text('Choose a supported adapter', '选择支持的适配器', 'サポート済みアダプターを選択')}
+                            description={adapterDefinitionsPanel.error ?? text('The create flow is driven by developer-provided adapter definitions. Free platform/type creation is not available here.', '新增流程由开发者提供的适配器定义驱动，这里不提供自由平台/类型创建。', '作成フローは開発者提供のアダプター定義で決まります。自由なプラットフォーム/種別作成はここでは利用できません。')}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <TextField
+                          label={text('Adapter code', '适配器代码', 'アダプターコード')}
+                          value={adapterDraft.code}
+                          onChange={(value) =>
+                            setAdapterDraft((current) => ({
+                              ...current,
+                              code: value.toUpperCase(),
+                            }))
+                          }
+                          disabled
+                          placeholder={text('BILIBILI_EXPORT', 'BILIBILI_EXPORT', 'BILIBILI_EXPORT')}
+                        />
+                        <TextField
+                          label={text('Name (EN)', '名称（英文）', '名称（英語）')}
+                          value={adapterDraft.nameEn}
+                          onChange={(value) => setAdapterDraft((current) => ({ ...current, nameEn: value }))}
+                        />
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-slate-700">
+                            {text('Translations', '翻译', '翻訳')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAdapterTranslationDrawerOpen(true)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                          >
+                            <Languages className="h-4 w-4" />
+                            {configuredAdapterTranslationCount > 0
+                              ? text(
+                                  `Translation management (${configuredAdapterTranslationCount})`,
+                                  `翻译管理（${configuredAdapterTranslationCount}）`,
+                                  `翻訳管理（${configuredAdapterTranslationCount}）`,
+                                )
+                              : text('Translation management', '翻译管理', '翻訳管理')}
+                          </button>
+                          {consumerTranslationOptionsState.error ? (
+                            <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
+                          ) : null}
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{text('Platform', '平台', 'プラットフォーム')}</p>
+                          <p className="mt-2 text-sm font-semibold text-slate-950">
+                            {adapterDetailPanel.data?.platform.displayName ?? adapterDraft.platformId}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{text('Definition / type', '定义 / 类型', '定義 / 種別')}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {adapterDetailPanel.data?.definitionKey ? (
+                              <StatusBadge tone="info" label={adapterDetailPanel.data.definitionKey} />
+                            ) : (
+                              <StatusBadge tone="neutral" label={text('Legacy adapter', '旧式适配器', 'レガシーアダプター')} />
+                            )}
+                            <StatusBadge tone="neutral" label={adapterTypeLabel(adapterDraft.adapterType)} />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <CheckboxField
                     label={text('Allow inherited fallback behavior', '允许继承回退行为', '継承フォールバックを許可')}
@@ -4134,21 +4316,28 @@ export function IntegrationManagementScreen({
                     })
               }
               actions={
-                shouldShowAdapterConfigEditor ? (
+                shouldShowAdapterConfigEditor && adapterCreateMode ? (
+                  <AsyncSubmitButton
+                    onClick={() => void handleAdapterSave()}
+                    isPending={adapterSubmitting}
+                    disabled={!selectedAdapterDefinition}
+                    pendingText={text('Creating adapter...', '正在创建适配器...', 'アダプターを作成しています...')}
+                  >
+                    {text('Create adapter', '创建适配器', 'アダプターを作成')}
+                  </AsyncSubmitButton>
+                ) : shouldShowAdapterConfigEditor ? (
                   <>
-                    {!adapterCreateMode ? (
-                      <SecondaryButton
-                        onClick={() =>
-                          requestDiscardDirtyEditor(() => {
-                            setAdapterConfigPanelOpen(false);
-                            setAdapterConfigureSection('basics');
-                            setAdapterDrawerOpen(false);
-                          })
-                        }
-                      >
-                        {text('Done configuring', '完成配置', '設定を完了')}
-                      </SecondaryButton>
-                    ) : null}
+                    <SecondaryButton
+                      onClick={() =>
+                        requestDiscardDirtyEditor(() => {
+                          setAdapterConfigPanelOpen(false);
+                          setAdapterConfigureSection('basics');
+                          setAdapterDrawerOpen(false);
+                        })
+                      }
+                    >
+                      {text('Done configuring', '完成配置', '設定を完了')}
+                    </SecondaryButton>
                     <AsyncSubmitButton
                       onClick={() => void handleAdapterConfigSave()}
                       isPending={adapterConfigSubmitting}
@@ -4171,17 +4360,30 @@ export function IntegrationManagementScreen({
                 ) : undefined
               }
             >
-              {shouldShowAdapterConfigEditor ? (
+              {adapterCreateMode && !selectedAdapterDefinition ? (
+                <StateView
+                  status="empty"
+                  title={text('Choose an adapter definition first', '请先选择适配器定义', '先にアダプター定義を選択')}
+                  description={text('Definition-specific configuration fields appear after you choose a supported adapter. Free-form config rows are not part of the primary create flow.', '选择支持的适配器后会显示该定义专属配置字段。主创建流程不提供自由配置行。', 'サポート済みアダプターを選ぶと定義固有の設定項目が表示されます。主要な作成フローに自由入力の設定行はありません。')}
+                />
+              ) : shouldShowAdapterConfigEditor ? (
                 <div className="space-y-4">
                   {adapterConfigRows.map((row, index) => (
                     (() => {
                       const requiredSecret = row.isSecret && isRequiredSecretConfig(adapterDraft.adapterType, row.configKey);
                       const canClearSecret = !adapterCreateMode && row.isSecret && !row.isNew && !requiredSecret;
+                      const configField = selectedAdapterDefinitionConfigFields.get(row.configKey);
+                      const configLabel = configField
+                        ? pickAdapterDefinitionText(configField.label, row.configKey)
+                        : text(`Config key ${index + 1}`, `配置键 ${index + 1}`, `設定キー ${index + 1}`);
+                      const configDescription = configField?.description
+                        ? pickAdapterDefinitionText(configField.description)
+                        : null;
 
                       return (
                         <div key={row.rowKey} className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]">
                           <TextField
-                            label={text(`Config key ${index + 1}`, `配置键 ${index + 1}`, `設定キー ${index + 1}`)}
+                            label={configField ? text('Config key', '配置键', '設定キー') : configLabel}
                             value={row.configKey}
                             onChange={(value) =>
                               setAdapterConfigRows((current) =>
@@ -4197,12 +4399,12 @@ export function IntegrationManagementScreen({
                                 ),
                               )
                             }
-                            disabled={!row.isNew}
+                            disabled={row.locked || !row.isNew}
                             placeholder={text('client_secret', 'client_secret', 'client_secret')}
                           />
                           <div className="space-y-2">
                             <TextField
-                              label={text(`Value ${index + 1}`, `值 ${index + 1}`, `値 ${index + 1}`)}
+                              label={configField?.required ? `${configLabel} *` : configLabel}
                               value={row.configValue}
                               onChange={(value) =>
                                 setAdapterConfigRows((current) =>
@@ -4219,9 +4421,14 @@ export function IntegrationManagementScreen({
                                   ),
                                 )
                               }
-                              placeholder={row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値')}
+                              placeholder={configField?.placeholder ?? (row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値'))}
+                              type={configField?.input === 'password' ? 'password' : configField?.input === 'url' ? 'url' : 'text'}
                               disabled={row.clearRequested}
+                              required={configField?.required}
                             />
+                            {configDescription ? (
+                              <p className="text-xs leading-5 text-slate-500">{configDescription}</p>
+                            ) : null}
                             {row.isSecret ? (
                               <p className="text-xs leading-5 text-slate-500">
                                 {row.clearRequested
@@ -4291,7 +4498,7 @@ export function IntegrationManagementScreen({
                                 {row.clearRequested ? text('Keep secret', '保留密钥', 'シークレットを保持') : text('Clear secret', '清空密钥', 'シークレットを消去')}
                               </SecondaryButton>
                             ) : null}
-                            {row.isNew ? (
+                            {row.isNew && !row.locked ? (
                               <SecondaryButton
                                 tone="danger"
                                 onClick={() =>
@@ -4307,26 +4514,29 @@ export function IntegrationManagementScreen({
                     })()
                   ))}
 
-                  <SecondaryButton
-                    onClick={() =>
-                      setAdapterConfigRows((current) => [
-                        ...current,
-                        {
-                          rowKey: `new-config-${current.length + 1}-${Date.now()}`,
-                          configKey: '',
-                          configValue: '',
-                          isSecret: false,
-                          isMasked: false,
-                          isNew: true,
-                          valueEdited: false,
-                          clearRequested: false,
-                        },
-                      ])
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    {text('Add config row', '新增配置行', '設定行を追加')}
-                  </SecondaryButton>
+                  {!adapterCreateMode ? (
+                    <SecondaryButton
+                      onClick={() =>
+                        setAdapterConfigRows((current) => [
+                          ...current,
+                          {
+                            rowKey: `new-config-${current.length + 1}-${Date.now()}`,
+                            configKey: '',
+                            configValue: '',
+                            isSecret: false,
+                            isMasked: false,
+                            isNew: true,
+                            locked: false,
+                            valueEdited: false,
+                            clearRequested: false,
+                          },
+                        ])
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                      {text('Add config row', '新增配置行', '設定行を追加')}
+                    </SecondaryButton>
+                  ) : null}
                 </div>
               ) : adapterDetailPanel.data ? (
                 <StateView
@@ -4432,7 +4642,7 @@ export function IntegrationManagementScreen({
                         setWebhookCreateMode(true);
                         setSelectedWebhookId(null);
                         setWebhookDrawerOpen(true);
-                        setWebhookEditorState(buildWebhookDraft());
+                        setWebhookEditorState(buildWebhookDraft(undefined, webhookDefinitionsPanel.data[0] ?? null));
                       })
                     }
                   >
@@ -4567,7 +4777,11 @@ export function IntegrationManagementScreen({
             open={webhookDrawerOpen}
             onOpenChange={(open) => requestDrawerOpenChange(setWebhookDrawerOpen, open)}
             title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
-            description={text('Edit endpoint URL, retry settings, headers, events, and lifecycle details.', '编辑端点 URL、重试策略、请求头、事件与生命周期详情。', 'エンドポイント URL、再試行設定、ヘッダー、イベント、ライフサイクル詳細を編集します。')}
+            description={
+              webhookCreateMode
+                ? text('Choose a supported webhook definition, then configure only endpoint delivery settings.', '选择支持的 Webhook 定义，然后只配置端点投递设置。', 'サポート済み Webhook 定義を選び、エンドポイント配信設定だけを構成します。')
+                : text('Edit endpoint URL, retry settings, headers, events, and lifecycle details.', '编辑端点 URL、重试策略、请求头、事件与生命周期详情。', 'エンドポイント URL、再試行設定、ヘッダー、イベント、ライフサイクル詳細を編集します。')
+            }
             size="xl"
             closeButtonAriaLabel={text({
               en: 'Close webhook detail drawer',
@@ -4580,7 +4794,11 @@ export function IntegrationManagementScreen({
           >
             <FormSection
               title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
-              description={text('The stored secret remains masked in detail reads. Leave the secret field blank during update to preserve the current secret.', '详情读取时，已存储的密钥会保持遮罩。更新时将密钥字段留空即可保留当前值。', '保存済みシークレットは詳細取得時にマスクされたままです。更新時にシークレット欄を空欄にすると現在の値を保持します。')}
+              description={
+                webhookCreateMode
+                  ? text('Webhook code, name, and supported event set come from the selected definition. Operators only provide the receiving endpoint and delivery metadata.', 'Webhook 代码、名称和支持事件集来自所选定义。操作员只提供接收端点与投递元数据。', 'Webhook コード、名称、サポートイベントは選択した定義から決まります。オペレーターは受信エンドポイントと配信メタデータだけを入力します。')
+                  : text('The stored secret remains masked in detail reads. Leave the secret field blank during update to preserve the current secret.', '详情读取时，已存储的密钥会保持遮罩。更新时将密钥字段留空即可保留当前值。', '保存済みシークレットは詳細取得時にマスクされたままです。更新時にシークレット欄を空欄にすると現在の値を保持します。')
+              }
               actions={
                 <>
                   {!webhookCreateMode ? (
@@ -4590,7 +4808,7 @@ export function IntegrationManagementScreen({
                           setWebhookCreateMode(true);
                           setSelectedWebhookId(null);
                           setWebhookDrawerOpen(true);
-                          setWebhookEditorState(buildWebhookDraft());
+                          setWebhookEditorState(buildWebhookDraft(undefined, webhookDefinitionsPanel.data[0] ?? null));
                         })
                       }
                     >
@@ -4640,6 +4858,7 @@ export function IntegrationManagementScreen({
                   <AsyncSubmitButton
                     onClick={() => void handleWebhookSave()}
                     isPending={webhookSubmitting}
+                    disabled={webhookCreateMode && !selectedWebhookDefinition}
                     pendingText={
                       webhookCreateMode
                         ? text('Creating webhook...', '正在创建 Webhook...', 'Webhook を作成しています...')
@@ -4664,46 +4883,93 @@ export function IntegrationManagementScreen({
               ) : webhookCreateMode || webhookDetailPanel.data ? (
                 <>
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <TextField
-                      label={text('Webhook code', 'Webhook 代码', 'Webhook コード')}
-                      value={webhookDraft.code}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, code: value.toUpperCase() }))}
-                      disabled={!webhookCreateMode}
-                      placeholder={text('CUSTOMER_DELTA', 'CUSTOMER_DELTA', 'CUSTOMER_DELTA')}
-                    />
+                    {webhookCreateMode ? (
+                      <>
+                        <SelectField
+                          label={text('Supported webhook', '支持的 Webhook', 'サポート済み Webhook')}
+                          value={webhookDraft.definitionKey}
+                          onChange={(value) => {
+                            const definition = webhookDefinitionsPanel.data.find((item) => item.key === value) ?? null;
+                            setWebhookEditorState(buildWebhookDraft(undefined, definition));
+                          }}
+                          disabled={webhookDefinitionsPanel.loading}
+                          options={[
+                            { value: '', label: text('Choose a supported webhook', '选择支持的 Webhook', 'サポート済み Webhook を選択') },
+                            ...webhookDefinitionsPanel.data.map((definition) => ({
+                              value: definition.key,
+                              label: `${pickWebhookDefinitionText(definition.name, definition.code)} (${definition.code})`,
+                            })),
+                          ]}
+                        />
+                        {selectedWebhookDefinition ? (
+                          <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusBadge tone="info" label={selectedWebhookDefinition.code} />
+                              <StatusBadge tone="neutral" label={text(`${selectedWebhookDefinition.events.length} events`, `${selectedWebhookDefinition.events.length} 个事件`, `${selectedWebhookDefinition.events.length} 件のイベント`)} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {pickWebhookDefinitionText(selectedWebhookDefinition.name, selectedWebhookDefinition.code)}
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">
+                                {pickWebhookDefinitionText(selectedWebhookDefinition.description)}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <StateView
+                            status={webhookDefinitionsPanel.error ? 'error' : 'empty'}
+                            title={webhookDefinitionsPanel.error ? text('Webhook definitions unavailable', 'Webhook 定义不可用', 'Webhook 定義を表示できません') : text('Choose a supported webhook', '选择支持的 Webhook', 'サポート済み Webhook を選択')}
+                            description={webhookDefinitionsPanel.error ?? text('The create flow is driven by developer-provided webhook definitions. Free event-set creation is not available here.', '新增流程由开发者提供的 Webhook 定义驱动，这里不提供自由事件集创建。', '作成フローは開発者提供の Webhook 定義で決まります。自由なイベントセット作成はここでは利用できません。')}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <TextField
+                        label={text('Webhook code', 'Webhook 代码', 'Webhook コード')}
+                        value={webhookDraft.code}
+                        onChange={(value) => setWebhookDraft((current) => ({ ...current, code: value.toUpperCase() }))}
+                        disabled
+                        placeholder={text('CUSTOMER_DELTA', 'CUSTOMER_DELTA', 'CUSTOMER_DELTA')}
+                      />
+                    )}
                     <TextField
                       label={text('Endpoint URL', '端点 URL', 'エンドポイント URL')}
                       value={webhookDraft.url}
                       onChange={(value) => setWebhookDraft((current) => ({ ...current, url: value }))}
                       placeholder={text('https://example.com/webhooks/customer', 'https://example.com/webhooks/customer', 'https://example.com/webhooks/customer')}
                     />
-                    <TextField
-                      label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                      value={webhookDraft.nameEn}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, nameEn: value }))}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Translations', '翻译', '翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setWebhookTranslationDrawerOpen(true)}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredWebhookTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredWebhookTranslationCount})`,
-                              `翻译管理（${configuredWebhookTranslationCount}）`,
-                              `翻訳管理（${configuredWebhookTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                      {consumerTranslationOptionsState.error ? (
-                        <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
-                      ) : null}
-                    </div>
+                    {!webhookCreateMode ? (
+                      <>
+                        <TextField
+                          label={text('Name (EN)', '名称（英文）', '名称（英語）')}
+                          value={webhookDraft.nameEn}
+                          onChange={(value) => setWebhookDraft((current) => ({ ...current, nameEn: value }))}
+                        />
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-slate-700">
+                            {text('Translations', '翻译', '翻訳')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setWebhookTranslationDrawerOpen(true)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                          >
+                            <Languages className="h-4 w-4" />
+                            {configuredWebhookTranslationCount > 0
+                              ? text(
+                                  `Translation management (${configuredWebhookTranslationCount})`,
+                                  `翻译管理（${configuredWebhookTranslationCount}）`,
+                                  `翻訳管理（${configuredWebhookTranslationCount}）`,
+                                )
+                              : text('Translation management', '翻译管理', '翻訳管理')}
+                          </button>
+                          {consumerTranslationOptionsState.error ? (
+                            <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : null}
                     <TextField
                       label={text('Secret override', '覆盖密钥', 'シークレット上書き')}
                       value={webhookDraft.secret}
@@ -4731,30 +4997,59 @@ export function IntegrationManagementScreen({
                   <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
                     <p className="text-sm font-semibold text-slate-900">{text('Subscribed events', '订阅事件', '購読イベント')}</p>
                     <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {webhookEventsPanel.data.map((eventDefinition) => (
-                        <label key={eventDefinition.event} className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={webhookDraft.selectedEvents.includes(eventDefinition.event)}
-                              onChange={(event) =>
-                                setWebhookDraft((current) => ({
-                                  ...current,
-                                  selectedEvents: event.target.checked
-                                    ? [...current.selectedEvents, eventDefinition.event]
-                                    : current.selectedEvents.filter((item) => item !== eventDefinition.event),
-                                }))
-                              }
-                              className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <div className="space-y-1">
-                              <p className="font-semibold text-slate-900">{eventDefinition.name}</p>
-                              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{eventDefinition.event}</p>
-                              <p className="text-xs leading-5 text-slate-500">{eventDefinition.description}</p>
+                      {webhookCreateMode ? (
+                        selectedWebhookDefinition ? (
+                          selectedWebhookDefinition.events.map((eventName) => {
+                            const eventDefinition = webhookEventsPanel.data.find((item) => item.event === eventName);
+
+                            return (
+                              <div key={eventName} className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700">
+                                <div className="flex items-start gap-3">
+                                  <StatusBadge tone="info" label={text('Defined', '已定义', '定義済み')} />
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-slate-900">{eventDefinition?.name ?? eventName}</p>
+                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{eventName}</p>
+                                    {eventDefinition?.description ? (
+                                      <p className="text-xs leading-5 text-slate-500">{eventDefinition.description}</p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <StateView
+                            status="empty"
+                            title={text('Choose a webhook definition first', '请先选择 Webhook 定义', '先に Webhook 定義を選択')}
+                            description={text('Supported events are locked by the developer-provided webhook definition.', '支持事件由开发者提供的 Webhook 定义锁定。', 'サポートイベントは開発者提供の Webhook 定義で固定されます。')}
+                          />
+                        )
+                      ) : (
+                        webhookEventsPanel.data.map((eventDefinition) => (
+                          <label key={eventDefinition.event} className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={webhookDraft.selectedEvents.includes(eventDefinition.event)}
+                                onChange={(event) =>
+                                  setWebhookDraft((current) => ({
+                                    ...current,
+                                    selectedEvents: event.target.checked
+                                      ? [...current.selectedEvents, eventDefinition.event]
+                                      : current.selectedEvents.filter((item) => item !== eventDefinition.event),
+                                  }))
+                                }
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                              />
+                              <div className="space-y-1">
+                                <p className="font-semibold text-slate-900">{eventDefinition.name}</p>
+                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{eventDefinition.event}</p>
+                                <p className="text-xs leading-5 text-slate-500">{eventDefinition.description}</p>
+                              </div>
                             </div>
-                          </div>
-                        </label>
-                      ))}
+                          </label>
+                        ))
+                      )}
                     </div>
                   </div>
 
