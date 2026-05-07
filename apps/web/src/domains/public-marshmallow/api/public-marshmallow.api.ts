@@ -3,8 +3,11 @@ import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/a
 export type PublicCaptchaMode = 'always' | 'never' | 'auto';
 
 export interface PublicTurnstileConfigStatus {
+  environment?: 'development' | 'test' | 'staging' | 'production' | string;
   siteKeyConfigured: boolean;
   secretKeyConfigured: boolean;
+  providerReady?: boolean;
+  runtimeBypass?: boolean;
   ready: boolean;
 }
 

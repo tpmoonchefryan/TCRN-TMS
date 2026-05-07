@@ -12,6 +12,7 @@ import { ErrorCodes } from '@tcrn/shared';
 import { Request, Response } from 'express';
 
 import { error } from '../response.util';
+import { TraceIdRequestFields } from '../trace/trace-id.util';
 
 /**
  * Error code mapping from HTTP status
@@ -39,9 +40,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    
-    const requestId = (request.headers['x-request-id'] as string) || 
-                      (request as unknown as { requestId?: string }).requestId;
+    const requestFields = request as Request & TraceIdRequestFields;
+    const traceId = requestFields.traceId ?? requestFields.requestId;
+    const requestId = traceId ?? requestFields.requestId;
 
     let status: number;
     let errorCode: string;
@@ -87,6 +88,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(
         `Unhandled exception: ${exception.message}`,
         exception.stack,
+        {
+          traceId,
+          requestId,
+        },
       );
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -98,12 +103,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.warn(
       `${request.method} ${request.url} - ${status} ${errorCode}: ${message}`,
       {
+        traceId,
         requestId,
         ip: request.ip,
         userAgent: request.headers['user-agent'],
       },
     );
 
-    response.status(status).json(error(errorCode, message, details, requestId));
+    response.status(status).json(error(errorCode, message, details, traceId, requestId));
   }
 }

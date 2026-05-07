@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import { ApiRequestError } from '@/platform/http/api';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
@@ -449,6 +450,47 @@ describe('ScopedConfigEntityWorkspace', () => {
     expect(mockRouterReplace).toHaveBeenCalledWith(
       '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true&configEntityPageSize=50',
     );
+  });
+
+  it('shows safe custom-domain unavailable copy with trace id and no raw storage internals', async () => {
+    currentSearch = 'configEntityType=custom-domain';
+    const rawStorageMessage =
+      'PrismaClientKnownRequestError: relation "public.custom_domain_binding" does not exist in SQL';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false'
+      ) {
+        throw new ApiRequestError(
+          rawStorageMessage,
+          'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
+          503,
+          undefined,
+          'req_registry_123',
+          'trace_registry_123',
+        );
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="tenant"
+      />,
+    );
+
+    expect(await screen.findByText('Custom domains unavailable')).toBeInTheDocument();
+    expect(
+      screen.getByText('Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Trace ID: trace_registry_123')).toBeInTheDocument();
+    expect(screen.queryByText(/Prisma/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/public\.custom_domain_binding/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bSQL\b/i)).not.toBeInTheDocument();
   });
 
   it('opens the config entity editor inside a drawer instead of expanding inline', async () => {

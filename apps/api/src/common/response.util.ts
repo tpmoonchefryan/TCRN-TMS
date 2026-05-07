@@ -35,6 +35,7 @@ export interface ErrorResponse {
     code: string;
     message: string;
     details?: ErrorDetail[] | Record<string, unknown>;
+    traceId?: string;
     requestId?: string;
   };
 }
@@ -91,6 +92,7 @@ export function error(
   code: string,
   message: string,
   details?: ErrorResponse['error']['details'],
+  traceId?: string,
   requestId?: string
 ): ErrorResponse {
   const response: ErrorResponse = {
@@ -102,6 +104,9 @@ export function error(
   };
   if (details) {
     response.error.details = details;
+  }
+  if (traceId) {
+    response.error.traceId = traceId;
   }
   if (requestId) {
     response.error.requestId = requestId;

@@ -59,6 +59,7 @@ export class IntegrationLogService {
     try {
       const prisma = this.databaseService.getPrisma();
       const schema = context?.tenantSchema || 'public';
+      const traceId = data.traceId ?? context?.traceId ?? context?.requestId ?? null;
 
       const maskedRequestHeaders = this.maskHeaders(data.requestHeaders);
       const maskedRequestBody = this.truncateBody(
@@ -90,7 +91,7 @@ export class IntegrationLogService {
         maskedResponseBody ? JSON.stringify(maskedResponseBody) : null,
         data.latencyMs,
         data.errorMessage ?? null,
-        data.traceId ?? null,
+        traceId,
       );
     } catch (error) {
       this.logger.error(
@@ -107,6 +108,7 @@ export class IntegrationLogService {
     try {
       const prisma = this.databaseService.getPrisma();
       const schema = context?.tenantSchema || 'public';
+      const traceId = data.traceId ?? context?.traceId ?? context?.requestId ?? null;
 
       const maskedRequestHeaders = this.maskHeaders(data.requestHeaders);
       const maskedRequestBody = this.truncateBody(
@@ -138,7 +140,7 @@ export class IntegrationLogService {
         maskedResponseBody ? JSON.stringify(maskedResponseBody) : null,
         data.latencyMs ?? null,
         data.errorMessage ?? null,
-        data.traceId ?? null,
+        traceId,
       );
     } catch (error) {
       this.logger.error(

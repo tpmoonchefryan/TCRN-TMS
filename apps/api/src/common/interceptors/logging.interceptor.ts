@@ -8,10 +8,11 @@ import {
     NestInterceptor,
 } from '@nestjs/common';
 import { BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
-import { randomUUID } from 'crypto';
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+
+import { resolveTraceIdFromHeaders } from '../trace/trace-id.util';
 
 // Extend Express Request to include requestId
 // Extend Express Request to include requestId
@@ -20,6 +21,7 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
+      traceId?: string;
       publicConsumerCode?: string;
     }
   }
@@ -39,13 +41,14 @@ export class LoggingInterceptor implements NestInterceptor {
     const response = ctx.getResponse<Response>();
     const publicConsumerCode = this.getPublicConsumerCode(request);
 
-    // Generate or use existing request ID
-    const requestId = (request.headers['x-request-id'] as string) || `req_${randomUUID().replace(/-/g, '').substring(0, 16)}`;
-    request.requestId = requestId;
+    const traceId = request.traceId ?? resolveTraceIdFromHeaders(request.headers);
+    request.traceId = traceId;
+    request.requestId = traceId;
     request.publicConsumerCode = publicConsumerCode;
     
     // Set response header
-    response.setHeader('X-Request-ID', requestId);
+    response.setHeader('X-Trace-ID', traceId);
+    response.setHeader('X-Request-ID', traceId);
 
     const { method, url, ip } = request;
     const userAgent = request.get('user-agent') || '';
@@ -55,7 +58,7 @@ export class LoggingInterceptor implements NestInterceptor {
     // Log request
     this.logger.log(
       `→ ${method} ${url} - ${ip} - ${userAgent.substring(0, 50)}${consumerSuffix}`,
-      { requestId },
+      { traceId, requestId: traceId },
     );
 
     return next.handle().pipe(
@@ -66,7 +69,7 @@ export class LoggingInterceptor implements NestInterceptor {
           
           this.logger.log(
             `← ${method} ${url} - ${statusCode} - ${duration}ms${consumerSuffix}`,
-            { requestId },
+            { traceId, requestId: traceId },
           );
         },
         error: () => {
@@ -74,7 +77,7 @@ export class LoggingInterceptor implements NestInterceptor {
           
           this.logger.warn(
             `← ${method} ${url} - ERROR - ${duration}ms${consumerSuffix}`,
-            { requestId },
+            { traceId, requestId: traceId },
           );
         },
       }),

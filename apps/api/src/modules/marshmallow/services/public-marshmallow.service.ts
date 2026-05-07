@@ -480,6 +480,13 @@ export class PublicMarshmallowService {
       });
     }
 
+    if (captchaDecision.unavailable) {
+      throw new ForbiddenException({
+        code: 'CAPTCHA_UNAVAILABLE',
+        message: 'Submission is temporarily unavailable. Please try again later.',
+      });
+    }
+
     if (captchaDecision.required) {
       if (!dto.turnstileToken) {
         throw new ForbiddenException({

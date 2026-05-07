@@ -30,6 +30,7 @@ describe('TalentCustomDomainService', () => {
     updateServicePaths: vi.fn(),
     updateSslMode: vi.fn(),
     listCustomDomainBindingsForTalent: vi.fn(),
+    getCustomDomainRegistryReadiness: vi.fn(),
     listCustomDomainBindingsForScope: vi.fn(),
     listSelectedInheritedDomainIds: vi.fn(),
     customDomainOwnerExists: vi.fn(),
@@ -54,6 +55,11 @@ describe('TalentCustomDomainService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(mockRepository.getCustomDomainRegistryReadiness).mockResolvedValue({
+      customDomainBinding: true,
+      customDomainTalentSelection: true,
+      ready: true,
+    });
   });
 
   it('sets a normalized custom domain and returns the TXT verification record', async () => {
@@ -265,6 +271,34 @@ describe('TalentCustomDomainService', () => {
     ).rejects.toThrow(ServiceUnavailableException);
   });
 
+  it('fails safe before scoped list queries when the custom-domain registry is not ready', async () => {
+    vi.mocked(mockRepository.getCustomDomainRegistryReadiness).mockResolvedValue({
+      customDomainBinding: false,
+      customDomainTalentSelection: true,
+      ready: false,
+    });
+
+    let caught: unknown;
+    try {
+      await service.listCustomDomainBindings('tenant_test', {
+        scopeType: 'tenant',
+        scopeId: null,
+        includeInherited: true,
+        includeInactive: false,
+      });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ServiceUnavailableException);
+    expect((caught as ServiceUnavailableException).getResponse()).toMatchObject({
+      code: 'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
+      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
+    });
+    expect(mockRepository.customDomainOwnerExists).not.toHaveBeenCalled();
+    expect(mockRepository.listCustomDomainBindingsForScope).not.toHaveBeenCalled();
+  });
+
   it('verifies the custom domain when the expected TXT record exists', async () => {
     vi.mocked(mockRepository.getCustomDomainConfig).mockResolvedValue({
       talentId: 'talent-123',
@@ -335,6 +369,23 @@ describe('TalentCustomDomainService', () => {
     );
   });
 
+  it('fails safe before creating a domain binding when the custom-domain registry is not ready', async () => {
+    vi.mocked(mockRepository.getCustomDomainRegistryReadiness).mockResolvedValue({
+      customDomainBinding: true,
+      customDomainTalentSelection: false,
+      ready: false,
+    });
+
+    await expect(
+      service.createCustomDomainBinding('tenant_test', {
+        ownerType: 'tenant',
+        hostname: 'brand.example.com',
+      }),
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(mockRepository.customDomainOwnerExists).not.toHaveBeenCalled();
+    expect(mockRepository.createCustomDomainBinding).not.toHaveBeenCalled();
+  });
+
   it('fails closed when a domain binding hostname collides with existing registry', async () => {
     vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
     vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue({
@@ -398,6 +449,20 @@ describe('TalentCustomDomainService', () => {
       'tenant_test',
       'domain-1',
     );
+  });
+
+  it('fails safe before verifying a domain binding when the custom-domain registry is not ready', async () => {
+    vi.mocked(mockRepository.getCustomDomainRegistryReadiness).mockResolvedValue({
+      customDomainBinding: false,
+      customDomainTalentSelection: false,
+      ready: false,
+    });
+
+    await expect(
+      service.verifyCustomDomainBinding('tenant_test', 'domain-1'),
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(mockRepository.findCustomDomainBindingById).not.toHaveBeenCalled();
+    expect(dnsPromises.resolveTxt).not.toHaveBeenCalled();
   });
 
   it('fails closed when selecting an unverified inherited domain', async () => {
@@ -472,9 +537,8 @@ describe('TalentCustomDomainService', () => {
 
     expect(caught).toBeInstanceOf(ServiceUnavailableException);
     expect((caught as ServiceUnavailableException).getResponse()).toMatchObject({
-      code: 'SYS_DATABASE_ERROR',
-      message:
-        'Custom-domain storage is unavailable. Ask an administrator to apply the custom-domain database migration.',
+      code: 'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
+      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
     });
   });
 

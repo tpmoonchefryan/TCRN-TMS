@@ -457,9 +457,9 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       messageLabel: 'Message',
       messagePlaceholder: 'Write your message here',
       missingCaptchaDisabledNotice:
-        'This page requires Turnstile, but captcha is not configured. Submission is unavailable.',
+        'Submission is temporarily unavailable. Please try again later.',
       missingCaptchaError:
-        'This public page requires Turnstile, but captcha is not configured.',
+        'Submission is temporarily unavailable. Please try again later.',
       namedFanFallback: 'Named fan',
       namedOnlyBadge: 'Named submissions only',
       privacyLabel: 'Privacy',
@@ -709,8 +709,8 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       messageLabel: '消息内容',
       messagePlaceholder: '在这里写下你的消息',
       missingCaptchaDisabledNotice:
-        '当前页面要求启用 Turnstile，但验证码尚未配置，因此暂时无法提交。',
-      missingCaptchaError: '当前公开页面要求启用 Turnstile，但验证码尚未配置。',
+        '提交暂时不可用。请稍后重试。',
+      missingCaptchaError: '提交暂时不可用。请稍后重试。',
       namedFanFallback: '署名粉丝',
       namedOnlyBadge: '仅允许署名投稿',
       privacyLabel: '隐私说明',
@@ -959,9 +959,9 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       messageLabel: 'メッセージ',
       messagePlaceholder: 'ここにメッセージを入力してください',
       missingCaptchaDisabledNotice:
-        'このページでは Turnstile が必須ですが、captcha が設定されていないため送信できません。',
+        '送信は一時的に利用できません。後でもう一度お試しください。',
       missingCaptchaError:
-        'この公開ページでは Turnstile が必要ですが、captcha が設定されていません。',
+        '送信は一時的に利用できません。後でもう一度お試しください。',
       namedFanFallback: '署名付きファン',
       namedOnlyBadge: '記名投稿のみ',
       privacyLabel: 'プライバシー',
@@ -1286,8 +1286,8 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
       messageLabel: '訊息內容',
       messagePlaceholder: '在這裡寫下你的訊息',
       missingCaptchaDisabledNotice:
-        '此頁面要求啟用 Turnstile，但驗證碼尚未設定，因此暫時無法提交。',
-      missingCaptchaError: '此公開頁面要求啟用 Turnstile，但驗證碼尚未設定。',
+        '提交暫時無法使用。請稍後再試。',
+      missingCaptchaError: '提交暫時無法使用。請稍後再試。',
       namedFanFallback: '署名粉絲',
       namedOnlyBadge: '僅允許署名投稿',
       privacyLabel: '隱私說明',
@@ -1460,8 +1460,8 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
       messageLabel: '메시지',
       messagePlaceholder: '여기에 메시지를 입력하세요',
       missingCaptchaDisabledNotice:
-        '이 페이지는 Turnstile이 필요하지만 캡차가 구성되지 않아 제출할 수 없습니다.',
-      missingCaptchaError: '이 공개 페이지는 Turnstile이 필요하지만 캡차가 구성되지 않았습니다.',
+        '제출을 일시적으로 사용할 수 없습니다. 나중에 다시 시도하세요.',
+      missingCaptchaError: '제출을 일시적으로 사용할 수 없습니다. 나중에 다시 시도하세요.',
       namedFanFallback: '이름 공개 팬',
       namedOnlyBadge: '기명 제출만 허용',
       privacyLabel: '개인정보',
@@ -1633,8 +1633,8 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
       messageLabel: 'Message',
       messagePlaceholder: 'Écrivez votre message ici',
       missingCaptchaDisabledNotice:
-        'Cette page exige Turnstile, mais le captcha n’est pas configuré. L’envoi est indisponible.',
-      missingCaptchaError: 'Cette page publique exige Turnstile, mais le captcha n’est pas configuré.',
+        'L’envoi est temporairement indisponible. Réessayez plus tard.',
+      missingCaptchaError: 'L’envoi est temporairement indisponible. Réessayez plus tard.',
       namedFanFallback: 'Fan identifié',
       namedOnlyBadge: 'Envois nominatifs uniquement',
       privacyLabel: 'Confidentialité',

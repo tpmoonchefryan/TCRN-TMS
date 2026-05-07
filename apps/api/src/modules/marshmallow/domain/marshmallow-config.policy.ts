@@ -3,6 +3,10 @@
 import { buildSharedMarshmallowUrl } from '@tcrn/shared';
 
 import { CaptchaMode, type UpdateConfigDto } from '../dto/marshmallow.dto';
+import {
+  buildCaptchaRuntimeStatus,
+  type CaptchaRuntimeStatus,
+} from './captcha-runtime.policy';
 
 export const DEFAULT_MARSHMALLOW_CONFIG = {
   isEnabled: false,
@@ -74,11 +78,7 @@ export interface MarshmallowConfigStats {
   unreadCount: number;
 }
 
-export interface TurnstileConfigStatus {
-  siteKeyConfigured: boolean;
-  secretKeyConfigured: boolean;
-  ready: boolean;
-}
+export type TurnstileConfigStatus = CaptchaRuntimeStatus;
 
 export interface MarshmallowTalentRecord {
   id: string;
@@ -121,19 +121,7 @@ export const buildMarshmallowConfigStats = (
   };
 };
 
-export const buildTurnstileConfigStatus = (input: {
-  siteKey: string | null | undefined;
-  secretKey: string | null | undefined;
-}): TurnstileConfigStatus => {
-  const siteKeyConfigured = Boolean(input.siteKey?.trim());
-  const secretKeyConfigured = Boolean(input.secretKey?.trim());
-
-  return {
-    siteKeyConfigured,
-    secretKeyConfigured,
-    ready: siteKeyConfigured && secretKeyConfigured,
-  };
-};
+export const buildTurnstileConfigStatus = buildCaptchaRuntimeStatus;
 
 export const buildMarshmallowConfigResponse = (params: {
   config: MarshmallowConfigRecord;

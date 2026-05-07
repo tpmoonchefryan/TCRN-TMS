@@ -70,6 +70,7 @@ export interface RequestContext {
   ipAddress?: string;
   userAgent?: string;
   requestId?: string;
+  traceId?: string;
   tenantId?: string;
   tenantSchema?: string;
 }

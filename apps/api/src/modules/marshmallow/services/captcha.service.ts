@@ -4,10 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '../../redis';
-import {
-  buildTurnstileConfigStatus,
-  type TurnstileConfigStatus,
-} from '../domain/marshmallow-config.policy';
+import { buildCaptchaRuntimeStatus, type CaptchaRuntimeStatus } from '../domain/captcha-runtime.policy';
 import { CaptchaMode } from '../dto/marshmallow.dto';
 import { TrustScoreService } from './trust-score.service';
 
@@ -19,6 +16,7 @@ export interface CaptchaDecision {
   required: boolean;
   reason?: string;
   forceReject?: boolean;  // If true, reject the request entirely (honeypot, etc.)
+  unavailable?: boolean;
   trustLevel?: string;
 }
 
@@ -53,11 +51,38 @@ export class CaptchaService {
   // Core Methods
   // =============================================================================
 
-  getTurnstileConfigStatus(): TurnstileConfigStatus {
-    return buildTurnstileConfigStatus({
+  getTurnstileConfigStatus(): CaptchaRuntimeStatus {
+    return buildCaptchaRuntimeStatus({
+      nodeEnv: this.configService.get<string>('NODE_ENV'),
       siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY'),
       secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY'),
     });
+  }
+
+  private applyRuntimePolicy(decision: CaptchaDecision): CaptchaDecision {
+    if (!decision.required || decision.forceReject) {
+      return decision;
+    }
+
+    const runtimeStatus = this.getTurnstileConfigStatus();
+
+    if (runtimeStatus.runtimeBypass) {
+      return {
+        required: false,
+        reason: 'runtime_bypass',
+        trustLevel: decision.trustLevel,
+      };
+    }
+
+    if (!runtimeStatus.providerReady) {
+      return {
+        ...decision,
+        reason: 'turnstile_not_configured',
+        unavailable: true,
+      };
+    }
+
+    return decision;
   }
 
   /**
@@ -74,7 +99,7 @@ export class CaptchaService {
     }
 
     if (mode === CaptchaMode.ALWAYS) {
-      return { required: true, reason: 'config_always' };
+      return this.applyRuntimePolicy({ required: true, reason: 'config_always' });
     }
 
     if (mode === CaptchaMode.NEVER) {
@@ -82,7 +107,7 @@ export class CaptchaService {
     }
 
     // Auto mode: intelligent evaluation
-    return this.evaluateAutoMode(context);
+    return this.applyRuntimePolicy(await this.evaluateAutoMode(context));
   }
 
   /**
@@ -171,9 +196,15 @@ export class CaptchaService {
    * Verify Turnstile token and record result
    */
   async verifyTurnstile(token: string, ip: string, fingerprint?: string): Promise<boolean> {
+    const runtimeStatus = this.getTurnstileConfigStatus();
+
+    if (runtimeStatus.runtimeBypass) {
+      return true;
+    }
+
     const secretKey = this.configService.get<string>('TURNSTILE_SECRET_KEY');
 
-    if (!secretKey?.trim()) {
+    if (!runtimeStatus.providerReady || !secretKey?.trim()) {
       this.logger.warn('Turnstile secret key not configured');
       return false;
     }

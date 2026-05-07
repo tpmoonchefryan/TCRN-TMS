@@ -11,6 +11,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiLogger } from './common/logger/api-logger';
+import { createTraceIdMiddleware } from './common/trace/trace-id.middleware';
 import { applyGlobalSwaggerParameters } from './config/swagger-global-parameters';
 // Import modules for Swagger definition grouping
 import { AuthModule } from './modules/auth';
@@ -49,6 +50,8 @@ export async function bootstrap(): Promise<void> {
   });
   const configService = app.get(ConfigService);
 
+  app.use(createTraceIdMiddleware());
+
   // Security middleware - configured to allow Swagger UI
   app.use(
     helmet({
@@ -83,6 +86,8 @@ export async function bootstrap(): Promise<void> {
       'X-Tenant-ID',
       'X-Talent-Id',
       'X-PII-Access-Reason',
+      'X-Trace-ID',
+      'X-Request-ID',
     ],
   });
 

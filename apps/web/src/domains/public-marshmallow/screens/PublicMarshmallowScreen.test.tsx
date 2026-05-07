@@ -202,6 +202,9 @@ describe('PublicMarshmallowScreen', () => {
             turnstile: {
               siteKeyConfigured: true,
               secretKeyConfigured: false,
+              providerReady: false,
+              runtimeBypass: false,
+              environment: 'staging',
               ready: false,
             },
             maxMessageLength: 500,
@@ -240,9 +243,99 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="site-key" />);
 
     expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
-    expect(screen.getByText('This page requires Turnstile, but captcha is not configured. Submission is unavailable.')).toBeInTheDocument();
+    expect(screen.getByText('Submission is temporarily unavailable. Please try again later.')).toBeInTheDocument();
     expect(screen.queryByText('Turnstile verification')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
+  });
+
+  it('does not render Turnstile or block submission when runtime bypass is active', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/config')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            talent: {
+              displayName: 'Aki Rosenthal',
+              avatarUrl: null,
+            },
+            title: 'Ask Aki',
+            welcomeText: 'Leave your next question here.',
+            placeholderText: 'Type your question',
+            allowAnonymous: true,
+            captchaMode: 'always',
+            turnstile: {
+              siteKeyConfigured: false,
+              secretKeyConfigured: false,
+              providerReady: false,
+              runtimeBypass: true,
+              environment: 'development',
+              ready: true,
+            },
+            maxMessageLength: 500,
+            minMessageLength: 5,
+            reactionsEnabled: false,
+            allowedReactions: [],
+            theme: {},
+            terms: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+            privacy: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+          },
+        });
+      }
+
+      if (url.includes('/api/v1/public/marshmallow/aki-mailbox/messages')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [],
+            cursor: null,
+            hasMore: false,
+          },
+        });
+      }
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') && init?.method === 'POST') {
+        return jsonResponse({
+          success: true,
+          data: {
+            id: 'message-2',
+            status: 'pending',
+            message: 'Question received.',
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request: ${url}`);
+    });
+
+    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
+
+    expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
+    expect(screen.queryByText('Turnstile verification')).not.toBeInTheDocument();
+    expect(screen.queryByText(/captcha is not configured/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send message' })).not.toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: {
+        value: 'Will there be a karaoke this weekend?',
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    expect(await screen.findByText('Question received.')).toBeInTheDocument();
+    const submitCall = mockFetch.mock.calls.find((call) =>
+      String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit'),
+    );
+    expect(JSON.parse(String(submitCall?.[1]?.body))).not.toHaveProperty('turnstileToken');
   });
 
   it('renders the Turnstile widget path and submits the token when required config is ready', async () => {
@@ -275,6 +368,9 @@ describe('PublicMarshmallowScreen', () => {
             turnstile: {
               siteKeyConfigured: true,
               secretKeyConfigured: true,
+              providerReady: true,
+              runtimeBypass: false,
+              environment: 'staging',
               ready: true,
             },
             maxMessageLength: 500,

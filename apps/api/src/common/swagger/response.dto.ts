@@ -81,6 +81,9 @@ export class ErrorBodyDto {
 
   @ApiPropertyOptional({ description: 'Request ID for tracking', example: 'req-abc123' })
   requestId?: string;
+
+  @ApiPropertyOptional({ description: 'Trace ID for support correlation', example: 'trace_abc123' })
+  traceId?: string;
 }
 
 export class ApiErrorResponseDto {
@@ -167,6 +170,7 @@ export const COMMON_RESPONSES = {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'An unexpected error occurred',
+          traceId: 'trace_abc123',
           requestId: 'req-abc123',
         },
       },

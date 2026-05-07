@@ -402,7 +402,8 @@ export function PublicMarshmallowScreen({
     () => (config ? pickLocalizedLegalCopy(config.privacy, selectedLocale) : null),
     [config, selectedLocale],
   );
-  const requiresCaptchaWidget = config?.captchaMode !== 'never';
+  const captchaRuntimeBypass = config?.turnstile?.runtimeBypass === true;
+  const requiresCaptchaWidget = config?.captchaMode !== 'never' && !captchaRuntimeBypass;
   const turnstileRuntimeReady = config?.turnstile?.ready ?? true;
   const cannotSubmitDueToMissingCaptcha = Boolean(
     config && requiresCaptchaWidget && (!turnstileSiteKey || !turnstileRuntimeReady),

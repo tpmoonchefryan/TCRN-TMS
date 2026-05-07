@@ -13,8 +13,38 @@ import type {
   TalentLegacyCustomDomainConfig,
 } from '../domain/talent-custom-domain.policy';
 
+export interface CustomDomainRegistryReadiness {
+  customDomainBinding: boolean;
+  customDomainTalentSelection: boolean;
+  ready: boolean;
+}
+
 @Injectable()
 export class TalentCustomDomainRepository {
+  async getCustomDomainRegistryReadiness(): Promise<CustomDomainRegistryReadiness> {
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{
+        customDomainBinding: string | null;
+        customDomainTalentSelection: string | null;
+      }>
+    >(
+      `SELECT
+         to_regclass('public.custom_domain_binding')::text as "customDomainBinding",
+         to_regclass('public.custom_domain_talent_selection')::text as "customDomainTalentSelection"`,
+    );
+
+    const readiness = {
+      customDomainBinding: rows[0]?.customDomainBinding === 'public.custom_domain_binding',
+      customDomainTalentSelection:
+        rows[0]?.customDomainTalentSelection === 'public.custom_domain_talent_selection',
+    };
+
+    return {
+      ...readiness,
+      ready: readiness.customDomainBinding && readiness.customDomainTalentSelection,
+    };
+  }
+
   async getTenantIdBySchema(tenantSchema: string): Promise<string | null> {
     const tenants = await prisma.$queryRawUnsafe<Array<{ tenantId: string }>>(
       `SELECT id as "tenantId"

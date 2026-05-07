@@ -8,6 +8,7 @@ export interface ApiEnvelopeError {
   message: string;
   details?: unknown;
   requestId?: string;
+  traceId?: string;
 }
 
 export interface ApiEnvelopeMeta {
@@ -50,14 +51,23 @@ export class ApiRequestError extends Error {
   status: number;
   details?: unknown;
   requestId?: string;
+  traceId?: string;
 
-  constructor(message: string, code: string, status: number, details?: unknown, requestId?: string) {
+  constructor(
+    message: string,
+    code: string,
+    status: number,
+    details?: unknown,
+    requestId?: string,
+    traceId?: string,
+  ) {
     super(message);
     this.name = 'ApiRequestError';
     this.code = code;
     this.status = status;
     this.details = details;
     this.requestId = requestId;
+    this.traceId = traceId;
   }
 }
 
@@ -72,6 +82,7 @@ export async function readApiEnvelope<T>(response: Response): Promise<ApiSuccess
       response.status,
       error?.details,
       error?.requestId,
+      error?.traceId,
     );
   }
 

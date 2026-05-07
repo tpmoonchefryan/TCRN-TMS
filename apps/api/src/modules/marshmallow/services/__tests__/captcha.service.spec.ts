@@ -71,6 +71,22 @@ describe('CaptchaService', () => {
     });
 
     it('should always require CAPTCHA in ALWAYS mode', async () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'site-key';
+        }
+
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return 'secret-key';
+        }
+
+        return null;
+      });
+
       const result = await service.shouldRequireCaptcha(CaptchaMode.ALWAYS, mockContext);
 
       expect(result.required).toBe(true);
@@ -123,8 +139,25 @@ describe('CaptchaService', () => {
   });
 
   describe('Turnstile runtime config', () => {
-    it('returns non-secret readiness flags for Turnstile configuration', () => {
+    it('returns non-secret local bypass readiness in test runtime without Turnstile keys', () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+      expect(service.getTurnstileConfigStatus()).toMatchObject({
+        environment: 'test',
+        siteKeyConfigured: false,
+        secretKeyConfigured: false,
+        providerReady: false,
+        runtimeBypass: true,
+        ready: true,
+      });
+    });
+
+    it('fails closed in staging when Turnstile configuration is incomplete', () => {
       (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
         if (key === 'TURNSTILE_SITE_KEY') {
           return 'site-key';
         }
@@ -136,19 +169,78 @@ describe('CaptchaService', () => {
         return null;
       });
 
-      expect(service.getTurnstileConfigStatus()).toEqual({
+      expect(service.getTurnstileConfigStatus()).toMatchObject({
+        environment: 'staging',
         siteKeyConfigured: true,
         secretKeyConfigured: false,
+        providerReady: false,
+        runtimeBypass: false,
         ready: false,
       });
     });
 
-    it('fails closed when Turnstile verification is requested without a secret key', async () => {
-      (mockConfigService.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    it('passes Turnstile verification locally without a provider call when runtime bypass is active', async () => {
+      const fetchSpy = vi.fn();
+      vi.stubGlobal('fetch', fetchSpy);
+
+      await expect(
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+      ).resolves.toBe(true);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('fails closed when staging Turnstile verification is requested without a secret key', async () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'site-key';
+        }
+
+        return null;
+      });
 
       await expect(
         service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
       ).resolves.toBe(false);
+    });
+
+    it('calls Cloudflare verification when staging Turnstile config is complete', async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue({ success: true }),
+      });
+      vi.stubGlobal('fetch', fetchSpy);
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'site-key';
+        }
+
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return 'secret-key';
+        }
+
+        return null;
+      });
+      mockTrustScoreService.recordCaptchaResult = vi.fn().mockResolvedValue(undefined);
+
+      await expect(
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+      ).resolves.toBe(true);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(mockTrustScoreService.recordCaptchaResult).toHaveBeenCalledWith(
+        'test-fingerprint',
+        '192.168.1.100',
+        true,
+      );
     });
   });
 });

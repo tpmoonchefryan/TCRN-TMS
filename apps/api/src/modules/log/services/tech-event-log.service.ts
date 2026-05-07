@@ -56,6 +56,7 @@ export class TechEventLogService {
       const schema = context?.tenantSchema || 'public';
       const scope = data.scope || TechEventScope.GENERAL;
       const errorStack = process.env.NODE_ENV === 'development' ? data.errorStack ?? null : null;
+      const traceId = data.traceId ?? context?.traceId ?? context?.requestId ?? null;
 
       await prisma.$executeRawUnsafe(`
         INSERT INTO "${schema}".technical_event_log (
@@ -67,7 +68,7 @@ export class TechEventLogService {
         data.severity,
         data.eventType,
         scope,
-        data.traceId ?? null,
+        traceId,
         data.spanId ?? null,
         data.source ?? null,
         data.message ?? null,

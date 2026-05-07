@@ -12,7 +12,7 @@ import {
   verifyCustomDomainBinding,
 } from '@/domains/config-dictionary-settings/api/public-domain-settings.api';
 import type { ConfigEntityScopeType } from '@/domains/config-dictionary-settings/api/settings.api';
-import { ApiRequestError } from '@/platform/http/api';
+import { type SafeApiErrorView,toSafeApiErrorView } from '@/platform/http/safe-api-error';
 import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
@@ -51,6 +51,7 @@ interface DomainDraft {
 interface NoticeState {
   tone: 'success' | 'error';
   message: string;
+  secondaryText?: string;
 }
 
 const EMPTY_DRAFT: DomainDraft = {
@@ -59,8 +60,34 @@ const EMPTY_DRAFT: DomainDraft = {
   isActive: true,
 };
 
-function getErrorMessage(reason: unknown, fallback: string) {
-  return reason instanceof ApiRequestError ? reason.message : fallback;
+function getTraceLabel(locale: SupportedUiLocale | RuntimeLocale, traceId: string) {
+  return pickLocaleText(locale, {
+    en: `Trace ID: ${traceId}`,
+    zh: `追踪 ID：${traceId}`,
+    ja: `トレース ID: ${traceId}`,
+  });
+}
+
+function getSafeCustomDomainError(
+  reason: unknown,
+  locale: SupportedUiLocale | RuntimeLocale,
+  fallbackDescription: string,
+): SafeApiErrorView {
+  return toSafeApiErrorView(reason, {
+    fallbackTitle: pickLocaleText(locale, {
+      en: 'Custom domains unavailable',
+      zh: '自定义域名不可用',
+      ja: 'カスタムドメインを読み込めません',
+    }),
+    fallbackDescription,
+    descriptionByCode: {
+      SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE: pickLocaleText(locale, {
+        en: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
+        zh: '自定义域名路由暂时不可用。请稍后重试或联系管理员。',
+        ja: 'カスタムドメインルーティングは一時的に利用できません。後でもう一度試すか、管理者に連絡してください。',
+      }),
+    },
+  });
 }
 
 function normalizeHostname(value: string) {
@@ -158,7 +185,7 @@ export function CustomDomainConfigEntityWorkspace({
   const scopeLabel = resolveScopeLabel(scopeType, locale);
   const [domains, setDomains] = useState<CustomDomainBindingCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorView | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [editorMode, setEditorMode] = useState<'closed' | 'create' | 'edit'>('closed');
   const [editorTarget, setEditorTarget] = useState<CustomDomainBindingCatalogItem | null>(null);
@@ -235,8 +262,9 @@ export function CustomDomainConfigEntityWorkspace({
         if (!cancelled) {
           setDomains([]);
           setError(
-            getErrorMessage(
+            getSafeCustomDomainError(
               reason,
+              locale,
               pickLocaleText(locale, {
                 en: 'Custom-domain records are unavailable for this scope.',
                 zh: '当前范围的自定义域名记录不可用。',
@@ -360,14 +388,15 @@ export function CustomDomainConfigEntityWorkspace({
       refresh();
     } catch (reason) {
       setEditorError(
-        getErrorMessage(
+        getSafeCustomDomainError(
           reason,
+          locale,
           pickLocaleText(locale, {
             en: 'Failed to save custom domain.',
             zh: '保存自定义域名失败。',
             ja: 'カスタムドメインの保存に失敗しました。',
           }),
-        ),
+        ).description,
       );
     } finally {
       setEditorPending(false);
@@ -386,16 +415,19 @@ export function CustomDomainConfigEntityWorkspace({
       });
       refresh();
     } catch (reason) {
+      const errorView = getSafeCustomDomainError(
+        reason,
+        locale,
+        pickLocaleText(locale, {
+          en: 'Failed to verify custom domain.',
+          zh: '验证自定义域名失败。',
+          ja: 'カスタムドメインの検証に失敗しました。',
+        }),
+      );
       setNotice({
         tone: 'error',
-        message: getErrorMessage(
-          reason,
-          pickLocaleText(locale, {
-            en: 'Failed to verify custom domain.',
-            zh: '验证自定义域名失败。',
-            ja: 'カスタムドメインの検証に失敗しました。',
-          }),
-        ),
+        message: errorView.description,
+        secondaryText: errorView.traceId ? getTraceLabel(locale, errorView.traceId) : undefined,
       });
     } finally {
       setVerificationPendingId(null);
@@ -444,6 +476,7 @@ export function CustomDomainConfigEntityWorkspace({
           }`}
         >
           {notice.message}
+          {notice.secondaryText ? <p className="mt-1 text-xs font-semibold">{notice.secondaryText}</p> : null}
         </div>
       ) : null}
 
@@ -515,7 +548,12 @@ export function CustomDomainConfigEntityWorkspace({
       </div>
 
       {error ? (
-        <StateView status="error" title={pickLocaleText(locale, { en: 'Custom domains unavailable', zh: '自定义域名不可用', ja: 'カスタムドメインを読み込めません' })} description={error} />
+        <StateView
+          status="error"
+          title={error.title}
+          description={error.description}
+          secondaryText={error.traceId ? getTraceLabel(locale, error.traceId) : undefined}
+        />
       ) : (
         <TableShell
           ariaLabel={pickLocaleText(locale, { en: 'Custom-domain records', zh: '自定义域名记录', ja: 'カスタムドメインレコード' })}

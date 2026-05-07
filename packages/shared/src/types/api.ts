@@ -19,6 +19,7 @@ export interface ApiError {
   details?: Record<string, unknown>;
   timestamp: string;
   traceId?: string;
+  requestId?: string;
 }
 
 /**

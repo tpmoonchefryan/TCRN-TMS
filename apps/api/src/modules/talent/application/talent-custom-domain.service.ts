@@ -59,10 +59,20 @@ export class TalentCustomDomainService {
 
   private createCustomDomainStorageUnavailableException(): ServiceUnavailableException {
     return new ServiceUnavailableException({
-      code: ErrorCodes.SYS_DATABASE_ERROR,
-      message:
-        'Custom-domain storage is unavailable. Ask an administrator to apply the custom-domain database migration.',
+      code: ErrorCodes.SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE,
+      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
     });
+  }
+
+  private async ensureCustomDomainRegistryReady(): Promise<void> {
+    const readiness = await this.talentCustomDomainRepository.getCustomDomainRegistryReadiness();
+
+    if (!readiness.ready) {
+      this.logger.warn(
+        `Custom-domain registry is not ready for management operations: binding=${readiness.customDomainBinding}, selection=${readiness.customDomainTalentSelection}`,
+      );
+      throw this.createCustomDomainStorageUnavailableException();
+    }
   }
 
   private async listCustomDomainBindingsForTalentOrEmpty(
@@ -118,10 +128,7 @@ export class TalentCustomDomainService {
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
-        this.logger.warn(
-          `Custom-domain binding registry is unavailable while checking hostname "${hostname}"; continuing with legacy-domain collision checks only.`,
-        );
-        return null;
+        throw this.createCustomDomainStorageUnavailableException();
       }
 
       throw error;
@@ -313,6 +320,7 @@ export class TalentCustomDomainService {
       });
     }
 
+    await this.ensureCustomDomainRegistryReady();
     await this.ensureBindingOwnerExists(
       tenantSchema,
       input.scopeType,
@@ -375,6 +383,7 @@ export class TalentCustomDomainService {
       return { customDomain: null, token: null, txtRecord: null };
     }
 
+    await this.ensureCustomDomainRegistryReady();
     const normalizedDomain = normalizeCustomDomain(customDomain);
     const [existingTalentId, existingBinding] = await Promise.all([
       this.talentCustomDomainRepository.findTalentIdByCustomDomain(
@@ -490,6 +499,7 @@ export class TalentCustomDomainService {
     };
 
     this.assertValidBindingInput(normalizedInput);
+    await this.ensureCustomDomainRegistryReady();
     await this.ensureBindingOwnerExists(
       tenantSchema,
       normalizedInput.ownerType,
@@ -538,6 +548,8 @@ export class TalentCustomDomainService {
       isActive?: boolean;
     },
   ): Promise<TalentCustomDomainBindingMutationResult> {
+    await this.ensureCustomDomainRegistryReady();
+
     let current: TalentCustomDomainBindingRecord | null;
     try {
       current = await this.talentCustomDomainRepository.findCustomDomainBindingById(
@@ -613,6 +625,8 @@ export class TalentCustomDomainService {
     tenantSchema: string,
     domainId: string,
   ): Promise<TalentCustomDomainVerificationResult> {
+    await this.ensureCustomDomainRegistryReady();
+
     let binding: TalentCustomDomainBindingRecord | null;
     try {
       binding = await this.talentCustomDomainRepository.findCustomDomainBindingById(
@@ -659,6 +673,8 @@ export class TalentCustomDomainService {
     tenantSchema: string,
     domainIds: string[],
   ): Promise<TalentCustomDomainSelectionResult> {
+    await this.ensureCustomDomainRegistryReady();
+
     const config = await this.getCustomDomainConfig(talentId, tenantSchema);
 
     if (!config) {

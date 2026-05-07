@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -13,7 +13,11 @@ import { TrustScoreService } from './trust-score.service';
 describe('PublicMarshmallowService', () => {
   let service: PublicMarshmallowService;
   let mockDatabaseService: Pick<DatabaseService, 'getPrisma'>;
-  let mockCaptchaService: Pick<CaptchaService, 'getTurnstileConfigStatus'>;
+  let mockCaptchaService: Pick<CaptchaService, 'getTurnstileConfigStatus' | 'shouldRequireCaptcha' | 'verifyTurnstile'>;
+  let mockRateLimitService: Pick<MarshmallowRateLimitService, 'checkRateLimit'>;
+  let mockProfanityFilter: Pick<ProfanityFilterService, 'filter'>;
+  let mockTechEventLog: Pick<TechEventLogService, 'log'>;
+  let mockTrustScoreService: Pick<TrustScoreService, 'recordContentResult'>;
   let mockPrisma: {
     $queryRawUnsafe: ReturnType<typeof vi.fn>;
     $executeRawUnsafe: ReturnType<typeof vi.fn>;
@@ -32,21 +36,87 @@ describe('PublicMarshmallowService', () => {
       getTurnstileConfigStatus: vi.fn().mockReturnValue({
         siteKeyConfigured: true,
         secretKeyConfigured: true,
+        providerReady: true,
+        runtimeBypass: false,
+        environment: 'staging',
         ready: true,
       }),
+      shouldRequireCaptcha: vi.fn().mockResolvedValue({ required: false }),
+      verifyTurnstile: vi.fn().mockResolvedValue(true),
+    };
+    mockRateLimitService = {
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
+    };
+    mockProfanityFilter = {
+      filter: vi.fn().mockResolvedValue({
+        action: 'allow',
+        filteredContent: null,
+        flags: [],
+        score: 100,
+      }),
+    };
+    mockTechEventLog = {
+      log: vi.fn().mockResolvedValue(undefined),
+    };
+    mockTrustScoreService = {
+      recordContentResult: vi.fn().mockResolvedValue(undefined),
     };
 
     service = new PublicMarshmallowService(
       mockDatabaseService as DatabaseService,
-      {} as ProfanityFilterService,
-      {} as MarshmallowRateLimitService,
+      mockProfanityFilter as ProfanityFilterService,
+      mockRateLimitService as MarshmallowRateLimitService,
       mockCaptchaService as CaptchaService,
       {} as MarshmallowReactionService,
-      {} as TechEventLogService,
-      {} as TrustScoreService,
+      mockTechEventLog as TechEventLogService,
+      mockTrustScoreService as TrustScoreService,
       { get: vi.fn() } as any,
     );
   });
+
+  function mockPublicSubmitLookup(configOverrides: Record<string, unknown> = {}) {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ schemaName: 'tenant_demo' }])
+      .mockResolvedValueOnce([
+        {
+          id: 'talent-1',
+          displayName: 'Demo Talent',
+          avatarUrl: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'config-1',
+          isEnabled: true,
+          title: 'Ask Demo',
+          welcomeText: 'Welcome',
+          placeholderText: 'Ask away',
+          thankYouText: 'Question received.',
+          allowAnonymous: true,
+          captchaMode: 'always',
+          moderationEnabled: false,
+          autoApprove: true,
+          profanityFilterEnabled: false,
+          externalBlocklistEnabled: false,
+          maxMessageLength: 500,
+          minMessageLength: 1,
+          rateLimitPerIp: 1,
+          rateLimitWindowHours: 1,
+          reactionsEnabled: false,
+          allowedReactions: [],
+          theme: {},
+          avatarUrl: null,
+          termsContentEn: null,
+          termsContentZh: null,
+          termsContentJa: null,
+          privacyContentEn: null,
+          privacyContentZh: null,
+          privacyContentJa: null,
+          ...configOverrides,
+        },
+      ])
+      .mockResolvedValueOnce([{ id: 'message-1', status: 'approved' }]);
+  }
 
   it('filters public config lookup by published talent lifecycle', async () => {
     mockPrisma.$queryRawUnsafe
@@ -107,11 +177,69 @@ describe('PublicMarshmallowService', () => {
       allowAnonymous: true,
       captchaMode: 'never',
       turnstile: {
+        environment: 'staging',
+        providerReady: true,
+        runtimeBypass: false,
         siteKeyConfigured: true,
         secretKeyConfigured: true,
         ready: true,
       },
     });
+  });
+
+  it('allows public submission without a Turnstile token when server-side runtime bypass is active', async () => {
+    mockPublicSubmitLookup();
+    (mockCaptchaService.shouldRequireCaptcha as ReturnType<typeof vi.fn>).mockResolvedValue({
+      required: false,
+      reason: 'runtime_bypass',
+    });
+
+    await expect(
+      service.submitMessage(
+        'demo',
+        {
+          content: 'Hello',
+          isAnonymous: true,
+          fingerprint: 'fp-test',
+        },
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' },
+      ),
+    ).resolves.toMatchObject({
+      id: 'message-1',
+      message: 'Question received.',
+    });
+    expect(mockCaptchaService.verifyTurnstile).not.toHaveBeenCalled();
+  });
+
+  it('fails closed server-side when CAPTCHA is required and provider config is incomplete', async () => {
+    mockPublicSubmitLookup();
+    (mockCaptchaService.shouldRequireCaptcha as ReturnType<typeof vi.fn>).mockResolvedValue({
+      required: true,
+      unavailable: true,
+      reason: 'turnstile_not_configured',
+    });
+
+    let caught: unknown;
+    try {
+      await service.submitMessage(
+        'demo',
+        {
+          content: 'Hello',
+          isAnonymous: true,
+          fingerprint: 'fp-test',
+        },
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' },
+      );
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ForbiddenException);
+    expect((caught as ForbiddenException).getResponse()).toMatchObject({
+      code: 'CAPTCHA_UNAVAILABLE',
+      message: 'Submission is temporarily unavailable. Please try again later.',
+    });
+    expect(mockCaptchaService.verifyTurnstile).not.toHaveBeenCalled();
   });
 
   it('requires enabled config and published talent when marking read via SSO', async () => {

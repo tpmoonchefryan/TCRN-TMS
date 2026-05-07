@@ -66,6 +66,7 @@ export class MarshmallowConfigApplicationService {
       config,
       stats: buildMarshmallowConfigStats(statsRow),
       turnstile: buildTurnstileConfigStatus({
+        nodeEnv: this.configService.get<string>('NODE_ENV'),
         siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY'),
         secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY'),
       }),
