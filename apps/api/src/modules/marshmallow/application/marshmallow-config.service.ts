@@ -15,6 +15,7 @@ import {
   buildMarshmallowConfigChanges,
   buildMarshmallowConfigResponse,
   buildMarshmallowConfigStats,
+  buildTurnstileConfigStatus,
   isMarshmallowEnabledByTalentSettings,
 } from '../domain/marshmallow-config.policy';
 import type { UpdateConfigDto } from '../dto/marshmallow.dto';
@@ -64,6 +65,10 @@ export class MarshmallowConfigApplicationService {
     return buildMarshmallowConfigResponse({
       config,
       stats: buildMarshmallowConfigStats(statsRow),
+      turnstile: buildTurnstileConfigStatus({
+        siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY'),
+        secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY'),
+      }),
       appUrl: this.configService.get<string>('APP_URL', 'http://localhost:3000'),
       tenantCode: tenantCode ?? tenantSchema,
       talentCode: talentRoute?.code ?? talentId,

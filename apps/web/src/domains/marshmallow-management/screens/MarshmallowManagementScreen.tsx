@@ -37,6 +37,7 @@ import {
   getMarshmallowActionAriaLabel,
   getMarshmallowExportStatusLabel,
   getMarshmallowMessageStatusLabel,
+  type MarshmallowManagementCopy,
   useMarshmallowManagementCopy,
 } from '@/domains/marshmallow-management/screens/marshmallow-management.copy';
 import {
@@ -200,6 +201,40 @@ function buildConfigDraft(config: MarshmallowConfigResponse): MarshmallowConfigD
     reactionsEnabled: config.reactionsEnabled,
     allowedReactions: config.allowedReactions.join(', '),
   };
+}
+
+type TurnstileStatusKind = 'not-required' | 'ready' | 'unavailable';
+
+function getTurnstileStatusKind(config: MarshmallowConfigResponse): TurnstileStatusKind {
+  if (config.captchaMode === 'never') {
+    return 'not-required';
+  }
+
+  return config.turnstile.ready ? 'ready' : 'unavailable';
+}
+
+function getTurnstileStatusLabel(kind: TurnstileStatusKind, copy: MarshmallowManagementCopy) {
+  if (kind === 'ready') {
+    return copy.config.turnstile.ready;
+  }
+
+  if (kind === 'not-required') {
+    return copy.config.turnstile.notRequired;
+  }
+
+  return copy.config.turnstile.unavailable;
+}
+
+function getTurnstileStatusHint(kind: TurnstileStatusKind, copy: MarshmallowManagementCopy) {
+  if (kind === 'ready') {
+    return copy.config.turnstile.readyHint;
+  }
+
+  if (kind === 'not-required') {
+    return copy.config.turnstile.notRequiredHint;
+  }
+
+  return copy.config.turnstile.unavailableHint;
 }
 
 function SummaryCard({
@@ -927,6 +962,9 @@ export function MarshmallowManagementScreen({
     ko: '다음',
     fr: 'Suivant',
   });
+  const turnstileStatusKind = getTurnstileStatusKind(config);
+  const turnstileStatusLabel = getTurnstileStatusLabel(turnstileStatusKind, copy);
+  const turnstileStatusHint = getTurnstileStatusHint(turnstileStatusKind, copy);
 
   return (
     <div className="space-y-6">
@@ -1020,7 +1058,7 @@ export function MarshmallowManagementScreen({
             <p className="mt-2 text-sm leading-6 text-indigo-900">{copy.config.publicRouteDescription}</p>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-3">
+          <div className="grid gap-4 xl:grid-cols-4">
             <SummaryCard label={copy.config.stats.versionLabel} value={String(config.version)} hint={copy.config.stats.versionHint} />
             <SummaryCard
               label={copy.config.stats.updatedAtLabel}
@@ -1031,6 +1069,11 @@ export function MarshmallowManagementScreen({
               label={copy.config.stats.mailboxUrlLabel}
               value={config.isEnabled ? copy.config.stats.mailboxUrlLive : copy.config.stats.mailboxUrlDisabled}
               hint={config.marshmallowUrl}
+            />
+            <SummaryCard
+              label={copy.config.turnstile.summaryLabel}
+              value={turnstileStatusLabel}
+              hint={turnstileStatusHint}
             />
           </div>
         </FormSection>
@@ -1376,6 +1419,33 @@ export function MarshmallowManagementScreen({
           <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4">
             <p className="text-sm font-semibold text-indigo-950">{copy.config.publicRouteTitle}</p>
             <p className="mt-2 text-sm leading-6 text-indigo-900">{copy.config.publicRouteDescription}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-950">{copy.config.turnstile.title}</p>
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.config.turnstile.description}</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+                {turnstileStatusLabel}
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.config.turnstile.siteKeyLabel}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  {config.turnstile.siteKeyConfigured ? copy.config.turnstile.configured : copy.config.turnstile.missing}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.config.turnstile.secretKeyLabel}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  {config.turnstile.secretKeyConfigured ? copy.config.turnstile.configured : copy.config.turnstile.missing}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-600">{turnstileStatusHint}</p>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-2">

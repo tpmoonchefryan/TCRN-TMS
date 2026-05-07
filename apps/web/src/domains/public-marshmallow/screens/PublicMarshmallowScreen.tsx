@@ -403,7 +403,10 @@ export function PublicMarshmallowScreen({
     [config, selectedLocale],
   );
   const requiresCaptchaWidget = config?.captchaMode !== 'never';
-  const cannotSubmitDueToMissingCaptcha = Boolean(config && requiresCaptchaWidget && !turnstileSiteKey);
+  const turnstileRuntimeReady = config?.turnstile?.ready ?? true;
+  const cannotSubmitDueToMissingCaptcha = Boolean(
+    config && requiresCaptchaWidget && (!turnstileSiteKey || !turnstileRuntimeReady),
+  );
 
   async function refreshMessages(options: { append?: boolean; nextCursor?: string | null; cacheBust?: string } = {}) {
     const result = await readPublicMarshmallowMessages(path, {
@@ -705,7 +708,7 @@ export function PublicMarshmallowScreen({
                   name="homepage"
                 />
 
-                {requiresCaptchaWidget && turnstileSiteKey ? (
+                {requiresCaptchaWidget && turnstileSiteKey && turnstileRuntimeReady ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-slate-700">{copy.publicMarshmallow.turnstileLabel}</p>
                     <TurnstileWidget

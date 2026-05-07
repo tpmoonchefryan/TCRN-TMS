@@ -2,6 +2,12 @@ import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/a
 
 export type PublicCaptchaMode = 'always' | 'never' | 'auto';
 
+export interface PublicTurnstileConfigStatus {
+  siteKeyConfigured: boolean;
+  secretKeyConfigured: boolean;
+  ready: boolean;
+}
+
 export interface PublicMarshmallowConfigResponse {
   talent: {
     displayName: string;
@@ -12,6 +18,7 @@ export interface PublicMarshmallowConfigResponse {
   placeholderText: string | null;
   allowAnonymous: boolean;
   captchaMode: PublicCaptchaMode;
+  turnstile?: PublicTurnstileConfigStatus;
   maxMessageLength: number;
   minMessageLength: number;
   reactionsEnabled: boolean;

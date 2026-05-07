@@ -10,6 +10,12 @@ export interface MarshmallowConfigStats {
   unreadCount: number;
 }
 
+export interface TurnstileConfigStatus {
+  siteKeyConfigured: boolean;
+  secretKeyConfigured: boolean;
+  ready: boolean;
+}
+
 export interface MarshmallowConfigResponse {
   id: string;
   talentId: string;
@@ -39,6 +45,7 @@ export interface MarshmallowConfigResponse {
   privacyContentZh: string | null;
   privacyContentJa: string | null;
   stats: MarshmallowConfigStats;
+  turnstile: TurnstileConfigStatus;
   marshmallowUrl: string;
   createdAt: string;
   updatedAt: string;

@@ -182,6 +182,170 @@ describe('PublicMarshmallowScreen', () => {
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
   });
 
+  it('disables public submission when Turnstile is required but runtime config is incomplete', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/config')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            talent: {
+              displayName: 'Aki Rosenthal',
+              avatarUrl: null,
+            },
+            title: 'Ask Aki',
+            welcomeText: 'Leave your next question here.',
+            placeholderText: 'Type your question',
+            allowAnonymous: true,
+            captchaMode: 'always',
+            turnstile: {
+              siteKeyConfigured: true,
+              secretKeyConfigured: false,
+              ready: false,
+            },
+            maxMessageLength: 500,
+            minMessageLength: 5,
+            reactionsEnabled: false,
+            allowedReactions: [],
+            theme: {},
+            terms: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+            privacy: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+          },
+        });
+      }
+
+      if (url.includes('/api/v1/public/marshmallow/aki-mailbox/messages')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [],
+            cursor: null,
+            hasMore: false,
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request: ${url}`);
+    });
+
+    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="site-key" />);
+
+    expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
+    expect(screen.getByText('This page requires Turnstile, but captcha is not configured. Submission is unavailable.')).toBeInTheDocument();
+    expect(screen.queryByText('Turnstile verification')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
+  });
+
+  it('renders the Turnstile widget path and submits the token when required config is ready', async () => {
+    const renderTurnstile = vi.fn((_: HTMLElement, options: { callback: (token: string) => void }) => {
+      options.callback('turnstile-token');
+      return 'widget-1';
+    });
+    vi.stubGlobal('turnstile', {
+      render: renderTurnstile,
+      reset: vi.fn(),
+      remove: vi.fn(),
+    });
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/config')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            talent: {
+              displayName: 'Aki Rosenthal',
+              avatarUrl: null,
+            },
+            title: 'Ask Aki',
+            welcomeText: 'Leave your next question here.',
+            placeholderText: 'Type your question',
+            allowAnonymous: true,
+            captchaMode: 'always',
+            turnstile: {
+              siteKeyConfigured: true,
+              secretKeyConfigured: true,
+              ready: true,
+            },
+            maxMessageLength: 500,
+            minMessageLength: 5,
+            reactionsEnabled: false,
+            allowedReactions: [],
+            theme: {},
+            terms: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+            privacy: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+          },
+        });
+      }
+
+      if (url.includes('/api/v1/public/marshmallow/aki-mailbox/messages')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [],
+            cursor: null,
+            hasMore: false,
+          },
+        });
+      }
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') && init?.method === 'POST') {
+        return jsonResponse({
+          success: true,
+          data: {
+            id: 'message-2',
+            status: 'pending',
+            message: 'Question received.',
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request: ${url}`);
+    });
+
+    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="site-key" />);
+
+    expect(await screen.findByText('Turnstile verification')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(renderTurnstile).toHaveBeenCalled();
+    });
+
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: {
+        value: 'Will there be a karaoke this weekend?',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    await waitFor(() => {
+      const submitCall = mockFetch.mock.calls.find(
+        (call) => String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit'),
+      );
+      expect(JSON.parse(String(submitCall?.[1]?.body))).toMatchObject({
+        turnstileToken: 'turnstile-token',
+      });
+    });
+  });
+
   it('shows the unavailable state when the public marshmallow page is not reachable', async () => {
     mockFetch.mockResolvedValueOnce(
       jsonResponse(

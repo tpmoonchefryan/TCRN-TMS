@@ -121,4 +121,34 @@ describe('CaptchaService', () => {
       expect(result.reason).toBe('multiple_fingerprints');
     });
   });
+
+  describe('Turnstile runtime config', () => {
+    it('returns non-secret readiness flags for Turnstile configuration', () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'site-key';
+        }
+
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return '';
+        }
+
+        return null;
+      });
+
+      expect(service.getTurnstileConfigStatus()).toEqual({
+        siteKeyConfigured: true,
+        secretKeyConfigured: false,
+        ready: false,
+      });
+    });
+
+    it('fails closed when Turnstile verification is requested without a secret key', async () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+      await expect(
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+      ).resolves.toBe(false);
+    });
+  });
 });

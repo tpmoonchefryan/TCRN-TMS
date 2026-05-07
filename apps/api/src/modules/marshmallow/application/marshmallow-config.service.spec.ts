@@ -26,7 +26,21 @@ describe('MarshmallowConfigApplicationService', () => {
   };
 
   const mockConfigService = {
-    get: vi.fn().mockReturnValue('http://localhost:3000'),
+    get: vi.fn((key: string, fallback?: string) => {
+      if (key === 'APP_URL') {
+        return fallback ?? 'http://localhost:3000';
+      }
+
+      if (key === 'TURNSTILE_SITE_KEY') {
+        return 'site-key';
+      }
+
+      if (key === 'TURNSTILE_SECRET_KEY') {
+        return 'secret-key';
+      }
+
+      return fallback;
+    }),
   };
 
   const mockConfig = {
@@ -64,6 +78,21 @@ describe('MarshmallowConfigApplicationService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfigService.get.mockImplementation((key: string, fallback?: string) => {
+      if (key === 'APP_URL') {
+        return fallback ?? 'http://localhost:3000';
+      }
+
+      if (key === 'TURNSTILE_SITE_KEY') {
+        return 'site-key';
+      }
+
+      if (key === 'TURNSTILE_SECRET_KEY') {
+        return 'secret-key';
+      }
+
+      return fallback;
+    });
     service = new MarshmallowConfigApplicationService(
       mockRepository as unknown as MarshmallowConfigRepository,
       mockChangeLogService as unknown as ChangeLogService,
@@ -101,7 +130,51 @@ describe('MarshmallowConfigApplicationService', () => {
         totalMessages: 0,
         pendingCount: 0,
       },
+      turnstile: {
+        siteKeyConfigured: true,
+        secretKeyConfigured: true,
+        ready: true,
+      },
       marshmallowUrl: 'http://localhost:3000/tenant-code/talent_123/marshmallow',
+    });
+  });
+
+  it('returns non-secret Turnstile runtime status with the config response', async () => {
+    mockConfigService.get.mockImplementation((key: string, fallback?: string) => {
+      if (key === 'APP_URL') {
+        return fallback ?? 'http://localhost:3000';
+      }
+
+      if (key === 'TURNSTILE_SITE_KEY') {
+        return 'site-key';
+      }
+
+      if (key === 'TURNSTILE_SECRET_KEY') {
+        return '';
+      }
+
+      return fallback;
+    });
+    mockRepository.findConfigByTalentId.mockResolvedValue(mockConfig);
+    mockRepository.findStatsByConfigId.mockResolvedValue({
+      total: 0n,
+      pending: 0n,
+      approved: 0n,
+      rejected: 0n,
+      unread: 0n,
+    });
+    mockRepository.findTenantCodeBySchema.mockResolvedValue('tenant-code');
+    mockRepository.findTalentRouteRecord.mockResolvedValue({
+      code: 'TALENT_123',
+      homepagePath: 'demo',
+    });
+
+    await expect(service.getOrCreate('talent-123', 'tenant_test')).resolves.toMatchObject({
+      turnstile: {
+        siteKeyConfigured: true,
+        secretKeyConfigured: false,
+        ready: false,
+      },
     });
   });
 

@@ -285,6 +285,7 @@ export class PublicMarshmallowService {
       placeholderText: config.placeholderText,
       allowAnonymous: config.allowAnonymous,
       captchaMode: config.captchaMode,
+      turnstile: this.captchaService.getTurnstileConfigStatus(),
       maxMessageLength: config.maxMessageLength,
       minMessageLength: config.minMessageLength,
       reactionsEnabled: config.reactionsEnabled,

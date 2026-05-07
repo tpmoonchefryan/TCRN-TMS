@@ -77,6 +77,11 @@ function buildConfig(version = 3) {
       rejectedCount: 2,
       unreadCount: 4,
     },
+    turnstile: {
+      siteKeyConfigured: true,
+      secretKeyConfigured: false,
+      ready: false,
+    },
     marshmallowUrl: 'https://app.example.com/m/aki-mailbox',
     createdAt: '2026-04-17T09:00:00.000Z',
     updatedAt: '2026-04-17T10:00:00.000Z',
@@ -391,8 +396,17 @@ describe('MarshmallowManagementScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Aki Mailbox')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Configure mailbox' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Configuration' }));
+    expect(await screen.findByText('Submission unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Configure mailbox' })[0]);
     expect(await screen.findByDisplayValue('Aki Mailbox')).toBeInTheDocument();
+    expect(screen.getByText('Turnstile runtime status')).toBeInTheDocument();
+    expect(screen.getByText('Site key')).toBeInTheDocument();
+    expect(screen.getByText('Secret key')).toBeInTheDocument();
+    expect(screen.getByText('Configured')).toBeInTheDocument();
+    expect(screen.getByText('Missing')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Title'), {
       target: { value: 'Updated Mailbox' },
@@ -408,8 +422,20 @@ describe('MarshmallowManagementScreen', () => {
         }),
       );
     });
+    const configPatchCall = mockRequest.mock.calls.find(
+      (call) =>
+        call[0] === '/api/v1/talents/talent-1/marshmallow/config' &&
+        call[1]?.method === 'PATCH',
+    );
+    expect(JSON.parse(String(configPatchCall?.[1]?.body))).not.toHaveProperty('turnstile');
 
     expect(await screen.findByText('Marshmallow configuration saved.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Configuration' }),
+      ).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Moderation Queue' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve message-1' }));
 

@@ -75,6 +75,16 @@ const MESSAGE_STATS_SCHEMA = {
   required: ['totalMessages', 'pendingCount', 'approvedCount', 'rejectedCount', 'unreadCount'],
 };
 
+const TURNSTILE_CONFIG_STATUS_SCHEMA = {
+  type: 'object',
+  properties: {
+    siteKeyConfigured: { type: 'boolean', example: true },
+    secretKeyConfigured: { type: 'boolean', example: true },
+    ready: { type: 'boolean', example: true },
+  },
+  required: ['siteKeyConfigured', 'secretKeyConfigured', 'ready'],
+};
+
 export const MARSHMALLOW_CONFIG_SCHEMA = {
   type: 'object',
   properties: {
@@ -121,6 +131,7 @@ export const MARSHMALLOW_CONFIG_SCHEMA = {
     privacyContentZh: { type: 'string', nullable: true, example: '我们仅保存审核所需元数据。' },
     privacyContentJa: { type: 'string', nullable: true, example: '審査に必要なメタデータのみ保存します。' },
     stats: MESSAGE_STATS_SCHEMA,
+    turnstile: TURNSTILE_CONFIG_STATUS_SCHEMA,
     marshmallowUrl: {
       type: 'string',
       example: 'https://app.example.com/m/aki-mailbox',
@@ -147,6 +158,7 @@ export const MARSHMALLOW_CONFIG_SCHEMA = {
     'allowedReactions',
     'theme',
     'stats',
+    'turnstile',
     'marshmallowUrl',
     'createdAt',
     'updatedAt',
@@ -189,6 +201,11 @@ export const MARSHMALLOW_CONFIG_SCHEMA = {
       approvedCount: 102,
       rejectedCount: 14,
       unreadCount: 9,
+    },
+    turnstile: {
+      siteKeyConfigured: true,
+      secretKeyConfigured: true,
+      ready: true,
     },
     marshmallowUrl: 'https://app.example.com/m/aki-mailbox',
     createdAt: '2026-04-13T12:00:00.000Z',
@@ -783,6 +800,8 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
     welcomeText: { type: 'string', nullable: true, example: 'Leave your message here.' },
     placeholderText: { type: 'string', nullable: true, example: 'Write your message...' },
     allowAnonymous: { type: 'boolean', example: true },
+    captchaMode: { type: 'string', example: 'auto' },
+    turnstile: TURNSTILE_CONFIG_STATUS_SCHEMA,
     maxMessageLength: { type: 'integer', example: 500 },
     minMessageLength: { type: 'integer', example: 1 },
     reactionsEnabled: { type: 'boolean', example: true },
@@ -816,6 +835,8 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
     'welcomeText',
     'placeholderText',
     'allowAnonymous',
+    'captchaMode',
+    'turnstile',
     'maxMessageLength',
     'minMessageLength',
     'reactionsEnabled',
@@ -833,6 +854,12 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
     welcomeText: 'Leave your message here.',
     placeholderText: 'Write your message...',
     allowAnonymous: true,
+    captchaMode: 'auto',
+    turnstile: {
+      siteKeyConfigured: true,
+      secretKeyConfigured: true,
+      ready: true,
+    },
     maxMessageLength: 500,
     minMessageLength: 1,
     reactionsEnabled: true,

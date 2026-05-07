@@ -74,6 +74,12 @@ export interface MarshmallowConfigStats {
   unreadCount: number;
 }
 
+export interface TurnstileConfigStatus {
+  siteKeyConfigured: boolean;
+  secretKeyConfigured: boolean;
+  ready: boolean;
+}
+
 export interface MarshmallowTalentRecord {
   id: string;
   code: string;
@@ -115,14 +121,29 @@ export const buildMarshmallowConfigStats = (
   };
 };
 
+export const buildTurnstileConfigStatus = (input: {
+  siteKey: string | null | undefined;
+  secretKey: string | null | undefined;
+}): TurnstileConfigStatus => {
+  const siteKeyConfigured = Boolean(input.siteKey?.trim());
+  const secretKeyConfigured = Boolean(input.secretKey?.trim());
+
+  return {
+    siteKeyConfigured,
+    secretKeyConfigured,
+    ready: siteKeyConfigured && secretKeyConfigured,
+  };
+};
+
 export const buildMarshmallowConfigResponse = (params: {
   config: MarshmallowConfigRecord;
   stats: MarshmallowConfigStats;
+  turnstile: TurnstileConfigStatus;
   appUrl: string;
   tenantCode: string;
   talentCode: string;
 }) => {
-  const { appUrl, config, stats, talentCode, tenantCode } = params;
+  const { appUrl, config, stats, talentCode, tenantCode, turnstile } = params;
 
   return {
     id: config.id,
@@ -153,6 +174,7 @@ export const buildMarshmallowConfigResponse = (params: {
     privacyContentZh: config.privacyContentZh,
     privacyContentJa: config.privacyContentJa,
     stats,
+    turnstile,
     marshmallowUrl: buildSharedMarshmallowUrl(appUrl, tenantCode, talentCode),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),

@@ -124,6 +124,8 @@ const visualQaFixture = {
   homepagePath: 'browser-visual-homepage',
   darkHomepagePath: 'browser-visual-homepage-dark',
   marshmallowPath: 'browser-visual-marshmallow',
+  marshmallowMissingCaptchaPath: 'browser-visual-marshmallow-missing-captcha',
+  marshmallowConfiguredCaptchaPath: 'browser-visual-marshmallow-configured-captcha',
   marshmallowTitle: 'Ask The Talent',
   welcomeText: 'Drop a thoughtful question.',
 };
@@ -306,7 +308,16 @@ async function mockPublicRuntimeApi(page: Page) {
       return;
     }
 
-    if (url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowPath}/config`) {
+    if (
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowPath}/config` ||
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowMissingCaptchaPath}/config` ||
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowConfiguredCaptchaPath}/config`
+    ) {
+      const isMissingCaptchaRoute =
+        url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowMissingCaptchaPath}/config`;
+      const isConfiguredCaptchaRoute =
+        url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowConfiguredCaptchaPath}/config`;
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -317,11 +328,20 @@ async function mockPublicRuntimeApi(page: Page) {
               displayName: visualQaFixture.displayName,
               avatarUrl: null,
             },
-            title: visualQaFixture.marshmallowTitle,
+            title: isMissingCaptchaRoute
+              ? 'Missing Turnstile Mailbox'
+              : isConfiguredCaptchaRoute
+                ? 'Configured Turnstile Mailbox'
+                : visualQaFixture.marshmallowTitle,
             welcomeText: visualQaFixture.welcomeText,
             placeholderText: 'Type your question here',
             allowAnonymous: true,
-            captchaMode: 'never',
+            captchaMode: isMissingCaptchaRoute || isConfiguredCaptchaRoute ? 'always' : 'never',
+            turnstile: {
+              siteKeyConfigured: !isMissingCaptchaRoute,
+              secretKeyConfigured: !isMissingCaptchaRoute,
+              ready: !isMissingCaptchaRoute,
+            },
             maxMessageLength: 500,
             minMessageLength: 5,
             reactionsEnabled: false,
@@ -335,7 +355,11 @@ async function mockPublicRuntimeApi(page: Page) {
       return;
     }
 
-    if (url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowPath}/messages`) {
+    if (
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowPath}/messages` ||
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowMissingCaptchaPath}/messages` ||
+      url.pathname === `/api/v1/public/marshmallow/${visualQaFixture.marshmallowConfiguredCaptchaPath}/messages`
+    ) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -559,5 +583,35 @@ test.describe('public runtime browser visual QA', () => {
     await expect(anonymousCheckbox).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(sendButton).toBeFocused();
+  });
+
+  test('public marshmallow disables submission when Turnstile config is missing', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/m/${visualQaFixture.marshmallowMissingCaptchaPath}`);
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Missing Turnstile Mailbox', level: 1 })).toBeVisible();
+    await expect(
+      page.getByText('This page requires Turnstile, but captcha is not configured. Submission is unavailable.')
+    ).toBeVisible();
+    await expect(page.getByText('Turnstile verification')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    await expectNoHorizontalOverflow(page, 'mobile marshmallow missing Turnstile config');
+  });
+
+  test('public marshmallow renders Turnstile when runtime config is ready', async ({ page }) => {
+    test.skip(!process.env.TURNSTILE_SITE_KEY, 'Requires TURNSTILE_SITE_KEY for the Next public env path.');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/m/${visualQaFixture.marshmallowConfiguredCaptchaPath}`);
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Configured Turnstile Mailbox', level: 1 })).toBeVisible();
+    await expect(page.getByText('Turnstile verification')).toBeVisible();
+    await expect(
+      page.getByText('This page requires Turnstile, but captcha is not configured. Submission is unavailable.')
+    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled();
+    await expectNoHorizontalOverflow(page, 'mobile marshmallow configured Turnstile path');
   });
 });

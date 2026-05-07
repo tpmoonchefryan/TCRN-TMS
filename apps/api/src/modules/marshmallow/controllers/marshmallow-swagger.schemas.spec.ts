@@ -24,4 +24,21 @@ describe('marshmallow swagger locale contracts', () => {
       expect(localizedSchema.required).not.toEqual([...SUPPORTED_UI_LOCALES]);
     }
   });
+
+  it('documents public captcha mode and non-secret Turnstile readiness', () => {
+    const schema = asObjectSchema(PUBLIC_MARSHMALLOW_CONFIG_SCHEMA);
+    const properties = schema.properties ?? {};
+    const turnstileSchema = asObjectSchema(properties.turnstile);
+
+    expect(properties.captchaMode).toBeDefined();
+    expect(properties.turnstile).toBeDefined();
+    expect(turnstileSchema.required).toEqual([
+      'siteKeyConfigured',
+      'secretKeyConfigured',
+      'ready',
+    ]);
+    expect(schema.required).toEqual(
+      expect.arrayContaining(['captchaMode', 'turnstile']),
+    );
+  });
 });

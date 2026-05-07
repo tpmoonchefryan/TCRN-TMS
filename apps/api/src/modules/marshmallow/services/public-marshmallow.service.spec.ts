@@ -13,6 +13,7 @@ import { TrustScoreService } from './trust-score.service';
 describe('PublicMarshmallowService', () => {
   let service: PublicMarshmallowService;
   let mockDatabaseService: Pick<DatabaseService, 'getPrisma'>;
+  let mockCaptchaService: Pick<CaptchaService, 'getTurnstileConfigStatus'>;
   let mockPrisma: {
     $queryRawUnsafe: ReturnType<typeof vi.fn>;
     $executeRawUnsafe: ReturnType<typeof vi.fn>;
@@ -27,12 +28,19 @@ describe('PublicMarshmallowService', () => {
     mockDatabaseService = {
       getPrisma: vi.fn().mockReturnValue(mockPrisma),
     };
+    mockCaptchaService = {
+      getTurnstileConfigStatus: vi.fn().mockReturnValue({
+        siteKeyConfigured: true,
+        secretKeyConfigured: true,
+        ready: true,
+      }),
+    };
 
     service = new PublicMarshmallowService(
       mockDatabaseService as DatabaseService,
       {} as ProfanityFilterService,
       {} as MarshmallowRateLimitService,
-      {} as CaptchaService,
+      mockCaptchaService as CaptchaService,
       {} as MarshmallowReactionService,
       {} as TechEventLogService,
       {} as TrustScoreService,
@@ -98,6 +106,11 @@ describe('PublicMarshmallowService', () => {
       title: 'Ask Demo',
       allowAnonymous: true,
       captchaMode: 'never',
+      turnstile: {
+        siteKeyConfigured: true,
+        secretKeyConfigured: true,
+        ready: true,
+      },
     });
   });
 

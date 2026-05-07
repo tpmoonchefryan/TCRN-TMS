@@ -47,6 +47,11 @@ describe('MarshmallowConfigService', () => {
       rejectedCount: 0,
       unreadCount: 0,
     },
+    turnstile: {
+      siteKeyConfigured: true,
+      secretKeyConfigured: true,
+      ready: true,
+    },
     marshmallowUrl: 'http://localhost:3000/m/test',
     version: 1,
     createdAt: new Date(),

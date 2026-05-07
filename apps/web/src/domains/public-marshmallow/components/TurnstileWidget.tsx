@@ -35,6 +35,7 @@ export function TurnstileWidget({
 }>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | number | null>(null);
+  const hasMountedResetEffectRef = useRef(false);
   const [scriptReady, setScriptReady] = useState(Boolean(typeof window !== 'undefined' && window.turnstile));
 
   useEffect(() => {
@@ -66,6 +67,11 @@ export function TurnstileWidget({
   }, [onTokenChange, scriptReady, siteKey, theme]);
 
   useEffect(() => {
+    if (!hasMountedResetEffectRef.current) {
+      hasMountedResetEffectRef.current = true;
+      return;
+    }
+
     if (widgetIdRef.current !== null && window.turnstile) {
       window.turnstile.reset(widgetIdRef.current);
       onTokenChange(null);

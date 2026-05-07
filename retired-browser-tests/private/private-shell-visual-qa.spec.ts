@@ -994,6 +994,11 @@ async function mockPrivateRuntimeApi(page: Page) {
             thankYouText: 'Thanks for your message.',
             allowAnonymous: true,
             captchaMode: 'auto',
+            turnstile: {
+              siteKeyConfigured: true,
+              secretKeyConfigured: false,
+              ready: false,
+            },
             moderationEnabled: true,
             autoApprove: false,
             profanityFilterEnabled: true,
@@ -2159,10 +2164,24 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
 
-    await page.getByRole('button', { name: 'Configure mailbox' }).click();
+    await page.getByRole('tab', { name: 'Configuration' }).click();
+    await expect(page.getByText('Turnstile', { exact: true })).toBeVisible();
+    await expect(page.getByText('Submission unavailable')).toBeVisible();
+    await expect(
+      page.getByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.')
+    ).toBeVisible();
+
+    await page
+      .locator('#marshmallow-panel-configuration')
+      .getByRole('button', { name: 'Configure mailbox' })
+      .click();
     const configDrawer = page.getByRole('dialog', { name: 'Configuration' });
     await expect(configDrawer).toBeVisible();
     await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
+    await expect(configDrawer.getByText('Turnstile runtime status')).toBeVisible();
+    await expect(configDrawer.getByText('Site key')).toBeVisible();
+    await expect(configDrawer.getByText('Secret key')).toBeVisible();
+    await expect(configDrawer.getByText('Missing', { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
     await expect(page).toHaveScreenshot('private-marshmallow-mobile-config-drawer.png', {
       animations: 'disabled',

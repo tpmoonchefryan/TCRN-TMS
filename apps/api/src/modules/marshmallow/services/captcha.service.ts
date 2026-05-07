@@ -4,6 +4,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '../../redis';
+import {
+  buildTurnstileConfigStatus,
+  type TurnstileConfigStatus,
+} from '../domain/marshmallow-config.policy';
 import { CaptchaMode } from '../dto/marshmallow.dto';
 import { TrustScoreService } from './trust-score.service';
 
@@ -48,6 +52,13 @@ export class CaptchaService {
   // =============================================================================
   // Core Methods
   // =============================================================================
+
+  getTurnstileConfigStatus(): TurnstileConfigStatus {
+    return buildTurnstileConfigStatus({
+      siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY'),
+      secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY'),
+    });
+  }
 
   /**
    * Determine if CAPTCHA is required
@@ -162,9 +173,9 @@ export class CaptchaService {
   async verifyTurnstile(token: string, ip: string, fingerprint?: string): Promise<boolean> {
     const secretKey = this.configService.get<string>('TURNSTILE_SECRET_KEY');
 
-    if (!secretKey) {
+    if (!secretKey?.trim()) {
       this.logger.warn('Turnstile secret key not configured');
-      return true; // Skip verification in dev
+      return false;
     }
 
     try {
