@@ -781,7 +781,7 @@ async function useLocaleOverride(page: Page, locale: string) {
 }
 
 async function mockPrivateRuntimeApi(page: Page) {
-  await page.route('**/api/v1/**', async (route) => {
+  await page.context().route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
 
     if (url.pathname === '/api/v1/organization/tree') {
@@ -1007,7 +1007,13 @@ async function mockPrivateRuntimeApi(page: Page) {
             talentId: 'talent-visual',
             isPublished: true,
             publishedVersion: null,
-            draftVersion: null,
+            draftVersion: {
+              id: 'draft-homepage-visual',
+              versionNumber: 3,
+              createdAt: '2026-05-06T04:00:00.000Z',
+              publishedAt: null,
+              publishedBy: null,
+            },
             customDomain,
             customDomainVerified: false,
             seoTitle: null,
@@ -1019,6 +1025,104 @@ async function mockPrivateRuntimeApi(page: Page) {
             createdAt: '2026-05-06T03:00:00.000Z',
             updatedAt: '2026-05-06T04:00:00.000Z',
             version: 2,
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/talents/talent-visual/homepage/versions/draft-homepage-visual') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'draft-homepage-visual',
+            versionNumber: 3,
+            status: 'draft',
+            contentPreview: 'ProfileCard, RichText, LinkButton',
+            componentCount: 3,
+            content: {
+              version: '1.0',
+              components: [
+                {
+                  id: 'profile-visual',
+                  type: 'ProfileCard',
+                  visible: true,
+                  order: 1,
+                  props: {
+                    displayName: 'Visual Talent',
+                    bio: 'Draft profile content for visual QA.',
+                    avatarUrl: '',
+                    avatarShape: 'circle',
+                    nameFontSize: 'large',
+                    bioMaxLines: 3,
+                  },
+                },
+                {
+                  id: 'richtext-visual',
+                  type: 'RichText',
+                  visible: true,
+                  order: 2,
+                  props: {
+                    contentHtml: '<p>Visual draft announcement.</p>',
+                    textAlign: 'left',
+                  },
+                },
+                {
+                  id: 'link-visual',
+                  type: 'LinkButton',
+                  visible: true,
+                  order: 3,
+                  props: {
+                    label: 'Visit official store',
+                    url: 'https://example.test/store',
+                    style: 'primary',
+                    fullWidth: false,
+                  },
+                },
+              ],
+            },
+            theme: {
+              preset: 'modern-minimal',
+              visualStyle: 'flat',
+              colors: {
+                primary: '#7B9EE0',
+                accent: '#E0A0C0',
+                background: '#FAFBFC',
+                text: '#333333',
+                textSecondary: '#666666',
+              },
+              background: {
+                type: 'gradient',
+                value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
+              },
+              card: {
+                background: '#FFFFFF',
+                borderRadius: 'large',
+                shadow: 'small',
+              },
+              typography: {
+                fontFamily: 'noto-sans',
+                headingWeight: 'medium',
+              },
+              animation: {
+                enableEntrance: true,
+                enableHover: true,
+                intensity: 'low',
+              },
+              decorations: {
+                type: 'none',
+              },
+            },
+            publishedAt: null,
+            publishedBy: null,
+            createdAt: '2026-05-06T04:00:00.000Z',
+            createdBy: {
+              id: 'user-visual',
+              username: 'visual.operator@example.test',
+            },
           },
         }),
       });
@@ -2395,6 +2499,88 @@ test.describe('private shell browser visual QA', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+
+  test('desktop homepage editor separates visual source editing from modal preview', async ({ page }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('Draft preview')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open live preview' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop homepage editor visual mode');
+
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const previewDrawer = page.getByRole('dialog', { name: 'Homepage preview' });
+    await expect(previewDrawer).toBeVisible();
+    await expect(previewDrawer.getByText('Preview viewport')).toBeVisible();
+    await expect(previewDrawer.locator('h1').filter({ hasText: 'Visual Talent' })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop homepage editor modal preview');
+    await expect(page).toHaveScreenshot('private-homepage-editor-desktop-preview-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await previewDrawer.getByRole('button', { name: 'Cancel' }).click();
+    await expect(previewDrawer).toBeHidden();
+
+    await page.getByRole('button', { name: 'Advanced source' }).click();
+    await expect(page.getByRole('button', { name: 'Advanced source' })).toHaveAttribute('aria-pressed', 'true');
+    const sourceEditor = page.getByLabel('Homepage source');
+    await expect(sourceEditor).toBeVisible();
+    const currentSource = await sourceEditor.inputValue();
+    await sourceEditor.fill(currentSource.replace('Visual Talent', 'Source Mode Talent'));
+    await expect(page.getByText('Source must contain')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop homepage editor source mode');
+    await expect(page).toHaveScreenshot('private-homepage-editor-desktop-source-mode.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect(previewDrawer).toBeVisible();
+    await expect(previewDrawer.locator('h1').filter({ hasText: 'Source Mode Talent' })).toBeVisible();
+  });
+
+  test('homepage editor live preview updates in a second page on mobile', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toBeVisible();
+    await page.getByRole('button', { name: 'Advanced source' }).click();
+    await expect(page.getByLabel('Homepage source')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile homepage editor source mode');
+    await expect(page).toHaveScreenshot('private-homepage-editor-mobile-source-mode.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Visual' }).click();
+    const popupPromise = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Open live preview' }).click();
+    const previewPage = await popupPromise;
+    await previewPage.setViewportSize({ width: 390, height: 844 });
+    await hideFrameworkDevTools(previewPage);
+    await expect(previewPage.getByRole('heading', { name: 'Live homepage preview' })).toBeVisible();
+    await expect(previewPage.locator('h1').filter({ hasText: 'Visual Talent' })).toBeVisible();
+    await expectNoHorizontalOverflow(previewPage, 'mobile homepage editor live preview page');
+
+    await page.getByRole('button', { name: 'Edit Profile card block' }).click();
+    await page.getByLabel('Display name').fill('Live Synced Talent');
+    await expect(previewPage.locator('h1').filter({ hasText: 'Live Synced Talent' })).toBeVisible();
+    await expect(previewPage).toHaveScreenshot('private-homepage-editor-mobile-live-preview.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+    await previewPage.close();
   });
 
   test('desktop tenant settings keeps defaults summary-first and drawer-scoped', async ({

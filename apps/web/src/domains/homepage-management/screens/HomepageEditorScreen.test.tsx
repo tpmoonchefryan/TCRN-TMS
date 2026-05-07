@@ -7,6 +7,7 @@ import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider
 
 const mockRequest = vi.fn();
 const mockPush = vi.fn();
+const mockWindowOpen = vi.fn();
 const mockSession = {
   tenantId: 'tenant-1',
   tenantName: 'Test Tenant',
@@ -77,6 +78,12 @@ describe('HomepageEditorScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockPush.mockReset();
+    mockWindowOpen.mockReset();
+    window.localStorage.clear();
+    Object.defineProperty(window, 'open', {
+      configurable: true,
+      value: mockWindowOpen,
+    });
     mockSession.user.preferredLanguage = 'en';
     setRuntimeLanguage('en-US');
   });
@@ -180,9 +187,13 @@ describe('HomepageEditorScreen', () => {
     expect(screen.queryByLabelText('Profile card JSON')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add block' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('button', { name: /Link button/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByText('Preview viewport')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
     expect(screen.getByText('Preview viewport')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
     expect(screen.getByRole('button', { name: 'Mobile' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Profile card block' }));
 
@@ -485,6 +496,297 @@ describe('HomepageEditorScreen', () => {
         2,
       ),
     );
+  });
+
+  it('lets advanced source edits update the draft save payload', async () => {
+    let savedPayload: unknown = null;
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/talents/talent-1/homepage') {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: false,
+          publishedVersion: null,
+          draftVersion: {
+            id: 'draft-1',
+            versionNumber: 1,
+            createdAt: '2026-04-17T12:00:00.000Z',
+            publishedAt: null,
+            publishedBy: null,
+          },
+          customDomain: null,
+          customDomainVerified: false,
+          seoTitle: null,
+          seoDescription: null,
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T09:00:00.000Z',
+          updatedAt: '2026-04-17T12:00:00.000Z',
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions/draft-1') {
+        return {
+          id: 'draft-1',
+          versionNumber: 1,
+          status: 'draft',
+          contentPreview: '',
+          componentCount: 0,
+          content: {
+            version: '1.0',
+            components: [],
+          },
+          theme: baseTheme,
+          publishedAt: null,
+          publishedBy: null,
+          createdAt: '2026-04-17T12:00:00.000Z',
+          createdBy: {
+            id: 'user-2',
+            username: 'editor',
+          },
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/draft' && init?.method === 'PATCH') {
+        savedPayload = JSON.parse((init.body as string) || '{}');
+
+        return {
+          draftVersion: {
+            id: 'draft-2',
+            versionNumber: 2,
+            contentHash: 'hash-source',
+            updatedAt: '2026-04-17T12:30:00.000Z',
+          },
+          isNewVersion: true,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced source' }));
+    expect(screen.getByRole('button', { name: 'Advanced source' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.change(screen.getByLabelText('Homepage source'), {
+      target: {
+        value: JSON.stringify({
+          content: {
+            version: '1.0',
+            components: [
+              {
+                id: 'source-rich-text',
+                type: 'RichText',
+                visible: true,
+                order: 1,
+                props: {
+                  contentHtml: '<p>Edited in source mode</p>',
+                  textAlign: 'center',
+                },
+              },
+            ],
+          },
+          theme: baseTheme,
+        }),
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Save draft/i }));
+
+    await waitFor(() => {
+      expect(savedPayload).toMatchObject({
+        content: {
+          components: [
+            expect.objectContaining({
+              id: 'source-rich-text',
+              type: 'RichText',
+              props: expect.objectContaining({
+                contentHtml: '<p>Edited in source mode</p>',
+                textAlign: 'center',
+              }),
+            }),
+          ],
+        },
+      });
+    });
+  });
+
+  it('blocks saving invalid advanced source and opens modal preview from source mode', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/homepage') {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: false,
+          publishedVersion: null,
+          draftVersion: {
+            id: 'draft-1',
+            versionNumber: 1,
+            createdAt: '2026-04-17T12:00:00.000Z',
+            publishedAt: null,
+            publishedBy: null,
+          },
+          customDomain: null,
+          customDomainVerified: false,
+          seoTitle: null,
+          seoDescription: null,
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T09:00:00.000Z',
+          updatedAt: '2026-04-17T12:00:00.000Z',
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions/draft-1') {
+        return {
+          id: 'draft-1',
+          versionNumber: 1,
+          status: 'draft',
+          contentPreview: '',
+          componentCount: 0,
+          content: {
+            version: '1.0',
+            components: [],
+          },
+          theme: baseTheme,
+          publishedAt: null,
+          publishedBy: null,
+          createdAt: '2026-04-17T12:00:00.000Z',
+          createdBy: {
+            id: 'user-2',
+            username: 'editor',
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced source' }));
+    fireEvent.change(screen.getByLabelText('Homepage source'), {
+      target: { value: '{}' },
+    });
+
+    expect(screen.getByText('Source must contain a content object with a components array and a theme object.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save draft/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+    expect(screen.getByRole('heading', { name: 'Homepage preview' })).toBeInTheDocument();
+    expect(screen.getByText('Preview viewport')).toBeInTheDocument();
+  });
+
+  it('writes live preview snapshots and opens the two-page preview route', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/homepage') {
+        return {
+          id: 'homepage-1',
+          talentId: 'talent-1',
+          isPublished: false,
+          publishedVersion: null,
+          draftVersion: {
+            id: 'draft-1',
+            versionNumber: 1,
+            createdAt: '2026-04-17T12:00:00.000Z',
+            publishedAt: null,
+            publishedBy: null,
+          },
+          customDomain: null,
+          customDomainVerified: false,
+          seoTitle: null,
+          seoDescription: null,
+          ogImageUrl: null,
+          analyticsId: null,
+          homepagePath: 'sora',
+          homepageUrl: 'https://app.example.com/p/sora',
+          createdAt: '2026-04-17T09:00:00.000Z',
+          updatedAt: '2026-04-17T12:00:00.000Z',
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/talents/talent-1/homepage/versions/draft-1') {
+        return {
+          id: 'draft-1',
+          versionNumber: 1,
+          status: 'draft',
+          contentPreview: 'ProfileCard',
+          componentCount: 1,
+          content: {
+            version: '1.0',
+            components: [
+              {
+                id: 'profile-1',
+                type: 'ProfileCard',
+                visible: true,
+                order: 1,
+                props: {
+                  displayName: 'Tokino Sora',
+                  bio: '',
+                  avatarUrl: '',
+                  avatarShape: 'circle',
+                },
+              },
+            ],
+          },
+          theme: baseTheme,
+          publishedAt: null,
+          publishedBy: null,
+          createdAt: '2026-04-17T12:00:00.000Z',
+          createdBy: {
+            id: 'user-2',
+            username: 'editor',
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
+
+    await waitFor(() => {
+      expect(mockWindowOpen).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/tenant\/tenant-1\/talent\/talent-1\/homepage\/editor\/preview\?previewId=tenant-1\.talent-1\./),
+        '_blank',
+      );
+    });
+
+    const previewKey = Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
+      .find((key) => key?.startsWith('tcrn.homepage.editor.preview.tenant-1.talent-1.'));
+
+    expect(previewKey).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Profile card block' }));
+    fireEvent.change(screen.getByLabelText('Display name'), {
+      target: { value: 'Live Preview Sora' },
+    });
+
+    await waitFor(() => {
+      const snapshot = JSON.parse(window.localStorage.getItem(previewKey || '') || '{}') as {
+        hero?: { displayName?: string };
+      };
+
+      expect(snapshot.hero?.displayName).toBe('Live Preview Sora');
+    });
   });
 
   it('hydrates from the published version when no draft exists yet', async () => {
@@ -849,7 +1151,8 @@ describe('HomepageEditorScreen', () => {
     expect(await screen.findByRole('heading', { name: '主页编辑器' })).toBeInTheDocument();
     expect(screen.getByText('组件目录')).toBeInTheDocument();
     expect(screen.getByText('草稿区块')).toBeInTheDocument();
-    expect(screen.getByText('草稿预览')).toBeInTheDocument();
+    expect(screen.getByText('编辑模式')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '预览' })).toBeInTheDocument();
     expect(screen.getByText('已全部保存')).toBeInTheDocument();
   });
 });

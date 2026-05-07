@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   ArrowUp,
   Bold,
+  Code2,
+  ExternalLink,
   Eye,
   EyeOff,
   Globe2,
@@ -36,6 +38,12 @@ import {
   type HomepageEditorCopy,
   useHomepageEditorCopy,
 } from '@/domains/homepage-management/screens/homepage-editor.copy';
+import {
+  buildHomepageEditorPreviewPath,
+  createHomepageEditorPreviewId,
+  type HomepageEditorPreviewHero,
+  writeHomepageEditorPreviewSnapshot,
+} from '@/domains/homepage-management/screens/homepage-editor-preview-storage';
 import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import { ApiRequestError } from '@/platform/http/api';
 import {
@@ -43,6 +51,8 @@ import {
 } from '@/platform/routing/workspace-paths';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
+  ActionDrawer,
+  ActionDrawerFooter,
   AsyncSubmitButton,
   ConfirmActionDialog,
   FormSection,
@@ -50,6 +60,7 @@ import {
   StateView,
 } from '@/platform/ui';
 
+type AuthoringMode = 'source' | 'visual';
 type ComponentCategory = 'content' | 'core' | 'interactive' | 'layout' | 'media';
 type SourceMode = 'draft' | 'empty' | 'published';
 type PreviewViewport = 'desktop' | 'tablet' | 'mobile';
@@ -84,6 +95,11 @@ interface EditorStatePayload {
 interface NoticeState {
   tone: 'error' | 'success';
   message: string;
+}
+
+interface HomepageSourceDocument {
+  content: HomepageDraftContent;
+  theme: ThemeConfig;
 }
 
 interface LeaveGuardState {
@@ -307,6 +323,67 @@ function normalizeDraftContent(content: HomepageDraftContent | null | undefined)
   };
 }
 
+function buildHomepageSourceDocument(
+  content: HomepageDraftContent,
+  theme: ThemeConfig,
+): HomepageSourceDocument {
+  return {
+    content,
+    theme,
+  };
+}
+
+function parseHomepageSourceDocument(
+  input: string,
+): { ok: true; value: HomepageSourceDocument } | { ok: false; reason: 'invalidJson' | 'sourceDocumentRequired' } {
+  try {
+    const value = JSON.parse(input) as unknown;
+
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return { ok: false, reason: 'sourceDocumentRequired' };
+    }
+
+    const record = value as Record<string, unknown>;
+    const contentRecord = asRecord(record.content);
+    const themeRecord = asRecord(record.theme);
+    const sourceComponents = contentRecord.components;
+
+    if (!Array.isArray(sourceComponents) || Object.keys(themeRecord).length === 0) {
+      return { ok: false, reason: 'sourceDocumentRequired' };
+    }
+
+    const components = sourceComponents.map((component, index) => {
+      const componentRecord = asRecord(component);
+      const type = asString(componentRecord.type).trim();
+
+      if (!type) {
+        throw new Error('component type required');
+      }
+
+      return {
+        id: asString(componentRecord.id, `source-component-${index + 1}`),
+        type,
+        props: asRecord(componentRecord.props),
+        order: asNumber(componentRecord.order, index + 1),
+        visible: asBoolean(componentRecord.visible, true),
+      } satisfies HomepageDraftComponentRecord;
+    });
+
+    return {
+      ok: true,
+      value: {
+        content: normalizeDraftContent({
+          version: asString(contentRecord.version, '1.0'),
+          components,
+        }),
+        theme: normalizeTheme(themeRecord as unknown as ThemeConfig),
+      },
+    };
+  } catch {
+    return { ok: false, reason: 'invalidJson' };
+  }
+}
+
 function createComponentId() {
   if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
     return globalThis.crypto.randomUUID();
@@ -393,7 +470,10 @@ function getCatalogEntryCopy(copy: HomepageEditorCopy, type: string) {
   return copy.catalog.entries[type] || { description: type, label: type };
 }
 
-function buildPreviewHero(homepage: HomepageResponse | null, content: HomepageDraftContent) {
+function buildPreviewHero(
+  homepage: HomepageResponse | null,
+  content: HomepageDraftContent,
+): HomepageEditorPreviewHero {
   const profileCard = content.components.find((component) => component.type === 'ProfileCard');
   const profileProps =
     profileCard && profileCard.props && typeof profileCard.props === 'object'
@@ -515,6 +595,125 @@ function SummaryCard({
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
+    </div>
+  );
+}
+
+function AuthoringModeSelector({
+  copy,
+  mode,
+  onModeChange,
+}: Readonly<{
+  copy: HomepageEditorCopy;
+  mode: AuthoringMode;
+  onModeChange: (mode: AuthoringMode) => void;
+}>) {
+  return (
+    <GlassSurface className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-slate-900">{copy.modes.title}</p>
+          <p className="text-xs leading-5 text-slate-500">
+            {mode === 'visual' ? copy.modes.visualDescription : copy.modes.sourceDescription}
+          </p>
+        </div>
+        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
+          {(['visual', 'source'] as const).map((nextMode) => {
+            const isActive = mode === nextMode;
+            const label = nextMode === 'visual' ? copy.modes.visual : copy.modes.source;
+            const Icon = nextMode === 'visual' ? Eye : Code2;
+
+            return (
+              <button
+                key={nextMode}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onModeChange(nextMode)}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  isActive
+                    ? 'bg-slate-950 text-white'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </GlassSurface>
+  );
+}
+
+function PreviewViewportControls({
+  copy,
+  previewViewport,
+  onPreviewViewportChange,
+}: Readonly<{
+  copy: HomepageEditorCopy;
+  previewViewport: PreviewViewport;
+  onPreviewViewportChange: (viewport: PreviewViewport) => void;
+}>) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-slate-900">{copy.sections.previewViewportLabel}</p>
+        <p className="text-xs leading-5 text-slate-500">{copy.sections.previewViewportHint}</p>
+      </div>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={copy.sections.previewViewportLabel}>
+        {(['desktop', 'tablet', 'mobile'] as const).map((viewport) => {
+          const isActive = previewViewport === viewport;
+          const label = viewport === 'desktop'
+            ? copy.sections.previewViewportDesktop
+            : viewport === 'tablet'
+              ? copy.sections.previewViewportTablet
+              : copy.sections.previewViewportMobile;
+
+          return (
+            <button
+              key={viewport}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => onPreviewViewportChange(viewport)}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isActive
+                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function HomepagePreviewFrame({
+  content,
+  hero,
+  homepage,
+  previewViewport,
+  theme,
+}: Readonly<{
+  content: HomepageDraftContent;
+  hero: HomepageEditorPreviewHero;
+  homepage: HomepageResponse;
+  previewViewport: PreviewViewport;
+  theme: ThemeConfig;
+}>) {
+  return (
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <div className={`mx-auto transition-[max-width] duration-200 ${PREVIEW_VIEWPORT_CLASSES[previewViewport]}`}>
+        <PublicHomepageRenderer
+          content={content}
+          theme={theme}
+          updatedAt={homepage.updatedAt}
+          hero={hero}
+        />
+      </div>
     </div>
   );
 }
@@ -988,10 +1187,15 @@ export function HomepageEditorScreen({
   const [themeError, setThemeError] = useState<string | null>(null);
   const [componentJsonMap, setComponentJsonMap] = useState<Record<string, string>>({});
   const [componentErrors, setComponentErrors] = useState<Record<string, string>>({});
+  const [authoringMode, setAuthoringMode] = useState<AuthoringMode>('visual');
+  const [sourceJson, setSourceJson] = useState(asPrettyJson(buildHomepageSourceDocument(EMPTY_HOMEPAGE_CONTENT, normalizeTheme(DEFAULT_THEME))));
+  const [sourceError, setSourceError] = useState<string | null>(null);
   const [activeComponentEditorId, setActiveComponentEditorId] = useState<string | null>(null);
   const [advancedJsonOpenMap, setAdvancedJsonOpenMap] = useState<Record<string, boolean>>({});
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [livePreviewId, setLivePreviewId] = useState<string | null>(null);
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
   const [sourceVersion, setSourceVersion] = useState<{ id: string; versionNumber: number } | null>(null);
@@ -1023,11 +1227,16 @@ export function HomepageEditorScreen({
         setTheme(nextState.theme);
         setThemeJson(asPrettyJson(nextState.theme));
         setThemeError(null);
+        setSourceJson(asPrettyJson(buildHomepageSourceDocument(nextState.content, nextState.theme)));
+        setSourceError(null);
         setComponentJsonMap(buildComponentTextMap(nextState.content));
         setComponentErrors({});
+        setAuthoringMode('visual');
         setActiveComponentEditorId(null);
         setAdvancedJsonOpenMap({});
         setIsCatalogOpen(false);
+        setIsPreviewOpen(false);
+        setLivePreviewId(null);
         setIsThemeEditorOpen(false);
         setSourceMode(nextState.sourceMode);
         setSourceVersion(nextState.sourceVersion);
@@ -1051,7 +1260,7 @@ export function HomepageEditorScreen({
   }, [request, talentId]);
 
   const hasInvalidJson =
-    !!themeError || Object.values(componentErrors).some((message) => Boolean(message));
+    !!themeError || !!sourceError || Object.values(componentErrors).some((message) => Boolean(message));
   const hasUnsavedChanges =
     buildEditorSignature({
       content,
@@ -1060,6 +1269,29 @@ export function HomepageEditorScreen({
       componentJsonMap,
     }) !== baselineSignature;
   const previewHero = useMemo(() => buildPreviewHero(homepage, content), [content, homepage]);
+
+  useEffect(() => {
+    if (!sourceError) {
+      setSourceJson(asPrettyJson(buildHomepageSourceDocument(content, theme)));
+    }
+  }, [content, sourceError, theme]);
+
+  useEffect(() => {
+    if (!homepage || !livePreviewId) {
+      return;
+    }
+
+    writeHomepageEditorPreviewSnapshot(livePreviewId, {
+      schemaVersion: 1,
+      tenantId,
+      talentId,
+      homepageUrl: homepage.homepageUrl,
+      updatedAt: homepage.updatedAt,
+      content,
+      theme,
+      hero: previewHero,
+    });
+  }, [content, homepage, livePreviewId, previewHero, talentId, tenantId, theme]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -1224,6 +1456,62 @@ export function HomepageEditorScreen({
     setTheme(normalizeTheme(parsed.value as unknown as ThemeConfig));
   }
 
+  function handleSourceJsonChange(nextValue: string) {
+    setSourceJson(nextValue);
+
+    const parsed = parseHomepageSourceDocument(nextValue);
+
+    if (!parsed.ok) {
+      setSourceError(copy.state[parsed.reason]);
+      return;
+    }
+
+    setSourceError(null);
+    setContent(parsed.value.content);
+    setTheme(parsed.value.theme);
+    setThemeJson(asPrettyJson(parsed.value.theme));
+    setThemeError(null);
+    setComponentJsonMap(buildComponentTextMap(parsed.value.content));
+    setComponentErrors({});
+    setAdvancedJsonOpenMap({});
+  }
+
+  function handleAuthoringModeChange(nextMode: AuthoringMode) {
+    if (nextMode === 'visual' && sourceError) {
+      setSourceError(null);
+      setSourceJson(asPrettyJson(buildHomepageSourceDocument(content, theme)));
+    }
+
+    if (nextMode === 'source') {
+      setSourceJson(asPrettyJson(buildHomepageSourceDocument(content, theme)));
+      setSourceError(null);
+    }
+
+    setAuthoringMode(nextMode);
+  }
+
+  function handleOpenLivePreview() {
+    if (!homepage) {
+      return;
+    }
+
+    const previewId = livePreviewId || createHomepageEditorPreviewId(tenantId, talentId);
+    const previewPath = buildHomepageEditorPreviewPath(tenantId, talentId, previewId);
+
+    writeHomepageEditorPreviewSnapshot(previewId, {
+      schemaVersion: 1,
+      tenantId,
+      talentId,
+      homepageUrl: homepage.homepageUrl,
+      updatedAt: homepage.updatedAt,
+      content,
+      theme,
+      hero: previewHero,
+    });
+    setLivePreviewId(previewId);
+    window.open(previewPath, '_blank');
+  }
+
   function requestLeave(href: string, label: string) {
     if (!hasUnsavedChanges) {
       router.push(href);
@@ -1263,6 +1551,8 @@ export function HomepageEditorScreen({
       setTheme(nextState.theme);
       setThemeJson(asPrettyJson(nextState.theme));
       setThemeError(null);
+      setSourceJson(asPrettyJson(buildHomepageSourceDocument(nextState.content, nextState.theme)));
+      setSourceError(null);
       setComponentJsonMap(buildComponentTextMap(nextState.content));
       setComponentErrors({});
       setAdvancedJsonOpenMap({});
@@ -1360,6 +1650,22 @@ export function HomepageEditorScreen({
             >
               {hasUnsavedChanges ? copy.actions.unsavedChanges : copy.actions.allChangesSaved}
             </div>
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <Eye className="h-4 w-4" />
+              {copy.actions.previewDraft}
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenLivePreview}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {copy.actions.openLivePreview}
+            </button>
             <AsyncSubmitButton
               type="button"
               isPending={isSaving}
@@ -1400,7 +1706,9 @@ export function HomepageEditorScreen({
 
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <AuthoringModeSelector copy={copy} mode={authoringMode} onModeChange={handleAuthoringModeChange} />
+
+      {authoringMode === 'visual' ? (
         <div className="space-y-6">
           <GlassSurface className="p-6">
             <FormSection
@@ -1615,61 +1923,82 @@ export function HomepageEditorScreen({
             </FormSection>
           </GlassSurface>
         </div>
+      ) : (
+        <GlassSurface className="p-6">
+          <FormSection
+            title={copy.sections.sourceTitle}
+            description={copy.sections.sourceDescription}
+          >
+            <div className="space-y-3">
+              <label htmlFor="homepage-source-editor" className="text-sm font-medium text-slate-800">
+                {copy.sections.sourceJsonLabel}
+              </label>
+              <textarea
+                id="homepage-source-editor"
+                name="homepage-source"
+                value={sourceJson}
+                onChange={(event) => handleSourceJsonChange(event.target.value)}
+                rows={24}
+                className="min-h-[560px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                aria-invalid={sourceError ? 'true' : 'false'}
+                spellCheck={false}
+              />
+              {sourceError ? (
+                <p className="text-sm font-medium text-rose-700">{sourceError}</p>
+              ) : (
+                <p className="text-xs leading-5 text-slate-500">{copy.sections.sourceJsonHint}</p>
+              )}
+            </div>
+          </FormSection>
+        </GlassSurface>
+      )}
 
-        <div className="space-y-6">
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.previewTitle}
-              description={copy.sections.previewDescription}
-            >
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-900">{copy.sections.previewViewportLabel}</p>
-                    <p className="text-xs leading-5 text-slate-500">{copy.sections.previewViewportHint}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2" role="group" aria-label={copy.sections.previewViewportLabel}>
-                    {(['desktop', 'tablet', 'mobile'] as const).map((viewport) => {
-                      const isActive = previewViewport === viewport;
-                      const label = viewport === 'desktop'
-                        ? copy.sections.previewViewportDesktop
-                        : viewport === 'tablet'
-                          ? copy.sections.previewViewportTablet
-                          : copy.sections.previewViewportMobile;
-
-                      return (
-                        <button
-                          key={viewport}
-                          type="button"
-                          aria-pressed={isActive}
-                          onClick={() => setPreviewViewport(viewport)}
-                          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                            isActive
-                              ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className={`mx-auto transition-[max-width] duration-200 ${PREVIEW_VIEWPORT_CLASSES[previewViewport]}`}>
-                    <PublicHomepageRenderer
-                      content={content}
-                      theme={theme}
-                      updatedAt={homepage.updatedAt}
-                      hero={previewHero}
-                    />
-                  </div>
-                </div>
-              </div>
-            </FormSection>
-          </GlassSurface>
+      <ActionDrawer
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        title={copy.preview.drawerTitle}
+        description={copy.preview.drawerDescription}
+        closeButtonAriaLabel={copy.preview.closeLabel}
+        size="full"
+        footer={(
+          <ActionDrawerFooter
+            secondary={(
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                {copy.dialogs.leaveCancel}
+              </button>
+            )}
+            primary={(
+              <button
+                type="button"
+                onClick={handleOpenLivePreview}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {copy.actions.openLivePreview}
+              </button>
+            )}
+          />
+        )}
+      >
+        <div className="space-y-4">
+          <PreviewViewportControls
+            copy={copy}
+            previewViewport={previewViewport}
+            onPreviewViewportChange={setPreviewViewport}
+          />
+          <HomepagePreviewFrame
+            content={content}
+            hero={previewHero}
+            homepage={homepage}
+            previewViewport={previewViewport}
+            theme={theme}
+          />
         </div>
-      </div>
+      </ActionDrawer>
 
       <ConfirmActionDialog
         open={leaveGuardState !== null}

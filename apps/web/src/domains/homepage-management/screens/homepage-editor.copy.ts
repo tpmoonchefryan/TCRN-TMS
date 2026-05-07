@@ -13,6 +13,7 @@ export interface HomepageEditorCopy {
     loadError: string;
     loading: string;
     saveError: string;
+    sourceDocumentRequired: string;
     unavailableTitle: string;
   };
   header: {
@@ -23,10 +24,19 @@ export interface HomepageEditorCopy {
   actions: {
     allChangesSaved: string;
     backToManagement: string;
+    openLivePreview: string;
+    previewDraft: string;
     routingSettings: string;
     saveDraft: string;
     savingDraft: string;
     unsavedChanges: string;
+  };
+  modes: {
+    source: string;
+    sourceDescription: string;
+    title: string;
+    visual: string;
+    visualDescription: string;
   };
   summary: {
     componentsHint: string;
@@ -64,10 +74,24 @@ export interface HomepageEditorCopy {
     previewViewportTablet: string;
     editThemeJson: string;
     hideThemeJson: string;
+    sourceDescription: string;
+    sourceJsonHint: string;
+    sourceJsonLabel: string;
+    sourceTitle: string;
     themeDescription: string;
     themeJsonHint: string;
     themeJsonLabel: string;
     themeTitle: string;
+  };
+  preview: {
+    closeLabel: string;
+    drawerDescription: string;
+    drawerTitle: string;
+    liveBadge: string;
+    liveDescription: string;
+    liveTitle: string;
+    liveUnavailableDescription: string;
+    liveUnavailableTitle: string;
   };
   catalog: {
     add: string;
@@ -147,6 +171,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       loadError: 'Failed to load the homepage editor.',
       loading: 'Loading homepage editor…',
       saveError: 'Failed to save the homepage draft.',
+      sourceDocumentRequired: 'Source must contain a content object with a components array and a theme object.',
       unavailableTitle: 'Homepage editor unavailable',
     },
     header: {
@@ -157,10 +182,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: 'All changes saved',
       backToManagement: 'Back to homepage management',
+      openLivePreview: 'Open live preview',
+      previewDraft: 'Preview',
       routingSettings: 'Public access settings',
       saveDraft: 'Save draft',
       savingDraft: 'Saving draft…',
       unsavedChanges: 'Unsaved changes',
+    },
+    modes: {
+      source: 'Advanced source',
+      sourceDescription: 'Edit the safe homepage source document directly.',
+      title: 'Authoring mode',
+      visual: 'Visual',
+      visualDescription: 'Assemble the homepage from structured low-code blocks.',
     },
     summary: {
       componentsHint: 'Total homepage blocks currently included in this draft.',
@@ -198,10 +232,24 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportTablet: 'Tablet',
       editThemeJson: 'Edit theme JSON',
       hideThemeJson: 'Hide theme JSON',
+      sourceDescription: 'Edit the full draft source document. The preview updates after the document parses and matches the safe content/theme contract.',
+      sourceJsonHint: 'This source edits the saved homepage content and theme. Scripts, event handlers, and unsafe links are still removed by the public renderer sanitizer.',
+      sourceJsonLabel: 'Homepage source',
+      sourceTitle: 'Advanced source',
       themeDescription: 'Theme JSON is an advanced editor for visual tokens. Public access settings are managed separately.',
       themeJsonHint: 'Open the advanced editor only when you need to change theme JSON. The preview uses the most recent valid theme JSON.',
       themeJsonLabel: 'Theme JSON',
       themeTitle: 'Theme',
+    },
+    preview: {
+      closeLabel: 'Close homepage preview',
+      drawerDescription: 'Review the current draft without squeezing the editor and preview into the same work area.',
+      drawerTitle: 'Homepage preview',
+      liveBadge: 'Live preview',
+      liveDescription: 'This page listens for draft source updates from the editor tab on the same browser.',
+      liveTitle: 'Live homepage preview',
+      liveUnavailableDescription: 'Open live preview from the Homepage editor again so this page can load the latest local preview source.',
+      liveUnavailableTitle: 'Live preview unavailable',
     },
     catalog: {
       add: 'Add',
@@ -362,6 +410,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       loadError: '加载主页编辑器失败。',
       loading: '正在加载主页编辑器…',
       saveError: '保存主页草稿失败。',
+      sourceDocumentRequired: '源码必须包含 content 对象、components 数组和 theme 对象。',
       unavailableTitle: '主页编辑器不可用',
     },
     header: {
@@ -372,10 +421,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: '已全部保存',
       backToManagement: '返回主页管理',
+      openLivePreview: '打开实时预览',
+      previewDraft: '预览',
       routingSettings: '公开访问设置',
       saveDraft: '保存草稿',
       savingDraft: '保存中…',
       unsavedChanges: '有未保存更改',
+    },
+    modes: {
+      source: '进阶源码',
+      sourceDescription: '直接编辑安全的主页源码文档。',
+      title: '编辑模式',
+      visual: '可视化',
+      visualDescription: '用结构化低代码区块搭建主页。',
     },
     summary: {
       componentsHint: '当前草稿中包含的主页区块总数。',
@@ -413,10 +471,24 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportTablet: '平板',
       editThemeJson: '编辑主题 JSON',
       hideThemeJson: '收起主题 JSON',
+      sourceDescription: '编辑完整草稿源码文档。文档解析成功并符合安全 content/theme 合同后，预览会同步更新。',
+      sourceJsonHint: '这里会修改已保存的主页内容与主题。脚本、事件处理器和不安全链接仍会被公开渲染器清理。',
+      sourceJsonLabel: '主页源码',
+      sourceTitle: '进阶源码',
       themeDescription: '主题 JSON 是视觉 token 的高级编辑入口。公开访问设置会在单独页面管理。',
       themeJsonHint: '仅在需要修改主题 JSON 时打开高级编辑器。预览会使用最近一次解析成功的主题 JSON。',
       themeJsonLabel: '主题 JSON',
       themeTitle: '主题',
+    },
+    preview: {
+      closeLabel: '关闭主页预览',
+      drawerDescription: '在弹出的预览区检查当前草稿，不再把编辑区和预览区挤在同一个工作栏里。',
+      drawerTitle: '主页预览',
+      liveBadge: '实时预览',
+      liveDescription: '该页面会监听同一浏览器中编辑页写入的草稿源码更新。',
+      liveTitle: '实时主页预览',
+      liveUnavailableDescription: '请从主页编辑器重新打开实时预览，以加载最新本地预览源码。',
+      liveUnavailableTitle: '实时预览不可用',
     },
     catalog: {
       add: '添加',
@@ -577,6 +649,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       loadError: 'ホームページ編集画面の読み込みに失敗しました。',
       loading: 'ホームページ編集画面を読み込み中…',
       saveError: 'ホームページ下書きの保存に失敗しました。',
+      sourceDocumentRequired: 'ソースには content オブジェクト、components 配列、theme オブジェクトが必要です。',
       unavailableTitle: 'ホームページ編集画面を開けません',
     },
     header: {
@@ -587,10 +660,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: 'すべて保存済み',
       backToManagement: 'ホームページ管理へ戻る',
+      openLivePreview: 'ライブプレビューを開く',
+      previewDraft: 'プレビュー',
       routingSettings: '公開アクセス設定',
       saveDraft: '下書きを保存',
       savingDraft: '保存中…',
       unsavedChanges: '未保存の変更あり',
+    },
+    modes: {
+      source: '高度なソース',
+      sourceDescription: '安全なホームページソース文書を直接編集します。',
+      title: '編集モード',
+      visual: 'ビジュアル',
+      visualDescription: '構造化されたローコードブロックでホームページを組み立てます。',
     },
     summary: {
       componentsHint: '現在の下書きに含まれるホームページブロック数です。',
@@ -628,10 +710,24 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportTablet: 'タブレット',
       editThemeJson: 'テーマ JSON を編集',
       hideThemeJson: 'テーマ JSON を閉じる',
+      sourceDescription: '下書き全体のソース文書を編集します。文書が解析でき、安全な content/theme 契約に一致するとプレビューへ反映されます。',
+      sourceJsonHint: 'このソースは保存されるホームページ内容とテーマを編集します。スクリプト、イベントハンドラ、安全でないリンクは公開レンダラーで引き続き除去されます。',
+      sourceJsonLabel: 'ホームページソース',
+      sourceTitle: '高度なソース',
       themeDescription: 'テーマ JSON はビジュアル token 用の高度な編集入口です。公開アクセス設定は別画面で管理します。',
       themeJsonHint: 'テーマ JSON を変更する必要がある場合だけ高度な編集欄を開きます。プレビューには最後に有効だったテーマ JSON が使われます。',
       themeJsonLabel: 'テーマ JSON',
       themeTitle: 'テーマ',
+    },
+    preview: {
+      closeLabel: 'ホームページプレビューを閉じる',
+      drawerDescription: 'エディタとプレビューを同じ作業領域に詰め込まず、現在の下書きを確認します。',
+      drawerTitle: 'ホームページプレビュー',
+      liveBadge: 'ライブプレビュー',
+      liveDescription: 'このページは同じブラウザのエディタタブから送られる下書きソース更新を監視します。',
+      liveTitle: 'ライブホームページプレビュー',
+      liveUnavailableDescription: '最新のローカルプレビューソースを読み込むため、ホームページエディタからライブプレビューをもう一度開いてください。',
+      liveUnavailableTitle: 'ライブプレビューを利用できません',
     },
     catalog: {
       add: '追加',
