@@ -1321,6 +1321,12 @@ async function mockPrivateRuntimeApi(page: Page) {
               name: 'YouTube',
               isActive: true,
             },
+            ...Array.from({ length: 24 }, (_, index) => ({
+              id: `platform-large-${index + 2}`,
+              code: `platform-${index + 2}`,
+              name: `Platform ${index + 2}`,
+              isActive: true,
+            })),
           ],
         }),
       });
@@ -2691,13 +2697,35 @@ test.describe('private shell browser visual QA', () => {
     await page.getByRole('button', { name: 'Draft report' }).first().click();
     const draftDrawer = page.getByRole('dialog', { name: 'Create MFR job' });
     await expect(draftDrawer).toBeVisible();
-    await expect(draftDrawer.getByText('YouTube', { exact: true }).first()).toBeVisible();
-    await expect(draftDrawer.getByText('VIP / Monthly / Gold')).toBeVisible();
+    await expect(draftDrawer.getByRole('button', { name: 'Select Platforms' })).toBeVisible();
+    await expect(draftDrawer.getByRole('checkbox', { name: /YouTube/i })).toHaveCount(0);
+    await expect(draftDrawer.getByText('VIP / Monthly / Gold')).toHaveCount(0);
     await expect(draftDrawer.getByText("Entity type 'membership-tree' not found")).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop reports draft drawer');
 
+    await draftDrawer.getByRole('button', { name: 'Select Platforms' }).click();
+    const optionPicker = page.getByRole('dialog', { name: 'Select Platforms' });
+    await expect(optionPicker).toBeVisible();
+    await expect(optionPicker.getByText('Page 1 of 2')).toBeVisible();
+    await expect(optionPicker.getByRole('checkbox', { name: /YouTube/i })).toBeVisible();
+    await expect(optionPicker.getByRole('checkbox', { name: /Platform 25/i })).toHaveCount(0);
+    await optionPicker.getByRole('button', { name: 'Next' }).click();
+    await expect(optionPicker.getByRole('checkbox', { name: /Platform 25/i })).toBeVisible();
+    await optionPicker.getByRole('searchbox', { name: 'Search Platforms' }).fill('YouTube');
+    await expect(optionPicker.getByRole('checkbox', { name: /YouTube/i })).toBeVisible();
+    await expect(optionPicker.getByRole('checkbox', { name: /Platform 25/i })).toHaveCount(0);
+    await optionPicker.getByRole('checkbox', { name: /YouTube/i }).check();
+    await expectNoHorizontalOverflow(page, 'desktop reports option picker');
+    await expect(page).toHaveScreenshot('private-reports-desktop-option-picker.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+    await optionPicker.getByRole('button', { name: 'Done' }).click();
+    await expect(draftDrawer.getByText('YouTube', { exact: true })).toBeVisible();
+
     await draftDrawer.getByRole('button', { name: 'Preview rows' }).click();
     await expect(page.getByText('Visual Fan')).toBeVisible();
+    await draftDrawer.locator('.overflow-y-auto').evaluate((node) => node.scrollTo(0, 0));
     await expect(page).toHaveScreenshot('private-reports-desktop-draft-drawer.png', {
       animations: 'disabled',
       fullPage: true,
@@ -2727,9 +2755,22 @@ test.describe('private shell browser visual QA', () => {
     await expect(draftDrawer).toBeVisible();
     await expect(draftDrawer.getByText('Catalog filters')).toBeVisible();
     await expect(draftDrawer.getByRole('group', { name: 'Platforms' })).toBeVisible();
+    await expect(draftDrawer.getByRole('button', { name: 'Select Platforms' })).toBeVisible();
+    await expect(draftDrawer.getByRole('checkbox', { name: /YouTube/i })).toHaveCount(0);
     await expect(draftDrawer.getByText('No preview requested yet')).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile reports draft drawer');
     await expect(page).toHaveScreenshot('private-reports-mobile-draft-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await draftDrawer.getByRole('button', { name: 'Select Platforms' }).click();
+    const optionPicker = page.getByRole('dialog', { name: 'Select Platforms' });
+    await expect(optionPicker).toBeVisible();
+    await expect(optionPicker.getByText('Page 1 of 2')).toBeVisible();
+    await expect(optionPicker.getByRole('checkbox', { name: /YouTube/i })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile reports option picker');
+    await expect(page).toHaveScreenshot('private-reports-mobile-option-picker.png', {
       animations: 'disabled',
       fullPage: true,
     });

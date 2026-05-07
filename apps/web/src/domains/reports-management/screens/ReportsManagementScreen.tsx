@@ -133,6 +133,12 @@ interface DialogState {
   errorFallback: string;
 }
 
+interface OptionPickerState {
+  fieldId: string;
+  page: number;
+  search: string;
+}
+
 const DEFAULT_FILTER_DRAFT: ReportFilterDraft = {
   platformCodes: '',
   membershipClassCodes: '',
@@ -147,6 +153,8 @@ const DEFAULT_FILTER_DRAFT: ReportFilterDraft = {
   includeInactive: false,
   format: 'xlsx',
 };
+
+const OPTION_PICKER_PAGE_SIZE = 20;
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -182,6 +190,10 @@ function toggleSelectedCode(value: unknown, code: string) {
     : [...current, code];
 
   return next.join(', ');
+}
+
+function removeSelectedCode(value: unknown, code: string) {
+  return readSelectedCodes(value).filter((item) => item !== code).join(', ');
 }
 
 function readBooleanFilter(value: unknown) {
@@ -642,6 +654,25 @@ function describeFilterFieldSource(field: ReportFilterField) {
   return null;
 }
 
+function filterOptionsBySearch(options: ReportFilterOption[], search: string) {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return options;
+  }
+
+  return options.filter((option) =>
+    `${option.label} ${option.value}`.toLowerCase().includes(normalizedSearch),
+  );
+}
+
+function resolveSelectedOptionLabels(options: ReportFilterOption[], selectedCodes: string[]) {
+  return selectedCodes.map((code) => {
+    const option = options.find((item) => item.value === code);
+    return option?.label ?? code;
+  });
+}
+
 function SchemaFilterField({
   field,
   draft,
@@ -650,7 +681,9 @@ function SchemaFilterField({
   optionsLoading = false,
   optionsError = null,
   advanced = false,
+  disabled = false,
   onChange,
+  onOpenPicker,
 }: Readonly<{
   field: ReportFilterField;
   draft: ReportFilterDraft;
@@ -659,7 +692,9 @@ function SchemaFilterField({
   optionsLoading?: boolean;
   optionsError?: string | null;
   advanced?: boolean;
+  disabled?: boolean;
   onChange: (key: string, value: string | boolean) => void;
+  onOpenPicker: (fieldId: string) => void;
 }>) {
   const label = pickLocaleText(locale, field.label);
   const description = field.description ? pickLocaleText(locale, field.description) : null;
@@ -739,10 +774,53 @@ function SchemaFilterField({
   if (field.type === 'config-multi-select' || field.type === 'dictionary-multi-select') {
     const selectedCodes = readSelectedCodes(getFilterFieldValue(draft, field.targetField));
     const visibleOptions = options ?? [];
+    const selectedLabels = resolveSelectedOptionLabels(visibleOptions, selectedCodes);
+    const selectedCountLabel = pickLocaleText(locale, {
+      en: `${selectedCodes.length} selected`,
+      zh_HANS: `已选择 ${selectedCodes.length} 项`,
+      zh_HANT: `已選擇 ${selectedCodes.length} 項`,
+      ja: `${selectedCodes.length} 件選択済み`,
+      ko: `${selectedCodes.length}개 선택됨`,
+      fr: `${selectedCodes.length} sélectionné(s)`,
+    });
 
     return (
-      <fieldset className="space-y-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
-        <legend className="text-sm font-medium text-slate-800">{label}</legend>
+      <section
+        role="group"
+        aria-label={label}
+        className="space-y-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm font-medium text-slate-800">{label}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {selectedCountLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenPicker(field.id)}
+            disabled={disabled || optionsLoading}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={pickLocaleText(locale, {
+              en: `Select ${label}`,
+              zh_HANS: `选择${label}`,
+              zh_HANT: `選擇${label}`,
+              ja: `${label}を選択`,
+              ko: `${label} 선택`,
+              fr: `Sélectionner ${label}`,
+            })}
+          >
+            {pickLocaleText(locale, {
+              en: 'Select',
+              zh_HANS: '选择',
+              zh_HANT: '選擇',
+              ja: '選択',
+              ko: '선택',
+              fr: 'Sélectionner',
+            })}
+          </button>
+        </div>
         {description || source ? (
           <p className="text-xs leading-5 text-slate-500">
             {[description, source].filter(Boolean).join(' ')}
@@ -762,39 +840,36 @@ function SchemaFilterField({
               fr: 'Chargement des options...',
             })}
           </p>
-        ) : visibleOptions.length > 0 ? (
-          <div className="grid gap-2">
-            {visibleOptions.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+        ) : selectedLabels.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {selectedLabels.slice(0, 4).map((selectedLabel, index) => (
+              <span
+                key={`${selectedCodes[index]}-${selectedLabel}`}
+                className="max-w-full truncate rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-800"
+                title={selectedLabel}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedCodes.includes(option.value)}
-                  onChange={() => {
-                    onChange(field.targetField, toggleSelectedCode(getFilterFieldValue(draft, field.targetField), option.value));
-                  }}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span>{option.label}</span>
-                <span aria-hidden="true" className="ml-auto text-xs text-slate-400">{option.value}</span>
-              </label>
+                {selectedLabel}
+              </span>
             ))}
+            {selectedLabels.length > 4 ? (
+              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                +{selectedLabels.length - 4}
+              </span>
+            ) : null}
           </div>
         ) : (
           <p className="text-xs text-slate-500">
             {pickLocaleText(locale, {
-              en: 'No configured options are available.',
-              zh_HANS: '当前没有已配置选项。',
-              zh_HANT: '目前沒有已設定選項。',
-              ja: '利用できる設定済み選択肢がありません。',
-              ko: '사용 가능한 구성 옵션이 없습니다.',
-              fr: 'Aucune option configuree disponible.',
+              en: visibleOptions.length > 0 ? 'No options selected.' : 'No configured options are available.',
+              zh_HANS: visibleOptions.length > 0 ? '未选择选项。' : '当前没有已配置选项。',
+              zh_HANT: visibleOptions.length > 0 ? '未選擇選項。' : '目前沒有已設定選項。',
+              ja: visibleOptions.length > 0 ? '選択されていません。' : '利用できる設定済み選択肢がありません。',
+              ko: visibleOptions.length > 0 ? '선택된 옵션이 없습니다.' : '사용 가능한 구성 옵션이 없습니다.',
+              fr: visibleOptions.length > 0 ? 'Aucune option sélectionnée.' : 'Aucune option configuree disponible.',
             })}
           </p>
         )}
-      </fieldset>
+      </section>
     );
   }
 
@@ -896,6 +971,7 @@ export function ReportsManagementScreen({
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [portalHandoff, setPortalHandoff] = useState<PiiPlatformReportCreateResponse | null>(null);
   const [activeView, setActiveView] = useState<ReportsView>(urlActiveView);
+  const [optionPicker, setOptionPicker] = useState<OptionPickerState | null>(null);
 
   useEffect(() => {
     setActiveView((current) => (current === urlActiveView ? current : urlActiveView));
@@ -1140,6 +1216,7 @@ export function ReportsManagementScreen({
     setPreviewPending(true);
     setNotice(null);
     setPortalHandoff(null);
+    setOptionPicker(null);
     setPreviewPanel((current) => ({
       ...current,
       loading: true,
@@ -1171,6 +1248,7 @@ export function ReportsManagementScreen({
     setCreatePending(true);
     setNotice(null);
     setPortalHandoff(null);
+    setOptionPicker(null);
 
     try {
       const result = await createMfrJob(request, talentId, {
@@ -1292,6 +1370,18 @@ export function ReportsManagementScreen({
       error: null,
     });
     setIsDraftDrawerOpen(true);
+  }
+
+  function openOptionPicker(fieldId: string) {
+    if (previewPending || createPending) {
+      return;
+    }
+
+    setOptionPicker({
+      fieldId,
+      page: 1,
+      search: '',
+    });
   }
 
   async function handleConfirmCancel() {
@@ -1462,6 +1552,80 @@ export function ReportsManagementScreen({
   const selectedReportIsAvailable = selectedReport?.availability.status === 'available';
   const reportDirectoryCountLabel = jobsPanel.loading ? copy.summary.jobsLoading : String(jobsPanel.total);
   const reportCatalogCount = catalogPanel.loading ? copy.summary.jobsLoading : String(catalogPanel.data.length);
+  const optionPickerField = optionPicker
+    ? [...primaryFilterFields, ...advancedFilterFields].find((field) => field.id === optionPicker.fieldId)
+    : null;
+  const optionPickerFieldLabel = optionPickerField ? pickLocaleText(selectedLocale, optionPickerField.label) : '';
+  const optionPickerFieldDescription = optionPickerField?.description
+    ? pickLocaleText(selectedLocale, optionPickerField.description)
+    : null;
+  const optionPickerOptions =
+    optionPickerField?.type === 'config-multi-select' || optionPickerField?.type === 'dictionary-multi-select'
+      ? filterOptionsPanel.data[optionPickerField.id] ?? []
+      : [];
+  const optionPickerTargetField =
+    optionPickerField?.type === 'config-multi-select' || optionPickerField?.type === 'dictionary-multi-select'
+      ? optionPickerField.targetField
+      : null;
+  const optionPickerSelectedCodes = optionPickerTargetField
+    ? readSelectedCodes(getFilterFieldValue(draft, optionPickerTargetField))
+    : [];
+  const optionPickerFilteredOptions = optionPicker
+    ? filterOptionsBySearch(optionPickerOptions, optionPicker.search)
+    : optionPickerOptions;
+  const optionPickerPagination = buildPaginationMeta(
+    optionPickerFilteredOptions.length,
+    optionPicker?.page ?? 1,
+    OPTION_PICKER_PAGE_SIZE,
+  );
+  const optionPickerVisibleOptions = optionPickerFilteredOptions.slice(
+    (optionPickerPagination.page - 1) * optionPickerPagination.pageSize,
+    optionPickerPagination.page * optionPickerPagination.pageSize,
+  );
+  const optionPickerRange = getPaginationRange(optionPickerPagination, optionPickerVisibleOptions.length);
+  const optionPickerSource = optionPickerField ? describeFilterFieldSource(optionPickerField) : null;
+  const optionPickerPageLabel = pickLocaleText(selectedLocale, {
+    en: `Page ${optionPickerPagination.page} of ${optionPickerPagination.totalPages}`,
+    zh_HANS: `第 ${optionPickerPagination.page} / ${optionPickerPagination.totalPages} 页`,
+    zh_HANT: `第 ${optionPickerPagination.page} / ${optionPickerPagination.totalPages} 頁`,
+    ja: `${optionPickerPagination.totalPages} ページ中 ${optionPickerPagination.page} ページ`,
+    ko: `${optionPickerPagination.totalPages}페이지 중 ${optionPickerPagination.page}페이지`,
+    fr: `Page ${optionPickerPagination.page} sur ${optionPickerPagination.totalPages}`,
+  });
+  const optionPickerRangeLabel =
+    optionPickerPagination.totalCount === 0
+      ? pickLocaleText(selectedLocale, {
+          en: 'No options match this picker.',
+          zh_HANS: '没有匹配的选项。',
+          zh_HANT: '沒有符合的選項。',
+          ja: '一致する選択肢はありません。',
+          ko: '일치하는 옵션이 없습니다.',
+          fr: 'Aucune option ne correspond.',
+        })
+      : pickLocaleText(selectedLocale, {
+          en: `Showing ${optionPickerRange.start}-${optionPickerRange.end} of ${optionPickerPagination.totalCount}`,
+          zh_HANS: `显示第 ${optionPickerRange.start}-${optionPickerRange.end} 项，共 ${optionPickerPagination.totalCount} 项`,
+          zh_HANT: `顯示第 ${optionPickerRange.start}-${optionPickerRange.end} 項，共 ${optionPickerPagination.totalCount} 項`,
+          ja: `${optionPickerPagination.totalCount} 件中 ${optionPickerRange.start}-${optionPickerRange.end} 件を表示`,
+          ko: `${optionPickerPagination.totalCount}개 중 ${optionPickerRange.start}-${optionPickerRange.end}개 표시`,
+          fr: `Affichage de ${optionPickerRange.start} à ${optionPickerRange.end} sur ${optionPickerPagination.totalCount}`,
+        });
+  const optionPickerRowsPerPageLabel = pickLocaleText(selectedLocale, {
+    en: 'Rows per page',
+    zh_HANS: '每页显示',
+    zh_HANT: '每頁顯示',
+    ja: '1ページあたり',
+    ko: '페이지당 행 수',
+    fr: 'Lignes par page',
+  });
+  const optionPickerSelectedCountLabel = pickLocaleText(selectedLocale, {
+    en: `${optionPickerSelectedCodes.length} selected`,
+    zh_HANS: `已选择 ${optionPickerSelectedCodes.length} 项`,
+    zh_HANT: `已選擇 ${optionPickerSelectedCodes.length} 項`,
+    ja: `${optionPickerSelectedCodes.length} 件選択済み`,
+    ko: `${optionPickerSelectedCodes.length}개 선택됨`,
+    fr: `${optionPickerSelectedCodes.length} sélectionné(s)`,
+  });
 
   return (
     <div className="space-y-6">
@@ -1990,6 +2154,7 @@ export function ReportsManagementScreen({
         onOpenChange={(nextOpen) => {
           if (!nextOpen && !previewPending && !createPending) {
             setIsDraftDrawerOpen(false);
+            setOptionPicker(null);
           }
         }}
         title={copy.drawer.title}
@@ -2054,6 +2219,8 @@ export function ReportsManagementScreen({
                       options={filterOptionsPanel.data[field.id]}
                       optionsLoading={filterOptionsPanel.loading}
                       optionsError={filterOptionsPanel.error}
+                      disabled={previewPending || createPending}
+                      onOpenPicker={openOptionPicker}
                       onChange={(key, value) => {
                         setDraft((current) => updateDraftField(current, key, value));
                       }}
@@ -2091,6 +2258,8 @@ export function ReportsManagementScreen({
                           optionsLoading={filterOptionsPanel.loading}
                           optionsError={filterOptionsPanel.error}
                           advanced
+                          disabled={previewPending || createPending}
+                          onOpenPicker={openOptionPicker}
                           onChange={(key, value) => {
                             setDraft((current) => updateDraftField(current, key, value));
                           }}
@@ -2159,6 +2328,219 @@ export function ReportsManagementScreen({
             )}
           </DrawerStep>
         </div>
+      </ActionDrawer>
+
+      <ActionDrawer
+        open={optionPicker !== null && isDraftDrawerOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setOptionPicker(null);
+          }
+        }}
+        title={pickLocaleText(selectedLocale, {
+          en: optionPickerFieldLabel ? `Select ${optionPickerFieldLabel}` : 'Select options',
+          zh_HANS: optionPickerFieldLabel ? `选择${optionPickerFieldLabel}` : '选择选项',
+          zh_HANT: optionPickerFieldLabel ? `選擇${optionPickerFieldLabel}` : '選擇選項',
+          ja: optionPickerFieldLabel ? `${optionPickerFieldLabel}を選択` : '選択肢を選ぶ',
+          ko: optionPickerFieldLabel ? `${optionPickerFieldLabel} 선택` : '옵션 선택',
+          fr: optionPickerFieldLabel ? `Sélectionner ${optionPickerFieldLabel}` : 'Sélectionner des options',
+        })}
+        description={pickLocaleText(selectedLocale, {
+          en: 'Search and page through catalog options without expanding the report drawer.',
+          zh_HANS: '在不展开报表抽屉的情况下搜索并分页选择目录选项。',
+          zh_HANT: '在不展開報表抽屜的情況下搜尋並分頁選擇目錄選項。',
+          ja: 'レポートドロワーを広げずに、カタログ選択肢を検索してページ単位で選択します。',
+          ko: '보고서 드로어를 확장하지 않고 카탈로그 옵션을 검색하고 페이지 단위로 선택합니다.',
+          fr: 'Recherchez et parcourez les options du catalogue sans étendre le tiroir du rapport.',
+        })}
+        size="lg"
+        closeButtonAriaLabel={pickLocaleText(selectedLocale, {
+          en: 'Close report option picker',
+          zh_HANS: '关闭报表选项选择器',
+          zh_HANT: '關閉報表選項選擇器',
+          ja: 'レポート選択肢ピッカーを閉じる',
+          ko: '보고서 옵션 선택기 닫기',
+          fr: 'Fermer le sélecteur d’options du rapport',
+        })}
+        footer={
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (optionPickerTargetField) {
+                  setDraft((current) => updateDraftField(current, optionPickerTargetField, ''));
+                }
+              }}
+              disabled={!optionPickerTargetField || optionPickerSelectedCodes.length === 0 || previewPending || createPending}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {pickLocaleText(selectedLocale, {
+                en: 'Clear selected',
+                zh_HANS: '清空已选',
+                zh_HANT: '清空已選',
+                ja: '選択を解除',
+                ko: '선택 지우기',
+                fr: 'Effacer la sélection',
+              })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOptionPicker(null)}
+              className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              {pickLocaleText(selectedLocale, {
+                en: 'Done',
+                zh_HANS: '完成',
+                zh_HANT: '完成',
+                ja: '完了',
+                ko: '완료',
+                fr: 'Terminé',
+              })}
+            </button>
+          </div>
+        }
+      >
+        {optionPickerField && optionPickerTargetField ? (
+          <div className="space-y-5">
+            <div className="rounded-lg border border-slate-200 bg-white/80 px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-950">{optionPickerSelectedCountLabel}</p>
+                  {optionPickerFieldDescription || optionPickerSource ? (
+                    <p className="text-xs leading-5 text-slate-500">
+                      {[optionPickerFieldDescription, optionPickerSource].filter(Boolean).join(' ')}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  {optionPickerFilteredOptions.length}
+                </span>
+              </div>
+            </div>
+
+            <label className="relative block">
+              <span className="sr-only">
+                {pickLocaleText(selectedLocale, {
+                  en: `Search ${optionPickerFieldLabel}`,
+                  zh_HANS: `搜索${optionPickerFieldLabel}`,
+                  zh_HANT: `搜尋${optionPickerFieldLabel}`,
+                  ja: `${optionPickerFieldLabel}を検索`,
+                  ko: `${optionPickerFieldLabel} 검색`,
+                  fr: `Rechercher ${optionPickerFieldLabel}`,
+                })}
+              </span>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={optionPicker?.search ?? ''}
+                onChange={(event) =>
+                  setOptionPicker((current) => current
+                    ? { ...current, page: 1, search: event.target.value }
+                    : current)
+                }
+                placeholder={pickLocaleText(selectedLocale, {
+                  en: 'Search label or code',
+                  zh_HANS: '搜索标签或代码',
+                  zh_HANT: '搜尋標籤或代碼',
+                  ja: 'ラベルまたはコードを検索',
+                  ko: '라벨 또는 코드 검색',
+                  fr: 'Rechercher libellé ou code',
+                })}
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+            </label>
+
+            {filterOptionsPanel.error ? (
+              <StateView status="error" title={copy.preview.unavailableTitle} description={filterOptionsPanel.error} />
+            ) : filterOptionsPanel.loading && optionPickerOptions.length === 0 ? (
+              <StateView status="empty" title={copy.drawer.previewRows} description={copy.drawer.codeFiltersDescription} />
+            ) : optionPickerVisibleOptions.length > 0 ? (
+              <div className="space-y-2" role="group" aria-label={optionPickerFieldLabel}>
+                {optionPickerVisibleOptions.map((option) => {
+                  const checked = optionPickerSelectedCodes.includes(option.value);
+
+                  return (
+                    <label
+                      key={option.value}
+                      className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={previewPending || createPending}
+                        onChange={() => {
+                          setDraft((current) =>
+                            updateDraftField(
+                              current,
+                              optionPickerTargetField,
+                              checked
+                                ? removeSelectedCode(getFilterFieldValue(current, optionPickerTargetField), option.value)
+                                : toggleSelectedCode(getFilterFieldValue(current, optionPickerTargetField), option.value),
+                            ),
+                          );
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-words font-medium text-slate-900">{option.label}</span>
+                        <span className="block break-all text-xs text-slate-500">{option.value}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <StateView
+                status="empty"
+                title={pickLocaleText(selectedLocale, {
+                  en: 'No options found',
+                  zh_HANS: '未找到选项',
+                  zh_HANT: '未找到選項',
+                  ja: '選択肢が見つかりません',
+                  ko: '옵션을 찾을 수 없습니다',
+                  fr: 'Aucune option trouvée',
+                })}
+                description={pickLocaleText(selectedLocale, {
+                  en: 'Adjust the search or check the underlying catalog configuration.',
+                  zh_HANS: '调整搜索条件，或检查底层目录配置。',
+                  zh_HANT: '調整搜尋條件，或檢查底層目錄設定。',
+                  ja: '検索条件を変更するか、基盤のカタログ設定を確認してください。',
+                  ko: '검색 조건을 조정하거나 기본 카탈로그 구성을 확인하세요.',
+                  fr: 'Ajustez la recherche ou vérifiez la configuration du catalogue source.',
+                })}
+              />
+            )}
+
+            <PaginationFooter
+              pagination={optionPickerPagination}
+              itemCount={optionPickerVisibleOptions.length}
+              labels={{
+                pageLabel: optionPickerPageLabel,
+                rangeLabel: optionPickerRangeLabel,
+                rowsPerPageLabel: optionPickerRowsPerPageLabel,
+                previousLabel: previousPageLabel,
+                nextLabel: nextPageLabel,
+              }}
+              onPageChange={(nextPage) =>
+                setOptionPicker((current) => current ? { ...current, page: nextPage } : current)
+              }
+              isLoading={filterOptionsPanel.loading}
+              className="rounded-2xl"
+            />
+          </div>
+        ) : (
+          <StateView
+            status="empty"
+            title={pickLocaleText(selectedLocale, {
+              en: 'No option field selected',
+              zh_HANS: '未选择选项字段',
+              zh_HANT: '未選擇選項欄位',
+              ja: '選択肢フィールドが選ばれていません',
+              ko: '선택된 옵션 필드가 없습니다',
+              fr: 'Aucun champ d’options sélectionné',
+            })}
+          />
+        )}
       </ActionDrawer>
     </div>
   );

@@ -188,6 +188,10 @@ describe('ReportsManagementScreen', () => {
     expect(drawer).toBeInTheDocument();
     expect(await screen.findByText('Catalog filters')).toBeInTheDocument();
     expect(await screen.findByRole('group', { name: 'Platforms' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /YouTube/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Select Platforms' }));
+    expect(await screen.findByRole('dialog', { name: 'Select Platforms' })).toBeInTheDocument();
+    expect(await screen.findByRole('checkbox', { name: /YouTube/i })).toBeInTheDocument();
     expect(await screen.findByText('No preview requested yet')).toBeInTheDocument();
   });
 
@@ -377,7 +381,10 @@ describe('ReportsManagementScreen', () => {
 
     fireEvent.click((await screen.findAllByRole('button', { name: 'Draft report' }))[0]);
     expect(await screen.findByRole('group', { name: 'Platforms' })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Select Platforms' }));
     fireEvent.click(await screen.findByRole('checkbox', { name: /YouTube/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(await screen.findByText('YouTube')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Preview rows' }));
 
     await waitFor(() => {
@@ -405,7 +412,7 @@ describe('ReportsManagementScreen', () => {
         }),
       );
     });
-    expect(screen.getByRole('checkbox', { name: /YouTube/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Select Platforms' })).toBeDisabled();
     expect(screen.getByLabelText('Download format')).toBeDisabled();
     expect(screen.getByLabelText('Include inactive customers')).toBeDisabled();
 
@@ -420,9 +427,68 @@ describe('ReportsManagementScreen', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('checkbox', { name: /YouTube/i })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Select Platforms' })).not.toBeDisabled();
     });
     expect(await screen.findByText('Matched Rows')).toBeInTheDocument();
+  });
+
+  it('uses a searchable paginated picker for large report option sets', async () => {
+    const platformOptions = Array.from({ length: 25 }, (_, index) => ({
+      id: `platform-${index + 1}`,
+      code: `platform-${index + 1}`,
+      name: `Platform ${index + 1}`,
+      isActive: true,
+    }));
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/reports/catalog') {
+        return reportCatalogResponse();
+      }
+
+      if (path === '/api/v1/configuration-entity/social-platform?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder') {
+        return platformOptions;
+      }
+
+      const filterOptions = reportFilterOptionResponse(path);
+      if (filterOptions) {
+        return filterOptions;
+      }
+
+      if (path === '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: {
+            total: 0,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Draft report' }))[0]);
+    expect(await screen.findByRole('group', { name: 'Platforms' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Platform 25/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Platforms' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Select Platforms' })).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /^Platform 1platform-1$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Platform 25/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByRole('checkbox', { name: /^Platform 25platform-25$/i })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search Platforms' }), {
+      target: { value: 'Platform 3' },
+    });
+
+    expect(await screen.findByRole('checkbox', { name: /^Platform 3platform-3$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Platform 25/i })).not.toBeInTheDocument();
   });
 
   it('creates a local MFR job and refreshes the ledger', async () => {
@@ -490,11 +556,12 @@ describe('ReportsManagementScreen', () => {
     expect(screen.getByText('Preview first, then queue')).toBeInTheDocument();
     expect(screen.getByText('Catalog filters')).toBeInTheDocument();
     expect(await screen.findByRole('group', { name: 'Platforms' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /YouTube/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /^VIP$/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /^VIP \/ Monthly$/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /^VIP \/ Monthly \/ Gold$/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /^Active$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Platforms' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Membership classes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Membership types' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Membership levels' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Customer statuses' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /YouTube/i })).not.toBeInTheDocument();
     expect(screen.getByText('Advanced')).toBeInTheDocument();
     expect(screen.getByText('Output')).toBeInTheDocument();
     expect(screen.getByText('No MFR jobs found')).toBeInTheDocument();
@@ -759,7 +826,7 @@ describe('ReportsManagementScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry from filters' }));
 
     expect(await screen.findByRole('heading', { name: 'Create MFR Job' })).toBeInTheDocument();
-    expect(await screen.findByRole('checkbox', { name: /YouTube/i })).toBeChecked();
+    expect(await screen.findByText('YouTube')).toBeInTheDocument();
     expect(screen.getByLabelText('Include expired memberships')).toBeChecked();
   });
 
