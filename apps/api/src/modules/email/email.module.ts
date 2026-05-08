@@ -8,12 +8,15 @@ import { DatabaseModule } from '../database';
 import { QUEUE_NAMES } from '../queue/queue.module';
 import { EmailConfigApplicationService } from './application/email-config.service';
 import { EmailDispatchApplicationService } from './application/email-dispatch.service';
+import { TenantSendingDomainService } from './application/tenant-sending-domain.service';
 import { EmailConfigController } from './controllers/email-config.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
+import { TenantSendingDomainController } from './controllers/tenant-sending-domain.controller';
 import { EmailConfigRepository } from './infrastructure/email-config.repository';
 import { EmailConfigCryptoService } from './infrastructure/email-config-crypto.service';
 import { EmailQueueGateway } from './infrastructure/email-queue.gateway';
 import { EmailTemplateRepository } from './infrastructure/email-template.repository';
+import { TenantSendingDomainRepository } from './infrastructure/tenant-sending-domain.repository';
 import { EmailService } from './services/email.service';
 import { EmailConfigService } from './services/email-config.service';
 import { EmailTemplateService } from './services/email-template.service';
@@ -28,7 +31,7 @@ import { TencentSesClient } from './services/tencent-ses.client';
       name: QUEUE_NAMES.EMAIL,
     }),
   ],
-  controllers: [EmailConfigController, EmailTemplateController],
+  controllers: [EmailConfigController, EmailTemplateController, TenantSendingDomainController],
   providers: [
     EmailConfigService,
     EmailConfigApplicationService,
@@ -39,6 +42,8 @@ import { TencentSesClient } from './services/tencent-ses.client';
     EmailService,
     EmailTemplateRepository,
     EmailTemplateService,
+    TenantSendingDomainRepository,
+    TenantSendingDomainService,
     SmtpClient,
     TencentSesClient,
   ],

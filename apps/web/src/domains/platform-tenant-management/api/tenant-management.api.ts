@@ -30,6 +30,29 @@ export interface TenantActivationResult {
   isActive: boolean;
 }
 
+export type ManagedSendingDomainStatus = 'pending_dns' | 'verified' | 'disabled';
+
+export interface ManagedSendingDomainDnsRecord {
+  type: 'TXT';
+  host: string;
+  value: string;
+}
+
+export interface ManagedSendingDomain {
+  id: string;
+  domain: string;
+  status: ManagedSendingDomainStatus;
+  dnsRecords: ManagedSendingDomainDnsRecord[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TenantSendingDomainsResponse {
+  tenantId: string;
+  domains: ManagedSendingDomain[];
+  defaultDomainId: string | null;
+}
+
 export interface CreateTenantPayload {
   code: string;
   name: string;
@@ -149,5 +172,30 @@ export function deactivateTenant(
     body: JSON.stringify({
       reason,
     }),
+  });
+}
+
+export function readTenantSendingDomains(request: RequestFn, tenantId: string) {
+  return request<TenantSendingDomainsResponse>(`/api/v1/email/tenants/${tenantId}/sending-domains`);
+}
+
+export function updateTenantSendingDomains(
+  request: RequestFn,
+  tenantId: string,
+  payload: {
+    domains: Array<{
+      id?: string;
+      domain: string;
+      status: ManagedSendingDomainStatus;
+    }>;
+    defaultDomainId?: string | null;
+  },
+) {
+  return request<TenantSendingDomainsResponse>(`/api/v1/email/tenants/${tenantId}/sending-domains`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 }

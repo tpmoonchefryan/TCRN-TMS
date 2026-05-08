@@ -125,6 +125,27 @@ describe('TenantEditorScreen', () => {
         };
       }
 
+      if (path === '/api/v1/email/tenants/tenant-1/sending-domains' && !init) {
+        return {
+          tenantId: 'tenant-1',
+          domains: [
+            {
+              id: 'domain-1',
+              domain: 'mail.alpha.example.com',
+              status: 'pending_dns',
+              dnsRecords: [
+                {
+                  type: 'TXT',
+                  host: '_tcrn-email.mail.alpha.example.com',
+                  value: 'tcrn-email-verification=alpha-token',
+                },
+              ],
+            },
+          ],
+          defaultDomainId: null,
+        };
+      }
+
       if (path === '/api/v1/tenants/tenant-1' && init?.method === 'PATCH') {
         return {
           id: 'tenant-1',
@@ -148,6 +169,27 @@ describe('TenantEditorScreen', () => {
         };
       }
 
+      if (path === '/api/v1/email/tenants/tenant-1/sending-domains' && init?.method === 'PATCH') {
+        return {
+          tenantId: 'tenant-1',
+          domains: [
+            {
+              id: 'domain-1',
+              domain: 'mail.alpha.example.com',
+              status: 'verified',
+              dnsRecords: [
+                {
+                  type: 'TXT',
+                  host: '_tcrn-email.mail.alpha.example.com',
+                  value: 'tcrn-email-verification=alpha-token',
+                },
+              ],
+            },
+          ],
+          defaultDomainId: 'domain-1',
+        };
+      }
+
       throw new Error(`Unhandled request: ${path}`);
     });
 
@@ -156,6 +198,9 @@ describe('TenantEditorScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Alpha Entertainment' })).toBeInTheDocument();
     expect(screen.getByLabelText('Tenant code')).toHaveValue('ALPHA');
     expect(screen.getByText('Tier: Standard')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Email sending domains' })).toBeInTheDocument();
+    expect(screen.getByText('mail.alpha.example.com')).toBeInTheDocument();
+    expect(screen.getByText('_tcrn-email.mail.alpha.example.com')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Tenant name'), {
       target: { value: 'Alpha Entertainment Updated' },
@@ -176,5 +221,30 @@ describe('TenantEditorScreen', () => {
     });
 
     expect(await screen.findByText('Alpha Entertainment Updated was updated.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Sending domain hostname for mail.alpha.example.com'), {
+      target: { value: 'sender.alpha.example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Sending domain status for sender.alpha.example.com'), {
+      target: { value: 'verified' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save sending domains' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/email/tenants/tenant-1/sending-domains',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('"domain":"sender.alpha.example.com"'),
+        }),
+      );
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/email/tenants/tenant-1/sending-domains',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('"status":"verified"'),
+        }),
+      );
+    });
   });
 });

@@ -83,6 +83,46 @@ describe('SettingsApplicationService', () => {
       expect(result.inheritedFrom.defaultLanguage).toBe('default');
     });
 
+    it('should not expose AC-managed email domain storage through general tenant settings', async () => {
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {
+          timezone: 'Asia/Tokyo',
+          emailSendingDomains: [
+            {
+              id: 'domain-1',
+              domain: 'mail.alpha.example.com',
+              status: 'pending_dns',
+              verificationToken: 'dns-token-should-stay-ac-only',
+              dnsRecords: [
+                {
+                  type: 'TXT',
+                  host: '_tcrn-email.mail.alpha.example.com',
+                  value: 'tcrn-email-verification=dns-token-should-stay-ac-only',
+                },
+              ],
+              createdAt: '2026-05-08T09:00:00.000Z',
+              updatedAt: '2026-05-08T09:00:00.000Z',
+            },
+          ],
+          emailSenderPreferences: {
+            defaultDomainId: 'domain-1',
+            fromName: 'Alpha Support',
+            replyTo: 'support@alpha.example.com',
+          },
+        },
+      });
+
+      const result = await service.getEffectiveSettings(testSchema, 'tenant', null);
+
+      expect(result.settings.timezone).toBe('Asia/Tokyo');
+      expect(result.settings).not.toHaveProperty('emailSendingDomains');
+      expect(result.settings).not.toHaveProperty('emailSenderPreferences');
+      expect(result.overrides).not.toContain('emailSendingDomains');
+      expect(result.overrides).not.toContain('emailSenderPreferences');
+      expect(JSON.stringify(result)).not.toContain('dns-token-should-stay-ac-only');
+    });
+
     it('should handle talent scope with subsidiary inheritance', async () => {
       mockSettingsRepository.findTalentById
         .mockResolvedValueOnce({

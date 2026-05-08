@@ -9,9 +9,12 @@ import {
   buildTenantSettingsDraft,
   buildTenantSettingsUpdatePayload,
   isTenantSettingsDraftDirty,
+  readTenantSenderDomains,
   readTenantSettings,
   type ScopeSettingsResponse,
+  type TenantSenderDomainsResponse,
   type TenantSettingsDraft,
+  updateTenantSenderDomains,
   updateTenantSettings,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import {
@@ -25,6 +28,11 @@ import {
   SettingsDefaultsFormFields,
   SettingsDefaultsSummaryGrid,
 } from '@/domains/config-dictionary-settings/components/SettingsDefaultsFields';
+import {
+  buildTenantEmailSenderDraft,
+  type TenantEmailSenderDraft,
+  TenantEmailSettingsFields,
+} from '@/domains/config-dictionary-settings/components/TenantEmailSettingsFields';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildTenantBusinessPath } from '@/platform/routing/workspace-paths';
@@ -46,6 +54,7 @@ interface AsyncPanelState<T> {
 }
 
 type TenantSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
+type TenantSettingsCategory = 'defaults' | 'email';
 
 const TENANT_SETTINGS_SECTIONS: readonly TenantSettingsSection[] = [
   'details',
@@ -166,6 +175,16 @@ export function TenantSettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
+  const [activeSettingsCategory, setActiveSettingsCategory] = useState<TenantSettingsCategory>('defaults');
+  const [emailPanel, setEmailPanel] = useState<AsyncPanelState<TenantSenderDomainsResponse>>({
+    data: null,
+    error: null,
+    loading: false,
+  });
+  const [emailDraft, setEmailDraft] = useState<TenantEmailSenderDraft>(() => buildTenantEmailSenderDraft(null));
+  const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
+  const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
+  const [isEmailSaving, setIsEmailSaving] = useState(false);
 
   useEffect(() => {
     setActiveSectionId((current) => (current === urlSection ? current : urlSection));
@@ -361,6 +380,101 @@ export function TenantSettingsScreen({
     setSaveSuccess(null);
   }
 
+  async function loadTenantEmailSenderDomains() {
+    if (emailPanel.loading) {
+      return;
+    }
+
+    setEmailPanel((current) => ({ ...current, loading: true, error: null }));
+    setEmailSaveError(null);
+    setEmailSaveSuccess(null);
+
+    try {
+      const response = await readTenantSenderDomains(request);
+      setEmailPanel({
+        data: response,
+        error: null,
+        loading: false,
+      });
+      setEmailDraft(buildTenantEmailSenderDraft(response));
+    } catch (reason) {
+      setEmailPanel({
+        data: null,
+        error: getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to load email sender domains.',
+            zh_HANS: '加载发信域名失败。',
+            zh_HANT: '載入發信域名失敗。',
+            ja: 'メール送信ドメインを読み込めません。',
+            ko: '이메일 발신 도메인을 불러오지 못했습니다.',
+            fr: 'Impossible de charger les domaines d’envoi.',
+          }),
+        ),
+        loading: false,
+      });
+    }
+  }
+
+  function handleSettingsCategoryChange(categoryId: string) {
+    const nextCategoryId = categoryId === 'email' ? 'email' : 'defaults';
+    setActiveSettingsCategory(nextCategoryId);
+
+    if (nextCategoryId === 'email' && !emailPanel.data && !emailPanel.loading) {
+      void loadTenantEmailSenderDomains();
+    }
+  }
+
+  async function handleSaveEmailSenderPreferences() {
+    if (isEmailSaving) {
+      return;
+    }
+
+    setIsEmailSaving(true);
+    setEmailSaveError(null);
+    setEmailSaveSuccess(null);
+
+    try {
+      const response = await updateTenantSenderDomains(request, {
+        defaultDomainId: emailDraft.defaultDomainId || null,
+        fromName: emailDraft.fromName || null,
+        replyTo: emailDraft.replyTo || null,
+      });
+      setEmailPanel({
+        data: response,
+        error: null,
+        loading: false,
+      });
+      setEmailDraft(buildTenantEmailSenderDraft(response));
+      setEmailSaveSuccess(
+        text({
+          en: 'Email sender preferences saved.',
+          zh_HANS: '发信偏好已保存。',
+          zh_HANT: '發信偏好已儲存。',
+          ja: 'メール送信設定を保存しました。',
+          ko: '이메일 발신 설정이 저장되었습니다.',
+          fr: 'Les préférences d’envoi ont été enregistrées.',
+        }),
+      );
+    } catch (reason) {
+      setEmailSaveError(
+        getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to save email sender preferences.',
+            zh_HANS: '保存发信偏好失败。',
+            zh_HANT: '儲存發信偏好失敗。',
+            ja: 'メール送信設定を保存できません。',
+            ko: '이메일 발신 설정을 저장하지 못했습니다.',
+            fr: 'Impossible d’enregistrer les préférences d’envoi.',
+          }),
+        ),
+      );
+    } finally {
+      setIsEmailSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <SettingsLayout
@@ -539,17 +653,46 @@ export function TenantSettingsScreen({
             >
               <SettingsCategoryWorkbench
                 ariaLabel={common.settingsCategoriesAriaLabel}
-                categories={[{ id: 'defaults', label: common.defaultsCategory }]}
-                activeCategoryId="defaults"
+                categories={[
+                  { id: 'defaults', label: common.defaultsCategory },
+                  { id: 'email', label: text('Email', '邮件', 'メール') },
+                ]}
+                activeCategoryId={activeSettingsCategory}
+                onCategoryChange={handleSettingsCategoryChange}
               >
-                <SettingsDefaultsSummaryGrid
-                  draft={initialDraft}
-                  getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
-                  text={text}
-                />
+                {activeSettingsCategory === 'defaults' ? (
+                  <>
+                    <SettingsDefaultsSummaryGrid
+                      draft={initialDraft}
+                      getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+                      text={text}
+                    />
 
-                {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-                {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+                    {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+                    {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+                  </>
+                ) : null}
+
+                {activeSettingsCategory === 'email' ? (
+                  emailPanel.loading ? (
+                    <p className="text-sm font-medium text-slate-500">
+                      {text('Loading email sender domains…', '正在加载发信域名…', 'メール送信ドメインを読み込み中…')}
+                    </p>
+                  ) : emailPanel.error ? (
+                    <p className="text-sm font-medium text-red-600">{emailPanel.error}</p>
+                  ) : (
+                    <TenantEmailSettingsFields
+                      domains={emailPanel.data?.domains ?? []}
+                      draft={emailDraft}
+                      error={emailSaveError}
+                      success={emailSaveSuccess}
+                      isSaving={isEmailSaving}
+                      onDraftChange={setEmailDraft}
+                      onSave={() => void handleSaveEmailSenderPreferences()}
+                      text={text}
+                    />
+                  )
+                ) : null}
               </SettingsCategoryWorkbench>
             </FormSection>
           </GlassSurface>

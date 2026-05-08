@@ -9,8 +9,12 @@ import {
   activateTenant,
   createTenant,
   deactivateTenant,
+  type ManagedSendingDomain,
+  type ManagedSendingDomainStatus,
   readTenant,
+  readTenantSendingDomains,
   updateTenant,
+  updateTenantSendingDomains,
 } from '@/domains/platform-tenant-management/api/tenant-management.api';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { AsyncSubmitButton, GlassSurface, StateView } from '@/platform/ui';
@@ -49,6 +53,12 @@ export function TenantEditorScreen({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingDomains, setSendingDomains] = useState<ManagedSendingDomain[]>([]);
+  const [sendingDomainsLoading, setSendingDomainsLoading] = useState(mode === 'edit');
+  const [sendingDomainsError, setSendingDomainsError] = useState<string | null>(null);
+  const [sendingDomainsNotice, setSendingDomainsNotice] = useState<string | null>(null);
+  const [savingSendingDomains, setSavingSendingDomains] = useState(false);
+  const [newSendingDomain, setNewSendingDomain] = useState('');
   const [tenantState, setTenantState] = useState<{
     id: string;
     name: string;
@@ -98,6 +108,44 @@ export function TenantEditorScreen({
     }
 
     void loadTenant();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [managedTenantId, mode, request]);
+
+  useEffect(() => {
+    if (mode !== 'edit' || !managedTenantId) {
+      return;
+    }
+
+    const targetTenantId = managedTenantId;
+    let cancelled = false;
+
+    async function loadSendingDomains() {
+      setSendingDomainsLoading(true);
+      setSendingDomainsError(null);
+
+      try {
+        const response = await readTenantSendingDomains(request, targetTenantId);
+
+        if (cancelled) {
+          return;
+        }
+
+        setSendingDomains(response.domains);
+      } catch (reason) {
+        if (!cancelled) {
+          setSendingDomainsError(getErrorMessage(reason, 'Failed to load email sending domains.'));
+        }
+      } finally {
+        if (!cancelled) {
+          setSendingDomainsLoading(false);
+        }
+      }
+    }
+
+    void loadSendingDomains();
 
     return () => {
       cancelled = true;
@@ -195,6 +243,96 @@ export function TenantEditorScreen({
       });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function handleSendingDomainStatusChange(domainId: string, status: ManagedSendingDomainStatus) {
+    setSendingDomains((current) => current.map((domain) => (
+      domain.id === domainId ? { ...domain, status } : domain
+    )));
+    setSendingDomainsNotice(null);
+  }
+
+  function handleSendingDomainDomainChange(domainId: string, value: string) {
+    setSendingDomains((current) => current.map((domain) => (
+      domain.id === domainId
+        ? {
+            ...domain,
+            domain: value,
+            dnsRecords: domain.dnsRecords.map((record) => (
+              value.trim()
+                ? {
+                    ...record,
+                    host: `_tcrn-email.${value.trim().toLowerCase()}`,
+                  }
+                : record
+            )),
+          }
+        : domain
+    )));
+    setSendingDomainsNotice(null);
+  }
+
+  function handleRemoveSendingDomain(domainId: string) {
+    setSendingDomains((current) => current.filter((domain) => domain.id !== domainId));
+    setSendingDomainsNotice(null);
+  }
+
+  function handleAddSendingDomain() {
+    const normalizedDomain = newSendingDomain.trim().toLowerCase();
+    if (!normalizedDomain) {
+      return;
+    }
+
+    setSendingDomains((current) => {
+      if (current.some((domain) => domain.domain === normalizedDomain)) {
+        return current;
+      }
+
+      return [
+        ...current,
+        {
+          id: `new-${normalizedDomain}`,
+          domain: normalizedDomain,
+          status: 'pending_dns',
+          dnsRecords: [
+            {
+              type: 'TXT',
+              host: `_tcrn-email.${normalizedDomain}`,
+              value: 'Save to generate verification token',
+            },
+          ],
+        },
+      ];
+    });
+    setNewSendingDomain('');
+    setSendingDomainsNotice(null);
+  }
+
+  async function handleSaveSendingDomains() {
+    if (!managedTenantId || savingSendingDomains) {
+      return;
+    }
+
+    setSavingSendingDomains(true);
+    setSendingDomainsError(null);
+    setSendingDomainsNotice(null);
+
+    try {
+      const response = await updateTenantSendingDomains(request, managedTenantId, {
+        domains: sendingDomains.map((domain) => ({
+          id: domain.id.startsWith('new-') ? undefined : domain.id,
+          domain: domain.domain,
+          status: domain.status,
+        })),
+      });
+
+      setSendingDomains(response.domains);
+      setSendingDomainsNotice('Email sending domains saved.');
+    } catch (reason) {
+      setSendingDomainsError(getErrorMessage(reason, 'Failed to save email sending domains.'));
+    } finally {
+      setSavingSendingDomains(false);
     }
   }
 
@@ -443,6 +581,117 @@ export function TenantEditorScreen({
           </AsyncSubmitButton>
         </div>
       </GlassSurface>
+
+      {mode === 'edit' && tenantState ? (
+        <GlassSurface className="p-6">
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-slate-950">Email sending domains</h2>
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                  Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  aria-label="New sending domain"
+                  value={newSendingDomain}
+                  onChange={(event) => setNewSendingDomain(event.target.value)}
+                  className={inputClassName}
+                  placeholder="mail.example.com"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddSendingDomain}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  Add sending domain
+                </button>
+              </div>
+            </div>
+
+            {sendingDomainsLoading ? (
+              <p className="text-sm font-medium text-slate-500">Loading email sending domains…</p>
+            ) : null}
+            {sendingDomainsError ? <p className="text-sm font-medium text-red-600">{sendingDomainsError}</p> : null}
+            {sendingDomainsNotice ? <p className="text-sm font-medium text-emerald-700">{sendingDomainsNotice}</p> : null}
+
+            {!sendingDomainsLoading && sendingDomains.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                No customer sending domain has been added for this tenant.
+              </p>
+            ) : (
+              <div className="grid gap-4">
+                {sendingDomains.map((domain) => (
+                  <div key={domain.id} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <p className="break-all text-sm font-semibold text-slate-950">{domain.domain}</p>
+                        <label className="block space-y-2">
+                          <span className="text-sm font-semibold text-slate-900">
+                            Sending domain hostname
+                          </span>
+                          <input
+                            aria-label={`Sending domain hostname for ${domain.domain}`}
+                            value={domain.domain}
+                            onChange={(event) => handleSendingDomainDomainChange(domain.id, event.target.value)}
+                            className={inputClassName}
+                          />
+                        </label>
+                        <div className="space-y-1">
+                          {domain.dnsRecords.map((record) => (
+                            <div key={`${domain.id}-${record.host}-${record.value}`} className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                              <p className="font-semibold">{record.type}</p>
+                              <p className="break-all">{record.host}</p>
+                              <p className="break-all">{record.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          Sending domain status for {domain.domain}
+                        </span>
+                        <select
+                          aria-label={`Sending domain status for ${domain.domain}`}
+                          value={domain.status}
+                          onChange={(event) => handleSendingDomainStatusChange(
+                            domain.id,
+                            event.target.value as ManagedSendingDomainStatus,
+                          )}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                        >
+                          <option value="pending_dns">Pending DNS</option>
+                          <option value="verified">Verified</option>
+                          <option value="disabled">Disabled</option>
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSendingDomain(domain.id)}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Remove domain
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <AsyncSubmitButton
+                type="button"
+                isPending={savingSendingDomains}
+                pendingText="Save sending domains"
+                onClick={() => void handleSaveSendingDomains()}
+              >
+                Save sending domains
+              </AsyncSubmitButton>
+            </div>
+          </div>
+        </GlassSurface>
+      ) : null}
     </div>
   );
 }

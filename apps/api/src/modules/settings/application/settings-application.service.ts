@@ -4,6 +4,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ErrorCodes, normalizeSupportedUiLocale } from '@tcrn/shared';
 
 import {
+  EMAIL_SENDER_PREFERENCES_SETTINGS_KEY,
+  EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
+} from '../../email/domain/tenant-sending-domain.policy';
+import {
   createDefaultInheritedFrom,
   DEFAULT_SETTINGS,
   getScopeName,
@@ -13,6 +17,11 @@ import {
   type SettingsScopeType,
 } from '../domain/settings.policy';
 import { SettingsRepository } from '../infrastructure/settings.repository';
+
+const GENERAL_SETTINGS_HIDDEN_KEYS = [
+  EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
+  EMAIL_SENDER_PREFERENCES_SETTINGS_KEY,
+] as const;
 
 @Injectable()
 export class SettingsApplicationService {
@@ -57,6 +66,16 @@ export class SettingsApplicationService {
 
     for (const key of overrides) {
       delete inheritedFrom[key];
+    }
+
+    for (const key of GENERAL_SETTINGS_HIDDEN_KEYS) {
+      delete mergedSettings[key];
+      delete inheritedFrom[key];
+      const overrideIndex = overrides.indexOf(key);
+
+      if (overrideIndex >= 0) {
+        overrides.splice(overrideIndex, 1);
+      }
     }
 
     return {

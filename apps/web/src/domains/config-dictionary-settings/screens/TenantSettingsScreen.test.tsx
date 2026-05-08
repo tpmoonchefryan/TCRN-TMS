@@ -180,6 +180,44 @@ describe('TenantSettingsScreen', () => {
         };
       }
 
+      if (path === '/api/v1/email/sender-domains' && !init) {
+        return {
+          domains: [
+            {
+              id: 'domain-verified',
+              domain: 'mail.alpha.example.com',
+              status: 'verified',
+              selectable: true,
+            },
+            {
+              id: 'domain-pending',
+              domain: 'pending.alpha.example.com',
+              status: 'pending_dns',
+              selectable: false,
+            },
+          ],
+          defaultDomainId: 'domain-verified',
+          fromName: 'Alpha Support',
+          replyTo: 'support@alpha.example.com',
+        };
+      }
+
+      if (path === '/api/v1/email/sender-domains' && init?.method === 'PATCH') {
+        return {
+          domains: [
+            {
+              id: 'domain-verified',
+              domain: 'mail.alpha.example.com',
+              status: 'verified',
+              selectable: true,
+            },
+          ],
+          defaultDomainId: 'domain-verified',
+          fromName: 'Alpha Support',
+          replyTo: 'help@alpha.example.com',
+        };
+      }
+
       if (path === '/api/v1/system-dictionary') {
         return [
           {
@@ -314,6 +352,24 @@ describe('TenantSettingsScreen', () => {
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+    expect(await screen.findByText('mail.alpha.example.com')).toBeInTheDocument();
+    expect(screen.getByText('pending.alpha.example.com')).toBeInTheDocument();
+    expect(screen.getByLabelText('Default sending domain')).toHaveValue('domain-verified');
+    expect(screen.queryByText(/Tencent Cloud Secret|Secret ID|Secret Key|provider credentials/i)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Reply-to address'), {
+      target: { value: 'help@alpha.example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save email sender preferences' }));
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/email/sender-domains',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('help@alpha.example.com'),
+        }),
+      );
+    });
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     expect(screen.getByText('Localization')).toBeInTheDocument();

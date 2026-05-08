@@ -17,6 +17,28 @@ export interface ScopeSettingsResponse {
   version: number;
 }
 
+export type TenantSenderDomainStatus = 'pending_dns' | 'verified' | 'disabled';
+
+export interface TenantSenderDomainOption {
+  id: string;
+  domain: string;
+  status: TenantSenderDomainStatus;
+  selectable: boolean;
+}
+
+export interface TenantSenderDomainsResponse {
+  domains: TenantSenderDomainOption[];
+  defaultDomainId: string | null;
+  fromName: string | null;
+  replyTo: string | null;
+}
+
+export interface UpdateTenantSenderDomainsPayload {
+  defaultDomainId: string | null;
+  fromName?: string | null;
+  replyTo?: string | null;
+}
+
 export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 
 export interface ProfileStoreListItem {
@@ -551,6 +573,14 @@ export function readTenantSettings(request: RequestFn) {
 
 export function updateTenantSettings(request: RequestFn, input: UpdateSettingsInput) {
   return request<ScopeSettingsResponse>('/api/v1/organization/settings', buildJsonRequestInit('PATCH', input));
+}
+
+export function readTenantSenderDomains(request: RequestFn) {
+  return request<TenantSenderDomainsResponse>('/api/v1/email/sender-domains');
+}
+
+export function updateTenantSenderDomains(request: RequestFn, input: UpdateTenantSenderDomainsPayload) {
+  return request<TenantSenderDomainsResponse>('/api/v1/email/sender-domains', buildJsonRequestInit('PATCH', input));
 }
 
 export async function listProfileStores(request: RequestFn, options: ProfileStoreListOptions = {}) {
