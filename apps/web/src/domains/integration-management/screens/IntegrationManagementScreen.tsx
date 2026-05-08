@@ -1089,7 +1089,7 @@ function CheckboxField({
 }
 
 export function IntegrationManagementScreen({
-  tenantId: _tenantId,
+  tenantId,
   workspaceKind = 'tenant',
   surface = 'mixed',
 }: Readonly<{
@@ -2756,6 +2756,47 @@ export function IntegrationManagementScreen({
     requestDiscardDirtyEditor(() => setSelectedScope(scope));
   }
 
+  function buildInterfaceAddAdapterHref() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('tab');
+    params.delete('adapterPage');
+    params.delete('adapterPageSize');
+
+    if (selectedIntegrationScope) {
+      params.set('ownerType', selectedIntegrationScope.ownerType);
+
+      if (selectedIntegrationScope.ownerId) {
+        params.set('ownerId', selectedIntegrationScope.ownerId);
+      } else {
+        params.delete('ownerId');
+      }
+    }
+
+    const query = params.toString();
+    const basePath = isAcWorkspace
+      ? `/ac/${encodeURIComponent(tenantId)}/interface-management/adapters/new`
+      : `/tenant/${encodeURIComponent(tenantId)}/interface-management/adapters/new`;
+
+    return query ? `${basePath}?${query}` : basePath;
+  }
+
+  function startAdapterCreateFlow() {
+    requestDiscardDirtyEditor(() => {
+      if (surface === 'interfaces') {
+        router.replace(buildInterfaceAddAdapterHref());
+        return;
+      }
+
+      setAdapterCreateMode(true);
+      setSelectedAdapterId(null);
+      setAdapterDrawerOpen(true);
+      setAdapterConfigPanelOpen(true);
+      setAdapterConfigureSection('basics');
+      const definition = adapterDefinitionsPanel.data[0] ?? null;
+      setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
+    });
+  }
+
   async function handleConfirmAction() {
     if (!confirmState) {
       return;
@@ -4002,17 +4043,7 @@ export function IntegrationManagementScreen({
                   </SecondaryButton>
                   <SecondaryButton
                     tone="primary"
-                    onClick={() =>
-                      requestDiscardDirtyEditor(() => {
-                        setAdapterCreateMode(true);
-                        setSelectedAdapterId(null);
-                        setAdapterDrawerOpen(true);
-                        setAdapterConfigPanelOpen(true);
-                        setAdapterConfigureSection('basics');
-                        const definition = adapterDefinitionsPanel.data[0] ?? null;
-                        setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
-                      })
-                    }
+                    onClick={startAdapterCreateFlow}
                   >
                     <Plus className="h-4 w-4" />
                     {text({
@@ -4261,16 +4292,7 @@ export function IntegrationManagementScreen({
                 <>
                   {!adapterCreateMode ? (
                     <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setAdapterCreateMode(true);
-                          setSelectedAdapterId(null);
-                          setAdapterDrawerOpen(true);
-                          setAdapterConfigPanelOpen(true);
-                          const definition = adapterDefinitionsPanel.data[0] ?? null;
-                          setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
-                        })
-                      }
+                      onClick={startAdapterCreateFlow}
                     >
                       {text('Start new', '新建', '新規作成')}
                     </SecondaryButton>
@@ -4559,29 +4581,55 @@ export function IntegrationManagementScreen({
                             placeholder={text('client_secret', 'client_secret', 'client_secret')}
                           />
                           <div className="space-y-2">
-                            <TextField
-                              label={configField?.required ? `${configLabel} *` : configLabel}
-                              value={row.configValue}
-                              onChange={(value) =>
-                                setAdapterConfigRows((current) =>
-                                  current.map((item) =>
-                                    item.rowKey === row.rowKey
-                                      ? {
-                                          ...item,
-                                          configValue: value,
-                                          isMasked: false,
-                                          valueEdited: true,
-                                          clearRequested: false,
-                                        }
-                                      : item,
-                                  ),
-                                )
-                              }
-                              placeholder={configField?.placeholder ?? (row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値'))}
-                              type={configField?.input === 'password' ? 'password' : configField?.input === 'url' ? 'url' : 'text'}
-                              disabled={row.clearRequested}
-                              required={configField?.required}
-                            />
+                            {configField?.input === 'select' && configField.options?.length ? (
+                              <SelectField
+                                label={configField.required ? `${configLabel} *` : configLabel}
+                                value={row.configValue}
+                                onChange={(value) =>
+                                  setAdapterConfigRows((current) =>
+                                    current.map((item) =>
+                                      item.rowKey === row.rowKey
+                                        ? {
+                                            ...item,
+                                            configValue: value,
+                                            isMasked: false,
+                                            valueEdited: true,
+                                            clearRequested: false,
+                                          }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                                options={configField.options.map((option) => ({
+                                  value: option.value,
+                                  label: pickAdapterDefinitionText(option.label, option.value),
+                                }))}
+                              />
+                            ) : (
+                              <TextField
+                                label={configField?.required ? `${configLabel} *` : configLabel}
+                                value={row.configValue}
+                                onChange={(value) =>
+                                  setAdapterConfigRows((current) =>
+                                    current.map((item) =>
+                                      item.rowKey === row.rowKey
+                                        ? {
+                                            ...item,
+                                            configValue: value,
+                                            isMasked: false,
+                                            valueEdited: true,
+                                            clearRequested: false,
+                                          }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                                placeholder={configField?.placeholder ?? (row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値'))}
+                                type={configField?.input === 'password' ? 'password' : configField?.input === 'url' ? 'url' : 'text'}
+                                disabled={row.clearRequested}
+                                required={configField?.required}
+                              />
+                            )}
                             {configDescription ? (
                               <p className="text-xs leading-5 text-slate-500">{configDescription}</p>
                             ) : null}

@@ -75,7 +75,9 @@ export type {
 } from './types/customer/schema';
 export type {
     AiProvider,
+    IntegrationAdapterAiProviderDefinition,
     IntegrationAdapterConfigFieldDefinition,
+    IntegrationAdapterConfigFieldOptionDefinition,
     IntegrationAdapterDefinition,
     IntegrationAdapterPlatformBindingDefinition,
     IntegrationAdapterProtocolDefinition,
@@ -85,8 +87,10 @@ export type {
 } from './types/integration/schema';
 export {
     ADAPTER_CONFIG_KEYS,
+    getIntegrationAdapterCreateDefinition,
     getIntegrationAdapterDefinition,
     getIntegrationWebhookDefinition,
+    INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
     INTEGRATION_ADAPTER_DEFINITIONS,
     INTEGRATION_WEBHOOK_DEFINITIONS,
 } from './types/integration/schema';

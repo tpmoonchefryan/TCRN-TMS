@@ -9,7 +9,7 @@ import {
 import { Prisma } from '@tcrn/database';
 import {
   ErrorCodes,
-  getIntegrationAdapterDefinition,
+  getIntegrationAdapterCreateDefinition,
   type IntegrationAdapterDefinition,
   LogSeverity,
   type RequestContext,
@@ -131,7 +131,11 @@ export class AdapterWriteApplicationService {
         nameEn: translationPayload.nameEn,
         nameZh: translationPayload.nameZh,
         nameJa: translationPayload.nameJa,
-        extraData: this.mergeDefinitionExtraData(translationPayload.extraData, definition),
+        extraData: this.mergeDefinitionExtraData(
+          translationPayload.extraData,
+          definition,
+          createInput.configs,
+        ),
         adapterType: createInput.adapterType,
         inherit: createInput.inherit,
         userId: context.userId ?? null,
@@ -182,7 +186,7 @@ export class AdapterWriteApplicationService {
       return null;
     }
 
-    const definition = getIntegrationAdapterDefinition(definitionKey);
+    const definition = getIntegrationAdapterCreateDefinition(definitionKey);
     if (!definition) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
@@ -293,6 +297,17 @@ export class AdapterWriteApplicationService {
         });
       }
 
+      if (
+        normalizedValue
+        && field.options?.length
+        && !field.options.some((option) => option.value === normalizedValue)
+      ) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `Config '${field.key}' value is not supported by adapter definition '${definition.key}'`,
+        });
+      }
+
       return normalizedValue
         ? [{ configKey: field.key, configValue: normalizedValue }]
         : [];
@@ -302,6 +317,7 @@ export class AdapterWriteApplicationService {
   private mergeDefinitionExtraData(
     extraData: Record<string, unknown> | null,
     definition: IntegrationAdapterDefinition | null,
+    configs: Array<{ configKey: string; configValue: string }>,
   ) {
     if (!definition) {
       return extraData;
@@ -311,10 +327,22 @@ export class AdapterWriteApplicationService {
       ...(extraData ?? {}),
       definitionKey: definition.key,
       definitionCode: definition.code,
-      aiProvider: definition.aiProvider ?? null,
+      aiProvider: definition.aiProvider ?? this.resolveDefinitionAiProvider(configs, definition),
       capabilities: definition.capabilities,
       protocol: definition.protocol,
     };
+  }
+
+  private resolveDefinitionAiProvider(
+    configs: Array<{ configKey: string; configValue: string }>,
+    definition: IntegrationAdapterDefinition,
+  ) {
+    if (!definition.aiProviders?.length) {
+      return null;
+    }
+
+    const provider = configs.find((config) => config.configKey === 'provider')?.configValue ?? null;
+    return definition.aiProviders.some((option) => option.provider === provider) ? provider : null;
   }
 
   async update(id: string, dto: UpdateAdapterDto, context: RequestContext) {

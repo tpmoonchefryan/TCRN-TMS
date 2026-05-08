@@ -83,11 +83,11 @@ describe('AdapterWriteApplicationService', () => {
     );
   });
 
-  it('creates adapters from a supported definition and encrypts AI tokens without free platform/type input', async () => {
+  it('creates adapters from the addable AI Adapter definition and encrypts tokens without free platform/type input', async () => {
     vi.mocked(mockRepository.ensurePlatformForDefinition).mockResolvedValue({
-      id: 'platform-openai',
-      code: 'OPENAI',
-      displayName: 'OpenAI',
+      id: 'platform-ai-adapter',
+      code: 'AI_ADAPTER',
+      displayName: 'AI Adapter',
       iconUrl: null,
     } as never);
     vi.mocked(mockRepository.findByCode).mockResolvedValue(null);
@@ -95,14 +95,18 @@ describe('AdapterWriteApplicationService', () => {
     vi.mocked(mockRepository.create).mockResolvedValue('adapter-ai-1');
     vi.mocked(mockReadApplicationService.findById).mockResolvedValue({
       id: 'adapter-ai-1',
-      code: 'OPENAI_AI',
+      code: 'AI_ADAPTER',
     } as never);
 
     await expect(
       service.create(
         {
-          definitionKey: 'openai-ai',
+          definitionKey: 'ai-adapter',
           configs: [
+            {
+              configKey: 'provider',
+              configValue: 'OPENAI',
+            },
             {
               configKey: 'endpoint_path',
               configValue: '/v1/responses',
@@ -122,7 +126,7 @@ describe('AdapterWriteApplicationService', () => {
       ),
     ).resolves.toEqual({
       id: 'adapter-ai-1',
-      code: 'OPENAI_AI',
+      code: 'AI_ADAPTER',
     });
 
     expect(mockRepository.findPlatformById).not.toHaveBeenCalled();
@@ -130,12 +134,12 @@ describe('AdapterWriteApplicationService', () => {
       prisma,
       'tenant_test',
       expect.objectContaining({
-        platformId: 'platform-openai',
-        code: 'OPENAI_AI',
-        nameEn: 'OpenAI AI Adapter',
+        platformId: 'platform-ai-adapter',
+        code: 'AI_ADAPTER',
+        nameEn: 'AI Adapter',
         adapterType: 'ai',
         extraData: expect.objectContaining({
-          definitionKey: 'openai-ai',
+          definitionKey: 'ai-adapter',
           aiProvider: 'OPENAI',
           protocol: expect.objectContaining({
             invocationRuntime: 'not_implemented',
@@ -148,6 +152,11 @@ describe('AdapterWriteApplicationService', () => {
       'tenant_test',
       'adapter-ai-1',
       [
+        {
+          configKey: 'provider',
+          configValue: 'OPENAI',
+          isSecret: false,
+        },
         {
           configKey: 'endpoint_path',
           configValue: '/v1/responses',
@@ -171,11 +180,35 @@ describe('AdapterWriteApplicationService', () => {
     await expect(
       service.create(
         {
-          definitionKey: 'openai-ai',
+          definitionKey: 'ai-adapter',
           platformId: '11111111-1111-4111-8111-111111111111',
           adapterType: AdapterType.API_KEY,
           code: 'FREE_FORM',
           nameEn: 'Free form adapter',
+          configs: [
+            { configKey: 'provider', configValue: 'OPENAI' },
+            { configKey: 'endpoint_path', configValue: '/v1/responses' },
+            { configKey: 'model', configValue: 'gpt-example' },
+            { configKey: 'token', configValue: 'provider-token' },
+          ],
+        },
+        context,
+        scope,
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Adapter definition 'ai-adapter' controls platform, type, code, and name fields",
+      },
+    });
+    expect(mockRepository.ensurePlatformForDefinition).not.toHaveBeenCalled();
+  });
+
+  it('rejects legacy adapter definition keys in create while keeping legacy records readable elsewhere', async () => {
+    await expect(
+      service.create(
+        {
+          definitionKey: 'openai-ai',
           configs: [
             { configKey: 'endpoint_path', configValue: '/v1/responses' },
             { configKey: 'model', configValue: 'gpt-example' },
@@ -188,7 +221,31 @@ describe('AdapterWriteApplicationService', () => {
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
-        message: "Adapter definition 'openai-ai' controls platform, type, code, and name fields",
+        message: "Unsupported adapter definition 'openai-ai'",
+      },
+    });
+    expect(mockRepository.ensurePlatformForDefinition).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsupported AI provider values for the generic AI Adapter definition', async () => {
+    await expect(
+      service.create(
+        {
+          definitionKey: 'ai-adapter',
+          configs: [
+            { configKey: 'provider', configValue: 'BILIBILI' },
+            { configKey: 'endpoint_path', configValue: '/v1/responses' },
+            { configKey: 'model', configValue: 'gpt-example' },
+            { configKey: 'token', configValue: 'provider-token' },
+          ],
+        },
+        context,
+        scope,
+      ),
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Config 'provider' value is not supported by adapter definition 'ai-adapter'",
       },
     });
     expect(mockRepository.ensurePlatformForDefinition).not.toHaveBeenCalled();

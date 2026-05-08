@@ -18,7 +18,14 @@ export type IntegrationAdapterConfigFieldInput =
   | 'text'
   | 'password'
   | 'url'
-  | 'textarea';
+  | 'textarea'
+  | 'select';
+
+export interface IntegrationAdapterConfigFieldOptionDefinition {
+  value: string;
+  label: IntegrationLocalizedText;
+  description?: IntegrationLocalizedText;
+}
 
 export interface IntegrationAdapterConfigFieldDefinition {
   key: string;
@@ -29,6 +36,7 @@ export interface IntegrationAdapterConfigFieldDefinition {
   secret: boolean;
   placeholder?: string;
   defaultValue?: string;
+  options?: IntegrationAdapterConfigFieldOptionDefinition[];
 }
 
 export interface IntegrationAdapterPlatformBindingDefinition {
@@ -66,6 +74,15 @@ export interface IntegrationAdapterDefinition {
   configFields: IntegrationAdapterConfigFieldDefinition[];
   protocol: IntegrationAdapterProtocolDefinition;
   capabilities: Array<'outbound_api' | 'oauth_login' | 'webhook_delivery' | 'ai_provider_config'>;
+  aiProviders?: IntegrationAdapterAiProviderDefinition[];
+}
+
+export interface IntegrationAdapterAiProviderDefinition {
+  provider: AiProvider;
+  label: IntegrationLocalizedText;
+  endpointPathDefault: string;
+  modelPlaceholder: string;
+  protocol: IntegrationAdapterProtocolDefinition;
 }
 
 export interface IntegrationWebhookDefinition {
@@ -168,6 +185,7 @@ export const ADAPTER_CONFIG_KEYS = {
     { key: 'endpoint_url', label: 'Endpoint URL', required: false, secret: false },
   ],
   ai: [
+    { key: 'provider', label: 'Provider', required: true, secret: false },
     { key: 'endpoint_path', label: 'Endpoint Path', required: true, secret: false },
     { key: 'model', label: 'Model', required: true, secret: false },
     { key: 'token', label: 'Token', required: true, secret: true },
@@ -256,7 +274,139 @@ const tokenField: IntegrationAdapterConfigFieldDefinition = {
   secret: true,
 };
 
-export const INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
+const aiProviderDefinitions: IntegrationAdapterAiProviderDefinition[] = [
+  {
+    provider: 'OPENAI',
+    label: {
+      en: 'OpenAI',
+      zh_HANS: 'OpenAI',
+      zh_HANT: 'OpenAI',
+      ja: 'OpenAI',
+      ko: 'OpenAI',
+      fr: 'OpenAI',
+    },
+    endpointPathDefault: '/v1/responses',
+    modelPlaceholder: 'gpt-example',
+    protocol: {
+      family: 'openai-responses',
+      payloadFormat: 'official-provider-protocol',
+      invocationRuntime: 'not_implemented',
+      notes: notImplementedProtocolNotes,
+    },
+  },
+  {
+    provider: 'ANTHROPIC',
+    label: {
+      en: 'Anthropic',
+      zh_HANS: 'Anthropic',
+      zh_HANT: 'Anthropic',
+      ja: 'Anthropic',
+      ko: 'Anthropic',
+      fr: 'Anthropic',
+    },
+    endpointPathDefault: '/v1/messages',
+    modelPlaceholder: 'claude-example',
+    protocol: {
+      family: 'anthropic-messages',
+      payloadFormat: 'official-provider-protocol',
+      invocationRuntime: 'not_implemented',
+      notes: notImplementedProtocolNotes,
+    },
+  },
+  {
+    provider: 'GEMINI',
+    label: {
+      en: 'Gemini',
+      zh_HANS: 'Gemini',
+      zh_HANT: 'Gemini',
+      ja: 'Gemini',
+      ko: 'Gemini',
+      fr: 'Gemini',
+    },
+    endpointPathDefault: '/v1beta/models/{model}:generateContent',
+    modelPlaceholder: 'gemini-example',
+    protocol: {
+      family: 'gemini-generate-content',
+      payloadFormat: 'official-provider-protocol',
+      invocationRuntime: 'not_implemented',
+      notes: notImplementedProtocolNotes,
+    },
+  },
+];
+
+const providerField: IntegrationAdapterConfigFieldDefinition = {
+  key: 'provider',
+  label: {
+    en: 'Provider',
+    zh_HANS: '提供商',
+    zh_HANT: '供應商',
+    ja: 'プロバイダー',
+    ko: '제공자',
+    fr: 'Fournisseur',
+  },
+  description: {
+    en: 'AI provider selected inside the adapter form. The first version supports token-only connection setup.',
+    zh_HANS: '在适配器表单内选择 AI 提供商。第一版仅支持 Token 连接。',
+    zh_HANT: '在適配器表單內選擇 AI 供應商。第一版僅支援 Token 連線。',
+    ja: 'アダプターフォーム内で選択する AI プロバイダーです。初版はトークン接続のみをサポートします。',
+    ko: '어댑터 양식 안에서 선택하는 AI 제공자입니다. 첫 버전은 토큰 연결만 지원합니다.',
+    fr: "Fournisseur IA sélectionné dans le formulaire d'adaptateur. La première version prend uniquement en charge la connexion par jeton.",
+  },
+  input: 'select',
+  required: true,
+  secret: false,
+  defaultValue: 'OPENAI',
+  options: aiProviderDefinitions.map((provider) => ({
+    value: provider.provider,
+    label: provider.label,
+  })),
+};
+
+const aiAdapterCreateDefinition: IntegrationAdapterDefinition = {
+  key: 'ai-adapter',
+  code: 'AI_ADAPTER',
+  adapterType: 'ai',
+  name: {
+    en: 'AI Adapter',
+    zh_HANS: 'AI 适配器',
+    zh_HANT: 'AI 適配器',
+    ja: 'AI アダプター',
+    ko: 'AI 어댑터',
+    fr: 'Adaptateur IA',
+  },
+  description: {
+    en: 'Generic token-only AI provider configuration. Choose OpenAI, Anthropic, or Gemini inside the form. AI invocation is not implemented yet.',
+    zh_HANS: '通用 Token-only AI 提供商配置。在表单内选择 OpenAI、Anthropic 或 Gemini。当前尚未实现 AI 调用。',
+    zh_HANT: '通用 Token-only AI 供應商設定。在表單內選擇 OpenAI、Anthropic 或 Gemini。目前尚未實作 AI 呼叫。',
+    ja: 'トークン専用の汎用 AI プロバイダー設定です。フォーム内で OpenAI、Anthropic、Gemini を選びます。AI 呼び出しはまだ実装されていません。',
+    ko: '토큰 전용 일반 AI 제공자 설정입니다. 양식 안에서 OpenAI, Anthropic 또는 Gemini를 선택합니다. AI 호출은 아직 구현되지 않았습니다.',
+    fr: "Configuration générique de fournisseur IA par jeton uniquement. Choisissez OpenAI, Anthropic ou Gemini dans le formulaire. L'appel IA n'est pas encore implémenté.",
+  },
+  platform: {
+    code: 'AI_ADAPTER',
+    displayName: 'AI Adapter',
+    nameEn: 'AI Adapter',
+    baseUrl: null,
+    iconUrl: null,
+    color: '#6366F1',
+  },
+  configFields: [
+    providerField,
+    endpointPathField,
+    modelField,
+    tokenField,
+  ],
+  protocol: {
+    family: 'generic-rest',
+    payloadFormat: 'official-provider-protocol',
+    invocationRuntime: 'not_implemented',
+    notes: notImplementedProtocolNotes,
+  },
+  capabilities: ['ai_provider_config'],
+  aiProviders: aiProviderDefinitions,
+};
+
+const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
   {
     key: 'bilibili-api-key',
     code: 'BILIBILI_API',
@@ -550,6 +700,15 @@ export const INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
   },
 ];
 
+export const INTEGRATION_ADAPTER_CREATE_DEFINITIONS: IntegrationAdapterDefinition[] = [
+  aiAdapterCreateDefinition,
+];
+
+export const INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
+  ...INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
+  ...LEGACY_INTEGRATION_ADAPTER_DEFINITIONS,
+];
+
 export const INTEGRATION_WEBHOOK_DEFINITIONS: IntegrationWebhookDefinition[] = [
   {
     key: 'customer-lifecycle',
@@ -643,6 +802,10 @@ export const INTEGRATION_WEBHOOK_DEFINITIONS: IntegrationWebhookDefinition[] = [
 
 export function getIntegrationAdapterDefinition(key: string | undefined) {
   return INTEGRATION_ADAPTER_DEFINITIONS.find((definition) => definition.key === key);
+}
+
+export function getIntegrationAdapterCreateDefinition(key: string | undefined) {
+  return INTEGRATION_ADAPTER_CREATE_DEFINITIONS.find((definition) => definition.key === key);
 }
 
 export function getIntegrationWebhookDefinition(key: string | undefined) {

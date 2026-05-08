@@ -56,7 +56,7 @@ describe('integration-management.api pagination helpers', () => {
   it('loads supported adapter and webhook definitions from the Integration API', async () => {
     const request = vi.fn(async (path: string) => {
       if (path === '/api/v1/integration/adapter-definitions') {
-        return [{ key: 'openai-ai' }];
+        return [{ key: 'ai-adapter' }];
       }
 
       if (path === '/api/v1/integration/webhook-definitions') {
@@ -66,7 +66,7 @@ describe('integration-management.api pagination helpers', () => {
       throw new Error(`Unexpected request path: ${path}`);
     });
 
-    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([{ key: 'openai-ai' }]);
+    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([{ key: 'ai-adapter' }]);
     await expect(listWebhookDefinitions(request as never)).resolves.toEqual([{ key: 'customer-lifecycle' }]);
   });
 
@@ -255,10 +255,10 @@ describe('integration-management.api pagination helpers', () => {
       id: 'adapter-ai-1',
       ownerType: 'tenant',
       ownerId: null,
-      definitionKey: 'openai-ai',
-      platform: { id: 'platform-openai', code: 'OPENAI', displayName: 'OpenAI' },
-      code: 'OPENAI_AI',
-      nameEn: 'OpenAI AI Adapter',
+      definitionKey: 'ai-adapter',
+      platform: { id: 'platform-ai-adapter', code: 'AI_ADAPTER', displayName: 'AI Adapter' },
+      code: 'AI_ADAPTER',
+      nameEn: 'AI Adapter',
       adapterType: 'ai',
       inherit: true,
       isActive: true,
@@ -271,8 +271,9 @@ describe('integration-management.api pagination helpers', () => {
     }));
 
     await createTenantAdapter(request as never, {
-      definitionKey: 'openai-ai',
+      definitionKey: 'ai-adapter',
       configs: [
+        { configKey: 'provider', configValue: 'OPENAI' },
         { configKey: 'endpoint_path', configValue: '/v1/responses' },
         { configKey: 'model', configValue: 'gpt-example' },
         { configKey: 'token', configValue: 'provider-token' },
@@ -284,8 +285,9 @@ describe('integration-management.api pagination helpers', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
-          definitionKey: 'openai-ai',
+          definitionKey: 'ai-adapter',
           configs: [
+            { configKey: 'provider', configValue: 'OPENAI' },
             { configKey: 'endpoint_path', configValue: '/v1/responses' },
             { configKey: 'model', configValue: 'gpt-example' },
             { configKey: 'token', configValue: 'provider-token' },

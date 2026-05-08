@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { INTEGRATION_ADAPTER_CREATE_DEFINITIONS } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -52,6 +53,18 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
 };
 
 describe('Integration private route contract', () => {
+  it('keeps the adapter create catalog narrowed to the generic AI Adapter entry', () => {
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS.map((definition) => definition.key)).toEqual([
+      'ai-adapter',
+    ]);
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].configFields.map((field) => field.key)).toEqual([
+      'provider',
+      'endpoint_path',
+      'model',
+      'token',
+    ]);
+  });
+
   it('keeps webhooks and tenant-owned adapters under the tenant-root integration family', () => {
     expect(Reflect.getMetadata(PATH_METADATA, IntegrationController)).toBe('integration');
     expect(getControllerRoutes(IntegrationController)).toEqual(

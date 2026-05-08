@@ -95,4 +95,37 @@ describe('InterfaceManagementScreen', () => {
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/email/config');
     });
   });
+
+  it('navigates Add Adapter to the dedicated new adapter page with selected scope query', async () => {
+    const user = userEvent.setup();
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return {
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        };
+      }
+
+      if (path === '/api/v1/integration/adapter-definitions') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
+        return [];
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<InterfaceManagementScreen tenantId="tenant-1" />);
+
+    await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
+    await user.click(await screen.findByRole('button', { name: /New adapter/i }));
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/interface-management/adapters/new?ownerType=tenant',
+    );
+  });
 });

@@ -62,36 +62,55 @@ const organizationTreeResponse = {
   ],
 };
 
-const openAiAdapterDefinition = {
-  key: 'openai-ai',
-  code: 'OPENAI_AI',
+const aiAdapterDefinition = {
+  key: 'ai-adapter',
+  code: 'AI_ADAPTER',
   adapterType: 'ai',
-  aiProvider: 'OPENAI',
   name: {
-    en: 'OpenAI AI Adapter',
-    zh_HANS: 'OpenAI AI 适配器',
-    zh_HANT: 'OpenAI AI 適配器',
-    ja: 'OpenAI AI アダプター',
-    ko: 'OpenAI AI 어댑터',
-    fr: 'Adaptateur IA OpenAI',
+    en: 'AI Adapter',
+    zh_HANS: 'AI 适配器',
+    zh_HANT: 'AI 適配器',
+    ja: 'AI アダプター',
+    ko: 'AI 어댑터',
+    fr: 'Adaptateur IA',
   },
   description: {
-    en: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-    zh_HANS: '使用 Token 认证的通用 OpenAI 提供商配置。当前不会执行 AI 调用。',
-    zh_HANT: '使用 Token 認證的通用 OpenAI 供應商設定。目前不會執行 AI 呼叫。',
-    ja: 'トークン認証を使う汎用 OpenAI プロバイダー設定です。AI 呼び出しはまだ実行しません。',
-    ko: '토큰 인증을 사용하는 일반 OpenAI 제공자 설정입니다. 아직 AI 호출은 실행하지 않습니다.',
-    fr: "Configuration fournisseur OpenAI générique avec authentification par jeton. Aucun appel IA n'est exécuté pour l'instant.",
+    en: 'Generic token-only AI provider configuration.',
+    zh_HANS: '通用 Token-only AI 提供商配置。',
+    zh_HANT: '通用 Token-only AI 供應商設定。',
+    ja: 'トークン専用の汎用 AI プロバイダー設定です。',
+    ko: '토큰 전용 일반 AI 제공자 설정입니다.',
+    fr: 'Configuration générique de fournisseur IA par jeton uniquement.',
   },
   platform: {
-    code: 'OPENAI',
-    displayName: 'OpenAI',
-    nameEn: 'OpenAI',
-    baseUrl: 'https://api.openai.com',
+    code: 'AI_ADAPTER',
+    displayName: 'AI Adapter',
+    nameEn: 'AI Adapter',
+    baseUrl: null,
     iconUrl: null,
-    color: '#10A37F',
+    color: '#6366F1',
   },
   configFields: [
+    {
+      key: 'provider',
+      label: {
+        en: 'Provider',
+        zh_HANS: '提供商',
+        zh_HANT: '供應商',
+        ja: 'プロバイダー',
+        ko: '제공자',
+        fr: 'Fournisseur',
+      },
+      input: 'select',
+      required: true,
+      secret: false,
+      defaultValue: 'OPENAI',
+      options: [
+        { value: 'OPENAI', label: { en: 'OpenAI', zh_HANS: 'OpenAI', zh_HANT: 'OpenAI', ja: 'OpenAI', ko: 'OpenAI', fr: 'OpenAI' } },
+        { value: 'ANTHROPIC', label: { en: 'Anthropic', zh_HANS: 'Anthropic', zh_HANT: 'Anthropic', ja: 'Anthropic', ko: 'Anthropic', fr: 'Anthropic' } },
+        { value: 'GEMINI', label: { en: 'Gemini', zh_HANS: 'Gemini', zh_HANT: 'Gemini', ja: 'Gemini', ko: 'Gemini', fr: 'Gemini' } },
+      ],
+    },
     {
       key: 'endpoint_path',
       label: {
@@ -137,16 +156,16 @@ const openAiAdapterDefinition = {
     },
   ],
   protocol: {
-    family: 'openai-responses',
+    family: 'generic-rest',
     payloadFormat: 'official-provider-protocol',
     invocationRuntime: 'not_implemented',
     notes: {
-      en: 'This definition stores provider configuration only. AI invocation is intentionally not implemented in this package.',
-      zh_HANS: '此定义只存储提供商配置。本包不会实现 AI 调用能力。',
-      zh_HANT: '此定義只儲存供應商設定。本包不會實作 AI 呼叫能力。',
-      ja: 'この定義はプロバイダー設定のみを保存します。このパッケージでは AI 呼び出しは実装しません。',
-      ko: '이 정의는 제공자 설정만 저장합니다. 이 패키지에서는 AI 호출을 구현하지 않습니다.',
-      fr: "Cette définition stocke seulement la configuration du fournisseur. L'appel IA n'est pas implémenté dans ce package.",
+      en: 'Provider configuration only.',
+      zh_HANS: '仅提供商配置。',
+      zh_HANT: '僅供應商設定。',
+      ja: 'プロバイダー設定のみ。',
+      ko: '제공자 설정만.',
+      fr: 'Configuration fournisseur uniquement.',
     },
   },
   capabilities: ['ai_provider_config'],
@@ -267,7 +286,7 @@ describe('IntegrationManagementScreen', () => {
 
       if (path === '/api/v1/integration/adapter-definitions') {
         adapterDefinitionCalls += 1;
-        return [openAiAdapterDefinition];
+        return [aiAdapterDefinition];
       }
 
       if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
@@ -1804,25 +1823,25 @@ describe('IntegrationManagementScreen', () => {
       }
 
       if (path === '/api/v1/integration/adapter-definitions') {
-        return [openAiAdapterDefinition];
+        return [aiAdapterDefinition];
       }
 
       if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {
         return created
           ? [
               {
-                id: 'adapter-openai',
+                id: 'adapter-ai',
                 ownerType: 'tenant',
                 ownerId: null,
-                platformId: 'platform-openai',
+                platformId: 'platform-ai-adapter',
                 platform: {
-                  code: 'OPENAI',
-                  displayName: 'OpenAI',
+                  code: 'AI_ADAPTER',
+                  displayName: 'AI Adapter',
                   iconUrl: null,
                 },
-                definitionKey: 'openai-ai',
-                code: 'OPENAI_AI',
-                nameEn: 'OpenAI AI Adapter',
+                definitionKey: 'ai-adapter',
+                code: 'AI_ADAPTER',
+                nameEn: 'AI Adapter',
                 nameZh: null,
                 nameJa: null,
                 adapterType: 'ai',
@@ -1842,17 +1861,17 @@ describe('IntegrationManagementScreen', () => {
         createBody = JSON.parse(String(init.body));
         created = true;
         return {
-          id: 'adapter-openai',
+          id: 'adapter-ai',
           ownerType: 'tenant',
           ownerId: null,
           platform: {
-            id: 'platform-openai',
-            code: 'OPENAI',
-            displayName: 'OpenAI',
+            id: 'platform-ai-adapter',
+            code: 'AI_ADAPTER',
+            displayName: 'AI Adapter',
           },
-          definitionKey: 'openai-ai',
-          code: 'OPENAI_AI',
-          nameEn: 'OpenAI AI Adapter',
+          definitionKey: 'ai-adapter',
+          code: 'AI_ADAPTER',
+          nameEn: 'AI Adapter',
           nameZh: null,
           nameJa: null,
           adapterType: 'ai',
@@ -1867,19 +1886,19 @@ describe('IntegrationManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/integration/adapters/adapter-openai') {
+      if (path === '/api/v1/integration/adapters/adapter-ai') {
         return {
-          id: 'adapter-openai',
+          id: 'adapter-ai',
           ownerType: 'tenant',
           ownerId: null,
           platform: {
-            id: 'platform-openai',
-            code: 'OPENAI',
-            displayName: 'OpenAI',
+            id: 'platform-ai-adapter',
+            code: 'AI_ADAPTER',
+            displayName: 'AI Adapter',
           },
-          definitionKey: 'openai-ai',
-          code: 'OPENAI_AI',
-          nameEn: 'OpenAI AI Adapter',
+          definitionKey: 'ai-adapter',
+          code: 'AI_ADAPTER',
+          nameEn: 'AI Adapter',
           nameZh: null,
           nameJa: null,
           adapterType: 'ai',
@@ -1905,14 +1924,14 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getByRole('button', { name: 'New adapter' }));
     const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
 
-    expect(within(drawer).getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('openai-ai');
+    expect(within(drawer).getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('ai-adapter');
     expect(within(drawer).queryByLabelText('Platform')).not.toBeInTheDocument();
     expect(within(drawer).queryByLabelText('Adapter type')).not.toBeInTheDocument();
-    expect(within(drawer).getByText('OpenAI AI Adapter')).toBeInTheDocument();
-    expect(within(drawer).getByText('OPENAI')).toBeInTheDocument();
-    expect(within(drawer).getByText('openai-responses')).toBeInTheDocument();
+    expect(within(drawer).getAllByText('AI Adapter').length).toBeGreaterThan(0);
+    expect(within(drawer).getByText('generic-rest')).toBeInTheDocument();
 
     await user.click(within(drawer).getByRole('tab', { name: 'Secrets' }));
+    expect(within(drawer).getByRole('combobox', { name: /Provider/ })).toHaveValue('OPENAI');
     expect(within(drawer).getByDisplayValue('/v1/responses')).toBeInTheDocument();
 
     await user.type(within(drawer).getByLabelText(/Model/), 'gpt-4.1-mini');
@@ -1921,9 +1940,10 @@ describe('IntegrationManagementScreen', () => {
 
     await waitFor(() => {
       expect(createBody).toEqual({
-        definitionKey: 'openai-ai',
+        definitionKey: 'ai-adapter',
         inherit: true,
         configs: [
+          { configKey: 'provider', configValue: 'OPENAI' },
           { configKey: 'endpoint_path', configValue: '/v1/responses' },
           { configKey: 'model', configValue: 'gpt-4.1-mini' },
           { configKey: 'token', configValue: 'sk-test-token' },
@@ -1945,7 +1965,7 @@ describe('IntegrationManagementScreen', () => {
       }
 
       if (path === '/api/v1/integration/adapter-definitions') {
-        return [openAiAdapterDefinition];
+        return [aiAdapterDefinition];
       }
 
       if (path === '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true') {

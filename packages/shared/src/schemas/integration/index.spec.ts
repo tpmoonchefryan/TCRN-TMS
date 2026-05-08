@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { INTEGRATION_ADAPTER_DEFINITIONS } from '../../types/integration/schema';
+import {
+  INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
+  INTEGRATION_ADAPTER_DEFINITIONS,
+} from '../../types/integration/schema';
 import {
   AdapterConfigMutationItemSchema,
   AdapterTypeSchema,
@@ -97,16 +100,18 @@ describe('integration adapter config mutation schema', () => {
 describe('integration definition-backed create schema', () => {
   it('accepts adapter creation by developer-provided definition key without free platform/type fields', () => {
     expect(CreateAdapterSchema.parse({
-      definitionKey: 'openai-ai',
+      definitionKey: 'ai-adapter',
       configs: [
+        { configKey: 'provider', configValue: 'OPENAI' },
         { configKey: 'endpoint_path', configValue: '/v1/responses' },
         { configKey: 'model', configValue: 'gpt-example' },
         { configKey: 'token', configValue: 'secret-token' },
       ],
     })).toEqual({
-      definitionKey: 'openai-ai',
+      definitionKey: 'ai-adapter',
       inherit: true,
       configs: [
+        { configKey: 'provider', configValue: 'OPENAI' },
         { configKey: 'endpoint_path', configValue: '/v1/responses' },
         { configKey: 'model', configValue: 'gpt-example' },
         { configKey: 'token', configValue: 'secret-token' },
@@ -117,12 +122,13 @@ describe('integration definition-backed create schema', () => {
   it('rejects free adapter identity fields when creating from a supported definition', () => {
     expect(() =>
       CreateAdapterSchema.parse({
-        definitionKey: 'openai-ai',
+        definitionKey: 'ai-adapter',
         platformId: '11111111-1111-4111-8111-111111111111',
         adapterType: 'api_key',
         code: 'FREE_FORM',
         nameEn: 'Free form',
         configs: [
+          { configKey: 'provider', configValue: 'OPENAI' },
           { configKey: 'endpoint_path', configValue: '/v1/responses' },
           { configKey: 'model', configValue: 'gpt-example' },
           { configKey: 'token', configValue: 'secret-token' },
@@ -152,41 +158,54 @@ describe('integration definition-backed create schema', () => {
     });
   });
 
-  it('accepts ai as a first-class adapter type and exposes the three approved AI provider definitions', () => {
+  it('accepts ai as a first-class adapter type and exposes one addable AI Adapter create definition', () => {
     expect(AdapterTypeSchema.parse('ai')).toBe('ai');
 
-    const aiDefinitions = INTEGRATION_ADAPTER_DEFINITIONS.filter(
-      (definition) => definition.adapterType === 'ai',
-    );
-
-    expect(aiDefinitions.map((definition) => definition.aiProvider).sort()).toEqual([
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS).toHaveLength(1);
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0]).toMatchObject({
+      key: 'ai-adapter',
+      code: 'AI_ADAPTER',
+      adapterType: 'ai',
+      protocol: {
+        invocationRuntime: 'not_implemented',
+      },
+    });
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].configFields.map((field) => field.key)).toEqual([
+      'provider',
+      'endpoint_path',
+      'model',
+      'token',
+    ]);
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].configFields[0]).toMatchObject({
+      key: 'provider',
+      input: 'select',
+      secret: false,
+      options: [
+        { value: 'OPENAI' },
+        { value: 'ANTHROPIC' },
+        { value: 'GEMINI' },
+      ],
+    });
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].aiProviders?.map((provider) => provider.provider)).toEqual([
+      'OPENAI',
       'ANTHROPIC',
       'GEMINI',
-      'OPENAI',
     ]);
-    expect(
-      aiDefinitions.map((definition) => ({
-        key: definition.key,
-        configKeys: definition.configFields.map((field) => field.key),
-        invocationRuntime: definition.protocol.invocationRuntime,
-      })),
-    ).toEqual([
-      {
-        key: 'openai-ai',
-        configKeys: ['endpoint_path', 'model', 'token'],
-        invocationRuntime: 'not_implemented',
-      },
-      {
-        key: 'anthropic-ai',
-        configKeys: ['endpoint_path', 'model', 'token'],
-        invocationRuntime: 'not_implemented',
-      },
-      {
-        key: 'gemini-ai',
-        configKeys: ['endpoint_path', 'model', 'token'],
-        invocationRuntime: 'not_implemented',
-      },
-    ]);
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS.map((definition) => definition.key)).not.toContain('bilibili-api-key');
+    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS.map((definition) => definition.key)).not.toContain('youtube-oauth');
+  });
+
+  it('keeps legacy adapter definitions available outside the addable create catalog', () => {
+    expect(INTEGRATION_ADAPTER_DEFINITIONS.map((definition) => definition.key)).toEqual(
+      expect.arrayContaining([
+        'ai-adapter',
+        'bilibili-api-key',
+        'youtube-oauth',
+        'openai-ai',
+        'anthropic-ai',
+        'gemini-ai',
+      ]),
+    );
   });
 
   it('accepts webhook creation by developer-provided definition key', () => {

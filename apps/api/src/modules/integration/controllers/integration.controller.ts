@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
-  INTEGRATION_ADAPTER_DEFINITIONS,
+  INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
   INTEGRATION_WEBHOOK_DEFINITIONS,
   type RequestContext,
 } from '@tcrn/shared';
@@ -73,7 +73,7 @@ export class IntegrationController {
   @RequirePermissions({ resource: 'integration.adapter', action: 'read' })
   @ApiOperation({ summary: 'List supported adapter definitions' })
   getAdapterDefinitions() {
-    return INTEGRATION_ADAPTER_DEFINITIONS;
+    return INTEGRATION_ADAPTER_CREATE_DEFINITIONS;
   }
 
   @Get('webhook-definitions')
