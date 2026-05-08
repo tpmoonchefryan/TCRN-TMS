@@ -14,6 +14,7 @@
     "test:cov": "vitest run --config ./vitest.config.ts --coverage"
   },
   "dependencies": {
+    "@puckeditor/core": "^0.21.2",
     "@tcrn/shared": "workspace:*",
     "lucide-react": "0.542.0",
     "next": "16.1.1",

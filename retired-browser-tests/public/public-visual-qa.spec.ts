@@ -340,7 +340,11 @@ async function mockPublicRuntimeApi(page: Page) {
             turnstile: {
               siteKeyConfigured: !isMissingCaptchaRoute,
               secretKeyConfigured: !isMissingCaptchaRoute,
-              ready: !isMissingCaptchaRoute,
+              source: isMissingCaptchaRoute ? 'none' : 'environment',
+              providerReady: !isMissingCaptchaRoute,
+              runtimeBypass: isMissingCaptchaRoute,
+              environment: isMissingCaptchaRoute ? 'test' : 'staging',
+              ready: true,
             },
             maxMessageLength: 500,
             minMessageLength: 5,
@@ -585,17 +589,15 @@ test.describe('public runtime browser visual QA', () => {
     await expect(sendButton).toBeFocused();
   });
 
-  test('public marshmallow disables submission when Turnstile config is missing', async ({ page }) => {
+  test('public marshmallow keeps submission available when runtime bypass is active', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/m/${visualQaFixture.marshmallowMissingCaptchaPath}`);
     await hideFrameworkDevTools(page);
 
     await expect(page.getByRole('heading', { name: 'Missing Turnstile Mailbox', level: 1 })).toBeVisible();
-    await expect(
-      page.getByText('This page requires Turnstile, but captcha is not configured. Submission is unavailable.')
-    ).toBeVisible();
+    await expect(page.getByText('Submission is temporarily unavailable. Please try again later.')).toHaveCount(0);
     await expect(page.getByText('Turnstile verification')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled();
     await expectNoHorizontalOverflow(page, 'mobile marshmallow missing Turnstile config');
   });
 

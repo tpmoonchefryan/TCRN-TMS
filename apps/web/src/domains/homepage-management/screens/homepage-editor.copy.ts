@@ -12,9 +12,12 @@ export interface HomepageEditorCopy {
     jsonObjectRequired: string;
     loadError: string;
     loading: string;
+    lowCodeSnapshotRestored: string;
     saveError: string;
     sourceDocumentRequired: string;
+    unsafeSource: string;
     unavailableTitle: string;
+    visualLockedAfterEject: string;
   };
   header: {
     description: string;
@@ -26,6 +29,7 @@ export interface HomepageEditorCopy {
     backToManagement: string;
     openLivePreview: string;
     previewDraft: string;
+    restoreLowCodeSnapshot: string;
     routingSettings: string;
     saveDraft: string;
     savingDraft: string;
@@ -137,6 +141,7 @@ export interface HomepageEditorCopy {
     link: string;
     nameFontSize: string;
     numberedList: string;
+    originalType: string;
     platformCode: string;
     removeImage: (index: number) => string;
     removeSocialLink: (index: number) => string;
@@ -147,6 +152,7 @@ export interface HomepageEditorCopy {
     style: string;
     textAlign: string;
     unsupportedAdvancedOnly: string;
+    unsupportedCategory: string;
     url: string;
     options: Record<string, string>;
   };
@@ -170,9 +176,12 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       jsonObjectRequired: 'Enter a valid JSON object.',
       loadError: 'Failed to load the homepage editor.',
       loading: 'Loading homepage editor…',
+      lowCodeSnapshotRestored: 'Low-code snapshot restored. Review the visual editor before saving.',
       saveError: 'Failed to save the homepage draft.',
       sourceDocumentRequired: 'Source must contain a content object with a components array and a theme object.',
+      unsafeSource: 'Source cannot include scripts, event handlers, inline style attributes, unsafe URLs, or unrestricted HTML/CSS.',
       unavailableTitle: 'Homepage editor unavailable',
+      visualLockedAfterEject: 'This draft has entered Advanced source mode. Restore the low-code snapshot to return to Visual editing.',
     },
     header: {
       description: 'Build and preview homepage drafts here, then publish them from homepage management when they are ready.',
@@ -184,6 +193,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       backToManagement: 'Back to homepage management',
       openLivePreview: 'Open live preview',
       previewDraft: 'Preview',
+      restoreLowCodeSnapshot: 'Restore low-code snapshot',
       routingSettings: 'Public access settings',
       saveDraft: 'Save draft',
       savingDraft: 'Saving draft…',
@@ -354,6 +364,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       link: 'Link',
       nameFontSize: 'Name size',
       numberedList: 'Numbered list',
+      originalType: 'Original type',
       platformCode: 'Platform code',
       removeImage: (index) => `Remove image ${index}`,
       removeSocialLink: (index) => `Remove social link ${index}`,
@@ -364,6 +375,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       style: 'Style',
       textAlign: 'Text align',
       unsupportedAdvancedOnly: 'This block type stays in Advanced JSON for now.',
+      unsupportedCategory: 'Unsupported',
       url: 'URL',
       options: {
         button: 'Button',
@@ -409,9 +421,12 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       jsonObjectRequired: '请输入 JSON 对象。',
       loadError: '加载主页编辑器失败。',
       loading: '正在加载主页编辑器…',
+      lowCodeSnapshotRestored: '已恢复低代码快照。请在可视化编辑器中检查后再保存。',
       saveError: '保存主页草稿失败。',
       sourceDocumentRequired: '源码必须包含 content 对象、components 数组和 theme 对象。',
+      unsafeSource: '源码不能包含脚本、事件处理器、内联 style 属性、不安全 URL 或未受限制的 HTML/CSS。',
       unavailableTitle: '主页编辑器不可用',
+      visualLockedAfterEject: '该草稿已进入进阶源码模式。需要恢复低代码快照后才能回到可视化编辑。',
     },
     header: {
       description: '在这里编辑并预览主页草稿，确认无误后再回到主页管理页发布。',
@@ -423,6 +438,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       backToManagement: '返回主页管理',
       openLivePreview: '打开实时预览',
       previewDraft: '预览',
+      restoreLowCodeSnapshot: '恢复低代码快照',
       routingSettings: '公开访问设置',
       saveDraft: '保存草稿',
       savingDraft: '保存中…',
@@ -593,6 +609,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       link: '链接',
       nameFontSize: '名称字号',
       numberedList: '编号列表',
+      originalType: '原始类型',
       platformCode: '平台代码',
       removeImage: (index) => `移除图片 ${index}`,
       removeSocialLink: (index) => `移除社交链接 ${index}`,
@@ -603,6 +620,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       style: '样式',
       textAlign: '对齐',
       unsupportedAdvancedOnly: '该区块类型暂时保留在高级 JSON 中编辑。',
+      unsupportedCategory: '暂不支持',
       url: 'URL',
       options: {
         button: '按钮',
@@ -648,9 +666,12 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       jsonObjectRequired: 'JSON オブジェクトを入力してください。',
       loadError: 'ホームページ編集画面の読み込みに失敗しました。',
       loading: 'ホームページ編集画面を読み込み中…',
+      lowCodeSnapshotRestored: 'ローコードスナップショットを復元しました。保存前にビジュアルエディタで確認してください。',
       saveError: 'ホームページ下書きの保存に失敗しました。',
       sourceDocumentRequired: 'ソースには content オブジェクト、components 配列、theme オブジェクトが必要です。',
+      unsafeSource: 'ソースにはスクリプト、イベントハンドラ、インライン style 属性、安全でない URL、制限のない HTML/CSS を含められません。',
       unavailableTitle: 'ホームページ編集画面を開けません',
+      visualLockedAfterEject: 'この下書きは高度なソースモードに移行済みです。ビジュアル編集へ戻るにはローコードスナップショットを復元してください。',
     },
     header: {
       description: 'ここでホームページの下書きを編集して確認し、準備ができたらホームページ管理から公開します。',
@@ -662,6 +683,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       backToManagement: 'ホームページ管理へ戻る',
       openLivePreview: 'ライブプレビューを開く',
       previewDraft: 'プレビュー',
+      restoreLowCodeSnapshot: 'ローコードスナップショットを復元',
       routingSettings: '公開アクセス設定',
       saveDraft: '下書きを保存',
       savingDraft: '保存中…',
@@ -832,6 +854,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       link: 'リンク',
       nameFontSize: '名前サイズ',
       numberedList: '番号付きリスト',
+      originalType: '元のタイプ',
       platformCode: 'プラットフォームコード',
       removeImage: (index) => `画像 ${index} を削除`,
       removeSocialLink: (index) => `SNS リンク ${index} を削除`,
@@ -842,6 +865,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       style: 'スタイル',
       textAlign: 'テキスト揃え',
       unsupportedAdvancedOnly: 'このブロックタイプは現時点では高度な JSON で編集します。',
+      unsupportedCategory: '未対応',
       url: 'URL',
       options: {
         button: 'ボタン',

@@ -139,7 +139,7 @@ describe('MarshmallowConfigApplicationService', () => {
     });
   });
 
-  it('returns non-secret Turnstile runtime status with the config response', async () => {
+  it('returns non-secret Turnstile runtime status with test-runtime bypass readiness', async () => {
     mockConfigService.get.mockImplementation((key: string, fallback?: string) => {
       if (key === 'APP_URL') {
         return fallback ?? 'http://localhost:3000';
@@ -171,9 +171,11 @@ describe('MarshmallowConfigApplicationService', () => {
 
     await expect(service.getOrCreate('talent-123', 'tenant_test')).resolves.toMatchObject({
       turnstile: {
+        environment: 'test',
         siteKeyConfigured: true,
         secretKeyConfigured: false,
-        ready: false,
+        runtimeBypass: true,
+        ready: true,
       },
     });
   });

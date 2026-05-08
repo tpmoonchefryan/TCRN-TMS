@@ -2685,7 +2685,8 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
 
-    await page.getByRole('button', { name: 'Visual' }).click();
+    await expect(page.getByRole('button', { name: 'Visual' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Restore low-code snapshot' })).toBeVisible();
     const popupPromise = page.waitForEvent('popup');
     await page.getByRole('button', { name: 'Open live preview' }).click();
     const previewPage = await popupPromise;
@@ -2695,8 +2696,9 @@ test.describe('private shell browser visual QA', () => {
     await expect(previewPage.locator('h1').filter({ hasText: 'Visual Talent' })).toBeVisible();
     await expectNoHorizontalOverflow(previewPage, 'mobile homepage editor live preview page');
 
-    await page.getByRole('button', { name: 'Edit Profile card block' }).click();
-    await page.getByLabel('Display name').fill('Live Synced Talent');
+    const sourceEditor = page.getByLabel('Homepage source');
+    const currentSource = await sourceEditor.inputValue();
+    await sourceEditor.fill(currentSource.replace('Visual Talent', 'Live Synced Talent'));
     await expect(previewPage.locator('h1').filter({ hasText: 'Live Synced Talent' })).toBeVisible();
     await expect(previewPage).toHaveScreenshot('private-homepage-editor-mobile-live-preview.png', {
       animations: 'disabled',
