@@ -773,6 +773,85 @@ const privateVisualTalentCustomDomainBinding = {
   routeMode: 'dedicated_talent',
 };
 
+type PrivateVisualCustomDomainBinding = typeof privateVisualTenantCustomDomainBinding;
+type PrivateVisualCustomDomainMutation = {
+  method: string;
+  path: string;
+  body: Record<string, unknown> | null;
+};
+
+let privateVisualTenantCustomDomainBindings: PrivateVisualCustomDomainBinding[] = [];
+let privateVisualSubsidiaryCustomDomainBindings: PrivateVisualCustomDomainBinding[] = [];
+let privateVisualTalentCustomDomainBindings: PrivateVisualCustomDomainBinding[] = [];
+let privateVisualCustomDomainMutations: PrivateVisualCustomDomainMutation[] = [];
+
+function resetPrivateVisualCustomDomainFixtures() {
+  privateVisualTenantCustomDomainBindings = [{ ...privateVisualTenantCustomDomainBinding }];
+  privateVisualSubsidiaryCustomDomainBindings = [{ ...privateVisualSubsidiaryCustomDomainBinding }];
+  privateVisualTalentCustomDomainBindings = [{ ...privateVisualTalentCustomDomainBinding }];
+  privateVisualCustomDomainMutations = [];
+}
+
+function getPrivateVisualOwnedBindings(scopeType: 'tenant' | 'subsidiary' | 'talent') {
+  if (scopeType === 'tenant') {
+    return privateVisualTenantCustomDomainBindings;
+  }
+
+  if (scopeType === 'subsidiary') {
+    return privateVisualSubsidiaryCustomDomainBindings;
+  }
+
+  return privateVisualTalentCustomDomainBindings;
+}
+
+function setPrivateVisualOwnedBindings(
+  scopeType: 'tenant' | 'subsidiary' | 'talent',
+  domains: PrivateVisualCustomDomainBinding[],
+) {
+  if (scopeType === 'tenant') {
+    privateVisualTenantCustomDomainBindings = domains;
+    return;
+  }
+
+  if (scopeType === 'subsidiary') {
+    privateVisualSubsidiaryCustomDomainBindings = domains;
+    return;
+  }
+
+  privateVisualTalentCustomDomainBindings = domains;
+}
+
+function buildPrivateVisualCustomDomainBinding(
+  id: string,
+  input: {
+    ownerType: 'tenant' | 'subsidiary' | 'talent';
+    ownerId?: string | null;
+    hostname: string;
+    customDomainSslMode?: string;
+    isActive?: boolean;
+    customDomainVerified?: boolean;
+    customDomainVerificationToken: string | null;
+  },
+): PrivateVisualCustomDomainBinding {
+  return {
+    id,
+    hostname: input.hostname,
+    ownerType: input.ownerType,
+    ownerId:
+      input.ownerType === 'tenant'
+        ? visualQaSession.tenantId
+        : (input.ownerId ?? null),
+    ownerDepth: input.ownerType === 'tenant' ? 0 : input.ownerType === 'subsidiary' ? 1 : 2,
+    inherited: false,
+    selected: false,
+    customDomainVerified: input.customDomainVerified ?? false,
+    customDomainVerificationToken: input.customDomainVerificationToken,
+    customDomainSslMode: input.customDomainSslMode ?? 'auto',
+    isActive: input.isActive ?? true,
+    routeMode: input.ownerType === 'talent' ? 'dedicated_talent' : 'scoped_talent_path',
+  };
+}
+
 function cloneCustomDomainBinding(
   domain: typeof privateVisualTenantCustomDomainBinding,
   inherited: boolean,
@@ -792,22 +871,38 @@ function listPrivateVisualCustomDomainBindings(url: URL) {
   let domains: Array<typeof privateVisualTenantCustomDomainBinding> = [];
 
   if (scopeType === 'tenant') {
-    domains = [cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, false)];
+    domains = privateVisualTenantCustomDomainBindings.map((domain) =>
+      cloneCustomDomainBinding(domain, false),
+    );
   } else if (scopeType === 'subsidiary') {
     domains = includeInherited
       ? [
-          cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, true),
-          cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, false),
+          ...privateVisualTenantCustomDomainBindings.map((domain) =>
+            cloneCustomDomainBinding(domain, true),
+          ),
+          ...privateVisualSubsidiaryCustomDomainBindings.map((domain) =>
+            cloneCustomDomainBinding(domain, false),
+          ),
         ]
-      : [cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, false)];
+      : privateVisualSubsidiaryCustomDomainBindings.map((domain) =>
+          cloneCustomDomainBinding(domain, false),
+        );
   } else if (scopeType === 'talent') {
     domains = includeInherited
       ? [
-          cloneCustomDomainBinding(privateVisualTenantCustomDomainBinding, true, true),
-          cloneCustomDomainBinding(privateVisualSubsidiaryCustomDomainBinding, true, true),
-          cloneCustomDomainBinding(privateVisualTalentCustomDomainBinding, false),
+          ...privateVisualTenantCustomDomainBindings.map((domain) =>
+            cloneCustomDomainBinding(domain, true, true),
+          ),
+          ...privateVisualSubsidiaryCustomDomainBindings.map((domain) =>
+            cloneCustomDomainBinding(domain, true, true),
+          ),
+          ...privateVisualTalentCustomDomainBindings.map((domain) =>
+            cloneCustomDomainBinding(domain, false),
+          ),
         ]
-      : [cloneCustomDomainBinding(privateVisualTalentCustomDomainBinding, false)];
+      : privateVisualTalentCustomDomainBindings.map((domain) =>
+          cloneCustomDomainBinding(domain, false),
+        );
   }
 
   return search
@@ -1319,6 +1414,47 @@ async function mockPrivateRuntimeApi(page: Page) {
     }
 
     if (url.pathname === '/api/v1/talents/custom-domain-bindings') {
+      if (route.request().method() === 'POST') {
+        const body = route.request().postDataJSON() as {
+          ownerType: 'tenant' | 'subsidiary' | 'talent';
+          ownerId?: string | null;
+          hostname: string;
+          customDomainSslMode?: string;
+          isActive?: boolean;
+        };
+        const currentDomains = getPrivateVisualOwnedBindings(body.ownerType);
+        const nextIndex = currentDomains.length + 1;
+        const token = `${body.ownerType}-visual-created-token-${nextIndex}`;
+        const createdDomain = buildPrivateVisualCustomDomainBinding(
+          `domain-${body.ownerType}-created-${nextIndex}`,
+          {
+            ...body,
+            customDomainVerificationToken: token,
+          },
+        );
+
+        privateVisualCustomDomainMutations.push({
+          method: 'POST',
+          path: url.pathname,
+          body,
+        });
+        setPrivateVisualOwnedBindings(body.ownerType, [...currentDomains, createdDomain]);
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              domain: createdDomain,
+              token,
+              txtRecord: `tcrn-verify=${token}`,
+            },
+          }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1326,6 +1462,122 @@ async function mockPrivateRuntimeApi(page: Page) {
           success: true,
           data: {
             domains: listPrivateVisualCustomDomainBindings(url),
+          },
+        }),
+      });
+      return;
+    }
+
+    if (
+      url.pathname.startsWith('/api/v1/talents/custom-domain-bindings/')
+      && url.pathname.endsWith('/verify')
+      && route.request().method() === 'POST'
+    ) {
+      const domainId = url.pathname.split('/')[5];
+      const scopes: Array<'tenant' | 'subsidiary' | 'talent'> = ['tenant', 'subsidiary', 'talent'];
+
+      for (const scopeType of scopes) {
+        const currentDomains = getPrivateVisualOwnedBindings(scopeType);
+        const domainIndex = currentDomains.findIndex((domain) => domain.id === domainId);
+
+        if (domainIndex >= 0) {
+          const verifiedDomain = {
+            ...currentDomains[domainIndex],
+            customDomainVerified: true,
+            customDomainVerificationToken: null,
+          };
+          const nextDomains = [...currentDomains];
+          nextDomains[domainIndex] = verifiedDomain;
+          setPrivateVisualOwnedBindings(scopeType, nextDomains);
+
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: true,
+              data: {
+                verified: true,
+                message: 'Domain binding verified successfully',
+              },
+            }),
+          });
+          return;
+        }
+      }
+
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: {
+            code: 'RES_NOT_FOUND',
+            message: 'Custom-domain binding not found',
+          },
+        }),
+      });
+      return;
+    }
+
+    if (
+      url.pathname.startsWith('/api/v1/talents/custom-domain-bindings/')
+      && route.request().method() === 'PATCH'
+    ) {
+      const domainId = url.pathname.split('/')[5];
+      const body = route.request().postDataJSON() as {
+        ownerType: 'tenant' | 'subsidiary' | 'talent';
+        ownerId?: string | null;
+        hostname: string;
+        customDomainSslMode?: string;
+        isActive?: boolean;
+      };
+      const currentDomains = getPrivateVisualOwnedBindings(body.ownerType);
+      const domainIndex = currentDomains.findIndex((domain) => domain.id === domainId);
+
+      if (domainIndex < 0) {
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: false,
+            error: {
+              code: 'RES_NOT_FOUND',
+              message: 'Custom-domain binding not found',
+            },
+          }),
+        });
+        return;
+      }
+
+      const currentDomain = currentDomains[domainIndex];
+      const hostnameChanged = currentDomain.hostname !== body.hostname;
+      const token = hostnameChanged ? `${body.ownerType}-visual-updated-token` : null;
+      const updatedDomain = buildPrivateVisualCustomDomainBinding(domainId, {
+        ...body,
+        customDomainVerified: hostnameChanged ? false : currentDomain.customDomainVerified,
+        customDomainVerificationToken: hostnameChanged
+          ? token
+          : currentDomain.customDomainVerificationToken,
+      });
+      const nextDomains = [...currentDomains];
+      nextDomains[domainIndex] = updatedDomain;
+
+      privateVisualCustomDomainMutations.push({
+        method: 'PATCH',
+        path: url.pathname,
+        body,
+      });
+      setPrivateVisualOwnedBindings(body.ownerType, nextDomains);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            domain: updatedDomain,
+            token,
+            txtRecord: token ? `tcrn-verify=${token}` : null,
           },
         }),
       });
@@ -2265,6 +2517,7 @@ test.describe('private shell browser visual QA', () => {
     privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
     privateVisualUseLongHomepageFixture = false;
     privateVisualUseCustomDomainStorageError = false;
+    resetPrivateVisualCustomDomainFixtures();
     await mockPrivateRuntimeApi(page);
   });
 
@@ -2931,6 +3184,79 @@ test.describe('private shell browser visual QA', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+
+  test('desktop tenant settings proves create, edit, and verify custom-domain routing records', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/settings?configEntityType=custom-domain');
+    await hideFrameworkDevTools(page);
+
+    await page.getByRole('button', { name: 'Configuration Entity Management' }).click();
+    await expect(page.getByRole('heading', { name: 'Custom-domain records' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'New custom domain' }).click();
+    const createDrawer = page.getByRole('dialog', { name: 'Create custom domain' });
+    await expect(createDrawer).toBeVisible();
+    await createDrawer.getByLabel('Custom-domain hostname').fill('Brand-New.Example.Test.');
+    await createDrawer.getByLabel('Custom-domain SSL mode').selectOption('cloudflare');
+    await createDrawer.getByRole('button', { name: 'Save custom domain' }).click();
+
+    await expect(
+      page.getByText('Custom domain saved. Add TXT record: tcrn-verify=tenant-visual-created-token-2'),
+    ).toBeVisible();
+    expect(privateVisualCustomDomainMutations).toContainEqual({
+      method: 'POST',
+      path: '/api/v1/talents/custom-domain-bindings',
+      body: {
+        ownerType: 'tenant',
+        ownerId: null,
+        hostname: 'brand-new.example.test',
+        customDomainSslMode: 'cloudflare',
+        isActive: true,
+      },
+    });
+
+    const createdRow = page.getByRole('row', { name: /brand-new\.example\.test/i });
+    await expect(createdRow).toBeVisible();
+    await expect(createdRow.getByText('Unverified')).toBeVisible();
+    await expect(createdRow.getByText('cloudflare')).toBeVisible();
+
+    await createdRow.getByRole('button', { name: 'Edit' }).click();
+    const editDrawer = page.getByRole('dialog', { name: 'Edit custom domain' });
+    await expect(editDrawer).toBeVisible();
+    await editDrawer.getByLabel('Custom-domain hostname').fill('Brand-Updated.Example.Test.');
+    await editDrawer.getByLabel('Custom-domain SSL mode').selectOption('self_hosted');
+    await editDrawer.getByLabel('Custom domain is active').uncheck();
+    await editDrawer.getByRole('button', { name: 'Save custom domain' }).click();
+
+    await expect(
+      page.getByText('Custom domain saved. Add TXT record: tcrn-verify=tenant-visual-updated-token'),
+    ).toBeVisible();
+    expect(privateVisualCustomDomainMutations).toContainEqual({
+      method: 'PATCH',
+      path: '/api/v1/talents/custom-domain-bindings/domain-tenant-created-2',
+      body: {
+        ownerType: 'tenant',
+        ownerId: null,
+        hostname: 'brand-updated.example.test',
+        customDomainSslMode: 'self_hosted',
+        isActive: false,
+      },
+    });
+
+    const updatedRow = page.getByRole('row', { name: /brand-updated\.example\.test/i });
+    await expect(updatedRow).toBeVisible();
+    await expect(updatedRow.getByText('Unverified')).toBeVisible();
+    await expect(updatedRow.getByText('Inactive')).toBeVisible();
+    await expect(updatedRow.getByText('self_hosted')).toBeVisible();
+
+    await updatedRow.getByRole('button', { name: 'Verify' }).click();
+    await expect(page.getByText('Domain binding verified successfully')).toBeVisible();
+    await expect(updatedRow.getByText('Verified')).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant custom-domain create edit verify');
   });
 
   test('desktop subsidiary settings reviews inherited custom domains and manages owned rows', async ({

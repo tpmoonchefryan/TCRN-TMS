@@ -369,6 +369,72 @@ describe('TalentCustomDomainService', () => {
     );
   });
 
+  it('updates a domain binding with normalized hostname and rotated TXT record when the hostname changes', async () => {
+    vi.mocked(mockRepository.findCustomDomainBindingById).mockResolvedValue({
+      id: 'domain-1',
+      hostname: 'tenant.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: true,
+      customDomainVerificationToken: null,
+      customDomainSslMode: 'auto',
+      isActive: true,
+    });
+    vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
+    vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue(null);
+    vi.mocked(mockRepository.findLegacyCustomDomainOwner).mockResolvedValue(null);
+    vi.mocked(mockRepository.updateCustomDomainBinding).mockResolvedValue({
+      id: 'domain-1',
+      hostname: 'brand.example.com',
+      ownerType: 'tenant',
+      ownerId: null,
+      ownerDepth: null,
+      customDomainVerified: false,
+      customDomainVerificationToken: 'token-123',
+      customDomainSslMode: 'cloudflare',
+      isActive: false,
+    });
+
+    await expect(
+      service.updateCustomDomainBinding('tenant_test', 'domain-1', {
+        ownerType: 'tenant',
+        ownerId: 'ignored-for-tenant',
+        hostname: 'Brand.Example.COM.',
+        customDomainSslMode: 'cloudflare',
+        isActive: false,
+      }),
+    ).resolves.toEqual({
+      domain: expect.objectContaining({
+        id: 'domain-1',
+        hostname: 'brand.example.com',
+        ownerType: 'tenant',
+        customDomainVerified: false,
+        customDomainVerificationToken: 'token-123',
+        customDomainSslMode: 'cloudflare',
+        isActive: false,
+      }),
+      token: 'token-123',
+      txtRecord: 'tcrn-verify=token-123',
+    });
+    expect(mockRepository.findCustomDomainBindingByHostname).toHaveBeenCalledWith(
+      'brand.example.com',
+      'domain-1',
+    );
+    expect(mockRepository.updateCustomDomainBinding).toHaveBeenCalledWith(
+      'tenant_test',
+      'domain-1',
+      {
+        ownerType: 'tenant',
+        ownerId: null,
+        hostname: 'brand.example.com',
+        customDomainSslMode: 'cloudflare',
+        isActive: false,
+      },
+      'token-123',
+    );
+  });
+
   it('fails safe before creating a domain binding when the custom-domain registry is not ready', async () => {
     vi.mocked(mockRepository.getCustomDomainRegistryReadiness).mockResolvedValue({
       customDomainBinding: true,
