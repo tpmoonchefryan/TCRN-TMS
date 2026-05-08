@@ -42,6 +42,7 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
 import {
   SettingsDefaultsFormFields,
   SettingsDefaultsSummaryGrid,
@@ -1885,41 +1886,47 @@ export function TalentSettingsScreen({
                   </div>
                 )}
               >
-                <SettingsDefaultsSummaryGrid
-                  draft={initialDraft}
-                  getSourceHint={(key) => inheritedSourceLabel(settings.inheritedFrom[key], talentOverrideLabel, overrideSet.has(key))}
-                  text={text}
-                />
+                <SettingsCategoryWorkbench
+                  ariaLabel={common.settingsCategoriesAriaLabel}
+                  categories={[{ id: 'defaults-routes', label: common.defaultsAndRoutesCategory }]}
+                  activeCategoryId="defaults-routes"
+                >
+                  <SettingsDefaultsSummaryGrid
+                    draft={initialDraft}
+                    getSourceHint={(key) => inheritedSourceLabel(settings.inheritedFrom[key], talentOverrideLabel, overrideSet.has(key))}
+                    text={text}
+                  />
 
-                <div className="grid gap-4 xl:grid-cols-3">
-                  <FieldRow
-                    label={text('Current Homepage URL', '当前主页 URL', '現在のホームページ URL')}
-                    value={sharedHomepageUrl}
-                    valueClassName="font-mono text-sm leading-7"
-                  />
-                  <FieldRow
-                    label={text('Custom Domain', '自定义域名', 'カスタムドメイン')}
-                    value={customDomainPanel.data?.customDomain || common.notConfigured}
-                    valueClassName="font-mono text-sm leading-7"
-                  />
-                  <FieldRow
-                    label={text('Public Marshmallow Route', '公开棉花糖路由', '公開マシュマロルート')}
-                    value={formatBoolean(
-                      marshmallowPanel.data?.isEnabled ?? detail.externalPagesDomain.marshmallow?.isEnabled,
-                      common.active,
-                      common.inactive,
-                    )}
-                  />
-                  <FieldRow
-                    label={text('Profile Store', '档案库', 'プロフィールストア')}
-                    value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
-                  />
-                </div>
+                  <div className="grid gap-4 xl:grid-cols-3">
+                    <FieldRow
+                      label={text('Current Homepage URL', '当前主页 URL', '現在のホームページ URL')}
+                      value={sharedHomepageUrl}
+                      valueClassName="font-mono text-sm leading-7"
+                    />
+                    <FieldRow
+                      label={text('Custom Domain', '自定义域名', 'カスタムドメイン')}
+                      value={customDomainPanel.data?.customDomain || common.notConfigured}
+                      valueClassName="font-mono text-sm leading-7"
+                    />
+                    <FieldRow
+                      label={text('Public Marshmallow Route', '公开棉花糖路由', '公開マシュマロルート')}
+                      value={formatBoolean(
+                        marshmallowPanel.data?.isEnabled ?? detail.externalPagesDomain.marshmallow?.isEnabled,
+                        common.active,
+                        common.inactive,
+                      )}
+                    />
+                    <FieldRow
+                      label={text('Profile Store', '档案库', 'プロフィールストア')}
+                      value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
+                    />
+                  </div>
 
-                {!isSettingsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-                {!isSettingsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
-                {!isSettingsDrawerOpen && marshmallowSaveError ? <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p> : null}
-                {!isSettingsDrawerOpen && marshmallowSaveSuccess ? <p className="text-sm font-medium text-emerald-700">{marshmallowSaveSuccess}</p> : null}
+                  {!isSettingsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+                  {!isSettingsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+                  {!isSettingsDrawerOpen && marshmallowSaveError ? <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p> : null}
+                  {!isSettingsDrawerOpen && marshmallowSaveSuccess ? <p className="text-sm font-medium text-emerald-700">{marshmallowSaveSuccess}</p> : null}
+                </SettingsCategoryWorkbench>
               </FormSection>
             </GlassSurface>
 

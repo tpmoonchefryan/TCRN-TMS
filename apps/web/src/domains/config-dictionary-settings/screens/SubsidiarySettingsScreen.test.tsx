@@ -402,6 +402,8 @@ describe('SubsidiarySettingsScreen', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('navigation', { name: 'Settings categories' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);

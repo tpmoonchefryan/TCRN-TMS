@@ -74,6 +74,9 @@ const COMMON = {
     inheritedUnset: 'Inherited / unset',
     notConfigured: 'Not configured',
     settingsSectionsAriaLabel: 'Settings sections',
+    settingsCategoriesAriaLabel: 'Settings categories',
+    defaultsCategory: 'Defaults',
+    defaultsAndRoutesCategory: 'Defaults and routes',
     unavailable: 'Unavailable',
   },
   zh: {
@@ -93,6 +96,9 @@ const COMMON = {
     inheritedUnset: '继承 / 未设置',
     notConfigured: '未配置',
     settingsSectionsAriaLabel: '设置分区',
+    settingsCategoriesAriaLabel: '设置类别',
+    defaultsCategory: '默认值',
+    defaultsAndRoutesCategory: '默认值与路由',
     unavailable: '不可用',
   },
   zh_HANS: {
@@ -112,6 +118,9 @@ const COMMON = {
     inheritedUnset: '继承 / 未设置',
     notConfigured: '未配置',
     settingsSectionsAriaLabel: '设置分区',
+    settingsCategoriesAriaLabel: '设置类别',
+    defaultsCategory: '默认值',
+    defaultsAndRoutesCategory: '默认值与路由',
     unavailable: '不可用',
   },
   zh_HANT: {
@@ -131,6 +140,9 @@ const COMMON = {
     inheritedUnset: '繼承 / 未設定',
     notConfigured: '未設定',
     settingsSectionsAriaLabel: '設定分區',
+    settingsCategoriesAriaLabel: '設定類別',
+    defaultsCategory: '預設值',
+    defaultsAndRoutesCategory: '預設值與路由',
     unavailable: '不可用',
   },
   ja: {
@@ -150,6 +162,9 @@ const COMMON = {
     inheritedUnset: '継承 / 未設定',
     notConfigured: '未設定',
     settingsSectionsAriaLabel: '設定セクション',
+    settingsCategoriesAriaLabel: '設定カテゴリ',
+    defaultsCategory: '既定値',
+    defaultsAndRoutesCategory: '既定値とルート',
     unavailable: '利用不可',
   },
   ko: {
@@ -169,6 +184,9 @@ const COMMON = {
     inheritedUnset: '상속 / 미설정',
     notConfigured: '미설정',
     settingsSectionsAriaLabel: '설정 섹션',
+    settingsCategoriesAriaLabel: '설정 카테고리',
+    defaultsCategory: '기본값',
+    defaultsAndRoutesCategory: '기본값 및 경로',
     unavailable: '사용 불가',
   },
   fr: {
@@ -188,6 +206,9 @@ const COMMON = {
     inheritedUnset: 'Herite / non defini',
     notConfigured: 'Non configure',
     settingsSectionsAriaLabel: 'Sections des parametres',
+    settingsCategoriesAriaLabel: 'Categories de parametres',
+    defaultsCategory: 'Valeurs par defaut',
+    defaultsAndRoutesCategory: 'Valeurs par defaut et routes',
     unavailable: 'Indisponible',
   },
 } satisfies Record<SupportedUiLocale | RuntimeLocale, Record<string, string>>;

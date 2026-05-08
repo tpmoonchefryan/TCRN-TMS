@@ -81,52 +81,50 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         {help ? <div className="flex flex-none justify-start lg:justify-end">{help}</div> : null}
       </header>
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
-        <nav
-          id={sectionNavId}
-          tabIndex={-1}
-          className="min-w-0 rounded-lg border border-slate-200 bg-white/78 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 lg:sticky lg:top-6"
-          aria-label={ariaLabel}
+      <nav
+        id={sectionNavId}
+        tabIndex={-1}
+        className="min-w-0 rounded-lg border border-slate-200 bg-white/78 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+        aria-label={ariaLabel}
+      >
+        <div
+          className="flex min-w-0 gap-2 overflow-x-auto pb-1"
+          onKeyDown={handleSectionNavKeyDown}
         >
-          <div
-            className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
-            onKeyDown={handleSectionNavKeyDown}
-          >
-            {sections.map((section) => {
-              const isActive = section.id === activeSectionId;
+          {sections.map((section) => {
+            const isActive = section.id === activeSectionId;
 
-              return (
-                <button
-                  key={section.id}
-                  ref={(node) => {
-                    buttonRefs.current[section.id] = node;
-                  }}
-                  type="button"
-                  onClick={() => onSectionChange(section.id)}
-                  aria-current={isActive ? 'page' : undefined}
-                  tabIndex={section.id === focusableSectionId ? 0 : -1}
-                  className={`
-                    inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:w-full lg:flex-none
-                    ${isActive
-                      ? 'bg-slate-950 text-white shadow-sm'
-                      : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`}
-                  `}
-                >
-                  {section.icon ? (
-                    <span className="flex h-5 w-5 flex-none items-center justify-center" aria-hidden="true">
-                      {section.icon}
-                    </span>
-                  ) : null}
-                  <span className="whitespace-nowrap lg:whitespace-normal">{section.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+            return (
+              <button
+                key={section.id}
+                ref={(node) => {
+                  buttonRefs.current[section.id] = node;
+                }}
+                type="button"
+                onClick={() => onSectionChange(section.id)}
+                aria-current={isActive ? 'page' : undefined}
+                tabIndex={section.id === focusableSectionId ? 0 : -1}
+                className={`
+                  inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+                  ${isActive
+                    ? 'bg-slate-950 text-white shadow-sm'
+                    : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`}
+                `}
+              >
+                {section.icon ? (
+                  <span className="flex h-5 w-5 flex-none items-center justify-center" aria-hidden="true">
+                    {section.icon}
+                  </span>
+                ) : null}
+                <span className="whitespace-nowrap">{section.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
-        <main className="min-w-0 pb-12">{children}</main>
-      </div>
+      <main className="min-w-0 pb-12">{children}</main>
     </div>
   );
 };

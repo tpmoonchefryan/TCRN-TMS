@@ -22,6 +22,7 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
 import {
   SettingsDefaultsFormFields,
   SettingsDefaultsSummaryGrid,
@@ -666,14 +667,20 @@ export function SubsidiarySettingsScreen({
                 </button>
               }
             >
-              <SettingsDefaultsSummaryGrid
-                draft={initialDraft}
-                getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
-                text={text}
-              />
+              <SettingsCategoryWorkbench
+                ariaLabel={common.settingsCategoriesAriaLabel}
+                categories={[{ id: 'defaults', label: common.defaultsCategory }]}
+                activeCategoryId="defaults"
+              >
+                <SettingsDefaultsSummaryGrid
+                  draft={initialDraft}
+                  getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+                  text={text}
+                />
 
-              {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-              {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+                {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+                {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+              </SettingsCategoryWorkbench>
             </FormSection>
           </GlassSurface>
         </div>

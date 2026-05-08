@@ -41,6 +41,33 @@ describe('SettingsLayout', () => {
     expect(screen.getByRole('navigation')).toHaveAttribute('id', 'settings-sections');
   });
 
+  it('keeps top-level settings sections as horizontal navigation instead of a desktop left rail', () => {
+    render(
+      <SettingsLayout
+        title="Settings"
+        sections={[
+          { id: 'details', label: 'Details' },
+          { id: 'config-entities', label: 'Configuration Entity Management' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'dictionary', label: 'System Dictionary' },
+        ]}
+        activeSectionId="details"
+        onSectionChange={vi.fn()}
+        ariaLabel="Settings sections"
+      >
+        <div>Content</div>
+      </SettingsLayout>,
+    );
+
+    const nav = screen.getByRole('navigation', { name: 'Settings sections' });
+    expect(nav).not.toHaveClass('lg:sticky');
+    expect(nav.firstElementChild).not.toHaveClass('lg:flex-col');
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Configuration Entity Management' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'System Dictionary' })).toBeInTheDocument();
+  });
+
   it('supports arrow, home, and end keyboard navigation across setting sections', async () => {
     const user = userEvent.setup();
     const onSectionChange = vi.fn();
