@@ -1,4 +1,4 @@
-import { IntegrationManagementScreen } from '@/domains/integration-management/screens/IntegrationManagementScreen';
+import { redirect } from 'next/navigation';
 
 export default async function IntegrationManagementPage({
   params,
@@ -7,5 +7,5 @@ export default async function IntegrationManagementPage({
 }>) {
   const { tenantId } = await params;
 
-  return <IntegrationManagementScreen tenantId={tenantId} />;
+  redirect(`/tenant/${tenantId}/interface-management`);
 }

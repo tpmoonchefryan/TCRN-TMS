@@ -82,6 +82,18 @@ describe('AcShell', () => {
       within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('User Management'),
     ).toBeInTheDocument();
     expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('Interface Management'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('Webhook Management'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('API Client Management'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText('Integration Management'),
+    ).not.toBeInTheDocument();
+    expect(
       within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText('My Profile'),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
@@ -168,5 +180,24 @@ describe('AcShell', () => {
 
     expect(within(navigation).queryByText('My Profile')).not.toBeInTheDocument();
     expect(within(navigation).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
+  });
+
+  it('highlights the AC API client surface as a platform-level navigation item', () => {
+    mockPathname = '/ac/tenant-ac/api-clients';
+
+    render(
+      <RuntimeLocaleProvider>
+        <AcShell tenantId="tenant-ac">
+          <div>AC API clients</div>
+        </AcShell>
+      </RuntimeLocaleProvider>,
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+
+    expect(within(navigation).getByRole('link', { name: 'API Client Management' })).toHaveAttribute('aria-current', 'page');
+    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).not.toHaveAttribute('aria-current');
+    expect(screen.getAllByText('API Client Management').length).toBeGreaterThan(0);
   });
 });

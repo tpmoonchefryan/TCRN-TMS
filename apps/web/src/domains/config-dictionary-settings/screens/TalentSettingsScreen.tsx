@@ -1815,32 +1815,32 @@ export function TalentSettingsScreen({
                   fr: 'Pages associees',
                 })}
                 description={text({
-                  en: 'Jump to tenant integration or talent security from here.',
-                  zh_HANS: '从这里进入租户集成页或艺人安全页。',
-                  zh_HANT: '從這裡進入租戶集成頁或藝人安全頁。',
-                  ja: 'ここからテナント統合画面またはタレントセキュリティ画面へ移動できます。',
-                  ko: '여기에서 테넌트 통합 화면이나 아티스트 보안 화면으로 이동할 수 있습니다.',
-                  fr: 'Accedez ici a l integration locataire ou a la securite du talent.',
+                  en: 'Jump to tenant interface management or talent security from here.',
+                  zh_HANS: '从这里进入租户接口管理或艺人安全页。',
+                  zh_HANT: '從這裡進入租戶介面管理或藝人安全頁。',
+                  ja: 'ここからテナントインターフェース管理またはタレントセキュリティ画面へ移動できます。',
+                  ko: '여기에서 테넌트 인터페이스 관리나 아티스트 보안 화면으로 이동할 수 있습니다.',
+                  fr: 'Accedez ici a la gestion des interfaces du tenant ou a la securite du talent.',
                 })}
               >
                 <div className="grid gap-4 xl:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-slate-950">
-                        {text('Tenant integration', '租户集成管理', 'テナント統合管理')}
+                        {text('Tenant interface management', '租户接口管理', 'テナントインターフェース管理')}
                       </p>
                       <p className="text-sm leading-6 text-slate-600">
                         {text(
-                          'Manage adapters, webhook endpoints, and email settings at the tenant level.',
-                          '在租户层管理适配器、Webhook 端点和邮件设置。',
-                          'アダプター、Webhook エンドポイント、メール設定をテナント単位で管理します。',
+                          'Manage adapter interfaces at the tenant level. Webhooks and email sender domains stay on separate surfaces.',
+                          '在租户层管理适配器接口。Webhook 与邮件发信域名保留在独立页面。',
+                          'テナント単位でアダプターインターフェースを管理します。Webhook とメール送信ドメインは別画面に残します。',
                         )}
                       </p>
                       <Link
-                        href={`/tenant/${tenantId}/integration-management`}
+                        href={`/tenant/${tenantId}/interface-management`}
                         className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
                       >
-                        {text('Open integration', '打开集成管理', '統合管理を開く')}
+                        {text('Open interface management', '打开接口管理', 'インターフェース管理を開く')}
                       </Link>
                     </div>
                   </div>

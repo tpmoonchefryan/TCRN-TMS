@@ -65,6 +65,9 @@ describe('TenantGovernanceShell', () => {
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
 
     expect(within(navigation).getByRole('link', { name: 'Organization Structure' })).toBeInTheDocument();
+    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).toBeInTheDocument();
+    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).toBeInTheDocument();
+    expect(within(navigation).queryByRole('link', { name: 'Integration Management' })).not.toBeInTheDocument();
     expect(within(navigation).queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Tenant Settings' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Tenant')).toHaveLength(2);
@@ -111,5 +114,27 @@ describe('TenantGovernanceShell', () => {
     expect(within(navigation).queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(within(navigation).getByRole('link', { name: 'Security' })).not.toHaveAttribute('aria-current');
     expect(within(navigation).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
+  });
+
+  it('highlights the split tenant integration surfaces independently', () => {
+    render(
+      <RuntimeLocaleProvider>
+        <TenantGovernanceShell
+          tenantId="tenant-1"
+          pathname="/tenant/tenant-1/webhook-management"
+          session={baseSession}
+          onNavigate={vi.fn()}
+          onSignOut={vi.fn().mockResolvedValue(undefined)}
+        >
+          <div>Webhook content</div>
+        </TenantGovernanceShell>
+      </RuntimeLocaleProvider>,
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+
+    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).toHaveAttribute('aria-current', 'page');
+    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).not.toHaveAttribute('aria-current');
+    expect(screen.getAllByText('Webhook Management').length).toBeGreaterThan(0);
   });
 });

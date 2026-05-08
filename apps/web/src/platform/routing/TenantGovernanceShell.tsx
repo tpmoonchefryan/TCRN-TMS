@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, Building2, Cable, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Building2, Cable, ShieldCheck, Users, Webhook } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -23,6 +23,7 @@ function getTenantGovernancePageTitle(
   pathname: string,
   titles: {
     integrationManagement: string;
+    interfaceManagement: string;
     observability: string;
     organizationStructure: string;
     profile: string;
@@ -30,6 +31,7 @@ function getTenantGovernancePageTitle(
     subsidiarySettings: string;
     tenantSettings: string;
     userManagement: string;
+    webhookManagement: string;
     workspaceLanding: string;
   },
 ) {
@@ -43,6 +45,14 @@ function getTenantGovernancePageTitle(
 
   if (pathname.includes('/integration-management')) {
     return titles.integrationManagement;
+  }
+
+  if (pathname.includes('/interface-management')) {
+    return titles.interfaceManagement;
+  }
+
+  if (pathname.includes('/webhook-management')) {
+    return titles.webhookManagement;
   }
 
   if (pathname === `/tenant/${tenantId}/security`) {
@@ -89,6 +99,24 @@ export function TenantGovernanceShell({
 }: Readonly<TenantGovernanceShellProps>) {
   const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const integrationLabels = {
+    interfaceManagement: pickLocaleText(selectedLocale, {
+      en: 'Interface Management',
+      zh_HANS: '接口管理',
+      zh_HANT: '介面管理',
+      ja: 'インターフェース管理',
+      ko: '인터페이스 관리',
+      fr: 'Gestion des interfaces',
+    }),
+    webhookManagement: pickLocaleText(selectedLocale, {
+      en: 'Webhook Management',
+      zh_HANS: 'Webhook 管理',
+      zh_HANT: 'Webhook 管理',
+      ja: 'Webhook 管理',
+      ko: '웹훅 관리',
+      fr: 'Gestion des webhooks',
+    }),
+  };
 
   const navItems = [
     {
@@ -106,11 +134,18 @@ export function TenantGovernanceShell({
       icon: <Users className="h-4 w-4" />,
     },
     {
-      key: 'integration-management',
-      label: copy.tenantGovernance.nav.integrationManagement,
-      href: `/tenant/${tenantId}/integration-management`,
-      isActive: pathname.includes('/integration-management'),
+      key: 'interface-management',
+      label: integrationLabels.interfaceManagement,
+      href: `/tenant/${tenantId}/interface-management`,
+      isActive: pathname.includes('/interface-management'),
       icon: <Cable className="h-4 w-4" />,
+    },
+    {
+      key: 'webhook-management',
+      label: integrationLabels.webhookManagement,
+      href: `/tenant/${tenantId}/webhook-management`,
+      isActive: pathname.includes('/webhook-management'),
+      icon: <Webhook className="h-4 w-4" />,
     },
     {
       key: 'security',
@@ -129,7 +164,11 @@ export function TenantGovernanceShell({
   ];
 
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
-  const pageTitle = getTenantGovernancePageTitle(tenantId, pathname, copy.tenantGovernance.titles);
+  const pageTitle = getTenantGovernancePageTitle(tenantId, pathname, {
+    ...copy.tenantGovernance.titles,
+    interfaceManagement: integrationLabels.interfaceManagement,
+    webhookManagement: integrationLabels.webhookManagement,
+  });
   const shellA11y = {
     breadcrumb: pickLocaleText(selectedLocale, {
       en: 'Workspace breadcrumb',

@@ -269,6 +269,7 @@ interface EmailTemplateDraft {
 
 type TemplateTranslationSection = 'name' | 'subject' | 'bodyHtml' | 'bodyText';
 type AdapterConfigureSection = 'basics' | 'secrets' | 'webhook-api-client' | 'email-templates';
+export type IntegrationManagementSurface = 'mixed' | 'interfaces' | 'webhooks' | 'api-clients';
 
 interface EmailConfigPanelState {
   data: EmailConfigResponse | null;
@@ -292,6 +293,18 @@ interface EmailPreviewState {
 
 const TAB_ORDER: IntegrationTab[] = ['adapters', 'webhooks', 'api-keys', 'email'];
 const TENANT_TAB_ORDER: IntegrationTab[] = ['adapters', 'webhooks', 'email'];
+
+function getDefaultTabForSurface(surface: IntegrationManagementSurface): IntegrationTab {
+  if (surface === 'webhooks') {
+    return 'webhooks';
+  }
+
+  if (surface === 'api-clients') {
+    return 'api-keys';
+  }
+
+  return 'adapters';
+}
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -376,7 +389,7 @@ function hasSelectionInTree(
 }
 
 function resolveInitialTab(value: string | null, availableTabs: readonly IntegrationTab[]): IntegrationTab {
-  return availableTabs.includes(value as IntegrationTab) ? (value as IntegrationTab) : 'adapters';
+  return availableTabs.includes(value as IntegrationTab) ? (value as IntegrationTab) : availableTabs[0] ?? 'adapters';
 }
 
 function trimToUndefined(value: string) {
@@ -1078,9 +1091,11 @@ function CheckboxField({
 export function IntegrationManagementScreen({
   tenantId: _tenantId,
   workspaceKind = 'tenant',
+  surface = 'mixed',
 }: Readonly<{
   tenantId: string;
   workspaceKind?: 'tenant' | 'ac';
+  surface?: IntegrationManagementSurface;
 }>) {
   const { request, requestEnvelope, session } = useSession();
   const {
@@ -1101,14 +1116,82 @@ export function IntegrationManagementScreen({
   const searchParams = useSearchParams();
   const isAcWorkspace = workspaceKind === 'ac';
   const localizedWorkspaceLabel = resolveWorkspaceLabel(isAcWorkspace);
-  const workspaceChipLabel = `${localizedWorkspaceLabel} / ${text({
-    en: 'Integration',
-    zh_HANS: '集成',
-    zh_HANT: '整合',
-    ja: '統合',
-    ko: '통합',
-    fr: 'Intégration',
-  })}`;
+  const surfaceCopy = surface === 'interfaces'
+    ? {
+        title: text({
+          en: 'Interface Management',
+          zh_HANS: '接口管理',
+          zh_HANT: '介面管理',
+          ja: 'インターフェース管理',
+          ko: '인터페이스 관리',
+          fr: 'Gestion des interfaces',
+        }),
+        chip: text({
+          en: 'Interfaces',
+          zh_HANS: '接口',
+          zh_HANT: '介面',
+          ja: 'インターフェース',
+          ko: '인터페이스',
+          fr: 'Interfaces',
+        }),
+      }
+    : surface === 'webhooks'
+      ? {
+          title: text({
+            en: 'Webhook Management',
+            zh_HANS: 'Webhook 管理',
+            zh_HANT: 'Webhook 管理',
+            ja: 'Webhook 管理',
+            ko: '웹훅 관리',
+            fr: 'Gestion des webhooks',
+          }),
+          chip: text({
+            en: 'Webhooks',
+            zh_HANS: 'Webhook',
+            zh_HANT: 'Webhook',
+            ja: 'Webhook',
+            ko: '웹훅',
+            fr: 'Webhooks',
+          }),
+        }
+      : surface === 'api-clients'
+        ? {
+            title: text({
+              en: 'API Client Management',
+              zh_HANS: 'API 客户端管理',
+              zh_HANT: 'API 用戶端管理',
+              ja: 'API クライアント管理',
+              ko: 'API 클라이언트 관리',
+              fr: 'Gestion des clients API',
+            }),
+            chip: text({
+              en: 'API Clients',
+              zh_HANS: 'API 客户端',
+              zh_HANT: 'API 用戶端',
+              ja: 'API クライアント',
+              ko: 'API 클라이언트',
+              fr: 'Clients API',
+            }),
+          }
+        : {
+            title: text({
+              en: 'Integration Management',
+              zh_HANS: '集成管理',
+              zh_HANT: '整合管理',
+              ja: '統合管理',
+              ko: '통합 관리',
+              fr: 'Gestion des intégrations',
+            }),
+            chip: text({
+              en: 'Integration',
+              zh_HANS: '集成',
+              zh_HANT: '整合',
+              ja: '統合',
+              ko: '통합',
+              fr: 'Intégration',
+            }),
+          };
+  const workspaceChipLabel = `${localizedWorkspaceLabel} / ${surfaceCopy.chip}`;
   const workspaceDescriptor = resolveWorkspaceDescriptor(isAcWorkspace);
   const tenantRootLabel = text({
     en: 'Tenant root',
@@ -1185,16 +1268,28 @@ export function IntegrationManagementScreen({
   );
   const [selectedScope, setSelectedScope] = useState<IntegrationScopeSelection | null>(null);
   const selectedIntegrationScope = isAcWorkspace ? tenantRootSelection : selectedScope;
-  const availableTabs: readonly IntegrationTab[] = isAcWorkspace
-    ? TAB_ORDER
-    : selectedIntegrationScope
-      ? selectedIntegrationScope.ownerType === 'tenant'
-        ? TENANT_TAB_ORDER
-        : (['adapters'] as const)
-      : [];
+  const availableTabs: readonly IntegrationTab[] = surface === 'interfaces'
+    ? selectedIntegrationScope
+      ? (['adapters'] as const)
+      : []
+    : surface === 'webhooks'
+      ? selectedIntegrationScope
+        ? (['webhooks'] as const)
+        : []
+      : surface === 'api-clients'
+        ? isAcWorkspace
+          ? (['api-keys'] as const)
+          : []
+        : isAcWorkspace
+          ? TAB_ORDER
+          : selectedIntegrationScope
+            ? selectedIntegrationScope.ownerType === 'tenant'
+              ? TENANT_TAB_ORDER
+              : (['adapters'] as const)
+            : [];
   const resolvedInitialTab = resolveInitialTab(
     searchParams.get('tab'),
-    availableTabs.length > 0 ? availableTabs : (['adapters'] as const),
+    availableTabs.length > 0 ? availableTabs : ([getDefaultTabForSurface(surface)] as const),
   );
   const urlAdapterPage = parsePageParam(searchParams.get('adapterPage'));
   const urlAdapterPageSize = parsePageSizeParam(searchParams.get('adapterPageSize'));
@@ -1313,6 +1408,12 @@ export function IntegrationManagementScreen({
   const [emailConfigSubmitting, setEmailConfigSubmitting] = useState(false);
   const [emailActionPending, setEmailActionPending] = useState<'connection' | 'test-email' | null>(null);
   const [emailActionResult, setEmailActionResult] = useState<EmailActionResult | null>(null);
+
+  useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0]);
+    }
+  }, [activeTab, availableTabs]);
   const isAnyTranslationDrawerOpen = consumerTranslationDrawerOpen
     || adapterTranslationDrawerOpen
     || webhookTranslationDrawerOpen
@@ -2064,8 +2165,26 @@ export function IntegrationManagementScreen({
 
       if (activeTab === 'adapters') {
         tasks.push(refreshAdapterDefinitions(), refreshAdapters());
-      } else if (activeTab === 'webhooks' && selectedIntegrationScope.ownerType === 'tenant') {
-        tasks.push(refreshWebhooks(), refreshWebhookEvents(), refreshWebhookDefinitions());
+      } else if (activeTab === 'webhooks') {
+        if (selectedIntegrationScope.ownerType === 'tenant') {
+          tasks.push(refreshWebhooks(), refreshWebhookEvents(), refreshWebhookDefinitions());
+        } else {
+          setWebhooksPanel({
+            data: [],
+            loading: false,
+            error: null,
+            unavailableReason: text({
+              en: 'Webhook management is available at tenant root only.',
+              zh_HANS: 'Webhook 管理仅在租户根范围可用。',
+              zh_HANT: 'Webhook 管理僅在租戶根範圍可用。',
+              ja: 'Webhook 管理はテナントルートでのみ利用できます。',
+              ko: '웹훅 관리는 테넌트 루트에서만 사용할 수 있습니다.',
+              fr: 'La gestion des webhooks est disponible uniquement à la racine du tenant.',
+            }),
+          });
+          setWebhookEventsPanel(createPanelState<WebhookEventDefinition[]>([], false));
+          setWebhookDefinitionsPanel(createPanelState<IntegrationWebhookDefinition[]>([], false));
+        }
       } else if (activeTab === 'api-keys') {
         tasks.push(refreshConsumers());
       } else if (activeTab === 'email' && selectedIntegrationScope.ownerType === 'tenant') {
@@ -3420,12 +3539,14 @@ export function IntegrationManagementScreen({
           `管理 ${selectedIntegrationScope.label} 范围内继承或自有的适配器。API 客户端保留在账户中心，Webhook 与邮件保留在租户根范围。`,
           `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。API クライアントはアカウントセンター、Webhook とメールはテナントルートに保持されます。`,
         );
-  const integrationCapabilityItems = ([
-    'adapters',
-    'webhooks',
-    'api-keys',
-    'email',
-  ] as const).map((tab) => {
+  const capabilityTabs: readonly IntegrationTab[] = surface === 'interfaces'
+    ? (['adapters'] as const)
+    : surface === 'webhooks'
+      ? (['webhooks'] as const)
+      : surface === 'api-clients'
+        ? (['api-keys'] as const)
+        : (['adapters', 'webhooks', 'api-keys', 'email'] as const);
+  const integrationCapabilityItems = capabilityTabs.map((tab) => {
     const available = availableTabs.includes(tab);
     const unavailableReason = tab === 'api-keys'
       ? text('Account Center only', '仅账户中心', 'アカウントセンターのみ')
@@ -3442,7 +3563,9 @@ export function IntegrationManagementScreen({
         : unavailableReason,
     };
   });
-  const scopeAccessNotice = !selectedIntegrationScope
+  const scopeAccessNotice = surface !== 'mixed'
+    ? null
+    : !selectedIntegrationScope
     ? null
     : isTenantRootScope
       ? text({
@@ -3588,16 +3711,40 @@ export function IntegrationManagementScreen({
               {workspaceChipLabel}
             </div>
             <div className="space-y-3">
-              <h1 className="text-3xl font-semibold text-slate-950">{text({
-                en: 'Integration Management',
-                zh_HANS: '集成管理',
-                zh_HANT: '整合管理',
-                ja: '統合管理',
-                ko: '통합 관리',
-                fr: 'Gestion des intégrations',
-              })}</h1>
+              <h1 className="text-3xl font-semibold text-slate-950">{surfaceCopy.title}</h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                {isAcWorkspace
+                {surface === 'interfaces'
+                  ? !selectedIntegrationScope && !isAcWorkspace
+                    ? noScopeWorkspaceDescription
+                    : text({
+                        en: 'Manage adapter interfaces for the selected scope. Webhooks, API clients, and email settings stay on their own surfaces.',
+                        zh_HANS: '管理所选范围的适配器接口。Webhook、API 客户端与邮件设置保留在各自独立页面。',
+                        zh_HANT: '管理所選範圍的適配器介面。Webhook、API 用戶端與郵件設定保留在各自獨立頁面。',
+                        ja: '選択したスコープのアダプターインターフェースを管理します。Webhook、API クライアント、メール設定は独立した画面に残します。',
+                        ko: '선택한 범위의 어댑터 인터페이스를 관리합니다. 웹훅, API 클라이언트, 이메일 설정은 별도 화면에 유지합니다.',
+                        fr: 'Gérez les interfaces d’adaptateur du périmètre sélectionné. Les webhooks, clients API et paramètres e-mail restent sur leurs surfaces dédiées.',
+                      })
+                  : surface === 'webhooks'
+                    ? !selectedIntegrationScope && !isAcWorkspace
+                      ? noScopeWorkspaceDescription
+                      : text({
+                          en: 'Manage tenant-root webhook endpoints separately from adapter interfaces and API clients.',
+                          zh_HANS: '在独立页面管理租户根范围 Webhook 端点，与适配器接口和 API 客户端分开。',
+                          zh_HANT: '在獨立頁面管理租戶根範圍 Webhook 端點，並與適配器介面和 API 用戶端分開。',
+                          ja: 'テナントルートの Webhook エンドポイントを、アダプターインターフェースや API クライアントから分けて管理します。',
+                          ko: '테넌트 루트 웹훅 엔드포인트를 어댑터 인터페이스 및 API 클라이언트와 분리해 관리합니다.',
+                          fr: 'Gérez les endpoints webhook de racine tenant séparément des interfaces d’adaptateur et des clients API.',
+                        })
+                    : surface === 'api-clients'
+                      ? text({
+                          en: 'Manage platform API clients and key lifecycle from Account Center only.',
+                          zh_HANS: '仅在账户中心管理平台 API 客户端与密钥生命周期。',
+                          zh_HANT: '僅在帳戶中心管理平台 API 用戶端與金鑰生命週期。',
+                          ja: 'プラットフォーム API クライアントとキーのライフサイクルはアカウントセンターでのみ管理します。',
+                          ko: '플랫폼 API 클라이언트와 키 수명주기는 계정 센터에서만 관리합니다.',
+                          fr: 'Gérez les clients API plateforme et le cycle de vie des clés uniquement depuis l’Account Center.',
+                        })
+                      : isAcWorkspace
                   ? text({
                       en: `Manage ${workspaceDescriptor} integrations, API clients, and email settings.`,
                       zh_HANS: `管理${workspaceDescriptor}集成、API 客户端与邮件设置。`,
@@ -3643,45 +3790,54 @@ export function IntegrationManagementScreen({
                 value={selectedScopeDisplayName}
                 hint={selectedScopeHint}
               />
-              <SummaryCard
-                label={text({
-                  en: 'Adapters',
-                  zh_HANS: '适配器',
-                  zh_HANT: '適配器',
-                  ja: 'アダプター',
-                  ko: '어댑터',
-                  fr: 'Adaptateurs',
-                })}
-                value={String(adapterCount)}
-                hint={text({
-                  en: 'Adapters visible in the current scope, including inherited records where supported.',
-                  zh_HANS: '当前范围可见的适配器数量；在支持的范围中包含继承记录。',
-                  zh_HANT: '目前範圍可見的適配器數量；在支援的情況下包含繼承記錄。',
-                  ja: '現在のスコープで表示されるアダプター数です。対応する場合は継承レコードも含みます。',
-                  ko: '현재 범위에서 볼 수 있는 어댑터 수입니다. 지원되는 경우 상속 레코드도 포함됩니다.',
-                  fr: 'Nombre d’adaptateurs visibles dans le périmètre actuel, y compris les éléments hérités lorsque c’est pris en charge.',
-                })}
-              />
-              {isAcWorkspace || isTenantRootScope ? (
+              {surface === 'mixed' || surface === 'interfaces' ? (
+                <SummaryCard
+                  label={text({
+                    en: 'Adapters',
+                    zh_HANS: '适配器',
+                    zh_HANT: '適配器',
+                    ja: 'アダプター',
+                    ko: '어댑터',
+                    fr: 'Adaptateurs',
+                  })}
+                  value={String(adapterCount)}
+                  hint={text({
+                    en: 'Adapters visible in the current scope, including inherited records where supported.',
+                    zh_HANS: '当前范围可见的适配器数量；在支持的范围中包含继承记录。',
+                    zh_HANT: '目前範圍可見的適配器數量；在支援的情況下包含繼承記錄。',
+                    ja: '現在のスコープで表示されるアダプター数です。対応する場合は継承レコードも含みます。',
+                    ko: '현재 범위에서 볼 수 있는 어댑터 수입니다. 지원되는 경우 상속 레코드도 포함됩니다.',
+                    fr: 'Nombre d’adaptateurs visibles dans le périmètre actuel, y compris les éléments hérités lorsque c’est pris en charge.',
+                  })}
+                />
+              ) : null}
+              {surface === 'mixed' && (isAcWorkspace || isTenantRootScope) ? (
                 <SummaryCard
                   label={text('Webhooks', 'Webhook', 'Webhook')}
                   value={String(webhookCount)}
                   hint={text('Endpoint URLs, retry settings, and recent active-state changes.', '端点地址、重试策略与最近的启停状态。', 'エンドポイント URL、再試行設定、最近の有効状態を表示します。')}
                 />
               ) : null}
-              {isAcWorkspace ? (
+              {surface === 'webhooks' ? (
+                <SummaryCard
+                  label={text('Webhooks', 'Webhook', 'Webhook')}
+                  value={String(webhookCount)}
+                  hint={text('Endpoint URLs, retry settings, and recent active-state changes.', '端点地址、重试策略与最近的启停状态。', 'エンドポイント URL、再試行設定、最近の有効状態を表示します。')}
+                />
+              ) : null}
+              {surface === 'api-clients' || (surface === 'mixed' && isAcWorkspace) ? (
                 <SummaryCard
                   label={text('API Clients', 'API 客户端', 'API クライアント')}
                   value={String(consumerCount)}
                   hint={text('Platform clients and their current key status.', '平台客户端及其当前密钥状态。', 'プラットフォームクライアントと現在のキー状態です。')}
                 />
-              ) : (
+              ) : surface === 'mixed' ? (
                 <SummaryCard
                   label={text('Email Templates', '邮件模板', 'メールテンプレート')}
                   value={String(emailTemplateCount)}
                   hint={text('Notification templates and email settings available at tenant root.', '租户根范围可用的通知模板与邮件设置。', 'テナントルートで利用できる通知テンプレートとメール設定です。')}
                 />
-              )}
+              ) : null}
             </div>
           ) : null}
         </div>

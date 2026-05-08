@@ -687,14 +687,14 @@ export function TenantSettingsScreen({
                     cta={text('Open business workspace', '打开业务工作区', '業務ワークスペースを開く')}
                   />
                   <SectionEntryLink
-                    title={text('Integration', '集成管理', '統合管理')}
+                    title={text('Interface Management', '接口管理', 'インターフェース管理')}
                     description={text(
-                      'Open adapters, webhooks, and tenant email settings.',
-                      '打开适配器、Webhook 和租户邮件设置。',
-                      'アダプター、Webhook、テナントのメール設定を開きます。',
+                      'Open adapter interface management. Webhooks and email sender settings are managed from their own pages.',
+                      '打开适配器接口管理。Webhook 与邮件发信设置分别在独立页面管理。',
+                      'アダプターインターフェース管理を開きます。Webhook とメール送信設定はそれぞれ専用画面で管理します。',
                     )}
-                    href={`/tenant/${tenantId}/integration-management`}
-                    cta={text('Open integration', '打开集成管理', '統合管理を開く')}
+                    href={`/tenant/${tenantId}/interface-management`}
+                    cta={text('Open interface management', '打开接口管理', 'インターフェース管理を開く')}
                   />
                   <SectionEntryLink
                     title={text('Security', '安全管理', 'セキュリティ管理')}

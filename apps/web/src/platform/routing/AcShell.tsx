@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, BookText, Building2, Cable, Users } from 'lucide-react';
+import { Activity, BookText, Building2, Cable, KeyRound, Users, Webhook } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -27,11 +27,14 @@ function getAcPageTitle(
   pathname: string,
   titles: {
     integrationManagement: string;
+    apiClientManagement: string;
+    interfaceManagement: string;
     observability: string;
     profile: string;
     systemDictionary: string;
     tenantManagement: string;
     userManagement: string;
+    webhookManagement: string;
   },
 ) {
   if (pathname.includes('/user-management')) {
@@ -40,6 +43,18 @@ function getAcPageTitle(
 
   if (pathname.includes('/integration-management')) {
     return titles.integrationManagement;
+  }
+
+  if (pathname.includes('/interface-management')) {
+    return titles.interfaceManagement;
+  }
+
+  if (pathname.includes('/webhook-management')) {
+    return titles.webhookManagement;
+  }
+
+  if (pathname.includes('/api-clients')) {
+    return titles.apiClientManagement;
   }
 
   if (pathname.includes('/observability')) {
@@ -71,6 +86,32 @@ export function AcShell({
   const [isSignOutPending, setIsSignOutPending] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isRecoverySuppressed, setIsRecoverySuppressed] = useState(false);
+  const integrationLabels = {
+    apiClientManagement: pickLocaleText(selectedLocale, {
+      en: 'API Client Management',
+      zh_HANS: 'API 客户端管理',
+      zh_HANT: 'API 用戶端管理',
+      ja: 'API クライアント管理',
+      ko: 'API 클라이언트 관리',
+      fr: 'Gestion des clients API',
+    }),
+    interfaceManagement: pickLocaleText(selectedLocale, {
+      en: 'Interface Management',
+      zh_HANS: '接口管理',
+      zh_HANT: '介面管理',
+      ja: 'インターフェース管理',
+      ko: '인터페이스 관리',
+      fr: 'Gestion des interfaces',
+    }),
+    webhookManagement: pickLocaleText(selectedLocale, {
+      en: 'Webhook Management',
+      zh_HANS: 'Webhook 管理',
+      zh_HANT: 'Webhook 管理',
+      ja: 'Webhook 管理',
+      ko: '웹훅 관리',
+      fr: 'Gestion des webhooks',
+    }),
+  };
   const loadingCopy = {
     title: pickLocaleText(selectedLocale, {
       en: 'Checking platform account',
@@ -214,11 +255,25 @@ export function AcShell({
       icon: <Users className="h-4 w-4" />,
     },
     {
-      key: 'integration',
-      label: copy.ac.nav.integrationManagement,
-      href: `/ac/${tenantId}/integration-management`,
-      isActive: pathname.includes('/integration-management'),
+      key: 'interface-management',
+      label: integrationLabels.interfaceManagement,
+      href: `/ac/${tenantId}/interface-management`,
+      isActive: pathname.includes('/interface-management'),
       icon: <Cable className="h-4 w-4" />,
+    },
+    {
+      key: 'webhook-management',
+      label: integrationLabels.webhookManagement,
+      href: `/ac/${tenantId}/webhook-management`,
+      isActive: pathname.includes('/webhook-management'),
+      icon: <Webhook className="h-4 w-4" />,
+    },
+    {
+      key: 'api-clients',
+      label: integrationLabels.apiClientManagement,
+      href: `/ac/${tenantId}/api-clients`,
+      isActive: pathname.includes('/api-clients'),
+      icon: <KeyRound className="h-4 w-4" />,
     },
     {
       key: 'observability',
@@ -237,7 +292,12 @@ export function AcShell({
   ];
 
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
-  const pageTitle = getAcPageTitle(pathname, copy.ac.titles);
+  const pageTitle = getAcPageTitle(pathname, {
+    ...copy.ac.titles,
+    apiClientManagement: integrationLabels.apiClientManagement,
+    interfaceManagement: integrationLabels.interfaceManagement,
+    webhookManagement: integrationLabels.webhookManagement,
+  });
   const shellA11y = {
     breadcrumb: pickLocaleText(selectedLocale, {
       en: 'Workspace breadcrumb',

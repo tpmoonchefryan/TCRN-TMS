@@ -1,4 +1,4 @@
-import { IntegrationManagementScreen } from '@/domains/integration-management/screens/IntegrationManagementScreen';
+import { redirect } from 'next/navigation';
 
 type AcRoutePageProps = {
   params: Promise<{ tenantId: string }>;
@@ -7,5 +7,5 @@ type AcRoutePageProps = {
 export default async function AcIntegrationManagementPage(props: AcRoutePageProps) {
   const { tenantId } = await props.params;
 
-  return <IntegrationManagementScreen tenantId={tenantId} workspaceKind="ac" />;
+  redirect(`/ac/${tenantId}/interface-management`);
 }
