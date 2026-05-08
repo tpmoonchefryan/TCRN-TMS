@@ -371,6 +371,7 @@ describe('TenantSettingsScreen', () => {
       );
     });
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Defaults' }));
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     expect(screen.getByText('Localization')).toBeInTheDocument();
     expect(screen.getByText('Public surfaces')).toBeInTheDocument();

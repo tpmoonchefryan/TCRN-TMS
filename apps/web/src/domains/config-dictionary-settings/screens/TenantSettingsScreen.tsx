@@ -743,12 +743,24 @@ export function TenantSettingsScreen({
           <GlassSurface className="p-6">
               <FormSection
                 title={common.settings}
-                description={text(
-                  'Review tenant defaults before opening the edit workflow.',
-                  '先查看租户默认值，再进入编辑流程。',
-                  '編集ワークフローを開く前にテナント既定値を確認します。',
-                )}
-                actions={(
+                description={activeSettingsCategory === 'email'
+                  ? text(
+                      'Select verified AC-assigned sending domains and non-secret sender preferences.',
+                      '选择 AC 分配且已验证的发信域名，以及非密钥类发信偏好。',
+                      'AC が割り当て検証済みの送信ドメインと非秘密の送信者設定を選択します。',
+                    )
+                  : activeSettingsCategory === 'captcha'
+                    ? text(
+                        'Manage tenant Cloudflare Turnstile keys and readiness for public CAPTCHA.',
+                        '管理租户级 Cloudflare Turnstile 密钥与公开验证码就绪状态。',
+                        '公開 CAPTCHA 用のテナント Cloudflare Turnstile キーと準備状況を管理します。',
+                      )
+                    : text(
+                        'Review tenant defaults before opening the edit workflow.',
+                        '先查看租户默认值，再进入编辑流程。',
+                        '編集ワークフローを開く前にテナント既定値を確認します。',
+                      )}
+                actions={activeSettingsCategory === 'defaults' ? (
                   <button
                     type="button"
                     onClick={() => setIsDefaultsDrawerOpen(true)}
@@ -756,7 +768,7 @@ export function TenantSettingsScreen({
                   >
                     {text('Edit defaults', '编辑默认值', '既定値を編集')}
                   </button>
-                )}
+                ) : null}
             >
               <SettingsCategoryWorkbench
                 ariaLabel={common.settingsCategoriesAriaLabel}

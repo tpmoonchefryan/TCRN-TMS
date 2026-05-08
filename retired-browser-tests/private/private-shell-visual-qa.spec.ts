@@ -419,6 +419,19 @@ const privateVisualScopeSettings = {
   version: 3,
 };
 
+const privateVisualTenantTurnstileSettings = {
+  siteKey: '0x4AAAAAAAVISUALSITEKEY',
+  effectiveSiteKey: '0x4AAAAAAAVISUALSITEKEY',
+  source: 'tenant',
+  environment: 'staging',
+  siteKeyConfigured: true,
+  secretKeyConfigured: true,
+  providerReady: true,
+  runtimeBypass: false,
+  ready: true,
+  secretKeyMasked: '********',
+};
+
 const privateVisualSubsidiaryDetail = {
   id: 'subsidiary-visual',
   parentId: null,
@@ -803,6 +816,18 @@ async function mockPrivateRuntimeApi(page: Page) {
         body: JSON.stringify({
           success: true,
           data: privateVisualScopeSettings,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/organization/settings/turnstile') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualTenantTurnstileSettings,
         }),
       });
       return;
@@ -2629,6 +2654,40 @@ test.describe('private shell browser visual QA', () => {
     });
   });
 
+  test('desktop tenant settings shows turnstile captcha workbench', async ({
+    page,
+  }) => {
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/settings?section=settings');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Tenant Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Details' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Configuration Entity Management' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'System Dictionary' })).toBeVisible();
+    await expect(page.getByLabel('Cloudflare Turnstile Site Key')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'CAPTCHA' }).click();
+
+    await expect(page.getByText('Readiness', { exact: true })).toBeVisible();
+    await expect(page.getByText('Ready', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Tenant keys', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Cloudflare Turnstile Site Key')).toBeVisible();
+    await expect(page.getByLabel('Cloudflare Turnstile Secret Key')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Keep secret' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Replace secret' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clear secret' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Turnstile settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit defaults' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop tenant settings turnstile captcha workbench');
+    await expect(page).toHaveScreenshot('private-tenant-settings-turnstile-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
   test('desktop subsidiary settings keeps defaults summary-first and drawer-scoped', async ({
     page,
   }) => {
@@ -2690,6 +2749,8 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Customer import', { exact: true })).toBeVisible();
     await expect(page.getByText('Password policy', { exact: true })).toBeVisible();
     await expect(page.getByText('Public Marshmallow Route')).toBeVisible();
+    await expect(page.getByText('Inherited CAPTCHA')).toBeVisible();
+    await expect(page.getByText('Unavailable', { exact: true }).first()).toBeVisible();
     await expect(page.getByLabel('Enable public marshmallow route')).toHaveCount(0);
     await expect(page.getByLabel('Custom domain')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Configure routes' })).toBeVisible();
@@ -2709,6 +2770,8 @@ test.describe('private shell browser visual QA', () => {
     await expect(settingsDrawer.getByLabel('Minimum password length')).toBeVisible();
     await expect(settingsDrawer.getByLabel('Enable public marshmallow route')).toBeVisible();
     await expect(settingsDrawer.getByLabel('Custom domain')).toBeVisible();
+    await expect(settingsDrawer.getByText('Inherited CAPTCHA readiness')).toBeVisible();
+    await expect(settingsDrawer.getByText('Unavailable', { exact: true }).first()).toBeVisible();
     await expect(settingsDrawer.getByText('visual.example.test', { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile talent settings route drawer');
     await expect(page).toHaveScreenshot('private-talent-settings-mobile-drawer.png', {
