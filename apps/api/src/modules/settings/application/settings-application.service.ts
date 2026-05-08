@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ErrorCodes, normalizeSupportedUiLocale } from '@tcrn/shared';
 
 import {
@@ -8,24 +9,38 @@ import {
   EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
 } from '../../email/domain/tenant-sending-domain.policy';
 import {
+  buildTenantTurnstileSettingsResponse,
   createDefaultInheritedFrom,
   DEFAULT_SETTINGS,
   getScopeName,
+  hasStoredTenantTurnstileSettings,
+  normalizeNullableSettingString,
+  readStoredTenantTurnstileSettings,
   type ScopeOwnSettingsRecord,
   type ScopeSettings,
   type SettingsScopeRef,
   type SettingsScopeType,
+  TENANT_TURNSTILE_SETTINGS_KEY,
+  type TenantTurnstileRuntimeConfig,
+  type TenantTurnstileSettingsResponse,
+  type UpdateTenantTurnstileSettingsInput,
 } from '../domain/settings.policy';
 import { SettingsRepository } from '../infrastructure/settings.repository';
+import { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
 
 const GENERAL_SETTINGS_HIDDEN_KEYS = [
   EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
   EMAIL_SENDER_PREFERENCES_SETTINGS_KEY,
+  TENANT_TURNSTILE_SETTINGS_KEY,
 ] as const;
 
 @Injectable()
 export class SettingsApplicationService {
-  constructor(private readonly settingsRepository: SettingsRepository) {}
+  constructor(
+    private readonly settingsRepository: SettingsRepository,
+    @Optional() private readonly secretCrypto?: SettingsSecretCryptoService,
+    @Optional() private readonly configService?: ConfigService,
+  ) {}
 
   async getEffectiveSettings(
     tenantSchema: string,
@@ -116,6 +131,120 @@ export class SettingsApplicationService {
     return this.getEffectiveSettings(tenantSchema, scopeType, scopeId);
   }
 
+  async getTenantTurnstileSettings(
+    tenantSchema: string,
+  ): Promise<TenantTurnstileSettingsResponse> {
+    const resolved = await this.resolveTenantTurnstileRuntimeConfig(tenantSchema);
+
+    return buildTenantTurnstileSettingsResponse({
+      source: resolved.source,
+      nodeEnv: this.configService?.get<string>('NODE_ENV'),
+      tenantSiteKey: resolved.tenantSiteKey,
+      effectiveSiteKey: resolved.siteKey,
+      effectiveSecretKey: resolved.secretKey,
+      tenantSecretKeyConfigured: resolved.tenantSecretKeyConfigured,
+    });
+  }
+
+  async updateTenantTurnstileSettings(
+    tenantSchema: string,
+    input: UpdateTenantTurnstileSettingsInput,
+  ): Promise<TenantTurnstileSettingsResponse> {
+    const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
+
+    if (!tenant) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Tenant not found',
+      });
+    }
+
+    const currentSettings = tenant.settings ?? {};
+    const currentTurnstile = readStoredTenantTurnstileSettings(currentSettings);
+    const secretKeyMutation = input.secretKeyMutation ?? 'keep';
+    const submittedSecretKey = normalizeNullableSettingString(input.secretKey);
+
+    if (submittedSecretKey && secretKeyMutation !== 'replace') {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Secret key value is only accepted when replacing the secret key',
+      });
+    }
+
+    let nextSecretKeyEncrypted = currentTurnstile.secretKeyEncrypted;
+    if (secretKeyMutation === 'replace') {
+      if (!submittedSecretKey) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: 'Secret key replacement requires a non-empty value',
+        });
+      }
+
+      nextSecretKeyEncrypted = this.requireSecretCrypto().encrypt(submittedSecretKey);
+    } else if (secretKeyMutation === 'clear') {
+      nextSecretKeyEncrypted = null;
+    }
+
+    const nextTurnstile = {
+      siteKey: Object.prototype.hasOwnProperty.call(input, 'siteKey')
+        ? normalizeNullableSettingString(input.siteKey)
+        : currentTurnstile.siteKey,
+      secretKeyEncrypted: nextSecretKeyEncrypted,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const nextSettings = {
+      ...currentSettings,
+      [TENANT_TURNSTILE_SETTINGS_KEY]: nextTurnstile,
+    };
+
+    await this.settingsRepository.updateTenantSettings(tenantSchema, nextSettings);
+
+    return this.getTenantTurnstileSettings(tenantSchema);
+  }
+
+  async resolveTenantTurnstileRuntimeConfig(
+    tenantSchema: string,
+  ): Promise<TenantTurnstileRuntimeConfig> {
+    const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
+    const envSiteKey = normalizeNullableSettingString(this.configService?.get<string>('TURNSTILE_SITE_KEY'));
+    const envSecretKey = normalizeNullableSettingString(this.configService?.get<string>('TURNSTILE_SECRET_KEY'));
+
+    if (!tenant) {
+      return {
+        source: envSiteKey || envSecretKey ? 'environment' : 'none',
+        siteKey: envSiteKey,
+        secretKey: envSecretKey,
+        tenantSiteKey: null,
+        tenantSecretKeyConfigured: false,
+      };
+    }
+
+    const stored = readStoredTenantTurnstileSettings(tenant.settings ?? {});
+
+    if (hasStoredTenantTurnstileSettings(stored)) {
+      const tenantSecretKey = stored.secretKeyEncrypted
+        ? this.secretCrypto?.decryptStoredSecret(stored.secretKeyEncrypted) ?? null
+        : null;
+
+      return {
+        source: 'tenant',
+        siteKey: stored.siteKey,
+        secretKey: tenantSecretKey,
+        tenantSiteKey: stored.siteKey,
+        tenantSecretKeyConfigured: Boolean(tenantSecretKey),
+      };
+    }
+
+    return {
+      source: envSiteKey || envSecretKey ? 'environment' : 'none',
+      siteKey: envSiteKey,
+      secretKey: envSecretKey,
+      tenantSiteKey: null,
+      tenantSecretKeyConfigured: false,
+    };
+  }
+
   private normalizeSettingsUpdates(updates: Record<string, unknown>): Record<string, unknown> {
     const normalizedUpdates = { ...updates };
 
@@ -135,6 +264,17 @@ export class SettingsApplicationService {
     }
 
     return normalizedUpdates;
+  }
+
+  private requireSecretCrypto(): SettingsSecretCryptoService {
+    if (this.secretCrypto) {
+      return this.secretCrypto;
+    }
+
+    throw new BadRequestException({
+      code: ErrorCodes.VALIDATION_FAILED,
+      message: 'Settings secret encryption service is unavailable',
+    });
   }
 
   async resetToInherited(

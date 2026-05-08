@@ -1,10 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsApplicationService } from '../application/settings-application.service';
 import { SettingsRepository } from '../infrastructure/settings.repository';
+import type { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
 
 describe('SettingsApplicationService', () => {
   let service: SettingsApplicationService;
@@ -110,6 +112,10 @@ describe('SettingsApplicationService', () => {
             fromName: 'Alpha Support',
             replyTo: 'support@alpha.example.com',
           },
+          turnstileConfig: {
+            siteKey: 'tenant-site-key',
+            secretKeyEncrypted: 'v1:encrypted-secret-should-stay-hidden',
+          },
         },
       });
 
@@ -118,9 +124,12 @@ describe('SettingsApplicationService', () => {
       expect(result.settings.timezone).toBe('Asia/Tokyo');
       expect(result.settings).not.toHaveProperty('emailSendingDomains');
       expect(result.settings).not.toHaveProperty('emailSenderPreferences');
+      expect(result.settings).not.toHaveProperty('turnstileConfig');
       expect(result.overrides).not.toContain('emailSendingDomains');
       expect(result.overrides).not.toContain('emailSenderPreferences');
+      expect(result.overrides).not.toContain('turnstileConfig');
       expect(JSON.stringify(result)).not.toContain('dns-token-should-stay-ac-only');
+      expect(JSON.stringify(result)).not.toContain('encrypted-secret-should-stay-hidden');
     });
 
     it('should handle talent scope with subsidiary inheritance', async () => {
@@ -324,6 +333,168 @@ describe('SettingsApplicationService', () => {
           'user-123',
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('tenant Turnstile settings', () => {
+    function createServiceWithTurnstileHelpers() {
+      const mockSecretCrypto = {
+        encrypt: vi.fn().mockReturnValue('v1:encrypted-secret'),
+        decryptStoredSecret: vi.fn().mockReturnValue('tenant-secret-key'),
+      };
+      const mockConfigService = {
+        get: vi.fn((key: string) => {
+          if (key === 'NODE_ENV') {
+            return 'staging';
+          }
+          return null;
+        }),
+      };
+
+      return {
+        mockConfigService,
+        mockSecretCrypto,
+        service: new SettingsApplicationService(
+          mockSettingsRepository as unknown as SettingsRepository,
+          mockSecretCrypto as unknown as SettingsSecretCryptoService,
+          mockConfigService as unknown as ConfigService,
+        ),
+      };
+    }
+
+    it('encrypts tenant Turnstile Secret Key replacement and never returns the raw value', async () => {
+      const helpers = createServiceWithTurnstileHelpers();
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: {},
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: {
+            turnstileConfig: {
+              siteKey: 'tenant-site-key',
+              secretKeyEncrypted: 'v1:encrypted-secret',
+              updatedAt: '2026-05-08T10:00:00.000Z',
+            },
+          },
+        });
+      mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
+
+      const result = await helpers.service.updateTenantTurnstileSettings(testSchema, {
+        siteKey: ' tenant-site-key ',
+        secretKeyMutation: 'replace',
+        secretKey: ' tenant-secret-key ',
+      });
+
+      expect(helpers.mockSecretCrypto.encrypt).toHaveBeenCalledWith('tenant-secret-key');
+      expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
+        testSchema,
+        expect.objectContaining({
+          turnstileConfig: expect.objectContaining({
+            siteKey: 'tenant-site-key',
+            secretKeyEncrypted: 'v1:encrypted-secret',
+          }),
+        }),
+      );
+      expect(result).toMatchObject({
+        siteKey: 'tenant-site-key',
+        effectiveSiteKey: 'tenant-site-key',
+        source: 'tenant',
+        secretKeyConfigured: true,
+        providerReady: true,
+        ready: true,
+        secretKeyMasked: '********',
+      });
+      expect(JSON.stringify(mockSettingsRepository.updateTenantSettings.mock.calls)).not.toContain('tenant-secret-key');
+      expect(JSON.stringify(result)).not.toContain('tenant-secret-key');
+    });
+
+    it('rejects empty Secret Key replacement instead of treating empty as clear', async () => {
+      const helpers = createServiceWithTurnstileHelpers();
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
+
+      await expect(
+        helpers.service.updateTenantTurnstileSettings(testSchema, {
+          secretKeyMutation: 'replace',
+          secretKey: '',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
+    });
+
+    it('clears tenant Turnstile Secret Key only through explicit clear mutation', async () => {
+      const helpers = createServiceWithTurnstileHelpers();
+      mockSettingsRepository.findTenantBySchema
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: {
+            turnstileConfig: {
+              siteKey: 'tenant-site-key',
+              secretKeyEncrypted: 'v1:old-secret',
+            },
+          },
+        })
+        .mockResolvedValueOnce({
+          id: 'tenant-123',
+          settings: {
+            turnstileConfig: {
+              siteKey: 'tenant-site-key',
+              secretKeyEncrypted: null,
+            },
+          },
+        });
+      mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
+
+      const result = await helpers.service.updateTenantTurnstileSettings(testSchema, {
+        secretKeyMutation: 'clear',
+      });
+
+      expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
+        testSchema,
+        expect.objectContaining({
+          turnstileConfig: expect.objectContaining({
+            secretKeyEncrypted: null,
+          }),
+        }),
+      );
+      expect(result).toMatchObject({
+        secretKeyConfigured: false,
+        providerReady: false,
+        ready: false,
+        secretKeyMasked: null,
+      });
+    });
+
+    it('falls back to platform Turnstile keys only when tenant config is absent', async () => {
+      const helpers = createServiceWithTurnstileHelpers();
+      helpers.mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'env-site-key';
+        }
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return 'env-secret-key';
+        }
+        return null;
+      });
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
+
+      await expect(helpers.service.getTenantTurnstileSettings(testSchema)).resolves.toMatchObject({
+        effectiveSiteKey: 'env-site-key',
+        source: 'environment',
+        providerReady: true,
+        ready: true,
+        secretKeyMasked: null,
+      });
     });
   });
 

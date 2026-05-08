@@ -11,9 +11,13 @@ export interface MarshmallowConfigStats {
 }
 
 export interface TurnstileConfigStatus {
+  environment?: 'development' | 'test' | 'staging' | 'production' | string;
   siteKeyConfigured: boolean;
   secretKeyConfigured: boolean;
+  providerReady?: boolean;
+  runtimeBypass?: boolean;
   ready: boolean;
+  source?: 'tenant' | 'environment' | 'none' | string;
 }
 
 export interface MarshmallowConfigResponse {

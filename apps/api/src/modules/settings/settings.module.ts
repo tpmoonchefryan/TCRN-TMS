@@ -3,12 +3,13 @@
 import { Module } from '@nestjs/common';
 
 import { SettingsRepository } from './infrastructure/settings.repository';
+import { SettingsSecretCryptoService } from './infrastructure/settings-secret-crypto.service';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
 
 @Module({
   controllers: [SettingsController],
-  providers: [SettingsRepository, SettingsService],
+  providers: [SettingsRepository, SettingsSecretCryptoService, SettingsService],
   exports: [SettingsService],
 })
 export class SettingsModule {}

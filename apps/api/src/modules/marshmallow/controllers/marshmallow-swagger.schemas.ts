@@ -78,11 +78,23 @@ const MESSAGE_STATS_SCHEMA = {
 const TURNSTILE_CONFIG_STATUS_SCHEMA = {
   type: 'object',
   properties: {
+    environment: { type: 'string', example: 'staging' },
     siteKeyConfigured: { type: 'boolean', example: true },
     secretKeyConfigured: { type: 'boolean', example: true },
+    providerReady: { type: 'boolean', example: true },
+    runtimeBypass: { type: 'boolean', example: false },
     ready: { type: 'boolean', example: true },
+    siteKey: { type: 'string', nullable: true, example: '0x4AAAAAAABBBBBBBBBBBBBB' },
+    source: { type: 'string', enum: ['tenant', 'environment', 'none'], example: 'tenant' },
   },
-  required: ['siteKeyConfigured', 'secretKeyConfigured', 'ready'],
+  required: [
+    'environment',
+    'siteKeyConfigured',
+    'secretKeyConfigured',
+    'providerReady',
+    'runtimeBypass',
+    'ready',
+  ],
 };
 
 export const MARSHMALLOW_CONFIG_SCHEMA = {

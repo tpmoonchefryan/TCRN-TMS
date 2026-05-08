@@ -13,7 +13,10 @@ import { TrustScoreService } from './trust-score.service';
 describe('PublicMarshmallowService', () => {
   let service: PublicMarshmallowService;
   let mockDatabaseService: Pick<DatabaseService, 'getPrisma'>;
-  let mockCaptchaService: Pick<CaptchaService, 'getTurnstileConfigStatus' | 'shouldRequireCaptcha' | 'verifyTurnstile'>;
+  let mockCaptchaService: Pick<
+    CaptchaService,
+    'getTurnstileConfigStatus' | 'getTurnstileConfigStatusForTenant' | 'shouldRequireCaptcha' | 'verifyTurnstile'
+  >;
   let mockRateLimitService: Pick<MarshmallowRateLimitService, 'checkRateLimit'>;
   let mockProfanityFilter: Pick<ProfanityFilterService, 'filter'>;
   let mockTechEventLog: Pick<TechEventLogService, 'log'>;
@@ -34,6 +37,16 @@ describe('PublicMarshmallowService', () => {
     };
     mockCaptchaService = {
       getTurnstileConfigStatus: vi.fn().mockReturnValue({
+        siteKeyConfigured: true,
+        secretKeyConfigured: true,
+        providerReady: true,
+        runtimeBypass: false,
+        environment: 'staging',
+        ready: true,
+      }),
+      getTurnstileConfigStatusForTenant: vi.fn().mockResolvedValue({
+        siteKey: 'tenant-site-key',
+        source: 'tenant',
         siteKeyConfigured: true,
         secretKeyConfigured: true,
         providerReady: true,

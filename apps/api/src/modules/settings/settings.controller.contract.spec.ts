@@ -58,6 +58,16 @@ describe('SettingsController private route contract', () => {
           path: 'organization/settings',
         },
         {
+          methodName: 'getTenantTurnstileSettings',
+          requestMethod: RequestMethod.GET,
+          path: 'organization/settings/turnstile',
+        },
+        {
+          methodName: 'updateTenantTurnstileSettings',
+          requestMethod: RequestMethod.PATCH,
+          path: 'organization/settings/turnstile',
+        },
+        {
           methodName: 'getSubsidiarySettings',
           requestMethod: RequestMethod.GET,
           path: 'subsidiaries/:subsidiaryId/settings',

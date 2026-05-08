@@ -5,11 +5,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type ChangeAction, ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { ChangeLogService } from '../../log';
+import { SettingsService } from '../../settings';
 import {
   buildDefaultMarshmallowConfig,
   buildMarshmallowConfigChanges,
@@ -27,6 +29,7 @@ export class MarshmallowConfigApplicationService {
     private readonly marshmallowConfigRepository: MarshmallowConfigRepository,
     private readonly changeLogService: ChangeLogService,
     private readonly configService: ConfigService,
+    @Optional() private readonly settingsService?: SettingsService,
   ) {}
 
   async getOrCreate(talentId: string, tenantSchema: string) {
@@ -62,13 +65,20 @@ export class MarshmallowConfigApplicationService {
       this.marshmallowConfigRepository.findTalentRouteRecord(tenantSchema, talentId),
     ]);
 
+    const turnstileConfig = this.settingsService
+      ? await this.settingsService.resolveTenantTurnstileRuntimeConfig(tenantSchema)
+      : {
+          siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY') ?? null,
+          secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY') ?? null,
+        };
+
     return buildMarshmallowConfigResponse({
       config,
       stats: buildMarshmallowConfigStats(statsRow),
       turnstile: buildTurnstileConfigStatus({
         nodeEnv: this.configService.get<string>('NODE_ENV'),
-        siteKey: this.configService.get<string>('TURNSTILE_SITE_KEY'),
-        secretKey: this.configService.get<string>('TURNSTILE_SECRET_KEY'),
+        siteKey: turnstileConfig.siteKey,
+        secretKey: turnstileConfig.secretKey,
       }),
       appUrl: this.configService.get<string>('APP_URL', 'http://localhost:3000'),
       tenantCode: tenantCode ?? tenantSchema,

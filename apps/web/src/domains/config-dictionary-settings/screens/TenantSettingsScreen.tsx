@@ -11,11 +11,14 @@ import {
   isTenantSettingsDraftDirty,
   readTenantSenderDomains,
   readTenantSettings,
+  readTenantTurnstileSettings,
   type ScopeSettingsResponse,
   type TenantSenderDomainsResponse,
   type TenantSettingsDraft,
+  type TenantTurnstileSettingsResponse,
   updateTenantSenderDomains,
   updateTenantSettings,
+  updateTenantTurnstileSettings,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import {
   type DictionaryTypeSummary,
@@ -33,6 +36,11 @@ import {
   type TenantEmailSenderDraft,
   TenantEmailSettingsFields,
 } from '@/domains/config-dictionary-settings/components/TenantEmailSettingsFields';
+import {
+  buildTenantTurnstileDraft,
+  type TenantTurnstileDraft,
+  TurnstileSettingsFields,
+} from '@/domains/config-dictionary-settings/components/TurnstileSettingsFields';
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildTenantBusinessPath } from '@/platform/routing/workspace-paths';
@@ -54,7 +62,7 @@ interface AsyncPanelState<T> {
 }
 
 type TenantSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
-type TenantSettingsCategory = 'defaults' | 'email';
+type TenantSettingsCategory = 'defaults' | 'email' | 'captcha';
 
 const TENANT_SETTINGS_SECTIONS: readonly TenantSettingsSection[] = [
   'details',
@@ -185,6 +193,15 @@ export function TenantSettingsScreen({
   const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
   const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
   const [isEmailSaving, setIsEmailSaving] = useState(false);
+  const [turnstilePanel, setTurnstilePanel] = useState<AsyncPanelState<TenantTurnstileSettingsResponse>>({
+    data: null,
+    error: null,
+    loading: false,
+  });
+  const [turnstileDraft, setTurnstileDraft] = useState<TenantTurnstileDraft>(() => buildTenantTurnstileDraft(null));
+  const [turnstileSaveError, setTurnstileSaveError] = useState<string | null>(null);
+  const [turnstileSaveSuccess, setTurnstileSaveSuccess] = useState<string | null>(null);
+  const [isTurnstileSaving, setIsTurnstileSaving] = useState(false);
 
   useEffect(() => {
     setActiveSectionId((current) => (current === urlSection ? current : urlSection));
@@ -416,12 +433,52 @@ export function TenantSettingsScreen({
     }
   }
 
+  async function loadTenantTurnstileSettings() {
+    if (turnstilePanel.loading) {
+      return;
+    }
+
+    setTurnstilePanel((current) => ({ ...current, loading: true, error: null }));
+    setTurnstileSaveError(null);
+    setTurnstileSaveSuccess(null);
+
+    try {
+      const response = await readTenantTurnstileSettings(request);
+      setTurnstilePanel({
+        data: response,
+        error: null,
+        loading: false,
+      });
+      setTurnstileDraft(buildTenantTurnstileDraft(response));
+    } catch (reason) {
+      setTurnstilePanel({
+        data: null,
+        error: getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to load Turnstile settings.',
+            zh_HANS: '加载 Turnstile 设置失败。',
+            zh_HANT: '載入 Turnstile 設定失敗。',
+            ja: 'Turnstile 設定を読み込めません。',
+            ko: 'Turnstile 설정을 불러오지 못했습니다.',
+            fr: 'Impossible de charger les paramètres Turnstile.',
+          }),
+        ),
+        loading: false,
+      });
+    }
+  }
+
   function handleSettingsCategoryChange(categoryId: string) {
-    const nextCategoryId = categoryId === 'email' ? 'email' : 'defaults';
+    const nextCategoryId = categoryId === 'email' || categoryId === 'captcha' ? categoryId : 'defaults';
     setActiveSettingsCategory(nextCategoryId);
 
     if (nextCategoryId === 'email' && !emailPanel.data && !emailPanel.loading) {
       void loadTenantEmailSenderDomains();
+    }
+
+    if (nextCategoryId === 'captcha' && !turnstilePanel.data && !turnstilePanel.loading) {
+      void loadTenantTurnstileSettings();
     }
   }
 
@@ -472,6 +529,56 @@ export function TenantSettingsScreen({
       );
     } finally {
       setIsEmailSaving(false);
+    }
+  }
+
+  async function handleSaveTurnstileSettings() {
+    if (isTurnstileSaving) {
+      return;
+    }
+
+    setIsTurnstileSaving(true);
+    setTurnstileSaveError(null);
+    setTurnstileSaveSuccess(null);
+
+    try {
+      const response = await updateTenantTurnstileSettings(request, {
+        siteKey: turnstileDraft.siteKey || null,
+        secretKeyMutation: turnstileDraft.secretKeyMutation,
+        secretKey: turnstileDraft.secretKey || null,
+      });
+      setTurnstilePanel({
+        data: response,
+        error: null,
+        loading: false,
+      });
+      setTurnstileDraft(buildTenantTurnstileDraft(response));
+      setTurnstileSaveSuccess(
+        text({
+          en: 'Turnstile settings saved.',
+          zh_HANS: 'Turnstile 设置已保存。',
+          zh_HANT: 'Turnstile 設定已儲存。',
+          ja: 'Turnstile 設定を保存しました。',
+          ko: 'Turnstile 설정이 저장되었습니다.',
+          fr: 'Les paramètres Turnstile ont été enregistrés.',
+        }),
+      );
+    } catch (reason) {
+      setTurnstileSaveError(
+        getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to save Turnstile settings.',
+            zh_HANS: '保存 Turnstile 设置失败。',
+            zh_HANT: '儲存 Turnstile 設定失敗。',
+            ja: 'Turnstile 設定を保存できません。',
+            ko: 'Turnstile 설정을 저장하지 못했습니다.',
+            fr: 'Impossible d’enregistrer les paramètres Turnstile.',
+          }),
+        ),
+      );
+    } finally {
+      setIsTurnstileSaving(false);
     }
   }
 
@@ -656,6 +763,7 @@ export function TenantSettingsScreen({
                 categories={[
                   { id: 'defaults', label: common.defaultsCategory },
                   { id: 'email', label: text('Email', '邮件', 'メール') },
+                  { id: 'captcha', label: text('CAPTCHA', '验证码', 'CAPTCHA') },
                 ]}
                 activeCategoryId={activeSettingsCategory}
                 onCategoryChange={handleSettingsCategoryChange}
@@ -692,6 +800,27 @@ export function TenantSettingsScreen({
                       text={text}
                     />
                   )
+                ) : null}
+
+                {activeSettingsCategory === 'captcha' ? (
+                  turnstilePanel.loading ? (
+                    <p className="text-sm font-medium text-slate-500">
+                      {text('Loading Turnstile settings…', '正在加载 Turnstile 设置…', 'Turnstile 設定を読み込み中…')}
+                    </p>
+                  ) : turnstilePanel.error ? (
+                    <p className="text-sm font-medium text-red-600">{turnstilePanel.error}</p>
+                  ) : turnstilePanel.data ? (
+                    <TurnstileSettingsFields
+                      response={turnstilePanel.data}
+                      draft={turnstileDraft}
+                      error={turnstileSaveError}
+                      success={turnstileSaveSuccess}
+                      isSaving={isTurnstileSaving}
+                      onDraftChange={setTurnstileDraft}
+                      onSave={() => void handleSaveTurnstileSettings()}
+                      text={text}
+                    />
+                  ) : null
                 ) : null}
               </SettingsCategoryWorkbench>
             </FormSection>

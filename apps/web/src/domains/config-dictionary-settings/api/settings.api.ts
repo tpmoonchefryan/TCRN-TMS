@@ -39,6 +39,28 @@ export interface UpdateTenantSenderDomainsPayload {
   replyTo?: string | null;
 }
 
+export type TenantTurnstileSource = 'tenant' | 'environment' | 'none';
+export type TenantTurnstileSecretMutation = 'keep' | 'replace' | 'clear';
+
+export interface TenantTurnstileSettingsResponse {
+  siteKey: string | null;
+  effectiveSiteKey: string | null;
+  source: TenantTurnstileSource;
+  environment: 'development' | 'test' | 'staging' | 'production';
+  siteKeyConfigured: boolean;
+  secretKeyConfigured: boolean;
+  providerReady: boolean;
+  runtimeBypass: boolean;
+  ready: boolean;
+  secretKeyMasked: string | null;
+}
+
+export interface UpdateTenantTurnstileSettingsPayload {
+  siteKey?: string | null;
+  secretKeyMutation?: TenantTurnstileSecretMutation;
+  secretKey?: string | null;
+}
+
 export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 
 export interface ProfileStoreListItem {
@@ -581,6 +603,17 @@ export function readTenantSenderDomains(request: RequestFn) {
 
 export function updateTenantSenderDomains(request: RequestFn, input: UpdateTenantSenderDomainsPayload) {
   return request<TenantSenderDomainsResponse>('/api/v1/email/sender-domains', buildJsonRequestInit('PATCH', input));
+}
+
+export function readTenantTurnstileSettings(request: RequestFn) {
+  return request<TenantTurnstileSettingsResponse>('/api/v1/organization/settings/turnstile');
+}
+
+export function updateTenantTurnstileSettings(request: RequestFn, input: UpdateTenantTurnstileSettingsPayload) {
+  return request<TenantTurnstileSettingsResponse>(
+    '/api/v1/organization/settings/turnstile',
+    buildJsonRequestInit('PATCH', input),
+  );
 }
 
 export async function listProfileStores(request: RequestFn, options: ProfileStoreListOptions = {}) {

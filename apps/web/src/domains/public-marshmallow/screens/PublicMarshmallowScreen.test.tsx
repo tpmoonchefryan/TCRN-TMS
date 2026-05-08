@@ -442,6 +442,89 @@ describe('PublicMarshmallowScreen', () => {
     });
   });
 
+  it('uses the tenant Turnstile Site Key from the public config contract', async () => {
+    const renderTurnstile = vi.fn((_: HTMLElement, options: { callback: (token: string) => void }) => {
+      options.callback('turnstile-token');
+      return 'widget-1';
+    });
+    vi.stubGlobal('turnstile', {
+      render: renderTurnstile,
+      reset: vi.fn(),
+      remove: vi.fn(),
+    });
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/config')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            talent: {
+              displayName: 'Aki Rosenthal',
+              avatarUrl: null,
+            },
+            title: 'Ask Aki',
+            welcomeText: 'Leave your next question here.',
+            placeholderText: 'Type your question',
+            allowAnonymous: true,
+            captchaMode: 'always',
+            turnstile: {
+              siteKey: 'tenant-public-site-key',
+              source: 'tenant',
+              siteKeyConfigured: true,
+              secretKeyConfigured: true,
+              providerReady: true,
+              runtimeBypass: false,
+              environment: 'staging',
+              ready: true,
+            },
+            maxMessageLength: 500,
+            minMessageLength: 5,
+            reactionsEnabled: false,
+            allowedReactions: [],
+            theme: {},
+            terms: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+            privacy: {
+              en: null,
+              zh: null,
+              ja: null,
+            },
+          },
+        });
+      }
+
+      if (url.includes('/api/v1/public/marshmallow/aki-mailbox/messages')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            messages: [],
+            cursor: null,
+            hasMore: false,
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request: ${url}`);
+    });
+
+    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
+
+    expect(await screen.findByText('Turnstile verification')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(renderTurnstile).toHaveBeenCalledWith(
+        expect.any(HTMLElement),
+        expect.objectContaining({
+          sitekey: 'tenant-public-site-key',
+        }),
+      );
+    });
+  });
+
   it('shows the unavailable state when the public marshmallow page is not reachable', async () => {
     mockFetch.mockResolvedValueOnce(
       jsonResponse(

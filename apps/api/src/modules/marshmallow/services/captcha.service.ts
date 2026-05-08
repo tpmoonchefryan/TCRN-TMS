@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '../../redis';
+import { SettingsService } from '../../settings';
 import { buildCaptchaRuntimeStatus, type CaptchaRuntimeStatus } from '../domain/captcha-runtime.policy';
 import { CaptchaMode } from '../dto/marshmallow.dto';
 import { TrustScoreService } from './trust-score.service';
@@ -28,6 +29,11 @@ export interface CaptchaContext {
   contentPreview?: string; // Optional content for risk pre-analysis
 }
 
+export interface ResolvedTurnstileConfigStatus extends CaptchaRuntimeStatus {
+  siteKey: string | null;
+  source: 'tenant' | 'environment' | 'none';
+}
+
 // Auto mode thresholds
 const AUTO_MODE_CONFIG = {
   ipRequestThreshold: 3,          // Require CAPTCHA after N requests per hour from same IP
@@ -45,6 +51,7 @@ export class CaptchaService {
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
     private readonly trustScoreService: TrustScoreService,
+    @Optional() private readonly settingsService?: SettingsService,
   ) {}
 
   // =============================================================================
@@ -59,12 +66,54 @@ export class CaptchaService {
     });
   }
 
-  private applyRuntimePolicy(decision: CaptchaDecision): CaptchaDecision {
+  async getTurnstileConfigStatusForTenant(
+    tenantSchema: string | null | undefined,
+  ): Promise<ResolvedTurnstileConfigStatus> {
+    const resolved = await this.resolveTurnstileConfig(tenantSchema);
+
+    return {
+      ...buildCaptchaRuntimeStatus({
+        nodeEnv: this.configService.get<string>('NODE_ENV'),
+        siteKey: resolved.siteKey,
+        secretKey: resolved.secretKey,
+      }),
+      siteKey: resolved.siteKey,
+      source: resolved.source,
+    };
+  }
+
+  private async resolveTurnstileConfig(
+    tenantSchema: string | null | undefined,
+  ): Promise<{ siteKey: string | null; secretKey: string | null; source: 'tenant' | 'environment' | 'none' }> {
+    if (tenantSchema && this.settingsService) {
+      const resolved = await this.settingsService.resolveTenantTurnstileRuntimeConfig(tenantSchema);
+
+      return {
+        siteKey: resolved.siteKey,
+        secretKey: resolved.secretKey,
+        source: resolved.source,
+      };
+    }
+
+    const siteKey = this.configService.get<string>('TURNSTILE_SITE_KEY')?.trim() || null;
+    const secretKey = this.configService.get<string>('TURNSTILE_SECRET_KEY')?.trim() || null;
+
+    return {
+      siteKey,
+      secretKey,
+      source: siteKey || secretKey ? 'environment' : 'none',
+    };
+  }
+
+  private async applyRuntimePolicy(
+    decision: CaptchaDecision,
+    tenantSchema?: string | null,
+  ): Promise<CaptchaDecision> {
     if (!decision.required || decision.forceReject) {
       return decision;
     }
 
-    const runtimeStatus = this.getTurnstileConfigStatus();
+    const runtimeStatus = await this.getTurnstileConfigStatusForTenant(tenantSchema);
 
     if (runtimeStatus.runtimeBypass) {
       return {
@@ -91,6 +140,7 @@ export class CaptchaService {
   async shouldRequireCaptcha(
     mode: CaptchaMode,
     context: CaptchaContext,
+    tenantSchema?: string | null,
   ): Promise<CaptchaDecision> {
     // 0. Honeypot check - immediate rejection for bots
     if (context.honeypotValue) {
@@ -99,7 +149,7 @@ export class CaptchaService {
     }
 
     if (mode === CaptchaMode.ALWAYS) {
-      return this.applyRuntimePolicy({ required: true, reason: 'config_always' });
+      return this.applyRuntimePolicy({ required: true, reason: 'config_always' }, tenantSchema);
     }
 
     if (mode === CaptchaMode.NEVER) {
@@ -107,7 +157,7 @@ export class CaptchaService {
     }
 
     // Auto mode: intelligent evaluation
-    return this.applyRuntimePolicy(await this.evaluateAutoMode(context));
+    return this.applyRuntimePolicy(await this.evaluateAutoMode(context), tenantSchema);
   }
 
   /**
@@ -195,14 +245,24 @@ export class CaptchaService {
   /**
    * Verify Turnstile token and record result
    */
-  async verifyTurnstile(token: string, ip: string, fingerprint?: string): Promise<boolean> {
-    const runtimeStatus = this.getTurnstileConfigStatus();
+  async verifyTurnstile(
+    token: string,
+    ip: string,
+    fingerprint?: string,
+    tenantSchema?: string | null,
+  ): Promise<boolean> {
+    const resolved = await this.resolveTurnstileConfig(tenantSchema);
+    const runtimeStatus = buildCaptchaRuntimeStatus({
+      nodeEnv: this.configService.get<string>('NODE_ENV'),
+      siteKey: resolved.siteKey,
+      secretKey: resolved.secretKey,
+    });
 
     if (runtimeStatus.runtimeBypass) {
       return true;
     }
 
-    const secretKey = this.configService.get<string>('TURNSTILE_SECRET_KEY');
+    const secretKey = resolved.secretKey;
 
     if (!runtimeStatus.providerReady || !secretKey?.trim()) {
       this.logger.warn('Turnstile secret key not configured');

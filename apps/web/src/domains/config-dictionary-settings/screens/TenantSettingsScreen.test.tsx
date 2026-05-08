@@ -418,6 +418,101 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByText('Tenant defaults saved.')).toBeInTheDocument();
   });
 
+  it('loads and saves tenant Turnstile settings without revealing the stored secret', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/settings' && !init) {
+        return {
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'en',
+            timezone: 'UTC',
+            allowCustomHomepage: true,
+          },
+          overrides: [],
+          inheritedFrom: {},
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      if (path === '/api/v1/organization/settings/turnstile' && !init) {
+        return {
+          siteKey: 'tenant-site-key',
+          effectiveSiteKey: 'tenant-site-key',
+          source: 'tenant',
+          environment: 'staging',
+          siteKeyConfigured: true,
+          secretKeyConfigured: true,
+          providerReady: true,
+          runtimeBypass: false,
+          ready: true,
+          secretKeyMasked: '********',
+        };
+      }
+
+      if (path === '/api/v1/organization/settings/turnstile' && init?.method === 'PATCH') {
+        return {
+          siteKey: 'tenant-site-key-updated',
+          effectiveSiteKey: 'tenant-site-key-updated',
+          source: 'tenant',
+          environment: 'staging',
+          siteKeyConfigured: true,
+          secretKeyConfigured: true,
+          providerReady: true,
+          runtimeBypass: false,
+          ready: true,
+          secretKeyMasked: '********',
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'CAPTCHA' }));
+
+    expect(await screen.findByLabelText('Cloudflare Turnstile Site Key')).toHaveValue('tenant-site-key');
+    expect(screen.getByLabelText('Cloudflare Turnstile Secret Key')).toHaveValue('');
+    expect(screen.queryByDisplayValue('tenant-secret-key')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear secret' }));
+    expect(screen.getByRole('button', { name: 'Save Turnstile settings' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(/I understand that staging and production will be unavailable/i));
+    expect(screen.getByRole('button', { name: 'Save Turnstile settings' })).not.toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Replace secret' }));
+    fireEvent.change(screen.getByLabelText('Cloudflare Turnstile Site Key'), {
+      target: { value: 'tenant-site-key-updated' },
+    });
+    fireEvent.change(screen.getByLabelText('Cloudflare Turnstile Secret Key'), {
+      target: { value: 'tenant-secret-key-rotated' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Turnstile settings' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/organization/settings/turnstile',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            siteKey: 'tenant-site-key-updated',
+            secretKeyMutation: 'replace',
+            secretKey: 'tenant-secret-key-rotated',
+          }),
+        }),
+      );
+    });
+    expect(await screen.findByText('Turnstile settings saved.')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('tenant-secret-key-rotated')).not.toBeInTheDocument();
+  });
+
 
   it('renders zh copy when runtime locale is zh', async () => {
     localeState.currentLocale = 'zh';

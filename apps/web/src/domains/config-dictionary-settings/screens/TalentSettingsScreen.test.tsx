@@ -611,6 +611,15 @@ describe('TalentSettingsScreen', () => {
             rejectedCount: 1,
             unreadCount: 3,
           },
+          turnstile: {
+            siteKeyConfigured: true,
+            secretKeyConfigured: true,
+            providerReady: true,
+            runtimeBypass: false,
+            environment: 'staging',
+            ready: true,
+            source: 'tenant',
+          },
           marshmallowUrl: 'https://app.example.com/m/sora-mailbox',
           createdAt: '2026-04-17T00:00:00.000Z',
           updatedAt: '2026-04-17T00:10:00.000Z',
@@ -745,6 +754,9 @@ describe('TalentSettingsScreen', () => {
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
+    expect(screen.getByText('Inherited CAPTCHA')).toBeInTheDocument();
+    expect(screen.getByText('Inherited from tenant-level Cloudflare Turnstile settings.')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Cloudflare Turnstile Secret Key/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
     expect(screen.getByText('Localization')).toBeInTheDocument();

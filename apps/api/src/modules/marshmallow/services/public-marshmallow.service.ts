@@ -253,7 +253,8 @@ export class PublicMarshmallowService {
     );
   }
 
-  private buildPublicConfigResponse(
+  private async buildPublicConfigResponse(
+    tenantSchema: string,
     talent: { displayName: string; avatarUrl: string | null },
     config: {
       avatarUrl: string | null;
@@ -285,7 +286,7 @@ export class PublicMarshmallowService {
       placeholderText: config.placeholderText,
       allowAnonymous: config.allowAnonymous,
       captchaMode: config.captchaMode,
-      turnstile: this.captchaService.getTurnstileConfigStatus(),
+      turnstile: await this.captchaService.getTurnstileConfigStatusForTenant(tenantSchema),
       maxMessageLength: config.maxMessageLength,
       minMessageLength: config.minMessageLength,
       reactionsEnabled: config.reactionsEnabled,
@@ -455,6 +456,7 @@ export class PublicMarshmallowService {
     const captchaDecision = await this.captchaService.shouldRequireCaptcha(
       config.captchaMode as CaptchaMode,
       captchaContext,
+      tenantSchema,
     );
 
     if (captchaDecision.forceReject) {
@@ -499,6 +501,7 @@ export class PublicMarshmallowService {
         dto.turnstileToken,
         context.ip,
         dto.fingerprint,
+        tenantSchema,
       );
 
       if (!verified) {
@@ -658,13 +661,13 @@ export class PublicMarshmallowService {
    * Get config for public page (multi-tenant aware)
    */
   async getConfig(path: string) {
-    const { talent, config } = await this.requireEnabledLookupByPath(path);
-    return this.buildPublicConfigResponse(talent, config);
+    const { talent, config, tenantSchema } = await this.requireEnabledLookupByPath(path);
+    return this.buildPublicConfigResponse(tenantSchema, talent, config);
   }
 
   async getConfigByCodes(tenantCode: string, talentCode: string) {
-    const { talent, config } = await this.requireEnabledLookupByCodes(tenantCode, talentCode);
-    return this.buildPublicConfigResponse(talent, config);
+    const { talent, config, tenantSchema } = await this.requireEnabledLookupByCodes(tenantCode, talentCode);
+    return this.buildPublicConfigResponse(tenantSchema, talent, config);
   }
 
   /**

@@ -4,6 +4,8 @@ export type PublicCaptchaMode = 'always' | 'never' | 'auto';
 
 export interface PublicTurnstileConfigStatus {
   environment?: 'development' | 'test' | 'staging' | 'production' | string;
+  siteKey?: string | null;
+  source?: 'tenant' | 'environment' | 'none' | string;
   siteKeyConfigured: boolean;
   secretKeyConfigured: boolean;
   providerReady?: boolean;

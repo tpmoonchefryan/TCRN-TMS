@@ -168,6 +168,42 @@ function formatBoolean(value: boolean | null | undefined, truthy: string, falsy:
   return value ? truthy : falsy;
 }
 
+function formatTurnstileReadiness(
+  turnstile: MarshmallowConfigResponse['turnstile'] | undefined,
+  text: (valueOrEn: string | SettingsFamilyLocalizedText, zh?: string, ja?: string) => string,
+) {
+  if (!turnstile) {
+    return text('Unknown', '未知', '不明');
+  }
+
+  if (turnstile.runtimeBypass) {
+    return text('Development/test bypass', '开发/测试旁路', '開発/テストバイパス');
+  }
+
+  return turnstile.ready
+    ? text('Ready', '已就绪', '準備完了')
+    : text('Unavailable', '不可用', '利用不可');
+}
+
+function formatTurnstileHint(
+  turnstile: MarshmallowConfigResponse['turnstile'] | undefined,
+  text: (valueOrEn: string | SettingsFamilyLocalizedText, zh?: string, ja?: string) => string,
+) {
+  if (!turnstile) {
+    return undefined;
+  }
+
+  if (turnstile.runtimeBypass) {
+    return text('Inherited tenant CAPTCHA readiness: local runtime bypass.', '继承租户验证码就绪状态：本地运行时旁路。', '継承されたテナント CAPTCHA 準備状況: ローカル実行時バイパス。');
+  }
+
+  if (turnstile.ready) {
+    return text('Inherited from tenant-level Cloudflare Turnstile settings.', '继承自租户级 Cloudflare Turnstile 设置。', 'テナントレベルの Cloudflare Turnstile 設定から継承されています。');
+  }
+
+  return text('Inherited tenant CAPTCHA readiness is incomplete; required public CAPTCHA will fail closed.', '继承的租户验证码配置不完整；需要验证码的公开提交会关闭。', '継承されたテナント CAPTCHA 設定が不完全なため、必須 CAPTCHA の公開送信は停止します。');
+}
+
 function resolveProfileStoreName(
   detail: TalentDetailResponse,
   locale: RuntimeLocale | SupportedUiLocale,
@@ -1917,6 +1953,11 @@ export function TalentSettingsScreen({
                       )}
                     />
                     <FieldRow
+                      label={text('Inherited CAPTCHA', '继承验证码状态', '継承 CAPTCHA')}
+                      value={formatTurnstileReadiness(marshmallowPanel.data?.turnstile, text)}
+                      hint={formatTurnstileHint(marshmallowPanel.data?.turnstile, text)}
+                    />
+                    <FieldRow
                       label={text('Profile Store', '档案库', 'プロフィールストア')}
                       value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
                     />
@@ -2530,6 +2571,11 @@ export function TalentSettingsScreen({
                             '保存后可用这个链接核对公开信箱入口。',
                             '保存後、このリンクで公開メールボックスを確認できます。',
                           )}
+                        />
+                        <FieldRow
+                          label={text('Inherited CAPTCHA readiness', '继承验证码就绪状态', '継承 CAPTCHA 準備状況')}
+                          value={formatTurnstileReadiness(marshmallowPanel.data.turnstile, text)}
+                          hint={formatTurnstileHint(marshmallowPanel.data.turnstile, text)}
                         />
                       </div>
 

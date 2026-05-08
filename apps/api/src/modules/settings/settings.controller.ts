@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsObject, IsString, Min } from 'class-validator';
+import { IsIn, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
@@ -33,6 +33,38 @@ export class ResetFieldDto {
   @ApiProperty({ description: 'Field name to reset', example: 'defaultLanguage' })
   @IsString()
   field: string;
+}
+
+export class UpdateTenantTurnstileSettingsDto {
+  @ApiProperty({
+    description: 'Tenant Cloudflare Turnstile Site Key. Empty or null clears the tenant-owned site key.',
+    example: '0x4AAAAAAABBBBBBBBBBBBBB',
+    required: false,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  siteKey?: string | null;
+
+  @ApiProperty({
+    description: 'Explicit Secret Key mutation. Empty string never clears a secret.',
+    enum: ['keep', 'replace', 'clear'],
+    example: 'replace',
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['keep', 'replace', 'clear'])
+  secretKeyMutation?: 'keep' | 'replace' | 'clear';
+
+  @ApiProperty({
+    description: 'New Cloudflare Turnstile Secret Key. Only accepted when secretKeyMutation is replace.',
+    example: '0x4AAAAAAASECRET',
+    required: false,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  secretKey?: string | null;
 }
 
 const SETTINGS_DATA_SCHEMA = {
@@ -161,6 +193,50 @@ const SETTINGS_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   'Requested scope was not found',
 );
 
+const TURNSTILE_SETTINGS_DATA_SCHEMA = {
+  type: 'object',
+  properties: {
+    siteKey: { type: 'string', nullable: true, example: '0x4AAAAAAABBBBBBBBBBBBBB' },
+    effectiveSiteKey: { type: 'string', nullable: true, example: '0x4AAAAAAABBBBBBBBBBBBBB' },
+    source: { type: 'string', enum: ['tenant', 'environment', 'none'], example: 'tenant' },
+    environment: { type: 'string', enum: ['development', 'test', 'staging', 'production'], example: 'staging' },
+    siteKeyConfigured: { type: 'boolean', example: true },
+    secretKeyConfigured: { type: 'boolean', example: true },
+    providerReady: { type: 'boolean', example: true },
+    runtimeBypass: { type: 'boolean', example: false },
+    ready: { type: 'boolean', example: true },
+    secretKeyMasked: { type: 'string', nullable: true, example: '********' },
+  },
+  required: [
+    'siteKey',
+    'effectiveSiteKey',
+    'source',
+    'environment',
+    'siteKeyConfigured',
+    'secretKeyConfigured',
+    'providerReady',
+    'runtimeBypass',
+    'ready',
+    'secretKeyMasked',
+  ],
+} as const;
+
+const TURNSTILE_SETTINGS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  TURNSTILE_SETTINGS_DATA_SCHEMA,
+  {
+    siteKey: '0x4AAAAAAABBBBBBBBBBBBBB',
+    effectiveSiteKey: '0x4AAAAAAABBBBBBBBBBBBBB',
+    source: 'tenant',
+    environment: 'staging',
+    siteKeyConfigured: true,
+    secretKeyConfigured: true,
+    providerReady: true,
+    runtimeBypass: false,
+    ready: true,
+    secretKeyMasked: '********',
+  },
+);
+
 /**
  * Settings Controller
  * Manages hierarchical settings for tenant, subsidiary, and talent
@@ -234,6 +310,48 @@ export class SettingsController {
     );
 
     return success(this.formatSettingsResponse(settings));
+  }
+
+  @Get('organization/settings/turnstile')
+  @ApiOperation({ summary: 'Get tenant Cloudflare Turnstile settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns tenant-owned Turnstile settings and non-secret effective readiness',
+    schema: TURNSTILE_SETTINGS_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read tenant Turnstile settings',
+    schema: SETTINGS_UNAUTHORIZED_SCHEMA,
+  })
+  async getTenantTurnstileSettings(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return success(await this.settingsService.getTenantTurnstileSettings(user.tenantSchema));
+  }
+
+  @Patch('organization/settings/turnstile')
+  @ApiOperation({ summary: 'Update tenant Cloudflare Turnstile settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns updated tenant Turnstile settings without exposing Secret Key',
+    schema: TURNSTILE_SETTINGS_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Request validation failed',
+    schema: SETTINGS_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update tenant Turnstile settings',
+    schema: SETTINGS_UNAUTHORIZED_SCHEMA,
+  })
+  async updateTenantTurnstileSettings(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateTenantTurnstileSettingsDto,
+  ) {
+    return success(await this.settingsService.updateTenantTurnstileSettings(user.tenantSchema, dto));
   }
 
   /**

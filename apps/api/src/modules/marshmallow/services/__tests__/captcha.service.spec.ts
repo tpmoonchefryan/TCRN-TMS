@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
+import type { SettingsService } from '../../../settings';
 import { CaptchaMode } from '../../dto/marshmallow.dto';
 import { CaptchaService } from '../captcha.service';
 import { TrustScoreService } from '../trust-score.service';
@@ -14,6 +15,7 @@ describe('CaptchaService', () => {
   let service: CaptchaService;
   let mockRedisService: Partial<RedisService>;
   let mockConfigService: Partial<ConfigService>;
+  let mockSettingsService: Partial<Pick<SettingsService, 'resolveTenantTurnstileRuntimeConfig'>>;
   let mockTrustScoreService: Partial<TrustScoreService>;
 
   const mockContext = {
@@ -38,6 +40,10 @@ describe('CaptchaService', () => {
       get: vi.fn().mockReturnValue(null),
     };
 
+    mockSettingsService = {
+      resolveTenantTurnstileRuntimeConfig: vi.fn(),
+    };
+
     mockTrustScoreService = {
       getTrustScore: vi.fn().mockResolvedValue({
         score: 50,
@@ -51,6 +57,7 @@ describe('CaptchaService', () => {
       mockRedisService as RedisService,
       mockConfigService as ConfigService,
       mockTrustScoreService as TrustScoreService,
+      mockSettingsService as unknown as SettingsService,
     );
   });
 
@@ -241,6 +248,83 @@ describe('CaptchaService', () => {
         '192.168.1.100',
         true,
       );
+    });
+
+    it('uses tenant Turnstile keys before platform environment fallback', async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue({ success: true }),
+      });
+      vi.stubGlobal('fetch', fetchSpy);
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'env-site-key';
+        }
+
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return 'env-secret-key';
+        }
+
+        return null;
+      });
+      (mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>).mockResolvedValue({
+        source: 'tenant',
+        siteKey: 'tenant-site-key',
+        secretKey: 'tenant-secret-key',
+        tenantSiteKey: 'tenant-site-key',
+        tenantSecretKeyConfigured: true,
+      });
+      mockTrustScoreService.recordCaptchaResult = vi.fn().mockResolvedValue(undefined);
+
+      await expect(service.getTurnstileConfigStatusForTenant('tenant_demo')).resolves.toMatchObject({
+        siteKey: 'tenant-site-key',
+        source: 'tenant',
+        providerReady: true,
+        ready: true,
+      });
+      await expect(
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint', 'tenant_demo'),
+      ).resolves.toBe(true);
+
+      const body = fetchSpy.mock.calls[0]?.[1]?.body as URLSearchParams;
+      expect(body.get('secret')).toBe('tenant-secret-key');
+      expect(body.get('secret')).not.toBe('env-secret-key');
+    });
+
+    it('fails closed for partial tenant Turnstile config even when platform fallback is complete', async () => {
+      (mockConfigService.get as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'staging';
+        }
+
+        if (key === 'TURNSTILE_SITE_KEY') {
+          return 'env-site-key';
+        }
+
+        if (key === 'TURNSTILE_SECRET_KEY') {
+          return 'env-secret-key';
+        }
+
+        return null;
+      });
+      (mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>).mockResolvedValue({
+        source: 'tenant',
+        siteKey: 'tenant-site-key',
+        secretKey: null,
+        tenantSiteKey: 'tenant-site-key',
+        tenantSecretKeyConfigured: false,
+      });
+
+      await expect(
+        service.shouldRequireCaptcha(CaptchaMode.ALWAYS, mockContext, 'tenant_demo'),
+      ).resolves.toMatchObject({
+        required: true,
+        unavailable: true,
+        reason: 'turnstile_not_configured',
+      });
     });
   });
 });

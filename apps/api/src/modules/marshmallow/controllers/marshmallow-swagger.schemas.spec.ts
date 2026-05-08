@@ -33,8 +33,11 @@ describe('marshmallow swagger locale contracts', () => {
     expect(properties.captchaMode).toBeDefined();
     expect(properties.turnstile).toBeDefined();
     expect(turnstileSchema.required).toEqual([
+      'environment',
       'siteKeyConfigured',
       'secretKeyConfigured',
+      'providerReady',
+      'runtimeBypass',
       'ready',
     ]);
     expect(schema.required).toEqual(

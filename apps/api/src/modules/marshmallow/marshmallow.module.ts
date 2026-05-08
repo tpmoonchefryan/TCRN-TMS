@@ -7,6 +7,7 @@ import { RateLimiterGuard } from '../../common/guards/rate-limiter.guard';
 import { RateLimiterService } from '../../common/services/rate-limiter.service';
 import { AuthModule } from '../auth/auth.module';
 import { LogModule } from '../log';
+import { SettingsModule } from '../settings';
 import { TalentModule } from '../talent';
 import { ExternalBlocklistApplicationService } from './application/external-blocklist.service';
 import { MarshmallowConfigApplicationService } from './application/marshmallow-config.service';
@@ -44,7 +45,7 @@ import {
 } from './services';
 
 @Module({
-  imports: [forwardRef(() => AuthModule), HttpModule, LogModule, TalentModule],
+  imports: [forwardRef(() => AuthModule), HttpModule, LogModule, SettingsModule, TalentModule],
   controllers: [MarshmallowController, PublicMarshmallowController, ExternalBlocklistController],
   providers: [
     MarshmallowConfigService,
