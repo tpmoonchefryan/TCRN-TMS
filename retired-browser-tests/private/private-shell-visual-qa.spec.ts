@@ -148,35 +148,84 @@ const privateVisualReportCatalog = [
 
 const privateVisualAdapterDefinitions = [
   {
-    key: 'openai-ai',
-    code: 'OPENAI_AI',
+    key: 'ai-adapter',
+    code: 'AI_ADAPTER',
     adapterType: 'ai',
-    aiProvider: 'OPENAI',
     name: {
-      en: 'OpenAI AI Adapter',
-      zh_HANS: 'OpenAI AI Adapter',
-      zh_HANT: 'OpenAI AI Adapter',
-      ja: 'OpenAI AI Adapter',
-      ko: 'OpenAI AI Adapter',
-      fr: 'OpenAI AI Adapter',
+      en: 'AI Adapter',
+      zh_HANS: 'AI Adapter',
+      zh_HANT: 'AI Adapter',
+      ja: 'AI Adapter',
+      ko: 'AI Adapter',
+      fr: 'AI Adapter',
     },
     description: {
-      en: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-      zh_HANS: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-      zh_HANT: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-      ja: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-      ko: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
-      fr: 'Generic OpenAI provider configuration using token authentication. No AI calls are executed yet.',
+      en: 'Generic token-only AI provider configuration.',
+      zh_HANS: 'Generic token-only AI provider configuration.',
+      zh_HANT: 'Generic token-only AI provider configuration.',
+      ja: 'Generic token-only AI provider configuration.',
+      ko: 'Generic token-only AI provider configuration.',
+      fr: 'Generic token-only AI provider configuration.',
     },
     platform: {
-      code: 'OPENAI',
-      displayName: 'OpenAI',
-      nameEn: 'OpenAI',
-      baseUrl: 'https://api.openai.com',
+      code: 'AI_ADAPTER',
+      displayName: 'AI Adapter',
+      nameEn: 'AI Adapter',
+      baseUrl: null,
       iconUrl: null,
-      color: '#10A37F',
+      color: '#6366F1',
     },
     configFields: [
+      {
+        key: 'provider',
+        label: {
+          en: 'Provider',
+          zh_HANS: 'Provider',
+          zh_HANT: 'Provider',
+          ja: 'Provider',
+          ko: 'Provider',
+          fr: 'Provider',
+        },
+        input: 'select',
+        required: true,
+        secret: false,
+        defaultValue: 'OPENAI',
+        options: [
+          {
+            value: 'OPENAI',
+            label: {
+              en: 'OpenAI',
+              zh_HANS: 'OpenAI',
+              zh_HANT: 'OpenAI',
+              ja: 'OpenAI',
+              ko: 'OpenAI',
+              fr: 'OpenAI',
+            },
+          },
+          {
+            value: 'ANTHROPIC',
+            label: {
+              en: 'Anthropic',
+              zh_HANS: 'Anthropic',
+              zh_HANT: 'Anthropic',
+              ja: 'Anthropic',
+              ko: 'Anthropic',
+              fr: 'Anthropic',
+            },
+          },
+          {
+            value: 'GEMINI',
+            label: {
+              en: 'Gemini',
+              zh_HANS: 'Gemini',
+              zh_HANT: 'Gemini',
+              ja: 'Gemini',
+              ko: 'Gemini',
+              fr: 'Gemini',
+            },
+          },
+        ],
+      },
       {
         key: 'endpoint_path',
         label: {
@@ -230,7 +279,7 @@ const privateVisualAdapterDefinitions = [
       },
     ],
     protocol: {
-      family: 'openai-responses',
+      family: 'generic-rest',
       payloadFormat: 'official-provider-protocol',
       invocationRuntime: 'not_implemented',
       notes: {
@@ -243,6 +292,86 @@ const privateVisualAdapterDefinitions = [
       },
     },
     capabilities: ['ai_provider_config'],
+    aiProviders: [
+      {
+        provider: 'OPENAI',
+        label: {
+          en: 'OpenAI',
+          zh_HANS: 'OpenAI',
+          zh_HANT: 'OpenAI',
+          ja: 'OpenAI',
+          ko: 'OpenAI',
+          fr: 'OpenAI',
+        },
+        endpointPathDefault: '/v1/responses',
+        modelPlaceholder: 'gpt-example',
+        protocol: {
+          family: 'openai-responses',
+          payloadFormat: 'official-provider-protocol',
+          invocationRuntime: 'not_implemented',
+          notes: {
+            en: 'Provider configuration only.',
+            zh_HANS: 'Provider configuration only.',
+            zh_HANT: 'Provider configuration only.',
+            ja: 'Provider configuration only.',
+            ko: 'Provider configuration only.',
+            fr: 'Provider configuration only.',
+          },
+        },
+      },
+      {
+        provider: 'ANTHROPIC',
+        label: {
+          en: 'Anthropic',
+          zh_HANS: 'Anthropic',
+          zh_HANT: 'Anthropic',
+          ja: 'Anthropic',
+          ko: 'Anthropic',
+          fr: 'Anthropic',
+        },
+        endpointPathDefault: '/v1/messages',
+        modelPlaceholder: 'claude-example',
+        protocol: {
+          family: 'anthropic-messages',
+          payloadFormat: 'official-provider-protocol',
+          invocationRuntime: 'not_implemented',
+          notes: {
+            en: 'Provider configuration only.',
+            zh_HANS: 'Provider configuration only.',
+            zh_HANT: 'Provider configuration only.',
+            ja: 'Provider configuration only.',
+            ko: 'Provider configuration only.',
+            fr: 'Provider configuration only.',
+          },
+        },
+      },
+      {
+        provider: 'GEMINI',
+        label: {
+          en: 'Gemini',
+          zh_HANS: 'Gemini',
+          zh_HANT: 'Gemini',
+          ja: 'Gemini',
+          ko: 'Gemini',
+          fr: 'Gemini',
+        },
+        endpointPathDefault: '/v1beta/models/{model}:generateContent',
+        modelPlaceholder: 'gemini-example',
+        protocol: {
+          family: 'gemini-generate-content',
+          payloadFormat: 'official-provider-protocol',
+          invocationRuntime: 'not_implemented',
+          notes: {
+            en: 'Provider configuration only.',
+            zh_HANS: 'Provider configuration only.',
+            zh_HANT: 'Provider configuration only.',
+            ja: 'Provider configuration only.',
+            ko: 'Provider configuration only.',
+            fr: 'Provider configuration only.',
+          },
+        },
+      },
+    ],
   },
 ];
 
@@ -2231,15 +2360,15 @@ test.describe('private shell browser visual QA', () => {
     });
   });
 
-  test('desktop AC integration keeps API key lifecycle behind the API client drawer', async ({
+  test('desktop AC API Client management keeps key lifecycle behind the drawer', async ({
     page,
   }) => {
     await usePrivateSession(page, visualQaAcSession);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/ac/tenant-ac-visual/integration-management?tab=api-keys');
+    await page.goto('/ac/tenant-ac-visual/api-clients');
     await hideFrameworkDevTools(page);
 
-    await expect(page.getByRole('heading', { name: 'Integration Management' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'API Client Management' })).toBeVisible();
     await expectVisibleExactTextCount(page.locator('header'), 'Platform', 1, 'desktop AC shell Platform label');
     const apiClientTable = page.getByRole('table', { name: 'API clients' });
     await expect(apiClientTable).toBeVisible();
@@ -2261,113 +2390,81 @@ test.describe('private shell browser visual QA', () => {
     });
   });
 
-  test('mobile tenant integration keeps scope tree and adapter configuration drawer gated', async ({
-    page,
-  }) => {
-    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
-    await usePrivateSession(page);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/tenant/tenant-visual/integration-management');
-    await hideFrameworkDevTools(page);
-
-    await expect(page.getByRole('heading', { name: 'Integration Management' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Tenant root/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tokyo Branch Subsidiary Tokyo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Visual Talent Talent Tokyo' })).toBeVisible();
-    await expectNoHorizontalOverflow(page, 'mobile tenant integration scope tree');
-    await expect(page).toHaveScreenshot('private-tenant-integration-mobile-scope-tree.png', {
-      animations: 'disabled',
-      fullPage: true,
-    });
-
-    await page.getByRole('button', { name: /Tenant root/ }).click();
-    const adaptersTable = page.getByRole('table', { name: 'Tenant Adapters' });
-    await expect(adaptersTable).toBeVisible();
-    await expect(adaptersTable.getByText('TCRN_PII_PLATFORM')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Adapter Profile' })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Configuration & secrets' })).toHaveCount(0);
-    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter first level');
-
-    await adaptersTable
-      .getByRole('row', { name: /TCRN_PII_PLATFORM/ })
-      .getByRole('button', { name: 'Configure' })
-      .click();
-    const adapterDrawer = page.getByRole('dialog', { name: 'Configure Adapter' });
-    await expect(adapterDrawer).toBeVisible();
-    await expect(adapterDrawer.getByRole('tab', { name: 'Secrets' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    );
-    await expect(
-      adapterDrawer.getByRole('heading', { name: 'Configuration & secrets' })
-    ).toBeVisible();
-    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter drawer');
-    await expect(page).toHaveScreenshot('private-tenant-integration-mobile-adapter-drawer.png', {
-      animations: 'disabled',
-      fullPage: true,
-    });
-  });
-
-  test('mobile tenant integration creates adapters from supported definitions only', async ({
-    page,
-  }) => {
-    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
-    await usePrivateSession(page);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/tenant/tenant-visual/integration-management');
-    await hideFrameworkDevTools(page);
-
-    await page.getByRole('button', { name: /Tenant root/ }).click();
-    await expect(page.getByRole('table', { name: 'Tenant Adapters' })).toBeVisible();
-    await page.getByRole('button', { name: 'New adapter' }).click();
-
-    const adapterDrawer = page.getByRole('dialog', { name: 'Configure Adapter' });
-    await expect(adapterDrawer).toBeVisible();
-    await expect(adapterDrawer.getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('openai-ai');
-    await expect(adapterDrawer.getByLabel('Platform')).toHaveCount(0);
-    await expect(adapterDrawer.getByLabel('Adapter type')).toHaveCount(0);
-    await expect(adapterDrawer.getByText('OpenAI AI Adapter', { exact: true })).toBeVisible();
-    await expect(adapterDrawer.getByText('OPENAI', { exact: true })).toBeVisible();
-    await expect(adapterDrawer.getByText('openai-responses', { exact: true })).toBeVisible();
-
-    await adapterDrawer.getByRole('tab', { name: 'Secrets' }).click();
-    await expect(adapterDrawer.getByLabel(/Endpoint path/)).toHaveValue('/v1/responses');
-    await expect(adapterDrawer.getByLabel(/Model/)).toBeVisible();
-    await expect(adapterDrawer.getByLabel(/Token/)).toBeVisible();
-    await expectNoHorizontalOverflow(page, 'mobile tenant integration adapter definition create drawer');
-    await expect(page).toHaveScreenshot('private-tenant-integration-adapter-definition-create-mobile.png', {
-      animations: 'disabled',
-      fullPage: true,
-    });
-  });
-
-  test('desktop tenant integration creates webhooks from supported definitions only', async ({
+  test('desktop tenant Interface Management keeps adapter list and Add Adapter action first-level', async ({
     page,
   }) => {
     privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
     await usePrivateSession(page);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/tenant/tenant-visual/integration-management');
+    await page.goto('/tenant/tenant-visual/interface-management');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Interface Management' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Tenant root/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tokyo Branch Subsidiary Tokyo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Visual Talent Talent Tokyo' })).toBeVisible();
+
+    await page.getByRole('button', { name: /Tenant root/ }).click();
+    const adaptersTable = page.getByRole('table', { name: 'Tenant Adapters' });
+    await expect(adaptersTable).toBeVisible();
+    await expect(adaptersTable.getByText('TCRN_PII_PLATFORM')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New adapter' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Adapter Profile' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Configuration & secrets' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop tenant interface management adapter first level');
+    await expect(page).toHaveScreenshot('private-tenant-interface-management-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('mobile tenant Interface Add Adapter uses a vertical AI Adapter form', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/tenant/tenant-visual/interface-management/adapters/new?ownerType=tenant');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Add Adapter' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Add adapter sections' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Adapter type' })).toHaveValue('ai-adapter');
+    await expect(page.getByRole('combobox', { name: 'Provider' })).toHaveValue('OPENAI');
+    await expect(page.getByLabel('Endpoint path')).toHaveValue('/v1/responses');
+    await expect(page.getByLabel('Model')).toHaveValue('gpt-example');
+    await expect(page.getByLabel('Token secret')).toBeVisible();
+    await expect(page.getByText('Bilibili')).toHaveCount(0);
+    await expect(page.getByText('YouTube')).toHaveCount(0);
+
+    await page.getByRole('combobox', { name: 'Provider' }).selectOption('GEMINI');
+    await expect(page.getByLabel('Endpoint path')).toHaveValue('/v1beta/models/{model}:generateContent');
+    await expect(page.getByLabel('Model')).toHaveValue('gemini-example');
+    await expectNoHorizontalOverflow(page, 'mobile tenant interface add adapter form');
+    await expect(page).toHaveScreenshot('private-tenant-interface-add-adapter-mobile.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop tenant Webhook Management keeps webhook list separate', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/webhook-management');
     await hideFrameworkDevTools(page);
 
     await page.getByRole('button', { name: /Tenant root/ }).click();
-    await page.getByRole('tab', { name: 'Webhooks' }).click();
+    await expect(page.getByRole('heading', { name: 'Webhook Management' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Webhook Endpoints' })).toBeVisible();
-    await page.getByRole('button', { name: 'New webhook' }).click();
-
-    const webhookDrawer = page.getByRole('dialog', { name: 'New Webhook' });
-    await expect(webhookDrawer).toBeVisible();
-    await expect(webhookDrawer.getByRole('combobox', { name: 'Supported webhook' })).toHaveValue('customer-lifecycle');
-    await expect(webhookDrawer.getByLabel('Webhook code')).toHaveCount(0);
-    await expect(webhookDrawer.getByLabel('Name (EN)')).toHaveCount(0);
-    await expect(webhookDrawer.getByRole('checkbox')).toHaveCount(0);
-    await expect(webhookDrawer.getByText('Customer lifecycle webhook', { exact: true })).toBeVisible();
-    await expect(webhookDrawer.getByText('Customer created')).toBeVisible();
-    await expect(webhookDrawer.getByText('Customer updated')).toBeVisible();
-    await expect(webhookDrawer.getByText('Customer deactivated')).toBeVisible();
-    await expect(webhookDrawer.getByLabel('Endpoint URL')).toBeVisible();
-    await expectNoHorizontalOverflow(page, 'desktop tenant integration webhook definition create drawer');
-    await expect(page).toHaveScreenshot('private-tenant-integration-webhook-definition-create-desktop.png', {
+    await expect(page.getByRole('table', { name: 'Webhooks' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New webhook' })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Tenant Adapters' })).toHaveCount(0);
+    await expect(page.getByRole('table', { name: 'API clients' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop tenant webhook management list');
+    await expect(page).toHaveScreenshot('private-tenant-webhook-management-desktop.png', {
       animations: 'disabled',
       fullPage: true,
     });
