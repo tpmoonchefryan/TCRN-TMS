@@ -76,8 +76,18 @@ export class PermissionGuard implements CanActivate {
         scopeType,
         scopeId,
       );
+      const allowed = hasPermission
+        ? true
+        : await this.permissionService.refreshAndCheckPermission(
+            user.tenantSchema,
+            user.id,
+            perm.resource,
+            checkedAction,
+            scopeType,
+            scopeId,
+          );
 
-      if (!hasPermission) {
+      if (!allowed) {
         const permissionLabel = perm.action === checkedAction
           ? `${perm.resource}:${perm.action}`
           : `${perm.resource}:${perm.action} (checked as ${perm.resource}:${checkedAction})`;

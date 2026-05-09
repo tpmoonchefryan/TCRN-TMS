@@ -126,6 +126,12 @@ export interface BlocklistTestResult {
   filteredContent?: string;
 }
 
+export interface TestBlocklistPayload {
+  testContent: string;
+  pattern: string;
+  patternType: BlocklistPatternType;
+}
+
 export interface ExternalBlocklistRecord {
   id: string;
   ownerType: SecurityScopeType;
@@ -400,7 +406,7 @@ export async function deleteBlocklistEntry(request: RequestFn, blocklistId: stri
 
 export async function testBlocklistEntry(
   request: RequestFn,
-  payload: { text: string; scope?: string },
+  payload: TestBlocklistPayload,
 ) {
   return request<BlocklistTestResult>('/api/v1/blocklist-entries/test', buildJsonRequestInit('POST', payload));
 }

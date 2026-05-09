@@ -2,6 +2,7 @@
 
 import { Transform, Type } from 'class-transformer';
 import {
+    ArrayUnique,
     IsArray,
     IsBoolean,
     IsEnum,
@@ -290,6 +291,12 @@ export class CreateWebhookDto {
   @ValidateNested()
   @Type(() => RetryPolicyDto)
   retryPolicy?: RetryPolicyDto;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID(undefined, { each: true })
+  monitoredTalentIds?: string[];
 }
 
 export class UpdateWebhookDto {
@@ -335,6 +342,12 @@ export class UpdateWebhookDto {
   @ValidateNested()
   @Type(() => RetryPolicyDto)
   retryPolicy?: RetryPolicyDto;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID(undefined, { each: true })
+  monitoredTalentIds?: string[];
 
   @IsInt()
   version!: number;

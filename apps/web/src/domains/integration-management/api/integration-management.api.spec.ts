@@ -370,6 +370,7 @@ describe('integration-management.api pagination helpers', () => {
       },
       url: 'https://example.com/webhook',
       events: ['customer.created'],
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     });
 
     expect(request).toHaveBeenCalledWith(
@@ -387,6 +388,7 @@ describe('integration-management.api pagination helpers', () => {
           },
           url: 'https://example.com/webhook',
           events: ['customer.created'],
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
       }),
     );
@@ -410,6 +412,7 @@ describe('integration-management.api pagination helpers', () => {
     await createWebhook(request as never, {
       definitionKey: 'customer-lifecycle',
       url: 'https://example.com/webhook',
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     });
 
     expect(request).toHaveBeenCalledWith(
@@ -419,6 +422,7 @@ describe('integration-management.api pagination helpers', () => {
         body: JSON.stringify({
           definitionKey: 'customer-lifecycle',
           url: 'https://example.com/webhook',
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
       }),
     );
@@ -449,6 +453,7 @@ describe('integration-management.api pagination helpers', () => {
       },
       url: 'https://example.com/webhook',
       events: ['customer.created'],
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     });
 
     expect(request).toHaveBeenCalledWith(
@@ -466,6 +471,7 @@ describe('integration-management.api pagination helpers', () => {
           },
           url: 'https://example.com/webhook',
           events: ['customer.created'],
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
       }),
     );

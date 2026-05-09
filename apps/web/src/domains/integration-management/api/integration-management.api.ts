@@ -189,6 +189,7 @@ export interface IntegrationWebhookListItemRecord {
   nameJa?: string | null;
   translations?: Record<string, string>;
   definitionKey?: string;
+  monitoredTalentIds: string[];
   url: string;
   events: WebhookEventType[];
   isActive: boolean;
@@ -363,6 +364,7 @@ export interface CreateWebhookPayload {
   secret?: string;
   events?: WebhookEventType[];
   headers?: Record<string, string>;
+  monitoredTalentIds?: string[];
   retryPolicy?: {
     maxRetries?: number;
     backoffMs?: number;
@@ -378,6 +380,7 @@ export interface UpdateWebhookPayload {
   secret?: string;
   events?: WebhookEventType[];
   headers?: Record<string, string>;
+  monitoredTalentIds?: string[];
   retryPolicy?: {
     maxRetries?: number;
     backoffMs?: number;

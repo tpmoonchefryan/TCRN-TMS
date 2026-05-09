@@ -227,51 +227,65 @@ function SummaryCard({
 
 function AuthoringModeSelector({
   copy,
+  compact = false,
   isVisualDisabled,
   mode,
   onModeChange,
 }: Readonly<{
   copy: HomepageEditorCopy;
+  compact?: boolean;
   isVisualDisabled: boolean;
   mode: AuthoringMode;
   onModeChange: (mode: AuthoringMode) => void;
 }>) {
+  const content = (
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-slate-900">{copy.modes.title}</p>
+        <p className="text-xs leading-5 text-slate-500">
+          {mode === 'visual' ? copy.modes.visualDescription : copy.modes.sourceDescription}
+        </p>
+      </div>
+      <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
+        {(['visual', 'source'] as const).map((nextMode) => {
+          const isActive = mode === nextMode;
+          const label = nextMode === 'visual' ? copy.modes.visual : copy.modes.source;
+          const Icon = nextMode === 'visual' ? Eye : Code2;
+          const disabled = nextMode === 'visual' && isVisualDisabled;
+
+          return (
+            <button
+              key={nextMode}
+              type="button"
+              aria-pressed={isActive}
+              disabled={disabled}
+              onClick={() => onModeChange(nextMode)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isActive
+                  ? 'bg-slate-950 text-white'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+        {content}
+      </div>
+    );
+  }
+
   return (
     <GlassSurface className="p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-slate-900">{copy.modes.title}</p>
-          <p className="text-xs leading-5 text-slate-500">
-            {mode === 'visual' ? copy.modes.visualDescription : copy.modes.sourceDescription}
-          </p>
-        </div>
-        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
-          {(['visual', 'source'] as const).map((nextMode) => {
-            const isActive = mode === nextMode;
-            const label = nextMode === 'visual' ? copy.modes.visual : copy.modes.source;
-            const Icon = nextMode === 'visual' ? Eye : Code2;
-            const disabled = nextMode === 'visual' && isVisualDisabled;
-
-            return (
-              <button
-                key={nextMode}
-                type="button"
-                aria-pressed={isActive}
-                disabled={disabled}
-                onClick={() => onModeChange(nextMode)}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  isActive
-                    ? 'bg-slate-950 text-white'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {content}
     </GlassSurface>
   );
 }
@@ -351,9 +365,11 @@ function HomepagePreviewFrame({
 export function HomepageEditorScreen({
   tenantId,
   talentId,
+  standalone = false,
 }: Readonly<{
   tenantId: string;
   talentId: string;
+  standalone?: boolean;
 }>) {
   const router = useRouter();
   const { copy } = useHomepageEditorCopy();
@@ -671,36 +687,26 @@ export function HomepageEditorScreen({
       : sourceMode === 'published'
         ? copy.summary.sourcePublishedHint
         : copy.summary.sourceEmptyHint;
+  const exitActionLabel = standalone ? copy.actions.exitEditor : copy.actions.backToManagement;
 
   return (
-    <div className="space-y-6">
-      <GlassSurface className="p-8">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-              <Globe2 className="h-3.5 w-3.5" />
-              {copy.header.eyebrow}
-            </div>
-            <div className="space-y-3">
-              <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.header.description}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                requestLeave(
-                  buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'),
-                  copy.actions.backToManagement,
-                );
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {copy.actions.backToManagement}
-            </button>
+    <div className={standalone ? 'space-y-4' : 'space-y-6'}>
+      {standalone ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
+          <button
+            type="button"
+            onClick={() => {
+              requestLeave(
+                buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'),
+                exitActionLabel,
+              );
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {exitActionLabel}
+          </button>
+          <div className="flex flex-wrap items-center gap-2">
             <div
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
                 hasUnsavedChanges
@@ -713,7 +719,7 @@ export function HomepageEditorScreen({
             <button
               type="button"
               onClick={() => setIsPreviewOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <Eye className="h-4 w-4" />
               {copy.actions.previewDraft}
@@ -721,7 +727,7 @@ export function HomepageEditorScreen({
             <button
               type="button"
               onClick={handleOpenLivePreview}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <ExternalLink className="h-4 w-4" />
               {copy.actions.openLivePreview}
@@ -732,63 +738,144 @@ export function HomepageEditorScreen({
               pendingText={copy.actions.savingDraft}
               disabled={hasInvalidSource}
               onClick={() => void handleSaveDraft()}
-              className="rounded-full px-5"
+              className="rounded-full px-4"
             >
               <Save className="mr-2 h-4 w-4" />
               {copy.actions.saveDraft}
             </AsyncSubmitButton>
           </div>
         </div>
-      </GlassSurface>
+      ) : (
+        <>
+          <GlassSurface className="p-8">
+            <div className="flex flex-wrap items-start justify-between gap-6">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  <Globe2 className="h-3.5 w-3.5" />
+                  {copy.header.eyebrow}
+                </div>
+                <div className="space-y-3">
+                  <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
+                  <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.header.description}</p>
+                </div>
+              </div>
 
-      <div className="grid gap-4 xl:grid-cols-4">
-        <SummaryCard
-          label={copy.summary.tenantLabel}
-          value={session?.tenantName || copy.summary.tenantFallback}
-          hint={copy.summary.tenantHint}
-        />
-        <SummaryCard
-          label={copy.summary.sourceLabel}
-          value={sourceValue}
-          hint={sourceHint}
-        />
-        <SummaryCard
-          label={copy.summary.componentsLabel}
-          value={String(content.components.length)}
-          hint={copy.summary.componentsHint}
-        />
-        <SummaryCard
-          label={copy.summary.homepageUrlLabel}
-          value={homepage.homepageUrl}
-          hint={copy.summary.homepageUrlHint}
-        />
-      </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    requestLeave(
+                      buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'),
+                      exitActionLabel,
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {exitActionLabel}
+                </button>
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
+                    hasUnsavedChanges
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {hasUnsavedChanges ? copy.actions.unsavedChanges : copy.actions.allChangesSaved}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <Eye className="h-4 w-4" />
+                  {copy.actions.previewDraft}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenLivePreview}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {copy.actions.openLivePreview}
+                </button>
+                <AsyncSubmitButton
+                  type="button"
+                  isPending={isSaving}
+                  pendingText={copy.actions.savingDraft}
+                  disabled={hasInvalidSource}
+                  onClick={() => void handleSaveDraft()}
+                  className="rounded-full px-5"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {copy.actions.saveDraft}
+                </AsyncSubmitButton>
+              </div>
+            </div>
+          </GlassSurface>
+
+          <div className="grid gap-4 xl:grid-cols-4">
+            <SummaryCard
+              label={copy.summary.tenantLabel}
+              value={session?.tenantName || copy.summary.tenantFallback}
+              hint={copy.summary.tenantHint}
+            />
+            <SummaryCard
+              label={copy.summary.sourceLabel}
+              value={sourceValue}
+              hint={sourceHint}
+            />
+            <SummaryCard
+              label={copy.summary.componentsLabel}
+              value={String(content.components.length)}
+              hint={copy.summary.componentsHint}
+            />
+            <SummaryCard
+              label={copy.summary.homepageUrlLabel}
+              value={homepage.homepageUrl}
+              hint={copy.summary.homepageUrlHint}
+            />
+          </div>
+        </>
+      )}
 
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
       <AuthoringModeSelector
         copy={copy}
+        compact={standalone}
         isVisualDisabled={isAdvancedEjected}
         mode={authoringMode}
         onModeChange={handleAuthoringModeChange}
       />
 
       {authoringMode === 'visual' ? (
-        <GlassSurface className="p-6">
-          <FormSection
-            title={copy.sections.draftBlocksTitle}
-            description={copy.sections.draftBlocksDescription}
-          >
-            <HomepagePuckEditor
-              content={content}
-              copy={copy}
-              isAdvancedEjected={isAdvancedEjected}
-              onContentChange={handleContentChange}
-              onSaveDraft={() => void handleSaveDraft()}
-              theme={theme}
-            />
-          </FormSection>
-        </GlassSurface>
+        standalone ? (
+          <HomepagePuckEditor
+            content={content}
+            copy={copy}
+            isAdvancedEjected={isAdvancedEjected}
+            onContentChange={handleContentChange}
+            onSaveDraft={() => void handleSaveDraft()}
+            theme={theme}
+          />
+        ) : (
+          <GlassSurface className="p-6">
+            <FormSection
+              title={copy.sections.draftBlocksTitle}
+              description={copy.sections.draftBlocksDescription}
+            >
+              <HomepagePuckEditor
+                content={content}
+                copy={copy}
+                isAdvancedEjected={isAdvancedEjected}
+                onContentChange={handleContentChange}
+                onSaveDraft={() => void handleSaveDraft()}
+                theme={theme}
+              />
+            </FormSection>
+          </GlassSurface>
+        )
       ) : (
         <GlassSurface className="p-6">
           <FormSection

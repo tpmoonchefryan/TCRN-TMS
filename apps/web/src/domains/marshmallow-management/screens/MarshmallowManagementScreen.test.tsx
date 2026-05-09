@@ -395,12 +395,12 @@ describe('MarshmallowManagementScreen', () => {
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Configure mailbox' })).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('Aki Mailbox')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Configuration' }));
-    expect(await screen.findByText('Submission unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.')).toBeInTheDocument();
+    expect((await screen.findAllByText('Submission unavailable')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.').length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Configure mailbox' })[0]);
     expect(await screen.findByDisplayValue('Aki Mailbox')).toBeInTheDocument();
     expect(screen.getByText('Turnstile runtime status')).toBeInTheDocument();
     expect(screen.getByText('Site key')).toBeInTheDocument();
@@ -430,11 +430,6 @@ describe('MarshmallowManagementScreen', () => {
     expect(JSON.parse(String(configPatchCall?.[1]?.body))).not.toHaveProperty('turnstile');
 
     expect(await screen.findByText('Marshmallow configuration saved.')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Configuration' }),
-      ).not.toBeInTheDocument();
-    });
     fireEvent.click(screen.getByRole('tab', { name: 'Moderation Queue' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve message-1' }));

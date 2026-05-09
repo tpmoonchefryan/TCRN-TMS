@@ -12,7 +12,12 @@ import {
 
 import { ChangeLogService } from '../../log';
 import { buildNameTranslationPayload } from '../domain/name-translation.policy';
-import { toRetryPolicyInput, type WebhookRecord } from '../domain/webhook.policy';
+import {
+  mergeWebhookExtraData,
+  normalizeMonitoredTalentIds,
+  toRetryPolicyInput,
+  type WebhookRecord,
+} from '../domain/webhook.policy';
 import { CreateWebhookDto, UpdateWebhookDto } from '../dto/integration.dto';
 import { WebhookWriteRepository } from '../infrastructure/webhook-write.repository';
 import { AdapterCryptoService } from '../services/adapter-crypto.service';
@@ -58,7 +63,7 @@ export class WebhookWriteApplicationService {
         nameEn: translationPayload.nameEn,
         nameZh: translationPayload.nameZh,
         nameJa: translationPayload.nameJa,
-        extraData: this.mergeDefinitionExtraData(translationPayload.extraData, definition),
+        extraData: this.buildCreateExtraData(translationPayload.extraData, definition, dto.monitoredTalentIds),
         url: createInput.url,
         secret: createInput.secret ? this.cryptoService.encrypt(createInput.secret) : null,
         events: createInput.events,
@@ -81,7 +86,12 @@ export class WebhookWriteApplicationService {
           objectType: 'webhook',
           objectId: id,
           objectName: createInput.code,
-          newValue: { code: createInput.code, definitionKey: definition?.key, events: createInput.events },
+          newValue: {
+            code: createInput.code,
+            definitionKey: definition?.key,
+            events: createInput.events,
+            monitoredTalentIds: dto.monitoredTalentIds ?? [],
+          },
         },
         context,
       );
@@ -168,19 +178,20 @@ export class WebhookWriteApplicationService {
     }
   }
 
-  private mergeDefinitionExtraData(
+  private buildCreateExtraData(
     extraData: Record<string, unknown> | null,
     definition: IntegrationWebhookDefinition | null,
+    monitoredTalentIds: string[] | undefined,
   ) {
-    if (!definition) {
-      return extraData;
-    }
+    const definitionExtraData = !definition
+      ? extraData
+      : {
+          ...(extraData ?? {}),
+          definitionKey: definition.key,
+          definitionCode: definition.code,
+        };
 
-    return {
-      ...(extraData ?? {}),
-      definitionKey: definition.key,
-      definitionCode: definition.code,
-    };
+    return mergeWebhookExtraData(definitionExtraData, monitoredTalentIds);
   }
 
   async update(id: string, dto: UpdateWebhookDto, context: RequestContext) {
@@ -211,7 +222,7 @@ export class WebhookWriteApplicationService {
         nameEn: translationPayload.nameEn,
         nameZh: translationPayload.nameZh,
         nameJa: translationPayload.nameJa,
-        extraData: translationPayload.extraData,
+        extraData: mergeWebhookExtraData(translationPayload.extraData, dto.monitoredTalentIds),
         url: dto.url ?? webhook.url,
         secret: this.resolveSecret(dto.secret, webhook.secret),
         events: dto.events ?? webhook.events,
@@ -231,6 +242,11 @@ export class WebhookWriteApplicationService {
           objectType: 'webhook',
           objectId: id,
           objectName: webhook.code,
+          oldValue: { monitoredTalentIds: normalizeMonitoredTalentIds(webhook.extraData) },
+          newValue: {
+            monitoredTalentIds:
+              dto.monitoredTalentIds ?? normalizeMonitoredTalentIds(webhook.extraData),
+          },
         },
         context,
       );

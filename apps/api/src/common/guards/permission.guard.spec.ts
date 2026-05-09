@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,6 +17,7 @@ describe('PermissionGuard', () => {
   let mockReflector: Reflector;
   let mockPermissionService: {
     checkPermission: ReturnType<typeof vi.fn>;
+    refreshAndCheckPermission: ReturnType<typeof vi.fn>;
   };
 
   const requiredPermissions: RequiredPermission[] = [
@@ -48,6 +50,7 @@ describe('PermissionGuard', () => {
 
     mockPermissionService = {
       checkPermission: vi.fn().mockResolvedValue(true),
+      refreshAndCheckPermission: vi.fn().mockResolvedValue(true),
     };
 
     guard = new PermissionGuard(
@@ -152,5 +155,56 @@ describe('PermissionGuard', () => {
       undefined,
       undefined,
     );
+    expect(mockPermissionService.refreshAndCheckPermission).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the snapshot once when the cached permission check returns false', async () => {
+    mockPermissionService.checkPermission.mockResolvedValueOnce(false);
+    mockPermissionService.refreshAndCheckPermission.mockResolvedValueOnce(true);
+
+    const request = {
+      user: {
+        id: 'user-1',
+        tenantSchema: 'tenant_test',
+      },
+      params: {},
+      query: {},
+    };
+
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
+
+    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
+      'tenant_test',
+      'user-1',
+      'customer.profile',
+      'read',
+      undefined,
+      undefined,
+    );
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
+      'tenant_test',
+      'user-1',
+      'customer.profile',
+      'read',
+      undefined,
+      undefined,
+    );
+  });
+
+  it('still denies access when the refreshed permission check remains false', async () => {
+    mockPermissionService.checkPermission.mockResolvedValueOnce(false);
+    mockPermissionService.refreshAndCheckPermission.mockResolvedValueOnce(false);
+
+    const request = {
+      user: {
+        id: 'user-1',
+        tenantSchema: 'tenant_test',
+      },
+      params: {},
+      query: {},
+    };
+
+    await expect(guard.canActivate(createContext(request))).rejects.toBeInstanceOf(ForbiddenException);
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledTimes(1);
   });
 });

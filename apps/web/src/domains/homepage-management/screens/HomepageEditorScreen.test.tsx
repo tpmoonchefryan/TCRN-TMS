@@ -426,7 +426,7 @@ describe('HomepageEditorScreen', () => {
 
     await waitFor(() => {
       expect(mockWindowOpen).toHaveBeenCalledWith(
-        expect.stringMatching(/^\/tenant\/tenant-1\/talent\/talent-1\/homepage\/editor\/preview\?previewId=tenant-1\.talent-1\./),
+        expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
         '_blank',
       );
     });
@@ -444,6 +444,29 @@ describe('HomepageEditorScreen', () => {
       };
 
       expect(snapshot.hero?.displayName).toBe('Live Preview Sora');
+    });
+  });
+
+  it('renders standalone editor chrome without summary cards and uses the shell-free preview path', async () => {
+    mockHomepageRequests();
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" standalone />);
+
+    expect(await screen.findByRole('button', { name: 'Exit editor' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Homepage editor' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Tenant')).not.toBeInTheDocument();
+    expect(screen.queryByText('Source')).not.toBeInTheDocument();
+    expect(screen.queryByText('Blocks')).not.toBeInTheDocument();
+    expect(screen.queryByText('Homepage URL')).not.toBeInTheDocument();
+    expect(screen.getByTestId('homepage-puck-editor')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
+
+    await waitFor(() => {
+      expect(mockWindowOpen).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
+        '_blank',
+      );
     });
   });
 

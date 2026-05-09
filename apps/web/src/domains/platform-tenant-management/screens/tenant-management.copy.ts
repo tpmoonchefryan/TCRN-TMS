@@ -105,6 +105,27 @@ interface TenantManagementCopy {
     updateError: string;
     updatedLabel: string;
     standardTierLabel: string;
+    sendingDomains: {
+      title: string;
+      description: string;
+      newDomainLabel: string;
+      newDomainPlaceholder: string;
+      addDomain: string;
+      loading: string;
+      empty: string;
+      hostnameLabel: string;
+      statusLabel: string;
+      pendingDnsStatus: string;
+      verifiedStatus: string;
+      disabledStatus: string;
+      removeDomain: string;
+      saveSubmit: string;
+      savePending: string;
+      saveSuccess: string;
+      loadError: string;
+      saveError: string;
+      generateTokenNotice: string;
+    };
   };
   filters: {
     all: string;
@@ -212,6 +233,27 @@ const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
       updateError: 'Failed to update tenant.',
       updatedLabel: 'Updated',
       standardTierLabel: 'Standard',
+      sendingDomains: {
+        title: 'Email sending domains',
+        description: 'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
+        newDomainLabel: 'New sending domain',
+        newDomainPlaceholder: 'mail.example.com',
+        addDomain: 'Add sending domain',
+        loading: 'Loading email sending domains…',
+        empty: 'No customer sending domain has been added for this tenant.',
+        hostnameLabel: 'Sending domain hostname',
+        statusLabel: 'Sending domain status',
+        pendingDnsStatus: 'Pending DNS',
+        verifiedStatus: 'Verified',
+        disabledStatus: 'Disabled',
+        removeDomain: 'Remove domain',
+        saveSubmit: 'Save sending domains',
+        savePending: 'Saving sending domains…',
+        saveSuccess: 'Email sending domains saved.',
+        loadError: 'Failed to load email sending domains.',
+        saveError: 'Failed to save email sending domains.',
+        generateTokenNotice: 'Save to generate verification token',
+      },
     },
     filters: {
       all: 'All',
@@ -317,6 +359,27 @@ const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
       updateError: '更新租户失败。',
       updatedLabel: '更新时间',
       standardTierLabel: '标准',
+      sendingDomains: {
+        title: '发件域名',
+        description: '管理当前租户由客户提供的发件域名，并向客户提供 DNS 记录完成配置。',
+        newDomainLabel: '新增发件域名',
+        newDomainPlaceholder: 'mail.example.com',
+        addDomain: '新增发件域名',
+        loading: '正在加载发件域名…',
+        empty: '当前租户还没有添加客户发件域名。',
+        hostnameLabel: '发件域名主机名',
+        statusLabel: '发件域名状态',
+        pendingDnsStatus: '等待 DNS',
+        verifiedStatus: '已验证',
+        disabledStatus: '已停用',
+        removeDomain: '移除域名',
+        saveSubmit: '保存发件域名',
+        savePending: '正在保存发件域名…',
+        saveSuccess: '发件域名已保存。',
+        loadError: '加载发件域名失败。',
+        saveError: '保存发件域名失败。',
+        generateTokenNotice: '保存后生成验证令牌',
+      },
     },
     filters: {
       all: '全部',
@@ -422,6 +485,27 @@ const COPY: Record<RuntimeLocale, TenantManagementCopy> = {
       updateError: 'テナントの更新に失敗しました。',
       updatedLabel: '更新日時',
       standardTierLabel: '標準',
+      sendingDomains: {
+        title: '送信ドメイン',
+        description: 'このテナント向けに顧客所有の送信ドメインを管理し、顧客設定用の DNS レコードを案内します。',
+        newDomainLabel: '送信ドメインを追加',
+        newDomainPlaceholder: 'mail.example.com',
+        addDomain: '送信ドメインを追加',
+        loading: '送信ドメインを読み込み中…',
+        empty: 'このテナントには顧客の送信ドメインがまだ追加されていません。',
+        hostnameLabel: '送信ドメインのホスト名',
+        statusLabel: '送信ドメインの状態',
+        pendingDnsStatus: 'DNS 待ち',
+        verifiedStatus: '確認済み',
+        disabledStatus: '無効',
+        removeDomain: 'ドメインを削除',
+        saveSubmit: '送信ドメインを保存',
+        savePending: '送信ドメインを保存中…',
+        saveSuccess: '送信ドメインを保存しました。',
+        loadError: '送信ドメインの読み込みに失敗しました。',
+        saveError: '送信ドメインの保存に失敗しました。',
+        generateTokenNotice: '保存すると検証トークンが生成されます',
+      },
     },
     filters: {
       all: 'すべて',

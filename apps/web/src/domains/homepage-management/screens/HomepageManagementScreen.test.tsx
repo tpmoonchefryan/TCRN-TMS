@@ -172,7 +172,7 @@ describe('HomepageManagementScreen', () => {
     expect(await screen.findByText('HeroBanner, ProfileCard')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Open editor/i })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/homepage/editor',
+      '/homepage-editor/tenant-1/talent-1',
     );
     expect(screen.queryByRole('link', { name: 'Manage public address' })).not.toBeInTheDocument();
 

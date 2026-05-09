@@ -27,6 +27,7 @@ export interface HomepageEditorCopy {
   actions: {
     allChangesSaved: string;
     backToManagement: string;
+    exitEditor: string;
     openLivePreview: string;
     previewDraft: string;
     restoreLowCodeSnapshot: string;
@@ -191,6 +192,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: 'All changes saved',
       backToManagement: 'Back to homepage management',
+      exitEditor: 'Exit editor',
       openLivePreview: 'Open live preview',
       previewDraft: 'Preview',
       restoreLowCodeSnapshot: 'Restore low-code snapshot',
@@ -436,6 +438,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: '已全部保存',
       backToManagement: '返回主页管理',
+      exitEditor: '退出编辑器',
       openLivePreview: '打开实时预览',
       previewDraft: '预览',
       restoreLowCodeSnapshot: '恢复低代码快照',
@@ -681,6 +684,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     actions: {
       allChangesSaved: 'すべて保存済み',
       backToManagement: 'ホームページ管理へ戻る',
+      exitEditor: 'エディタを閉じる',
       openLivePreview: 'ライブプレビューを開く',
       previewDraft: 'プレビュー',
       restoreLowCodeSnapshot: 'ローコードスナップショットを復元',

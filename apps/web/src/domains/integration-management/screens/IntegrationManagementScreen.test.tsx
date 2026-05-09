@@ -1983,6 +1983,7 @@ describe('IntegrationManagementScreen', () => {
             nameZh: null,
             nameJa: null,
             definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: ['talent-1'],
             url: 'https://example.com/webhooks/customer',
             events: ['customer.created', 'customer.updated', 'customer.deactivated'],
             isActive: true,
@@ -2010,6 +2011,7 @@ describe('IntegrationManagementScreen', () => {
                 nameZh: null,
                 nameJa: null,
                 definitionKey: 'customer-lifecycle',
+                monitoredTalentIds: ['talent-1'],
                 url: 'https://example.com/webhooks/customer',
                 events: ['customer.created', 'customer.updated', 'customer.deactivated'],
                 isActive: true,
@@ -2057,6 +2059,7 @@ describe('IntegrationManagementScreen', () => {
           nameZh: null,
           nameJa: null,
           definitionKey: 'customer-lifecycle',
+          monitoredTalentIds: ['talent-1'],
           url: 'https://example.com/webhooks/customer',
           events: ['customer.created', 'customer.updated', 'customer.deactivated'],
           isActive: true,
@@ -2090,13 +2093,14 @@ describe('IntegrationManagementScreen', () => {
     expect(within(drawer).getByRole('combobox', { name: 'Supported webhook' })).toHaveValue('customer-lifecycle');
     expect(within(drawer).queryByLabelText('Webhook code')).not.toBeInTheDocument();
     expect(within(drawer).queryByLabelText('Name (EN)')).not.toBeInTheDocument();
-    expect(within(drawer).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(within(drawer).getByText('Monitored talents')).toBeInTheDocument();
     expect(within(drawer).getByText('Customer lifecycle webhook')).toBeInTheDocument();
 
     await user.type(
       within(drawer).getByLabelText('Endpoint URL'),
       'https://example.com/webhooks/customer',
     );
+    await user.click(within(drawer).getByRole('checkbox', { name: /Tokino Sora/ }));
     await user.click(within(drawer).getByRole('button', { name: 'Create webhook' }));
 
     await waitFor(() => {
@@ -2104,6 +2108,7 @@ describe('IntegrationManagementScreen', () => {
         definitionKey: 'customer-lifecycle',
         url: 'https://example.com/webhooks/customer',
         headers: {},
+        monitoredTalentIds: ['talent-1'],
         retryPolicy: {
           maxRetries: 3,
           backoffMs: 1000,
@@ -2112,6 +2117,82 @@ describe('IntegrationManagementScreen', () => {
     });
     expect(JSON.stringify(createBody)).not.toContain('CUSTOMER_LIFECYCLE');
     expect(JSON.stringify(createBody)).not.toContain('customer.created');
+    expect(await screen.findByText('1 talent')).toBeInTheDocument();
+  });
+
+  it('uses the dedicated webhook surface without the scope tree and keeps tenant-root targeting explicit', async () => {
+    pathname = '/tenant/tenant-1/webhook-management';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/integration/webhooks') {
+        return [
+          {
+            id: 'webhook-tenant-root',
+            code: 'TENANT_ROOT_WEBHOOK',
+            nameEn: 'Tenant root webhook',
+            nameZh: null,
+            nameJa: null,
+            definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: [],
+            url: 'https://example.com/webhooks/tenant-root',
+            events: ['customer.created'],
+            isActive: true,
+            lastTriggeredAt: null,
+            lastStatus: null,
+            consecutiveFailures: 0,
+            createdAt: '2026-05-07T08:00:00.000Z',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/integration/webhooks/events') {
+        return [];
+      }
+
+      if (path === '/api/v1/integration/webhook-definitions') {
+        return [customerLifecycleWebhookDefinition];
+      }
+
+      if (path === '/api/v1/integration/webhooks/webhook-tenant-root') {
+        return {
+          id: 'webhook-tenant-root',
+          code: 'TENANT_ROOT_WEBHOOK',
+          nameEn: 'Tenant root webhook',
+          nameZh: null,
+          nameJa: null,
+          definitionKey: 'customer-lifecycle',
+          monitoredTalentIds: [],
+          url: 'https://example.com/webhooks/tenant-root',
+          events: ['customer.created'],
+          isActive: true,
+          lastTriggeredAt: null,
+          lastStatus: null,
+          consecutiveFailures: 0,
+          createdAt: '2026-05-07T08:00:00.000Z',
+          secret: null,
+          headers: {},
+          retryPolicy: { maxRetries: 3, backoffMs: 1000 },
+          disabledAt: null,
+          updatedAt: '2026-05-07T08:00:00.000Z',
+          createdBy: 'user-1',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<IntegrationManagementScreen tenantId="tenant-1" surface="webhooks" />);
+
+    expect(screen.queryByText('Scope Tree')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Tenant root/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Webhook Endpoints' })).toBeInTheDocument();
+    expect(await screen.findByText('All talents', { selector: 'td' })).toBeInTheDocument();
   });
 
   it('renders localized integration management copy for zh locale', async () => {

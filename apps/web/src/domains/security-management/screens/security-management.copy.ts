@@ -85,6 +85,11 @@ const COPY = {
         unavailable: 'Blocklist unavailable',
         emptyTitle: 'No blocklist entries in this scope',
         emptyDescription: 'Change the current view or create the first rule.',
+        quickAddLabel: 'Keyword pattern',
+        quickAddPlaceholder: 'Add one keyword pattern',
+        quickAddAction: 'Add one',
+        quickAddPending: 'Adding…',
+        batchAddAction: 'Batch add / import',
         columns: ['Entry', 'Owner', 'Severity', 'Usage', 'State', 'Actions'],
       },
       blocklistEditor: {
@@ -113,11 +118,24 @@ const COPY = {
       },
       blocklistTest: {
         title: 'Rule Test Bench',
-        description: 'Test sample text against the current rule set before saving changes.',
+        description: 'Test sample text against the current draft or selected rule before saving changes.',
         run: 'Test rule',
         pending: 'Testing…',
         sampleText: 'Sample text',
         placeholder: 'Paste the content you want to test.',
+      },
+      blocklistBatch: {
+        title: 'Batch Add Blocklist Patterns',
+        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        inputLabel: 'Patterns',
+        inputPlaceholder: 'one pattern per line',
+        previewReady: 'Ready to add',
+        previewDuplicates: 'Duplicate lines',
+        previewInvalid: 'Invalid lines',
+        emptyPreview: 'Paste patterns to preview the batch import.',
+        submit: 'Add patterns',
+        pending: 'Adding…',
+        closeButtonAriaLabel: 'Close batch add blocklist patterns drawer',
       },
       externalList: {
         title: 'Scoped External Blocklist',
@@ -383,6 +401,11 @@ const COPY = {
         unavailable: '内容拦截不可用',
         emptyTitle: '当前范围没有内容拦截规则',
         emptyDescription: '切换当前视图，或创建第一条规则。',
+        quickAddLabel: '关键词模式',
+        quickAddPlaceholder: '逐条添加关键词模式',
+        quickAddAction: '添加一条',
+        quickAddPending: '添加中…',
+        batchAddAction: '批量添加 / 导入',
         columns: ['条目', '归属', '严重级别', '用途', '状态', '操作'],
       },
       blocklistEditor: {
@@ -411,11 +434,24 @@ const COPY = {
       },
       blocklistTest: {
         title: '规则测试台',
-        description: '在保存修改前，用当前规则集测试示例文本。',
+        description: '在保存修改前，用当前草稿或选中规则测试示例文本。',
         run: '测试规则',
         pending: '测试中…',
         sampleText: '示例文本',
         placeholder: '粘贴要测试的内容。',
+      },
+      blocklistBatch: {
+        title: '批量添加内容拦截模式',
+        description: '每行粘贴一条关键词模式。重复行会在发起创建前跳过。',
+        inputLabel: '模式列表',
+        inputPlaceholder: '每行一条模式',
+        previewReady: '可添加',
+        previewDuplicates: '重复行',
+        previewInvalid: '无效行',
+        emptyPreview: '粘贴模式后会在这里显示批量预览。',
+        submit: '添加模式',
+        pending: '添加中…',
+        closeButtonAriaLabel: '关闭批量添加内容拦截模式抽屉',
       },
       externalList: {
         title: '分范围外链拦截',
@@ -681,6 +717,11 @@ const COPY = {
         unavailable: 'コンテンツ遮断を利用できません',
         emptyTitle: 'このスコープに遮断ルールはありません',
         emptyDescription: '表示階層を切り替えるか、最初のルールを作成してください。',
+        quickAddLabel: 'キーワードパターン',
+        quickAddPlaceholder: 'キーワードパターンを1件追加',
+        quickAddAction: '1件追加',
+        quickAddPending: '追加中…',
+        batchAddAction: '一括追加 / 取り込み',
         columns: ['項目', '所有者', '重大度', '用途', '状態', '操作'],
       },
       blocklistEditor: {
@@ -709,11 +750,24 @@ const COPY = {
       },
       blocklistTest: {
         title: 'ルール検証',
-        description: '変更を保存する前に、現在のルールセットでサンプルテキストを検証します。',
+        description: '変更を保存する前に、現在のドラフトまたは選択中ルールでサンプルテキストを検証します。',
         run: 'ルールを検証',
         pending: '検証中…',
         sampleText: 'サンプルテキスト',
         placeholder: '検証したい内容を貼り付けてください。',
+      },
+      blocklistBatch: {
+        title: '遮断パターンを一括追加',
+        description: 'キーワードパターンを1行ずつ貼り付けてください。重複行は作成前にスキップします。',
+        inputLabel: 'パターン一覧',
+        inputPlaceholder: '1 行に 1 パターン',
+        previewReady: '追加予定',
+        previewDuplicates: '重複行',
+        previewInvalid: '無効な行',
+        emptyPreview: 'パターンを貼り付けると一括追加のプレビューが表示されます。',
+        submit: 'パターンを追加',
+        pending: '追加中…',
+        closeButtonAriaLabel: '遮断パターン一括追加ドロワーを閉じる',
       },
       externalList: {
         title: 'スコープ別外部遮断',
@@ -972,6 +1026,14 @@ function resolveSecurityAction(action: string | undefined): BlocklistAction {
   return 'flag';
 }
 
+function resolveSecuritySeverity(severity: string | undefined): BlocklistSeverity {
+  if (severity === 'low' || severity === 'high') {
+    return severity;
+  }
+
+  return 'medium';
+}
+
 export function formatSecurityHeaderDescription(locale: SecurityLocale, workspaceName: string) {
   const copy = resolveSecurityCopy(locale);
   const localeFamily = resolveSecurityLocaleFamily(locale);
@@ -1171,20 +1233,26 @@ export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result
     return 'No patterns matched the current sample.';
   }
 
+  const firstMatch = result.matches[0];
   const action = getSecurityActionLabel(
     locale,
-    resolveSecurityAction(result.action || result.matches[0]?.action),
+    resolveSecurityAction(result.action || firstMatch?.action),
   );
+  const severity = getSecuritySeverityLabel(
+    locale,
+    resolveSecuritySeverity(firstMatch?.severity),
+  );
+  const category = firstMatch?.category || '—';
 
   if (localeFamily === 'zh') {
-    return `检测到 ${result.matches.length} 条匹配，生效动作：${action}。`;
+    return `检测到 ${result.matches.length} 条匹配，生效动作：${action}，严重级别：${severity}，分类：${category}。`;
   }
 
   if (localeFamily === 'ja') {
-    return `${result.matches.length} 件の一致を検出しました。適用動作: ${action}。`;
+    return `${result.matches.length} 件の一致を検出しました。適用動作: ${action}、重大度: ${severity}、分類: ${category}。`;
   }
 
-  return `${result.matches.length} match(es) detected. Effective action: ${action}.`;
+  return `${result.matches.length} match(es) detected. Effective action: ${action}. Severity: ${severity}. Category: ${category}.`;
 }
 
 export function getSecurityBlocklistTestError(locale: SecurityLocale) {
@@ -1199,6 +1267,87 @@ export function getSecurityBlocklistTestError(locale: SecurityLocale) {
   }
 
   return 'Failed to test the current sample against the blocklist.';
+}
+
+export function getSecurityBlocklistTestValidationError(
+  locale: SecurityLocale,
+  field: 'pattern' | 'sampleText',
+) {
+  const localeFamily = resolveSecurityLocaleFamily(locale);
+
+  if (field === 'pattern') {
+    if (localeFamily === 'zh') {
+      return '请先填写要测试的模式。';
+    }
+
+    if (localeFamily === 'ja') {
+      return '先に検証するパターンを入力してください。';
+    }
+
+    return 'Enter a pattern before testing the rule.';
+  }
+
+  if (localeFamily === 'zh') {
+    return '请先填写示例文本，再测试规则。';
+  }
+
+  if (localeFamily === 'ja') {
+    return 'ルールを検証する前にサンプルテキストを入力してください。';
+  }
+
+  return 'Enter sample text before testing the rule.';
+}
+
+export function getSecurityBlocklistQuickAddError(locale: SecurityLocale) {
+  const localeFamily = resolveSecurityLocaleFamily(locale);
+
+  if (localeFamily === 'zh') {
+    return '请先输入要添加的关键词模式。';
+  }
+
+  if (localeFamily === 'ja') {
+    return '追加するキーワードパターンを入力してください。';
+  }
+
+  return 'Enter a keyword pattern before adding it.';
+}
+
+export function getSecurityBlocklistBatchValidationError(locale: SecurityLocale) {
+  const localeFamily = resolveSecurityLocaleFamily(locale);
+
+  if (localeFamily === 'zh') {
+    return '请至少保留一条可添加的模式。';
+  }
+
+  if (localeFamily === 'ja') {
+    return '追加可能なパターンを 1 件以上残してください。';
+  }
+
+  return 'Keep at least one valid pattern before submitting the batch add.';
+}
+
+export function formatSecurityBlocklistBatchResult(
+  locale: SecurityLocale,
+  createdCount: number,
+  failedCount: number,
+) {
+  const localeFamily = resolveSecurityLocaleFamily(locale);
+
+  if (localeFamily === 'zh') {
+    return failedCount === 0
+      ? `已添加 ${createdCount} 条内容拦截模式。`
+      : `已添加 ${createdCount} 条内容拦截模式，失败 ${failedCount} 条。`;
+  }
+
+  if (localeFamily === 'ja') {
+    return failedCount === 0
+      ? `${createdCount} 件の遮断パターンを追加しました。`
+      : `${createdCount} 件の遮断パターンを追加し、${failedCount} 件が失敗しました。`;
+  }
+
+  return failedCount === 0
+    ? `Added ${createdCount} blocklist pattern(s).`
+    : `Added ${createdCount} blocklist pattern(s); ${failedCount} failed.`;
 }
 
 export function formatSecurityIpRuleCreateSuccess(locale: SecurityLocale) {

@@ -107,7 +107,7 @@ describe('workspace-paths', () => {
       '/tenant/tenant-3/talent/talent-8/reports',
     );
     expect(buildTalentHomepageEditorPath('tenant-3', 'talent-8')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage/editor',
+      '/homepage-editor/tenant-3/talent-8',
     );
   });
 

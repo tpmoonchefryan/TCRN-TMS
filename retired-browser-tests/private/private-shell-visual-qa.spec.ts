@@ -561,6 +561,33 @@ const privateVisualTenantTurnstileSettings = {
   secretKeyMasked: '********',
 };
 
+const privateVisualManagedTenantDetail = {
+  id: 'tenant-visual',
+  code: 'VISUAL',
+  name: 'Visual Tenant',
+  schemaName: 'tenant_visual',
+  tier: 'standard',
+  isActive: true,
+  settings: {
+    maxTalents: 10,
+    maxCustomersPerTalent: 5000,
+    features: [],
+  },
+  stats: {
+    subsidiaryCount: 1,
+    talentCount: 2,
+    userCount: 1,
+  },
+  createdAt: '2026-05-06T03:00:00.000Z',
+  updatedAt: '2026-05-06T04:00:00.000Z',
+};
+
+const privateVisualTenantSendingDomainsResponse = {
+  tenantId: 'tenant-visual',
+  domains: [],
+  defaultDomainId: null,
+};
+
 const privateVisualSubsidiaryDetail = {
   id: 'subsidiary-visual',
   parentId: null,
@@ -1052,6 +1079,30 @@ async function mockPrivateRuntimeApi(page: Page) {
         body: JSON.stringify({
           success: true,
           data: privateVisualTenantTurnstileSettings,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/tenants/tenant-visual') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualManagedTenantDetail,
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/email/tenants/tenant-visual/sending-domains') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: privateVisualTenantSendingDomainsResponse,
         }),
       });
       return;
@@ -1758,6 +1809,124 @@ async function mockPrivateRuntimeApi(page: Page) {
       return;
     }
 
+    if (url.pathname === '/api/v1/blocklist-entries') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [],
+            meta: {
+              total: 0,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/blocklist-entries/test' && route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            matched: true,
+            matches: [
+              {
+                pattern: 'badword',
+                action: 'reject',
+                severity: 'high',
+                category: 'profanity',
+              },
+            ],
+            action: 'reject',
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/external-blocklist') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/ip-access-rules') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            items: [],
+            meta: {
+              total: 0,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/security/fingerprint' && route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fingerprint: 'tenant-user-fingerprint',
+            shortFingerprint: 'abc123',
+            version: 'v1',
+            generatedAt: '2026-05-06T04:00:00.000Z',
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/v1/rate-limit/stats') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            summary: {
+              totalRequests24h: 0,
+              blockedRequests24h: 0,
+              uniqueIPs24h: 0,
+              currentlyBlocked: 0,
+            },
+            topEndpoints: [],
+            topIPs: [],
+            lastUpdated: '2026-05-06T04:00:00.000Z',
+          },
+        }),
+      });
+      return;
+    }
+
     if (url.pathname === '/api/v1/reports/catalog') {
       await route.fulfill({
         status: 200,
@@ -2008,6 +2177,8 @@ async function mockPrivateRuntimeApi(page: Page) {
               nameZh: null,
               nameJa: null,
               translations: {},
+              definitionKey: 'customer-lifecycle',
+              monitoredTalentIds: ['talent-visual'],
               url: 'https://webhook.visual.example/customer',
               events: ['customer.created'],
               isActive: true,
@@ -2078,6 +2249,8 @@ async function mockPrivateRuntimeApi(page: Page) {
             nameZh: null,
             nameJa: null,
             translations: {},
+            definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: ['talent-visual'],
             url: 'https://webhook.visual.example/customer',
             events: ['customer.created'],
             isActive: true,
@@ -2626,6 +2799,8 @@ test.describe('private shell browser visual QA', () => {
     const apiClientTable = page.getByRole('table', { name: 'API clients' });
     await expect(apiClientTable).toBeVisible();
     await expect(apiClientTable.getByText('CRM_SYNC')).toBeVisible();
+    await expect(page.getByText('Scope capability matrix')).toHaveCount(0);
+    await expect(page.getByText('API clients stay in Account Center')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Generate key' })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop AC integration API clients first level');
 
@@ -2709,9 +2884,10 @@ test.describe('private shell browser visual QA', () => {
     await page.goto('/tenant/tenant-visual/webhook-management');
     await hideFrameworkDevTools(page);
 
-    await page.getByRole('button', { name: /Tenant root/ }).click();
     await expect(page.getByRole('heading', { name: 'Webhook Management' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Webhook Endpoints' })).toBeVisible();
+    await expect(page.getByText('Scope Tree')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Tenant root/ })).toHaveCount(0);
     await expect(page.getByRole('table', { name: 'Webhooks' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'New webhook' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Tenant Adapters' })).toHaveCount(0);
@@ -2721,6 +2897,22 @@ test.describe('private shell browser visual QA', () => {
       animations: 'disabled',
       fullPage: true,
     });
+
+    await page
+      .getByRole('table', { name: 'Webhooks' })
+      .getByRole('row', { name: /CUSTOMER_EVENTS/ })
+      .getByRole('button', { name: 'Open' })
+      .click();
+    const webhookDrawer = page.getByRole('dialog', { name: 'Webhook Detail' });
+    await expect(webhookDrawer).toBeVisible();
+    await expect(webhookDrawer.getByText('Monitored talents')).toBeVisible();
+    await expect(webhookDrawer.getByRole('button', { name: 'Use all talents' })).toBeVisible();
+    await expect(webhookDrawer.getByText('1 talent')).toBeVisible();
+    await expect(
+      webhookDrawer.getByRole('checkbox', {
+        name: 'Visual Talent Visual Tenant / Tokyo Branch / Visual Talent',
+      })
+    ).toBeChecked();
   });
 
   test('desktop observability keeps change-log filters attached to the table workbench', async ({
@@ -2744,6 +2936,17 @@ test.describe('private shell browser visual QA', () => {
       animations: 'disabled',
       fullPage: true,
     });
+
+    await usePrivateSession(page, visualQaAcSession);
+    await page.goto('/ac/tenant-ac-visual/observability');
+    await hideFrameworkDevTools(page);
+    await expect(page.getByRole('heading', { name: 'Observability' })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Change Logs' })).toBeVisible();
+    await expect(
+      page.getByText(/displayName: Old Visual Talent -> Visual Talent/).first()
+    ).toBeVisible();
+    await expect(page.getByText('Permission denied: log.change_log:read')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'AC observability change logs shared workbench');
 
     await usePrivateSession(page, visualQaAcSession);
     await page.goto('/ac/tenant-ac-visual/observability?tab=tech-events');
@@ -2804,7 +3007,7 @@ test.describe('private shell browser visual QA', () => {
     await expectNoHorizontalOverflow(page, 'mobile profile security password drawer');
   });
 
-  test('mobile marshmallow management keeps configuration behind a drawer', async ({ page }) => {
+  test('mobile marshmallow management keeps configuration directly editable on the tab', async ({ page }) => {
     await usePrivateSession(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/marshmallow');
@@ -2820,25 +3023,24 @@ test.describe('private shell browser visual QA', () => {
     });
 
     await page.getByRole('tab', { name: 'Configuration' }).click();
+    await expect(page.getByRole('button', { name: 'Configure mailbox' })).toHaveCount(0);
     await expect(page.getByText('Turnstile', { exact: true })).toBeVisible();
-    await expect(page.getByText('Submission unavailable')).toBeVisible();
+    await expect(page.getByText('Submission unavailable').first()).toBeVisible();
     await expect(
-      page.getByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.')
+      page
+        .getByText(
+          'Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.'
+        )
+        .first()
     ).toBeVisible();
-
-    await page
-      .locator('#marshmallow-panel-configuration')
-      .getByRole('button', { name: 'Configure mailbox' })
-      .click();
-    const configDrawer = page.getByRole('dialog', { name: 'Configuration' });
-    await expect(configDrawer).toBeVisible();
-    await expect(configDrawer.getByLabel('Title')).toHaveValue('Visual Mailbox');
-    await expect(configDrawer.getByText('Turnstile runtime status')).toBeVisible();
-    await expect(configDrawer.getByText('Site key')).toBeVisible();
-    await expect(configDrawer.getByText('Secret key')).toBeVisible();
-    await expect(configDrawer.getByText('Missing', { exact: true })).toBeVisible();
-    await expectNoHorizontalOverflow(page, 'mobile marshmallow config drawer');
-    await expect(page).toHaveScreenshot('private-marshmallow-mobile-config-drawer.png', {
+    await expect(page.getByLabel('Title')).toHaveValue('Visual Mailbox');
+    await expect(page.getByText('Turnstile runtime status')).toBeVisible();
+    await expect(page.getByText('Site key')).toBeVisible();
+    await expect(page.getByText('Secret key')).toBeVisible();
+    await expect(page.getByText('Configured', { exact: true })).toBeVisible();
+    await expect(page.getByText('Missing', { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'mobile marshmallow configuration tab');
+    await expect(page).toHaveScreenshot('private-marshmallow-mobile-configuration-tab.png', {
       animations: 'disabled',
       fullPage: true,
     });
@@ -2876,13 +3078,18 @@ test.describe('private shell browser visual QA', () => {
     });
   });
 
-  test('desktop homepage editor separates visual source editing from modal preview', async ({ page }) => {
+  test('desktop standalone homepage editor separates visual source editing from modal preview', async ({ page }) => {
     await usePrivateSession(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
+    await expect(page).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual$/);
     await hideFrameworkDevTools(page);
 
-    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Exit editor' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toHaveCount(0);
+    await expect(page.getByText('Tenant', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Editing source', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Homepage URL', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText('Draft preview')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeVisible();
@@ -2927,9 +3134,11 @@ test.describe('private shell browser visual QA', () => {
     await usePrivateSession(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
+    await expect(page).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual$/);
     await hideFrameworkDevTools(page);
 
-    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Exit editor' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Homepage editor' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Advanced source' }).click();
     await expect(page.getByLabel('Homepage source')).toBeVisible();
     await expectNoHorizontalOverflow(page, 'mobile homepage editor source mode');
@@ -2943,6 +3152,8 @@ test.describe('private shell browser visual QA', () => {
     const popupPromise = page.waitForEvent('popup');
     await page.getByRole('button', { name: 'Open live preview' }).click();
     const previewPage = await popupPromise;
+    await previewPage.waitForLoadState('domcontentloaded');
+    await expect(previewPage).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual\/preview\?previewId=/);
     await previewPage.setViewportSize({ width: 390, height: 844 });
     await hideFrameworkDevTools(previewPage);
     await expect(previewPage.getByRole('heading', { name: 'Live homepage preview' })).toBeVisible();
@@ -2958,6 +3169,91 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
     await previewPage.close();
+  });
+
+  test('desktop AC tenant editor shows localized sending-domain copy for zh_HANS', async ({
+    page,
+  }) => {
+    await usePrivateSession(page, visualQaAcSession);
+    await useLocaleOverride(page, 'zh_HANS');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/ac/tenant-ac-visual/tenants/tenant-visual');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: '发件域名' })).toBeVisible();
+    await expect(
+      page.getByText('管理当前租户由客户提供的发件域名，并向客户提供 DNS 记录完成配置。')
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: '新增发件域名' })).toBeVisible();
+    await expect(page.getByText('当前租户还没有添加客户发件域名。')).toBeVisible();
+    await expect(page.getByText('Email sending domains')).toHaveCount(0);
+
+    await page.getByLabel('新增发件域名').fill('mail.alpha.example.com');
+    await page.getByRole('button', { name: '新增发件域名' }).click();
+    await expect(page.getByLabel('发件域名主机名: mail.alpha.example.com')).toHaveValue(
+      'mail.alpha.example.com'
+    );
+    await expect(page.getByLabel('发件域名状态: mail.alpha.example.com')).toHaveValue('pending_dns');
+    await expectNoHorizontalOverflow(page, 'desktop AC tenant editor sending domains zh_HANS');
+    await expect(page).toHaveScreenshot('private-ac-tenant-editor-sending-domains-zh-desktop.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('desktop tenant security blocklist tests the current draft before save', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/security?tab=blocklist&scopeType=tenant');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Security' })).toBeVisible();
+    await page.getByRole('button', { name: 'Add rule' }).click();
+
+    const ruleDrawer = page.getByRole('dialog', { name: 'Create Blocklist Rule' });
+    await expect(ruleDrawer).toBeVisible();
+    await ruleDrawer.getByRole('textbox', { name: 'Pattern', exact: true }).fill('badword');
+    await page.getByRole('textbox', { name: 'Sample text', exact: true }).fill('This contains badword.');
+    await page.getByRole('button', { name: 'Test rule' }).evaluate((element) => {
+      (element as HTMLButtonElement).click();
+    });
+
+    await expect(
+      page.getByText(
+        '1 match(es) detected. Effective action: Reject. Severity: High. Category: profanity.'
+      )
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant security blocklist draft test bench');
+  });
+
+  test('desktop tenant security blocklist previews batch add duplicates and invalid lines', async ({
+    page,
+  }) => {
+    privateVisualOrganizationTree = privateVisualIntegrationOrganizationTree;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/security?tab=blocklist&scopeType=tenant');
+    await hideFrameworkDevTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Security' })).toBeVisible();
+    await page.getByRole('button', { name: 'Batch add / import' }).click();
+
+    const batchDrawer = page.getByRole('dialog', { name: 'Batch Add Blocklist Patterns' });
+    await expect(batchDrawer).toBeVisible();
+    await batchDrawer.getByRole('textbox', { name: 'Patterns', exact: true }).fill(`alpha\nalpha\nblocked-two\n${'x'.repeat(513)}`);
+
+    await expect(batchDrawer.getByText('Ready to add').first()).toBeVisible();
+    await expect(batchDrawer.getByText('Duplicate lines').first()).toBeVisible();
+    await expect(batchDrawer.getByText('Invalid lines').first()).toBeVisible();
+    await expect(batchDrawer.getByText('blocked-two').first()).toBeVisible();
+    await expectNoHorizontalOverflow(page, 'desktop tenant security blocklist batch preview');
+    await expect(page).toHaveScreenshot('private-tenant-security-blocklist-batch-drawer.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
   });
 
   test('desktop tenant settings keeps defaults summary-first and drawer-scoped', async ({

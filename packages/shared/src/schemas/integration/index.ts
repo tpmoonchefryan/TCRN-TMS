@@ -164,6 +164,8 @@ export const RetryPolicySchema = z.object({
   backoffMs: z.coerce.number().int().min(100).max(60000).optional().default(1000),
 });
 
+const MonitoredTalentIdsSchema = z.array(z.string().uuid()).optional();
+
 export const CreateWebhookSchema = z.object({
   definitionKey: z.string().max(64).optional(),
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/).optional(),
@@ -176,6 +178,7 @@ export const CreateWebhookSchema = z.object({
   events: z.array(WebhookEventTypeSchema).optional(),
   headers: z.record(z.string(), z.string()).optional(),
   retryPolicy: RetryPolicySchema.optional(),
+  monitoredTalentIds: MonitoredTalentIdsSchema,
 }).superRefine((value, ctx) => {
   if (value.definitionKey) {
     const lockedDefinitionFields = [
@@ -233,6 +236,7 @@ export const UpdateWebhookSchema = z.object({
   events: z.array(WebhookEventTypeSchema).optional(),
   headers: z.record(z.string(), z.string()).optional(),
   retryPolicy: RetryPolicySchema.optional(),
+  monitoredTalentIds: MonitoredTalentIdsSchema,
   version: z.number().int(),
 });
 

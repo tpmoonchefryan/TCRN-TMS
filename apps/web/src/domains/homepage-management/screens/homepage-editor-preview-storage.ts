@@ -42,7 +42,7 @@ export function buildHomepageEditorPreviewPath(
   previewId: string,
 ) {
   const query = new URLSearchParams({ previewId });
-  return `/tenant/${tenantId}/talent/${talentId}/homepage/editor/preview?${query.toString()}`;
+  return `/homepage-editor/${tenantId}/${talentId}/preview?${query.toString()}`;
 }
 
 export function getHomepageEditorPreviewStorageKey(previewId: string) {

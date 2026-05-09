@@ -119,7 +119,7 @@ export function buildTalentSettingsPath(
 }
 
 export function buildTalentHomepageEditorPath(tenantId: string, talentId: string) {
-  return `${buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage')}/editor`;
+  return `/homepage-editor/${tenantId}/${talentId}`;
 }
 
 export function buildAcWorkspacePath(tenantId: string) {

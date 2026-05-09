@@ -61,6 +61,7 @@ import {
   updateExternalBlocklistEntry,
 } from '@/domains/security-management/api/security-management.api';
 import {
+  formatSecurityBlocklistBatchResult,
   formatSecurityBlocklistSaveSuccess,
   formatSecurityBlocklistTestResult,
   formatSecurityDateTime,
@@ -74,8 +75,11 @@ import {
   formatSecurityReEnableSuccess,
   formatSecurityResetIn,
   formatSecurityRuleHits,
+  getSecurityBlocklistBatchValidationError,
+  getSecurityBlocklistQuickAddError,
   getSecurityBlocklistSaveError,
   getSecurityBlocklistTestError,
+  getSecurityBlocklistTestValidationError,
   getSecurityExternalSaveError,
   getSecurityIpCheckError,
   getSecurityIpRuleCreateError,
@@ -180,6 +184,12 @@ interface BlocklistDraft {
   inherit: boolean;
   isForceUse: boolean;
   sortOrder: string;
+}
+
+interface BlocklistBatchPreview {
+  validPatterns: string[];
+  duplicatePatterns: string[];
+  invalidPatterns: string[];
 }
 
 interface ExternalBlocklistDraft {
@@ -411,6 +421,42 @@ function createEmptyExternalDraft(scopeType: SecurityScopeType, scopeId: string)
     inherit: true,
     isForceUse: false,
     sortOrder: '0',
+  };
+}
+
+function buildBlocklistAutoName(pattern: string) {
+  return pattern.length <= 128 ? pattern : `${pattern.slice(0, 125)}...`;
+}
+
+function parseBlocklistBatchPreview(rawText: string): BlocklistBatchPreview {
+  const validPatterns: string[] = [];
+  const duplicatePatterns: string[] = [];
+  const invalidPatterns: string[] = [];
+  const seen = new Set<string>();
+
+  rawText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      if (line.length > 512) {
+        invalidPatterns.push(line);
+        return;
+      }
+
+      if (seen.has(line)) {
+        duplicatePatterns.push(line);
+        return;
+      }
+
+      seen.add(line);
+      validPatterns.push(line);
+    });
+
+  return {
+    validPatterns,
+    duplicatePatterns,
+    invalidPatterns,
   };
 }
 
@@ -743,6 +789,11 @@ export function SecurityManagementScreen({
   const [blocklistTestPending, setBlocklistTestPending] = useState(false);
   const [blocklistTestResult, setBlocklistTestResult] = useState<string | null>(null);
   const [blocklistTestError, setBlocklistTestError] = useState<string | null>(null);
+  const [blocklistQuickAddPattern, setBlocklistQuickAddPattern] = useState('');
+  const [blocklistQuickAddPending, setBlocklistQuickAddPending] = useState(false);
+  const [blocklistBatchDrawerOpen, setBlocklistBatchDrawerOpen] = useState(false);
+  const [blocklistBatchText, setBlocklistBatchText] = useState('');
+  const [blocklistBatchPending, setBlocklistBatchPending] = useState(false);
 
   const [externalMode, setExternalMode] = useState<EntryMode>('create');
   const [selectedExternalId, setSelectedExternalId] = useState<string | null>(null);
@@ -776,6 +827,10 @@ export function SecurityManagementScreen({
   const [dirtyGuardState, setDirtyGuardState] = useState<DirtyGuardState | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [dialogPending, setDialogPending] = useState(false);
+  const blocklistBatchPreview = useMemo(
+    () => parseBlocklistBatchPreview(blocklistBatchText),
+    [blocklistBatchText],
+  );
 
   useEffect(() => {
     if (!blocklistTranslationDrawerOpen && !externalTranslationDrawerOpen) {
@@ -1385,6 +1440,104 @@ export function SecurityManagementScreen({
     setBlocklistDrawerOpen(open);
   }
 
+  function buildQuickBlocklistPayload(pattern: string) {
+    const normalizedPattern = pattern.trim();
+    const baseDraft = createEmptyBlocklistDraft(scopeType, scopeId);
+
+    return {
+      ownerType: baseDraft.ownerType,
+      ownerId: baseDraft.ownerType === 'tenant' ? undefined : baseDraft.ownerId || undefined,
+      pattern: normalizedPattern,
+      patternType: 'keyword' as const,
+      nameEn: buildBlocklistAutoName(normalizedPattern),
+      description: undefined,
+      category: undefined,
+      severity: 'medium' as const,
+      action: 'reject' as const,
+      replacement: '***',
+      scope: buildAdvancedScopeTokens(baseDraft),
+      structuredScope: buildStructuredScopePayload(baseDraft),
+      inherit: baseDraft.inherit,
+      sortOrder: Number(baseDraft.sortOrder || 0),
+      isForceUse: baseDraft.isForceUse,
+    };
+  }
+
+  async function submitQuickBlocklistPattern() {
+    const normalizedPattern = blocklistQuickAddPattern.trim();
+
+    if (normalizedPattern.length === 0) {
+      setNotice({
+        tone: 'error',
+        message: getSecurityBlocklistQuickAddError(selectedLocale),
+      });
+      return;
+    }
+
+    setBlocklistQuickAddPending(true);
+    setNotice(null);
+
+    try {
+      await createBlocklistEntry(request, buildQuickBlocklistPayload(normalizedPattern));
+      await refreshBlocklist();
+      setBlocklistQuickAddPattern('');
+      setNotice({
+        tone: 'success',
+        message: formatSecurityBlocklistSaveSuccess(selectedLocale, 'create'),
+      });
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        message: getErrorMessage(error, getSecurityBlocklistSaveError(selectedLocale)),
+      });
+    } finally {
+      setBlocklistQuickAddPending(false);
+    }
+  }
+
+  async function submitBlocklistBatchImport() {
+    if (blocklistBatchPreview.validPatterns.length === 0) {
+      setNotice({
+        tone: 'error',
+        message: getSecurityBlocklistBatchValidationError(selectedLocale),
+      });
+      return;
+    }
+
+    setBlocklistBatchPending(true);
+    setNotice(null);
+
+    let createdCount = 0;
+    const failedPatterns: string[] = [];
+
+    for (const pattern of blocklistBatchPreview.validPatterns) {
+      try {
+        await createBlocklistEntry(request, buildQuickBlocklistPayload(pattern));
+        createdCount += 1;
+      } catch {
+        failedPatterns.push(pattern);
+      }
+    }
+
+    if (createdCount > 0) {
+      await refreshBlocklist();
+    }
+
+    setNotice({
+      tone: failedPatterns.length > 0 ? 'error' : 'success',
+      message: formatSecurityBlocklistBatchResult(selectedLocale, createdCount, failedPatterns.length),
+    });
+
+    if (failedPatterns.length > 0) {
+      setBlocklistBatchText(failedPatterns.join('\n'));
+    } else {
+      setBlocklistBatchText('');
+      setBlocklistBatchDrawerOpen(false);
+    }
+
+    setBlocklistBatchPending(false);
+  }
+
   function resetExternalEditor() {
     const nextDraft = createEmptyExternalDraft(scopeType, scopeId);
     setExternalMode('create');
@@ -1577,8 +1730,26 @@ export function SecurityManagementScreen({
     setBlocklistTestResult(null);
 
     try {
+      const selectedEntry = selectedBlocklistId
+        ? blocklistPanel.data.find((entry) => entry.id === selectedBlocklistId) ?? null
+        : null;
+      const testPattern = blocklistDraft.pattern.trim() || selectedEntry?.pattern?.trim() || '';
+      const testPatternType = blocklistDraft.patternType || selectedEntry?.patternType || 'keyword';
+
+      if (testPattern.length === 0) {
+        setBlocklistTestError(getSecurityBlocklistTestValidationError(selectedLocale, 'pattern'));
+        return;
+      }
+
+      if (blocklistTestText.trim().length === 0) {
+        setBlocklistTestError(getSecurityBlocklistTestValidationError(selectedLocale, 'sampleText'));
+        return;
+      }
+
       const result = await testBlocklistEntry(request, {
-        text: blocklistTestText,
+        testContent: blocklistTestText,
+        pattern: testPattern,
+        patternType: testPatternType,
       });
 
       setBlocklistTestResult(formatSecurityBlocklistTestResult(selectedLocale, result));
@@ -1924,7 +2095,39 @@ export function SecurityManagementScreen({
               title={copy.sections.blocklistList.title}
               description={copy.sections.blocklistList.description}
             >
-              <div className="flex justify-end">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+                <Field label={copy.sections.blocklistList.quickAddLabel}>
+                  <input
+                    aria-label={copy.sections.blocklistList.quickAddLabel}
+                    value={blocklistQuickAddPattern}
+                    onChange={(event) => setBlocklistQuickAddPattern(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        void submitQuickBlocklistPattern();
+                      }
+                    }}
+                    placeholder={copy.sections.blocklistList.quickAddPlaceholder}
+                    className={inputClassName}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={() => void submitQuickBlocklistPattern()}
+                  disabled={blocklistQuickAddPending || blocklistQuickAddPattern.trim().length === 0}
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  {blocklistQuickAddPending
+                    ? copy.sections.blocklistList.quickAddPending
+                    : copy.sections.blocklistList.quickAddAction}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBlocklistBatchDrawerOpen(true)}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {copy.sections.blocklistList.batchAddAction}
+                </button>
                 <button
                   type="button"
                   onClick={openBlocklistCreateDrawer}
@@ -2463,6 +2666,123 @@ export function SecurityManagementScreen({
                 </div>
               </div>
             )}
+          </ActionDrawer>
+
+          <ActionDrawer
+            open={blocklistBatchDrawerOpen}
+            onOpenChange={(open) => {
+              if (!open && blocklistBatchPending) {
+                return;
+              }
+
+              setBlocklistBatchDrawerOpen(open);
+            }}
+            title={copy.sections.blocklistBatch.title}
+            description={copy.sections.blocklistBatch.description}
+            size="lg"
+            closeButtonAriaLabel={copy.sections.blocklistBatch.closeButtonAriaLabel}
+            closeOnBackdropClick={!blocklistBatchPending}
+            closeOnEscape={!blocklistBatchPending}
+            footer={
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBlocklistBatchDrawerOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  {copy.common.cancel}
+                </button>
+                <AsyncSubmitButton
+                  onClick={() => void submitBlocklistBatchImport()}
+                  isPending={blocklistBatchPending}
+                  pendingText={copy.sections.blocklistBatch.pending}
+                  disabled={blocklistBatchPreview.validPatterns.length === 0}
+                >
+                  {copy.sections.blocklistBatch.submit}
+                </AsyncSubmitButton>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <Field label={copy.sections.blocklistBatch.inputLabel}>
+                <textarea
+                  aria-label={copy.sections.blocklistBatch.inputLabel}
+                  value={blocklistBatchText}
+                  onChange={(event) => setBlocklistBatchText(event.target.value)}
+                  rows={10}
+                  placeholder={copy.sections.blocklistBatch.inputPlaceholder}
+                  className={`${inputClassName} resize-y`}
+                />
+              </Field>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+                  <p className="font-semibold">{copy.sections.blocklistBatch.previewReady}</p>
+                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.validPatterns.length}</p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">{copy.sections.blocklistBatch.previewDuplicates}</p>
+                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.duplicatePatterns.length}</p>
+                </div>
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-900">
+                  <p className="font-semibold">{copy.sections.blocklistBatch.previewInvalid}</p>
+                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.invalidPatterns.length}</p>
+                </div>
+              </div>
+
+              {blocklistBatchPreview.validPatterns.length === 0
+                && blocklistBatchPreview.duplicatePatterns.length === 0
+                && blocklistBatchPreview.invalidPatterns.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    {copy.sections.blocklistBatch.emptyPreview}
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2 rounded-2xl border border-slate-200 bg-white/80 p-4">
+                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewReady}</p>
+                      {blocklistBatchPreview.validPatterns.length > 0 ? (
+                        <ul className="space-y-1 text-sm text-slate-700">
+                          {blocklistBatchPreview.validPatterns.map((pattern) => (
+                            <li key={pattern} className="break-all font-mono">
+                              {pattern}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2 rounded-2xl border border-amber-200 bg-white/80 p-4">
+                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewDuplicates}</p>
+                      {blocklistBatchPreview.duplicatePatterns.length > 0 ? (
+                        <ul className="space-y-1 text-sm text-slate-700">
+                          {blocklistBatchPreview.duplicatePatterns.map((pattern, index) => (
+                            <li key={`${pattern}-${index}`} className="break-all font-mono">
+                              {pattern}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2 rounded-2xl border border-rose-200 bg-white/80 p-4 md:col-span-2">
+                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewInvalid}</p>
+                      {blocklistBatchPreview.invalidPatterns.length > 0 ? (
+                        <ul className="space-y-1 text-sm text-slate-700">
+                          {blocklistBatchPreview.invalidPatterns.map((pattern, index) => (
+                            <li key={`${pattern}-${index}`} className="break-all font-mono">
+                              {pattern}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
           </ActionDrawer>
 
           <GlassSurface className="p-6">

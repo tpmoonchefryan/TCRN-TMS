@@ -68,6 +68,7 @@ describe('ApiClientManagementScreen', () => {
     expect(await screen.findByText('No API clients configured')).toBeInTheDocument();
     expect(screen.getAllByText('API Clients').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /New API client/i })).toBeInTheDocument();
+    expect(screen.queryByText('Scope capability matrix')).not.toBeInTheDocument();
     expect(screen.queryByText('Tenant Adapters')).not.toBeInTheDocument();
     expect(screen.queryByText('Webhook Endpoints')).not.toBeInTheDocument();
     expect(screen.queryByText('Email Management')).not.toBeInTheDocument();

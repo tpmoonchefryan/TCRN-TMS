@@ -375,6 +375,463 @@ describe('SecurityManagementScreen', () => {
     });
   });
 
+  it('tests the current blocklist draft with the real payload contract and guards missing inputs', async () => {
+    searchQuery = 'tab=blocklist&scopeType=tenant';
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=true') {
+        return organizationTreeResponse;
+      }
+
+      if (path.startsWith('/api/v1/blocklist-entries?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (path === '/api/v1/blocklist-entries/test' && init?.method === 'POST') {
+        return {
+          matched: true,
+          matches: [
+            {
+              pattern: 'badword',
+              action: 'reject',
+              severity: 'high',
+              category: 'profanity',
+            },
+          ],
+          action: 'reject',
+        };
+      }
+
+      if (path === '/api/v1/ip-access-rules?page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (path === '/api/v1/security/fingerprint' && init?.method === 'POST') {
+        return {
+          fingerprint: 'tenant-user-fingerprint',
+          shortFingerprint: 'abc123',
+          version: 'v1',
+          generatedAt: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/rate-limit/stats') {
+        return {
+          summary: {
+            totalRequests24h: 0,
+            blockedRequests24h: 0,
+            uniqueIPs24h: 0,
+            currentlyBlocked: 0,
+          },
+          topEndpoints: [],
+          topIPs: [],
+          lastUpdated: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/profile-stores?page=1&pageSize=8') {
+        return {
+          items: [],
+          meta: {
+            pagination: {
+              totalCount: 0,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path.startsWith('/api/v1/external-blocklist?')) {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled envelope request: ${path}`);
+    });
+
+    render(<SecurityManagementScreen tenantId="tenant-1" />);
+
+    await screen.findByRole('heading', { name: 'Security' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+
+    const ruleDrawer = await screen.findByRole('dialog', { name: 'Create Blocklist Rule' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
+    expect(await screen.findByText('Enter a pattern before testing the rule.')).toBeInTheDocument();
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      '/api/v1/blocklist-entries/test',
+      expect.anything(),
+    );
+
+    fireEvent.change(within(ruleDrawer).getByLabelText('Pattern'), {
+      target: { value: 'badword' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
+    expect(await screen.findByText('Enter sample text before testing the rule.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Sample text'), {
+      target: { value: 'This contains badword.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/blocklist-entries/test',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            testContent: 'This contains badword.',
+            pattern: 'badword',
+            patternType: 'keyword',
+          }),
+        }),
+      );
+    });
+
+    expect(
+      await screen.findByText(
+        '1 match(es) detected. Effective action: Reject. Severity: High. Category: profanity.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('quick-adds one keyword pattern with defaults from the current scope lens', async () => {
+    searchQuery = 'tab=blocklist&scopeType=tenant';
+
+    const createdPayloads: Array<Record<string, unknown>> = [];
+    let blocklistItems: Array<Record<string, unknown>> = [];
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=true') {
+        return organizationTreeResponse;
+      }
+
+      if (path.startsWith('/api/v1/blocklist-entries?')) {
+        return {
+          items: blocklistItems,
+          meta: { total: blocklistItems.length },
+        };
+      }
+
+      if (path === '/api/v1/blocklist-entries' && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body));
+        createdPayloads.push(payload);
+        blocklistItems = [
+          {
+            id: `entry-${createdPayloads.length}`,
+            ownerType: 'tenant',
+            ownerId: null,
+            pattern: payload.pattern,
+            patternType: payload.patternType,
+            nameEn: payload.nameEn,
+            nameZh: null,
+            nameJa: null,
+            translations: { en: payload.nameEn },
+            description: null,
+            category: null,
+            severity: payload.severity,
+            action: payload.action,
+            replacement: payload.replacement,
+            scope: [],
+            scopeSummary: {
+              tokens: [],
+              structuredScope: payload.structuredScope,
+              unsupported: [],
+            },
+            inherit: payload.inherit,
+            sortOrder: payload.sortOrder ?? 0,
+            isActive: true,
+            isForceUse: payload.isForceUse ?? false,
+            isSystem: false,
+            matchCount: 0,
+            lastMatchedAt: null,
+            createdAt: '2026-04-20T10:00:00.000Z',
+            createdBy: 'user-1',
+            updatedAt: '2026-04-20T10:00:00.000Z',
+            updatedBy: 'user-1',
+            version: 1,
+          },
+          ...blocklistItems,
+        ];
+
+        return blocklistItems[0];
+      }
+
+      if (path === '/api/v1/ip-access-rules?page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (path === '/api/v1/security/fingerprint' && init?.method === 'POST') {
+        return {
+          fingerprint: 'tenant-user-fingerprint',
+          shortFingerprint: 'abc123',
+          version: 'v1',
+          generatedAt: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/rate-limit/stats') {
+        return {
+          summary: {
+            totalRequests24h: 0,
+            blockedRequests24h: 0,
+            uniqueIPs24h: 0,
+            currentlyBlocked: 0,
+          },
+          topEndpoints: [],
+          topIPs: [],
+          lastUpdated: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/profile-stores?page=1&pageSize=8') {
+        return {
+          items: [],
+          meta: {
+            pagination: {
+              totalCount: 0,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path.startsWith('/api/v1/external-blocklist?')) {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled envelope request: ${path}`);
+    });
+
+    render(<SecurityManagementScreen tenantId="tenant-1" />);
+
+    await screen.findByRole('heading', { name: 'Security' });
+    fireEvent.change(screen.getByLabelText('Keyword pattern'), {
+      target: { value: 'badword' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add one' }));
+
+    await waitFor(() => {
+      expect(createdPayloads).toHaveLength(1);
+    });
+
+    expect(createdPayloads[0]).toEqual(
+      expect.objectContaining({
+        ownerType: 'tenant',
+        pattern: 'badword',
+        patternType: 'keyword',
+        nameEn: 'badword',
+        severity: 'medium',
+        action: 'reject',
+        inherit: true,
+        isForceUse: false,
+        structuredScope: {
+          entries: [
+            { category: 'tenant' },
+            { category: 'surface', value: 'marshmallow' },
+          ],
+        },
+      }),
+    );
+    expect(createdPayloads[0]).not.toHaveProperty('ownerId');
+    expect(await screen.findByText('Blocklist entry created.')).toBeInTheDocument();
+    expect((await screen.findAllByText('badword')).length).toBeGreaterThan(0);
+  });
+
+  it('shows batch import preview and keeps failed blocklist lines visible after partial failure', async () => {
+    searchQuery = 'tab=blocklist&scopeType=tenant';
+
+    const createdPatterns: string[] = [];
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/tree?includeInactive=true') {
+        return organizationTreeResponse;
+      }
+
+      if (path.startsWith('/api/v1/blocklist-entries?')) {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (path === '/api/v1/blocklist-entries' && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body));
+        createdPatterns.push(payload.pattern);
+
+        if (payload.pattern === 'blocked-two') {
+          throw new Error('Create failed');
+        }
+
+        return {
+          id: payload.pattern,
+          ownerType: 'tenant',
+          ownerId: null,
+          pattern: payload.pattern,
+          patternType: payload.patternType,
+          nameEn: payload.nameEn,
+          nameZh: null,
+          nameJa: null,
+          translations: { en: payload.nameEn },
+          description: null,
+          category: null,
+          severity: payload.severity,
+          action: payload.action,
+          replacement: payload.replacement,
+          scope: [],
+          scopeSummary: {
+            tokens: [],
+            structuredScope: payload.structuredScope,
+            unsupported: [],
+          },
+          inherit: payload.inherit,
+          sortOrder: payload.sortOrder ?? 0,
+          isActive: true,
+          isForceUse: payload.isForceUse ?? false,
+          isSystem: false,
+          matchCount: 0,
+          lastMatchedAt: null,
+          createdAt: '2026-04-20T10:00:00.000Z',
+          createdBy: 'user-1',
+          updatedAt: '2026-04-20T10:00:00.000Z',
+          updatedBy: 'user-1',
+          version: 1,
+        };
+      }
+
+      if (path === '/api/v1/ip-access-rules?page=1&pageSize=20') {
+        return {
+          items: [],
+          meta: { total: 0 },
+        };
+      }
+
+      if (path === '/api/v1/security/fingerprint' && init?.method === 'POST') {
+        return {
+          fingerprint: 'tenant-user-fingerprint',
+          shortFingerprint: 'abc123',
+          version: 'v1',
+          generatedAt: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/rate-limit/stats') {
+        return {
+          summary: {
+            totalRequests24h: 0,
+            blockedRequests24h: 0,
+            uniqueIPs24h: 0,
+            currentlyBlocked: 0,
+          },
+          topEndpoints: [],
+          topIPs: [],
+          lastUpdated: '2026-04-17T10:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/profile-stores?page=1&pageSize=8') {
+        return {
+          items: [],
+          meta: {
+            pagination: {
+              totalCount: 0,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path.startsWith('/api/v1/external-blocklist?')) {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled envelope request: ${path}`);
+    });
+
+    render(<SecurityManagementScreen tenantId="tenant-1" />);
+
+    await screen.findByRole('heading', { name: 'Security' });
+    fireEvent.click(screen.getByRole('button', { name: 'Batch add / import' }));
+
+    const batchDrawer = await screen.findByRole('dialog', { name: 'Batch Add Blocklist Patterns' });
+    fireEvent.change(within(batchDrawer).getByLabelText('Patterns'), {
+      target: {
+        value: `alpha\nalpha\nblocked-two\n${'x'.repeat(513)}`,
+      },
+    });
+
+    expect(within(batchDrawer).getAllByText('Ready to add').length).toBeGreaterThan(0);
+    expect(within(batchDrawer).getAllByText('Duplicate lines').length).toBeGreaterThan(0);
+    expect(within(batchDrawer).getAllByText('Invalid lines').length).toBeGreaterThan(0);
+    expect(within(batchDrawer).getAllByText('alpha').length).toBeGreaterThan(1);
+    expect(within(batchDrawer).getByText('blocked-two')).toBeInTheDocument();
+
+    fireEvent.click(within(batchDrawer).getByRole('button', { name: 'Add patterns' }));
+
+    await waitFor(() => {
+      expect(createdPatterns).toEqual(['alpha', 'blocked-two']);
+    });
+
+    expect(await screen.findByText('Added 1 blocklist pattern(s); 1 failed.')).toBeInTheDocument();
+    expect((within(batchDrawer).getByLabelText('Patterns') as HTMLTextAreaElement).value).toBe('blocked-two');
+  });
+
   it('guards dirty security editors before closing or switching tabs', async () => {
     searchQuery = 'tab=blocklist&scopeType=tenant';
 

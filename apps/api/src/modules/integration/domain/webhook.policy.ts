@@ -47,6 +47,7 @@ export interface WebhookListItem {
   nameJa: string | null;
   translations: Record<string, string>;
   definitionKey?: string;
+  monitoredTalentIds: string[];
   url: string;
   events: WebhookEventType[];
   isActive: boolean;
@@ -87,6 +88,46 @@ function getNumericProperty(
 
 function getDefinitionKey(extraData: Record<string, unknown> | null) {
   return typeof extraData?.definitionKey === 'string' ? extraData.definitionKey : undefined;
+}
+
+export function normalizeMonitoredTalentIds(extraData: Record<string, unknown> | null) {
+  const candidate = extraData?.monitoredTalentIds;
+  if (!Array.isArray(candidate)) {
+    return [];
+  }
+
+  const monitoredTalentIds = Array.from(
+    new Set(
+      candidate
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  return monitoredTalentIds;
+}
+
+export function mergeWebhookExtraData(
+  extraData: Record<string, unknown> | null,
+  monitoredTalentIds: string[] | undefined,
+) {
+  if (monitoredTalentIds === undefined) {
+    return extraData;
+  }
+
+  const nextExtraData = extraData ? { ...extraData } : {};
+  delete nextExtraData.monitoredTalentIds;
+
+  const normalizedIds = Array.from(
+    new Set(monitoredTalentIds.map((value) => value.trim()).filter(Boolean)),
+  );
+
+  if (normalizedIds.length > 0) {
+    nextExtraData.monitoredTalentIds = normalizedIds;
+  }
+
+  return Object.keys(nextExtraData).length > 0 ? nextExtraData : null;
 }
 
 export function normalizeWebhookHeaders(value: unknown): Record<string, string> {
@@ -138,6 +179,7 @@ export function mapWebhookListItem(webhook: WebhookRecord): WebhookListItem {
     nameJa: webhook.nameJa,
     translations: buildNameTranslations(webhook),
     definitionKey: getDefinitionKey(webhook.extraData),
+    monitoredTalentIds: normalizeMonitoredTalentIds(webhook.extraData),
     url: webhook.url,
     events: webhook.events as WebhookEventType[],
     isActive: webhook.isActive,

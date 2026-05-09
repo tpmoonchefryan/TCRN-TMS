@@ -51,6 +51,7 @@ describe('WebhookService', () => {
     nameEn: 'Test Webhook',
     nameZh: null,
     nameJa: null,
+    extraData: null,
     url: 'https://example.com/webhook',
     secret: 'encrypted-secret',
     events: [WebhookEventType.CUSTOMER_CREATED],
@@ -128,6 +129,7 @@ describe('WebhookService', () => {
       maxRetries: 5,
       backoffMs: 2500,
     });
+    expect(result.monitoredTalentIds).toEqual([]);
   });
 
   it('uses tenant-schema raw SQL for webhook list reads', async () => {
@@ -136,6 +138,12 @@ describe('WebhookService', () => {
         id: 'webhook-tenant-1',
         code: 'TENANT_WEBHOOK',
         createdAt: baseDate,
+        extraData: {
+          monitoredTalentIds: [
+            '11111111-1111-4111-8111-111111111111',
+            '22222222-2222-4222-8222-222222222222',
+          ],
+        },
       }),
     ]);
 
@@ -152,6 +160,10 @@ describe('WebhookService', () => {
         translations: {
           en: 'Test Webhook',
         },
+        monitoredTalentIds: [
+          '11111111-1111-4111-8111-111111111111',
+          '22222222-2222-4222-8222-222222222222',
+        ],
         url: 'https://example.com/webhook',
         events: [WebhookEventType.CUSTOMER_CREATED],
         isActive: true,
@@ -219,6 +231,7 @@ describe('WebhookService', () => {
     await service.create({
       definitionKey: 'customer-lifecycle',
       url: 'https://example.com/webhook',
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     } as CreateWebhookDto, mockContext);
 
     expect(mockPrisma.webhook.create).toHaveBeenCalledWith(
@@ -229,6 +242,7 @@ describe('WebhookService', () => {
           extraData: expect.objectContaining({
             definitionKey: 'customer-lifecycle',
             definitionCode: 'CUSTOMER_LIFECYCLE',
+            monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
           }),
         }),
       }),
@@ -289,6 +303,42 @@ describe('WebhookService', () => {
           },
           updatedBy: 'user-1',
           version: { increment: 1 },
+        }),
+      }),
+    );
+  });
+
+  it('preserves monitored talent metadata when update omits the field', async () => {
+    mockPrisma.webhook.findUnique
+      .mockResolvedValueOnce(buildWebhookRecord({
+        version: 3,
+        extraData: {
+          definitionKey: 'customer-lifecycle',
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+        },
+      }))
+      .mockResolvedValueOnce(
+        buildWebhookRecord({
+          version: 4,
+          extraData: {
+            definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+          },
+        }),
+      );
+
+    await service.update('webhook-1', {
+      version: 3,
+      url: 'https://example.com/updated-webhook',
+    } as UpdateWebhookDto, mockContext);
+
+    expect(mockPrisma.webhook.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          extraData: expect.objectContaining({
+            definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+          }),
         }),
       }),
     );

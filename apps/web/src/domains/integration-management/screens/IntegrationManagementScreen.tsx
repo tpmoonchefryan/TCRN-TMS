@@ -161,6 +161,12 @@ interface IntegrationScopeSelection {
   hint: string;
 }
 
+interface MonitoredTalentOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
 interface AdapterDraft {
   definitionKey: string;
   platformId: string;
@@ -195,6 +201,7 @@ interface WebhookDraft {
   url: string;
   secret: string;
   selectedEvents: string[];
+  monitoredTalentIds: string[];
   headersText: string;
   maxRetries: string;
   backoffMs: string;
@@ -513,6 +520,7 @@ function buildWebhookDraft(
     url: record?.url || '',
     secret: '',
     selectedEvents: record?.events || definition?.events || [],
+    monitoredTalentIds: record?.monitoredTalentIds ?? [],
     headersText: record
       ? Object.entries(record.headers)
           .map(([key, value]) => `${key}: ${value}`)
@@ -521,6 +529,38 @@ function buildWebhookDraft(
     maxRetries: String(record?.retryPolicy.maxRetries ?? 3),
     backoffMs: String(record?.retryPolicy.backoffMs ?? 1000),
   };
+}
+
+function collectMonitoredTalentOptions(
+  tree: OrganizationTreeResponse | null,
+  tenantRootLabel: string,
+): MonitoredTalentOption[] {
+  if (!tree) {
+    return [];
+  }
+
+  const options: MonitoredTalentOption[] = [];
+
+  const addTalent = (talent: OrganizationTalent, labels: string[]) => {
+    options.push({
+      id: talent.id,
+      label: talent.displayName,
+      hint: [...labels, talent.displayName].join(' / '),
+    });
+  };
+
+  const visitNodes = (nodes: OrganizationNode[], lineage: string[] = []) => {
+    nodes.forEach((node) => {
+      const nextLineage = [...lineage, node.displayName];
+      node.talents.forEach((talent) => addTalent(talent, nextLineage));
+      visitNodes(node.children, nextLineage);
+    });
+  };
+
+  tree.directTalents.forEach((talent) => addTalent(talent, [tenantRootLabel]));
+  visitNodes(tree.subsidiaries, [tenantRootLabel]);
+
+  return options;
 }
 
 function buildConsumerDraft(record?: IntegrationConsumerRecord): ConsumerDraft {
@@ -1267,7 +1307,10 @@ export function IntegrationManagementScreen({
     createPanelState<OrganizationTreeResponse | null>(null, !isAcWorkspace),
   );
   const [selectedScope, setSelectedScope] = useState<IntegrationScopeSelection | null>(null);
-  const selectedIntegrationScope = isAcWorkspace ? tenantRootSelection : selectedScope;
+  const showScopeTree = !isAcWorkspace && surface !== 'webhooks';
+  const selectedIntegrationScope = isAcWorkspace || surface === 'webhooks'
+    ? tenantRootSelection
+    : selectedScope;
   const availableTabs: readonly IntegrationTab[] = surface === 'interfaces'
     ? selectedIntegrationScope
       ? (['adapters'] as const)
@@ -3081,6 +3124,7 @@ export function IntegrationManagementScreen({
             url: webhookDraft.url.trim(),
             secret: trimToUndefined(webhookDraft.secret),
             headers,
+            monitoredTalentIds: webhookDraft.monitoredTalentIds,
             retryPolicy: {
               maxRetries: Number(webhookDraft.maxRetries || selectedWebhookDefinition.defaultRetryPolicy?.maxRetries || 3),
               backoffMs: Number(webhookDraft.backoffMs || selectedWebhookDefinition.defaultRetryPolicy?.backoffMs || 1000),
@@ -3096,6 +3140,7 @@ export function IntegrationManagementScreen({
             secret: trimToUndefined(webhookDraft.secret),
             events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
             headers,
+            monitoredTalentIds: webhookDraft.monitoredTalentIds,
             retryPolicy: {
               maxRetries: Number(webhookDraft.maxRetries || 3),
               backoffMs: Number(webhookDraft.backoffMs || 1000),
@@ -3126,6 +3171,7 @@ export function IntegrationManagementScreen({
           secret: payload.secret,
           events: payload.events,
           headers: payload.headers,
+          monitoredTalentIds: payload.monitoredTalentIds,
           retryPolicy: payload.retryPolicy,
           version: webhookDetailPanel.data.version,
         });
@@ -3519,6 +3565,28 @@ export function IntegrationManagementScreen({
     : selectedIntegrationScope.ownerType === 'tenant'
       ? tenantRootHint
       : selectedIntegrationScope.label;
+  const monitoredTalentOptions = useMemo(
+    () => collectMonitoredTalentOptions(organizationTreePanel.data, tenantRootHint),
+    [organizationTreePanel.data, tenantRootHint],
+  );
+  const formatMonitoredTalentTarget = (monitoredTalentIds: string[]) =>
+    monitoredTalentIds.length === 0
+      ? text({
+          en: 'All talents',
+          zh_HANS: '全部艺人',
+          zh_HANT: '全部藝人',
+          ja: 'すべてのタレント',
+          ko: '모든 탤런트',
+          fr: 'Tous les talents',
+        })
+      : text({
+          en: monitoredTalentIds.length === 1 ? '1 talent' : `${monitoredTalentIds.length} talents`,
+          zh_HANS: `${monitoredTalentIds.length} 个艺人`,
+          zh_HANT: `${monitoredTalentIds.length} 個藝人`,
+          ja: `${monitoredTalentIds.length} 人のタレント`,
+          ko: `${monitoredTalentIds.length}명의 탤런트`,
+          fr: monitoredTalentIds.length === 1 ? '1 talent' : `${monitoredTalentIds.length} talents`,
+        });
   const noScopeWorkspaceDescription =
     selectedLocale === 'zh_HANT'
       ? '請先從左側選擇範圍，再開啟對應的整合工作區。'
@@ -3866,6 +3934,17 @@ export function IntegrationManagementScreen({
                   hint={text('Endpoint URLs, retry settings, and recent active-state changes.', '端点地址、重试策略与最近的启停状态。', 'エンドポイント URL、再試行設定、最近の有効状態を表示します。')}
                 />
               ) : null}
+              {surface === 'webhooks' ? (
+                <SummaryCard
+                  label={text('Monitored talents', '监控艺人', '監視タレント')}
+                  value={formatMonitoredTalentTarget(webhookDraft.monitoredTalentIds)}
+                  hint={text(
+                    'Leave the picker empty to deliver webhook events for all active talents in the tenant.',
+                    '将下方选择器留空时，Webhook 会覆盖租户内全部有效艺人。',
+                    'ピッカーを空のままにすると、Webhook はテナント内のすべての有効タレントを対象にします。',
+                  )}
+                />
+              ) : null}
               {surface === 'api-clients' || (surface === 'mixed' && isAcWorkspace) ? (
                 <SummaryCard
                   label={text('API Clients', 'API 客户端', 'API クライアント')}
@@ -3886,8 +3965,8 @@ export function IntegrationManagementScreen({
 
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
-      <div className={isAcWorkspace ? 'space-y-6' : 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]'}>
-        {!isAcWorkspace ? (
+      <div className={showScopeTree ? 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]' : 'space-y-6'}>
+        {showScopeTree ? (
           <GlassSurface className="p-6">
             <FormSection
               title={text({
@@ -3998,26 +4077,28 @@ export function IntegrationManagementScreen({
                   {scopeAccessNotice}
                 </div>
               ) : null}
-              <div className="space-y-2" aria-label={text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
-                </p>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {integrationCapabilityItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-2xl border px-4 py-3 ${
-                        item.available
-                          ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
-                          : 'border-slate-200 bg-white/70 text-slate-600'
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{item.label}</p>
-                      <p className="mt-1 text-xs">{item.status}</p>
-                    </div>
-                  ))}
+              {surface === 'mixed' ? (
+                <div className="space-y-2" aria-label={text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {integrationCapabilityItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`rounded-2xl border px-4 py-3 ${
+                          item.available
+                            ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
+                            : 'border-slate-200 bg-white/70 text-slate-600'
+                        }`}
+                      >
+                        <p className="text-sm font-semibold">{item.label}</p>
+                        <p className="mt-1 text-xs">{item.status}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
           </GlassSurface>
 
@@ -4872,6 +4953,7 @@ export function IntegrationManagementScreen({
                     text('Code', '代码', 'コード'),
                     text('Endpoint', '端点', 'エンドポイント'),
                     text('Events', '事件数', 'イベント数'),
+                    text('Talents', '艺人范围', 'タレント範囲'),
                     text('Failures', '失败次数', '失敗回数'),
                     text('Status', '状态', '状態'),
                     text('Actions', '操作', '操作'),
@@ -4887,6 +4969,9 @@ export function IntegrationManagementScreen({
                       <td className="px-6 py-4 text-sm font-semibold text-slate-900">{webhook.code}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{webhook.url}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{webhook.events.length}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {formatMonitoredTalentTarget(webhook.monitoredTalentIds)}
+                      </td>
                       <td className="px-6 py-4 text-sm text-slate-700">{webhook.consecutiveFailures}</td>
                       <td className="px-6 py-4">
                         <StatusBadge tone={webhook.isActive ? 'success' : 'danger'} label={statusLabel(webhook.isActive)} />
@@ -5253,6 +5338,92 @@ export function IntegrationManagementScreen({
                             </div>
                           </label>
                         ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {text('Monitored talents', '监控艺人', '監視タレント')}
+                        </p>
+                        <p className="text-sm leading-6 text-slate-600">
+                          {text(
+                            'Leave the list empty to deliver events for all active talents in the tenant. Select one or more talents to narrow the webhook subscription.',
+                            '将列表留空时，事件会覆盖租户内全部有效艺人。选择一个或多个艺人即可缩小此 Webhook 的订阅范围。',
+                            '一覧を空のままにすると、テナント内のすべての有効タレントにイベントを配信します。1 人以上選択すると、この Webhook の購読範囲を絞り込めます。',
+                          )}
+                        </p>
+                      </div>
+                      <SecondaryButton
+                        onClick={() => setWebhookDraft((current) => ({ ...current, monitoredTalentIds: [] }))}
+                        disabled={webhookDraft.monitoredTalentIds.length === 0}
+                      >
+                        {text('Use all talents', '使用全部艺人', 'すべてのタレントを対象にする')}
+                      </SecondaryButton>
+                    </div>
+                    <div className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+                      {formatMonitoredTalentTarget(webhookDraft.monitoredTalentIds)}
+                    </div>
+                    <div className="mt-3">
+                      {organizationTreePanel.loading ? (
+                        <p className="text-sm text-slate-500">
+                          {text('Loading available talents…', '正在加载可选艺人…', '利用可能なタレントを読み込んでいます…')}
+                        </p>
+                      ) : organizationTreePanel.unavailableReason ? (
+                        <StateView
+                          status="unavailable"
+                          title={text('Talent picker unavailable', '艺人选择器不可用', 'タレントピッカーを利用できません')}
+                          description={organizationTreePanel.unavailableReason}
+                        />
+                      ) : organizationTreePanel.error ? (
+                        <StateView
+                          status="error"
+                          title={text('Talent picker failed to load', '艺人选择器加载失败', 'タレントピッカーの読み込みに失敗しました')}
+                          description={organizationTreePanel.error}
+                        />
+                      ) : monitoredTalentOptions.length === 0 ? (
+                        <StateView
+                          status="empty"
+                          title={text('No active talents available', '当前没有可选艺人', '選択できる有効タレントがありません')}
+                          description={text(
+                            'Webhook delivery will stay at tenant level until active talents become available.',
+                            '在出现可选艺人之前，Webhook 将保持租户级覆盖。',
+                            '選択できる有効タレントがない間、Webhook はテナント全体を対象にします。',
+                          )}
+                        />
+                      ) : (
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {monitoredTalentOptions.map((talent) => {
+                            const checked = webhookDraft.monitoredTalentIds.includes(talent.id);
+
+                            return (
+                              <label
+                                key={talent.id}
+                                className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(event) =>
+                                    setWebhookDraft((current) => ({
+                                      ...current,
+                                      monitoredTalentIds: event.target.checked
+                                        ? [...current.monitoredTalentIds, talent.id]
+                                        : current.monitoredTalentIds.filter((item) => item !== talent.id),
+                                    }))
+                                  }
+                                  className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-slate-900">{talent.label}</p>
+                                  <p className="text-xs leading-5 text-slate-500">{talent.hint}</p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

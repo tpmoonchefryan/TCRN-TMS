@@ -6,6 +6,7 @@ const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 const localeState = {
   currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  selectedLocale: 'en' as 'en' | 'zh_HANS' | 'ja',
 };
 
 vi.mock('next/navigation', () => ({
@@ -36,6 +37,7 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
 describe('TenantEditorScreen', () => {
   beforeEach(() => {
     localeState.currentLocale = 'en';
+    localeState.selectedLocale = 'en';
     mockRequest.mockReset();
     mockReplace.mockReset();
   });
@@ -222,10 +224,10 @@ describe('TenantEditorScreen', () => {
 
     expect(await screen.findByText('Alpha Entertainment Updated was updated.')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Sending domain hostname for mail.alpha.example.com'), {
+    fireEvent.change(screen.getByLabelText('Sending domain hostname: mail.alpha.example.com'), {
       target: { value: 'sender.alpha.example.com' },
     });
-    fireEvent.change(screen.getByLabelText('Sending domain status for sender.alpha.example.com'), {
+    fireEvent.change(screen.getByLabelText('Sending domain status: sender.alpha.example.com'), {
       target: { value: 'verified' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save sending domains' }));
@@ -246,5 +248,120 @@ describe('TenantEditorScreen', () => {
         }),
       );
     });
+  });
+
+  it('renders localized sending-domain copy in Chinese locale', async () => {
+    localeState.currentLocale = 'zh';
+    localeState.selectedLocale = 'zh_HANS';
+
+    type SendingDomainsResponse = {
+      tenantId: string;
+      domains: Array<{
+        id: string;
+        domain: string;
+        status: 'pending_dns' | 'verified' | 'disabled';
+        dnsRecords: Array<{ type: string; host: string; value: string }>;
+      }>;
+      defaultDomainId: string | null;
+    };
+
+    let resolveSendingDomains!: (value: SendingDomainsResponse) => void;
+
+    const sendingDomainsPromise = new Promise<SendingDomainsResponse>((resolve) => {
+      resolveSendingDomains = resolve;
+    });
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/tenants/tenant-1' && !init) {
+        return {
+          id: 'tenant-1',
+          code: 'ALPHA',
+          name: 'Alpha Entertainment',
+          schemaName: 'tenant_alpha',
+          tier: 'standard',
+          isActive: true,
+          settings: {
+            maxTalents: 10,
+            maxCustomersPerTalent: 200,
+            features: ['homepage'],
+          },
+          stats: {
+            subsidiaryCount: 1,
+            talentCount: 4,
+            userCount: 5,
+          },
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T01:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/email/tenants/tenant-1/sending-domains' && !init) {
+        return sendingDomainsPromise;
+      }
+
+      if (path === '/api/v1/email/tenants/tenant-1/sending-domains' && init?.method === 'PATCH') {
+        return {
+          tenantId: 'tenant-1',
+          domains: [
+            {
+              id: 'domain-1',
+              domain: 'mail.alpha.example.com',
+              status: 'verified',
+              dnsRecords: [
+                {
+                  type: 'TXT',
+                  host: '_tcrn-email.mail.alpha.example.com',
+                  value: 'tcrn-email-verification=alpha-token',
+                },
+              ],
+            },
+          ],
+          defaultDomainId: null,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantEditorScreen acTenantId="tenant-ac" managedTenantId="tenant-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Alpha Entertainment' })).toBeInTheDocument();
+    expect(screen.getByText('正在加载发件域名…')).toBeInTheDocument();
+
+    resolveSendingDomains({
+      tenantId: 'tenant-1',
+      domains: [],
+      defaultDomainId: null,
+    });
+
+    expect(await screen.findByRole('heading', { name: '发件域名' })).toBeInTheDocument();
+    expect(screen.getByText('管理当前租户由客户提供的发件域名，并向客户提供 DNS 记录完成配置。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '新增发件域名' })).toBeInTheDocument();
+    expect(screen.getByText('当前租户还没有添加客户发件域名。')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('新增发件域名'), {
+      target: { value: 'mail.alpha.example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '新增发件域名' }));
+
+    expect(screen.getByLabelText('发件域名主机名: mail.alpha.example.com')).toHaveValue('mail.alpha.example.com');
+    expect(screen.getByLabelText('发件域名状态: mail.alpha.example.com')).toHaveDisplayValue('等待 DNS');
+
+    fireEvent.change(screen.getByLabelText('发件域名状态: mail.alpha.example.com'), {
+      target: { value: 'verified' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '保存发件域名' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/email/tenants/tenant-1/sending-domains',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('"status":"verified"'),
+        }),
+      );
+    });
+
+    expect(await screen.findByText('发件域名已保存。')).toBeInTheDocument();
   });
 });

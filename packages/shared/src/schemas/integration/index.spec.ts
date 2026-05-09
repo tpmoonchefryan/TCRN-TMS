@@ -11,6 +11,7 @@ import {
   AdapterTypeSchema,
   CreateAdapterSchema,
   CreateWebhookSchema,
+  UpdateWebhookSchema,
   UpdateAdapterConfigsSchema,
 } from './index';
 
@@ -212,9 +213,11 @@ describe('integration definition-backed create schema', () => {
     expect(CreateWebhookSchema.parse({
       definitionKey: 'customer-lifecycle',
       url: 'https://example.com/webhook',
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     })).toMatchObject({
       definitionKey: 'customer-lifecycle',
       url: 'https://example.com/webhook',
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     });
 
     expect(() =>
@@ -240,9 +243,31 @@ describe('integration definition-backed create schema', () => {
       nameEn: 'Customer lifecycle',
       url: 'https://example.com/webhook',
       events: ['customer.created'],
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     })).toMatchObject({
       code: 'CUSTOMER_LIFECYCLE',
       events: ['customer.created'],
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+    });
+  });
+
+  it('rejects invalid monitored talent ids and accepts webhook updates with monitored talent filters', () => {
+    expect(() =>
+      CreateWebhookSchema.parse({
+        code: 'CUSTOMER_LIFECYCLE',
+        nameEn: 'Customer lifecycle',
+        url: 'https://example.com/webhook',
+        events: ['customer.created'],
+        monitoredTalentIds: ['not-a-uuid'],
+      }),
+    ).toThrow();
+
+    expect(UpdateWebhookSchema.parse({
+      version: 4,
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+    })).toMatchObject({
+      version: 4,
+      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
     });
   });
 });

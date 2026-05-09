@@ -48,6 +48,7 @@ export function TenantEditorScreen({
   const { request, session } = useSession();
   const { copy, selectedLocale } = useTenantManagementCopy();
   const editorCopy = copy.editor;
+  const sendingDomainCopy = editorCopy.sendingDomains;
   const [draft, setDraft] = useState<TenantDraft>(emptyTenantDraft);
   const [loading, setLoading] = useState(mode === 'edit');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -136,7 +137,7 @@ export function TenantEditorScreen({
         setSendingDomains(response.domains);
       } catch (reason) {
         if (!cancelled) {
-          setSendingDomainsError(getErrorMessage(reason, 'Failed to load email sending domains.'));
+          setSendingDomainsError(getErrorMessage(reason, sendingDomainCopy.loadError));
         }
       } finally {
         if (!cancelled) {
@@ -150,7 +151,7 @@ export function TenantEditorScreen({
     return () => {
       cancelled = true;
     };
-  }, [managedTenantId, mode, request]);
+  }, [managedTenantId, mode, request, sendingDomainCopy.loadError]);
 
   async function handleSubmit() {
     if (submitting) {
@@ -299,7 +300,7 @@ export function TenantEditorScreen({
             {
               type: 'TXT',
               host: `_tcrn-email.${normalizedDomain}`,
-              value: 'Save to generate verification token',
+              value: sendingDomainCopy.generateTokenNotice,
             },
           ],
         },
@@ -328,9 +329,9 @@ export function TenantEditorScreen({
       });
 
       setSendingDomains(response.domains);
-      setSendingDomainsNotice('Email sending domains saved.');
+      setSendingDomainsNotice(sendingDomainCopy.saveSuccess);
     } catch (reason) {
-      setSendingDomainsError(getErrorMessage(reason, 'Failed to save email sending domains.'));
+      setSendingDomainsError(getErrorMessage(reason, sendingDomainCopy.saveError));
     } finally {
       setSavingSendingDomains(false);
     }
@@ -587,38 +588,36 @@ export function TenantEditorScreen({
           <div className="space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-slate-950">Email sending domains</h2>
-                <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                  Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.
-                </p>
+                <h2 className="text-xl font-semibold text-slate-950">{sendingDomainCopy.title}</h2>
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">{sendingDomainCopy.description}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <input
-                  aria-label="New sending domain"
+                  aria-label={sendingDomainCopy.newDomainLabel}
                   value={newSendingDomain}
                   onChange={(event) => setNewSendingDomain(event.target.value)}
                   className={inputClassName}
-                  placeholder="mail.example.com"
+                  placeholder={sendingDomainCopy.newDomainPlaceholder}
                 />
                 <button
                   type="button"
                   onClick={handleAddSendingDomain}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                 >
-                  Add sending domain
+                  {sendingDomainCopy.addDomain}
                 </button>
               </div>
             </div>
 
             {sendingDomainsLoading ? (
-              <p className="text-sm font-medium text-slate-500">Loading email sending domains…</p>
+              <p className="text-sm font-medium text-slate-500">{sendingDomainCopy.loading}</p>
             ) : null}
             {sendingDomainsError ? <p className="text-sm font-medium text-red-600">{sendingDomainsError}</p> : null}
             {sendingDomainsNotice ? <p className="text-sm font-medium text-emerald-700">{sendingDomainsNotice}</p> : null}
 
             {!sendingDomainsLoading && sendingDomains.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                No customer sending domain has been added for this tenant.
+                {sendingDomainCopy.empty}
               </p>
             ) : (
               <div className="grid gap-4">
@@ -628,11 +627,9 @@ export function TenantEditorScreen({
                       <div className="space-y-2">
                         <p className="break-all text-sm font-semibold text-slate-950">{domain.domain}</p>
                         <label className="block space-y-2">
-                          <span className="text-sm font-semibold text-slate-900">
-                            Sending domain hostname
-                          </span>
+                          <span className="text-sm font-semibold text-slate-900">{sendingDomainCopy.hostnameLabel}</span>
                           <input
-                            aria-label={`Sending domain hostname for ${domain.domain}`}
+                            aria-label={`${sendingDomainCopy.hostnameLabel}: ${domain.domain}`}
                             value={domain.domain}
                             onChange={(event) => handleSendingDomainDomainChange(domain.id, event.target.value)}
                             className={inputClassName}
@@ -649,11 +646,9 @@ export function TenantEditorScreen({
                         </div>
                       </div>
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-900">
-                          Sending domain status for {domain.domain}
-                        </span>
+                        <span className="text-sm font-semibold text-slate-900">{sendingDomainCopy.statusLabel}</span>
                         <select
-                          aria-label={`Sending domain status for ${domain.domain}`}
+                          aria-label={`${sendingDomainCopy.statusLabel}: ${domain.domain}`}
                           value={domain.status}
                           onChange={(event) => handleSendingDomainStatusChange(
                             domain.id,
@@ -661,9 +656,9 @@ export function TenantEditorScreen({
                           )}
                           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
                         >
-                          <option value="pending_dns">Pending DNS</option>
-                          <option value="verified">Verified</option>
-                          <option value="disabled">Disabled</option>
+                          <option value="pending_dns">{sendingDomainCopy.pendingDnsStatus}</option>
+                          <option value="verified">{sendingDomainCopy.verifiedStatus}</option>
+                          <option value="disabled">{sendingDomainCopy.disabledStatus}</option>
                         </select>
                       </label>
                       <button
@@ -671,7 +666,7 @@ export function TenantEditorScreen({
                         onClick={() => handleRemoveSendingDomain(domain.id)}
                         className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                       >
-                        Remove domain
+                        {sendingDomainCopy.removeDomain}
                       </button>
                     </div>
                   </div>
@@ -683,10 +678,10 @@ export function TenantEditorScreen({
               <AsyncSubmitButton
                 type="button"
                 isPending={savingSendingDomains}
-                pendingText="Save sending domains"
+                pendingText={sendingDomainCopy.savePending}
                 onClick={() => void handleSaveSendingDomains()}
               >
-                Save sending domains
+                {sendingDomainCopy.saveSubmit}
               </AsyncSubmitButton>
             </div>
           </div>
