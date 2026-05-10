@@ -1001,6 +1001,26 @@ async function expectVisibleExactTextCount(root: Locator, text: string, expected
   expect(count, label).toBe(expected);
 }
 
+async function expectHorizontallyCentered(
+  container: Locator,
+  target: Locator,
+  label: string,
+) {
+  const containerBox = await container.boundingBox();
+  const targetBox = await target.boundingBox();
+
+  expect(containerBox, `${label} container should be measurable`).not.toBeNull();
+  expect(targetBox, `${label} target should be measurable`).not.toBeNull();
+
+  const containerCenter = containerBox!.x + (containerBox!.width / 2);
+  const targetCenter = targetBox!.x + (targetBox!.width / 2);
+
+  expect(
+    Math.abs(containerCenter - targetCenter),
+    `${label} should stay horizontally centered`,
+  ).toBeLessThanOrEqual(4);
+}
+
 async function hideFrameworkDevTools(page: Page) {
   await page.addStyleTag({
     content: `
@@ -3080,10 +3100,20 @@ test.describe('private shell browser visual QA', () => {
 
   test('desktop standalone homepage editor separates visual source editing from modal preview', async ({ page }) => {
     await usePrivateSession(page);
+    await page.addInitScript(() => {
+      window.localStorage.setItem('puck-sidebar-widths', JSON.stringify({
+        left: 240,
+        right: 1200,
+      }));
+    });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
     await expect(page).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual$/);
     await hideFrameworkDevTools(page);
+
+    const rightSidebar = page.locator('[class*="_Sidebar--right_"]');
+    await expect(rightSidebar).toBeVisible();
+    expect((await rightSidebar.boundingBox())?.width ?? 0).toBeLessThanOrEqual(360);
 
     await expect(page.getByRole('button', { name: 'Exit editor' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Homepage editor' })).toHaveCount(0);
@@ -3101,23 +3131,54 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Published blocks', { exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop homepage editor visual mode');
 
+    const backgroundTypeGroup = page.getByRole('group', { name: 'Background type' });
+    await expect(backgroundTypeGroup).toBeVisible();
+    await backgroundTypeGroup.getByRole('button', { name: 'Solid' }).click();
+    await page.locator('input[name="backgroundValue"]').last().fill('#112233');
+    await expect(page.frameLocator('#preview-frame').locator('[data-homepage-puck-root]')).toHaveCSS(
+      'background-color',
+      'rgb(17, 34, 51)',
+    );
+
+    const livePreviewPromise = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Open live preview' }).click();
+    const livePreviewPage = await livePreviewPromise;
+    await livePreviewPage.waitForLoadState('domcontentloaded');
+    await hideFrameworkDevTools(livePreviewPage);
+    await expect(livePreviewPage.locator('[data-homepage-live-preview-canvas]')).toHaveCSS(
+      'background-color',
+      'rgb(17, 34, 51)',
+    );
+    await livePreviewPage.close();
+
+    await page.locator('[class*="_PuckCanvas-controls_"] button').first().click();
+    await page.locator('button[title="Toggle left sidebar"]').click();
+    await page.locator('button[title="Toggle right sidebar"]').click();
+    await expectHorizontallyCentered(
+      page.locator('[class*="_PuckCanvas-inner_"]'),
+      page.locator('#puck-canvas-root'),
+      'homepage editor mobile viewport canvas after collapsing sidebars',
+    );
+    await page.locator('button[title="Toggle left sidebar"]').click();
+    await page.locator('button[title="Toggle right sidebar"]').click();
+
     await page.getByText('Outline', { exact: true }).click();
     await page.locator('[data-puck-layer-tree-id="profile-visual"] button').click();
-    const layoutModeField = page.getByLabel('Layout mode').nth(1);
-    const gapTokenField = page.getByLabel('Gap token').nth(1);
-    const widthPresetField = page.getByLabel('Width preset').nth(1);
-    const customWidthField = page.getByLabel('Custom width').nth(1);
-    const heightPresetField = page.getByLabel('Height preset').nth(1);
-    const customHeightField = page.getByLabel('Custom height').nth(1);
+    const layoutModeField = page.getByRole('group', { name: 'Layout mode' }).last();
+    const gapTokenField = page.getByRole('group', { name: 'Gap token' }).last();
+    const widthPresetField = page.getByRole('group', { name: 'Width preset' }).last();
+    const customWidthField = page.locator('input[name="customWidthPx"]').last();
+    const heightPresetField = page.getByRole('group', { name: 'Height preset' }).last();
+    const customHeightField = page.locator('input[name="customHeightPx"]').last();
 
     await expect(page.getByRole('heading', { name: 'Profile card' })).toBeVisible();
     await expect(layoutModeField).toBeVisible();
 
-    await layoutModeField.selectOption({ label: 'Row' });
-    await gapTokenField.selectOption({ label: 'Large' });
-    await widthPresetField.selectOption({ label: 'Custom' });
+    await layoutModeField.getByRole('button', { name: 'Row' }).click();
+    await gapTokenField.getByRole('button', { name: 'Large' }).click();
+    await widthPresetField.getByRole('button', { name: 'Custom' }).click();
     await customWidthField.fill('1300');
-    await heightPresetField.selectOption({ label: 'Custom' });
+    await heightPresetField.getByRole('button', { name: 'Custom' }).click();
     await customHeightField.fill('180');
 
     await page.getByRole('button', { name: 'Dev Mode' }).click();
@@ -3151,6 +3212,10 @@ test.describe('private shell browser visual QA', () => {
     await expect(previewDrawer.locator('h1').filter({ hasText: 'Visual Talent' })).toBeVisible();
     await expect(previewDrawer.locator('[style*="max-width: 1300px"]').first()).toBeVisible();
     await expect(previewDrawer.locator('[style*="min-height: 180px"]').first()).toBeVisible();
+    await expect(page.locator('[data-homepage-preview-canvas]')).toHaveCSS(
+      'background-color',
+      'rgb(17, 34, 51)',
+    );
     await expectNoHorizontalOverflow(page, 'desktop homepage editor modal preview');
     await expect(page).toHaveScreenshot('private-homepage-editor-desktop-preview-drawer.png', {
       animations: 'disabled',

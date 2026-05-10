@@ -5,8 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_HOMEPAGE_LAYOUT_PROPS } from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
 import {
+  type HomepagePuckData,
   mapHomepageContentToPuckData,
   mapPuckDataToHomepageContent,
+  mapPuckDataToHomepageTheme,
 } from '@/domains/homepage-management/editor/puck/homepage-puck-mappers';
 import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
@@ -215,6 +217,70 @@ describe('homepage Puck mappers', () => {
         paddingPreset: 'medium',
       },
     });
+  });
+
+  it('round-trips page background root props into theme without mutating component payloads', () => {
+    const baseTheme = normalizeTheme(DEFAULT_THEME);
+    const puckData = mapHomepageContentToPuckData({
+      version: '1.0',
+      components: [
+        {
+          id: 'profile-1',
+          type: 'ProfileCard',
+          visible: true,
+          order: 1,
+          props: {
+            displayName: 'Tokino Sora',
+          },
+        },
+      ],
+    }, baseTheme);
+
+    const rootProps = puckData.root.props;
+
+    expect(rootProps).toBeDefined();
+
+    if (!rootProps) {
+      throw new Error('Expected Puck root props to be defined');
+    }
+
+    expect(rootProps).toMatchObject({
+      backgroundType: baseTheme.background.type,
+      backgroundValue: baseTheme.background.value,
+    });
+
+    const nextData: Partial<HomepagePuckData> = {
+      ...puckData,
+      root: {
+        props: {
+          ...rootProps,
+          title: rootProps.title || 'Homepage',
+          backgroundType: 'image' as const,
+          backgroundValue: 'https://cdn.example.com/background.jpg',
+          backgroundOverlay: 'rgba(15, 23, 42, 0.55)',
+        },
+      },
+    };
+
+    const nextContent = mapPuckDataToHomepageContent(nextData, '1.0');
+    const nextTheme = mapPuckDataToHomepageTheme(nextData, baseTheme);
+
+    expect(nextContent.components).toEqual([
+      expect.objectContaining({
+        id: 'profile-1',
+        props: expect.objectContaining({
+          displayName: 'Tokino Sora',
+        }),
+      }),
+    ]);
+    expect(nextTheme.background).toEqual({
+      ...baseTheme.background,
+      type: 'image',
+      value: 'https://cdn.example.com/background.jpg',
+      overlay: 'rgba(15, 23, 42, 0.55)',
+    });
+    expect(nextTheme.card).toEqual(baseTheme.card);
+    expect(nextTheme.colors).toEqual(baseTheme.colors);
   });
 
   it('round-trips unsupported Puck blocks through their original type and props', () => {

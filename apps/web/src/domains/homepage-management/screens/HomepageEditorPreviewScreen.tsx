@@ -12,7 +12,10 @@ import {
   type HomepageEditorPreviewSnapshot,
   readHomepageEditorPreviewSnapshot,
 } from '@/domains/homepage-management/screens/homepage-editor-preview-storage';
-import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import {
+  getHomepageCanvasStyle,
+  PublicHomepageRenderer,
+} from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import { GlassSurface, StateView } from '@/platform/ui';
 
 export function HomepageEditorPreviewScreen({
@@ -78,6 +81,8 @@ export function HomepageEditorPreviewScreen({
     );
   }
 
+  const canvasStyle = getHomepageCanvasStyle(snapshot.theme);
+
   return (
     <div className="space-y-6">
       <GlassSurface className="p-6">
@@ -100,7 +105,11 @@ export function HomepageEditorPreviewScreen({
         </div>
       </GlassSurface>
 
-      <div className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
+      <div
+        data-homepage-live-preview-canvas
+        className="rounded-3xl border border-slate-200 bg-slate-100 p-6"
+        style={canvasStyle}
+      >
         <PublicHomepageRenderer
           content={snapshot.content}
           theme={snapshot.theme}

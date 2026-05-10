@@ -54,7 +54,10 @@ import {
   type HomepageEditorPreviewHero,
   writeHomepageEditorPreviewSnapshot,
 } from '@/domains/homepage-management/screens/homepage-editor-preview-storage';
-import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import {
+  getHomepageCanvasStyle,
+  PublicHomepageRenderer,
+} from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildTalentWorkspaceSectionPath,
@@ -434,9 +437,15 @@ function HomepagePreviewFrame({
   previewViewport: PreviewViewport;
   theme: ThemeConfig;
 }>) {
+  const canvasStyle = getHomepageCanvasStyle(theme);
+
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <div className={`mx-auto transition-[max-width] duration-200 ${PREVIEW_VIEWPORT_CLASSES[previewViewport]}`}>
+      <div
+        data-homepage-preview-canvas
+        className={`mx-auto rounded-[28px] p-6 transition-[max-width] duration-200 ${PREVIEW_VIEWPORT_CLASSES[previewViewport]}`}
+        style={canvasStyle}
+      >
         <PublicHomepageRenderer
           content={content}
           theme={theme}
@@ -804,6 +813,10 @@ export function HomepageEditorScreen({
       onContentChange={handleContentChange}
       onSaveDraft={() => void handleSaveDraft()}
       onSelectedItemChange={handleSelectedPuckItemChange}
+      onThemeChange={(nextTheme) => {
+        setTheme(nextTheme);
+        setNotice(null);
+      }}
       theme={theme}
     />
   );

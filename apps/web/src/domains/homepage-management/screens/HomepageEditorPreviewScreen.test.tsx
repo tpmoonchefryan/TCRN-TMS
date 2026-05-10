@@ -75,6 +75,7 @@ describe('HomepageEditorPreviewScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Live homepage preview' })).toBeInTheDocument();
     expect(screen.getAllByText('Tokino Sora').length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-homepage-live-preview-canvas]')?.getAttribute('style')).toContain('rgb');
 
     const updatedSnapshot = {
       ...baseSnapshot,

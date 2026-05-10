@@ -41,10 +41,12 @@ vi.mock('@/domains/homepage-management/editor/puck/HomepagePuckEditor', () => ({
     content,
     onContentChange,
     onSaveDraft,
+    onThemeChange,
   }: {
     content: HomepageDraftContent;
     onContentChange: (content: HomepageDraftContent) => void;
     onSaveDraft: () => void;
+    onThemeChange: (theme: ThemeConfig) => void;
   }) => (
     <div data-testid="homepage-puck-editor">
       <p>Puck visual editor</p>
@@ -72,6 +74,45 @@ vi.mock('@/domains/homepage-management/editor/puck/HomepagePuckEditor', () => ({
         }}
       >
         Mock Puck add link
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onThemeChange({
+            preset: ThemePreset.SOFT,
+            visualStyle: 'flat',
+            colors: {
+              primary: '#7B9EE0',
+              accent: '#E0A0C0',
+              background: '#FAFBFC',
+              text: '#333333',
+              textSecondary: '#888888',
+            },
+            background: {
+              type: 'solid',
+              value: '#112233',
+            },
+            card: {
+              background: '#FFFFFF',
+              borderRadius: 'large',
+              shadow: 'small',
+            },
+            typography: {
+              fontFamily: 'noto-sans',
+              headingWeight: 'medium',
+            },
+            animation: {
+              enableEntrance: true,
+              enableHover: true,
+              intensity: 'low',
+            },
+            decorations: {
+              type: 'none',
+            },
+          });
+        }}
+      >
+        Mock Puck change background
       </button>
       <button
         type="button"
@@ -434,6 +475,9 @@ describe('HomepageEditorScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
     expect(screen.getByRole('heading', { name: 'Homepage preview' })).toBeInTheDocument();
+    expect(document.querySelector('[data-homepage-preview-canvas]')?.getAttribute('style')).toContain('linear-gradient');
+    fireEvent.click(screen.getByRole('button', { name: 'Mock Puck change background' }));
+    expect(document.querySelector('[data-homepage-preview-canvas]')?.getAttribute('style')).toContain('rgb(17, 34, 51)');
     fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
     expect(screen.getByRole('button', { name: 'Mobile' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -460,9 +504,11 @@ describe('HomepageEditorScreen', () => {
     await waitFor(() => {
       const snapshot = JSON.parse(window.localStorage.getItem(previewKey || '') || '{}') as {
         hero?: { displayName?: string };
+        theme?: { background?: { value?: string } };
       };
 
       expect(snapshot.hero?.displayName).toBe('Live Preview Sora');
+      expect(snapshot.theme?.background?.value).toBe('#112233');
     });
   });
 

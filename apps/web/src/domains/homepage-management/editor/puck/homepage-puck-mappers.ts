@@ -1,4 +1,5 @@
 import { type Data } from '@puckeditor/core';
+import { type ThemeConfig } from '@tcrn/shared';
 
 import {
   type HomepageDraftComponentRecord,
@@ -9,6 +10,11 @@ import {
   type HomepageLayoutProps,
   normalizeHomepageLayoutProps,
 } from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
+import {
+  type HomepagePuckRootProps,
+  mapHomepagePuckRootPropsToTheme,
+  mapHomepageThemeToPuckRootProps,
+} from '@/domains/homepage-management/editor/puck/homepage-puck-theme';
 import { normalizeHomepageDraftContent } from '@/domains/homepage-management/editor/source/homepage-source-dsl';
 
 export const HOMEPAGE_PUCK_SUPPORTED_TYPES = [
@@ -75,7 +81,7 @@ export interface HomepagePuckComponents {
   UnsupportedHomepageBlock: HomepagePuckUnsupportedProps;
 }
 
-export type HomepagePuckData = Data<HomepagePuckComponents, { title?: string }>;
+export type HomepagePuckData = Data<HomepagePuckComponents, HomepagePuckRootProps>;
 type HomepagePuckContentItem = HomepagePuckData['content'][number];
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -242,17 +248,25 @@ function mapComponentToPuckItem(component: HomepageDraftComponentRecord): Homepa
   }
 }
 
-export function mapHomepageContentToPuckData(content: HomepageDraftContent): HomepagePuckData {
+export function mapHomepageContentToPuckData(
+  content: HomepageDraftContent,
+  theme?: ThemeConfig | null,
+): HomepagePuckData {
   const normalized = normalizeHomepageDraftContent(content);
 
   return {
     root: {
-      props: {
-        title: 'Homepage',
-      },
+      props: mapHomepageThemeToPuckRootProps(theme),
     },
     content: normalized.components.map((component) => mapComponentToPuckItem(component)),
   } satisfies HomepagePuckData;
+}
+
+export function mapPuckDataToHomepageTheme(
+  data: Partial<HomepagePuckData>,
+  baseTheme: ThemeConfig,
+) {
+  return mapHomepagePuckRootPropsToTheme(data.root?.props, baseTheme);
 }
 
 function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Record<string, unknown>) {

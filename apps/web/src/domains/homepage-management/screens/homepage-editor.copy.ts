@@ -132,6 +132,9 @@ export interface HomepageEditorCopy {
     addSocialLink: string;
     advancedJson: string;
     align: string;
+    backgroundOverlay: string;
+    backgroundType: string;
+    backgroundValue: string;
     bio: string;
     bioMaxLines: string;
     bold: string;
@@ -375,6 +378,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: 'Add social link',
       advancedJson: 'Advanced JSON',
       align: 'Alignment',
+      backgroundOverlay: 'Image overlay',
+      backgroundType: 'Background type',
+      backgroundValue: 'Background value',
       bio: 'Bio',
       bioMaxLines: 'Bio lines',
       bold: 'Bold',
@@ -423,6 +429,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         custom: 'Custom',
         default: 'Default',
         button: 'Button',
+        gradient: 'Gradient',
         carousel: 'Carousel',
         center: 'Center',
         circle: 'Circle',
@@ -432,6 +439,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         grid: 'Grid',
         horizontal: 'Horizontal',
         icon: 'Icon',
+        image: 'Image',
         large: 'Large',
         left: 'Left',
         lg: 'Large',
@@ -449,6 +457,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         sm: 'Small',
         secondary: 'Secondary',
         small: 'Small',
+        solid: 'Solid',
         square: 'Square',
         stack: 'Stack',
         vertical: 'Vertical',
@@ -653,6 +662,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: '添加社交链接',
       advancedJson: '高级 JSON',
       align: '对齐',
+      backgroundOverlay: '图片叠加层',
+      backgroundType: '背景类型',
+      backgroundValue: '背景值',
       bio: '简介',
       bioMaxLines: '简介行数',
       bold: '加粗',
@@ -701,6 +713,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         custom: '自定义',
         default: '默认',
         button: '按钮',
+        gradient: '渐变',
         carousel: '轮播',
         center: '居中',
         circle: '圆形',
@@ -710,6 +723,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         grid: '网格',
         horizontal: '横向',
         icon: '图标',
+        image: '图片',
         large: '大',
         left: '左对齐',
         lg: '大',
@@ -727,6 +741,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         sm: '小',
         secondary: '次要',
         small: '小',
+        solid: '纯色',
         square: '方形',
         stack: '纵向',
         vertical: '纵向',
@@ -931,6 +946,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: 'SNS リンクを追加',
       advancedJson: '高度な JSON',
       align: '配置',
+      backgroundOverlay: '画像オーバーレイ',
+      backgroundType: '背景タイプ',
+      backgroundValue: '背景値',
       bio: '紹介文',
       bioMaxLines: '紹介文の行数',
       bold: '太字',
@@ -979,6 +997,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         custom: 'カスタム',
         default: 'デフォルト',
         button: 'ボタン',
+        gradient: 'グラデーション',
         carousel: 'カルーセル',
         center: '中央',
         circle: '円形',
@@ -988,6 +1007,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         grid: 'グリッド',
         horizontal: '横並び',
         icon: 'アイコン',
+        image: '画像',
         large: '大',
         left: '左',
         lg: '大',
@@ -1005,6 +1025,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         sm: '小',
         secondary: 'セカンダリ',
         small: '小',
+        solid: '単色',
         square: '四角',
         stack: '縦方向',
         vertical: '縦並び',
