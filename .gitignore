@@ -43,7 +43,7 @@ build
 Thumbs.db
 
 # Logs
-logs
+/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -112,16 +112,17 @@ skills-lock.json
 
 # Generated files
 *.generated.*
+apps/web/next-env.d.ts
 
 # Prompts related files
 .context/*
+.superpowers/*
 .llm/*
 .references/*
 technical_readme.md
 tech_readme.md
 .agent/*
 .agents/*
-.gitignore
 .cursor/*
 .gemini/*
 
