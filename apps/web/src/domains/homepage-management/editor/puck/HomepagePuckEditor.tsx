@@ -1,6 +1,6 @@
-import { type Config, type Data,Puck } from '@puckeditor/core';
+import { type Config, type Data, Puck, usePuck } from '@puckeditor/core';
 import { type ThemeConfig } from '@tcrn/shared';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import {
   type HomepageDraftContent,
@@ -21,18 +21,61 @@ import { type HomepageEditorCopy } from '@/domains/homepage-management/screens/h
 interface HomepagePuckEditorProps {
   content: HomepageDraftContent;
   copy: HomepageEditorCopy;
+  fitToParent?: boolean;
   isAdvancedEjected: boolean;
   onContentChange: (content: HomepageDraftContent) => void;
   onSaveDraft: () => void;
+  onSelectedItemChange?: (item: HomepagePuckSelectedItem | null) => void;
   theme: ThemeConfig;
+}
+
+export interface HomepagePuckSelectedItem {
+  id: string | null;
+  props: Record<string, unknown>;
+  type: string;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function PuckHeaderBridge({
+  onSelectedItemChange,
+}: Readonly<{
+  onSelectedItemChange?: (item: HomepagePuckSelectedItem | null) => void;
+}>) {
+  const { selectedItem } = usePuck();
+
+  useEffect(() => {
+    if (!onSelectedItemChange) {
+      return;
+    }
+
+    if (!selectedItem) {
+      onSelectedItemChange(null);
+      return;
+    }
+
+    const props = asRecord(selectedItem.props);
+
+    onSelectedItemChange({
+      id: typeof props.id === 'string' ? props.id : null,
+      props,
+      type: String(selectedItem.type),
+    });
+  }, [onSelectedItemChange, selectedItem]);
+
+  return null;
 }
 
 export function HomepagePuckEditor({
   content,
   copy,
+  fitToParent = false,
   isAdvancedEjected,
   onContentChange,
   onSaveDraft,
+  onSelectedItemChange,
   theme,
 }: Readonly<HomepagePuckEditorProps>) {
   const config = useMemo(() => createHomepagePuckConfig(copy, theme), [copy, theme]);
@@ -41,11 +84,15 @@ export function HomepagePuckEditor({
   const puckData = data as unknown as Data;
 
   return (
-    <div className="min-h-[680px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm [&_.homepage-puck-block-preview_.min-h-screen]:min-h-0">
+    <div
+      className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm [&_.homepage-puck-block-preview_.min-h-screen]:min-h-0 ${
+        fitToParent ? 'flex h-full min-h-0' : 'min-h-[680px]'
+      }`}
+    >
       <Puck
         config={puckConfig}
         data={puckData}
-        height="min(82vh, 900px)"
+        height={fitToParent ? '100%' : 'min(82vh, 900px)'}
         onChange={(nextData) => {
           const nextContent = mapPuckDataToHomepageContent(
             nextData as Partial<HomepagePuckData>,
@@ -58,15 +105,7 @@ export function HomepagePuckEditor({
           onSaveDraft();
         }}
         headerTitle={copy.modes.visual}
-        renderHeaderActions={() => (
-          <button
-            type="button"
-            onClick={onSaveDraft}
-            className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-          >
-            {copy.actions.saveDraft}
-          </button>
-        )}
+        renderHeaderActions={() => <PuckHeaderBridge onSelectedItemChange={onSelectedItemChange} />}
         viewports={[
           {
             width: 390,

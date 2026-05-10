@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_THEME, normalizeTheme, type ThemeConfig } from '@tcrn/shared';
+import { type ThemeConfig } from '@tcrn/shared';
 import {
   Activity,
   CalendarRange,
@@ -15,8 +15,12 @@ import {
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
 import {
+  normalizeHomepageLayoutProps,
+  resolveHomepageLayoutSurfaceStyle,
+  resolveHomepageLayoutWrapperStyle,
+} from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
+import {
   type PublicHomepageComponentRecord,
-  type PublicHomepageContent,
 } from '@/domains/public-homepage/api/public-homepage.api';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { GlassSurface } from '@/platform/ui';
@@ -41,55 +45,6 @@ function asBoolean(value: unknown, fallback = false) {
 
 function asNumber(value: unknown, fallback = 0) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
-function resolveBorderRadius(value: ThemeConfig['card']['borderRadius']) {
-  switch (value) {
-    case 'none':
-      return '0px';
-    case 'small':
-      return '14px';
-    case 'medium':
-      return '22px';
-    case 'large':
-      return '30px';
-    case 'full':
-      return '999px';
-    default:
-      return '22px';
-  }
-}
-
-function resolveShadow(value: ThemeConfig['card']['shadow']) {
-  switch (value) {
-    case 'none':
-      return 'none';
-    case 'small':
-      return '0 10px 30px rgba(15, 23, 42, 0.08)';
-    case 'medium':
-      return '0 18px 40px rgba(15, 23, 42, 0.12)';
-    case 'large':
-      return '0 24px 56px rgba(15, 23, 42, 0.16)';
-    case 'glow':
-      return '0 18px 44px rgba(99, 102, 241, 0.22)';
-    case 'soft':
-      return '0 12px 36px rgba(15, 23, 42, 0.10)';
-    default:
-      return '0 10px 30px rgba(15, 23, 42, 0.08)';
-  }
-}
-
-function resolveBackground(theme: ThemeConfig) {
-  if (theme.background.type === 'gradient') {
-    return theme.background.value;
-  }
-
-  if (theme.background.type === 'image') {
-    const overlay = theme.background.overlay || 'rgba(15, 23, 42, 0.35)';
-    return `linear-gradient(${overlay}, ${overlay}), url(${theme.background.value}) center / cover no-repeat`;
-  }
-
-  return theme.background.value;
 }
 
 function toCssTextAlign(value: unknown): CSSProperties['textAlign'] {
@@ -132,72 +87,6 @@ function sanitizeRichText(html: string) {
   return template.innerHTML;
 }
 
-function RichTextCard({
-  html,
-  textAlign,
-  theme,
-}: Readonly<{
-  html: string;
-  textAlign: CSSProperties['textAlign'];
-  theme: ThemeConfig;
-}>) {
-  const sanitized = useMemo(() => sanitizeRichText(html), [html]);
-  const richTextStyle = useMemo(
-    () =>
-      ({
-        textAlign,
-        color: theme.colors.text,
-        '--tw-prose-body': theme.colors.text,
-        '--tw-prose-headings': theme.colors.text,
-        '--tw-prose-links': theme.colors.text,
-        '--tw-prose-bold': theme.colors.text,
-        '--tw-prose-counters': theme.colors.textSecondary,
-        '--tw-prose-bullets': theme.colors.textSecondary,
-        '--tw-prose-hr': theme.colors.textSecondary,
-        '--tw-prose-quotes': theme.colors.text,
-        '--tw-prose-captions': theme.colors.textSecondary,
-        '--tw-prose-code': theme.colors.text,
-      }) as CSSProperties,
-    [textAlign, theme.colors.text, theme.colors.textSecondary]
-  );
-
-  if (!sanitized.trim()) {
-    return null;
-  }
-
-  return (
-    <div
-      className="prose prose-slate prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7 max-w-none"
-      style={richTextStyle}
-      dangerouslySetInnerHTML={{ __html: sanitized }}
-    />
-  );
-}
-
-function extractVisibleComponents(content: PublicHomepageContent) {
-  return [...content.components]
-    .filter((component) => component.visible !== false)
-    .sort((left, right) => {
-      const leftOrder = typeof left.order === 'number' ? left.order : Number.MAX_SAFE_INTEGER;
-      const rightOrder = typeof right.order === 'number' ? right.order : Number.MAX_SAFE_INTEGER;
-      return leftOrder - rightOrder;
-    });
-}
-
-function getSocialPlatformLabel(platformCode: string) {
-  const normalized = platformCode.trim().toLowerCase();
-
-  if (normalized === 'x') {
-    return 'X';
-  }
-
-  return normalized
-    .split(/[_-]/)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ');
-}
-
 function resolveVideoEmbedUrl(value: string) {
   try {
     const url = new URL(value);
@@ -238,14 +127,30 @@ function resolveMusicEmbedUrl(platform: string, embedValue: string) {
   return null;
 }
 
+function getSocialPlatformLabel(platformCode: string) {
+  const normalized = platformCode.trim().toLowerCase();
+
+  if (normalized === 'x') {
+    return 'X';
+  }
+
+  return normalized
+    .split(/[_-]/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 function SectionSurface({
   theme,
   children,
   className = '',
+  style,
 }: Readonly<{
   theme: ThemeConfig;
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
 }>) {
   return (
     <GlassSurface
@@ -253,10 +158,11 @@ function SectionSurface({
       className={`border-white/60 ${className}`}
       style={{
         backgroundColor: theme.card.background,
-        borderRadius: resolveBorderRadius(theme.card.borderRadius),
-        boxShadow: resolveShadow(theme.card.shadow),
+        borderRadius: '22px',
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
         border: theme.card.border || undefined,
         backdropFilter: theme.card.backdropBlur ? `blur(${theme.card.backdropBlur}px)` : undefined,
+        ...style,
       }}
     >
       {children}
@@ -292,7 +198,7 @@ function UnsupportedComponent({
 }
 
 function getThemeTextStyles(
-  theme: ThemeConfig
+  theme: ThemeConfig,
 ): Record<'primary' | 'secondary' | 'link', CSSProperties> {
   return {
     primary: { color: theme.colors.text },
@@ -301,17 +207,96 @@ function getThemeTextStyles(
   };
 }
 
-function HomepageComponentCard({
+function CardFrame({
+  children,
+  layout,
+  theme,
+  className = '',
+}: Readonly<{
+  children: ReactNode;
+  layout: ReturnType<typeof normalizeHomepageLayoutProps>;
+  theme: ThemeConfig;
+  className?: string;
+}>) {
+  return (
+    <div style={resolveHomepageLayoutWrapperStyle(layout)}>
+      <SectionSurface
+        theme={theme}
+        className={className}
+        style={resolveHomepageLayoutSurfaceStyle(layout)}
+      >
+        {children}
+      </SectionSurface>
+    </div>
+  );
+}
+
+function PlainFrame({
+  children,
+  layout,
+}: Readonly<{
+  children: ReactNode;
+  layout: ReturnType<typeof normalizeHomepageLayoutProps>;
+}>) {
+  return <div style={resolveHomepageLayoutWrapperStyle(layout)}>{children}</div>;
+}
+
+function RichTextCard({
+  html,
+  textAlign,
+  theme,
+}: Readonly<{
+  html: string;
+  textAlign: CSSProperties['textAlign'];
+  theme: ThemeConfig;
+}>) {
+  const sanitized = useMemo(() => sanitizeRichText(html), [html]);
+  const richTextStyle = useMemo(
+    () =>
+      ({
+        textAlign,
+        color: theme.colors.text,
+        '--tw-prose-body': theme.colors.text,
+        '--tw-prose-headings': theme.colors.text,
+        '--tw-prose-links': theme.colors.text,
+        '--tw-prose-bold': theme.colors.text,
+        '--tw-prose-counters': theme.colors.textSecondary,
+        '--tw-prose-bullets': theme.colors.textSecondary,
+        '--tw-prose-hr': theme.colors.textSecondary,
+        '--tw-prose-quotes': theme.colors.text,
+        '--tw-prose-captions': theme.colors.textSecondary,
+        '--tw-prose-code': theme.colors.text,
+      }) as CSSProperties,
+    [textAlign, theme.colors.text, theme.colors.textSecondary],
+  );
+
+  if (!sanitized.trim()) {
+    return null;
+  }
+
+  return (
+    <div
+      className="prose prose-slate prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7 max-w-none"
+      style={richTextStyle}
+      dangerouslySetInnerHTML={{ __html: sanitized }}
+    />
+  );
+}
+
+export function PublicHomepageComponentCard({
   component,
   theme,
-  copy,
+  copy: providedCopy,
 }: Readonly<{
   component: VisibleHomepageComponent;
   theme: ThemeConfig;
-  copy: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'];
+  copy?: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'];
 }>) {
+  const { copy: runtimeCopy } = useRuntimeLocale();
+  const copy = providedCopy ?? runtimeCopy.publicHomepage;
   const props = asRecord(component.props);
   const textStyles = getThemeTextStyles(theme);
+  const layout = normalizeHomepageLayoutProps(props);
 
   switch (component.type) {
     case 'ProfileCard': {
@@ -327,7 +312,7 @@ function HomepageComponentCard({
             : 'rounded-full';
 
       return (
-        <SectionSurface theme={theme} className="p-8">
+        <CardFrame theme={theme} layout={layout} className="p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className={`h-28 w-28 overflow-hidden bg-slate-200 ${avatarClassName}`}>
               {avatarUrl ? (
@@ -353,13 +338,13 @@ function HomepageComponentCard({
               ) : null}
             </div>
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'SocialLinks': {
       const platforms = Array.isArray(props.platforms)
         ? props.platforms.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
           )
         : [];
 
@@ -367,47 +352,47 @@ function HomepageComponentCard({
         return null;
       }
 
-      return (
-        <SectionSurface theme={theme} className="p-6">
-          <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
-            style={textStyles.secondary}
-          >
-            <ExternalLink className="h-4 w-4" />
-            {copy.socialLinks}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {platforms.map((entry, index) => {
-              const url = asString(entry.url);
+        return (
+          <CardFrame theme={theme} layout={layout} className="p-6">
+            <div
+              className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+              style={textStyles.secondary}
+            >
+              <ExternalLink className="h-4 w-4" />
+              {copy.socialLinks}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {platforms.map((entry, index) => {
+                const url = asString(entry.url);
 
-              if (!url) {
-                return null;
-              }
+                if (!url) {
+                  return null;
+                }
 
-              const platformCode = asString(entry.platformCode, `link-${index}`);
-              const label = asString(entry.label) || getSocialPlatformLabel(platformCode);
+                const platformCode = asString(entry.platformCode, `link-${index}`);
+                const label = asString(entry.label) || getSocialPlatformLabel(platformCode);
 
-              return (
-                <a
-                  key={`${platformCode}-${index}`}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  {label}
-                </a>
-              );
-            })}
-          </div>
-        </SectionSurface>
-      );
-    }
+                return (
+                  <a
+                    key={`${platformCode}-${index}`}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {label}
+                  </a>
+                );
+              })}
+            </div>
+          </CardFrame>
+        );
+      }
     case 'ImageGallery': {
       const images = Array.isArray(props.images)
         ? props.images.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
           )
         : [];
 
@@ -418,7 +403,7 @@ function HomepageComponentCard({
       const columns = Math.min(Math.max(asNumber(props.columns, 3), 2), 4);
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -455,7 +440,7 @@ function HomepageComponentCard({
               );
             })}
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'VideoEmbed': {
@@ -468,7 +453,7 @@ function HomepageComponentCard({
       const embedUrl = resolveVideoEmbedUrl(videoUrl);
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -510,7 +495,7 @@ function HomepageComponentCard({
               {videoUrl}
             </a>
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'RichText': {
@@ -521,13 +506,13 @@ function HomepageComponentCard({
       }
 
       return (
-        <SectionSurface theme={theme} className="p-8">
+        <CardFrame theme={theme} layout={layout} className="p-8">
           <RichTextCard
             html={contentHtml}
             textAlign={toCssTextAlign(props.textAlign)}
             theme={theme}
           />
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'LinkButton': {
@@ -539,7 +524,7 @@ function HomepageComponentCard({
       }
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <a
             href={url}
             target="_blank"
@@ -549,12 +534,12 @@ function HomepageComponentCard({
             {label}
             <ExternalLink className="h-4 w-4" />
           </a>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'MarshmallowWidget': {
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">
               <MessageCircleMore className="h-4 w-4" />
@@ -564,19 +549,19 @@ function HomepageComponentCard({
               {copy.marshmallowDescription}
             </p>
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'Schedule': {
       const title = asFilledString(props.title, copy.schedule);
       const events = Array.isArray(props.events)
         ? props.events.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
           )
         : [];
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -610,7 +595,7 @@ function HomepageComponentCard({
               ))
             )}
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'MusicPlayer': {
@@ -620,7 +605,7 @@ function HomepageComponentCard({
       const embedUrl = resolveMusicEmbedUrl(platform, asString(props.embedValue));
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -649,7 +634,7 @@ function HomepageComponentCard({
               />
             ) : null}
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'LiveStatus': {
@@ -659,7 +644,7 @@ function HomepageComponentCard({
       const streamUrl = asString(props.streamUrl);
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -700,7 +685,7 @@ function HomepageComponentCard({
               </a>
             ) : null}
           </div>
-        </SectionSurface>
+        </CardFrame>
       );
     }
     case 'Divider': {
@@ -709,11 +694,13 @@ function HomepageComponentCard({
         dividerStyle === 'dotted' ? 'dotted' : dividerStyle === 'dashed' ? 'dashed' : 'solid';
 
       return (
-        <div
-          aria-hidden="true"
-          className="mx-4 border-t border-slate-300/80"
-          style={{ borderTopStyle: borderStyle }}
-        />
+        <PlainFrame layout={layout}>
+          <div
+            aria-hidden="true"
+            className="mx-4 border-t border-slate-300/80"
+            style={{ borderTopStyle: borderStyle }}
+          />
+        </PlainFrame>
       );
     }
     case 'Spacer': {
@@ -726,14 +713,19 @@ function HomepageComponentCard({
             : height === 'xlarge'
               ? '6rem'
               : '2.5rem';
-      return <div aria-hidden="true" style={{ height: size }} />;
+
+      return (
+        <PlainFrame layout={layout}>
+          <div aria-hidden="true" style={{ height: size }} />
+        </PlainFrame>
+      );
     }
     case 'BilibiliDynamic': {
       const uid = asString(props.uid);
       const title = asFilledString(props.title, copy.bilibiliDynamic);
 
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <div
             className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
             style={textStyles.secondary}
@@ -756,111 +748,19 @@ function HomepageComponentCard({
               {copy.viewBilibiliDynamics}
             </a>
           ) : null}
-        </SectionSurface>
+        </CardFrame>
       );
     }
     default:
       return (
-        <SectionSurface theme={theme} className="p-6">
+        <CardFrame theme={theme} layout={layout} className="p-6">
           <UnsupportedComponent
             type={component.type}
             props={props}
             description={copy.unsupportedDescription}
             descriptionStyle={textStyles.secondary}
           />
-        </SectionSurface>
+        </CardFrame>
       );
   }
-}
-
-export function getHomepageCanvasStyle(theme: ThemeConfig): CSSProperties {
-  return {
-    background: resolveBackground(theme),
-    color: theme.colors.text,
-  };
-}
-
-export function PublicHomepageRenderer({
-  content,
-  theme: rawTheme,
-  updatedAt: _updatedAt,
-  hero,
-}: Readonly<{
-  content: PublicHomepageContent;
-  theme: ThemeConfig | null | undefined;
-  updatedAt: string;
-  hero: {
-    displayName: string;
-    avatarUrl: string | null;
-    timezone?: string | null;
-    description: string | null;
-  };
-}>) {
-  const { copy } = useRuntimeLocale();
-  const theme = useMemo(() => normalizeTheme(rawTheme || DEFAULT_THEME), [rawTheme]);
-  const components = useMemo(() => extractVisibleComponents(content), [content]);
-  const publicCopy = copy.publicHomepage;
-  const heroAvatarAlt = hero.displayName
-    ? `${hero.displayName} ${publicCopy.avatarSuffix}`
-    : publicCopy.profileAvatar;
-  const textStyles = getThemeTextStyles(theme);
-
-  return (
-    <div className="space-y-8">
-      <SectionSurface theme={theme} className="p-8 md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">
-              <Sparkles className="h-3.5 w-3.5" />
-              {publicCopy.badge}
-            </div>
-            <div className="space-y-3">
-              <h1
-                className="text-4xl font-semibold tracking-tight md:text-5xl"
-                style={textStyles.primary}
-              >
-                {hero.displayName}
-              </h1>
-              {hero.description ? (
-                <p className="max-w-3xl text-base leading-8" style={textStyles.secondary}>
-                  {hero.description}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              {hero.timezone ? (
-                <span className="rounded-full bg-white/70 px-3 py-2">
-                  {publicCopy.timezoneLabel}: {hero.timezone}
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex justify-start lg:justify-end">
-            <div className="h-48 w-48 overflow-hidden rounded-[38px] border border-white/80 bg-slate-200 shadow-xl md:h-56 md:w-56">
-              {hero.avatarUrl ? (
-                <img
-                  src={hero.avatarUrl}
-                  alt={heroAvatarAlt}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-6xl font-semibold text-slate-500">
-                  {hero.displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </SectionSurface>
-
-      {components.map((component) => (
-        <HomepageComponentCard
-          key={component.id}
-          component={component}
-          theme={theme}
-          copy={publicCopy}
-        />
-      ))}
-    </div>
-  );
 }

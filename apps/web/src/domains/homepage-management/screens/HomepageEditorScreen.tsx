@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Eye,
   Globe2,
+  Info,
   RotateCcw,
   Save,
 } from 'lucide-react';
@@ -18,13 +19,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  type HomepageDraftComponentRecord,
   type HomepageDraftContent,
   type HomepageResponse,
   readHomepage,
   readHomepageVersion,
   saveHomepageDraft,
 } from '@/domains/homepage-management/api/homepage.api';
+import { HomepageEditorDevModePanel } from '@/domains/homepage-management/editor/puck/HomepageEditorDevModePanel';
 import { HomepagePuckEditor } from '@/domains/homepage-management/editor/puck/HomepagePuckEditor';
+import { type HomepagePuckSelectedItem } from '@/domains/homepage-management/editor/puck/HomepagePuckEditor';
 import {
   canSwitchFromAdvancedSourceToVisual,
   createLowCodeSnapshot,
@@ -66,7 +70,7 @@ import {
   StateView,
 } from '@/platform/ui';
 
-type AuthoringMode = 'source' | 'visual';
+type AuthoringMode = 'dev' | 'source' | 'visual';
 type SourceMode = 'draft' | 'empty' | 'published';
 type PreviewViewport = 'desktop' | 'tablet' | 'mobile';
 
@@ -92,6 +96,72 @@ interface NoticeState {
 interface LeaveGuardState {
   href: string;
   label: string;
+}
+
+function PageInfoSummaryGrid({
+  componentCount,
+  copy,
+  homepageUrl,
+  sourceHint,
+  sourceValue,
+  tenantName,
+}: Readonly<{
+  componentCount: number;
+  copy: HomepageEditorCopy;
+  homepageUrl: string;
+  sourceHint: string;
+  sourceValue: string;
+  tenantName: string;
+}>) {
+  return (
+    <div className="grid gap-4 xl:grid-cols-4">
+      <SummaryCard
+        label={copy.summary.tenantLabel}
+        value={tenantName}
+        hint={copy.summary.tenantHint}
+      />
+      <SummaryCard
+        label={copy.summary.sourceLabel}
+        value={sourceValue}
+        hint={sourceHint}
+      />
+      <SummaryCard
+        label={copy.summary.componentsLabel}
+        value={String(componentCount)}
+        hint={copy.summary.componentsHint}
+      />
+      <SummaryCard
+        label={copy.summary.homepageUrlLabel}
+        value={homepageUrl}
+        hint={copy.summary.homepageUrlHint}
+      />
+    </div>
+  );
+}
+
+function resolveDevModeSelectedComponent(
+  content: HomepageDraftContent,
+  selectedPuckItem: HomepagePuckSelectedItem | null,
+): HomepageDraftComponentRecord | null {
+  if (selectedPuckItem?.id) {
+    const matchedComponent = content.components.find((component) => component.id === selectedPuckItem.id);
+
+    if (matchedComponent) {
+      return matchedComponent;
+    }
+  }
+
+  if (selectedPuckItem) {
+    return {
+      id: selectedPuckItem.id || `puck-${selectedPuckItem.type}`,
+      order: 0,
+      props: selectedPuckItem.props,
+      type: selectedPuckItem.type,
+      visible: selectedPuckItem.props.visible !== false,
+    };
+  }
+
+  return content.components[0] ?? null;
 }
 
 function getErrorMessage(reason: unknown, fallback: string) {
@@ -238,40 +308,49 @@ function AuthoringModeSelector({
   mode: AuthoringMode;
   onModeChange: (mode: AuthoringMode) => void;
 }>) {
+  const buttons = (
+    <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
+      {([
+        { icon: Eye, mode: 'visual' as const, label: copy.modes.visual },
+        { icon: Info, mode: 'dev' as const, label: copy.modes.dev },
+        { icon: Code2, mode: 'source' as const, label: copy.modes.source },
+      ]).map(({ icon: Icon, label, mode: nextMode }) => {
+        const isActive = mode === nextMode;
+        const disabled = nextMode === 'visual' && isVisualDisabled;
+
+        return (
+          <button
+            key={nextMode}
+            type="button"
+            aria-pressed={isActive}
+            disabled={disabled}
+            onClick={() => onModeChange(nextMode)}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              isActive
+                ? 'bg-slate-950 text-white'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
   const content = (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-slate-900">{copy.modes.title}</p>
         <p className="text-xs leading-5 text-slate-500">
-          {mode === 'visual' ? copy.modes.visualDescription : copy.modes.sourceDescription}
+          {mode === 'visual'
+            ? copy.modes.visualDescription
+            : mode === 'dev'
+              ? copy.modes.devDescription
+              : copy.modes.sourceDescription}
         </p>
       </div>
-      <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
-        {(['visual', 'source'] as const).map((nextMode) => {
-          const isActive = mode === nextMode;
-          const label = nextMode === 'visual' ? copy.modes.visual : copy.modes.source;
-          const Icon = nextMode === 'visual' ? Eye : Code2;
-          const disabled = nextMode === 'visual' && isVisualDisabled;
-
-          return (
-            <button
-              key={nextMode}
-              type="button"
-              aria-pressed={isActive}
-              disabled={disabled}
-              onClick={() => onModeChange(nextMode)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                isActive
-                  ? 'bg-slate-950 text-white'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {buttons}
     </div>
   );
 
@@ -382,6 +461,7 @@ export function HomepageEditorScreen({
   const [lowCodeSnapshot, setLowCodeSnapshot] = useState<HomepageLowCodeSnapshot | null>(null);
   const [authoringMode, setAuthoringMode] = useState<AuthoringMode>('visual');
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop');
+  const [isPageInfoOpen, setIsPageInfoOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [livePreviewId, setLivePreviewId] = useState<string | null>(null);
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
@@ -390,6 +470,7 @@ export function HomepageEditorScreen({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedPuckItem, setSelectedPuckItem] = useState<HomepagePuckSelectedItem | null>(null);
   const [baselineSignature, setBaselineSignature] = useState(() =>
     buildEditorLoadedStateSignature(EMPTY_HOMEPAGE_CONTENT, normalizeTheme(DEFAULT_THEME)),
   );
@@ -418,8 +499,10 @@ export function HomepageEditorScreen({
         setSourceError(null);
         setLowCodeSnapshot(null);
         setAuthoringMode(isAdvancedSourceContent(nextState.content) ? 'source' : 'visual');
+        setIsPageInfoOpen(false);
         setIsPreviewOpen(false);
         setLivePreviewId(null);
+        setSelectedPuckItem(null);
         setSourceMode(nextState.sourceMode);
         setSourceVersion(nextState.sourceVersion);
         setBaselineSignature(buildEditorSignature({
@@ -454,6 +537,10 @@ export function HomepageEditorScreen({
       theme,
     }) !== baselineSignature;
   const previewHero = useMemo(() => buildPreviewHero(homepage, content), [content, homepage]);
+  const devModeSelectedComponent = useMemo(
+    () => resolveDevModeSelectedComponent(content, selectedPuckItem),
+    [content, selectedPuckItem],
+  );
 
   useEffect(() => {
     if (authoringMode !== 'source' && !sourceError) {
@@ -531,6 +618,13 @@ export function HomepageEditorScreen({
       }
 
       setAuthoringMode('visual');
+      setNotice(null);
+      return;
+    }
+
+    if (nextMode === 'dev') {
+      setAuthoringMode('dev');
+      setNotice(null);
       return;
     }
 
@@ -628,6 +722,7 @@ export function HomepageEditorScreen({
       setSourceError(null);
       setLowCodeSnapshot(null);
       setAuthoringMode(isAdvancedSourceContent(nextState.content) ? 'source' : 'visual');
+      setSelectedPuckItem(null);
       setSourceMode(nextState.sourceMode);
       setSourceVersion(nextState.sourceVersion);
       setBaselineSignature(buildEditorSignature({
@@ -688,9 +783,22 @@ export function HomepageEditorScreen({
         ? copy.summary.sourcePublishedHint
         : copy.summary.sourceEmptyHint;
   const exitActionLabel = standalone ? copy.actions.exitEditor : copy.actions.backToManagement;
+  const tenantName = session?.tenantName || copy.summary.tenantFallback;
+  const puckEditor = (
+    <HomepagePuckEditor
+      content={content}
+      copy={copy}
+      fitToParent={standalone}
+      isAdvancedEjected={isAdvancedEjected}
+      onContentChange={handleContentChange}
+      onSaveDraft={() => void handleSaveDraft()}
+      onSelectedItemChange={setSelectedPuckItem}
+      theme={theme}
+    />
+  );
 
   return (
-    <div className={standalone ? 'space-y-4' : 'space-y-6'}>
+    <div className={standalone ? 'flex min-h-[100dvh] flex-col gap-4 bg-slate-50 p-4' : 'space-y-6'}>
       {standalone ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
           <button
@@ -707,6 +815,34 @@ export function HomepageEditorScreen({
             {exitActionLabel}
           </button>
           <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1" role="group" aria-label={copy.modes.title}>
+              {([
+                { icon: Eye, mode: 'visual' as const, label: copy.modes.visual },
+                { icon: Info, mode: 'dev' as const, label: copy.modes.dev },
+                { icon: Code2, mode: 'source' as const, label: copy.modes.source },
+              ]).map(({ icon: Icon, label, mode: nextMode }) => {
+                const isActive = authoringMode === nextMode;
+                const disabled = nextMode === 'visual' && isAdvancedEjected;
+
+                return (
+                  <button
+                    key={nextMode}
+                    type="button"
+                    aria-pressed={isActive}
+                    disabled={disabled}
+                    onClick={() => handleAuthoringModeChange(nextMode)}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      isActive
+                        ? 'bg-slate-950 text-white'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <div
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
                 hasUnsavedChanges
@@ -716,6 +852,14 @@ export function HomepageEditorScreen({
             >
               {hasUnsavedChanges ? copy.actions.unsavedChanges : copy.actions.allChangesSaved}
             </div>
+            <button
+              type="button"
+              onClick={() => setIsPageInfoOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <Info className="h-4 w-4" />
+              {copy.actions.pageInfo}
+            </button>
             <button
               type="button"
               onClick={() => setIsPreviewOpen(true)}
@@ -814,110 +958,138 @@ export function HomepageEditorScreen({
             </div>
           </GlassSurface>
 
-          <div className="grid gap-4 xl:grid-cols-4">
-            <SummaryCard
-              label={copy.summary.tenantLabel}
-              value={session?.tenantName || copy.summary.tenantFallback}
-              hint={copy.summary.tenantHint}
-            />
-            <SummaryCard
-              label={copy.summary.sourceLabel}
-              value={sourceValue}
-              hint={sourceHint}
-            />
-            <SummaryCard
-              label={copy.summary.componentsLabel}
-              value={String(content.components.length)}
-              hint={copy.summary.componentsHint}
-            />
-            <SummaryCard
-              label={copy.summary.homepageUrlLabel}
-              value={homepage.homepageUrl}
-              hint={copy.summary.homepageUrlHint}
-            />
-          </div>
+          <PageInfoSummaryGrid
+            componentCount={content.components.length}
+            copy={copy}
+            homepageUrl={homepage.homepageUrl}
+            sourceHint={sourceHint}
+            sourceValue={sourceValue}
+            tenantName={tenantName}
+          />
         </>
       )}
 
-      {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
+      <div className={standalone ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-6'}>
+        {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
-      <AuthoringModeSelector
-        copy={copy}
-        compact={standalone}
-        isVisualDisabled={isAdvancedEjected}
-        mode={authoringMode}
-        onModeChange={handleAuthoringModeChange}
-      />
-
-      {authoringMode === 'visual' ? (
-        standalone ? (
-          <HomepagePuckEditor
-            content={content}
+        {standalone ? null : (
+          <AuthoringModeSelector
             copy={copy}
-            isAdvancedEjected={isAdvancedEjected}
-            onContentChange={handleContentChange}
-            onSaveDraft={() => void handleSaveDraft()}
-            theme={theme}
+            isVisualDisabled={isAdvancedEjected}
+            mode={authoringMode}
+            onModeChange={handleAuthoringModeChange}
           />
+        )}
+
+        {authoringMode === 'source' ? (
+          <GlassSurface className={standalone ? 'flex min-h-0 flex-1 flex-col p-6' : 'p-6'}>
+            <FormSection
+              title={copy.sections.sourceTitle}
+              description={copy.sections.sourceDescription}
+            >
+              <div className={standalone ? 'flex min-h-0 flex-1 flex-col space-y-4' : 'space-y-4'}>
+                {lowCodeSnapshot ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-sm font-medium text-amber-900">{copy.state.visualLockedAfterEject}</p>
+                    <button
+                      type="button"
+                      onClick={handleRestoreLowCodeSnapshot}
+                      className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {copy.actions.restoreLowCodeSnapshot}
+                    </button>
+                  </div>
+                ) : null}
+                <label htmlFor="homepage-source-editor" className="text-sm font-medium text-slate-800">
+                  {copy.sections.sourceJsonLabel}
+                </label>
+                <textarea
+                  id="homepage-source-editor"
+                  name="homepage-source"
+                  value={sourceJson}
+                  onChange={(event) => handleSourceJsonChange(event.target.value)}
+                  rows={24}
+                  className={`w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 ${
+                    standalone ? 'min-h-0 flex-1' : 'min-h-[560px]'
+                  }`}
+                  aria-invalid={sourceError ? 'true' : 'false'}
+                  spellCheck={false}
+                />
+                {sourceError ? (
+                  <p className="text-sm font-medium text-rose-700">{sourceError}</p>
+                ) : (
+                  <p className="text-xs leading-5 text-slate-500">{copy.sections.sourceJsonHint}</p>
+                )}
+              </div>
+            </FormSection>
+          </GlassSurface>
+        ) : authoringMode === 'dev' ? (
+          standalone ? (
+            <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <div className="flex min-h-0 flex-col">
+                {puckEditor}
+              </div>
+              <HomepageEditorDevModePanel
+                content={content}
+                copy={copy}
+                isAdvancedEjected={isAdvancedEjected}
+                selectedComponent={devModeSelectedComponent}
+                theme={theme}
+              />
+            </div>
+          ) : (
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.draftBlocksTitle}
+                description={copy.modes.devDescription}
+              >
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                  <div>{puckEditor}</div>
+                  <HomepageEditorDevModePanel
+                    content={content}
+                    copy={copy}
+                    isAdvancedEjected={isAdvancedEjected}
+                    selectedComponent={devModeSelectedComponent}
+                    theme={theme}
+                  />
+                </div>
+              </FormSection>
+            </GlassSurface>
+          )
+        ) : standalone ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {puckEditor}
+          </div>
         ) : (
           <GlassSurface className="p-6">
             <FormSection
               title={copy.sections.draftBlocksTitle}
               description={copy.sections.draftBlocksDescription}
             >
-              <HomepagePuckEditor
-                content={content}
-                copy={copy}
-                isAdvancedEjected={isAdvancedEjected}
-                onContentChange={handleContentChange}
-                onSaveDraft={() => void handleSaveDraft()}
-                theme={theme}
-              />
+              {puckEditor}
             </FormSection>
           </GlassSurface>
-        )
-      ) : (
-        <GlassSurface className="p-6">
-          <FormSection
-            title={copy.sections.sourceTitle}
-            description={copy.sections.sourceDescription}
-          >
-            <div className="space-y-4">
-              {lowCodeSnapshot ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-sm font-medium text-amber-900">{copy.state.visualLockedAfterEject}</p>
-                  <button
-                    type="button"
-                    onClick={handleRestoreLowCodeSnapshot}
-                    className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {copy.actions.restoreLowCodeSnapshot}
-                  </button>
-                </div>
-              ) : null}
-              <label htmlFor="homepage-source-editor" className="text-sm font-medium text-slate-800">
-                {copy.sections.sourceJsonLabel}
-              </label>
-              <textarea
-                id="homepage-source-editor"
-                name="homepage-source"
-                value={sourceJson}
-                onChange={(event) => handleSourceJsonChange(event.target.value)}
-                rows={24}
-                className="min-h-[560px] w-full rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-50 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                aria-invalid={sourceError ? 'true' : 'false'}
-                spellCheck={false}
-              />
-              {sourceError ? (
-                <p className="text-sm font-medium text-rose-700">{sourceError}</p>
-              ) : (
-                <p className="text-xs leading-5 text-slate-500">{copy.sections.sourceJsonHint}</p>
-              )}
-            </div>
-          </FormSection>
-        </GlassSurface>
-      )}
+        )}
+      </div>
+
+      <ActionDrawer
+        open={isPageInfoOpen}
+        onOpenChange={setIsPageInfoOpen}
+        title={copy.sections.pageInfoTitle}
+        description={copy.sections.pageInfoDescription}
+        closeButtonAriaLabel={copy.actions.pageInfo}
+        size="lg"
+      >
+        <PageInfoSummaryGrid
+          componentCount={content.components.length}
+          copy={copy}
+          homepageUrl={homepage.homepageUrl}
+          sourceHint={sourceHint}
+          sourceValue={sourceValue}
+          tenantName={tenantName}
+        />
+      </ActionDrawer>
 
       <ActionDrawer
         open={isPreviewOpen}

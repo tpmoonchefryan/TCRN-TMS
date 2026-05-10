@@ -1,8 +1,9 @@
 import { type Config, type Permissions } from '@puckeditor/core';
 import { type ThemeConfig } from '@tcrn/shared';
 
+import { DEFAULT_HOMEPAGE_LAYOUT_PROPS } from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
+import { HomepagePuckBlockPreview } from '@/domains/homepage-management/editor/puck/HomepagePuckBlockPreview';
 import { type HomepageEditorCopy } from '@/domains/homepage-management/screens/homepage-editor.copy';
-import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 
 import {
   HOMEPAGE_PUCK_UNSUPPORTED_TYPE,
@@ -31,37 +32,71 @@ function booleanOption(label: string, value: boolean) {
   };
 }
 
+function createLayoutFields(copy: HomepageEditorCopy) {
+  return {
+    layoutMode: {
+      type: 'select',
+      label: copy.structured.layoutMode,
+      options: ['default', 'stack', 'row', 'grid'].map((value) => textOption(copy, value)),
+    },
+    gapToken: {
+      type: 'select',
+      label: copy.structured.gapToken,
+      options: ['none', 'xs', 'sm', 'md', 'lg'].map((value) => textOption(copy, value)),
+    },
+    paddingToken: {
+      type: 'select',
+      label: copy.structured.paddingToken,
+      options: ['none', 'xs', 'sm', 'md', 'lg'].map((value) => textOption(copy, value)),
+    },
+    radiusToken: {
+      type: 'select',
+      label: copy.structured.radiusToken,
+      options: ['none', 'sm', 'md', 'lg', 'full'].map((value) => textOption(copy, value)),
+    },
+    widthPreset: {
+      type: 'select',
+      label: copy.structured.widthPreset,
+      options: ['full', 'wide', 'content', 'narrow', 'custom'].map((value) => textOption(copy, value)),
+    },
+    customWidthPx: {
+      type: 'number',
+      label: copy.structured.customWidth,
+      min: 240,
+      max: 1440,
+      step: 1,
+    },
+    align: {
+      type: 'select',
+      label: copy.structured.align,
+      options: ['left', 'center', 'right'].map((value) => textOption(copy, value)),
+    },
+    heightPreset: {
+      type: 'select',
+      label: copy.structured.heightPreset,
+      options: ['auto', 'small', 'medium', 'large', 'custom'].map((value) => textOption(copy, value)),
+    },
+    customHeightPx: {
+      type: 'number',
+      label: copy.structured.customHeight,
+      min: 80,
+      max: 1200,
+      step: 1,
+    },
+    paddingPreset: {
+      type: 'select',
+      label: copy.structured.paddingPreset,
+      options: ['none', 'small', 'medium', 'large'].map((value) => textOption(copy, value)),
+    },
+  } as const;
+}
+
 function renderPreviewBlock(
   type: keyof Omit<HomepagePuckComponents, typeof HOMEPAGE_PUCK_UNSUPPORTED_TYPE>,
   props: Record<string, unknown>,
   theme: ThemeConfig,
 ) {
-  return (
-    <div className="homepage-puck-block-preview">
-      <PublicHomepageRenderer
-        content={{
-          version: '1.0',
-          components: [
-            {
-              id: typeof props.id === 'string' ? props.id : `puck-${type}`,
-              type,
-              props,
-              order: 1,
-              visible: props.visible !== false,
-            },
-          ],
-        }}
-        theme={theme}
-        updatedAt={new Date(0).toISOString()}
-        hero={{
-          displayName: '',
-          avatarUrl: null,
-          description: null,
-          timezone: null,
-        }}
-      />
-    </div>
-  );
+  return <HomepagePuckBlockPreview props={props} theme={theme} type={type} />;
 }
 
 export function createHomepagePuckConfig(
@@ -72,6 +107,7 @@ export function createHomepagePuckConfig(
     booleanOption(copy.block.visible, true),
     booleanOption(copy.block.hidden, false),
   ];
+  const layoutFields = createLayoutFields(copy);
 
   return {
     categories: {
@@ -102,6 +138,7 @@ export function createHomepagePuckConfig(
       ProfileCard: {
         label: copy.catalog.entries.ProfileCard.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           avatarShape: 'circle',
@@ -113,6 +150,7 @@ export function createHomepagePuckConfig(
         },
         fields: {
           id: { type: 'text', visible: false },
+          ...layoutFields,
           displayName: { type: 'text', label: copy.structured.displayName },
           avatarUrl: { type: 'text', label: copy.structured.imageUrl },
           avatarShape: {
@@ -134,6 +172,7 @@ export function createHomepagePuckConfig(
       SocialLinks: {
         label: copy.catalog.entries.SocialLinks.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           iconSize: 'medium',
@@ -143,6 +182,7 @@ export function createHomepagePuckConfig(
         },
         fields: {
           id: { type: 'text', visible: false },
+          ...layoutFields,
           style: {
             type: 'select',
             label: copy.structured.style,
@@ -180,21 +220,18 @@ export function createHomepagePuckConfig(
       ImageGallery: {
         label: copy.catalog.entries.ImageGallery.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           columns: 3,
           gap: 'medium',
           images: [],
-          layoutMode: 'grid',
+          layoutMode: 'default',
           showCaptions: false,
         },
         fields: {
           id: { type: 'text', visible: false },
-          layoutMode: {
-            type: 'select',
-            label: copy.structured.layoutMode,
-            options: ['carousel', 'grid', 'masonry'].map((value) => textOption(copy, value)),
-          },
+          ...layoutFields,
           columns: { type: 'number', label: copy.structured.columns, min: 1, max: 4 },
           gap: {
             type: 'select',
@@ -228,6 +265,7 @@ export function createHomepagePuckConfig(
       RichText: {
         label: copy.catalog.entries.RichText.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           contentHtml: '',
@@ -235,6 +273,7 @@ export function createHomepagePuckConfig(
         },
         fields: {
           id: { type: 'text', visible: false },
+          ...layoutFields,
           textAlign: {
             type: 'select',
             label: copy.structured.textAlign,
@@ -248,6 +287,7 @@ export function createHomepagePuckConfig(
       LinkButton: {
         label: copy.catalog.entries.LinkButton.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           fullWidth: false,
@@ -257,6 +297,7 @@ export function createHomepagePuckConfig(
         },
         fields: {
           id: { type: 'text', visible: false },
+          ...layoutFields,
           label: { type: 'text', label: copy.structured.label },
           url: { type: 'text', label: copy.structured.url },
           style: {
@@ -276,6 +317,7 @@ export function createHomepagePuckConfig(
       MarshmallowWidget: {
         label: copy.catalog.entries.MarshmallowWidget.label,
         defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
           id: '',
           visible: true,
           displayMode: 'compact',
@@ -284,6 +326,7 @@ export function createHomepagePuckConfig(
         },
         fields: {
           id: { type: 'text', visible: false },
+          ...layoutFields,
           displayMode: {
             type: 'select',
             label: copy.structured.displayMode,

@@ -4,6 +4,11 @@ import {
   type HomepageDraftComponentRecord,
   type HomepageDraftContent,
 } from '@/domains/homepage-management/api/homepage.api';
+import {
+  DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+  type HomepageLayoutProps,
+  normalizeHomepageLayoutProps,
+} from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
 import { normalizeHomepageDraftContent } from '@/domains/homepage-management/editor/source/homepage-source-dsl';
 
 export const HOMEPAGE_PUCK_SUPPORTED_TYPES = [
@@ -31,7 +36,7 @@ export interface HomepagePuckUnsupportedProps extends HomepagePuckBaseProps {
 }
 
 export interface HomepagePuckComponents {
-  ProfileCard: HomepagePuckBaseProps & {
+  ProfileCard: HomepagePuckBaseProps & HomepageLayoutProps & {
     avatarShape: string;
     avatarUrl: string;
     bio: string;
@@ -39,30 +44,30 @@ export interface HomepagePuckComponents {
     displayName: string;
     nameFontSize: string;
   };
-  SocialLinks: HomepagePuckBaseProps & {
+  SocialLinks: HomepagePuckBaseProps & HomepageLayoutProps & {
     iconSize: string;
     layout: string;
     platforms: Array<{ label: string; platformCode: string; url: string }>;
     style: string;
   };
-  ImageGallery: HomepagePuckBaseProps & {
+  ImageGallery: HomepagePuckBaseProps & HomepageLayoutProps & {
     columns: number;
     gap: string;
     images: Array<{ alt: string; caption: string; url: string }>;
     layoutMode: string;
     showCaptions: boolean;
   };
-  RichText: HomepagePuckBaseProps & {
+  RichText: HomepagePuckBaseProps & HomepageLayoutProps & {
     contentHtml: string;
     textAlign: string;
   };
-  LinkButton: HomepagePuckBaseProps & {
+  LinkButton: HomepagePuckBaseProps & HomepageLayoutProps & {
     fullWidth: boolean;
     label: string;
     style: string;
     url: string;
   };
-  MarshmallowWidget: HomepagePuckBaseProps & {
+  MarshmallowWidget: HomepagePuckBaseProps & HomepageLayoutProps & {
     displayMode: string;
     showRecentCount: number;
     showSubmitButton: boolean;
@@ -87,6 +92,15 @@ function asNumber(value: unknown, fallback: number) {
 
 function asBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function mapLayoutPropsToPuckProps(props: Record<string, unknown>): HomepageLayoutProps {
+  const normalized = normalizeHomepageLayoutProps(props);
+
+  return {
+    ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+    ...normalized,
+  };
 }
 
 function asRecordArray(value: unknown) {
@@ -115,11 +129,13 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
     id: component.id,
     visible: component.visible !== false,
   };
+  const layoutProps = mapLayoutPropsToPuckProps(props);
 
   switch (component.type) {
     case 'ProfileCard':
       return {
         ...baseProps,
+        ...layoutProps,
         avatarShape: asString(props.avatarShape, 'circle'),
         avatarUrl: asString(props.avatarUrl),
         bio: asString(props.bio),
@@ -130,6 +146,7 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
     case 'SocialLinks':
       return {
         ...baseProps,
+        ...layoutProps,
         iconSize: asString(props.iconSize, 'medium'),
         layout: asString(props.layout, 'horizontal'),
         platforms: asRecordArray(props.platforms).map((platform) => ({
@@ -142,6 +159,7 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
     case 'ImageGallery':
       return {
         ...baseProps,
+        ...layoutProps,
         columns: asNumber(props.columns, 3),
         gap: asString(props.gap, 'medium'),
         images: asRecordArray(props.images).map((image) => ({
@@ -149,18 +167,19 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
           caption: asString(image.caption),
           url: asString(image.url),
         })),
-        layoutMode: asString(props.layoutMode, 'grid'),
         showCaptions: asBoolean(props.showCaptions),
       } satisfies HomepagePuckComponents['ImageGallery'];
     case 'RichText':
       return {
         ...baseProps,
+        ...layoutProps,
         contentHtml: asString(props.contentHtml),
         textAlign: asString(props.textAlign, 'left'),
       } satisfies HomepagePuckComponents['RichText'];
     case 'LinkButton':
       return {
         ...baseProps,
+        ...layoutProps,
         fullWidth: asBoolean(props.fullWidth),
         label: asString(props.label),
         style: asString(props.style, 'primary'),
@@ -169,6 +188,7 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
     case 'MarshmallowWidget':
       return {
         ...baseProps,
+        ...layoutProps,
         displayMode: asString(props.displayMode, 'compact'),
         showRecentCount: asNumber(props.showRecentCount, 3),
         showSubmitButton: asBoolean(props.showSubmitButton, true),
@@ -236,9 +256,12 @@ export function mapHomepageContentToPuckData(content: HomepageDraftContent): Hom
 }
 
 function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Record<string, unknown>) {
+  const layoutProps = mapLayoutPropsToPuckProps(props);
+
   switch (type) {
     case 'ProfileCard':
       return {
+        ...layoutProps,
         avatarShape: asString(props.avatarShape, 'circle'),
         avatarUrl: asString(props.avatarUrl),
         bio: asString(props.bio),
@@ -248,6 +271,7 @@ function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Rec
       };
     case 'SocialLinks':
       return {
+        ...layoutProps,
         iconSize: asString(props.iconSize, 'medium'),
         layout: asString(props.layout, 'horizontal'),
         platforms: asRecordArray(props.platforms).map((platform) => ({
@@ -259,6 +283,7 @@ function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Rec
       };
     case 'ImageGallery':
       return {
+        ...layoutProps,
         columns: asNumber(props.columns, 3),
         gap: asString(props.gap, 'medium'),
         images: asRecordArray(props.images).map((image) => ({
@@ -266,16 +291,17 @@ function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Rec
           caption: asString(image.caption),
           url: asString(image.url),
         })),
-        layoutMode: asString(props.layoutMode, 'grid'),
         showCaptions: asBoolean(props.showCaptions),
       };
     case 'RichText':
       return {
+        ...layoutProps,
         contentHtml: asString(props.contentHtml),
         textAlign: asString(props.textAlign, 'left'),
       };
     case 'LinkButton':
       return {
+        ...layoutProps,
         fullWidth: asBoolean(props.fullWidth),
         label: asString(props.label),
         style: asString(props.style, 'primary'),
@@ -283,6 +309,7 @@ function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Rec
       };
     case 'MarshmallowWidget':
       return {
+        ...layoutProps,
         displayMode: asString(props.displayMode, 'compact'),
         showRecentCount: asNumber(props.showRecentCount, 3),
         showSubmitButton: asBoolean(props.showSubmitButton, true),

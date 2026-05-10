@@ -28,6 +28,7 @@ export interface HomepageEditorCopy {
     allChangesSaved: string;
     backToManagement: string;
     exitEditor: string;
+    pageInfo: string;
     openLivePreview: string;
     previewDraft: string;
     restoreLowCodeSnapshot: string;
@@ -37,6 +38,8 @@ export interface HomepageEditorCopy {
     unsavedChanges: string;
   };
   modes: {
+    dev: string;
+    devDescription: string;
     source: string;
     sourceDescription: string;
     title: string;
@@ -70,6 +73,11 @@ export interface HomepageEditorCopy {
     draftBlocksTitle: string;
     emptyBlocksDescription: string;
     emptyBlocksTitle: string;
+    devModeLayoutTitle: string;
+    devModeSchemaTitle: string;
+    devModeSelectedBlockTitle: string;
+    devModeThemeTitle: string;
+    devModeWarningsTitle: string;
     previewDescription: string;
     previewTitle: string;
     previewViewportDesktop: string;
@@ -77,6 +85,8 @@ export interface HomepageEditorCopy {
     previewViewportLabel: string;
     previewViewportMobile: string;
     previewViewportTablet: string;
+    pageInfoDescription: string;
+    pageInfoTitle: string;
     editThemeJson: string;
     hideThemeJson: string;
     sourceDescription: string;
@@ -121,6 +131,7 @@ export interface HomepageEditorCopy {
     addImage: string;
     addSocialLink: string;
     advancedJson: string;
+    align: string;
     bio: string;
     bioMaxLines: string;
     bold: string;
@@ -128,6 +139,8 @@ export interface HomepageEditorCopy {
     caption: string;
     columns: string;
     content: string;
+    customHeight: string;
+    customWidth: string;
     displayMode: string;
     displayName: string;
     fullWidth: string;
@@ -140,10 +153,14 @@ export interface HomepageEditorCopy {
     layout: string;
     layoutMode: string;
     link: string;
+    heightPreset: string;
     nameFontSize: string;
     numberedList: string;
     originalType: string;
     platformCode: string;
+    paddingPreset: string;
+    paddingToken: string;
+    radiusToken: string;
     removeImage: (index: number) => string;
     removeSocialLink: (index: number) => string;
     shape: string;
@@ -151,6 +168,8 @@ export interface HomepageEditorCopy {
     showRecentCount: string;
     showSubmitButton: string;
     style: string;
+    widthPreset: string;
+    gapToken: string;
     textAlign: string;
     unsupportedAdvancedOnly: string;
     unsupportedCategory: string;
@@ -193,6 +212,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       allChangesSaved: 'All changes saved',
       backToManagement: 'Back to homepage management',
       exitEditor: 'Exit editor',
+      pageInfo: 'Page info',
       openLivePreview: 'Open live preview',
       previewDraft: 'Preview',
       restoreLowCodeSnapshot: 'Restore low-code snapshot',
@@ -202,6 +222,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       unsavedChanges: 'Unsaved changes',
     },
     modes: {
+      dev: 'Dev Mode',
+      devDescription: 'Inspect the current draft, layout tokens, and schema JSON without ejecting Visual ownership.',
       source: 'Advanced source',
       sourceDescription: 'Edit the safe homepage source document directly.',
       title: 'Authoring mode',
@@ -235,6 +257,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       draftBlocksTitle: 'Draft blocks',
       emptyBlocksDescription: 'Use Add block to open the catalog and start composing this homepage.',
       emptyBlocksTitle: 'No homepage blocks yet',
+      devModeLayoutTitle: 'Layout tokens',
+      devModeSchemaTitle: 'Schema JSON',
+      devModeSelectedBlockTitle: 'Selected block',
+      devModeThemeTitle: 'Theme tokens',
+      devModeWarningsTitle: 'Validation warnings',
       previewDescription: 'Review the current draft as visitors would see it after publication.',
       previewTitle: 'Draft preview',
       previewViewportDesktop: 'Desktop',
@@ -242,6 +269,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportLabel: 'Preview viewport',
       previewViewportMobile: 'Mobile',
       previewViewportTablet: 'Tablet',
+      pageInfoDescription: 'Review tenant, source, homepage URL, and block count without taking space from the editor.',
+      pageInfoTitle: 'Page info',
       editThemeJson: 'Edit theme JSON',
       hideThemeJson: 'Hide theme JSON',
       sourceDescription: 'Edit the full draft source document. The preview updates after the document parses and matches the safe content/theme contract.',
@@ -345,6 +374,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addImage: 'Add image',
       addSocialLink: 'Add social link',
       advancedJson: 'Advanced JSON',
+      align: 'Alignment',
       bio: 'Bio',
       bioMaxLines: 'Bio lines',
       bold: 'Bold',
@@ -352,10 +382,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: 'Caption',
       columns: 'Columns',
       content: 'Content',
+      customHeight: 'Custom height',
+      customWidth: 'Custom width',
       displayMode: 'Display mode',
       displayName: 'Display name',
       fullWidth: 'Full width',
       gap: 'Gap',
+      gapToken: 'Gap token',
       hideAdvancedJson: 'Hide Advanced JSON',
       imageAlt: 'Image alt text',
       imageUrl: 'Image URL',
@@ -364,10 +397,14 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       layout: 'Layout',
       layoutMode: 'Layout mode',
       link: 'Link',
+      heightPreset: 'Height preset',
       nameFontSize: 'Name size',
       numberedList: 'Numbered list',
       originalType: 'Original type',
       platformCode: 'Platform code',
+      paddingPreset: 'Padding preset',
+      paddingToken: 'Padding token',
+      radiusToken: 'Radius token',
       removeImage: (index) => `Remove image ${index}`,
       removeSocialLink: (index) => `Remove social link ${index}`,
       shape: 'Shape',
@@ -375,11 +412,16 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       showRecentCount: 'Recent count',
       showSubmitButton: 'Show submit button',
       style: 'Style',
+      widthPreset: 'Width preset',
       textAlign: 'Text align',
       unsupportedAdvancedOnly: 'This block type stays in Advanced JSON for now.',
       unsupportedCategory: 'Unsupported',
       url: 'URL',
       options: {
+        auto: 'Auto',
+        content: 'Content',
+        custom: 'Custom',
+        default: 'Default',
         button: 'Button',
         carousel: 'Carousel',
         center: 'Center',
@@ -392,17 +434,26 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: 'Icon',
         large: 'Large',
         left: 'Left',
+        lg: 'Large',
         masonry: 'Masonry',
         medium: 'Medium',
+        md: 'Medium',
+        narrow: 'Narrow',
         outline: 'Outline',
+        none: 'None',
         pill: 'Pill',
         primary: 'Primary',
         right: 'Right',
         rounded: 'Rounded',
+        row: 'Row',
+        sm: 'Small',
         secondary: 'Secondary',
         small: 'Small',
         square: 'Square',
+        stack: 'Stack',
         vertical: 'Vertical',
+        wide: 'Wide',
+        xs: 'Extra small',
       },
     },
     dialogs: {
@@ -439,6 +490,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       allChangesSaved: '已全部保存',
       backToManagement: '返回主页管理',
       exitEditor: '退出编辑器',
+      pageInfo: '页面信息',
       openLivePreview: '打开实时预览',
       previewDraft: '预览',
       restoreLowCodeSnapshot: '恢复低代码快照',
@@ -448,6 +500,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       unsavedChanges: '有未保存更改',
     },
     modes: {
+      dev: '开发模式',
+      devDescription: '在不退出可视化所有权的情况下检查当前草稿、布局 token 和 schema JSON。',
       source: '进阶源码',
       sourceDescription: '直接编辑安全的主页源码文档。',
       title: '编辑模式',
@@ -481,6 +535,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       draftBlocksTitle: '草稿区块',
       emptyBlocksDescription: '点击添加区块打开组件目录，再开始编辑主页内容。',
       emptyBlocksTitle: '还没有主页区块',
+      devModeLayoutTitle: '布局 token',
+      devModeSchemaTitle: 'Schema JSON',
+      devModeSelectedBlockTitle: '当前区块',
+      devModeThemeTitle: '主题 token',
+      devModeWarningsTitle: '校验提示',
       previewDescription: '按发布后用户看到的方式预览当前草稿。',
       previewTitle: '草稿预览',
       previewViewportDesktop: '桌面',
@@ -488,6 +547,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportLabel: '预览视口',
       previewViewportMobile: '移动端',
       previewViewportTablet: '平板',
+      pageInfoDescription: '在不占用编辑器空间的情况下查看租户、编辑来源、主页链接和区块数。',
+      pageInfoTitle: '页面信息',
       editThemeJson: '编辑主题 JSON',
       hideThemeJson: '收起主题 JSON',
       sourceDescription: '编辑完整草稿源码文档。文档解析成功并符合安全 content/theme 合同后，预览会同步更新。',
@@ -591,6 +652,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addImage: '添加图片',
       addSocialLink: '添加社交链接',
       advancedJson: '高级 JSON',
+      align: '对齐',
       bio: '简介',
       bioMaxLines: '简介行数',
       bold: '加粗',
@@ -598,10 +660,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: '说明',
       columns: '列数',
       content: '内容',
+      customHeight: '自定义高度',
+      customWidth: '自定义宽度',
       displayMode: '展示模式',
       displayName: '显示名称',
       fullWidth: '占满宽度',
       gap: '间距',
+      gapToken: '间距 token',
       hideAdvancedJson: '收起高级 JSON',
       imageAlt: '图片替代文本',
       imageUrl: '图片 URL',
@@ -610,10 +675,14 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       layout: '排列方式',
       layoutMode: '布局模式',
       link: '链接',
+      heightPreset: '高度预设',
       nameFontSize: '名称字号',
       numberedList: '编号列表',
       originalType: '原始类型',
       platformCode: '平台代码',
+      paddingPreset: '内边距预设',
+      paddingToken: '内边距 token',
+      radiusToken: '圆角 token',
       removeImage: (index) => `移除图片 ${index}`,
       removeSocialLink: (index) => `移除社交链接 ${index}`,
       shape: '形状',
@@ -621,11 +690,16 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       showRecentCount: '近期数量',
       showSubmitButton: '显示提交按钮',
       style: '样式',
+      widthPreset: '宽度预设',
       textAlign: '对齐',
       unsupportedAdvancedOnly: '该区块类型暂时保留在高级 JSON 中编辑。',
       unsupportedCategory: '暂不支持',
       url: 'URL',
       options: {
+        auto: '自动',
+        content: '内容',
+        custom: '自定义',
+        default: '默认',
         button: '按钮',
         carousel: '轮播',
         center: '居中',
@@ -638,17 +712,26 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: '图标',
         large: '大',
         left: '左对齐',
+        lg: '大',
         masonry: '瀑布流',
         medium: '中',
+        md: '中',
+        narrow: '窄',
         outline: '描边',
+        none: '无',
         pill: '胶囊',
         primary: '主要',
         right: '右对齐',
         rounded: '圆角',
+        row: '横向',
+        sm: '小',
         secondary: '次要',
         small: '小',
         square: '方形',
+        stack: '纵向',
         vertical: '纵向',
+        wide: '宽',
+        xs: '超小',
       },
     },
     dialogs: {
@@ -685,6 +768,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       allChangesSaved: 'すべて保存済み',
       backToManagement: 'ホームページ管理へ戻る',
       exitEditor: 'エディタを閉じる',
+      pageInfo: 'ページ情報',
       openLivePreview: 'ライブプレビューを開く',
       previewDraft: 'プレビュー',
       restoreLowCodeSnapshot: 'ローコードスナップショットを復元',
@@ -694,6 +778,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       unsavedChanges: '未保存の変更あり',
     },
     modes: {
+      dev: 'Dev Mode',
+      devDescription: 'Visual の所有権を維持したまま、現在の下書き、レイアウトトークン、schema JSON を確認します。',
       source: '高度なソース',
       sourceDescription: '安全なホームページソース文書を直接編集します。',
       title: '編集モード',
@@ -727,6 +813,11 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       draftBlocksTitle: '下書きブロック',
       emptyBlocksDescription: 'ブロックを追加から一覧を開き、ホームページ編集を始めてください。',
       emptyBlocksTitle: 'ホームページブロックはまだありません',
+      devModeLayoutTitle: 'レイアウトトークン',
+      devModeSchemaTitle: 'Schema JSON',
+      devModeSelectedBlockTitle: '選択中のブロック',
+      devModeThemeTitle: 'テーマトークン',
+      devModeWarningsTitle: '検証メモ',
       previewDescription: '公開後に訪問者が見る形で現在の下書きを確認します。',
       previewTitle: '下書きプレビュー',
       previewViewportDesktop: 'デスクトップ',
@@ -734,6 +825,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       previewViewportLabel: 'プレビュービューポート',
       previewViewportMobile: 'モバイル',
       previewViewportTablet: 'タブレット',
+      pageInfoDescription: 'エディタの作業領域を圧迫せず、テナント、編集元、ホームページ URL、ブロック数を確認します。',
+      pageInfoTitle: 'ページ情報',
       editThemeJson: 'テーマ JSON を編集',
       hideThemeJson: 'テーマ JSON を閉じる',
       sourceDescription: '下書き全体のソース文書を編集します。文書が解析でき、安全な content/theme 契約に一致するとプレビューへ反映されます。',
@@ -837,6 +930,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addImage: '画像を追加',
       addSocialLink: 'SNS リンクを追加',
       advancedJson: '高度な JSON',
+      align: '配置',
       bio: '紹介文',
       bioMaxLines: '紹介文の行数',
       bold: '太字',
@@ -844,10 +938,13 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: 'キャプション',
       columns: '列数',
       content: '本文',
+      customHeight: 'カスタム高さ',
+      customWidth: 'カスタム幅',
       displayMode: '表示モード',
       displayName: '表示名',
       fullWidth: '全幅',
       gap: '間隔',
+      gapToken: '間隔トークン',
       hideAdvancedJson: '高度な JSON を閉じる',
       imageAlt: '画像の代替テキスト',
       imageUrl: '画像 URL',
@@ -856,10 +953,14 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       layout: '配置',
       layoutMode: 'レイアウト',
       link: 'リンク',
+      heightPreset: '高さプリセット',
       nameFontSize: '名前サイズ',
       numberedList: '番号付きリスト',
       originalType: '元のタイプ',
       platformCode: 'プラットフォームコード',
+      paddingPreset: '余白プリセット',
+      paddingToken: '余白トークン',
+      radiusToken: '角丸トークン',
       removeImage: (index) => `画像 ${index} を削除`,
       removeSocialLink: (index) => `SNS リンク ${index} を削除`,
       shape: '形状',
@@ -867,11 +968,16 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       showRecentCount: '最近の件数',
       showSubmitButton: '送信ボタンを表示',
       style: 'スタイル',
+      widthPreset: '幅プリセット',
       textAlign: 'テキスト揃え',
       unsupportedAdvancedOnly: 'このブロックタイプは現時点では高度な JSON で編集します。',
       unsupportedCategory: '未対応',
       url: 'URL',
       options: {
+        auto: '自動',
+        content: 'コンテンツ',
+        custom: 'カスタム',
+        default: 'デフォルト',
         button: 'ボタン',
         carousel: 'カルーセル',
         center: '中央',
@@ -884,17 +990,26 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: 'アイコン',
         large: '大',
         left: '左',
+        lg: '大',
         masonry: 'メイソンリー',
         medium: '中',
+        md: '中',
+        narrow: '狭め',
         outline: 'アウトライン',
+        none: 'なし',
         pill: 'ピル',
         primary: 'プライマリ',
         right: '右',
         rounded: '角丸',
+        row: '横方向',
+        sm: '小',
         secondary: 'セカンダリ',
         small: '小',
         square: '四角',
+        stack: '縦方向',
         vertical: '縦並び',
+        wide: '広め',
+        xs: '極小',
       },
     },
     dialogs: {

@@ -88,7 +88,8 @@ describe('PublicHomepageRenderer', () => {
     );
 
     expect(screen.getByText('公开主页')).toBeInTheDocument();
-    expect(screen.getByText('已发布区块: 4')).toBeInTheDocument();
+    expect(screen.queryByText(/更新时间/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/已发布区块/)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '打开链接' })).toHaveAttribute('href', 'https://example.com');
     expect(screen.getByText('当前还没有已发布的公开日程。')).toBeInTheDocument();
     expect(screen.getByText('当前离线')).toBeInTheDocument();
@@ -101,7 +102,7 @@ describe('PublicHomepageRenderer', () => {
     );
   });
 
-  it('renders exact zh_HANT helper copy instead of falling back to zh_HANS', () => {
+  it('renders exact zh_HANT hero copy without reviving removed public stats', () => {
     Object.defineProperty(window.navigator, 'language', {
       configurable: true,
       value: 'zh-HK',
@@ -127,6 +128,7 @@ describe('PublicHomepageRenderer', () => {
     );
 
     expect(screen.getByText('公開主頁')).toBeInTheDocument();
-    expect(screen.getByText('已發佈區塊: 0')).toBeInTheDocument();
+    expect(screen.getByText('時區: Asia/Tokyo')).toBeInTheDocument();
+    expect(screen.queryByText(/已發佈區塊/)).not.toBeInTheDocument();
   });
 });

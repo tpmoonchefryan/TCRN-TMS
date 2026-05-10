@@ -3091,10 +3091,29 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Editing source', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Homepage URL', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Dev Mode' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Page info' })).toBeVisible();
     await expect(page.getByText('Draft preview')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open live preview' })).toBeVisible();
     await expectNoHorizontalOverflow(page, 'desktop homepage editor visual mode');
+
+    await page.getByRole('button', { name: 'Dev Mode' }).click();
+    await expect(page.getByRole('button', { name: 'Dev Mode' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('Selected block')).toBeVisible();
+    await expect(page.getByText('Layout tokens')).toBeVisible();
+    await expect(page.getByText('Schema JSON')).toBeVisible();
+    await expect(page.getByText('ProfileCard', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Visual' })).not.toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Restore low-code snapshot' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, 'desktop homepage editor dev mode');
+    await expect(page).toHaveScreenshot('private-homepage-editor-desktop-dev-mode.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+
+    await page.getByRole('button', { name: 'Visual' }).click();
+    await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
 
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const previewDrawer = page.getByRole('dialog', { name: 'Homepage preview' });

@@ -299,6 +299,25 @@ describe('HomepageEditorScreen', () => {
     expect(await screen.findByText('Homepage draft saved as v2.')).toBeInTheDocument();
   });
 
+  it('opens Dev Mode without ejecting the draft and shows inspector metadata', async () => {
+    mockHomepageRequests();
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dev Mode' }));
+
+    expect(screen.getByRole('button', { name: 'Dev Mode' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Visual' })).not.toBeDisabled();
+    expect(screen.getByTestId('homepage-puck-editor')).toBeInTheDocument();
+    expect(screen.getByText('Selected block')).toBeInTheDocument();
+    expect(screen.getByText('ProfileCard')).toBeInTheDocument();
+    expect(screen.getByText('Layout tokens')).toBeInTheDocument();
+    expect(screen.getByText('Schema JSON')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/"displayName": "Tokino Sora"/)).toBeInTheDocument();
+  });
+
   it('marks advanced source saves as one-way advanced content', async () => {
     let savedPayload: { content?: HomepageDraftContent } | null = null;
     mockHomepageRequests({
@@ -453,12 +472,20 @@ describe('HomepageEditorScreen', () => {
     renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" standalone />);
 
     expect(await screen.findByRole('button', { name: 'Exit editor' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dev Mode' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Page info' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Homepage editor' })).not.toBeInTheDocument();
     expect(screen.queryByText('Tenant')).not.toBeInTheDocument();
     expect(screen.queryByText('Source')).not.toBeInTheDocument();
     expect(screen.queryByText('Blocks')).not.toBeInTheDocument();
     expect(screen.queryByText('Homepage URL')).not.toBeInTheDocument();
     expect(screen.getByTestId('homepage-puck-editor')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Page info' }));
+
+    expect(screen.getByRole('heading', { name: 'Page info' })).toBeInTheDocument();
+    expect(screen.getByText('Tenant')).toBeInTheDocument();
+    expect(screen.getByText('Homepage URL')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
 
