@@ -131,4 +131,52 @@ describe('PublicHomepageRenderer', () => {
     expect(screen.getByText('時區: Asia/Tokyo')).toBeInTheDocument();
     expect(screen.queryByText(/已發佈區塊/)).not.toBeInTheDocument();
   });
+
+  it('applies bounded layout wrapper styles to supported components', () => {
+    const content: PublicHomepageContent = {
+      version: '1.0',
+      components: [
+        {
+          id: 'profile-layout-1',
+          type: 'ProfileCard',
+          visible: true,
+          order: 1,
+          props: {
+            displayName: 'Layout Proof',
+            bio: 'Bounded layout should flow through the public renderer.',
+            layoutMode: 'row',
+            gapToken: 'lg',
+            widthPreset: 'custom',
+            customWidthPx: 1300,
+            heightPreset: 'custom',
+            customHeightPx: 180,
+          },
+        },
+      ],
+    };
+
+    const { container } = renderWithLocale(
+      <PublicHomepageRenderer
+        content={content}
+        theme={DEFAULT_THEME}
+        updatedAt="2026-04-17T12:00:00.000Z"
+        hero={{
+          displayName: 'Layout Proof',
+          avatarUrl: null,
+          timezone: 'Asia/Shanghai',
+          description: 'Preview layout contract',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Bounded layout should flow through the public renderer.')).toBeInTheDocument();
+    const wrapper = container.querySelector('[style*="max-width: 1300px"][style*="min-height: 180px"]');
+    expect(wrapper).toHaveStyle({
+      maxWidth: '1300px',
+      minHeight: '180px',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '24px',
+    });
+  });
 });

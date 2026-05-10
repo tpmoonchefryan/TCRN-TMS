@@ -3096,7 +3096,29 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Draft preview')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open live preview' })).toBeVisible();
+    await expect(page.getByText('Public Homepage', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Updated', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Published blocks', { exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop homepage editor visual mode');
+
+    await page.getByText('Outline', { exact: true }).click();
+    await page.locator('[data-puck-layer-tree-id="profile-visual"] button').click();
+    const layoutModeField = page.getByLabel('Layout mode').nth(1);
+    const gapTokenField = page.getByLabel('Gap token').nth(1);
+    const widthPresetField = page.getByLabel('Width preset').nth(1);
+    const customWidthField = page.getByLabel('Custom width').nth(1);
+    const heightPresetField = page.getByLabel('Height preset').nth(1);
+    const customHeightField = page.getByLabel('Custom height').nth(1);
+
+    await expect(page.getByRole('heading', { name: 'Profile card' })).toBeVisible();
+    await expect(layoutModeField).toBeVisible();
+
+    await layoutModeField.selectOption({ label: 'Row' });
+    await gapTokenField.selectOption({ label: 'Large' });
+    await widthPresetField.selectOption({ label: 'Custom' });
+    await customWidthField.fill('1300');
+    await heightPresetField.selectOption({ label: 'Custom' });
+    await customHeightField.fill('180');
 
     await page.getByRole('button', { name: 'Dev Mode' }).click();
     await expect(page.getByRole('button', { name: 'Dev Mode' })).toHaveAttribute('aria-pressed', 'true');
@@ -3104,6 +3126,13 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText('Layout tokens')).toBeVisible();
     await expect(page.getByText('Schema JSON')).toBeVisible();
     await expect(page.getByText('ProfileCard', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/"layoutMode": "row"/).first()).toBeVisible();
+    await expect(page.getByText(/"gapToken": "lg"/).first()).toBeVisible();
+    await expect(page.getByText(/"widthPreset": "custom"/).first()).toBeVisible();
+    await expect(page.getByText(/"customWidthPx": 1300/).first()).toBeVisible();
+    await expect(page.getByText(/"customHeightPx": 180/).first()).toBeVisible();
+    await expect(page.getByText(/"maxWidth": "1300px"/).first()).toBeVisible();
+    await expect(page.getByText(/"minHeight": "180px"/).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Visual' })).not.toBeDisabled();
     await expect(page.getByRole('button', { name: 'Restore low-code snapshot' })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop homepage editor dev mode');
@@ -3120,6 +3149,8 @@ test.describe('private shell browser visual QA', () => {
     await expect(previewDrawer).toBeVisible();
     await expect(previewDrawer.getByText('Preview viewport')).toBeVisible();
     await expect(previewDrawer.locator('h1').filter({ hasText: 'Visual Talent' })).toBeVisible();
+    await expect(previewDrawer.locator('[style*="max-width: 1300px"]').first()).toBeVisible();
+    await expect(previewDrawer.locator('[style*="min-height: 180px"]').first()).toBeVisible();
     await expectNoHorizontalOverflow(page, 'desktop homepage editor modal preview');
     await expect(page).toHaveScreenshot('private-homepage-editor-desktop-preview-drawer.png', {
       animations: 'disabled',

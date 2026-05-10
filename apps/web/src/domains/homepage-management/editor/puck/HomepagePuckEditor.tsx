@@ -45,25 +45,27 @@ function PuckHeaderBridge({
   onSelectedItemChange?: (item: HomepagePuckSelectedItem | null) => void;
 }>) {
   const { selectedItem } = usePuck();
+  const selectionId = typeof selectedItem?.props?.id === 'string' ? selectedItem.props.id : null;
+  const selectionKey = selectedItem ? `${String(selectedItem.type)}:${selectionId ?? '__none__'}` : '__none__';
+  const bridgedSelectedItem = useMemo(() => {
+    if (!selectedItem) {
+      return null;
+    }
+
+    return {
+      id: selectionId,
+      props: asRecord(selectedItem.props),
+      type: String(selectedItem.type),
+    } satisfies HomepagePuckSelectedItem;
+  }, [selectionId, selectionKey]);
 
   useEffect(() => {
     if (!onSelectedItemChange) {
       return;
     }
 
-    if (!selectedItem) {
-      onSelectedItemChange(null);
-      return;
-    }
-
-    const props = asRecord(selectedItem.props);
-
-    onSelectedItemChange({
-      id: typeof props.id === 'string' ? props.id : null,
-      props,
-      type: String(selectedItem.type),
-    });
-  }, [onSelectedItemChange, selectedItem]);
+    onSelectedItemChange(bridgedSelectedItem);
+  }, [bridgedSelectedItem, onSelectedItemChange]);
 
   return null;
 }

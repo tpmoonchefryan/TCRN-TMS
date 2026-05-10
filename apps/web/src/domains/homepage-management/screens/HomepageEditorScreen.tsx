@@ -176,6 +176,13 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+function isSameSelectedPuckItem(
+  previous: HomepagePuckSelectedItem | null,
+  next: HomepagePuckSelectedItem | null,
+) {
+  return JSON.stringify(previous) === JSON.stringify(next);
+}
+
 function asString(value: unknown, fallback = '') {
   return typeof value === 'string' ? value : fallback;
 }
@@ -542,6 +549,10 @@ export function HomepageEditorScreen({
     [content, selectedPuckItem],
   );
 
+  function handleSelectedPuckItemChange(nextItem: HomepagePuckSelectedItem | null) {
+    setSelectedPuckItem((previous) => (isSameSelectedPuckItem(previous, nextItem) ? previous : nextItem));
+  }
+
   useEffect(() => {
     if (authoringMode !== 'source' && !sourceError) {
       setSourceJson(buildSourceJson(content, theme));
@@ -792,7 +803,7 @@ export function HomepageEditorScreen({
       isAdvancedEjected={isAdvancedEjected}
       onContentChange={handleContentChange}
       onSaveDraft={() => void handleSaveDraft()}
-      onSelectedItemChange={setSelectedPuckItem}
+      onSelectedItemChange={handleSelectedPuckItemChange}
       theme={theme}
     />
   );
