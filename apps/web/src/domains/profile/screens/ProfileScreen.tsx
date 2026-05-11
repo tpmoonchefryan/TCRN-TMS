@@ -1079,7 +1079,7 @@ export function ProfileScreen({
       {isSecurityMode ? (
         <section id="security-controls" aria-labelledby="security-controls-heading" className="scroll-mt-24 space-y-6">
           <h2 id="security-controls-heading" className="sr-only">
-            Security controls
+            {copy.cards.securityTitle}
           </h2>
 
           <GlassSurface className="p-6">

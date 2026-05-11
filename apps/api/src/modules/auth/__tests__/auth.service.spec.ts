@@ -121,7 +121,16 @@ describe('AuthService', () => {
 
       expect(result.type).toBe('success');
       expect(result.accessToken).toBe('access_token');
+      expect(result.refreshToken).toBe('refresh_token');
+      expect(result.refreshTokenExpiresAt).toBeInstanceOf(Date);
       expect(result.user).toBeDefined();
+      expect(mockTokenService.generateRefreshToken).toHaveBeenCalledTimes(1);
+      expect(mockTokenService.generateRefreshToken).toHaveBeenCalledWith(
+        'user-123',
+        'tenant_test123',
+        undefined,
+        '127.0.0.1',
+      );
     });
 
     it('should throw UnauthorizedException for invalid tenant', async () => {

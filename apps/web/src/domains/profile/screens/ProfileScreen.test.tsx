@@ -198,7 +198,7 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
       cards: {
         identityTitle: 'Identity',
         identityDescription: 'Identity description',
-        securityTitle: 'Security controls',
+        securityTitle: 'Localized security controls',
         securityDescription: 'Security description',
         emailTitle: 'Email lifecycle',
         emailDescription: 'Email description',
@@ -363,6 +363,9 @@ describe('ProfileScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
     expect(document.getElementById('security-controls')).toBeInTheDocument();
+    const securityHeadings = screen.getAllByRole('heading', { name: 'Localized security controls' });
+    expect(securityHeadings).toHaveLength(2);
+    expect(securityHeadings.some((heading) => heading.classList.contains('sr-only'))).toBe(true);
     expect(screen.getByText('Password')).toBeInTheDocument();
     expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open password change' }));

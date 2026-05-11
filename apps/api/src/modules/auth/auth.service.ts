@@ -40,6 +40,8 @@ export interface LoginResult {
   accessToken?: string;
   tokenType?: string;
   expiresIn?: number;
+  refreshToken?: string;
+  refreshTokenExpiresAt?: Date;
   user?: UserInfo;
   sessionToken?: string;
   reason?: string;
@@ -285,7 +287,8 @@ export class AuthService {
     });
 
     // Generate refresh token
-    await this.tokenService.generateRefreshToken(
+    const { token: refreshToken, expiresAt: refreshTokenExpiresAt } =
+      await this.tokenService.generateRefreshToken(
       user.id,
       tenantSchema,
       userAgent,
@@ -312,6 +315,8 @@ export class AuthService {
       accessToken,
       tokenType: 'Bearer',
       expiresIn,
+      refreshToken,
+      refreshTokenExpiresAt,
       user: {
         id: user.id,
         username: user.username,

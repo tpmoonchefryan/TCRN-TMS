@@ -33,7 +33,7 @@ import { AuthRateLimiterGuard } from '../../common/guards/auth-rate-limiter.guar
 import { success } from '../../common/response.util';
 import { EmailService } from '../email/services/email.service';
 import { BUCKETS, MinioService } from '../minio/minio.service';
-import { AuthService } from './auth.service';
+import { AuthService, type LoginResult } from './auth.service';
 import {
     ChangePasswordDto,
     ForceResetPasswordDto,
@@ -110,6 +110,28 @@ export class AuthController {
     private readonly sessionService: SessionService,
     private readonly emailService: EmailService,
   ) {}
+
+  private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date) {
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: expiresAt,
+      path: '/api/v1/auth',
+    });
+  }
+
+  private applyRefreshTokenCookie(res: Response, result: LoginResult) {
+    if (result.type !== 'success') {
+      return;
+    }
+
+    if (!result.refreshToken || !result.refreshTokenExpiresAt) {
+      throw new Error('Successful auth response is missing refresh token data');
+    }
+
+    this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+  }
 
   /**
    * POST /api/v1/auth/login
@@ -223,23 +245,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     );
 
     if (result.type === 'success') {
-      // Set refresh token cookie
-      const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.tenant.schemaName,
-        userAgent,
-        ipAddress,
-      );
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: expiresAt,
-        path: '/api/v1/auth',
-      });
+      this.applyRefreshTokenCookie(res, result);
 
       return success({
         accessToken: result.accessToken,
@@ -293,23 +299,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     );
 
     if (result.type === 'success') {
-      // Set refresh token cookie
-      const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.tenant.schemaName,
-        userAgent,
-        ipAddress,
-      );
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: expiresAt,
-        path: '/api/v1/auth',
-      });
+      this.applyRefreshTokenCookie(res, result);
     }
 
     return success({
@@ -400,23 +390,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     );
 
     if (result.type === 'success') {
-      // Set refresh token cookie
-      const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.tenant.schemaName,
-        userAgent,
-        ipAddress,
-      );
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: expiresAt,
-        path: '/api/v1/auth',
-      });
+      this.applyRefreshTokenCookie(res, result);
     }
 
     return success({
@@ -697,23 +671,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     );
 
     if (result.type === 'success') {
-      // Set refresh token cookie
-      const { token: refreshToken, expiresAt } = await this.tokenService.generateRefreshToken(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.user!.tenant.schemaName,
-        userAgent,
-        ipAddress,
-      );
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: expiresAt,
-        path: '/api/v1/auth',
-      });
+      this.applyRefreshTokenCookie(res, result);
     }
 
     return success({
@@ -961,6 +919,7 @@ export class UserController {
     private readonly passwordService: PasswordService,
     private readonly totpService: TotpService,
     private readonly sessionService: SessionService,
+    private readonly tokenService: TokenService,
     private readonly minioService: MinioService,
     private readonly emailService: EmailService,
   ) {}
@@ -1560,10 +1519,28 @@ export class UserController {
       },
     },
   })
-  async getSessions(@CurrentUser() user: AuthenticatedUser) {
+  async getSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    const refreshToken = req.cookies?.refresh_token;
+    let currentTokenId: string | undefined;
+
+    if (refreshToken) {
+      const currentToken = await this.tokenService.verifyRefreshToken(
+        refreshToken,
+        user.tenantSchema,
+      );
+
+      if (currentToken?.userId === user.id) {
+        currentTokenId = currentToken.tokenId;
+      }
+    }
+
     const sessions = await this.sessionService.getUserSessions(
       user.id,
       user.tenantSchema,
+      currentTokenId,
     );
 
     return success(sessions);
