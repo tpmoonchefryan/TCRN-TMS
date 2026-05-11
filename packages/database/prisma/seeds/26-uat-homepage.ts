@@ -2,6 +2,7 @@
 // UAT Homepage Configuration - Creates homepage configs and versions for testing
 
 import { PrismaClient } from '@prisma/client';
+import { UAT_HOMEPAGE_FIXTURES } from '../../src/domains/homepage/uat-homepage-fixtures';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
 
@@ -53,6 +54,29 @@ const CUTE_THEME = {
     heading_weight: 'bold',
   },
 };
+
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+async function syncTalentLifecycleForHomepageSeed(
+  prisma: PrismaClient,
+  schema: string,
+  talentId: string,
+  isPublished: boolean,
+): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `UPDATE "${schema}".talent
+     SET lifecycle_status = $1,
+         published_at = CASE WHEN $2 THEN now() ELSE NULL END,
+         published_by = CASE WHEN $2 THEN $3::uuid ELSE NULL END,
+         updated_at = now(),
+         updated_by = $3::uuid
+     WHERE id = $4::uuid`,
+    isPublished ? 'published' : 'draft',
+    isPublished,
+    SYSTEM_USER_ID,
+    talentId,
+  );
+}
 
 // Sample homepage content configurations with correct component types and props
 const SAMPLE_HOMEPAGE_CONTENT = {
@@ -177,7 +201,7 @@ export async function seedUatHomepages(
   const corpSchema = uatTenants.corpSchemaName;
   
   const corpTalentConfigs = [
-    { code: 'TALENT_SAKURA', published: true, contentType: 'advanced' },
+    { code: 'TALENT_SAKURA', published: true, contentType: 'allComponents' },
     { code: 'TALENT_LUNA', published: true, contentType: 'basic' },
     { code: 'TALENT_HANA', published: false, contentType: 'basic' }, // Draft only
     { code: 'TALENT_MELODY', published: true, contentType: 'advanced' },
@@ -187,9 +211,21 @@ export async function seedUatHomepages(
     const talentId = uatOrg.talents[config.code];
     if (!talentId) continue;
 
-    const content = config.contentType === 'advanced' 
-      ? SAMPLE_HOMEPAGE_CONTENT.advanced 
-      : SAMPLE_HOMEPAGE_CONTENT.basic;
+    const fixture = config.contentType === 'allComponents'
+      ? UAT_HOMEPAGE_FIXTURES.allComponentsPublished
+      : config.contentType === 'advanced'
+        ? {
+            content: SAMPLE_HOMEPAGE_CONTENT.advanced,
+            seoDescription: `Welcome to the official page of ${config.code.replace('TALENT_', '')}!`,
+            seoTitle: `${config.code.replace('TALENT_', '')} - Official Page`,
+            theme: DEFAULT_THEME,
+          }
+        : {
+            content: SAMPLE_HOMEPAGE_CONTENT.basic,
+            seoDescription: `Welcome to the official page of ${config.code.replace('TALENT_', '')}!`,
+            seoTitle: `${config.code.replace('TALENT_', '')} - Official Page`,
+            theme: DEFAULT_THEME,
+          };
 
     // Check if homepage already exists
     const existingHomepage = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -208,8 +244,19 @@ export async function seedUatHomepages(
       );
       // Update homepage
       await prisma.$executeRawUnsafe(
-        `UPDATE "${corpSchema}".talent_homepage SET is_published = $1, draft_version_id = NULL, published_version_id = NULL WHERE id = $2::uuid`,
-        config.published, homepageId
+        `UPDATE "${corpSchema}".talent_homepage
+         SET is_published = $1,
+             seo_title = $2,
+             seo_description = $3,
+             theme = $4::jsonb,
+             draft_version_id = NULL,
+             published_version_id = NULL
+         WHERE id = $5::uuid`,
+        config.published,
+        fixture.seoTitle,
+        fixture.seoDescription,
+        JSON.stringify(fixture.theme),
+        homepageId
       );
     } else {
       // Create homepage
@@ -220,9 +267,9 @@ export async function seedUatHomepages(
          RETURNING id`,
         talentId,
         config.published,
-        `${config.code.replace('TALENT_', '')} - Official Page`,
-        `Welcome to the official page of ${config.code.replace('TALENT_', '')}!`,
-        JSON.stringify(DEFAULT_THEME)
+        fixture.seoTitle,
+        fixture.seoDescription,
+        JSON.stringify(fixture.theme)
       );
       homepageId = homepageResult[0].id;
     }
@@ -231,11 +278,12 @@ export async function seedUatHomepages(
     const draftVersionResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${corpSchema}".homepage_version 
        (id, homepage_id, version_number, status, content, theme, created_at, updated_at, created_by)
-       VALUES (gen_random_uuid(), $1::uuid, 1, 'draft', $2::jsonb, '{}'::jsonb, now(), now(), $3::uuid)
+       VALUES (gen_random_uuid(), $1::uuid, 1, 'draft', $2::jsonb, $3::jsonb, now(), now(), $4::uuid)
        RETURNING id`,
       homepageId,
-      JSON.stringify(content),
-      '00000000-0000-0000-0000-000000000001'
+      JSON.stringify(fixture.content),
+      JSON.stringify(fixture.theme),
+      SYSTEM_USER_ID,
     );
     const draftVersionId = draftVersionResult[0].id;
 
@@ -251,7 +299,7 @@ export async function seedUatHomepages(
         `UPDATE "${corpSchema}".homepage_version 
          SET status = 'published', published_at = now(), published_by = $1::uuid 
          WHERE id = $2::uuid`,
-        '00000000-0000-0000-0000-000000000001',
+        SYSTEM_USER_ID,
         draftVersionId
       );
 
@@ -266,14 +314,17 @@ export async function seedUatHomepages(
         await prisma.$executeRawUnsafe(
           `INSERT INTO "${corpSchema}".homepage_version 
            (id, homepage_id, version_number, status, content, theme, archived_at, created_at, updated_at, created_by)
-           VALUES (gen_random_uuid(), $1::uuid, $2, 'archived', $3::jsonb, '{}'::jsonb, now() - interval '${v} days', now() - interval '${v} days', now() - interval '${v} days', $4::uuid)`,
+           VALUES (gen_random_uuid(), $1::uuid, $2, 'archived', $3::jsonb, $4::jsonb, now() - interval '${v} days', now() - interval '${v} days', now() - interval '${v} days', $5::uuid)`,
           homepageId,
           v,
-          JSON.stringify({ ...content, version: v }),
-          '00000000-0000-0000-0000-000000000001'
+          JSON.stringify({ ...fixture.content, version: String(v) }),
+          JSON.stringify(fixture.theme),
+          SYSTEM_USER_ID,
         );
       }
     }
+
+    await syncTalentLifecycleForHomepageSeed(prisma, corpSchema, talentId, config.published);
   }
 
   console.log(`    ✓ Created 4 homepage configurations in UAT_CORP`);
@@ -284,7 +335,7 @@ export async function seedUatHomepages(
   const soloSchema = uatTenants.soloSchemaName;
   
   const soloTalentConfigs = [
-    { code: 'TALENT_SOLO_STAR', published: true, contentType: 'advanced' },
+    { code: 'TALENT_SOLO_STAR', published: true, contentType: 'allComponents' },
     { code: 'TALENT_INDIE_CREATOR', published: false, contentType: 'basic' }, // Draft only
   ];
 
@@ -293,9 +344,21 @@ export async function seedUatHomepages(
     if (!talentId) continue;
 
     // Use the same content structure for UAT_SOLO
-    const content = config.contentType === 'advanced' 
-      ? SAMPLE_HOMEPAGE_CONTENT.advanced
-      : SAMPLE_HOMEPAGE_CONTENT.basic;
+    const fixture = config.contentType === 'allComponents'
+      ? UAT_HOMEPAGE_FIXTURES.allComponentsPublished
+      : config.contentType === 'advanced'
+        ? {
+            content: SAMPLE_HOMEPAGE_CONTENT.advanced,
+            seoDescription: `欢迎来到 ${config.code.replace('TALENT_', '')} 的官方主页！`,
+            seoTitle: `${config.code.replace('TALENT_', '')} - 主页`,
+            theme: CUTE_THEME,
+          }
+        : {
+            content: SAMPLE_HOMEPAGE_CONTENT.basic,
+            seoDescription: `欢迎来到 ${config.code.replace('TALENT_', '')} 的官方主页！`,
+            seoTitle: `${config.code.replace('TALENT_', '')} - 主页`,
+            theme: CUTE_THEME,
+          };
 
     // Check if homepage already exists
     const existingHomepage = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -314,8 +377,19 @@ export async function seedUatHomepages(
       );
       // Update homepage
       await prisma.$executeRawUnsafe(
-        `UPDATE "${soloSchema}".talent_homepage SET is_published = $1, draft_version_id = NULL, published_version_id = NULL WHERE id = $2::uuid`,
-        config.published, homepageId
+        `UPDATE "${soloSchema}".talent_homepage
+         SET is_published = $1,
+             seo_title = $2,
+             seo_description = $3,
+             theme = $4::jsonb,
+             draft_version_id = NULL,
+             published_version_id = NULL
+         WHERE id = $5::uuid`,
+        config.published,
+        fixture.seoTitle,
+        fixture.seoDescription,
+        JSON.stringify(fixture.theme),
+        homepageId
       );
     } else {
       // Create homepage
@@ -326,9 +400,9 @@ export async function seedUatHomepages(
          RETURNING id`,
         talentId,
         config.published,
-        `${config.code.replace('TALENT_', '')} - 主页`,
-        `欢迎来到 ${config.code.replace('TALENT_', '')} 的官方主页！`,
-        JSON.stringify(CUTE_THEME)
+        fixture.seoTitle,
+        fixture.seoDescription,
+        JSON.stringify(fixture.theme)
       );
       homepageId = homepageResult[0].id;
     }
@@ -337,11 +411,12 @@ export async function seedUatHomepages(
     const draftVersionResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${soloSchema}".homepage_version 
        (id, homepage_id, version_number, status, content, theme, created_at, updated_at, created_by)
-       VALUES (gen_random_uuid(), $1::uuid, 1, 'draft', $2::jsonb, '{}'::jsonb, now(), now(), $3::uuid)
+       VALUES (gen_random_uuid(), $1::uuid, 1, 'draft', $2::jsonb, $3::jsonb, now(), now(), $4::uuid)
        RETURNING id`,
       homepageId,
-      JSON.stringify(content),
-      '00000000-0000-0000-0000-000000000001'
+      JSON.stringify(fixture.content),
+      JSON.stringify(fixture.theme),
+      SYSTEM_USER_ID,
     );
     const draftVersionId = draftVersionResult[0].id;
 
@@ -356,7 +431,7 @@ export async function seedUatHomepages(
         `UPDATE "${soloSchema}".homepage_version 
          SET status = 'published', published_at = now(), published_by = $1::uuid 
          WHERE id = $2::uuid`,
-        '00000000-0000-0000-0000-000000000001',
+        SYSTEM_USER_ID,
         draftVersionId
       );
 
@@ -365,6 +440,8 @@ export async function seedUatHomepages(
         draftVersionId, homepageId
       );
     }
+
+    await syncTalentLifecycleForHomepageSeed(prisma, soloSchema, talentId, config.published);
   }
 
   console.log(`    ✓ Created 2 homepage configurations in UAT_SOLO`);

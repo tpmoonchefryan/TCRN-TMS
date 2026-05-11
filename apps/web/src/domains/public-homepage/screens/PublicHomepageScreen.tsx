@@ -112,18 +112,17 @@ export function PublicHomepageScreen({
   }
 
   if (!data) {
+    const description = isUnavailable
+      ? copy.publicHomepage.unavailableDescription
+      : error || copy.publicHomepage.failedDescription;
+
     return (
       <main className="flex min-h-screen items-center justify-center px-6 py-16">
         <div className="w-full max-w-xl">
           <StateView
             status={isUnavailable ? 'unavailable' : 'error'}
             title={isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle}
-            description={
-              error ||
-              (isUnavailable
-                ? copy.publicHomepage.unavailableDescription
-                : copy.publicHomepage.failedDescription)
-            }
+            description={description}
           />
         </div>
       </main>

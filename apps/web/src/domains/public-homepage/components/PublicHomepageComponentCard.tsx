@@ -111,6 +111,47 @@ function resolveVideoEmbedUrl(value: string) {
   }
 }
 
+function applyVideoEmbedOptions(
+  value: string,
+  options: {
+    autoplay: boolean;
+    showControls: boolean;
+  },
+) {
+  if (!value.includes('youtube.com/embed')) {
+    return value;
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (options.autoplay) {
+      url.searchParams.set('autoplay', '1');
+      url.searchParams.set('mute', '1');
+    }
+
+    if (!options.showControls) {
+      url.searchParams.set('controls', '0');
+    }
+
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+function resolveVideoAspectRatioClass(value: string) {
+  if (value === '4:3') {
+    return 'aspect-[4/3]';
+  }
+
+  if (value === '1:1') {
+    return 'aspect-square';
+  }
+
+  return 'aspect-video';
+}
+
 function resolveMusicEmbedUrl(platform: string, embedValue: string) {
   if (!embedValue) {
     return null;
@@ -125,6 +166,18 @@ function resolveMusicEmbedUrl(platform: string, embedValue: string) {
   }
 
   return null;
+}
+
+function resolveDividerSpacing(value: string) {
+  if (value === 'small') {
+    return '1rem';
+  }
+
+  if (value === 'large') {
+    return '2.5rem';
+  }
+
+  return '1.5rem';
 }
 
 function getSocialPlatformLabel(platformCode: string) {
@@ -445,12 +498,15 @@ export function PublicHomepageComponentCard({
     }
     case 'VideoEmbed': {
       const videoUrl = asString(props.videoUrl);
+      const aspectRatio = asString(props.aspectRatio, '16:9');
+      const embedUrl = applyVideoEmbedOptions(resolveVideoEmbedUrl(videoUrl), {
+        autoplay: asBoolean(props.autoplay),
+        showControls: asBoolean(props.showControls, true),
+      });
 
       if (!videoUrl) {
         return null;
       }
-
-      const embedUrl = resolveVideoEmbedUrl(videoUrl);
 
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
@@ -468,7 +524,7 @@ export function PublicHomepageComponentCard({
                 <iframe
                   title={asFilledString(props.title, copy.embeddedVideo)}
                   src={embedUrl}
-                  className="aspect-video w-full border-0"
+                  className={`w-full border-0 ${resolveVideoAspectRatioClass(aspectRatio)}`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
@@ -554,6 +610,7 @@ export function PublicHomepageComponentCard({
     }
     case 'Schedule': {
       const title = asFilledString(props.title, copy.schedule);
+      const weekOf = asString(props.weekOf);
       const events = Array.isArray(props.events)
         ? props.events.filter(
             (item): item is Record<string, unknown> => !!item && typeof item === 'object',
@@ -569,6 +626,11 @@ export function PublicHomepageComponentCard({
             <CalendarRange className="h-4 w-4" />
             {title}
           </div>
+          {weekOf ? (
+            <p className="-mt-2 mb-4 text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+              {weekOf}
+            </p>
+          ) : null}
           <div className="space-y-3">
             {events.length === 0 ? (
               <p className="text-sm" style={textStyles.secondary}>
@@ -639,6 +701,8 @@ export function PublicHomepageComponentCard({
     }
     case 'LiveStatus': {
       const isLive = asBoolean(props.isLive);
+      const platform = asString(props.platform);
+      const channelName = asString(props.channelName);
       const title = asString(props.title);
       const viewers = asString(props.viewers);
       const streamUrl = asString(props.streamUrl);
@@ -653,6 +717,11 @@ export function PublicHomepageComponentCard({
             {copy.liveStatus}
           </div>
           <div className="space-y-3">
+            {platform || channelName ? (
+              <p className="text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+                {[channelName, platform].filter(Boolean).join(' · ')}
+              </p>
+            ) : null}
             <div
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white"
               style={{ backgroundColor: isLive ? '#dc2626' : '#475569' }}
@@ -690,6 +759,7 @@ export function PublicHomepageComponentCard({
     }
     case 'Divider': {
       const dividerStyle = asString(props.style, 'solid');
+      const spacing = asString(props.spacing, 'medium');
       const borderStyle =
         dividerStyle === 'dotted' ? 'dotted' : dividerStyle === 'dashed' ? 'dashed' : 'solid';
 
@@ -698,7 +768,10 @@ export function PublicHomepageComponentCard({
           <div
             aria-hidden="true"
             className="mx-4 border-t border-slate-300/80"
-            style={{ borderTopStyle: borderStyle }}
+            style={{
+              borderTopStyle: borderStyle,
+              marginBlock: resolveDividerSpacing(spacing),
+            }}
           />
         </PlainFrame>
       );
@@ -723,18 +796,28 @@ export function PublicHomepageComponentCard({
     case 'BilibiliDynamic': {
       const uid = asString(props.uid);
       const title = asFilledString(props.title, copy.bilibiliDynamic);
+      const cardStyle = asString(props.cardStyle, 'standard');
+      const showHeader = asBoolean(props.showHeader, true);
+      const maxItems = asNumber(props.maxItems, 5);
+      const filterType = asString(props.filterType, 'all');
+      const refreshInterval = asNumber(props.refreshInterval, 0);
 
       return (
-        <CardFrame theme={theme} layout={layout} className="p-6">
-          <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
-            style={textStyles.secondary}
-          >
-            <Activity className="h-4 w-4" />
-            {title}
-          </div>
+        <CardFrame theme={theme} layout={layout} className={cardStyle === 'compact' ? 'p-5' : 'p-6'}>
+          {showHeader ? (
+            <div
+              className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+              style={textStyles.secondary}
+            >
+              <Activity className="h-4 w-4" />
+              {title}
+            </div>
+          ) : null}
           <p className="text-sm leading-7" style={textStyles.secondary}>
             {copy.bilibiliDescription}
+          </p>
+          <p className="mt-3 text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+            {`Max ${maxItems} · ${filterType}${refreshInterval > 0 ? ` · ${refreshInterval}s refresh` : ''}`}
           </p>
           {uid ? (
             <a

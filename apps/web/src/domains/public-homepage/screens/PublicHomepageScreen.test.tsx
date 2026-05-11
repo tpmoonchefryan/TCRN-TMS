@@ -173,10 +173,10 @@ describe('PublicHomepageScreen', () => {
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
     expect(await screen.findByText('Homepage unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Homepage not found or not published')).toBeInTheDocument();
+    expect(screen.getByText('The homepage is not published, not reachable, or has been disabled.')).toBeInTheDocument();
   });
 
-  it('uses runtime locale copy for unavailable public homepage states', async () => {
+  it('uses runtime locale copy for unavailable public homepage states even when the API returns English copy', async () => {
     Object.defineProperty(window.navigator, 'language', {
       configurable: true,
       value: 'zh-CN',
@@ -188,7 +188,7 @@ describe('PublicHomepageScreen', () => {
           success: false,
           error: {
             code: 'RES_NOT_FOUND',
-            message: '',
+            message: 'Homepage not found or not published',
           },
         },
         404,
