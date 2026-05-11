@@ -203,11 +203,11 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ### 浏览器运行时边界
 
-截至 2026-04-16，本仓库已不再内置浏览器端运行时：
+当前仓库仍内置 repo-owned 的浏览器端运行时，落点为 `apps/web`：
 
-- **无 repo-owned UI**：`historical browser runtime` 已从 monorepo 移除
-- **外部浏览器应用**：登录、后台和公开页 UI 必须运行在仓库外
-- **URL 契约**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` 指向该外部浏览器运行时或 public origin
+- **repo-owned UI**：`apps/web` 是当前登录、后台与公开页的 canonical 浏览器运行时
+- **已退役旧运行时**：`historical browser runtime` 已移除，不再视为当前 browser app
+- **URL 契约**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` 应指向当前 `apps/web` 部署或等价 public origin
 
 ### 错误处理
 
@@ -378,7 +378,7 @@ pnpm dev
 
 ### 测试与验证边界
 
-- repo-owned 的 historical browser test suite / 浏览器测试链路已随 `historical browser runtime` 一起移除，根目录不再提供 `historical browser E2E validation`。
+- 根目录的浏览器验证入口仍是 `pnpm test:e2e`，其底层使用 `playwright.config.ts` 与 `retired-browser-tests/*` 作为当前 targeted deterministic browser proof suite。
 - 根目录的 `pnpm test:integration` 实际等价于 `pnpm --filter @tcrn/api test:integration`，使用 `vitest.integration.config.ts` 运行 API integration suite。
 - 根目录的 `pnpm test:isolation` 实际等价于 `pnpm --filter @tcrn/api test:isolation`，使用同一套 Vitest integration 配置运行 API isolation suite。
 - 对包含 schema 变更的发布，应把 `db:verify-schema-rollout` 与常规运行时健康检查一起执行，不要把浏览器 smoke check 当作 direct schema rollout verification 的替代品。

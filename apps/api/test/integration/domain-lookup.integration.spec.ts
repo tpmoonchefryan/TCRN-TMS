@@ -138,10 +138,10 @@ describe('Domain Lookup Integration Tests', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
-      path: publishedHomepagePath,
+      path: 'homepage',
       type: 'homepage',
-      homepagePath: publishedHomepagePath,
-      marshmallowPath: publishedMarshmallowPath,
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
     });
   });
 
@@ -152,9 +152,9 @@ describe('Domain Lookup Integration Tests', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
-      talentPath: publishedHomepagePath,
-      homepagePath: publishedHomepagePath,
-      marshmallowPath: publishedMarshmallowPath,
+      talentPath: 'homepage',
+      homepagePath: 'homepage',
+      marshmallowPath: 'marshmallow',
     });
   });
 

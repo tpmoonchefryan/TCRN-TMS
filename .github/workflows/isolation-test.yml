@@ -67,7 +67,6 @@ jobs:
         run: pnpm db:migrate:deploy
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/tcrn_test
-        continue-on-error: true
 
       - name: Build shared package
         run: pnpm --filter @tcrn/shared build
@@ -79,7 +78,6 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret-min-32-chars-long-for-isolation-tests
           NODE_ENV: test
-        continue-on-error: true
 
       - name: Upload test results
         if: always()

@@ -1398,7 +1398,6 @@ model HomepageVersion {
 model MarshmallowConfig {
   id                            String   @id @default(uuid()) @db.Uuid
   talentId                      String   @unique @map("talent_id") @db.Uuid
-  path                          String?  @unique @db.VarChar(128) // Custom URL path for marshmallow page
   isEnabled                     Boolean  @default(false) @map("is_enabled")
   title                         String?  @db.VarChar(128)
   welcomeText                   String?  @map("welcome_text") @db.Text

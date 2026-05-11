@@ -203,11 +203,11 @@ Tencent Cloud SESと統合：
 
 ### ブラウザランタイム境界
 
-2026-04-16 時点で、このリポジトリはブラウザランタイムを同梱していません：
+現在のリポジトリには `apps/web` の repo-owned ブラウザランタイムが含まれています：
 
-- **repo-owned UI なし**：`historical browser runtime` は monorepo から削除済み
-- **外部ブラウザアプリ**：ログイン、管理画面、公開ページ UI はリポジトリ外で動かす必要があります
-- **URL 契約**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` はその外部ブラウザランタイムまたは public origin を指します
+- **repo-owned UI**：`apps/web` がログイン、管理画面、公開ページの canonical ブラウザランタイムです
+- **旧ランタイムは退役済み**：`historical browser runtime` は削除済みで、現行 browser app ではありません
+- **URL 契約**：`FRONTEND_URL`、`APP_URL`、`CORS_ORIGIN` は現在の `apps/web` デプロイ、または同等の public origin を指す必要があります
 
 ### エラーハンドリング
 
@@ -378,7 +378,7 @@ pnpm dev
 
 ### テストと検証の境界
 
-- repo-owned の historical browser test suite / ブラウザーテスト経路は `historical browser runtime` と一緒に削除され、ルートに `historical browser E2E validation` はもうありません。
+- ルートのブラウザ検証エントリは引き続き `pnpm test:e2e` で、`playwright.config.ts` と `retired-browser-tests/*` を現在の targeted deterministic browser proof suite として使います。
 - ルートの `pnpm test:integration` は実際には `pnpm --filter @tcrn/api test:integration` のエイリアスで、`vitest.integration.config.ts` を使って API integration suite を実行します。
 - ルートの `pnpm test:isolation` は実際には `pnpm --filter @tcrn/api test:isolation` のエイリアスで、同じ Vitest integration 設定で API isolation suite を実行します。
 - schema 変更を含むリリースでは、`db:verify-schema-rollout` を通常のランタイム health check と組み合わせて実行してください。ブラウザ smoke check を direct schema rollout verification の代替にしないでください。

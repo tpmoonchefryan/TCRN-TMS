@@ -70,9 +70,14 @@ export async function bootstrap(): Promise<void> {
   app.use(cookieParser());
 
   // CORS configuration
-  const corsOrigins = configService.get('CORS_ORIGIN', 'http://localhost:3000').split(',').map(o => o.trim());
-  // Ensure localhost:4000 is allowed for dev
-  if (!corsOrigins.includes('http://localhost:4000')) {
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  const corsOrigins = configService
+    .get('CORS_ORIGIN', 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (!isProduction && !corsOrigins.includes('http://localhost:4000')) {
     corsOrigins.push('http://localhost:4000');
   }
 
@@ -113,7 +118,6 @@ export async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Swagger documentation
-  const isProduction = configService.get('NODE_ENV') === 'production';
   const swaggerUser = configService.get('SWAGGER_USER');
   const swaggerPassword = configService.get('SWAGGER_PASSWORD');
 
@@ -121,6 +125,17 @@ export async function bootstrap(): Promise<void> {
   const enableSwagger = !isProduction || (swaggerUser && swaggerPassword);
 
   if (enableSwagger) {
+    if (isProduction && swaggerUser && swaggerPassword) {
+      const basicAuth = (await import('express-basic-auth')).default;
+      const authMiddleware = basicAuth({
+        users: { [swaggerUser]: swaggerPassword },
+        challenge: true,
+        realm: 'TCRN TMS API Documentation',
+      });
+      app.use('/api/docs', authMiddleware);
+      logger.log('Swagger documentation protected with HTTP Basic Auth');
+    }
+
     const {
       buildSwaggerConfig,
       SWAGGER_OPTIONS,
@@ -195,26 +210,13 @@ export async function bootstrap(): Promise<void> {
     });
     SwaggerModule.setup('api/docs/public', app, publicDoc, SWAGGER_OPTIONS);
 
-    // In production, protect Swagger with basic auth
-    if (isProduction && swaggerUser && swaggerPassword) {
-      const basicAuth = (await import('express-basic-auth')).default;
-      const authMiddleware = basicAuth({
-        users: { [swaggerUser]: swaggerPassword },
-        challenge: true,
-        realm: 'TCRN TMS API Documentation',
-      });
-      // Protect all docs routes
-      app.use('/api/docs', authMiddleware);
-      logger.log('Swagger documentation protected with HTTP Basic Auth');
-    }
-
     // 4. Main Explorer UI
     // Navigate to /api/docs to see the topbar with all definitions
+    const oauth2RedirectPath = '/api/docs/oauth2-redirect.html';
     const explorerOptions = {
       ...SWAGGER_OPTIONS,
       explorer: true,
-      // Ensure oauth2RedirectUrl is at top level
-      oauth2RedirectUrl: 'http://localhost:4000/api/docs/oauth2-redirect.html',
+      oauth2RedirectUrl: oauth2RedirectPath,
       swaggerOptions: {
         ...SWAGGER_OPTIONS.swaggerOptions,
         urls: [
@@ -222,8 +224,7 @@ export async function bootstrap(): Promise<void> {
           { url: '/api/docs/config-json', name: 'System & Config API' },
           { url: '/api/docs/public-json', name: 'Public API' },
         ],
-        // Also set in swaggerOptions for swagger-ui
-        oauth2RedirectUrl: 'http://localhost:4000/api/docs/oauth2-redirect.html',
+        oauth2RedirectUrl: oauth2RedirectPath,
       },
     };
 

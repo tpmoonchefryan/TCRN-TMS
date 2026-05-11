@@ -203,11 +203,11 @@ Current runtime performance levers:
 
 ### Browser Runtime Boundary
 
-As of 2026-04-16, this repository no longer ships a browser runtime:
+This repository currently ships a repo-owned browser runtime in `apps/web`:
 
-- **No repo-owned UI**: `historical browser runtime` has been removed from this monorepo
-- **External Browser App**: any login/admin/public UI must live outside this repository
-- **URL Contract**: `FRONTEND_URL`, `APP_URL`, and `CORS_ORIGIN` point to that external browser runtime or public origin
+- **Repo-owned UI**: `apps/web` is the canonical browser runtime for login, admin, and public page surfaces
+- **Retired Legacy Runtime**: `historical browser runtime` remains removed and is not the active browser app
+- **URL Contract**: `FRONTEND_URL`, `APP_URL`, and `CORS_ORIGIN` should point to the active `apps/web` deployment or equivalent public origin
 
 ### Error Handling
 
@@ -378,7 +378,7 @@ There is no repo-owned browser UI in local development anymore. If you run an ex
 
 ### Testing And Verification Boundary
 
-- The repo-owned historical browser test suite/browser suite has been removed together with `historical browser runtime`; there is no root `historical browser E2E validation` entry anymore.
+- The root browser validation entry remains `pnpm test:e2e`, backed by `playwright.config.ts` and `retired-browser-tests/*` as the current targeted deterministic browser proof suite.
 - `pnpm test:integration` at the repo root is an alias for `pnpm --filter @tcrn/api test:integration` and runs the API integration suite with `vitest.integration.config.ts`.
 - `pnpm test:isolation` at the repo root is an alias for `pnpm --filter @tcrn/api test:isolation` and runs the API isolation suite with the same Vitest integration config.
 - For schema-changing releases, run `db:verify-schema-rollout` together with the normal runtime health check; do not treat browser smoke checks as a substitute for direct schema rollout verification.

@@ -166,13 +166,14 @@ export class TalentReadRepository {
             }>
           >(
             `SELECT
-              is_enabled as "isEnabled",
-              path,
-              custom_domain as "customDomain",
-              custom_domain_verified as "customDomainVerified",
-              custom_domain_verification_token as "customDomainVerificationToken"
-             FROM "${tenantSchema}".marshmallow_config
-             WHERE talent_id = $1::uuid`,
+              mc.is_enabled as "isEnabled",
+              t.marshmallow_path as "path",
+              mc.custom_domain as "customDomain",
+              mc.custom_domain_verified as "customDomainVerified",
+              mc.custom_domain_verification_token as "customDomainVerificationToken"
+             FROM "${tenantSchema}".marshmallow_config mc
+             LEFT JOIN "${tenantSchema}".talent t ON t.id = mc.talent_id
+             WHERE mc.talent_id = $1::uuid`,
             talentId,
           )
           .catch(() => []),
