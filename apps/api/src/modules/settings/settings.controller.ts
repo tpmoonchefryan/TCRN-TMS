@@ -12,7 +12,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTag
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { success } from '../../common/response.util';
 import { ScopeSettings, SettingsService } from './settings.service';
 
@@ -252,6 +252,7 @@ export class SettingsController {
    * Get tenant-level settings
    */
   @Get('organization/settings')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
   @ApiOperation({ summary: 'Get tenant settings' })
   @ApiResponse({
     status: 200,
@@ -280,6 +281,7 @@ export class SettingsController {
    * Update tenant-level settings
    */
   @Patch('organization/settings')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Update tenant settings' })
   @ApiResponse({
     status: 200,
@@ -313,6 +315,7 @@ export class SettingsController {
   }
 
   @Get('organization/settings/turnstile')
+  @RequirePermissions({ resource: 'config.platform_settings', action: 'read' })
   @ApiOperation({ summary: 'Get tenant Cloudflare Turnstile settings' })
   @ApiResponse({
     status: 200,
@@ -331,6 +334,7 @@ export class SettingsController {
   }
 
   @Patch('organization/settings/turnstile')
+  @RequirePermissions({ resource: 'config.platform_settings', action: 'update' })
   @ApiOperation({ summary: 'Update tenant Cloudflare Turnstile settings' })
   @ApiResponse({
     status: 200,
@@ -359,6 +363,7 @@ export class SettingsController {
    * Get subsidiary settings (with inheritance)
    */
   @Get('subsidiaries/:subsidiaryId/settings')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
   @ApiOperation({ summary: 'Get subsidiary settings' })
   @ApiParam({
     name: 'subsidiaryId',
@@ -398,6 +403,7 @@ export class SettingsController {
    * Update subsidiary settings
    */
   @Patch('subsidiaries/:subsidiaryId/settings')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Update subsidiary settings' })
   @ApiParam({
     name: 'subsidiaryId',
@@ -446,6 +452,7 @@ export class SettingsController {
    * Reset a subsidiary setting field to inherited value
    */
   @Patch('subsidiaries/:subsidiaryId/settings/reset')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Reset subsidiary setting to inherited value' })
   @ApiParam({
     name: 'subsidiaryId',
@@ -493,6 +500,7 @@ export class SettingsController {
    * Get talent settings (with inheritance)
    */
   @Get('talents/:talentId/settings')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
   @ApiOperation({ summary: 'Get talent settings' })
   @ApiParam({
     name: 'talentId',
@@ -532,6 +540,7 @@ export class SettingsController {
    * Update talent settings
    */
   @Patch('talents/:talentId/settings')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Update talent settings' })
   @ApiParam({
     name: 'talentId',
@@ -580,6 +589,7 @@ export class SettingsController {
    * Reset a talent setting field to inherited value
    */
   @Patch('talents/:talentId/settings/reset')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Reset talent setting to inherited value' })
   @ApiParam({
     name: 'talentId',

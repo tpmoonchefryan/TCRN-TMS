@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { AuthenticatedUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards';
 import { success } from '../../../common/response.util';
 import { TenantSendingDomainService } from '../application/tenant-sending-domain.service';
@@ -180,6 +180,7 @@ export class TenantSendingDomainController {
   }
 
   @Get('tenants/:tenantId/sending-domains')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
   @ApiOperation({ summary: 'Get AC-managed sending domains for a tenant' })
   @ApiParam({ name: 'tenantId', description: 'Managed tenant id' })
   @ApiResponse({
@@ -201,6 +202,7 @@ export class TenantSendingDomainController {
   }
 
   @Patch('tenants/:tenantId/sending-domains')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
   @ApiOperation({ summary: 'Save AC-managed sending domains for a tenant' })
   @ApiParam({ name: 'tenantId', description: 'Managed tenant id' })
   @ApiResponse({
@@ -223,6 +225,7 @@ export class TenantSendingDomainController {
   }
 
   @Get('sender-domains')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
   @ApiOperation({ summary: 'Get tenant sender-domain options' })
   @ApiResponse({
     status: 200,
@@ -234,6 +237,7 @@ export class TenantSendingDomainController {
   }
 
   @Patch('sender-domains')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
   @ApiOperation({ summary: 'Save tenant sender-domain preferences' })
   @ApiResponse({
     status: 200,

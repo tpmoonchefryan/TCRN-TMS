@@ -4,6 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { SettingsController } from './settings.controller';
 
 interface ControllerRoute {
@@ -40,6 +41,11 @@ const getControllerRoutes = (controller: typeof SettingsController): ControllerR
     }));
   });
 };
+
+const getMethodPermissions = (methodName: string) =>
+  Reflect.getMetadata(PERMISSIONS_KEY, SettingsController.prototype[methodName]) as
+    | Array<{ resource: string; action: string }>
+    | undefined;
 
 describe('SettingsController private route contract', () => {
   it('keeps settings mutations on PATCH and explicit owner param names', () => {
@@ -99,5 +105,38 @@ describe('SettingsController private route contract', () => {
         },
       ]),
     );
+  });
+
+  it('declares explicit RBAC metadata for settings and sensitive tenant config routes', () => {
+    expect(getMethodPermissions('getTenantSettings')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateTenantSettings')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getTenantTurnstileSettings')).toEqual([
+      { resource: 'config.platform_settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateTenantTurnstileSettings')).toEqual([
+      { resource: 'config.platform_settings', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getSubsidiarySettings')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateSubsidiarySettings')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
+    expect(getMethodPermissions('resetSubsidiarySetting')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getTalentSettings')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateTalentSettings')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
+    expect(getMethodPermissions('resetTalentSetting')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
   });
 });

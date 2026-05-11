@@ -4,6 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { TenantSendingDomainController } from './controllers/tenant-sending-domain.controller';
 
 interface ControllerRoute {
@@ -42,6 +43,11 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
   });
 };
 
+const getMethodPermissions = (methodName: string) =>
+  Reflect.getMetadata(PERMISSIONS_KEY, TenantSendingDomainController.prototype[methodName]) as
+    | Array<{ resource: string; action: string }>
+    | undefined;
+
 describe('Tenant sending-domain route contract', () => {
   it('splits AC provisioning from ordinary tenant sender selection', () => {
     expect(Reflect.getMetadata(PATH_METADATA, TenantSendingDomainController)).toBe('email');
@@ -69,5 +75,20 @@ describe('Tenant sending-domain route contract', () => {
         },
       ]),
     );
+  });
+
+  it('keeps AC provisioning and ordinary tenant sender selection on explicit RBAC resources', () => {
+    expect(getMethodPermissions('getManagedTenantSendingDomains')).toEqual([
+      { resource: 'tenant.manage', action: 'read' },
+    ]);
+    expect(getMethodPermissions('saveManagedTenantSendingDomains')).toEqual([
+      { resource: 'tenant.manage', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getTenantSenderDomains')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('saveTenantSenderDomains')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
   });
 });

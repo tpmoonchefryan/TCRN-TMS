@@ -131,6 +131,7 @@ export const RBAC_RESOURCES = [
   resource('config.membership', 'config', { nameEn: 'Membership Config', nameZh: '会员配置', nameJa: 'メンバーシップ設定' }, ['read', 'write', 'admin'], 150),
   resource('config.platform_registry', 'config', { nameEn: 'Platform Registry', nameZh: '平台注册表', nameJa: 'プラットフォームレジストリ' }, ['read', 'write', 'admin'], 160),
   resource('config.platform_settings', 'config', { nameEn: 'Platform Settings', nameZh: '平台设置', nameJa: 'プラットフォーム設定' }, ['read', 'write', 'admin'], 170),
+  resource('settings', 'config', { nameEn: 'Settings', nameZh: '设置', nameJa: '設定' }, ['read', 'write', 'admin'], 175),
 
   resource('talent.homepage', 'external', { nameEn: 'Homepage', nameZh: '个人主页', nameJa: 'ホームページ' }, ['read', 'write', 'admin'], 180),
   resource('talent.marshmallow', 'external', { nameEn: 'Marshmallow', nameZh: '棉花糖', nameJa: 'マシュマロ' }, ['read', 'write', 'execute', 'admin'], 190),
@@ -215,6 +216,7 @@ const adminPermissions = [
     'config.membership',
     'config.platform_registry',
     'config.platform_settings',
+    'settings',
     'talent.homepage',
     'talent.marshmallow',
     'report.mfr',
@@ -286,6 +288,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
       permission('config.customer_status', ['read']),
       permission('config.membership', ['read']),
       permission('config.platform_settings', ['read']),
+      permission('settings', ['read']),
       permission('integration.consumer', ['read']),
       permission('log.change_log', ['read']),
     ],
@@ -300,6 +303,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
     permissions: [
       ...allActionsFor('talent.homepage', 'talent.marshmallow', 'security.external_blocklist'),
       permission('config.platform_settings', ['read']),
+      permission('settings', ['read']),
       permission('log.change_log', ['read']),
     ],
   },
