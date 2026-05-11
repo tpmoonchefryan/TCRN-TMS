@@ -7,7 +7,7 @@ import {
 import { ArrowLeft, Building2, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   createCompanyCustomer,
@@ -58,6 +58,14 @@ interface MembershipOptionsState {
 }
 
 type CustomerCreateLocaleText = Parameters<typeof pickLocaleText>[1];
+type ValidationField =
+  | 'nickname'
+  | 'companyLegalName'
+  | 'membershipPlatform'
+  | 'membershipClass'
+  | 'membershipType'
+  | 'membershipLevel'
+  | 'membershipValidFrom';
 
 const DEFAULT_DRAFT: CustomerDraft = {
   nickname: '',
@@ -82,6 +90,14 @@ function buildDefaultMembershipDraft(): MembershipDraft {
     note: '',
   };
 }
+
+const MEMBERSHIP_VALIDATION_FIELDS: readonly ValidationField[] = [
+  'membershipPlatform',
+  'membershipClass',
+  'membershipType',
+  'membershipLevel',
+  'membershipValidFrom',
+] as const;
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -200,7 +216,18 @@ export function CustomerCreateScreen({
     error: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<{
+    field: ValidationField;
+    message: string;
+  } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const nicknameInputRef = useRef<HTMLInputElement>(null);
+  const companyLegalNameInputRef = useRef<HTMLInputElement>(null);
+  const membershipPlatformRef = useRef<HTMLSelectElement>(null);
+  const membershipClassRef = useRef<HTMLSelectElement>(null);
+  const membershipTypeRef = useRef<HTMLSelectElement>(null);
+  const membershipLevelRef = useRef<HTMLSelectElement>(null);
+  const membershipValidFromRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -305,14 +332,45 @@ export function CustomerCreateScreen({
     [effectiveSelectedLocale, selectedMembershipType],
   );
 
+  const clearValidationError = (...fields: readonly ValidationField[]) => {
+    setValidationError((current) =>
+      current && fields.includes(current.field) ? null : current,
+    );
+  };
+
+  const setFieldValidationError = (
+    field: ValidationField,
+    message: string,
+    focusTarget?: HTMLElement | null,
+  ) => {
+    setValidationError({ field, message });
+    setErrorMessage(null);
+    focusTarget?.focus();
+  };
+
+  const isMembershipValidationError =
+    validationError && MEMBERSHIP_VALIDATION_FIELDS.includes(validationError.field);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nickname = draft.nickname.trim();
     const companyLegalName = draft.companyLegalName.trim();
+    const membershipRequirementMessage = pickText(
+      effectiveSelectedLocale,
+      {
+        en: 'Platform, membership class, type, level, and valid-from date are required when adding membership.',
+        zh_HANS: '添加会员时，平台、会员分类、会员类型、会员等级和生效日期为必填项。',
+        zh_HANT: '新增會員時，平台、會員分類、會員類型、會員等級與生效日期為必填項。',
+        ja: '会員を追加する場合、プラットフォーム、会員クラス、会員タイプ、会員レベル、有効開始日は必須です。',
+        ko: '멤버십을 추가하려면 플랫폼, 멤버십 분류, 유형, 등급, 시작일이 필요합니다.',
+        fr: 'La plateforme, la classe, le type, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
+      },
+    );
 
     if (!nickname) {
-      setErrorMessage(
+      setFieldValidationError(
+        'nickname',
         pickText(effectiveSelectedLocale, {
           en: 'Customer name is required.',
           zh_HANS: '客户名称不能为空。',
@@ -321,12 +379,14 @@ export function CustomerCreateScreen({
           ko: '고객 이름은 필수입니다.',
           fr: 'Le nom du client est obligatoire.',
         }),
+        nicknameInputRef.current,
       );
       return;
     }
 
     if (profileType === 'company' && !companyLegalName) {
-      setErrorMessage(
+      setFieldValidationError(
+        'companyLegalName',
         pickText(effectiveSelectedLocale, {
           en: 'Company legal name is required.',
           zh_HANS: '企业法定名称不能为空。',
@@ -335,36 +395,60 @@ export function CustomerCreateScreen({
           ko: '회사 법적 명칭은 필수입니다.',
           fr: 'La raison sociale est obligatoire.',
         }),
+        companyLegalNameInputRef.current,
       );
       return;
     }
 
     if (membershipDraft.enabled) {
-      if (
-        !membershipDraft.platformCode
-        || !membershipDraft.membershipClassCode
-        || !membershipDraft.membershipTypeCode
-        || !membershipDraft.membershipLevelCode
-        || !membershipDraft.validFrom
-      ) {
-        setErrorMessage(
-          pickText(
-            effectiveSelectedLocale,
-            {
-              en: 'Platform, membership class, type, level, and valid-from date are required when adding membership.',
-              zh_HANS: '添加会员时，平台、会员分类、会员类型、会员等级和生效日期为必填项。',
-              zh_HANT: '新增會員時，平台、會員分類、會員類型、會員等級與生效日期為必填項。',
-              ja: '会員を追加する場合、プラットフォーム、会員クラス、会員タイプ、会員レベル、有効開始日は必須です。',
-              ko: '멤버십을 추가하려면 플랫폼, 멤버십 분류, 유형, 등급, 시작일이 필요합니다.',
-              fr: 'La plateforme, la classe, le type, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
-            },
-          ),
+      if (!membershipDraft.platformCode) {
+        setFieldValidationError(
+          'membershipPlatform',
+          membershipRequirementMessage,
+          membershipPlatformRef.current,
+        );
+        return;
+      }
+
+      if (!membershipDraft.membershipClassCode) {
+        setFieldValidationError(
+          'membershipClass',
+          membershipRequirementMessage,
+          membershipClassRef.current,
+        );
+        return;
+      }
+
+      if (!membershipDraft.membershipTypeCode) {
+        setFieldValidationError(
+          'membershipType',
+          membershipRequirementMessage,
+          membershipTypeRef.current,
+        );
+        return;
+      }
+
+      if (!membershipDraft.membershipLevelCode) {
+        setFieldValidationError(
+          'membershipLevel',
+          membershipRequirementMessage,
+          membershipLevelRef.current,
+        );
+        return;
+      }
+
+      if (!membershipDraft.validFrom) {
+        setFieldValidationError(
+          'membershipValidFrom',
+          membershipRequirementMessage,
+          membershipValidFromRef.current,
         );
         return;
       }
     }
 
     setIsSubmitting(true);
+    setValidationError(null);
     setErrorMessage(null);
 
     try {
@@ -505,7 +589,7 @@ export function CustomerCreateScreen({
       </GlassSurface>
 
       <GlassSurface className="p-6">
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" noValidate onSubmit={handleSubmit}>
           <div className="space-y-3">
             <p className="text-sm font-semibold text-slate-900">
               {pickText(effectiveSelectedLocale, {
@@ -548,7 +632,12 @@ export function CustomerCreateScreen({
                   <button
                     key={option.key}
                     type="button"
-                    onClick={() => setProfileType(option.key)}
+                    onClick={() => {
+                      setProfileType(option.key);
+                      if (option.key === 'individual') {
+                        clearValidationError('companyLegalName');
+                      }
+                    }}
                     className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                       isActive
                         ? 'border-slate-950 bg-slate-950 text-white'
@@ -575,8 +664,12 @@ export function CustomerCreateScreen({
                 })}
               </span>
               <input
+                ref={nicknameInputRef}
                 value={draft.nickname}
-                onChange={(event) => setDraft((current) => ({ ...current, nickname: event.target.value }))}
+                onChange={(event) => {
+                  setDraft((current) => ({ ...current, nickname: event.target.value }));
+                  clearValidationError('nickname');
+                }}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 placeholder={pickText(effectiveSelectedLocale, {
                   en: 'Ari',
@@ -586,8 +679,15 @@ export function CustomerCreateScreen({
                   ko: '예: Ari',
                   fr: 'Ex. : Ari',
                 })}
+                aria-describedby={validationError?.field === 'nickname' ? 'customer-name-error' : undefined}
+                aria-invalid={validationError?.field === 'nickname' ? 'true' : 'false'}
                 required
               />
+              {validationError?.field === 'nickname' ? (
+                <p id="customer-name-error" className="text-sm font-medium text-rose-700">
+                  {validationError.message}
+                </p>
+              ) : null}
             </label>
 
             <label className="space-y-2">
@@ -634,10 +734,12 @@ export function CustomerCreateScreen({
                   })}
                 </span>
                 <input
+                  ref={companyLegalNameInputRef}
                   value={draft.companyLegalName}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, companyLegalName: event.target.value }))
-                  }
+                  onChange={(event) => {
+                    setDraft((current) => ({ ...current, companyLegalName: event.target.value }));
+                    clearValidationError('companyLegalName');
+                  }}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   placeholder={pickText(effectiveSelectedLocale, {
                     en: 'Acme Corporation',
@@ -647,8 +749,15 @@ export function CustomerCreateScreen({
                     ko: '예: Acme Corporation',
                     fr: 'Ex. : Acme Corporation',
                   })}
+                  aria-describedby={validationError?.field === 'companyLegalName' ? 'company-legal-name-error' : undefined}
+                  aria-invalid={validationError?.field === 'companyLegalName' ? 'true' : 'false'}
                   required
                 />
+                {validationError?.field === 'companyLegalName' ? (
+                  <p id="company-legal-name-error" className="text-sm font-medium text-rose-700">
+                    {validationError.message}
+                  </p>
+                ) : null}
               </label>
 
               <label className="space-y-2">
@@ -713,12 +822,13 @@ export function CustomerCreateScreen({
                 <input
                   type="checkbox"
                   checked={membershipDraft.enabled}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setMembershipDraft((current) => ({
                       ...current,
                       enabled: event.target.checked,
-                    }))
-                  }
+                    }));
+                    clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                  }}
                   className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <span>{pickText(effectiveSelectedLocale, {
@@ -734,6 +844,11 @@ export function CustomerCreateScreen({
 
             {membershipDraft.enabled ? (
               <div className="grid gap-4 lg:grid-cols-2">
+                {isMembershipValidationError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 lg:col-span-2">
+                    {validationError.message}
+                  </div>
+                ) : null}
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-900">
                     {pickText(effectiveSelectedLocale, {
@@ -746,15 +861,19 @@ export function CustomerCreateScreen({
                     })}
                   </span>
                   <select
+                    ref={membershipPlatformRef}
                     value={membershipDraft.platformCode}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setMembershipDraft((current) => ({
                         ...current,
                         platformCode: event.target.value,
-                      }))
-                    }
+                      }));
+                      clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                    }}
                     disabled={membershipOptions.loading || membershipOptions.platforms.length === 0}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-invalid={validationError?.field === 'membershipPlatform' ? 'true' : 'false'}
                   >
                     <option value="">
                       {membershipOptions.loading
@@ -795,17 +914,21 @@ export function CustomerCreateScreen({
                     })}
                   </span>
                   <select
+                    ref={membershipClassRef}
                     value={membershipDraft.membershipClassCode}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setMembershipDraft((current) => ({
                         ...current,
                         membershipClassCode: event.target.value,
                         membershipTypeCode: '',
                         membershipLevelCode: '',
-                      }))
-                    }
+                      }));
+                      clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                    }}
                     disabled={membershipOptions.loading || membershipClassOptions.length === 0}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-invalid={validationError?.field === 'membershipClass' ? 'true' : 'false'}
                   >
                     <option value="">
                       {membershipOptions.loading
@@ -846,20 +969,24 @@ export function CustomerCreateScreen({
                     })}
                   </span>
                   <select
+                    ref={membershipTypeRef}
                     value={membershipDraft.membershipTypeCode}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setMembershipDraft((current) => ({
                         ...current,
                         membershipTypeCode: event.target.value,
                         membershipLevelCode: '',
-                      }))
-                    }
+                      }));
+                      clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                    }}
                     disabled={
                       membershipOptions.loading
                       || !membershipDraft.membershipClassCode
                       || membershipTypeOptions.length === 0
                     }
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-invalid={validationError?.field === 'membershipType' ? 'true' : 'false'}
                   >
                     <option value="">
                       {membershipOptions.loading
@@ -909,19 +1036,23 @@ export function CustomerCreateScreen({
                     })}
                   </span>
                   <select
+                    ref={membershipLevelRef}
                     value={membershipDraft.membershipLevelCode}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setMembershipDraft((current) => ({
                         ...current,
                         membershipLevelCode: event.target.value,
-                      }))
-                    }
+                      }));
+                      clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                    }}
                     disabled={
                       membershipOptions.loading
                       || !membershipDraft.membershipTypeCode
                       || membershipLevelOptions.length === 0
                     }
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-invalid={validationError?.field === 'membershipLevel' ? 'true' : 'false'}
                   >
                     <option value="">
                       {membershipOptions.loading
@@ -971,15 +1102,19 @@ export function CustomerCreateScreen({
                     })}
                   </span>
                   <input
+                    ref={membershipValidFromRef}
                     type="date"
                     value={membershipDraft.validFrom}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setMembershipDraft((current) => ({
                         ...current,
                         validFrom: event.target.value,
-                      }))
-                    }
+                      }));
+                      clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
+                    }}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-invalid={validationError?.field === 'membershipValidFrom' ? 'true' : 'false'}
                   />
                 </label>
 
@@ -1029,7 +1164,10 @@ export function CustomerCreateScreen({
                   })}</span>
                 </label>
 
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                <div
+                  id={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                  className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600"
+                >
                   {membershipOptions.loading
                     ? pickText(effectiveSelectedLocale, {
                         en: 'Loading available membership options…',

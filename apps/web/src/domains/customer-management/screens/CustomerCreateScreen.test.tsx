@@ -208,4 +208,64 @@ describe('CustomerCreateScreen', () => {
     expect(screen.getByText('멤버십 정보')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '고객 생성' })).toBeInTheDocument();
   });
+
+  it('shows zh_HANS customer-name validation in the DOM instead of relying on browser-native required UI', async () => {
+    localeState.currentLocale = 'zh';
+
+    render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    const customerNameInput = await screen.findByLabelText('客户名称');
+
+    fireEvent.click(screen.getByRole('button', { name: '创建客户' }));
+
+    expect(await screen.findByText('客户名称不能为空。')).toBeInTheDocument();
+    expect(customerNameInput).toHaveFocus();
+    expect(createIndividualCustomer).not.toHaveBeenCalled();
+  });
+
+  it('requires company legal name through localized React validation', async () => {
+    render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Company' }));
+    await screen.findByText('Company legal name');
+    fireEvent.change(screen.getByLabelText('Customer name'), {
+      target: { value: 'Acme' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create customer' }));
+
+    expect(await screen.findByText('Company legal name is required.')).toBeInTheDocument();
+    const companyLegalNameInput = screen.getByPlaceholderText('Acme Corporation');
+    expect(companyLegalNameInput).toHaveFocus();
+    expect(createCompanyCustomer).not.toHaveBeenCalled();
+  });
+
+  it('keeps membership type and level disabled until their upstream selections are made', async () => {
+    render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    fireEvent.click(screen.getByLabelText('Add membership now'));
+
+    await waitFor(() => {
+      expect(listCustomerSocialPlatforms).toHaveBeenCalledWith(mockRequest);
+      expect(listCustomerMembershipTree).toHaveBeenCalledWith(mockRequest, 'talent-1');
+    });
+
+    const membershipTypeSelect = screen.getByLabelText('Membership type');
+    const membershipLevelSelect = screen.getByLabelText('Membership level');
+
+    expect(membershipTypeSelect).toBeDisabled();
+    expect(membershipLevelSelect).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Membership class'), {
+      target: { value: 'FANCLUB' },
+    });
+
+    expect(membershipTypeSelect).not.toBeDisabled();
+    expect(membershipLevelSelect).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Membership type'), {
+      target: { value: 'PAID' },
+    });
+
+    expect(membershipLevelSelect).not.toBeDisabled();
+  });
 });
