@@ -222,9 +222,10 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
 export async function scheduleMembershipRenewalJob(
   queue: Queue | { add: (name: string, data: MembershipRenewalJobData, opts?: unknown) => Promise<unknown> },
   tenantId: string,
-  tenantSchemaName: string
+  tenantSchemaName: string,
+  scheduleWindowKey: string = new Date().toISOString().slice(0, 10),
 ) {
-  const jobId = `renewal_${tenantId}_${Date.now()}`;
+  const jobId = `renewal_${tenantId}_${scheduleWindowKey}`;
 
   await queue.add(
     'membership-renewal',

@@ -1,4 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { rm, writeFile } from 'node:fs/promises';
+
 import type { PrismaClient } from '@tcrn/database';
 import type { ConnectionOptions, Worker as BullWorker } from 'bullmq';
 import type { CronJob } from 'cron';
@@ -20,7 +22,9 @@ type RuntimeProcess = {
 type ManagedWorker = Pick<BullWorker, 'close'>;
 type ManagedCronJob = Pick<CronJob, 'stop'>;
 type ManagedPrismaClient = Pick<PrismaClient, '$disconnect'>;
-type ManagedRedisConnection = Pick<Redis, 'quit'>;
+type ManagedRedisConnection = Pick<Redis, 'quit' | 'set'>;
+
+export const DEFAULT_WORKER_READY_FILE = '/tmp/tcrn-worker-ready';
 
 export interface WorkerRuntimeShellLogger {
   info: (message: string) => void;
@@ -43,6 +47,8 @@ export interface WorkerRuntimeShellOptions {
   setupQueuesFn?: typeof setupQueues;
   createWorkersFn?: typeof createWorkers;
   setupScheduledJobsRuntimeFn?: typeof setupScheduledJobsRuntime;
+  markReadyFn?: () => Promise<void>;
+  markNotReadyFn?: () => Promise<void>;
 }
 
 export interface WorkerRuntimeShell {
@@ -57,6 +63,18 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function getWorkerReadyFilePath(): string {
+  return process.env.WORKER_READY_FILE || DEFAULT_WORKER_READY_FILE;
+}
+
+async function markWorkerReady(): Promise<void> {
+  await writeFile(getWorkerReadyFilePath(), `${Date.now()}\n`, 'utf8');
+}
+
+async function clearWorkerReady(): Promise<void> {
+  await rm(getWorkerReadyFilePath(), { force: true });
+}
+
 export function createWorkerRuntimeShell({
   connection,
   redisConnection,
@@ -67,6 +85,8 @@ export function createWorkerRuntimeShell({
   setupQueuesFn = setupQueues,
   createWorkersFn = createWorkers,
   setupScheduledJobsRuntimeFn = setupScheduledJobsRuntime,
+  markReadyFn = markWorkerReady,
+  markNotReadyFn = clearWorkerReady,
 }: WorkerRuntimeShellOptions): WorkerRuntimeShell {
   const state: WorkerRuntimeShellState = {
     workers: [],
@@ -83,12 +103,16 @@ export function createWorkerRuntimeShell({
     state.workers.push(...createWorkersFn(connection));
 
     if (!enableScheduledJobs) {
+      await markReadyFn();
       return;
     }
 
-    const scheduledJobsRuntime = await setupScheduledJobsRuntimeFn(runtimeLogger);
+    const scheduledJobsRuntime = await setupScheduledJobsRuntimeFn(runtimeLogger, {
+      redisConnection,
+    });
     state.prisma = scheduledJobsRuntime.prisma;
     state.cronJobs.push(...scheduledJobsRuntime.cronJobs);
+    await markReadyFn();
   }
 
   async function shutdown(exitCode = 0): Promise<void> {
@@ -98,6 +122,7 @@ export function createWorkerRuntimeShell({
 
     shutdownPromise = (async () => {
       runtimeLogger.info('Shutting down workers...');
+      await markNotReadyFn();
 
       for (const cronJob of state.cronJobs) {
         cronJob.stop();
@@ -154,6 +179,7 @@ export function createWorkerRuntimeShell({
     try {
       await initialize();
     } catch (error) {
+      await markNotReadyFn();
       runtimeLogger.error(`Failed to initialize workers: ${getErrorMessage(error)}`);
       exitProcess(1);
     }

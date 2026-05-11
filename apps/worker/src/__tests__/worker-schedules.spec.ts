@@ -3,6 +3,7 @@ import { CronJob } from 'cron';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  buildScheduleWindowLockKey,
   createLogCleanupHandler,
   createMembershipRenewalHandler,
   createScheduledCronJobs,
@@ -43,6 +44,12 @@ function createPrismaMock() {
   };
 }
 
+function createScheduleLock(acquireResult = true) {
+  return {
+    acquire: vi.fn().mockResolvedValue(acquireResult),
+  };
+}
+
 describe('getActiveTenants', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,6 +86,7 @@ describe('scheduled job handlers', () => {
   it('schedules membership renewal per tenant and isolates per-tenant failures', async () => {
     const prisma = createPrismaMock();
     const logger = createLogger();
+    const scheduleLock = createScheduleLock();
     prisma.tenant.findMany.mockResolvedValueOnce([
       { id: 'tenant-1', code: 'AC', schemaName: 'tenant_ac' },
       { id: 'tenant-2', code: 'BROKEN', schemaName: 'tenant_broken' },
@@ -87,19 +95,29 @@ describe('scheduled job handlers', () => {
       .mockResolvedValueOnce('renewal_ac')
       .mockRejectedValueOnce(new Error('queue unavailable'));
 
-    await createMembershipRenewalHandler(prisma as never, logger)();
+    await createMembershipRenewalHandler(prisma as never, logger, {
+      nowProvider: () => Date.parse('2026-05-12T00:00:00.000Z'),
+      scheduleLock,
+    })();
+
+    expect(scheduleLock.acquire).toHaveBeenCalledWith(
+      buildScheduleWindowLockKey('membership-renewal', Date.parse('2026-05-12T00:00:00.000Z')),
+      26 * 60 * 60,
+    );
 
     expect(scheduleMembershipRenewalJob).toHaveBeenNthCalledWith(
       1,
       membershipRenewalQueue,
       'AC',
-      'tenant_ac'
+      'tenant_ac',
+      '2026-05-12'
     );
     expect(scheduleMembershipRenewalJob).toHaveBeenNthCalledWith(
       2,
       membershipRenewalQueue,
       'BROKEN',
-      'tenant_broken'
+      'tenant_broken',
+      '2026-05-12'
     );
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to schedule membership renewal for tenant BROKEN: queue unavailable'
@@ -110,20 +128,42 @@ describe('scheduled job handlers', () => {
   it('schedules tenant log cleanup jobs with deterministic job ids', async () => {
     const prisma = createPrismaMock();
     const logger = createLogger();
+    const scheduleLock = createScheduleLock();
     prisma.tenant.findMany.mockResolvedValueOnce([
       { id: 'tenant-1', code: 'AC', schemaName: 'tenant_ac' },
     ]);
 
-    await createLogCleanupHandler(prisma as never, logger, () => 123456)();
+    await createLogCleanupHandler(
+      prisma as never,
+      logger,
+      () => Date.parse('2026-05-12T00:00:00.000Z'),
+      scheduleLock,
+    )();
 
     expect(addLogCleanupJob).toHaveBeenCalledWith(
       'log-cleanup',
       { tenantSchemaName: 'tenant_ac' },
-      { jobId: 'log_cleanup_AC_123456' }
+      { jobId: 'log_cleanup_AC_2026-05-12' }
     );
     expect(logger.info).toHaveBeenCalledWith('Scheduled log cleanup for tenant: AC');
   });
 
+  it('skips membership renewal fan-out when another worker already owns the daily lock', async () => {
+    const prisma = createPrismaMock();
+    const logger = createLogger();
+    const scheduleLock = createScheduleLock(false);
+
+    await createMembershipRenewalHandler(prisma as never, logger, {
+      nowProvider: () => Date.parse('2026-05-12T00:00:00.000Z'),
+      scheduleLock,
+    })();
+
+    expect(prisma.tenant.findMany).not.toHaveBeenCalled();
+    expect(scheduleMembershipRenewalJob).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith(
+      'Skipping membership renewal schedule for window 2026-05-12: another worker already acquired the daily lock',
+    );
+  });
 });
 
 describe('createScheduledCronJobs', () => {

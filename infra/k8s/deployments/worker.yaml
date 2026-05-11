@@ -43,6 +43,33 @@ spec:
               value: production
             - name: ENABLE_SCHEDULED_JOBS
               value: 'true'
+            - name: WORKER_READY_FILE
+              value: /tmp/tcrn-worker-ready
+          startupProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - process.exit(require('node:fs').existsSync(process.env.WORKER_READY_FILE || '/tmp/tcrn-worker-ready') ? 0 : 1)
+            failureThreshold: 24
+            periodSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - process.exit(require('node:fs').existsSync(process.env.WORKER_READY_FILE || '/tmp/tcrn-worker-ready') ? 0 : 1)
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - process.exit(require('node:fs').existsSync(process.env.WORKER_READY_FILE || '/tmp/tcrn-worker-ready') ? 0 : 1)
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
           envFrom:
             - secretRef:
                 name: tcrn-runtime-env

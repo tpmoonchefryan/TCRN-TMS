@@ -145,17 +145,25 @@ describe('MembershipRenewalJobProcessor', () => {
         add: vi.fn().mockResolvedValue({}),
       };
 
-      const jobId = await scheduleMembershipRenewalJob(mockQueue, 'tenant-123', 'tenant_test');
+      const jobId = await scheduleMembershipRenewalJob(
+        mockQueue,
+        'tenant-123',
+        'tenant_test',
+        '2026-05-12'
+      );
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         'membership-renewal',
         expect.objectContaining({
+          jobId: 'renewal_tenant-123_2026-05-12',
           tenantId: 'tenant-123',
           triggerType: 'scheduled',
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'renewal_tenant-123_2026-05-12',
+        }),
       );
-      expect(jobId).toBeDefined();
+      expect(jobId).toBe('renewal_tenant-123_2026-05-12');
     });
   });
 });

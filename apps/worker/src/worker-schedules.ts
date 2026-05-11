@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { PrismaClient } from '@tcrn/database';
 import { CronJob } from 'cron';
+import type Redis from 'ioredis';
 
 import { scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
 import { workerLogger as logger } from './logger';
@@ -28,6 +29,50 @@ export interface ScheduledJobRuntime {
 type NowProvider = () => number;
 
 const TOKYO_TIMEZONE = 'Asia/Tokyo';
+const SCHEDULE_LOCK_TTL_SECONDS = 26 * 60 * 60;
+const SCHEDULE_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TOKYO_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export interface ScheduledJobLock {
+  acquire: (lockKey: string, ttlSeconds: number) => Promise<boolean>;
+}
+
+export interface ScheduledJobsRuntimeOptions {
+  nowProvider?: NowProvider;
+  redisConnection?: Pick<Redis, 'set'>;
+  scheduleLock?: ScheduledJobLock;
+  start?: boolean;
+}
+
+interface ScheduledJobHandlerOptions {
+  nowProvider?: NowProvider;
+  scheduleLock?: ScheduledJobLock;
+}
+
+const allowAllScheduleLock: ScheduledJobLock = {
+  acquire: async () => true,
+};
+
+export class RedisScheduledJobLock implements ScheduledJobLock {
+  constructor(private readonly redisConnection: Pick<Redis, 'set'>) {}
+
+  async acquire(lockKey: string, ttlSeconds: number): Promise<boolean> {
+    const result = await this.redisConnection.set(lockKey, '1', 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  }
+}
+
+export function buildScheduleDayKey(nowMillis: number): string {
+  return SCHEDULE_DAY_FORMATTER.format(new Date(nowMillis));
+}
+
+export function buildScheduleWindowLockKey(jobName: string, nowMillis: number): string {
+  return `worker:schedule:${jobName}:${buildScheduleDayKey(nowMillis)}`;
+}
 
 export async function getActiveTenants(
   prisma: PrismaClient,
@@ -47,9 +92,22 @@ export async function getActiveTenants(
 
 export function createMembershipRenewalHandler(
   prisma: PrismaClient,
-  eventLogger: ScheduledJobLogger = logger
+  eventLogger: ScheduledJobLogger = logger,
+  { nowProvider = () => Date.now(), scheduleLock = allowAllScheduleLock }: ScheduledJobHandlerOptions = {},
 ): () => Promise<void> {
   return async () => {
+    const nowMillis = nowProvider();
+    const scheduleDayKey = buildScheduleDayKey(nowMillis);
+    const lockKey = buildScheduleWindowLockKey('membership-renewal', nowMillis);
+    const acquired = await scheduleLock.acquire(lockKey, SCHEDULE_LOCK_TTL_SECONDS);
+
+    if (!acquired) {
+      eventLogger.info(
+        `Skipping membership renewal schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`,
+      );
+      return;
+    }
+
     eventLogger.info('Triggering scheduled membership renewal for all tenants');
 
     try {
@@ -61,7 +119,8 @@ export function createMembershipRenewalHandler(
           await scheduleMembershipRenewalJob(
             membershipRenewalQueue,
             tenant.code,
-            tenant.schemaName
+            tenant.schemaName,
+            scheduleDayKey,
           );
           eventLogger.info(`Scheduled membership renewal for tenant: ${tenant.code}`);
         } catch (error) {
@@ -83,9 +142,22 @@ export function createMembershipRenewalHandler(
 export function createLogCleanupHandler(
   prisma: PrismaClient,
   eventLogger: ScheduledJobLogger = logger,
-  nowProvider: NowProvider = () => Date.now()
+  nowProvider: NowProvider = () => Date.now(),
+  scheduleLock: ScheduledJobLock = allowAllScheduleLock,
 ): () => Promise<void> {
   return async () => {
+    const nowMillis = nowProvider();
+    const scheduleDayKey = buildScheduleDayKey(nowMillis);
+    const lockKey = buildScheduleWindowLockKey('log-cleanup', nowMillis);
+    const acquired = await scheduleLock.acquire(lockKey, SCHEDULE_LOCK_TTL_SECONDS);
+
+    if (!acquired) {
+      eventLogger.info(
+        `Skipping log cleanup schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`,
+      );
+      return;
+    }
+
     eventLogger.info('Triggering scheduled log cleanup for all tenants');
 
     try {
@@ -97,7 +169,7 @@ export function createLogCleanupHandler(
           await logCleanupQueue.add(
             'log-cleanup',
             { tenantSchemaName: tenant.schemaName },
-            { jobId: `log_cleanup_${tenant.code}_${nowProvider()}` }
+            { jobId: `log_cleanup_${tenant.code}_${scheduleDayKey}` }
           );
           eventLogger.info(`Scheduled log cleanup for tenant: ${tenant.code}`);
         } catch (error) {
@@ -118,19 +190,20 @@ export function createScheduledCronJobs(
   prisma: PrismaClient,
   eventLogger: ScheduledJobLogger = logger,
   start = true,
-  nowProvider: NowProvider = () => Date.now()
+  nowProvider: NowProvider = () => Date.now(),
+  scheduleLock: ScheduledJobLock = allowAllScheduleLock,
 ): CronJob[] {
   const cronJobs = [
     new CronJob(
       '0 2 * * *',
-      createMembershipRenewalHandler(prisma, eventLogger),
+      createMembershipRenewalHandler(prisma, eventLogger, { nowProvider, scheduleLock }),
       null,
       start,
       TOKYO_TIMEZONE
     ),
     new CronJob(
       '0 4 * * *',
-      createLogCleanupHandler(prisma, eventLogger, nowProvider),
+      createLogCleanupHandler(prisma, eventLogger, nowProvider, scheduleLock),
       null,
       start,
       TOKYO_TIMEZONE
@@ -144,12 +217,24 @@ export function createScheduledCronJobs(
 }
 
 export async function setupScheduledJobsRuntime(
-  eventLogger: ScheduledJobLogger = logger
+  eventLogger: ScheduledJobLogger = logger,
+  options: ScheduledJobsRuntimeOptions = {},
 ): Promise<ScheduledJobRuntime> {
   eventLogger.info('Setting up scheduled jobs...');
 
   const prisma = new PrismaClient();
-  const cronJobs = createScheduledCronJobs(prisma, eventLogger);
+  const scheduleLock =
+    options.scheduleLock ??
+    (options.redisConnection
+      ? new RedisScheduledJobLock(options.redisConnection)
+      : allowAllScheduleLock);
+  const cronJobs = createScheduledCronJobs(
+    prisma,
+    eventLogger,
+    options.start ?? true,
+    options.nowProvider ?? (() => Date.now()),
+    scheduleLock,
+  );
 
   eventLogger.info('Scheduled jobs initialized');
 

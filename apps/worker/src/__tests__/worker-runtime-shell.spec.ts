@@ -27,6 +27,7 @@ function createShell(overrides: Partial<Parameters<typeof createWorkerRuntimeShe
   const logger = createLogger();
   const redisConnection = {
     quit: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn().mockResolvedValue('OK'),
   };
   const setupQueuesFn = vi.fn().mockResolvedValue(undefined);
   const createWorkersFn = vi.fn().mockReturnValue([]);
@@ -34,6 +35,8 @@ function createShell(overrides: Partial<Parameters<typeof createWorkerRuntimeShe
     prisma: { $disconnect: vi.fn().mockResolvedValue(undefined) },
     cronJobs: [],
   });
+  const markReadyFn = vi.fn().mockResolvedValue(undefined);
+  const markNotReadyFn = vi.fn().mockResolvedValue(undefined);
   const exitProcess = vi.fn((_: number) => undefined as never);
   const processHarness = createProcessHarness();
   const options = {
@@ -45,6 +48,8 @@ function createShell(overrides: Partial<Parameters<typeof createWorkerRuntimeShe
     setupQueuesFn,
     createWorkersFn,
     setupScheduledJobsRuntimeFn,
+    markReadyFn,
+    markNotReadyFn,
     ...overrides,
   };
 
@@ -57,6 +62,8 @@ function createShell(overrides: Partial<Parameters<typeof createWorkerRuntimeShe
     setupQueuesFn: options.setupQueuesFn,
     createWorkersFn: options.createWorkersFn,
     setupScheduledJobsRuntimeFn: options.setupScheduledJobsRuntimeFn,
+    markReadyFn: options.markReadyFn,
+    markNotReadyFn: options.markNotReadyFn,
     exitProcess,
     processHarness,
   };
@@ -90,12 +97,15 @@ describe('createWorkerRuntimeShell', () => {
     await runtime.shell.initialize();
 
     expect(createWorkersFn).toHaveBeenCalledTimes(1);
-    expect(setupScheduledJobsRuntimeFn).toHaveBeenCalledWith(runtime.logger);
+    expect(setupScheduledJobsRuntimeFn).toHaveBeenCalledWith(runtime.logger, {
+      redisConnection: runtime.redisConnection,
+    });
     expect(runtime.shell.getState()).toMatchObject({
       workers: [workerA, workerB],
       cronJobs: [cronJob],
       prisma,
     });
+    expect(runtime.markReadyFn).toHaveBeenCalledTimes(1);
   });
 
   it('skips scheduled runtime when scheduled jobs are disabled', async () => {
@@ -110,6 +120,7 @@ describe('createWorkerRuntimeShell', () => {
       workers: [],
       cronJobs: [],
     });
+    expect(runtime.markReadyFn).toHaveBeenCalledTimes(1);
   });
 
   it('shuts resources down once even when multiple shutdown calls race', async () => {
@@ -128,6 +139,7 @@ describe('createWorkerRuntimeShell', () => {
     await runtime.shell.initialize();
     await Promise.all([runtime.shell.shutdown(0), runtime.shell.shutdown(0)]);
 
+    expect(runtime.markNotReadyFn).toHaveBeenCalledTimes(1);
     expect(cronJob.stop).toHaveBeenCalledTimes(1);
     expect(workerA.close).toHaveBeenCalledTimes(1);
     expect(workerB.close).toHaveBeenCalledTimes(1);
@@ -184,6 +196,7 @@ describe('createWorkerRuntimeShell', () => {
     await runtime.shell.start();
 
     expect(runtime.processHarness.processRef.on).toHaveBeenCalledTimes(4);
+    expect(runtime.markNotReadyFn).toHaveBeenCalledTimes(1);
     expect(runtime.logger.error).toHaveBeenCalledWith(
       'Failed to initialize workers: redis unavailable'
     );
