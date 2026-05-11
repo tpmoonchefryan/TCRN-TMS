@@ -907,12 +907,10 @@ const PUBLIC_MESSAGE_ITEM_SCHEMA = {
       type: 'object',
       nullable: true,
       properties: {
-        id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' },
         displayName: { type: 'string', example: 'Aki Rosenthal' },
         avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.example.com/avatars/aki.png' },
-        email: { type: 'string', nullable: true, example: 'aki@example.com' },
       },
-      required: ['id', 'displayName', 'avatarUrl', 'email'],
+      required: ['displayName', 'avatarUrl'],
     },
     reactionCounts: {
       type: 'object',
@@ -970,10 +968,8 @@ export const PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA = {
         replyContent: 'Thank you!',
         repliedAt: '2026-04-13T12:10:00.000Z',
         repliedBy: {
-          id: '550e8400-e29b-41d4-a716-446655440100',
           displayName: 'Aki Rosenthal',
           avatarUrl: 'https://cdn.example.com/avatars/aki.png',
-          email: 'aki@example.com',
         },
         reactionCounts: { heart: 12, fire: 4 },
         userReactions: ['heart'],

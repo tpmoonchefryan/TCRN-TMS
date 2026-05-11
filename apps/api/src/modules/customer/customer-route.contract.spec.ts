@@ -4,6 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { CustomerController } from './controllers/customer.controller';
 import { ExternalIdController } from './controllers/external-id.controller';
 import { MembershipController } from './controllers/membership.controller';
@@ -49,6 +50,11 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
     }));
   });
 };
+
+const getMethodPermissions = (methodName: string) =>
+  Reflect.getMetadata(PERMISSIONS_KEY, CustomerController.prototype[methodName]) as
+    | Array<{ resource: string; action: string }>
+    | undefined;
 
 describe('Customer private route contract', () => {
   it('keeps customer profile routes under the canonical talent-root customer family', () => {
@@ -125,5 +131,23 @@ describe('Customer private route contract', () => {
     expect(Reflect.getMetadata(PATH_METADATA, ExternalIdController)).not.toBe(
       'customers/:customerId/external-ids',
     );
+  });
+
+  it('uses dedicated customer.pii permissions for pii portal and update routes', () => {
+    expect(getMethodPermissions('createPiiPortalSession')).toEqual([
+      { resource: 'customer.pii', action: 'read' },
+    ]);
+    expect(getMethodPermissions('createCompanyPiiPortalSession')).toEqual([
+      { resource: 'customer.pii', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateIndividualPii')).toEqual([
+      { resource: 'customer.pii', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getById')).toEqual([
+      { resource: 'customer.profile', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateIndividual')).toEqual([
+      { resource: 'customer.profile', action: 'update' },
+    ]);
   });
 });

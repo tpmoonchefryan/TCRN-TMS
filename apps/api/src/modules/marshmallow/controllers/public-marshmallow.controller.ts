@@ -273,6 +273,7 @@ export class PublicMarshmallowController {
   @ApiParam({ name: 'messageId', description: 'Public marshmallow-message identifier', schema: { type: 'string', format: 'uuid' } })
   @ApiResponse({ status: 200, description: 'Message marked as read', schema: PUBLIC_MARSHMALLOW_MARK_READ_SCHEMA })
   @ApiResponse({ status: 400, description: 'Mark-read payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Public mark-read is no longer available', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
   @ApiResponse({ status: 404, description: 'Public marshmallow message or path was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
   async markAsRead(
     @Param('path') path: string,
@@ -400,6 +401,7 @@ export class PublicMarshmallowController {
     return this.publicService.replyAuth(path, messageId, dto.content, {
       userId: payload.sub,
       displayName: payload.displayName,
+      email: payload.email,
       talentId: payload.talentId,
       tenantSchema: payload.tsc,
       ip,

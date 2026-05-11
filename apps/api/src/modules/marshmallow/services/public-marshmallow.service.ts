@@ -27,6 +27,8 @@ import { TrustScoreService } from './trust-score.service';
 
 @Injectable()
 export class PublicMarshmallowService {
+  private static readonly PUBLIC_REPLY_FALLBACK = 'Staff';
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly profanityFilter: ProfanityFilterService,
@@ -39,6 +41,19 @@ export class PublicMarshmallowService {
   ) {}
 
   private readonly logger = new Logger(PublicMarshmallowService.name);
+
+  private buildPublicReplyAuthor(
+    displayName: string | null,
+    avatarUrl: string | null,
+  ): {
+    displayName: string;
+    avatarUrl: string | null;
+  } {
+    return {
+      displayName: displayName?.trim() || PublicMarshmallowService.PUBLIC_REPLY_FALLBACK,
+      avatarUrl,
+    };
+  }
 
   private async getSearchableTenantSchemas() {
     const prisma = this.databaseService.getPrisma();
@@ -332,7 +347,6 @@ export class PublicMarshmallowService {
       repliedById: string | null;
       repliedByName: string | null;
       repliedByAvatar: string | null;
-      repliedByEmail: string | null;
       reactionCounts: Record<string, number> | null;
       isPinned: boolean;
       createdAt: Date;
@@ -342,7 +356,7 @@ export class PublicMarshmallowService {
       SELECT m.id, m.content, m.sender_name as "senderName", m.is_anonymous as "isAnonymous",
              m.is_read as "isRead", m.reply_content as "replyContent", m.replied_at as "repliedAt",
              m.replied_by as "repliedById", u.display_name as "repliedByName",
-             u.avatar_url as "repliedByAvatar", u.email as "repliedByEmail",
+             u.avatar_url as "repliedByAvatar",
              m.reaction_counts as "reactionCounts", m.is_pinned as "isPinned", m.created_at as "createdAt",
              m.image_url as "imageUrl", m.image_urls as "imageUrls"
       FROM "${tenantSchema}".marshmallow_message m
@@ -374,12 +388,7 @@ export class PublicMarshmallowService {
         replyContent: message.replyContent,
         repliedAt: message.repliedAt?.toISOString() ?? null,
         repliedBy: message.repliedById
-          ? {
-              id: message.repliedById,
-              displayName: message.repliedByName || 'Unknown',
-              avatarUrl: message.repliedByAvatar,
-              email: message.repliedByEmail,
-            }
+          ? this.buildPublicReplyAuthor(message.repliedByName, message.repliedByAvatar)
           : null,
         reactionCounts: message.reactionCounts ?? {},
         userReactions: userReactions[message.id] ?? [],
@@ -679,85 +688,25 @@ export class PublicMarshmallowService {
     messageId: string,
     context: { fingerprint: string; ip: string },
   ): Promise<{ success: boolean; isRead: boolean }> {
-    const prisma = this.databaseService.getPrisma();
-
-    // Get talent and config by path (multi-tenant)
-    const result = await this.findTalentAndConfigByPath(path);
-
-    if (!result) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Page not found',
-      });
-    }
-
-    const { config, tenantSchema } = result;
-
-    if (!config.isEnabled) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Marshmallow is not enabled',
-      });
-    }
-
-    // Verify message exists and belongs to this config
-    const messages = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      isRead: boolean;
-      status: string;
-    }>>(`
-      SELECT id, is_read as "isRead", status
-      FROM "${tenantSchema}".marshmallow_message
-      WHERE id = $1::uuid AND config_id = $2::uuid
-    `, messageId, config.id);
-
-    if (messages.length === 0) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Message not found',
-      });
-    }
-
-    const message = messages[0];
-
-    // Only allow marking approved messages as read
-    if (message.status !== 'approved') {
-      throw new BadRequestException({
-        code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Only approved messages can be marked as read',
-      });
-    }
-
-    // Toggle read status
-    const newIsRead = !message.isRead;
-
-    await prisma.$executeRawUnsafe(`
-      UPDATE "${tenantSchema}".marshmallow_message
-      SET is_read = $1
-      WHERE id = $2::uuid
-    `, newIsRead, messageId);
-
-    // Log the action
     await this.techEventLog.log({
-      eventType: TechEventType.SYSTEM_ERROR,
-      scope: 'integration',
-      severity: LogSeverity.INFO,
+      eventType: 'MARSHMALLOW_PUBLIC_MARK_READ_BLOCKED',
+      scope: 'marshmallow',
+      severity: LogSeverity.WARN,
       payload: {
-        type: 'marshmallow_mark_read',
+        type: 'marshmallow_public_mark_read_blocked',
+        path,
         messageId,
-        isRead: newIsRead,
         fingerprint: context.fingerprint,
         ip: context.ip,
       },
     }, {
-      tenantSchema,
       ipAddress: context.ip,
     });
 
-    return {
-      success: true,
-      isRead: newIsRead,
-    };
+    throw new ForbiddenException({
+      code: ErrorCodes.PERM_ACCESS_DENIED,
+      message: 'Public mark-read is no longer available.',
+    });
   }
 
   /**
@@ -846,6 +795,7 @@ export class PublicMarshmallowService {
     context: {
       userId: string;
       displayName: string;
+      email: string;
       talentId: string;
       tenantSchema: string;
       ip: string;
@@ -917,6 +867,25 @@ export class PublicMarshmallowService {
       SET reply_content = $1, replied_at = $2, replied_by = $3::uuid, is_read = true
       WHERE id = $4::uuid
     `, newReplyContent, now, context.userId, messageId);
+
+    await this.techEventLog.log({
+      eventType: 'MARSHMALLOW_PUBLIC_REPLY_AUTH',
+      scope: 'marshmallow',
+      severity: LogSeverity.INFO,
+      payload: {
+        type: 'marshmallow_public_reply_auth',
+        path,
+        messageId,
+        talentId: context.talentId,
+        userId: context.userId,
+        email: context.email,
+        displayName: context.displayName,
+        appendedToExistingReply: Boolean(message.replyContent),
+      },
+    }, {
+      tenantSchema: context.tenantSchema,
+      ipAddress: context.ip,
+    });
 
     return {
       success: true,

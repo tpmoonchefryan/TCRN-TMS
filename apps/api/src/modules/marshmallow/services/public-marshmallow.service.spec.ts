@@ -279,4 +279,100 @@ describe('PublicMarshmallowService', () => {
       'demo',
     );
   });
+
+  it('does not expose responder email or internal ids in public message responses', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ schemaName: 'tenant_demo' }])
+      .mockResolvedValueOnce([
+        {
+          id: 'talent-1',
+          displayName: 'Demo Talent',
+          avatarUrl: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'config-1',
+          isEnabled: true,
+          title: 'Ask Demo',
+          welcomeText: 'Welcome',
+          placeholderText: 'Ask away',
+          thankYouText: 'Thanks',
+          allowAnonymous: true,
+          captchaMode: 'never',
+          moderationEnabled: false,
+          autoApprove: true,
+          profanityFilterEnabled: false,
+          externalBlocklistEnabled: false,
+          maxMessageLength: 500,
+          minMessageLength: 1,
+          rateLimitPerIp: 1,
+          rateLimitWindowHours: 1,
+          reactionsEnabled: true,
+          allowedReactions: [],
+          theme: {},
+          avatarUrl: null,
+          termsContentEn: null,
+          termsContentZh: null,
+          termsContentJa: null,
+          privacyContentEn: null,
+          privacyContentZh: null,
+          privacyContentJa: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: '550e8400-e29b-41d4-a716-446655440020',
+          content: 'Happy birthday!',
+          senderName: 'Fan',
+          isAnonymous: false,
+          isRead: false,
+          replyContent: 'Thank you!',
+          repliedAt: new Date('2026-05-11T00:00:00.000Z'),
+          repliedById: '550e8400-e29b-41d4-a716-446655440100',
+          repliedByName: null,
+          repliedByAvatar: null,
+          reactionCounts: { heart: 2 },
+          isPinned: false,
+          createdAt: new Date('2026-05-10T00:00:00.000Z'),
+          imageUrl: null,
+          imageUrls: [],
+        },
+      ]);
+
+    await expect(
+      service.getMessages('demo', { limit: 20 }),
+    ).resolves.toMatchObject({
+      messages: [
+        {
+          repliedBy: {
+            displayName: 'Staff',
+            avatarUrl: null,
+          },
+        },
+      ],
+    });
+
+    const publicMessagesQuery = mockPrisma.$queryRawUnsafe.mock.calls[3]?.[0];
+    expect(publicMessagesQuery).not.toContain('u.email');
+  });
+
+  it('rejects unauthenticated public mark-read state mutation', async () => {
+    await expect(
+      service.markAsRead('demo', '550e8400-e29b-41d4-a716-446655440010', {
+        fingerprint: 'fp-demo',
+        ip: '127.0.0.1',
+      }),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(mockTechEventLog.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'MARSHMALLOW_PUBLIC_MARK_READ_BLOCKED',
+      }),
+      expect.objectContaining({
+        ipAddress: '127.0.0.1',
+      }),
+    );
+  });
 });

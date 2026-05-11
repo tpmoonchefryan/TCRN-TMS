@@ -52,10 +52,8 @@ export interface PublicMarshmallowMessageRecord {
   replyContent: string | null;
   repliedAt: string | null;
   repliedBy: {
-    id: string;
     displayName: string;
     avatarUrl: string | null;
-    email: string | null;
   } | null;
   reactionCounts: Record<string, number>;
   userReactions: string[];

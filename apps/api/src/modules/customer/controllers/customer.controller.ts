@@ -176,7 +176,7 @@ Results include both individual and company customers.`,
    */
   @Post('individuals/:customerId/pii-portal-session')
   @HttpCode(200)
-  @RequirePermissions({ resource: 'customer.profile', action: 'read' })
+  @RequirePermissions({ resource: 'customer.pii', action: 'read' })
   @ApiOperation({ summary: 'Create PII portal session' })
   @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
   @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
@@ -200,7 +200,7 @@ Results include both individual and company customers.`,
    */
   @Post('companies/:customerId/pii-portal-session')
   @HttpCode(200)
-  @RequirePermissions({ resource: 'customer.profile', action: 'read' })
+  @RequirePermissions({ resource: 'customer.pii', action: 'read' })
   @ApiOperation({ summary: 'Create company-customer PII portal session' })
   @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
   @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })
@@ -223,7 +223,7 @@ Results include both individual and company customers.`,
    * Update individual customer PII
    */
   @Patch('individuals/:customerId/pii')
-  @RequirePermissions({ resource: 'customer.profile', action: 'update' })
+  @RequirePermissions({ resource: 'customer.pii', action: 'update' })
   @ApiOperation({ summary: 'Update individual customer PII' })
   @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
   @ApiParam({ name: 'customerId', description: 'Customer identifier', schema: { type: 'string', format: 'uuid' } })

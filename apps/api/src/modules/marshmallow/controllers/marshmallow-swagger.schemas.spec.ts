@@ -1,11 +1,12 @@
 import { SUPPORTED_UI_LOCALES, TRILINGUAL_LOCALE_FAMILIES } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
-import { PUBLIC_MARSHMALLOW_CONFIG_SCHEMA } from './marshmallow-swagger.schemas';
+import { PUBLIC_MARSHMALLOW_CONFIG_SCHEMA, PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA } from './marshmallow-swagger.schemas';
 
 type OpenApiObjectSchema = {
   properties?: Record<string, unknown>;
   required?: string[];
+  items?: unknown;
 };
 
 const asObjectSchema = (value: unknown): OpenApiObjectSchema => value as OpenApiObjectSchema;
@@ -43,5 +44,16 @@ describe('marshmallow swagger locale contracts', () => {
     expect(schema.required).toEqual(
       expect.arrayContaining(['captchaMode', 'turnstile']),
     );
+  });
+
+  it('does not document internal responder identifiers or email on the public message contract', () => {
+    const schema = asObjectSchema(PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA);
+    const properties = schema.properties ?? {};
+    const messagesSchema = asObjectSchema(properties.messages);
+    const messageItemSchema = asObjectSchema(messagesSchema.items);
+    const repliedBySchema = asObjectSchema((messageItemSchema.properties ?? {}).repliedBy);
+
+    expect(Object.keys(repliedBySchema.properties ?? {})).toEqual(['displayName', 'avatarUrl']);
+    expect(repliedBySchema.required).toEqual(['displayName', 'avatarUrl']);
   });
 });
