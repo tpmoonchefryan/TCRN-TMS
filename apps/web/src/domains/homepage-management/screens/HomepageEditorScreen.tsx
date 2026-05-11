@@ -117,7 +117,10 @@ function PageInfoSummaryGrid({
   tenantName: string;
 }>) {
   return (
-    <div className="grid gap-4 xl:grid-cols-4">
+    <div
+      data-testid="homepage-editor-page-info-summary"
+      className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(16rem,1fr))]"
+    >
       <SummaryCard
         label={copy.summary.tenantLabel}
         value={tenantName}
@@ -297,9 +300,9 @@ function SummaryCard({
   hint: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 break-all text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 break-words text-xl font-semibold leading-8 text-slate-950 md:text-2xl">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
   );
@@ -822,7 +825,7 @@ export function HomepageEditorScreen({
   );
 
   return (
-    <div className={standalone ? 'flex min-h-[100dvh] flex-col gap-4 bg-slate-50 p-4' : 'space-y-6'}>
+    <div className={standalone ? 'flex h-[100dvh] max-h-[100dvh] flex-col gap-4 overflow-hidden bg-slate-50 p-4' : 'space-y-6'}>
       {standalone ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
           <button
@@ -993,7 +996,7 @@ export function HomepageEditorScreen({
         </>
       )}
 
-      <div className={standalone ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-6'}>
+      <div className={standalone ? 'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain' : 'space-y-6'}>
         {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
         {standalone ? null : (

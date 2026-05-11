@@ -7,6 +7,7 @@ const privateVisualLongHomepageUrl =
 const privateVisualLongCustomDomain =
   'very-long-public-homepage-custom-domain-name-for-visual-regression.example.test';
 let privateVisualUseLongHomepageFixture = false;
+let privateVisualUseEmptyHomepageFixture = false;
 let privateVisualUseCustomDomainStorageError = false;
 
 const privateVisualReportCatalog = [
@@ -1325,7 +1326,7 @@ async function mockPrivateRuntimeApi(page: Page) {
           data: {
             id: 'homepage-visual',
             talentId: 'talent-visual',
-            isPublished: true,
+            isPublished: !privateVisualUseEmptyHomepageFixture,
             publishedVersion: null,
             draftVersion: {
               id: 'draft-homepage-visual',
@@ -1352,6 +1353,47 @@ async function mockPrivateRuntimeApi(page: Page) {
     }
 
     if (url.pathname === '/api/v1/talents/talent-visual/homepage/versions/draft-homepage-visual') {
+      const draftComponents = privateVisualUseEmptyHomepageFixture
+        ? []
+        : [
+          {
+            id: 'profile-visual',
+            type: 'ProfileCard',
+            visible: true,
+            order: 1,
+            props: {
+              displayName: 'Visual Talent',
+              bio: 'Draft profile content for visual QA.',
+              avatarUrl: '',
+              avatarShape: 'circle',
+              nameFontSize: 'large',
+              bioMaxLines: 3,
+            },
+          },
+          {
+            id: 'richtext-visual',
+            type: 'RichText',
+            visible: true,
+            order: 2,
+            props: {
+              contentHtml: '<p>Visual draft announcement.</p>',
+              textAlign: 'left',
+            },
+          },
+          {
+            id: 'link-visual',
+            type: 'LinkButton',
+            visible: true,
+            order: 3,
+            props: {
+              label: 'Visit official store',
+              url: 'https://example.test/store',
+              style: 'primary',
+              fullWidth: false,
+            },
+          },
+        ];
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1361,48 +1403,11 @@ async function mockPrivateRuntimeApi(page: Page) {
             id: 'draft-homepage-visual',
             versionNumber: 3,
             status: 'draft',
-            contentPreview: 'ProfileCard, RichText, LinkButton',
-            componentCount: 3,
+            contentPreview: draftComponents.map((component) => component.type).join(', '),
+            componentCount: draftComponents.length,
             content: {
               version: '1.0',
-              components: [
-                {
-                  id: 'profile-visual',
-                  type: 'ProfileCard',
-                  visible: true,
-                  order: 1,
-                  props: {
-                    displayName: 'Visual Talent',
-                    bio: 'Draft profile content for visual QA.',
-                    avatarUrl: '',
-                    avatarShape: 'circle',
-                    nameFontSize: 'large',
-                    bioMaxLines: 3,
-                  },
-                },
-                {
-                  id: 'richtext-visual',
-                  type: 'RichText',
-                  visible: true,
-                  order: 2,
-                  props: {
-                    contentHtml: '<p>Visual draft announcement.</p>',
-                    textAlign: 'left',
-                  },
-                },
-                {
-                  id: 'link-visual',
-                  type: 'LinkButton',
-                  visible: true,
-                  order: 3,
-                  props: {
-                    label: 'Visit official store',
-                    url: 'https://example.test/store',
-                    style: 'primary',
-                    fullWidth: false,
-                  },
-                },
-              ],
+              components: draftComponents,
             },
             theme: {
               preset: 'modern-minimal',
@@ -2709,6 +2714,7 @@ test.describe('private shell browser visual QA', () => {
     privateVisualRoleAssignments = [privateVisualPlatformAdminAssignment];
     privateVisualOrganizationTree = privateVisualEmptyOrganizationTree;
     privateVisualUseLongHomepageFixture = false;
+    privateVisualUseEmptyHomepageFixture = false;
     privateVisualUseCustomDomainStorageError = false;
     resetPrivateVisualCustomDomainFixtures();
     await mockPrivateRuntimeApi(page);
@@ -3111,16 +3117,35 @@ test.describe('private shell browser visual QA', () => {
     await expect(page).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual$/);
     await hideFrameworkDevTools(page);
 
+    const editorShell = page.locator('[data-homepage-puck-editor]');
     const rightSidebar = page.locator('[class*="_Sidebar--right_"]');
+    const puckRoot = page.locator('[data-homepage-puck-editor] > [class*="_Puck_"]');
+    const layoutInner = page.locator('[data-homepage-puck-editor] [class*="_PuckLayout-inner_"]');
+    const canvasRoot = page.locator('[class*="_PuckCanvas-root_"]');
     await expect(rightSidebar).toBeVisible();
+    await expect(editorShell).toBeVisible();
+    await expect(puckRoot).toBeVisible();
+    await expect(layoutInner).toBeVisible();
+    await expect(canvasRoot).toBeVisible();
     expect((await rightSidebar.boundingBox())?.width ?? 0).toBeLessThanOrEqual(360);
+    const editorShellBox = await editorShell.boundingBox();
+    const puckRootBox = await puckRoot.boundingBox();
+    const layoutInnerBox = await layoutInner.boundingBox();
+    const canvasRootBox = await canvasRoot.boundingBox();
+    expect(editorShellBox?.height ?? 0).toBeGreaterThan(600);
+    expect(layoutInnerBox?.height ?? 0).toBeGreaterThan(600);
+    expect(Math.abs((editorShellBox?.height ?? 0) - (puckRootBox?.height ?? 0))).toBeLessThanOrEqual(8);
+    expect(Math.abs((layoutInnerBox?.height ?? 0) - (puckRootBox?.height ?? 0))).toBeLessThanOrEqual(8);
+    expect((puckRootBox?.width ?? 0)).toBeGreaterThan(1300);
+    expect((canvasRootBox?.width ?? 0)).toBeGreaterThan(600);
+    const canvasRootHeightBeforeCollapse = canvasRootBox?.height ?? 0;
 
     await expect(page.getByRole('button', { name: 'Exit editor' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Homepage editor' })).toHaveCount(0);
     await expect(page.getByText('Tenant', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Editing source', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Homepage URL', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Visual', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'Dev Mode' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Page info' })).toBeVisible();
     await expect(page.getByText('Draft preview')).toHaveCount(0);
@@ -3135,7 +3160,7 @@ test.describe('private shell browser visual QA', () => {
     await expect(backgroundTypeGroup).toBeVisible();
     await backgroundTypeGroup.getByRole('button', { name: 'Solid' }).click();
     await page.locator('input[name="backgroundValue"]').last().fill('#112233');
-    await expect(page.frameLocator('#preview-frame').locator('[data-homepage-puck-root]')).toHaveCSS(
+    await expect(page.locator('#preview-frame').locator('[data-homepage-puck-root]')).toHaveCSS(
       'background-color',
       'rgb(17, 34, 51)',
     );
@@ -3151,9 +3176,11 @@ test.describe('private shell browser visual QA', () => {
     );
     await livePreviewPage.close();
 
-    await page.locator('[class*="_PuckCanvas-controls_"] button').first().click();
     await page.locator('button[title="Toggle left sidebar"]').click();
     await page.locator('button[title="Toggle right sidebar"]').click();
+    const collapsedCanvasRootBox = await canvasRoot.boundingBox();
+    expect((collapsedCanvasRootBox?.height ?? 0)).toBeGreaterThan(600);
+    expect(collapsedCanvasRootBox?.height ?? 0).toBeGreaterThanOrEqual(canvasRootHeightBeforeCollapse - 8);
     await expectHorizontallyCentered(
       page.locator('[class*="_PuckCanvas-inner_"]'),
       page.locator('#puck-canvas-root'),
@@ -3194,7 +3221,7 @@ test.describe('private shell browser visual QA', () => {
     await expect(page.getByText(/"customHeightPx": 180/).first()).toBeVisible();
     await expect(page.getByText(/"maxWidth": "1300px"/).first()).toBeVisible();
     await expect(page.getByText(/"minHeight": "180px"/).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Visual' })).not.toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Visual', exact: true })).not.toBeDisabled();
     await expect(page.getByRole('button', { name: 'Restore low-code snapshot' })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, 'desktop homepage editor dev mode');
     await expect(page).toHaveScreenshot('private-homepage-editor-desktop-dev-mode.png', {
@@ -3202,8 +3229,8 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
 
-    await page.getByRole('button', { name: 'Visual' }).click();
-    await expect(page.getByRole('button', { name: 'Visual' })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Visual', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const previewDrawer = page.getByRole('dialog', { name: 'Homepage preview' });
@@ -3262,7 +3289,7 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
 
-    await expect(page.getByRole('button', { name: 'Visual' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Visual', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Restore low-code snapshot' })).toBeVisible();
     const popupPromise = page.waitForEvent('popup');
     await page.getByRole('button', { name: 'Open live preview' }).click();
@@ -3284,6 +3311,31 @@ test.describe('private shell browser visual QA', () => {
       fullPage: true,
     });
     await previewPage.close();
+  });
+
+  test('homepage editor can add the first block on an empty draft', async ({ page }) => {
+    privateVisualUseEmptyHomepageFixture = true;
+    await usePrivateSession(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/tenant/tenant-visual/talent/talent-visual/homepage/editor');
+    await expect(page).toHaveURL(/\/homepage-editor\/tenant-visual\/talent-visual$/);
+    await hideFrameworkDevTools(page);
+
+    const rootDropZone = page.locator('#preview-frame').locator('[data-puck-dropzone="root:default-zone"]');
+    const profileCardDrawerItem = page.getByTestId('drawer-item:ProfileCard');
+
+    await expect(rootDropZone).toBeVisible();
+    await expect(profileCardDrawerItem).toBeVisible();
+    await expect(page.getByText('No homepage blocks yet')).toBeVisible();
+
+    const emptyRootHeight = (await rootDropZone.boundingBox())?.height ?? 0;
+    expect(emptyRootHeight).toBeGreaterThan(400);
+    await profileCardDrawerItem.click();
+
+    await page.getByRole('button', { name: 'Dev Mode' }).click();
+    await expect(page.getByText(/"components": \[\]/).first()).toHaveCount(0);
+    await expect(page.locator('[data-puck-layer-tree-id]')).toHaveCount(1);
+    await expect(page.getByText(/"type": "ProfileCard"/).first()).toBeVisible();
   });
 
   test('desktop AC tenant editor shows localized sending-domain copy for zh_HANS', async ({

@@ -132,6 +132,8 @@ export interface HomepageEditorCopy {
     addSocialLink: string;
     advancedJson: string;
     align: string;
+    artist: string;
+    day: string;
     backgroundOverlay: string;
     backgroundType: string;
     backgroundValue: string;
@@ -142,6 +144,8 @@ export interface HomepageEditorCopy {
     caption: string;
     columns: string;
     content: string;
+    embedValue: string;
+    events: string;
     customHeight: string;
     customWidth: string;
     displayMode: string;
@@ -149,14 +153,18 @@ export interface HomepageEditorCopy {
     fullWidth: string;
     gap: string;
     hideAdvancedJson: string;
+    height: string;
     imageAlt: string;
     imageUrl: string;
+    isLive: string;
     italic: string;
     label: string;
     layout: string;
     layoutMode: string;
     link: string;
     heightPreset: string;
+    platform: string;
+    spotify: string;
     nameFontSize: string;
     numberedList: string;
     originalType: string;
@@ -164,8 +172,14 @@ export interface HomepageEditorCopy {
     paddingPreset: string;
     paddingToken: string;
     radiusToken: string;
+    streamUrl: string;
+    time: string;
+    title: string;
+    uid: string;
     removeImage: (index: number) => string;
     removeSocialLink: (index: number) => string;
+    videoUrl: string;
+    viewers: string;
     shape: string;
     showCaptions: string;
     showRecentCount: string;
@@ -258,7 +272,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       hideCatalog: 'Hide catalog',
       draftBlocksDescription: 'Edit each block in order. The preview updates after the JSON becomes valid.',
       draftBlocksTitle: 'Draft blocks',
-      emptyBlocksDescription: 'Use Add block to open the catalog and start composing this homepage.',
+      emptyBlocksDescription: 'Click a block in the catalog to insert the first component and start composing this homepage.',
       emptyBlocksTitle: 'No homepage blocks yet',
       devModeLayoutTitle: 'Layout tokens',
       devModeSchemaTitle: 'Schema JSON',
@@ -378,6 +392,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: 'Add social link',
       advancedJson: 'Advanced JSON',
       align: 'Alignment',
+      artist: 'Artist',
+      day: 'Day',
       backgroundOverlay: 'Image overlay',
       backgroundType: 'Background type',
       backgroundValue: 'Background value',
@@ -388,6 +404,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: 'Caption',
       columns: 'Columns',
       content: 'Content',
+      embedValue: 'Embed value',
+      events: 'Events',
       customHeight: 'Custom height',
       customWidth: 'Custom width',
       displayMode: 'Display mode',
@@ -396,8 +414,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       gap: 'Gap',
       gapToken: 'Gap token',
       hideAdvancedJson: 'Hide Advanced JSON',
+      height: 'Height',
       imageAlt: 'Image alt text',
       imageUrl: 'Image URL',
+      isLive: 'Live status',
       italic: 'Italic',
       label: 'Label',
       layout: 'Layout',
@@ -408,11 +428,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       numberedList: 'Numbered list',
       originalType: 'Original type',
       platformCode: 'Platform code',
+      platform: 'Platform',
+      spotify: 'Spotify',
       paddingPreset: 'Padding preset',
       paddingToken: 'Padding token',
       radiusToken: 'Radius token',
+      streamUrl: 'Stream URL',
       removeImage: (index) => `Remove image ${index}`,
       removeSocialLink: (index) => `Remove social link ${index}`,
+      time: 'Time',
+      title: 'Title',
+      uid: 'UID',
+      videoUrl: 'Video URL',
+      viewers: 'Viewers',
       shape: 'Shape',
       showCaptions: 'Show captions',
       showRecentCount: 'Recent count',
@@ -441,6 +469,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: 'Icon',
         image: 'Image',
         large: 'Large',
+        live: 'Live',
+        dashed: 'Dashed',
+        dotted: 'Dotted',
         left: 'Left',
         lg: 'Large',
         masonry: 'Masonry',
@@ -448,6 +479,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         md: 'Medium',
         narrow: 'Narrow',
         outline: 'Outline',
+        offline: 'Offline',
         none: 'None',
         pill: 'Pill',
         primary: 'Primary',
@@ -460,6 +492,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         solid: 'Solid',
         square: 'Square',
         stack: 'Stack',
+        xlarge: 'Extra large',
         vertical: 'Vertical',
         wide: 'Wide',
         xs: 'Extra small',
@@ -542,7 +575,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       hideCatalog: '收起目录',
       draftBlocksDescription: '按顺序编辑各区块。只有 JSON 合法时，预览才会更新。',
       draftBlocksTitle: '草稿区块',
-      emptyBlocksDescription: '点击添加区块打开组件目录，再开始编辑主页内容。',
+      emptyBlocksDescription: '点击组件目录中的区块，先插入第一个组件，再开始编辑主页内容。',
       emptyBlocksTitle: '还没有主页区块',
       devModeLayoutTitle: '布局 token',
       devModeSchemaTitle: 'Schema JSON',
@@ -662,6 +695,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: '添加社交链接',
       advancedJson: '高级 JSON',
       align: '对齐',
+      artist: '艺人',
+      day: '日期',
       backgroundOverlay: '图片叠加层',
       backgroundType: '背景类型',
       backgroundValue: '背景值',
@@ -672,6 +707,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: '说明',
       columns: '列数',
       content: '内容',
+      embedValue: '嵌入值',
+      events: '活动',
       customHeight: '自定义高度',
       customWidth: '自定义宽度',
       displayMode: '展示模式',
@@ -680,8 +717,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       gap: '间距',
       gapToken: '间距 token',
       hideAdvancedJson: '收起高级 JSON',
+      height: '高度',
       imageAlt: '图片替代文本',
       imageUrl: '图片 URL',
+      isLive: '直播状态',
       italic: '斜体',
       label: '标签',
       layout: '排列方式',
@@ -692,11 +731,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       numberedList: '编号列表',
       originalType: '原始类型',
       platformCode: '平台代码',
+      platform: '平台',
+      spotify: 'Spotify',
       paddingPreset: '内边距预设',
       paddingToken: '内边距 token',
       radiusToken: '圆角 token',
+      streamUrl: '直播链接',
       removeImage: (index) => `移除图片 ${index}`,
       removeSocialLink: (index) => `移除社交链接 ${index}`,
+      time: '时间',
+      title: '标题',
+      uid: 'UID',
+      videoUrl: '视频 URL',
+      viewers: '观看人数',
       shape: '形状',
       showCaptions: '显示说明',
       showRecentCount: '近期数量',
@@ -725,6 +772,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: '图标',
         image: '图片',
         large: '大',
+        live: '直播中',
+        dashed: '虚线',
+        dotted: '点线',
         left: '左对齐',
         lg: '大',
         masonry: '瀑布流',
@@ -732,6 +782,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         md: '中',
         narrow: '窄',
         outline: '描边',
+        offline: '离线',
         none: '无',
         pill: '胶囊',
         primary: '主要',
@@ -744,6 +795,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         solid: '纯色',
         square: '方形',
         stack: '纵向',
+        xlarge: '超大',
         vertical: '纵向',
         wide: '宽',
         xs: '超小',
@@ -826,7 +878,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       hideCatalog: '一覧を閉じる',
       draftBlocksDescription: 'ブロックを順番に編集します。JSON が有効になるとプレビューが更新されます。',
       draftBlocksTitle: '下書きブロック',
-      emptyBlocksDescription: 'ブロックを追加から一覧を開き、ホームページ編集を始めてください。',
+      emptyBlocksDescription: 'コンポーネント一覧のブロックをクリックして最初のコンポーネントを挿入し、ホームページ編集を始めてください。',
       emptyBlocksTitle: 'ホームページブロックはまだありません',
       devModeLayoutTitle: 'レイアウトトークン',
       devModeSchemaTitle: 'Schema JSON',
@@ -946,6 +998,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       addSocialLink: 'SNS リンクを追加',
       advancedJson: '高度な JSON',
       align: '配置',
+      artist: 'アーティスト',
+      day: '日付',
       backgroundOverlay: '画像オーバーレイ',
       backgroundType: '背景タイプ',
       backgroundValue: '背景値',
@@ -956,6 +1010,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       caption: 'キャプション',
       columns: '列数',
       content: '本文',
+      embedValue: '埋め込み値',
+      events: '予定',
       customHeight: 'カスタム高さ',
       customWidth: 'カスタム幅',
       displayMode: '表示モード',
@@ -964,8 +1020,10 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       gap: '間隔',
       gapToken: '間隔トークン',
       hideAdvancedJson: '高度な JSON を閉じる',
+      height: '高さ',
       imageAlt: '画像の代替テキスト',
       imageUrl: '画像 URL',
+      isLive: '配信状態',
       italic: '斜体',
       label: 'ラベル',
       layout: '配置',
@@ -976,11 +1034,19 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
       numberedList: '番号付きリスト',
       originalType: '元のタイプ',
       platformCode: 'プラットフォームコード',
+      platform: 'プラットフォーム',
+      spotify: 'Spotify',
       paddingPreset: '余白プリセット',
       paddingToken: '余白トークン',
       radiusToken: '角丸トークン',
+      streamUrl: '配信 URL',
       removeImage: (index) => `画像 ${index} を削除`,
       removeSocialLink: (index) => `SNS リンク ${index} を削除`,
+      time: '時間',
+      title: 'タイトル',
+      uid: 'UID',
+      videoUrl: '動画 URL',
+      viewers: '視聴者数',
       shape: '形状',
       showCaptions: 'キャプションを表示',
       showRecentCount: '最近の件数',
@@ -1009,6 +1075,9 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         icon: 'アイコン',
         image: '画像',
         large: '大',
+        live: '配信中',
+        dashed: '破線',
+        dotted: '点線',
         left: '左',
         lg: '大',
         masonry: 'メイソンリー',
@@ -1016,6 +1085,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         md: '中',
         narrow: '狭め',
         outline: 'アウトライン',
+        offline: 'オフライン',
         none: 'なし',
         pill: 'ピル',
         primary: 'プライマリ',
@@ -1028,6 +1098,7 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
         solid: '単色',
         square: '四角',
         stack: '縦方向',
+        xlarge: '特大',
         vertical: '縦並び',
         wide: '広め',
         xs: '極小',

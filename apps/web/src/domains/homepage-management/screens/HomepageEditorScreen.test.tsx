@@ -39,16 +39,18 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 vi.mock('@/domains/homepage-management/editor/puck/HomepagePuckEditor', () => ({
   HomepagePuckEditor: ({
     content,
+    fitToParent,
     onContentChange,
     onSaveDraft,
     onThemeChange,
   }: {
     content: HomepageDraftContent;
+    fitToParent?: boolean;
     onContentChange: (content: HomepageDraftContent) => void;
     onSaveDraft: () => void;
     onThemeChange: (theme: ThemeConfig) => void;
   }) => (
-    <div data-testid="homepage-puck-editor">
+    <div data-fit-to-parent={String(Boolean(fitToParent))} data-testid="homepage-puck-editor">
       <p>Puck visual editor</p>
       <button
         type="button"
@@ -515,7 +517,7 @@ describe('HomepageEditorScreen', () => {
   it('renders standalone editor chrome without summary cards and uses the shell-free preview path', async () => {
     mockHomepageRequests();
 
-    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" standalone />);
+    const { container } = renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" standalone />);
 
     expect(await screen.findByRole('button', { name: 'Exit editor' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Dev Mode' })).toBeInTheDocument();
@@ -526,12 +528,17 @@ describe('HomepageEditorScreen', () => {
     expect(screen.queryByText('Blocks')).not.toBeInTheDocument();
     expect(screen.queryByText('Homepage URL')).not.toBeInTheDocument();
     expect(screen.getByTestId('homepage-puck-editor')).toBeInTheDocument();
+    expect(screen.getByTestId('homepage-puck-editor')).toHaveAttribute('data-fit-to-parent', 'true');
+    expect(container.firstElementChild?.className).toContain('overflow-hidden');
+    expect(container.firstElementChild?.className).toContain('max-h-[100dvh]');
+    expect(container.querySelector('.overscroll-contain')?.className).toContain('overflow-y-auto');
 
     fireEvent.click(screen.getByRole('button', { name: 'Page info' }));
 
     expect(screen.getByRole('heading', { name: 'Page info' })).toBeInTheDocument();
     expect(screen.getByText('Tenant')).toBeInTheDocument();
     expect(screen.getByText('Homepage URL')).toBeInTheDocument();
+    expect(screen.getByTestId('homepage-editor-page-info-summary').className).toContain('auto-fit');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
 

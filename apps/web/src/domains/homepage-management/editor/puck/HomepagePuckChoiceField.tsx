@@ -26,7 +26,7 @@ function HomepagePuckChoiceField<T extends string>({
       <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
         {label}
       </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={label}>
         {options.map((option) => {
           const Icon = option.icon;
           const isActive = option.value === value;
@@ -41,7 +41,7 @@ function HomepagePuckChoiceField<T extends string>({
               onClick={() => {
                 onChange(option.value);
               }}
-              className={`inline-flex min-w-[2.5rem] items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition ${
+              className={`inline-flex min-w-[2.25rem] items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
                 isActive
                   ? 'border-slate-900 bg-slate-900 text-white'
                   : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -73,7 +73,7 @@ export function createHomepagePuckChoiceField<T extends string>(
           label={label}
           options={options}
           readOnly={readOnly}
-          value={nextValue}
+          value={nextValue as T}
           onChange={(nextChoice) => {
             onChange(nextChoice);
           }}

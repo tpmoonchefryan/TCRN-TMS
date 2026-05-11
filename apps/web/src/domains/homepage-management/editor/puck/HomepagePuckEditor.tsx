@@ -1,6 +1,6 @@
 import { type Config, type Data, Puck, usePuck } from '@puckeditor/core';
 import { type ThemeConfig } from '@tcrn/shared';
-import { useEffect, useMemo } from 'react';
+import { type ReactNode,useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
 import {
   type HomepageDraftContent,
@@ -44,6 +44,8 @@ export interface HomepagePuckSelectedItem {
   type: string;
 }
 
+const HOMEPAGE_PUCK_ROOT_ZONE = 'root:default-zone';
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
@@ -54,6 +56,37 @@ function isSameSerializedValue(left: unknown, right: unknown) {
 
 function getViewportWidth() {
   return typeof window === 'undefined' ? null : window.innerWidth;
+}
+
+function getHomepagePuckSidebarUiKey(ui: {
+  leftSideBarWidth: number;
+  rightSideBarWidth: number;
+}) {
+  return serializeHomepagePuckSidebarWidths({
+    left: ui.leftSideBarWidth,
+    right: ui.rightSideBarWidth,
+  });
+}
+
+function initializeHomepagePuckSidebarUi() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_HOMEPAGE_PUCK_SIDEBAR_UI;
+  }
+
+  const storedWidths = sanitizeHomepagePuckSidebarStorageValue(
+    window.localStorage.getItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY),
+    getViewportWidth(),
+  );
+  const serialized = serializeHomepagePuckSidebarWidths(storedWidths);
+
+  if (window.localStorage.getItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY) !== serialized) {
+    window.localStorage.setItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY, serialized);
+  }
+
+  return {
+    leftSideBarWidth: storedWidths.left,
+    rightSideBarWidth: storedWidths.right,
+  };
 }
 
 function HomepagePuckBridge({
@@ -91,25 +124,17 @@ function HomepagePuckBridge({
       return;
     }
 
-    const storedWidths = sanitizeHomepagePuckSidebarStorageValue(
-      window.localStorage.getItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY),
-      getViewportWidth(),
-    );
-    const serialized = serializeHomepagePuckSidebarWidths(storedWidths);
-
-    if (window.localStorage.getItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY) !== serialized) {
-      window.localStorage.setItem(HOMEPAGE_PUCK_SIDEBAR_STORAGE_KEY, serialized);
-    }
+    const storedWidths = initializeHomepagePuckSidebarUi();
 
     if (
-      leftSideBarWidth !== storedWidths.left
-      || rightSideBarWidth !== storedWidths.right
+      leftSideBarWidth !== storedWidths.leftSideBarWidth
+      || rightSideBarWidth !== storedWidths.rightSideBarWidth
     ) {
       dispatch({
         type: 'setUi',
         ui: {
-          leftSideBarWidth: storedWidths.left,
-          rightSideBarWidth: storedWidths.right,
+          leftSideBarWidth: storedWidths.leftSideBarWidth,
+          rightSideBarWidth: storedWidths.rightSideBarWidth,
         },
         recordHistory: false,
       });
@@ -187,6 +212,45 @@ function HomepagePuckBridge({
   return null;
 }
 
+function HomepagePuckEmptyInsertDrawerItem({
+  children,
+  isEmptyDraft,
+  name,
+}: Readonly<{
+  children: ReactNode;
+  isEmptyDraft: boolean;
+  name: string;
+}>) {
+  const { dispatch } = usePuck();
+
+  return (
+    <div
+      onClickCapture={(event) => {
+        if (!isEmptyDraft) {
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+
+        if (!target?.closest('[data-puck-drawer-item]')) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        dispatch({
+          type: 'insert',
+          componentType: name,
+          destinationIndex: 0,
+          destinationZone: HOMEPAGE_PUCK_ROOT_ZONE,
+        });
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function HomepagePuckEditor({
   content,
   copy,
@@ -200,20 +264,58 @@ export function HomepagePuckEditor({
 }: Readonly<HomepagePuckEditorProps>) {
   const config = useMemo(() => createHomepagePuckConfig(copy, theme), [copy, theme]);
   const data = useMemo(() => mapHomepageContentToPuckData(content, theme), [content, theme]);
+  const isEmptyDraft = content.components.length === 0;
+  const [puckUi, setPuckUi] = useState(DEFAULT_HOMEPAGE_PUCK_SIDEBAR_UI);
+
+  useLayoutEffect(() => {
+    const nextUi = initializeHomepagePuckSidebarUi();
+
+    if (!isSameSerializedValue(DEFAULT_HOMEPAGE_PUCK_SIDEBAR_UI, nextUi)) {
+      setPuckUi(nextUi);
+    }
+  }, []);
+
   const puckConfig = config as unknown as Config;
   const puckData = data as unknown as Data;
+  const puckOverrides = useMemo(() => ({
+    drawerItem: ({
+      children,
+      name,
+    }: {
+      children: ReactNode;
+      name: string;
+    }) => (
+      <HomepagePuckEmptyInsertDrawerItem isEmptyDraft={isEmptyDraft} name={name}>
+        {children}
+      </HomepagePuckEmptyInsertDrawerItem>
+    ),
+  }), [isEmptyDraft]);
 
   return (
     <div
-      className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm [&_.homepage-puck-block-preview_.min-h-screen]:min-h-0 ${
-        fitToParent ? 'flex h-full min-h-0' : 'min-h-[680px]'
+      data-homepage-puck-editor
+      className={`rounded-3xl border border-slate-200 bg-white shadow-sm [&_.homepage-puck-block-preview_.min-h-screen]:min-h-0 ${
+        fitToParent
+          ? 'flex min-h-0 flex-1 flex-col overflow-auto'
+          : 'min-h-[680px] overflow-hidden'
       }`}
     >
+      {isEmptyDraft ? (
+        <div className="shrink-0 border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+          <p className="text-sm font-semibold text-slate-900">{copy.sections.emptyBlocksTitle}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{copy.sections.emptyBlocksDescription}</p>
+        </div>
+      ) : null}
       <Puck
+        key={getHomepagePuckSidebarUiKey(puckUi)}
         config={puckConfig}
         data={puckData}
         height={fitToParent ? '100%' : 'min(82vh, 900px)'}
-        ui={DEFAULT_HOMEPAGE_PUCK_SIDEBAR_UI}
+        iframe={{
+          enabled: false,
+        }}
+        overrides={puckOverrides}
+        ui={puckUi}
         onChange={(nextData) => {
           const nextContent = mapPuckDataToHomepageContent(
             nextData as Partial<HomepagePuckData>,
@@ -260,13 +362,49 @@ export function HomepagePuckEditor({
         ]}
       />
       <style jsx global>{`
-        [class*="_PuckCanvas-root_"] {
+        [data-homepage-puck-editor] > [class*="_Puck_"] {
+          display: flex !important;
+          flex: 1 1 0% !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          min-height: 0 !important;
+          width: 100% !important;
+        }
+
+        [data-homepage-puck-editor] > [class*="_Puck_"],
+        [data-homepage-puck-editor] > [class*="_PuckLayout_"],
+        [data-homepage-puck-editor] [class*="_PuckLayout-inner_"] {
+          min-width: 0 !important;
+        }
+
+        [data-homepage-puck-editor] > [class*="_Puck_"] > [class*="_PuckLayout_"] {
+          display: flex !important;
+          flex: 1 1 0% !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          min-height: 0 !important;
+        }
+
+        [data-homepage-puck-editor] [class*="_PuckLayout-inner_"] {
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 0 !important;
+          --puck-frame-width: minmax(0, 1fr);
+          grid-template-rows: min-content minmax(0, 1fr) !important;
+        }
+
+        [data-homepage-puck-editor] [class*="_PuckCanvas-root_"] {
           background: transparent !important;
           left: 50% !important;
+          height: 100% !important;
           translate: -50% 0;
         }
 
-        [class*="_PuckCanvas-root_"] [data-homepage-puck-root] {
+        [data-homepage-puck-editor] [class*="_PuckCanvas-inner_"] {
+          height: 100% !important;
+        }
+
+        [data-homepage-puck-editor] [class*="_PuckCanvas-root_"] [data-homepage-puck-root] {
           min-height: 100%;
         }
       `}</style>

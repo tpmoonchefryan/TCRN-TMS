@@ -24,6 +24,13 @@ export const HOMEPAGE_PUCK_SUPPORTED_TYPES = [
   'RichText',
   'LinkButton',
   'MarshmallowWidget',
+  'VideoEmbed',
+  'MusicPlayer',
+  'Schedule',
+  'LiveStatus',
+  'Divider',
+  'Spacer',
+  'BilibiliDynamic',
 ] as const;
 
 export const HOMEPAGE_PUCK_UNSUPPORTED_TYPE = 'UnsupportedHomepageBlock';
@@ -78,6 +85,48 @@ export interface HomepagePuckComponents {
     showRecentCount: number;
     showSubmitButton: boolean;
   };
+  VideoEmbed: HomepagePuckBaseProps & HomepageLayoutProps & {
+    aspectRatio: string;
+    autoplay: boolean;
+    showControls: boolean;
+    title: string;
+    videoUrl: string;
+  };
+  MusicPlayer: HomepagePuckBaseProps & HomepageLayoutProps & {
+    artist: string;
+    embedValue: string;
+    platform: string;
+    title: string;
+  };
+  Schedule: HomepagePuckBaseProps & HomepageLayoutProps & {
+    events: Array<{ day: string; time: string; title: string }>;
+    title: string;
+    weekOf: string;
+  };
+  LiveStatus: HomepagePuckBaseProps & HomepageLayoutProps & {
+    channelName: string;
+    isLive: boolean;
+    platform: string;
+    streamUrl: string;
+    title: string;
+    viewers: string;
+  };
+  Divider: HomepagePuckBaseProps & HomepageLayoutProps & {
+    spacing: 'small' | 'medium' | 'large';
+    style: 'solid' | 'dashed' | 'dotted';
+  };
+  Spacer: HomepagePuckBaseProps & HomepageLayoutProps & {
+    height: 'small' | 'medium' | 'large' | 'xlarge';
+  };
+  BilibiliDynamic: HomepagePuckBaseProps & HomepageLayoutProps & {
+    cardStyle: string;
+    filterType: string;
+    maxItems: number;
+    refreshInterval: number;
+    showHeader: boolean;
+    title: string;
+    uid: string;
+  };
   UnsupportedHomepageBlock: HomepagePuckUnsupportedProps;
 }
 
@@ -98,6 +147,16 @@ function asNumber(value: unknown, fallback: number) {
 
 function asBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function normalizeStringChoice<T extends string>(
+  value: unknown,
+  fallback: T,
+  options: readonly T[],
+): T {
+  const nextValue = asString(value, fallback);
+
+  return options.includes(nextValue as T) ? (nextValue as T) : fallback;
 }
 
 function mapLayoutPropsToPuckProps(props: Record<string, unknown>): HomepageLayoutProps {
@@ -199,6 +258,73 @@ function mapPropsToPuckProps(component: HomepageDraftComponentRecord) {
         showRecentCount: asNumber(props.showRecentCount, 3),
         showSubmitButton: asBoolean(props.showSubmitButton, true),
       } satisfies HomepagePuckComponents['MarshmallowWidget'];
+    case 'VideoEmbed':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        aspectRatio: asString(props.aspectRatio, '16:9'),
+        autoplay: asBoolean(props.autoplay),
+        showControls: asBoolean(props.showControls, true),
+        title: asString(props.title),
+        videoUrl: asString(props.videoUrl),
+      } satisfies HomepagePuckComponents['VideoEmbed'];
+    case 'MusicPlayer':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        artist: asString(props.artist),
+        embedValue: asString(props.embedValue),
+        platform: asString(props.platform, 'spotify'),
+        title: asString(props.title),
+      } satisfies HomepagePuckComponents['MusicPlayer'];
+    case 'Schedule':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        events: asRecordArray(props.events).map((event) => ({
+          day: asString(event.day),
+          time: asString(event.time),
+          title: asString(event.title),
+        })),
+        title: asString(props.title),
+        weekOf: asString(props.weekOf),
+      } satisfies HomepagePuckComponents['Schedule'];
+    case 'LiveStatus':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        channelName: asString(props.channelName),
+        isLive: asBoolean(props.isLive),
+        platform: asString(props.platform, 'youtube'),
+        streamUrl: asString(props.streamUrl),
+        title: asString(props.title),
+        viewers: asString(props.viewers),
+      } satisfies HomepagePuckComponents['LiveStatus'];
+    case 'Divider':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        spacing: normalizeStringChoice(props.spacing, 'medium', ['small', 'medium', 'large'] as const),
+        style: normalizeStringChoice(props.style, 'solid', ['solid', 'dashed', 'dotted'] as const),
+      } satisfies HomepagePuckComponents['Divider'];
+    case 'Spacer':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        height: normalizeStringChoice(props.height, 'medium', ['small', 'medium', 'large', 'xlarge'] as const),
+      } satisfies HomepagePuckComponents['Spacer'];
+    case 'BilibiliDynamic':
+      return {
+        ...baseProps,
+        ...layoutProps,
+        cardStyle: asString(props.cardStyle, 'standard'),
+        filterType: asString(props.filterType, 'all'),
+        maxItems: asNumber(props.maxItems, 5),
+        refreshInterval: asNumber(props.refreshInterval, 0),
+        showHeader: asBoolean(props.showHeader, true),
+        title: asString(props.title),
+        uid: asString(props.uid),
+      } satisfies HomepagePuckComponents['BilibiliDynamic'];
     default:
       return {
         ...baseProps,
@@ -239,6 +365,41 @@ function mapComponentToPuckItem(component: HomepageDraftComponentRecord): Homepa
       return {
         type: 'MarshmallowWidget',
         props: mapPropsToPuckProps(component) as HomepagePuckComponents['MarshmallowWidget'],
+      };
+    case 'VideoEmbed':
+      return {
+        type: 'VideoEmbed',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['VideoEmbed'],
+      };
+    case 'MusicPlayer':
+      return {
+        type: 'MusicPlayer',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['MusicPlayer'],
+      };
+    case 'Schedule':
+      return {
+        type: 'Schedule',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['Schedule'],
+      };
+    case 'LiveStatus':
+      return {
+        type: 'LiveStatus',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['LiveStatus'],
+      };
+    case 'Divider':
+      return {
+        type: 'Divider',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['Divider'],
+      };
+    case 'Spacer':
+      return {
+        type: 'Spacer',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['Spacer'],
+      };
+    case 'BilibiliDynamic':
+      return {
+        type: 'BilibiliDynamic',
+        props: mapPropsToPuckProps(component) as HomepagePuckComponents['BilibiliDynamic'],
       };
     default:
       return {
@@ -327,6 +488,66 @@ function mapPuckPropsToHomepageProps(type: HomepagePuckSupportedType, props: Rec
         displayMode: asString(props.displayMode, 'compact'),
         showRecentCount: asNumber(props.showRecentCount, 3),
         showSubmitButton: asBoolean(props.showSubmitButton, true),
+      };
+    case 'VideoEmbed':
+      return {
+        ...layoutProps,
+        aspectRatio: asString(props.aspectRatio, '16:9'),
+        autoplay: asBoolean(props.autoplay),
+        showControls: asBoolean(props.showControls, true),
+        title: asString(props.title),
+        videoUrl: asString(props.videoUrl),
+      };
+    case 'MusicPlayer':
+      return {
+        ...layoutProps,
+        artist: asString(props.artist),
+        embedValue: asString(props.embedValue),
+        platform: asString(props.platform, 'spotify'),
+        title: asString(props.title),
+      };
+    case 'Schedule':
+      return {
+        ...layoutProps,
+        events: asRecordArray(props.events).map((event) => ({
+          day: asString(event.day),
+          time: asString(event.time),
+          title: asString(event.title),
+        })),
+        title: asString(props.title),
+        weekOf: asString(props.weekOf),
+      };
+    case 'LiveStatus':
+      return {
+        ...layoutProps,
+        channelName: asString(props.channelName),
+        isLive: asBoolean(props.isLive),
+        platform: asString(props.platform, 'youtube'),
+        streamUrl: asString(props.streamUrl),
+        title: asString(props.title),
+        viewers: asString(props.viewers),
+      };
+    case 'Divider':
+      return {
+        ...layoutProps,
+        spacing: normalizeStringChoice(props.spacing, 'medium', ['small', 'medium', 'large'] as const),
+        style: normalizeStringChoice(props.style, 'solid', ['solid', 'dashed', 'dotted'] as const),
+      };
+    case 'Spacer':
+      return {
+        ...layoutProps,
+        height: normalizeStringChoice(props.height, 'medium', ['small', 'medium', 'large', 'xlarge'] as const),
+      };
+    case 'BilibiliDynamic':
+      return {
+        ...layoutProps,
+        cardStyle: asString(props.cardStyle, 'standard'),
+        filterType: asString(props.filterType, 'all'),
+        maxItems: asNumber(props.maxItems, 5),
+        refreshInterval: asNumber(props.refreshInterval, 0),
+        showHeader: asBoolean(props.showHeader, true),
+        title: asString(props.title),
+        uid: asString(props.uid),
       };
   }
 }

@@ -9,7 +9,7 @@ import {
   Square,
   TableRowsSplit,
 } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 
 import { DEFAULT_HOMEPAGE_LAYOUT_PROPS } from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
 import {
@@ -19,6 +19,12 @@ import {
 } from '@/domains/homepage-management/editor/puck/homepage-puck-theme';
 import { HomepagePuckBlockPreview } from '@/domains/homepage-management/editor/puck/HomepagePuckBlockPreview';
 import { createHomepagePuckChoiceField } from '@/domains/homepage-management/editor/puck/HomepagePuckChoiceField';
+import { createHomepagePuckDimensionField } from '@/domains/homepage-management/editor/puck/HomepagePuckDimensionField';
+import {
+  createHomepagePuckBackgroundField,
+  createHomepagePuckBackgroundOverlayField,
+  createHomepagePuckImageField,
+} from '@/domains/homepage-management/editor/puck/HomepagePuckMediaField';
 import { type HomepageEditorCopy } from '@/domains/homepage-management/screens/homepage-editor.copy';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 
@@ -35,7 +41,7 @@ const READ_ONLY_PERMISSIONS: Partial<Permissions> = {
   insert: false,
 };
 
-function textOption(copy: HomepageEditorCopy, value: string) {
+function textOption<T extends string>(copy: HomepageEditorCopy, value: T) {
   return {
     label: copy.structured.options[value] || value,
     value,
@@ -47,6 +53,10 @@ function booleanOption(label: string, value: boolean) {
     label,
     value,
   };
+}
+
+function booleanOptions(onLabel: string, offLabel: string) {
+  return [booleanOption(onLabel, true), booleanOption(offLabel, false)] as const;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -116,11 +126,11 @@ function createLayoutFields(copy: HomepageEditorCopy) {
       { label: copy.structured.options.custom, value: 'custom' },
     ] as const),
     customWidthPx: {
-      type: 'number',
-      label: copy.structured.customWidth,
-      min: 240,
-      max: 1440,
-      step: 1,
+      ...createHomepagePuckDimensionField(copy.structured.customWidth, {
+        max: 1440,
+        min: 240,
+        step: 1,
+      }),
       visible: false,
     },
     heightPreset: createHomepagePuckChoiceField(copy.structured.heightPreset, [
@@ -131,11 +141,11 @@ function createLayoutFields(copy: HomepageEditorCopy) {
       { label: copy.structured.options.custom, value: 'custom' },
     ] as const),
     customHeightPx: {
-      type: 'number',
-      label: copy.structured.customHeight,
-      min: 80,
-      max: 1200,
-      step: 1,
+      ...createHomepagePuckDimensionField(copy.structured.customHeight, {
+        max: 1200,
+        min: 80,
+        step: 1,
+      }),
       visible: false,
     },
     gapToken: createHomepagePuckChoiceField(copy.structured.gapToken, [
@@ -172,8 +182,23 @@ function renderPreviewBlock(
   type: keyof Omit<HomepagePuckComponents, typeof HOMEPAGE_PUCK_UNSUPPORTED_TYPE>,
   props: Record<string, unknown>,
   theme: ThemeConfig,
+  copy: HomepageEditorCopy,
 ) {
-  return <HomepagePuckBlockPreview props={props} theme={theme} type={type} />;
+  return (
+    <HomepagePuckBlockPreview
+      description={copy.catalog.entries[type]?.description}
+      label={copy.catalog.entries[type]?.label}
+      props={props}
+      theme={theme}
+      type={type}
+    />
+  );
+}
+
+interface HomepagePuckRootDropZoneElementProps {
+  className?: string;
+  minEmptyHeight?: number | string;
+  zone: string;
 }
 
 function renderRootPreview(
@@ -182,14 +207,27 @@ function renderRootPreview(
   theme: ThemeConfig,
 ) {
   const rootTheme = mapHomepagePuckRootPropsToTheme(rootProps, theme);
+  const rootChildren =
+    isValidElement(children) && typeof children.props === 'object' && children.props !== null && 'zone' in children.props
+      ? cloneElement(
+        children as ReactElement<HomepagePuckRootDropZoneElementProps>,
+        {
+          className: [
+            (children.props as HomepagePuckRootDropZoneElementProps).className,
+            'flex-1',
+          ].filter(Boolean).join(' '),
+          minEmptyHeight: '100%',
+        },
+      )
+      : children;
 
   return (
     <div
       data-homepage-puck-root
-      className="min-h-full p-6 md:p-8"
+      className="flex h-full min-h-full flex-col p-6 md:p-8"
       style={getHomepageCanvasStyle(rootTheme)}
     >
-      {children}
+      {rootChildren}
     </div>
   );
 }
@@ -200,13 +238,42 @@ export function createHomepagePuckConfig(
 ): Config<
   HomepagePuckComponents,
   HomepagePuckRootProps,
-  'content' | 'core' | 'interactive' | 'media' | 'unsupported'
+  'content' | 'core' | 'interactive' | 'layout' | 'media' | 'unsupported'
 > {
   const visibilityOptions = [
     booleanOption(copy.block.visible, true),
     booleanOption(copy.block.hidden, false),
   ];
   const layoutFields = createLayoutFields(copy);
+  const imageField = createHomepagePuckImageField({
+    clearLabel: copy.block.remove,
+    label: copy.structured.imageUrl,
+    placeholder: 'https://cdn.example.com/image.png',
+    uploadLabel: copy.structured.addImage,
+  });
+  const backgroundValueFields = {
+    solid: createHomepagePuckBackgroundField({
+      clearLabel: copy.block.remove,
+      kind: 'solid',
+      label: copy.structured.backgroundValue,
+      placeholder: '#FAFBFC',
+      uploadLabel: copy.structured.addImage,
+    }),
+    gradient: createHomepagePuckBackgroundField({
+      clearLabel: copy.block.remove,
+      kind: 'gradient',
+      label: copy.structured.backgroundValue,
+      placeholder: 'linear-gradient(135deg, #FAFBFC 0%, #E0E7FF 100%)',
+      uploadLabel: copy.structured.addImage,
+    }),
+    image: createHomepagePuckBackgroundField({
+      clearLabel: copy.block.remove,
+      kind: 'image',
+      label: copy.structured.backgroundValue,
+      placeholder: 'https://cdn.example.com/background.jpg',
+      uploadLabel: copy.structured.addImage,
+    }),
+  } as const;
   const rootFields = {
     title: { type: 'text', visible: false },
     backgroundType: createHomepagePuckChoiceField(copy.structured.backgroundType, [
@@ -214,10 +281,12 @@ export function createHomepagePuckConfig(
       { label: copy.structured.options.gradient, value: 'gradient' },
       { label: copy.structured.options.image, value: 'image' },
     ] as const),
-    backgroundValue: { type: 'text', label: copy.structured.backgroundValue },
+    backgroundValue: backgroundValueFields.solid,
     backgroundOverlay: {
-      type: 'text',
-      label: copy.structured.backgroundOverlay,
+      ...createHomepagePuckBackgroundOverlayField({
+        description: copy.structured.backgroundOverlay,
+        label: copy.structured.backgroundOverlay,
+      }),
       visible: false,
     },
   } as const;
@@ -231,15 +300,19 @@ export function createHomepagePuckConfig(
       },
       media: {
         title: copy.catalog.categories.media,
-        components: ['ImageGallery'],
+        components: ['ImageGallery', 'VideoEmbed', 'MusicPlayer'],
       },
       content: {
         title: copy.catalog.categories.content,
-        components: ['RichText'],
+        components: ['RichText', 'Schedule'],
+      },
+      layout: {
+        title: copy.catalog.categories.layout,
+        components: ['Divider', 'Spacer'],
       },
       interactive: {
         title: copy.catalog.categories.interactive,
-        components: ['LinkButton', 'MarshmallowWidget'],
+        components: ['LinkButton', 'MarshmallowWidget', 'LiveStatus', 'BilibiliDynamic'],
       },
       unsupported: {
         title: copy.structured.unsupportedCategory,
@@ -260,7 +333,19 @@ export function createHomepagePuckConfig(
         },
         theme,
       ),
-      resolveFields: (data, { fields }) => resolveHomepagePuckRootFields(data, fields),
+      resolveFields: (data, { fields }) => {
+        const props = resolveFieldProps(data);
+
+        return {
+          ...resolveHomepagePuckRootFields(data, fields),
+          backgroundValue:
+            props.backgroundType === 'image'
+              ? backgroundValueFields.image
+              : props.backgroundType === 'gradient'
+                ? backgroundValueFields.gradient
+                : backgroundValueFields.solid,
+        };
+      },
     },
     components: {
       ProfileCard: {
@@ -289,7 +374,7 @@ export function createHomepagePuckConfig(
           radiusToken: layoutFields.radiusToken,
           paddingPreset: layoutFields.paddingPreset,
           displayName: { type: 'text', label: copy.structured.displayName },
-          avatarUrl: { type: 'text', label: copy.structured.imageUrl },
+          avatarUrl: imageField,
           avatarShape: {
             type: 'select',
             label: copy.structured.shape,
@@ -305,7 +390,7 @@ export function createHomepagePuckConfig(
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('ProfileCard', props, theme),
+        render: (props) => renderPreviewBlock('ProfileCard', props, theme, copy),
       },
       SocialLinks: {
         label: copy.catalog.entries.SocialLinks.label,
@@ -342,7 +427,7 @@ export function createHomepagePuckConfig(
           },
           iconSize: {
             type: 'select',
-            label: copy.structured.nameFontSize,
+            label: 'Icon size',
             options: ['small', 'medium', 'large'].map((value) => textOption(copy, value)),
           },
           platforms: {
@@ -363,7 +448,7 @@ export function createHomepagePuckConfig(
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('SocialLinks', props, theme),
+        render: (props) => renderPreviewBlock('SocialLinks', props, theme, copy),
       },
       ImageGallery: {
         label: copy.catalog.entries.ImageGallery.label,
@@ -398,13 +483,13 @@ export function createHomepagePuckConfig(
           showCaptions: {
             type: 'radio',
             label: copy.structured.showCaptions,
-            options: [booleanOption(copy.block.visible, true), booleanOption(copy.block.hidden, false)],
+            options: booleanOptions('Show captions', 'Hide captions'),
           },
           images: {
             type: 'array',
             label: copy.catalog.entries.ImageGallery.label,
             arrayFields: {
-              url: { type: 'text', label: copy.structured.imageUrl },
+              url: imageField,
               alt: { type: 'text', label: copy.structured.imageAlt },
               caption: { type: 'text', label: copy.structured.caption },
             },
@@ -418,7 +503,7 @@ export function createHomepagePuckConfig(
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('ImageGallery', props, theme),
+        render: (props) => renderPreviewBlock('ImageGallery', props, theme, copy),
       },
       RichText: {
         label: copy.catalog.entries.RichText.label,
@@ -450,7 +535,7 @@ export function createHomepagePuckConfig(
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('RichText', props, theme),
+        render: (props) => renderPreviewBlock('RichText', props, theme, copy),
       },
       LinkButton: {
         label: copy.catalog.entries.LinkButton.label,
@@ -485,12 +570,12 @@ export function createHomepagePuckConfig(
           fullWidth: {
             type: 'radio',
             label: copy.structured.fullWidth,
-            options: [booleanOption(copy.block.visible, true), booleanOption(copy.block.hidden, false)],
+            options: booleanOptions('Full width', 'Auto width'),
           },
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('LinkButton', props, theme),
+        render: (props) => renderPreviewBlock('LinkButton', props, theme, copy),
       },
       MarshmallowWidget: {
         label: copy.catalog.entries.MarshmallowWidget.label,
@@ -528,7 +613,302 @@ export function createHomepagePuckConfig(
           visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
         },
         resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
-        render: (props) => renderPreviewBlock('MarshmallowWidget', props, theme),
+        render: (props) => renderPreviewBlock('MarshmallowWidget', props, theme, copy),
+      },
+      VideoEmbed: {
+        label: copy.catalog.entries.VideoEmbed.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          aspectRatio: '16:9',
+          autoplay: false,
+          id: '',
+          visible: true,
+          showControls: true,
+          title: '',
+          videoUrl: '',
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          title: { type: 'text', label: copy.structured.title },
+          videoUrl: { type: 'text', label: copy.structured.videoUrl },
+          aspectRatio: {
+            type: 'select',
+            label: 'Aspect ratio',
+            options: ['16:9', '4:3', '1:1'].map((value) => ({ label: value, value })),
+          },
+          autoplay: {
+            type: 'radio',
+            label: 'Autoplay',
+            options: booleanOptions('On', 'Off'),
+          },
+          showControls: {
+            type: 'radio',
+            label: 'Show controls',
+            options: booleanOptions('Show controls', 'Hide controls'),
+          },
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('VideoEmbed', props, theme, copy),
+      },
+      MusicPlayer: {
+        label: copy.catalog.entries.MusicPlayer.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          id: '',
+          visible: true,
+          artist: '',
+          embedValue: '',
+          platform: 'spotify',
+          title: '',
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          title: { type: 'text', label: copy.structured.title },
+          artist: { type: 'text', label: copy.structured.artist },
+          platform: { type: 'text', label: copy.structured.platform },
+          embedValue: { type: 'text', label: copy.structured.embedValue },
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('MusicPlayer', props, theme, copy),
+      },
+      Schedule: {
+        label: copy.catalog.entries.Schedule.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          events: [],
+          id: '',
+          title: '',
+          weekOf: '',
+          visible: true,
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          title: { type: 'text', label: copy.structured.title },
+          weekOf: { type: 'text', label: 'Week of' },
+          events: {
+            type: 'array',
+            label: copy.catalog.entries.Schedule.label,
+            arrayFields: {
+              day: { type: 'text', label: copy.structured.day },
+              time: { type: 'text', label: copy.structured.time },
+              title: { type: 'text', label: copy.structured.title },
+            },
+            defaultItemProps: {
+              day: '',
+              time: '',
+              title: '',
+            },
+            getItemSummary: (item) => item.title || item.day || copy.catalog.entries.Schedule.label,
+          },
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('Schedule', props, theme, copy),
+      },
+      LiveStatus: {
+        label: copy.catalog.entries.LiveStatus.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          channelName: '',
+          id: '',
+          isLive: false,
+          platform: 'youtube',
+          streamUrl: '',
+          title: '',
+          viewers: '',
+          visible: true,
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          platform: {
+            type: 'select',
+            label: 'Platform',
+            options: ['youtube', 'twitch', 'bilibili'].map((value) => ({
+              label: value.charAt(0).toUpperCase() + value.slice(1),
+              value,
+            })),
+          },
+          channelName: { type: 'text', label: 'Channel name' },
+          isLive: {
+            type: 'radio',
+            label: copy.structured.isLive,
+            options: [
+              booleanOption(copy.structured.options.live, true),
+              booleanOption(copy.structured.options.offline, false),
+            ],
+          },
+          title: { type: 'text', label: copy.structured.title },
+          viewers: { type: 'text', label: copy.structured.viewers },
+          streamUrl: { type: 'text', label: copy.structured.streamUrl },
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('LiveStatus', props, theme, copy),
+      },
+      Divider: {
+        label: copy.catalog.entries.Divider.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          id: '',
+          spacing: 'medium',
+          style: 'solid',
+          visible: true,
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          spacing: {
+            type: 'select',
+            label: 'Spacing',
+            options: ['small', 'medium', 'large'].map((value) => textOption(copy, value)),
+          },
+          style: createHomepagePuckChoiceField(copy.structured.style, [
+            { label: copy.structured.options.solid, value: 'solid' },
+            { label: copy.structured.options.dashed, value: 'dashed' },
+            { label: copy.structured.options.dotted, value: 'dotted' },
+          ] as const),
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('Divider', props, theme, copy),
+      },
+      Spacer: {
+        label: copy.catalog.entries.Spacer.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          height: 'medium',
+          id: '',
+          visible: true,
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          height: createHomepagePuckChoiceField(copy.structured.height, [
+            { label: copy.structured.options.small, value: 'small' },
+            { label: copy.structured.options.medium, value: 'medium' },
+            { label: copy.structured.options.large, value: 'large' },
+            { label: copy.structured.options.xlarge, value: 'xlarge' },
+          ] as const),
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('Spacer', props, theme, copy),
+      },
+      BilibiliDynamic: {
+        label: copy.catalog.entries.BilibiliDynamic.label,
+        defaultProps: {
+          ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+          cardStyle: 'standard',
+          filterType: 'all',
+          id: '',
+          maxItems: 5,
+          refreshInterval: 0,
+          showHeader: true,
+          title: '',
+          uid: '',
+          visible: true,
+        },
+        fields: {
+          id: { type: 'text', visible: false },
+          layoutMode: layoutFields.layoutMode,
+          align: layoutFields.align,
+          widthPreset: layoutFields.widthPreset,
+          customWidthPx: layoutFields.customWidthPx,
+          heightPreset: layoutFields.heightPreset,
+          customHeightPx: layoutFields.customHeightPx,
+          gapToken: layoutFields.gapToken,
+          paddingToken: layoutFields.paddingToken,
+          radiusToken: layoutFields.radiusToken,
+          paddingPreset: layoutFields.paddingPreset,
+          title: { type: 'text', label: copy.structured.title },
+          uid: { type: 'text', label: copy.structured.uid },
+          maxItems: { type: 'number', label: 'Max items', min: 1, max: 20 },
+          filterType: {
+            type: 'select',
+            label: 'Filter type',
+            options: ['all', 'posts', 'videos'].map((value) => ({
+              label: value.charAt(0).toUpperCase() + value.slice(1),
+              value,
+            })),
+          },
+          cardStyle: {
+            type: 'select',
+            label: 'Card style',
+            options: ['standard', 'compact'].map((value) => ({
+              label: value.charAt(0).toUpperCase() + value.slice(1),
+              value,
+            })),
+          },
+          refreshInterval: { type: 'number', label: 'Refresh interval', min: 0, step: 1 },
+          showHeader: {
+            type: 'radio',
+            label: 'Show header',
+            options: booleanOptions('Show header', 'Hide header'),
+          },
+          visible: { type: 'radio', label: copy.block.visible, options: visibilityOptions },
+        },
+        resolveFields: (data, { fields }) => resolveHomepagePuckLayoutFields(data, fields),
+        render: (props) => renderPreviewBlock('BilibiliDynamic', props, theme, copy),
       },
       UnsupportedHomepageBlock: {
         label: copy.structured.unsupportedAdvancedOnly,

@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { type HomepageDraftContent } from '@/domains/homepage-management/api/homepage.api';
 import { DEFAULT_HOMEPAGE_LAYOUT_PROPS } from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
 import {
   type HomepagePuckData,
@@ -49,11 +50,12 @@ describe('homepage Puck mappers', () => {
 
     expect(puckData.content).toEqual([
       expect.objectContaining({
-        type: 'UnsupportedHomepageBlock',
+        type: 'Schedule',
         props: expect.objectContaining({
           id: 'schedule-1',
-          originalType: 'Schedule',
-          serializedProps: JSON.stringify({ title: 'Weekly plan' }, null, 2),
+          title: 'Weekly plan',
+          weekOf: '',
+          events: [],
           visible: false,
         }),
       }),
@@ -66,6 +68,168 @@ describe('homepage Puck mappers', () => {
         }),
       }),
     ]);
+  });
+
+  it('round-trips the newly supported homepage blocks without falling back to unsupported records', () => {
+    const content = {
+      version: '1.0',
+      components: [
+        {
+          id: 'video-1',
+          type: 'VideoEmbed',
+          visible: true,
+          order: 1,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            aspectRatio: '4:3',
+            autoplay: true,
+            title: 'Promo clip',
+            videoUrl: 'https://youtu.be/abc123',
+            showControls: false,
+          },
+        },
+        {
+          id: 'schedule-1',
+          type: 'Schedule',
+          visible: true,
+          order: 2,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            events: [{ day: 'Mon', time: '18:00', title: 'Live stream' }],
+            title: 'Weekly plan',
+            weekOf: '2026-05-11',
+          },
+        },
+        {
+          id: 'music-1',
+          type: 'MusicPlayer',
+          visible: false,
+          order: 3,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            artist: 'Astel',
+            embedValue: 'track-123',
+            platform: 'spotify',
+            title: 'Now playing',
+          },
+        },
+        {
+          id: 'live-1',
+          type: 'LiveStatus',
+          visible: true,
+          order: 4,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            channelName: 'Main channel',
+            isLive: true,
+            platform: 'youtube',
+            streamUrl: 'https://example.com/live',
+            title: 'Live now',
+            viewers: '1.2k',
+          },
+        },
+        {
+          id: 'divider-1',
+          type: 'Divider',
+          visible: true,
+          order: 5,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            style: 'dashed',
+          },
+        },
+        {
+          id: 'spacer-1',
+          type: 'Spacer',
+          visible: true,
+          order: 6,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            height: 'xlarge',
+          },
+        },
+        {
+          id: 'bilibili-1',
+          type: 'BilibiliDynamic',
+          visible: true,
+          order: 7,
+          props: {
+            ...DEFAULT_HOMEPAGE_LAYOUT_PROPS,
+            cardStyle: 'compact',
+            filterType: 'posts',
+            maxItems: 8,
+            refreshInterval: 30,
+            showHeader: false,
+            title: 'Bilibili updates',
+            uid: '123456',
+          },
+        },
+      ],
+    } satisfies HomepageDraftContent;
+
+    const puckData = mapHomepageContentToPuckData(content);
+
+    expect(puckData.content.map((component) => component.type)).toEqual([
+      'VideoEmbed',
+      'Schedule',
+      'MusicPlayer',
+      'LiveStatus',
+      'Divider',
+      'Spacer',
+      'BilibiliDynamic',
+    ]);
+    const roundTripped = mapPuckDataToHomepageContent(puckData, '1.0');
+
+    expect(roundTripped.version).toBe('1.0');
+    expect(roundTripped.components.map((component) => component.type)).toEqual([
+      'VideoEmbed',
+      'Schedule',
+      'MusicPlayer',
+      'LiveStatus',
+      'Divider',
+      'Spacer',
+      'BilibiliDynamic',
+    ]);
+    expect(roundTripped.components).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'video-1',
+        type: 'VideoEmbed',
+        props: expect.objectContaining({
+          aspectRatio: '4:3',
+          autoplay: true,
+          showControls: false,
+          title: 'Promo clip',
+          videoUrl: 'https://youtu.be/abc123',
+        }),
+      }),
+      expect.objectContaining({
+        id: 'schedule-1',
+        type: 'Schedule',
+        props: expect.objectContaining({
+          title: 'Weekly plan',
+          weekOf: '2026-05-11',
+        }),
+      }),
+      expect.objectContaining({
+        id: 'live-1',
+        type: 'LiveStatus',
+        props: expect.objectContaining({
+          channelName: 'Main channel',
+          platform: 'youtube',
+        }),
+      }),
+      expect.objectContaining({
+        id: 'bilibili-1',
+        type: 'BilibiliDynamic',
+        props: expect.objectContaining({
+          cardStyle: 'compact',
+          filterType: 'posts',
+          maxItems: 8,
+          refreshInterval: 30,
+          showHeader: false,
+        }),
+      }),
+    ]));
   });
 
   it('maps Puck output back to the existing homepage renderer payload', () => {
@@ -216,6 +380,136 @@ describe('homepage Puck mappers', () => {
         customHeightPx: null,
         paddingPreset: 'medium',
       },
+    });
+  });
+
+  it('round-trips the newly supported visual blocks without dropping schema fields', () => {
+    const puckData = mapHomepageContentToPuckData({
+      version: '1.0',
+      components: [
+        {
+          id: 'video-1',
+          type: 'VideoEmbed',
+          visible: true,
+          order: 1,
+          props: {
+            aspectRatio: '4:3',
+            autoplay: true,
+            title: 'Trailer',
+            videoUrl: 'https://youtu.be/example',
+            showControls: false,
+          },
+        },
+        {
+          id: 'schedule-1',
+          type: 'Schedule',
+          visible: true,
+          order: 2,
+          props: {
+            events: [{ day: 'Mon', time: '19:00', title: 'Live' }],
+            title: 'Weekly plan',
+            weekOf: '2026-05-11',
+          },
+        },
+        {
+          id: 'live-1',
+          type: 'LiveStatus',
+          visible: true,
+          order: 3,
+          props: {
+            channelName: 'Main channel',
+            isLive: true,
+            platform: 'youtube',
+            streamUrl: 'https://example.com/live',
+            title: 'Live now',
+            viewers: '128',
+          },
+        },
+        {
+          id: 'bilibili-1',
+          type: 'BilibiliDynamic',
+          visible: true,
+          order: 4,
+          props: {
+            cardStyle: 'compact',
+            filterType: 'posts',
+            maxItems: 8,
+            refreshInterval: 30,
+            showHeader: false,
+            title: 'Bilibili updates',
+            uid: '123456',
+          },
+        },
+      ],
+    });
+
+    expect(puckData.content).toEqual([
+      expect.objectContaining({
+        type: 'VideoEmbed',
+        props: expect.objectContaining({
+          aspectRatio: '4:3',
+          autoplay: true,
+          showControls: false,
+        }),
+      }),
+      expect.objectContaining({
+        type: 'Schedule',
+        props: expect.objectContaining({
+          weekOf: '2026-05-11',
+          events: [{ day: 'Mon', time: '19:00', title: 'Live' }],
+        }),
+      }),
+      expect.objectContaining({
+        type: 'LiveStatus',
+        props: expect.objectContaining({
+          channelName: 'Main channel',
+          platform: 'youtube',
+        }),
+      }),
+      expect.objectContaining({
+        type: 'BilibiliDynamic',
+        props: expect.objectContaining({
+          cardStyle: 'compact',
+          filterType: 'posts',
+          maxItems: 8,
+          refreshInterval: 30,
+          showHeader: false,
+        }),
+      }),
+    ]);
+
+    expect(mapPuckDataToHomepageContent(puckData)).toEqual({
+      version: '1.0',
+      components: [
+        expect.objectContaining({
+          type: 'VideoEmbed',
+          props: expect.objectContaining({
+            aspectRatio: '4:3',
+            autoplay: true,
+            showControls: false,
+          }),
+        }),
+        expect.objectContaining({
+          type: 'Schedule',
+          props: expect.objectContaining({
+            weekOf: '2026-05-11',
+          }),
+        }),
+        expect.objectContaining({
+          type: 'LiveStatus',
+          props: expect.objectContaining({
+            channelName: 'Main channel',
+            isLive: true,
+          }),
+        }),
+        expect.objectContaining({
+          type: 'BilibiliDynamic',
+          props: expect.objectContaining({
+            showHeader: false,
+            uid: '123456',
+          }),
+        }),
+      ],
     });
   });
 
