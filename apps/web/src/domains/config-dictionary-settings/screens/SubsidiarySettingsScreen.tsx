@@ -858,12 +858,12 @@ export function SubsidiarySettingsScreen({
       <FormSection
         title={common.settings}
         description={text({
-          en: 'Adjust the complete subsidiary settings payload exposed by the backend defaults contract.',
-          zh_HANS: '调整后端默认设置契约中暴露的完整分目录设置。',
-          zh_HANT: '調整後端預設設定契約中暴露的完整分目錄設定。',
-          ja: 'バックエンド既定値契約で公開されている配下スコープ設定全体を調整します。',
-          ko: '백엔드 기본값 계약에 노출된 전체 하위 조직 설정을 조정합니다.',
-          fr: 'Ajustez la charge de parametres complete exposee par le contrat de valeurs par defaut backend.',
+          en: 'Review and adjust the defaults applied within this subsidiary scope.',
+          zh_HANS: '查看并调整当前分目录范围内应用的默认设置。',
+          zh_HANT: '檢視並調整目前分目錄範圍內套用的預設設定。',
+          ja: 'この配下スコープに適用される既定値を確認して調整します。',
+          ko: '이 하위 조직 범위에 적용되는 기본 설정을 검토하고 조정합니다.',
+          fr: 'Examinez et ajustez les parametres par defaut appliques dans ce perimetre secondaire.',
         })}
       >
         <SettingsDefaultsFormFields

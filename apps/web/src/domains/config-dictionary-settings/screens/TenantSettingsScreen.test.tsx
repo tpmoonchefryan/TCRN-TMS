@@ -373,6 +373,8 @@ describe('TenantSettingsScreen', () => {
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Defaults' }));
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
+    expect(screen.getByText('Review and adjust the defaults applied across this tenant.')).toBeInTheDocument();
+    expect(screen.queryByText(/backend defaults contract|settings payload/i)).not.toBeInTheDocument();
     expect(screen.getByText('Localization')).toBeInTheDocument();
     expect(screen.getByText('Public surfaces')).toBeInTheDocument();
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
@@ -590,5 +592,76 @@ describe('TenantSettingsScreen', () => {
       'href',
       '/tenant/tenant-1/business',
     );
+  });
+
+  it('keeps tenant defaults drawer copy free of backend contract wording in zh-HANS', async () => {
+    localeState.currentLocale = 'zh';
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/organization/settings' && !init) {
+        return {
+          scopeType: 'tenant',
+          scopeId: null,
+          settings: {
+            defaultLanguage: 'zh_HANS',
+            timezone: 'Asia/Shanghai',
+            dateFormat: 'YYYY-MM-DD',
+            currency: 'CNY',
+            customerImportEnabled: true,
+            maxImportRows: 50000,
+            totpRequiredForAll: false,
+            allowCustomHomepage: true,
+            allowMarshmallow: true,
+            passwordPolicy: {
+              minLength: 12,
+              requireSpecial: true,
+              maxAgeDays: 90,
+            },
+          },
+          overrides: [],
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            dateFormat: 'tenant',
+            currency: 'tenant',
+            customerImportEnabled: 'tenant',
+            maxImportRows: 'tenant',
+            totpRequiredForAll: 'tenant',
+            allowCustomHomepage: 'tenant',
+            allowMarshmallow: 'tenant',
+            passwordPolicy: 'tenant',
+          },
+          version: 2,
+        };
+      }
+
+      if (path === '/api/v1/email/sender-domains' && !init) {
+        return {
+          domains: [],
+          defaultDomainId: null,
+          fromName: '',
+          replyTo: '',
+        };
+      }
+
+      if (path === '/api/v1/system-dictionary') {
+        return [];
+      }
+
+      if (path.startsWith('/api/v1/config-entity/') || path.startsWith('/api/v1/system-dictionary/')) {
+        return emptyConfigEntityEnvelope;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantSettingsScreen tenantId="tenant-1" />);
+
+    await screen.findByRole('heading', { name: '租户设置' });
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));
+
+    expect(screen.getByText('查看并调整整个租户范围内应用的默认设置。')).toBeInTheDocument();
+    expect(screen.queryByText(/后端|契约|payload/i)).not.toBeInTheDocument();
   });
 });

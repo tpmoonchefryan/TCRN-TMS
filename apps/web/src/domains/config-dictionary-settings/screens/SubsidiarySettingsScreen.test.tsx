@@ -410,6 +410,8 @@ describe('SubsidiarySettingsScreen', () => {
     expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
+    expect(screen.getByText('Review and adjust the defaults applied within this subsidiary scope.')).toBeInTheDocument();
+    expect(screen.queryByText(/backend defaults contract|settings payload/i)).not.toBeInTheDocument();
     expect(screen.getByText('Localization')).toBeInTheDocument();
     expect(screen.getByText('Public surfaces')).toBeInTheDocument();
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);

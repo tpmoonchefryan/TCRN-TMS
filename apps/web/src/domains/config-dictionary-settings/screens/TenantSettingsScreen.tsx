@@ -947,9 +947,9 @@ export function TenantSettingsScreen({
         <FormSection
           title={common.settings}
           description={text(
-            'Adjust the complete tenant settings payload exposed by the backend defaults contract.',
-            '调整后端默认设置契约中暴露的完整租户设置。',
-            'バックエンド既定値契約で公開されているテナント設定全体を調整します。',
+            'Review and adjust the defaults applied across this tenant.',
+            '查看并调整整个租户范围内应用的默认设置。',
+            'このテナント全体に適用される既定値を確認して調整します。',
           )}
         >
           <SettingsDefaultsFormFields
