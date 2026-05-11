@@ -48,11 +48,36 @@ export class ComplianceReportService {
     this.logger.log(`Generating compliance report for tenant ${tenantId}`);
 
     const prisma = this.databaseService.getPrisma();
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { schemaName: true },
+    });
 
-    // Use raw SQL for multi-tenant log tables
+    if (!tenant?.schemaName) {
+      return {
+        reportPeriod: { startDate, endDate },
+        auditMetrics: {
+          totalChangeLogEntries: 0,
+          totalTechEventEntries: 0,
+          totalIntegrationLogEntries: 0,
+        },
+        securityMetrics: {
+          authEvents: 0,
+          rateLimitEvents: 0,
+          blockedRequests: 0,
+        },
+        integrationMetrics: {
+          totalApiCalls: 0,
+          successRate: 100,
+          avgLatencyMs: 0,
+        },
+        generatedAt: new Date(),
+      };
+    }
+
     const [auditMetrics, integrationMetrics] = await Promise.all([
-      this.getAuditMetrics(prisma, tenantId, startDate, endDate),
-      this.getIntegrationMetrics(prisma, startDate, endDate),
+      this.getAuditMetrics(prisma, tenant.schemaName, startDate, endDate),
+      this.getIntegrationMetrics(prisma, tenant.schemaName, startDate, endDate),
     ]);
 
     return {
@@ -70,46 +95,27 @@ export class ComplianceReportService {
 
   private async getAuditMetrics(
     prisma: ReturnType<DatabaseService['getPrisma']>,
-    tenantId: string,
+    tenantSchema: string,
     startDate: Date,
     endDate: Date,
   ): Promise<ComplianceReportSummary['auditMetrics']> {
     try {
-      // Get tenant schema for multi-tenant queries
-      const tenant = await prisma.tenant.findUnique({
-        where: { id: tenantId },
-        select: { schemaName: true },
-      });
-
-      if (!tenant?.schemaName) {
-        return {
-          totalChangeLogEntries: 0,
-          totalTechEventEntries: 0,
-          totalIntegrationLogEntries: 0,
-        };
-      }
-
-      const schema = tenant.schemaName;
-
-      // Query change_log count using raw SQL
       const changeLogResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-        `SELECT COUNT(*) as count FROM "${schema}".change_log 
+        `SELECT COUNT(*) as count FROM "${tenantSchema}".change_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
         endDate,
       );
 
-      // Query tech_event_log count
       const techEventResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-        `SELECT COUNT(*) as count FROM "${schema}".tech_event_log 
-         WHERE created_at >= $1 AND created_at <= $2`,
+        `SELECT COUNT(*) as count FROM "${tenantSchema}".technical_event_log
+         WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
         endDate,
       );
 
-      // Query integration_log count (platform-level table)
       const integrationLogResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-        `SELECT COUNT(*) as count FROM public.integration_log 
+        `SELECT COUNT(*) as count FROM "${tenantSchema}".integration_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
         endDate,
@@ -132,6 +138,7 @@ export class ComplianceReportService {
 
   private async getIntegrationMetrics(
     prisma: ReturnType<DatabaseService['getPrisma']>,
+    tenantSchema: string,
     startDate: Date,
     endDate: Date,
   ): Promise<ComplianceReportSummary['integrationMetrics']> {
@@ -147,7 +154,7 @@ export class ComplianceReportService {
            COUNT(*) as total,
            COUNT(*) FILTER (WHERE response_status >= 200 AND response_status < 400) as success_count,
            AVG(latency_ms) as avg_latency
-         FROM public.integration_log 
+         FROM "${tenantSchema}".integration_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
         endDate,

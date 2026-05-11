@@ -14,7 +14,7 @@ import {
 
 @ApiTags('Compliance')
 @ApiBearerAuth()
-@Controller('api/v1/compliance')
+@Controller('compliance')
 @UseGuards(JwtAuthGuard)
 export class ComplianceReportController {
   constructor(

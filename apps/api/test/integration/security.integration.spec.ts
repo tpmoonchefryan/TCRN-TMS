@@ -128,27 +128,50 @@ describe('Security Integration Tests', () => {
   });
 
   describe('Auth vs RBAC boundary', () => {
-    it('allows a viewer to access auth-only technical security endpoints', async () => {
+    it('allows a viewer to access auth-only fingerprint generation', async () => {
       const fingerprintResponse = await withViewerAuth(
         request(app.getHttpServer()).post('/api/v1/security/fingerprint')
       ).expect(200);
 
       expect(fingerprintResponse.body.success).toBe(true);
       expect(fingerprintResponse.body.data.shortFingerprint).toBeDefined();
-
-      const rateLimitResponse = await withViewerAuth(
-        request(app.getHttpServer()).get('/api/v1/rate-limit/stats')
-      ).expect(200);
-
-      expect(rateLimitResponse.body.success).toBe(true);
-      expect(rateLimitResponse.body.data.summary).toBeDefined();
-      expect(rateLimitResponse.body.data.topEndpoints).toBeDefined();
     });
 
-    it('still rejects a viewer on RBAC-protected security management endpoints', async () => {
+    it('rejects a viewer on RBAC-protected security management endpoints', async () => {
+      await withViewerAuth(
+        request(app.getHttpServer()).get('/api/v1/rate-limit/stats')
+      ).expect(403);
+
       await withViewerAuth(
         request(app.getHttpServer()).get('/api/v1/blocklist-entries')
       ).expect(403);
+    });
+  });
+
+  describe('Compliance API', () => {
+    it('serves the canonical compliance report route exactly once under /api/v1', async () => {
+      const startDate = '2026-05-01T00:00:00.000Z';
+      const endDate = '2026-05-02T00:00:00.000Z';
+
+      const response = await withAuth(
+        request(app.getHttpServer()).get('/api/v1/compliance/report')
+      )
+        .query({ startDate, endDate })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.reportPeriod).toEqual({
+        startDate,
+        endDate,
+      });
+      expect(response.body.data.auditMetrics).toBeDefined();
+      expect(response.body.data.integrationMetrics).toBeDefined();
+
+      await withAuth(
+        request(app.getHttpServer()).get('/api/v1/api/v1/compliance/report')
+      )
+        .query({ startDate, endDate })
+        .expect(404);
     });
   });
 

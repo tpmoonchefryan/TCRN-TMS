@@ -2,7 +2,9 @@
 
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ErrorCodes } from '@tcrn/shared';
 
+import { RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RateLimitStatsResponse, RateLimitStatsService } from '../services/rate-limit-stats.service';
 
@@ -100,6 +102,29 @@ const RATE_LIMIT_UNAUTHORIZED_SCHEMA = {
   },
 };
 
+const RATE_LIMIT_FORBIDDEN_SCHEMA = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: ErrorCodes.PERM_ACCESS_DENIED },
+        message: { type: 'string', example: 'Access denied' },
+      },
+      required: ['code', 'message'],
+    },
+  },
+  required: ['success', 'error'],
+  example: {
+    success: false,
+    error: {
+      code: ErrorCodes.PERM_ACCESS_DENIED,
+      message: 'Access denied',
+    },
+  },
+};
+
 /**
  * Rate Limit Stats Controller
  * Provides endpoints for viewing rate limit statistics
@@ -123,6 +148,12 @@ export class RateLimitStatsController {
     description: 'Authentication is required to read rate limit statistics',
     schema: RATE_LIMIT_UNAUTHORIZED_SCHEMA,
   })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read rate limit statistics',
+    schema: RATE_LIMIT_FORBIDDEN_SCHEMA,
+  })
+  @RequirePermissions({ resource: 'security.ip_rules', action: 'read' })
   async getStats(): Promise<RateLimitStatsResponse> {
     return this.rateLimitStatsService.getStats();
   }

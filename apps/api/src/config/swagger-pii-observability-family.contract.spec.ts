@@ -146,7 +146,11 @@ describe('Swagger PII and observability family contract', () => {
       '401',
       '403',
     ]);
-    expect(getResponseStatuses(RateLimitStatsController, 'getStats')).toEqual(['200', '401']);
+    expect(getResponseStatuses(RateLimitStatsController, 'getStats')).toEqual([
+      '200',
+      '401',
+      '403',
+    ]);
   });
 
   it('documents explicit path params for pii config detail and mutation routes', () => {
