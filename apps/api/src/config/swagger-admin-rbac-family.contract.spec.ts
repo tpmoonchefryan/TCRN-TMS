@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../common/decorators/require-permissions.decorator';
 import {
   CreateRoleDto,
   RoleActivationDto,
@@ -61,6 +62,11 @@ const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] =
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
 };
+
+const getMethodPermissions = (controller: { prototype: object }, methodName: string) =>
+  Reflect.getMetadata(PERMISSIONS_KEY, controller.prototype[methodName]) as
+    | Array<{ resource: string; action: string }>
+    | undefined;
 
 describe('Swagger admin RBAC family contract', () => {
   it('documents response status coverage for role routes', () => {
@@ -198,5 +204,54 @@ describe('Swagger admin RBAC family contract', () => {
       'notifyUser',
     ]);
     expect(getDocumentedDtoProperties(SetScopeAccessDto)).toEqual(['accesses']);
+  });
+
+  it('declares explicit permissions for system-user and system-role routes', () => {
+    expect(getMethodPermissions(SystemUserController, 'list')).toEqual([
+      { resource: 'system_user', action: 'read' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'create')).toEqual([
+      { resource: 'system_user', action: 'create' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'getById')).toEqual([
+      { resource: 'system_user', action: 'read' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'update')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'resetPassword')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'deactivate')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'reactivate')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'forceTotp')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'getScopeAccess')).toEqual([
+      { resource: 'system_user', action: 'read' },
+    ]);
+    expect(getMethodPermissions(SystemUserController, 'setScopeAccess')).toEqual([
+      { resource: 'system_user', action: 'update' },
+    ]);
+
+    expect(getMethodPermissions(SystemRoleController, 'create')).toEqual([
+      { resource: 'role', action: 'create' },
+    ]);
+    expect(getMethodPermissions(SystemRoleController, 'findAll')).toEqual([
+      { resource: 'role', action: 'read' },
+    ]);
+    expect(getMethodPermissions(SystemRoleController, 'findOne')).toEqual([
+      { resource: 'role', action: 'read' },
+    ]);
+    expect(getMethodPermissions(SystemRoleController, 'update')).toEqual([
+      { resource: 'role', action: 'update' },
+    ]);
+    expect(getMethodPermissions(SystemRoleController, 'remove')).toEqual([
+      { resource: 'role', action: 'delete' },
+    ]);
   });
 });

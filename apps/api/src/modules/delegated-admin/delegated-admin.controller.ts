@@ -16,7 +16,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { getRequestTrilingualLocaleFamily } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { DelegatedAdminService, DelegateScopeType, DelegateType } from './delegated-admin.service';
@@ -62,6 +62,7 @@ export class DelegatedAdminController {
    * List delegated admins with optional filters
    */
   @Get()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
   @ApiOperation({ summary: 'List delegated admins' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -102,6 +103,7 @@ export class DelegatedAdminController {
    * Create a new delegated admin
    */
   @Post()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'create' })
   @ApiOperation({ summary: 'Create delegated admin' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
@@ -136,6 +138,7 @@ export class DelegatedAdminController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'tenant.manage', action: 'delete' })
   @ApiOperation({ summary: 'Remove delegated admin' })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
@@ -153,6 +156,7 @@ export class DelegatedAdminController {
    * Get scopes where current user has delegation rights
    */
   @Get('my-scopes')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
   @ApiOperation({ summary: 'Get my delegated scopes' })
   async getMyScopes(@CurrentUser() user: AuthenticatedUser) {
     const scopes = await this.delegatedAdminService.getUserDelegatedScopes(

@@ -113,7 +113,7 @@ describe('AuthController refresh-token handling', () => {
       expect.objectContaining({
         httpOnly: true,
         sameSite: 'strict',
-        path: '/api/v1/auth',
+        path: '/api/v1',
         expires: result.refreshTokenExpiresAt,
       }),
     );
@@ -155,7 +155,7 @@ describe('AuthController refresh-token handling', () => {
       'refresh_token',
       result.refreshToken,
       expect.objectContaining({
-        path: '/api/v1/auth',
+        path: '/api/v1',
         expires: result.refreshTokenExpiresAt,
       }),
     );

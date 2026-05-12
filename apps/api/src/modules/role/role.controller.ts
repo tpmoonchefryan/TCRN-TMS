@@ -20,7 +20,7 @@ import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { RoleService } from './role.service';
@@ -409,6 +409,7 @@ export class RoleController {
    * List roles
    */
   @Get()
+  @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'List roles' })
   @ApiResponse({
     status: 200,
@@ -455,6 +456,7 @@ export class RoleController {
    * Create role
    */
   @Post()
+  @RequirePermissions({ resource: 'role', action: 'create' })
   @ApiOperation({ summary: 'Create role' })
   @ApiResponse({
     status: 201,
@@ -510,6 +512,7 @@ export class RoleController {
    * Get role details
    */
   @Get(':roleId')
+  @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'Get role details' })
   @ApiParam({
     name: 'roleId',
@@ -570,6 +573,7 @@ export class RoleController {
    * Update role
    */
   @Patch(':roleId')
+  @RequirePermissions({ resource: 'role', action: 'update' })
   @ApiOperation({ summary: 'Update role' })
   @ApiParam({
     name: 'roleId',
@@ -620,6 +624,7 @@ export class RoleController {
    * Set role permissions
    */
   @Patch(':roleId/permissions')
+  @RequirePermissions({ resource: 'role', action: 'update' })
   @ApiOperation({ summary: 'Set role permissions' })
   @ApiParam({
     name: 'roleId',
@@ -684,6 +689,7 @@ export class RoleController {
    */
   @Post(':roleId/deactivate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'role', action: 'update' })
   @ApiOperation({ summary: 'Deactivate role' })
   @ApiParam({
     name: 'roleId',
@@ -735,6 +741,7 @@ export class RoleController {
    */
   @Post(':roleId/reactivate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'role', action: 'update' })
   @ApiOperation({ summary: 'Reactivate role' })
   @ApiParam({
     name: 'roleId',

@@ -301,7 +301,6 @@ export interface TalentProfileStoreBinding {
   nameJa: string | null;
   translations: Record<string, string>;
   isDefault: boolean;
-  piiProxyUrl: string | null;
 }
 
 export interface TalentDetailStats {

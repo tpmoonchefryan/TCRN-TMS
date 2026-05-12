@@ -16,7 +16,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { ScopeType } from '../permission/permission-snapshot.service';
@@ -73,6 +73,7 @@ export class UserRoleController {
    * Get user's role assignments
    */
   @Get()
+  @RequirePermissions({ resource: 'system_user', action: 'read' })
   @ApiOperation({ summary: 'Get user roles' })
   async getUserRoles(
     @CurrentUser() user: AuthenticatedUser,
@@ -111,6 +112,7 @@ export class UserRoleController {
    * Assign role to user
    */
   @Post()
+  @RequirePermissions({ resource: 'system_user', action: 'create' })
   @ApiOperation({ summary: 'Assign role to user' })
   async assignRole(
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -148,6 +150,7 @@ export class UserRoleController {
    * Update role assignment
    */
   @Patch(':assignmentId')
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Update role assignment' })
   async updateAssignment(
     @CurrentUser() user: AuthenticatedUser,
@@ -177,6 +180,7 @@ export class UserRoleController {
    */
   @Delete(':assignmentId')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'delete' })
   @ApiOperation({ summary: 'Remove role assignment' })
   async removeAssignment(
     @CurrentUser() user: AuthenticatedUser,

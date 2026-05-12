@@ -4,6 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { TalentController } from './talent.controller';
 
 interface ControllerRoute {
@@ -40,6 +41,11 @@ const getControllerRoutes = (controller: typeof TalentController): ControllerRou
     }));
   });
 };
+
+const getMethodPermissions = (methodName: string) =>
+  Reflect.getMetadata(PERMISSIONS_KEY, TalentController.prototype[methodName]) as
+    | Array<{ resource: string; action: string }>
+    | undefined;
 
 describe('TalentController lifecycle route contract', () => {
   it('keeps the canonical talent lifecycle routes on publish/disable/re-enable', () => {
@@ -141,6 +147,53 @@ describe('TalentController lifecycle route contract', () => {
         },
       ]),
     );
+  });
+
+  it('declares explicit talent RBAC metadata for sensitive read and lifecycle routes', () => {
+    expect(getMethodPermissions('list')).toEqual([{ resource: 'talent', action: 'read' }]);
+    expect(getMethodPermissions('create')).toEqual([{ resource: 'talent', action: 'create' }]);
+    expect(getMethodPermissions('listCustomDomainBindings')).toEqual([
+      { resource: 'talent', action: 'read' },
+    ]);
+    expect(getMethodPermissions('createCustomDomainBinding')).toEqual([
+      { resource: 'talent', action: 'create' },
+    ]);
+    expect(getMethodPermissions('updateCustomDomainBinding')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('verifyCustomDomainBinding')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('getById')).toEqual([{ resource: 'talent', action: 'read' }]);
+    expect(getMethodPermissions('update')).toEqual([{ resource: 'talent', action: 'update' }]);
+    expect(getMethodPermissions('deleteTalent')).toEqual([
+      { resource: 'talent', action: 'delete' },
+    ]);
+    expect(getMethodPermissions('move')).toEqual([{ resource: 'talent', action: 'update' }]);
+    expect(getMethodPermissions('getPublishReadiness')).toEqual([
+      { resource: 'talent', action: 'read' },
+    ]);
+    expect(getMethodPermissions('publish')).toEqual([{ resource: 'talent', action: 'update' }]);
+    expect(getMethodPermissions('disable')).toEqual([{ resource: 'talent', action: 'update' }]);
+    expect(getMethodPermissions('reEnable')).toEqual([{ resource: 'talent', action: 'update' }]);
+    expect(getMethodPermissions('getCustomDomainConfig')).toEqual([
+      { resource: 'talent', action: 'read' },
+    ]);
+    expect(getMethodPermissions('setCustomDomain')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('verifyCustomDomain')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('selectInheritedCustomDomains')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('updateServicePaths')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
+    expect(getMethodPermissions('updateSslMode')).toEqual([
+      { resource: 'talent', action: 'update' },
+    ]);
   });
 
 

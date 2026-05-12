@@ -566,7 +566,6 @@ describe('OrganizationStructureScreen', () => {
             nameZh: null,
             nameJa: null,
             isDefault: true,
-            piiProxyUrl: null,
           },
           code: 'SORA',
           path: '/SORA/',

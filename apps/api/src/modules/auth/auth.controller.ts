@@ -96,6 +96,8 @@ const AUTH_TOTP_ALREADY_ENABLED_SCHEMA = createAuthErrorEnvelopeSchema(
   'TOTP is already enabled',
 );
 
+const REFRESH_TOKEN_COOKIE_PATH = '/api/v1';
+
 @ApiTags('Auth')
 @Controller('auth')
 @UseGuards(AuthRateLimiterGuard)
@@ -117,7 +119,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       expires: expiresAt,
-      path: '/api/v1/auth',
+      path: REFRESH_TOKEN_COOKIE_PATH,
     });
   }
 
@@ -813,7 +815,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/api/v1/auth',
+      path: REFRESH_TOKEN_COOKIE_PATH,
     });
 
     return success({ message: 'Logged out successfully' });
@@ -847,7 +849,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/api/v1/auth',
+      path: REFRESH_TOKEN_COOKIE_PATH,
     });
 
     return success({

@@ -27,7 +27,7 @@ import * as argon2 from 'argon2';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, Matches, Min, MinLength, ValidateNested } from 'class-validator';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
 import { TenantService } from './tenant.service';
 
@@ -546,6 +546,7 @@ export class TenantController {
    * List all tenants (AC only)
    */
   @Get()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
   @ApiOperation({ summary: 'List tenants (AC only)' })
   @ApiResponse({
     status: 200,
@@ -631,6 +632,7 @@ export class TenantController {
    * Create a new tenant (AC only)
    */
   @Post()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'create' })
   @ApiOperation({ summary: 'Create tenant (AC only)' })
   @ApiResponse({
     status: 201,
@@ -736,6 +738,7 @@ export class TenantController {
    * Get tenant details (AC only)
    */
   @Get(':tenantId')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
   @ApiOperation({ summary: 'Get tenant details (AC only)' })
   @ApiParam({
     name: 'tenantId',
@@ -800,6 +803,7 @@ export class TenantController {
    * Update tenant (AC only)
    */
   @Patch(':tenantId')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
   @ApiOperation({ summary: 'Update tenant (AC only)' })
   @ApiParam({
     name: 'tenantId',
@@ -868,6 +872,7 @@ export class TenantController {
    */
   @Post(':tenantId/activate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
   @ApiOperation({ summary: 'Activate tenant (AC only)' })
   @ApiParam({
     name: 'tenantId',
@@ -921,6 +926,7 @@ export class TenantController {
    */
   @Post(':tenantId/deactivate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
   @ApiOperation({ summary: 'Deactivate tenant (AC only)' })
   @ApiParam({
     name: 'tenantId',

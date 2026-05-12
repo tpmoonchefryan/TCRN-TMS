@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, NotFoundException, Param, ParseUUIDPipe,
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes } from '@tcrn/shared';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { success } from '../../common/response.util';
 import { TenantService } from '../tenant/tenant.service';
 import { CreateSystemRoleZodDto, UpdateSystemRoleZodDto } from './dto/system-role-zod.dto';
@@ -280,6 +280,7 @@ export class SystemRoleController {
   ) {}
 
   @Post()
+  @RequirePermissions({ resource: 'role', action: 'create' })
   @ApiOperation({ summary: 'Create system role' })
   @ApiResponse({
     status: 201,
@@ -302,6 +303,7 @@ export class SystemRoleController {
   }
 
   @Get()
+  @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'List system roles' })
   @ApiResponse({
     status: 200,
@@ -334,6 +336,7 @@ export class SystemRoleController {
   }
 
   @Get(':systemRoleId')
+  @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'Get system role detail' })
   @ApiParam({
     name: 'systemRoleId',
@@ -375,6 +378,7 @@ export class SystemRoleController {
   }
 
   @Patch(':systemRoleId')
+  @RequirePermissions({ resource: 'role', action: 'update' })
   @ApiOperation({ summary: 'Update system role' })
   @ApiParam({
     name: 'systemRoleId',
@@ -410,6 +414,7 @@ export class SystemRoleController {
   }
 
   @Delete(':systemRoleId')
+  @RequirePermissions({ resource: 'role', action: 'delete' })
   @ApiOperation({ summary: 'Delete system role' })
   @ApiParam({
     name: 'systemRoleId',

@@ -18,7 +18,7 @@ import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/
 import { Type } from 'class-transformer';
 import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
 import { SystemUserService } from './system-user.service';
 
@@ -497,6 +497,7 @@ export class SystemUserController {
    * List system users
    */
   @Get()
+  @RequirePermissions({ resource: 'system_user', action: 'read' })
   @ApiOperation({ summary: 'List system users' })
   @ApiResponse({
     status: 200,
@@ -547,6 +548,7 @@ export class SystemUserController {
    * Create system user
    */
   @Post()
+  @RequirePermissions({ resource: 'system_user', action: 'create' })
   @ApiOperation({ summary: 'Create system user' })
   @ApiResponse({
     status: 201,
@@ -593,6 +595,7 @@ export class SystemUserController {
    * Get system user details
    */
   @Get(':systemUserId')
+  @RequirePermissions({ resource: 'system_user', action: 'read' })
   @ApiOperation({ summary: 'Get system user details' })
   @ApiParam({
     name: 'systemUserId',
@@ -673,6 +676,7 @@ export class SystemUserController {
    * Update system user
    */
   @Patch(':systemUserId')
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Update system user' })
   @ApiParam({
     name: 'systemUserId',
@@ -717,6 +721,7 @@ export class SystemUserController {
    */
   @Post(':systemUserId/reset-password')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Reset user password' })
   @ApiParam({
     name: 'systemUserId',
@@ -761,6 +766,7 @@ export class SystemUserController {
    */
   @Post(':systemUserId/deactivate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Deactivate user' })
   @ApiParam({
     name: 'systemUserId',
@@ -800,6 +806,7 @@ export class SystemUserController {
    */
   @Post(':systemUserId/reactivate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Reactivate user' })
   @ApiParam({
     name: 'systemUserId',
@@ -848,6 +855,7 @@ export class SystemUserController {
    */
   @Post(':systemUserId/force-totp')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Force user to enable TOTP' })
   @ApiParam({
     name: 'systemUserId',
@@ -894,6 +902,7 @@ export class SystemUserController {
    * Get user's scope access settings
    */
   @Get(':systemUserId/scope-access')
+  @RequirePermissions({ resource: 'system_user', action: 'read' })
   @ApiOperation({ summary: 'Get user scope access settings' })
   @ApiParam({
     name: 'systemUserId',
@@ -924,6 +933,7 @@ export class SystemUserController {
    */
   @Post(':systemUserId/scope-access')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'system_user', action: 'update' })
   @ApiOperation({ summary: 'Set user scope access settings' })
   @ApiParam({
     name: 'systemUserId',

@@ -19,7 +19,7 @@ import { ErrorCodes } from '@tcrn/shared';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
-import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
 import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
 import { CUSTOM_DOMAIN_OWNER_TYPES, CUSTOM_DOMAIN_SSL_MODES } from './domain/talent-custom-domain.policy';
@@ -601,7 +601,6 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
             },
           },
           isDefault: { type: 'boolean', example: true },
-          piiProxyUrl: { type: 'string', nullable: true, example: 'https://pii.internal.tcrn.app' },
         },
       },
       descriptionEn: { type: 'string', nullable: true, example: 'Main homepage profile' },
@@ -644,7 +643,6 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
         zh_HANT: '預設客戶檔案庫',
       },
       isDefault: true,
-      piiProxyUrl: 'https://pii.internal.tcrn.app',
     },
     code: 'SORA',
     path: '/TOKYO/SORA/',
@@ -1216,6 +1214,7 @@ export class TalentController {
    * List talents
    */
   @Get()
+  @RequirePermissions({ resource: 'talent', action: 'read' })
   @ApiOperation({ summary: 'List talents' })
   @ApiResponse({
     status: 200,
@@ -1282,6 +1281,7 @@ export class TalentController {
    * Create talent
    */
   @Post()
+  @RequirePermissions({ resource: 'talent', action: 'create' })
   @ApiOperation({ summary: 'Create talent' })
   @ApiResponse({
     status: 201,
@@ -1359,6 +1359,7 @@ export class TalentController {
    * List custom-domain bindings for tenant/subsidiary/talent configuration-entity workspaces
    */
   @Get('custom-domain-bindings')
+  @RequirePermissions({ resource: 'talent', action: 'read' })
   @ApiOperation({ summary: 'List scoped custom-domain bindings' })
   @ApiQuery({
     name: 'scopeType',
@@ -1428,6 +1429,7 @@ export class TalentController {
    */
   @Post('custom-domain-bindings')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'create' })
   @ApiOperation({ summary: 'Create custom-domain binding' })
   @ApiResponse({
     status: 200,
@@ -1460,6 +1462,7 @@ export class TalentController {
    * Update tenant/subsidiary/talent custom-domain binding
    */
   @Patch('custom-domain-bindings/:domainId')
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Update custom-domain binding' })
   @ApiParam({
     name: 'domainId',
@@ -1505,6 +1508,7 @@ export class TalentController {
    */
   @Post('custom-domain-bindings/:domainId/verify')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Verify custom-domain binding' })
   @ApiParam({
     name: 'domainId',
@@ -1547,6 +1551,7 @@ export class TalentController {
    * Get talent details
    */
   @Get(':talentId')
+  @RequirePermissions({ resource: 'talent', action: 'read' })
   @ApiOperation({ summary: 'Get talent details' })
   @ApiParam({
     name: 'talentId',
@@ -1604,7 +1609,6 @@ export class TalentController {
         nameJa: profileStore.nameJa,
         translations: profileStoreTranslations ?? {},
         isDefault: profileStore.isDefault,
-        piiProxyUrl: profileStore.piiProxyUrl,
       } : null,
       code: talent.code,
       path: talent.path,
@@ -1638,6 +1642,7 @@ export class TalentController {
    * Update talent
    */
   @Patch(':talentId')
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Update talent' })
   @ApiParam({
     name: 'talentId',
@@ -1701,6 +1706,7 @@ export class TalentController {
    * Hard-delete a draft talent
    */
   @Delete(':talentId')
+  @RequirePermissions({ resource: 'talent', action: 'delete' })
   @ApiOperation({ summary: 'Delete draft talent' })
   @ApiParam({
     name: 'talentId',
@@ -1756,6 +1762,7 @@ export class TalentController {
    */
   @Post(':talentId/move')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Move talent (retired; direct database intervention only)' })
   @ApiParam({
     name: 'talentId',
@@ -1802,6 +1809,7 @@ export class TalentController {
    * Get publish readiness
    */
   @Get(':talentId/publish-readiness')
+  @RequirePermissions({ resource: 'talent', action: 'read' })
   @ApiOperation({ summary: 'Get talent publish readiness' })
   @ApiParam({
     name: 'talentId',
@@ -1838,6 +1846,7 @@ export class TalentController {
    */
   @Post(':talentId/publish')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Publish talent' })
   @ApiParam({
     name: 'talentId',
@@ -1897,6 +1906,7 @@ export class TalentController {
    */
   @Post(':talentId/disable')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Disable talent' })
   @ApiParam({
     name: 'talentId',
@@ -1956,6 +1966,7 @@ export class TalentController {
    */
   @Post(':talentId/re-enable')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Re-enable talent' })
   @ApiParam({
     name: 'talentId',
@@ -2031,6 +2042,7 @@ export class TalentController {
    * Get custom domain configuration
    */
   @Get(':talentId/custom-domain')
+  @RequirePermissions({ resource: 'talent', action: 'read' })
   @ApiOperation({ summary: 'Get custom domain configuration' })
   @ApiParam({
     name: 'talentId',
@@ -2072,6 +2084,7 @@ export class TalentController {
    */
   @Post(':talentId/custom-domain')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Set custom domain' })
   @ApiParam({
     name: 'talentId',
@@ -2117,6 +2130,7 @@ export class TalentController {
    */
   @Post(':talentId/custom-domain/verify')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Verify custom domain' })
   @ApiParam({
     name: 'talentId',
@@ -2157,6 +2171,7 @@ export class TalentController {
    * Replace explicit inherited custom-domain selections for a talent.
    */
   @Patch(':talentId/custom-domain/inherited-selections')
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Select inherited custom domains for a talent' })
   @ApiParam({
     name: 'talentId',
@@ -2201,6 +2216,7 @@ export class TalentController {
    * Return the fixed service paths for custom domains.
    */
   @Patch(':talentId/custom-domain/paths')
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Return fixed custom-domain service paths (compatibility endpoint)' })
   @ApiParam({
     name: 'talentId',
@@ -2240,6 +2256,7 @@ export class TalentController {
    * Update SSL mode for custom domain
    */
   @Patch(':talentId/custom-domain/ssl-mode')
+  @RequirePermissions({ resource: 'talent', action: 'update' })
   @ApiOperation({ summary: 'Update custom domain SSL mode' })
   @ApiParam({
     name: 'talentId',
