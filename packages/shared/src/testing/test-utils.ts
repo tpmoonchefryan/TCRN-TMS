@@ -558,7 +558,7 @@ export async function createTestTenantFixture(
       }) => Promise<unknown>;
       delete: (args: { where: { id: string } }) => Promise<unknown>;
     };
-    $executeRawUnsafe: (query: string) => Promise<unknown>;
+    $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
     $queryRawUnsafe: <T>(query: string, ...values: unknown[]) => Promise<T>;
   },
   suffix: string = ''
@@ -599,6 +599,32 @@ export async function createTestTenantFixture(
         INSERT INTO "${schemaName}"."${table}"
         SELECT * FROM tenant_template."${table}"
         ON CONFLICT DO NOTHING
+      `);
+    }
+
+    if (templateTables.some((item) => item.tablename === 'profile_store')) {
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "${schemaName}".profile_store
+          (
+            id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
+            pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version
+          )
+        VALUES
+          (
+            gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
+            'Default customer archive boundary', '默认客户档案边界', 'デフォルト顧客アーカイブ境界',
+            NULL, true, true, NOW(), NOW(), NULL, NULL, 1
+          )
+        ON CONFLICT (code) DO UPDATE SET
+          name_en = EXCLUDED.name_en,
+          name_zh = EXCLUDED.name_zh,
+          name_ja = EXCLUDED.name_ja,
+          description_en = EXCLUDED.description_en,
+          description_zh = EXCLUDED.description_zh,
+          description_ja = EXCLUDED.description_ja,
+          is_default = true,
+          is_active = true,
+          updated_at = NOW()
       `);
     }
 

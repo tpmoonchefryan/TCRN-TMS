@@ -170,6 +170,7 @@ describe('Swagger log and public marshmallow family contract', () => {
     expect(getResponseStatuses(PublicMarshmallowController, 'markAsRead')).toEqual([
       '200',
       '400',
+      '403',
       '404',
     ]);
     expect(getResponseStatuses(PublicMarshmallowController, 'validateSsoToken')).toEqual([

@@ -186,6 +186,51 @@ describe('createTestTenantFixture', () => {
     expect(update).toHaveBeenCalledTimes(1);
     expect(deleteFn).toHaveBeenCalledTimes(1);
   });
+
+  it('seeds a default active profile store when tenant_template has none', async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: 'tenant-123',
+      code: 'TEST_FIXTURE',
+      name: 'Test Fixture',
+      schemaName: 'tenant_test_fixture',
+      tier: 'standard',
+      isActive: true,
+    });
+    const update = vi.fn().mockResolvedValue(undefined);
+    const deleteFn = vi.fn().mockResolvedValue(undefined);
+    const execute = vi.fn().mockResolvedValue(undefined);
+    const query = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM pg_tables')) {
+        return [{ tablename: 'profile_store' }];
+      }
+
+      return [];
+    });
+
+    await createTestTenantFixture(
+      {
+        tenant: {
+          create,
+          update,
+          delete: deleteFn,
+        },
+        $executeRawUnsafe: execute,
+        $queryRawUnsafe: query,
+      },
+      'fixture',
+    );
+
+    const profileStoreSeedCall = execute.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('.profile_store') &&
+        sql.includes("'DEFAULT_STORE'") &&
+        sql.includes('is_default = true') &&
+        sql.includes('is_active = true'),
+    );
+
+    expect(profileStoreSeedCall).toBeDefined();
+  });
 });
 
 describe('generateSchemaName', () => {

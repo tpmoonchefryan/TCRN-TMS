@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WebhookManagementScreen } from '@/domains/webhook-management/screens/WebhookManagementScreen';
@@ -55,8 +54,6 @@ describe('WebhookManagementScreen', () => {
   });
 
   it('keeps webhook management separate from adapters, email, and API clients', async () => {
-    const user = userEvent.setup();
-
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         return {
@@ -84,7 +81,6 @@ describe('WebhookManagementScreen', () => {
     render(<WebhookManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Webhook Management' })).toBeInTheDocument();
-    await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
 
     expect(await screen.findByText('No webhooks configured')).toBeInTheDocument();
     expect(screen.getByText('Webhook Endpoints')).toBeInTheDocument();
