@@ -31,8 +31,9 @@ export function TalentBusinessAccessGate({
   talentId,
   children,
 }: Readonly<TalentBusinessAccessGateProps>) {
-  const { request } = useSession();
+  const { request, recoverSession, session, status } = useSession();
   const { selectedLocale } = useRuntimeLocale();
+  const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
   const [state, setState] = useState<GateState>({
     detail: null,
     loading: true,
@@ -40,6 +41,44 @@ export function TalentBusinessAccessGate({
   });
 
   useEffect(() => {
+    if (status !== 'anonymous' || session || hasAttemptedRecovery) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function runRecovery() {
+      await recoverSession({
+        tenantId,
+        tenantTier: 'standard',
+      });
+
+      if (!cancelled) {
+        setHasAttemptedRecovery(true);
+      }
+    }
+
+    void runRecovery();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasAttemptedRecovery, recoverSession, session, status, tenantId]);
+
+  useEffect(() => {
+    if (status === 'booting') {
+      return;
+    }
+
+    if (status === 'anonymous' && !hasAttemptedRecovery) {
+      setState({
+        detail: null,
+        loading: true,
+        error: null,
+      });
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
@@ -89,7 +128,7 @@ export function TalentBusinessAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [request, selectedLocale, talentId]);
+  }, [hasAttemptedRecovery, request, selectedLocale, status, talentId]);
 
   if (state.loading) {
     return (

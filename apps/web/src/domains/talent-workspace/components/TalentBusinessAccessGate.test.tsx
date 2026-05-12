@@ -6,16 +6,29 @@ import { ApiRequestError } from '@/platform/http/api';
 
 const mockRequest = vi.fn();
 const mockReadTalentDetail = vi.fn();
+const mockRecoverSession = vi.fn();
+const mockSessionState = {
+  request: mockRequest,
+  recoverSession: mockRecoverSession,
+  session: {
+    tenantId: 'tenant-1',
+  } as { tenantId: string } | null,
+  status: 'authenticated' as 'booting' | 'anonymous' | 'authenticated',
+};
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
-    request: mockRequest,
+    request: mockSessionState.request,
+    recoverSession: mockSessionState.recoverSession,
+    session: mockSessionState.session,
+    status: mockSessionState.status,
   }),
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useRuntimeLocale: () => ({
     currentLocale: 'en',
+    selectedLocale: 'en',
   }),
 }));
 
@@ -27,6 +40,13 @@ describe('TalentBusinessAccessGate', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockReadTalentDetail.mockReset();
+    mockRecoverSession.mockReset();
+    mockSessionState.request = mockRequest;
+    mockSessionState.recoverSession = mockRecoverSession;
+    mockSessionState.session = {
+      tenantId: 'tenant-1',
+    };
+    mockSessionState.status = 'authenticated';
   });
 
   it('renders children when the talent is published', async () => {
@@ -113,5 +133,36 @@ describe('TalentBusinessAccessGate', () => {
     await waitFor(() => {
       expect(screen.queryByText('Hidden workspace content')).not.toBeInTheDocument();
     });
+  });
+
+  it('recovers a cookie-backed session before loading talent detail in a new tab', async () => {
+    mockSessionState.session = null;
+    mockSessionState.status = 'anonymous';
+    mockRecoverSession.mockImplementation(async () => {
+      mockSessionState.session = {
+        tenantId: 'tenant-1',
+      };
+      mockSessionState.status = 'authenticated';
+      return true;
+    });
+    mockReadTalentDetail.mockResolvedValue({
+      id: 'talent-1',
+      lifecycleStatus: 'published',
+    });
+
+    render(
+      <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
+        <div>Recovered workspace content</div>
+      </TalentBusinessAccessGate>,
+    );
+
+    expect(screen.getByText('Checking talent availability')).toBeInTheDocument();
+
+    expect(await screen.findByText('Recovered workspace content')).toBeInTheDocument();
+    expect(mockRecoverSession).toHaveBeenCalledWith({
+      tenantId: 'tenant-1',
+      tenantTier: 'standard',
+    });
+    expect(mockReadTalentDetail).toHaveBeenCalledWith(mockRequest, 'talent-1');
   });
 });
