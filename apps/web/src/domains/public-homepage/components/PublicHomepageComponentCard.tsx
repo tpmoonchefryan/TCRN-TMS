@@ -22,8 +22,11 @@ import {
 import {
   type PublicHomepageComponentRecord,
 } from '@/domains/public-homepage/api/public-homepage.api';
+import {
+  PublicPresenceBadge,
+  PublicPresenceSurface,
+} from '@/domains/public-presence';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { GlassSurface } from '@/platform/ui';
 
 type VisibleHomepageComponent = PublicHomepageComponentRecord;
 
@@ -206,8 +209,8 @@ function SectionSurface({
   style?: CSSProperties;
 }>) {
   return (
-    <GlassSurface
-      variant="solid"
+    <PublicPresenceSurface
+      as="article"
       className={`border-white/60 ${className}`}
       style={{
         backgroundColor: theme.card.background,
@@ -219,33 +222,28 @@ function SectionSurface({
       }}
     >
       {children}
-    </GlassSurface>
+    </PublicPresenceSurface>
   );
 }
 
 function UnsupportedComponent({
   type,
-  props,
   description,
   descriptionStyle,
 }: Readonly<{
   type: string;
-  props: Record<string, unknown>;
   description: string;
   descriptionStyle?: CSSProperties;
 }>) {
   return (
     <div className="space-y-3">
-      <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-        <Sparkles className="h-3.5 w-3.5" />
+      <div className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+        <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
         {type}
       </div>
       <p className="text-sm leading-6" style={descriptionStyle}>
         {description}
       </p>
-      <pre className="overflow-x-auto rounded-2xl bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
-        {JSON.stringify(props, null, 2)}
-      </pre>
     </div>
   );
 }
@@ -408,7 +406,7 @@ export function PublicHomepageComponentCard({
         return (
           <CardFrame theme={theme} layout={layout} className="p-6">
             <div
-              className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+              className="mb-4 flex items-center gap-2 text-sm font-semibold"
               style={textStyles.secondary}
             >
               <ExternalLink className="h-4 w-4" />
@@ -431,7 +429,7 @@ export function PublicHomepageComponentCard({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-sky-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 motion-reduce:transition-none"
                   >
                     <ExternalLink className="h-4 w-4" />
                     {label}
@@ -458,15 +456,15 @@ export function PublicHomepageComponentCard({
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
             style={textStyles.secondary}
           >
             <ImageIcon className="h-4 w-4" />
             {copy.gallery}
           </div>
           <div
-            className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-            style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(var(--homepage-gallery-columns),minmax(0,1fr))]"
+            style={{ '--homepage-gallery-columns': String(columns) } as CSSProperties}
           >
             {images.map((entry, index) => {
               const url = asString(entry.url);
@@ -481,7 +479,7 @@ export function PublicHomepageComponentCard({
               return (
                 <figure
                   key={`${url}-${index}`}
-                  className="overflow-hidden rounded-[24px] bg-slate-900/5"
+                  className="overflow-hidden rounded-lg border border-white/70 bg-slate-900/5"
                 >
                   <img src={url} alt={alt} className="h-64 w-full object-cover" />
                   {caption ? (
@@ -511,7 +509,7 @@ export function PublicHomepageComponentCard({
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
             style={textStyles.secondary}
           >
             <PlayCircle className="h-4 w-4" />
@@ -585,7 +583,7 @@ export function PublicHomepageComponentCard({
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-slate-800"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             {label}
             <ExternalLink className="h-4 w-4" />
@@ -594,16 +592,27 @@ export function PublicHomepageComponentCard({
       );
     }
     case 'MarshmallowWidget': {
+      const marshmallowUrl = asString(props.url) || asString(props.href);
+      const showSubmitButton = asBoolean(props.showSubmitButton, true);
+
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">
-              <MessageCircleMore className="h-4 w-4" />
+            <PublicPresenceBadge icon={<MessageCircleMore />} tone="amber">
               {copy.marshmallow}
-            </div>
+            </PublicPresenceBadge>
             <p className="text-sm leading-7" style={textStyles.secondary}>
               {copy.marshmallowDescription}
             </p>
+            {showSubmitButton && marshmallowUrl ? (
+              <a
+                href={marshmallowUrl}
+                className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-white/85 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200 motion-reduce:transition-none"
+              >
+                <MessageCircleMore className="h-4 w-4" />
+                {copy.marshmallow}
+              </a>
+            ) : null}
           </div>
         </CardFrame>
       );
@@ -620,14 +629,14 @@ export function PublicHomepageComponentCard({
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
             style={textStyles.secondary}
           >
             <CalendarRange className="h-4 w-4" />
             {title}
           </div>
           {weekOf ? (
-            <p className="-mt-2 mb-4 text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+            <p className="-mt-2 mb-4 text-xs font-medium" style={textStyles.secondary}>
               {weekOf}
             </p>
           ) : null}
@@ -640,10 +649,10 @@ export function PublicHomepageComponentCard({
               events.map((event, index) => (
                 <div
                   key={`${asString(event.day)}-${asString(event.time)}-${index}`}
-                  className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3"
+                  className="rounded-lg border border-dashed border-sky-200 bg-white/75 px-4 py-3"
                 >
                   <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <span className="font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    <span className="font-semibold text-slate-500">
                       {asFilledString(event.day, copy.dayLabel)}
                     </span>
                     <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
@@ -669,7 +678,7 @@ export function PublicHomepageComponentCard({
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
             style={textStyles.secondary}
           >
             <Music4 className="h-4 w-4" />
@@ -710,7 +719,7 @@ export function PublicHomepageComponentCard({
       return (
         <CardFrame theme={theme} layout={layout} className="p-6">
           <div
-            className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
             style={textStyles.secondary}
           >
             <Radio className="h-4 w-4" />
@@ -718,12 +727,12 @@ export function PublicHomepageComponentCard({
           </div>
           <div className="space-y-3">
             {platform || channelName ? (
-              <p className="text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+              <p className="text-xs font-medium" style={textStyles.secondary}>
                 {[channelName, platform].filter(Boolean).join(' · ')}
               </p>
             ) : null}
             <div
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold text-white"
               style={{ backgroundColor: isLive ? '#dc2626' : '#475569' }}
             >
               <span
@@ -806,7 +815,7 @@ export function PublicHomepageComponentCard({
         <CardFrame theme={theme} layout={layout} className={cardStyle === 'compact' ? 'p-5' : 'p-6'}>
           {showHeader ? (
             <div
-              className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em]"
+              className="mb-4 flex items-center gap-2 text-sm font-semibold"
               style={textStyles.secondary}
             >
               <Activity className="h-4 w-4" />
@@ -816,7 +825,7 @@ export function PublicHomepageComponentCard({
           <p className="text-sm leading-7" style={textStyles.secondary}>
             {copy.bilibiliDescription}
           </p>
-          <p className="mt-3 text-xs uppercase tracking-[0.18em]" style={textStyles.secondary}>
+          <p className="mt-3 text-xs font-medium" style={textStyles.secondary}>
             {`Max ${maxItems} · ${filterType}${refreshInterval > 0 ? ` · ${refreshInterval}s refresh` : ''}`}
           </p>
           {uid ? (
@@ -839,7 +848,6 @@ export function PublicHomepageComponentCard({
         <CardFrame theme={theme} layout={layout} className="p-6">
           <UnsupportedComponent
             type={component.type}
-            props={props}
             description={copy.unsupportedDescription}
             descriptionStyle={textStyles.secondary}
           />

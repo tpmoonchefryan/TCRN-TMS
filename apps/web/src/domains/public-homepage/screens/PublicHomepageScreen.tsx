@@ -15,9 +15,14 @@ import {
   getHomepageCanvasStyle,
   PublicHomepageRenderer,
 } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import {
+  PublicPresenceBadge,
+  PublicPresenceShell,
+  PublicPresenceStateView,
+  PublicPresenceSurface,
+} from '@/domains/public-presence';
 import { ApiRequestError } from '@/platform/http/api';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { GlassSurface, StateView } from '@/platform/ui';
 
 function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
@@ -90,24 +95,23 @@ export function PublicHomepageScreen({
 
   if (loading && !data) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-4xl space-y-5">
-          <GlassSurface variant="solid" className="p-8">
-            <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-              <Sparkles className="h-4 w-4" />
+      <PublicPresenceShell contentClassName="flex min-h-[70vh] items-center" decorationDensity="calm">
+        <div className="w-full space-y-5">
+          <PublicPresenceSurface className="p-8">
+            <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {copy.publicHomepage.loading}
-            </div>
+            </PublicPresenceBadge>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <div className="h-32 animate-pulse rounded-3xl bg-slate-200/70" />
-              <div className="h-32 animate-pulse rounded-3xl bg-slate-200/70 md:col-span-2" />
+              <div className="h-32 animate-pulse rounded-lg bg-white/70" />
+              <div className="h-32 animate-pulse rounded-lg bg-white/70 md:col-span-2" />
             </div>
-          </GlassSurface>
+          </PublicPresenceSurface>
           <div className="grid gap-4">
-            <div className="h-40 animate-pulse rounded-[30px] bg-white/60" />
-            <div className="h-40 animate-pulse rounded-[30px] bg-white/60" />
+            <div className="h-40 animate-pulse rounded-lg bg-white/60" />
+            <div className="h-40 animate-pulse rounded-lg bg-white/60" />
           </div>
         </div>
-      </main>
+      </PublicPresenceShell>
     );
   }
 
@@ -117,33 +121,33 @@ export function PublicHomepageScreen({
       : error || copy.publicHomepage.failedDescription;
 
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-xl">
-          <StateView
-            status={isUnavailable ? 'unavailable' : 'error'}
+      <PublicPresenceShell
+        contentClassName="flex min-h-[70vh] items-center justify-center"
+        decorationDensity="calm"
+        width="sm"
+      >
+        <PublicPresenceStateView
+            tone={isUnavailable ? 'unavailable' : 'error'}
             title={isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle}
             description={description}
           />
-        </div>
-      </main>
+      </PublicPresenceShell>
     );
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 md:px-10 md:py-14" style={canvasStyle}>
-      <div className="mx-auto max-w-6xl">
-        <PublicHomepageRenderer
-          content={data.content}
-          theme={data.theme}
-          updatedAt={data.updatedAt}
-          hero={{
-            displayName: data.talent.displayName,
-            avatarUrl: data.talent.avatarUrl,
-            timezone: data.talent.timezone,
-            description: getHeroDescription(data),
-          }}
-        />
-      </div>
-    </main>
+    <PublicPresenceShell decorationDensity="calm" style={canvasStyle}>
+      <PublicHomepageRenderer
+        content={data.content}
+        theme={data.theme}
+        updatedAt={data.updatedAt}
+        hero={{
+          displayName: data.talent.displayName,
+          avatarUrl: data.talent.avatarUrl,
+          timezone: data.talent.timezone,
+          description: getHeroDescription(data),
+        }}
+      />
+    </PublicPresenceShell>
   );
 }

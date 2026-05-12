@@ -554,7 +554,8 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="missing-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('Public marshmallow unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Page not found')).toBeInTheDocument();
+    expect(screen.getByText('The public marshmallow page is not published, not enabled, or no longer reachable.')).toBeInTheDocument();
+    expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
   });
 
   it('uses runtime locale copy for unavailable public marshmallow states', async () => {

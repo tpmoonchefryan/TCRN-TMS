@@ -1,15 +1,20 @@
 'use client';
 
 import { DEFAULT_THEME, normalizeTheme, type ThemeConfig } from '@tcrn/shared';
-import { Sparkles } from 'lucide-react';
+import { ExternalLink, Sparkles } from 'lucide-react';
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
 import {
+  type PublicHomepageComponentRecord,
   type PublicHomepageContent,
 } from '@/domains/public-homepage/api/public-homepage.api';
 import { PublicHomepageComponentCard } from '@/domains/public-homepage/components/PublicHomepageComponentCard';
+import {
+  PublicPresenceBadge,
+  PublicPresenceHero,
+  PublicPresenceSurface,
+} from '@/domains/public-presence';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { GlassSurface } from '@/platform/ui';
 
 function resolveBorderRadius(value: ThemeConfig['card']['borderRadius']) {
   switch (value) {
@@ -80,8 +85,8 @@ function SectionSurface({
   className?: string;
 }>) {
   return (
-    <GlassSurface
-      variant="solid"
+    <PublicPresenceSurface
+      as="section"
       className={`border-white/60 ${className}`}
       style={{
         backgroundColor: theme.card.background,
@@ -92,7 +97,7 @@ function SectionSurface({
       }}
     >
       {children}
-    </GlassSurface>
+    </PublicPresenceSurface>
   );
 }
 
@@ -111,6 +116,70 @@ export function getHomepageCanvasStyle(theme: ThemeConfig): CSSProperties {
     background: resolveBackground(theme),
     color: theme.colors.text,
   };
+}
+
+function getHeroPrimaryAction(
+  components: PublicHomepageComponentRecord[],
+  publicCopy: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'],
+) {
+  for (const component of components) {
+    const props = component.props || {};
+
+    if (component.type === 'LiveStatus') {
+      const streamUrl = typeof props.streamUrl === 'string' ? props.streamUrl.trim() : '';
+
+      if (streamUrl) {
+        return {
+          href: streamUrl,
+          label: publicCopy.openStream,
+        };
+      }
+    }
+
+    if (component.type === 'LinkButton') {
+      const url = typeof props.url === 'string' ? props.url.trim() : '';
+      const label = typeof props.label === 'string' && props.label.trim()
+        ? props.label.trim()
+        : publicCopy.openLink;
+
+      if (url) {
+        return {
+          href: url,
+          label,
+        };
+      }
+    }
+
+    if (component.type === 'SocialLinks' && Array.isArray(props.platforms)) {
+      const firstLink = props.platforms.find(
+        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+      );
+      const url = typeof firstLink?.url === 'string' ? firstLink.url.trim() : '';
+      const label = typeof firstLink?.label === 'string' && firstLink.label.trim()
+        ? firstLink.label.trim()
+        : publicCopy.socialLinks;
+
+      if (url) {
+        return {
+          href: url,
+          label,
+        };
+      }
+    }
+
+    if (component.type === 'VideoEmbed') {
+      const videoUrl = typeof props.videoUrl === 'string' ? props.videoUrl.trim() : '';
+
+      if (videoUrl) {
+        return {
+          href: videoUrl,
+          label: publicCopy.openVideoInNewTab,
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 export function PublicHomepageRenderer({
@@ -137,53 +206,53 @@ export function PublicHomepageRenderer({
     ? `${hero.displayName} ${publicCopy.avatarSuffix}`
     : publicCopy.profileAvatar;
   const textStyles = getThemeTextStyles(theme);
+  const heroPrimaryAction = useMemo(
+    () => getHeroPrimaryAction(components, publicCopy),
+    [components, publicCopy],
+  );
 
   return (
     <div className="space-y-8">
       <SectionSurface theme={theme} className="p-8 md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">
-              <Sparkles className="h-3.5 w-3.5" />
+        <PublicPresenceHero
+          badge={(
+            <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {publicCopy.badge}
+            </PublicPresenceBadge>
+          )}
+          title={hero.displayName}
+          titleStyle={textStyles.primary}
+          description={hero.description ? (
+            <p style={textStyles.secondary}>{hero.description}</p>
+          ) : null}
+          meta={hero.timezone ? (
+            <PublicPresenceBadge tone="slate" variant="outline">
+              {publicCopy.timezoneLabel}: {hero.timezone}
+            </PublicPresenceBadge>
+          ) : null}
+          actions={heroPrimaryAction ? (
+            <a
+              href={heroPrimaryAction.href}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              {heroPrimaryAction.label}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          ) : null}
+          media={hero.avatarUrl ? (
+            <img
+              src={hero.avatarUrl}
+              alt={heroAvatarAlt}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-100 text-6xl font-semibold text-slate-500">
+              {hero.displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="space-y-3">
-              <h1
-                className="text-4xl font-semibold tracking-tight md:text-5xl"
-                style={textStyles.primary}
-              >
-                {hero.displayName}
-              </h1>
-              {hero.description ? (
-                <p className="max-w-3xl text-base leading-8" style={textStyles.secondary}>
-                  {hero.description}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              {hero.timezone ? (
-                <span className="rounded-full bg-white/70 px-3 py-2">
-                  {publicCopy.timezoneLabel}: {hero.timezone}
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex justify-start lg:justify-end">
-            <div className="h-48 w-48 overflow-hidden rounded-[38px] border border-white/80 bg-slate-200 shadow-xl md:h-56 md:w-56">
-              {hero.avatarUrl ? (
-                <img
-                  src={hero.avatarUrl}
-                  alt={heroAvatarAlt}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-6xl font-semibold text-slate-500">
-                  {hero.displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          )}
+        />
       </SectionSurface>
 
       {components.map((component) => (

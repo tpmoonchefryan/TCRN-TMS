@@ -15,15 +15,23 @@ import {
   submitPublicMarshmallowMessage,
   togglePublicMarshmallowReaction,
 } from '@/domains/public-marshmallow/api/public-marshmallow.api';
+import { PublicMarshmallowMessageCard } from '@/domains/public-marshmallow/components/PublicMarshmallowMessageCard';
+import { PublicMarshmallowNotice } from '@/domains/public-marshmallow/components/PublicMarshmallowNotice';
 import { TurnstileWidget } from '@/domains/public-marshmallow/components/TurnstileWidget';
+import { derivePublicMarshmallowThemeSurface } from '@/domains/public-marshmallow/public-marshmallow-theme';
+import {
+  PublicPresenceBadge,
+  PublicPresenceHero,
+  PublicPresenceShell,
+  PublicPresenceStateView,
+  PublicPresenceSurface,
+} from '@/domains/public-presence';
 import { ApiRequestError } from '@/platform/http/api';
 import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import {
-  formatLocaleDateTime,
   formatLocaleNumber,
   pickLocaleText,
 } from '@/platform/runtime/locale/locale-text';
-import { GlassSurface, StateView } from '@/platform/ui';
 
 interface NoticeState {
   tone: 'success' | 'error' | 'info';
@@ -46,14 +54,6 @@ function getErrorMessage(reason: unknown, fallback: string) {
 
 function isUnavailableError(reason: unknown) {
   return reason instanceof ApiRequestError && reason.status === 404;
-}
-
-function asRecord(value: unknown) {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-}
-
-function asString(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value : fallback;
 }
 
 function asFilledString(value: unknown, fallback = '') {
@@ -146,34 +146,6 @@ function formatCharacterCount(current: number, maximum: number, locale: Marshmal
   });
 }
 
-function formatReplyHeading(replyLabel: string, repliedBy: string | null, locale: MarshmallowLocale) {
-  if (!repliedBy) {
-    return replyLabel;
-  }
-
-  return pickLocaleText(locale, {
-    en: `${replyLabel} by ${repliedBy}`,
-    zh_HANS: `${replyLabel} · ${repliedBy}`,
-    zh_HANT: `${replyLabel} · ${repliedBy}`,
-    ja: `${replyLabel} · ${repliedBy}`,
-    ko: `${replyLabel} · ${repliedBy}`,
-    fr: `${replyLabel} par ${repliedBy}`,
-  });
-}
-
-function formatAttachmentAlt(index: number, locale: MarshmallowLocale) {
-  const order = formatLocaleNumber(locale, index + 1);
-
-  return pickLocaleText(locale, {
-    en: `Attachment ${order}`,
-    zh_HANS: `附件 ${order}`,
-    zh_HANT: `附件 ${order}`,
-    ja: `添付画像 ${order}`,
-    ko: `첨부 이미지 ${order}`,
-    fr: `Pièce jointe ${order}`,
-  });
-}
-
 function formatCaptchaMode(
   mode: PublicMarshmallowConfigResponse['captchaMode'],
   copy: ReturnType<typeof useRuntimeLocale>['copy']['publicMarshmallow'],
@@ -186,116 +158,6 @@ function formatCaptchaMode(
     default:
       return copy.captchaModeNever;
   }
-}
-
-function deriveThemeSurface(rawTheme: Record<string, unknown>) {
-  const theme = asRecord(rawTheme);
-
-  return {
-    pageBackground:
-      asString(theme.backgroundColor) ||
-      'linear-gradient(180deg, rgba(253, 242, 248, 1) 0%, rgba(239, 246, 255, 1) 100%)',
-    panelBackground: asString(theme.cardBackground) || 'rgba(255, 255, 255, 0.78)',
-    accentColor: asString(theme.accentColor) || '#9333ea',
-    accentText: asString(theme.accentTextColor) || '#ffffff',
-  };
-}
-
-function NoticeBanner({
-  tone,
-  message,
-}: Readonly<{
-  tone: NoticeState['tone'];
-  message: string;
-}>) {
-  const toneClasses =
-    tone === 'success'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-      : tone === 'info'
-        ? 'border-sky-200 bg-sky-50 text-sky-800'
-        : 'border-rose-200 bg-rose-50 text-rose-800';
-
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
-}
-
-function MessageCard({
-  message,
-  accentColor,
-  locale,
-  copy,
-  reactionsEnabled,
-  allowedReactions,
-  onReact,
-  pendingReaction,
-}: Readonly<{
-  message: PublicMarshmallowMessageRecord;
-  accentColor: string;
-  locale: MarshmallowLocale;
-  copy: ReturnType<typeof useRuntimeLocale>['copy']['publicMarshmallow'];
-  reactionsEnabled: boolean;
-  allowedReactions: string[];
-  onReact: (messageId: string, reaction: string) => Promise<void>;
-  pendingReaction: string | null;
-}>) {
-  const activeReactions = new Set(message.userReactions);
-  const visibleReactions = allowedReactions.length > 0 ? allowedReactions : Object.keys(message.reactionCounts);
-
-  return (
-    <GlassSurface variant="solid" className="p-5">
-      <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-        <span>{message.isAnonymous ? copy.anonymousSender : message.senderName || copy.namedFanFallback}</span>
-        <span>{formatLocaleDateTime(locale, message.createdAt, message.createdAt)}</span>
-      </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-800">{message.content}</p>
-      {message.imageUrls.length > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {message.imageUrls.map((url, index) => (
-            <img
-              key={`${url}-${index}`}
-              src={url}
-              alt={formatAttachmentAlt(index, locale)}
-              className="h-40 w-full rounded-2xl object-cover"
-            />
-          ))}
-        </div>
-      ) : null}
-      {message.replyContent ? (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-            {formatReplyHeading(copy.replyLabel, message.repliedBy?.displayName || null, locale)}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">{message.replyContent}</p>
-        </div>
-      ) : null}
-      {reactionsEnabled && visibleReactions.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {visibleReactions.map((reaction) => {
-            const isActive = activeReactions.has(reaction);
-            const count = message.reactionCounts[reaction] || 0;
-            const disabled = pendingReaction === `${message.id}:${reaction}`;
-
-            return (
-              <button
-                key={reaction}
-                type="button"
-                disabled={disabled}
-                onClick={() => void onReact(message.id, reaction)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                  isActive
-                    ? 'border-transparent text-white'
-                    : 'border-slate-200 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white'
-                } disabled:cursor-not-allowed disabled:opacity-60`}
-                style={isActive ? { backgroundColor: accentColor } : undefined}
-              >
-                <span>{reaction}</span>
-                <span>{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </GlassSurface>
-  );
 }
 
 export function PublicMarshmallowScreen({
@@ -393,7 +255,7 @@ export function PublicMarshmallowScreen({
     };
   }, [fingerprint, path]);
 
-  const theme = useMemo(() => deriveThemeSurface(config?.theme || {}), [config?.theme]);
+  const theme = useMemo(() => derivePublicMarshmallowThemeSurface(config?.theme || {}), [config?.theme]);
   const localizedTerms = useMemo(
     () => (config ? pickLocalizedLegalCopy(config.terms, selectedLocale) : null),
     [config, selectedLocale],
@@ -550,103 +412,94 @@ export function PublicMarshmallowScreen({
 
   if (loading && !config) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-4xl space-y-5">
-          <GlassSurface variant="solid" className="p-8">
-            <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-              <Sparkles className="h-4 w-4" />
+      <PublicPresenceShell contentClassName="flex min-h-[70vh] items-center" decorationDensity="calm">
+        <div className="w-full space-y-5">
+          <PublicPresenceSurface className="p-8">
+            <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {copy.publicMarshmallow.loading}
-            </div>
+            </PublicPresenceBadge>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="h-40 animate-pulse rounded-3xl bg-slate-200/70" />
-              <div className="h-40 animate-pulse rounded-3xl bg-slate-200/70" />
+              <div className="h-40 animate-pulse rounded-lg bg-white/70" />
+              <div className="h-40 animate-pulse rounded-lg bg-white/70" />
             </div>
-          </GlassSurface>
+          </PublicPresenceSurface>
         </div>
-      </main>
+      </PublicPresenceShell>
     );
   }
 
   if (!config) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-xl">
-          <StateView
-            status={isUnavailable ? 'unavailable' : 'error'}
+      <PublicPresenceShell
+        contentClassName="flex min-h-[70vh] items-center justify-center"
+        decorationDensity="calm"
+        width="sm"
+      >
+          <PublicPresenceStateView
+            tone={isUnavailable ? 'unavailable' : 'error'}
             title={isUnavailable ? copy.publicMarshmallow.unavailableTitle : copy.publicMarshmallow.failedTitle}
             description={
-              error ||
-              (isUnavailable
+              isUnavailable
                 ? copy.publicMarshmallow.unavailableDescription
-                : copy.publicMarshmallow.failedDescription)
+                : error || copy.publicMarshmallow.failedDescription
             }
           />
-        </div>
-      </main>
+      </PublicPresenceShell>
     );
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 md:px-10 md:py-14" style={{ background: theme.pageBackground }}>
-      <div className="mx-auto max-w-6xl space-y-8">
-        <GlassSurface variant="solid" className="overflow-hidden p-8" style={{ backgroundColor: theme.panelBackground }}>
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white" style={{ backgroundColor: theme.accentColor }}>
-                <Sparkles className="h-3.5 w-3.5" />
+    <PublicPresenceShell decorationDensity="calm" style={{ background: theme.pageBackground }}>
+      <div className="space-y-8">
+        <PublicPresenceSurface className="overflow-hidden p-8" style={{ backgroundColor: theme.panelBackground }}>
+          <PublicPresenceHero
+            badge={(
+              <PublicPresenceBadge icon={<Sparkles />} tone="rose">
                 {copy.publicMarshmallow.badge}
-              </div>
-              <div className="space-y-3">
-                <h1 className="text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-                  {config.title || `${config.talent.displayName} ${copy.publicMarshmallow.titleSuffix}`}
-                </h1>
-                {config.welcomeText ? (
-                  <p className="max-w-3xl text-base leading-8 text-slate-600">{config.welcomeText}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <span className="rounded-full bg-white/70 px-3 py-2">
+              </PublicPresenceBadge>
+            )}
+            title={config.title || `${config.talent.displayName} ${copy.publicMarshmallow.titleSuffix}`}
+            description={config.welcomeText ? <p>{config.welcomeText}</p> : null}
+            meta={(
+              <>
+                <PublicPresenceBadge tone={config.allowAnonymous ? 'rose' : 'slate'} variant="outline">
                   {config.allowAnonymous ? copy.publicMarshmallow.anonymousBadgeAllowed : copy.publicMarshmallow.namedOnlyBadge}
-                </span>
-                <span className="rounded-full bg-white/70 px-3 py-2">
+                </PublicPresenceBadge>
+                <PublicPresenceBadge tone="sky" variant="outline">
                   {copy.publicMarshmallow.captchaModeLabel}: {formatCaptchaMode(config.captchaMode, copy.publicMarshmallow)}
-                </span>
-                <span className="rounded-full bg-white/70 px-3 py-2">
+                </PublicPresenceBadge>
+                <PublicPresenceBadge tone="amber" variant="outline">
                   {formatLoadedCount(messages.length, selectedLocale, copy.publicMarshmallow.loadedCountLabel)}
-                </span>
+                </PublicPresenceBadge>
+              </>
+            )}
+            media={config.talent.avatarUrl ? (
+              <img
+                src={config.talent.avatarUrl}
+                alt={`${config.talent.displayName} ${copy.publicMarshmallow.avatarSuffix}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-slate-100 text-5xl font-semibold text-slate-500">
+                {config.talent.displayName.charAt(0).toUpperCase()}
               </div>
-            </div>
-            <div className="flex items-start justify-start lg:justify-end">
-              <div className="h-44 w-44 overflow-hidden rounded-[34px] border border-white/80 bg-slate-200 shadow-xl">
-                {config.talent.avatarUrl ? (
-                  <img
-                    src={config.talent.avatarUrl}
-                    alt={`${config.talent.displayName} ${copy.publicMarshmallow.avatarSuffix}`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-5xl font-semibold text-slate-500">
-                    {config.talent.displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </GlassSurface>
+            )}
+          />
+        </PublicPresenceSurface>
 
-        {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
+        {notice ? <PublicMarshmallowNotice tone={notice.tone} message={notice.message} /> : null}
         {cannotSubmitDueToMissingCaptcha ? (
-          <NoticeBanner
+          <PublicMarshmallowNotice
             tone="info"
             message={copy.publicMarshmallow.missingCaptchaDisabledNotice}
           />
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <GlassSurface variant="solid" className="p-6" style={{ backgroundColor: theme.panelBackground }}>
+          <PublicPresenceSurface variant="note" className="p-6" style={{ backgroundColor: theme.noteBackground }}>
             <div className="space-y-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.publicMarshmallow.sendSectionEyebrow}</p>
+                <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.sendSectionEyebrow}</p>
                 <h2 className="mt-2 text-2xl font-semibold text-slate-950">{copy.publicMarshmallow.sendSectionTitle}</h2>
               </div>
               <form className="space-y-4" onSubmit={handleSubmit}>
@@ -662,7 +515,7 @@ export function PublicMarshmallowScreen({
                     minLength={config.minMessageLength}
                     maxLength={config.maxMessageLength}
                     rows={7}
-                    className="w-full rounded-3xl border border-slate-200 bg-white/80 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border border-rose-100 bg-white/85 px-4 py-4 text-sm leading-7 text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
                     required
                   />
                   <p className="text-xs text-slate-500">
@@ -670,7 +523,7 @@ export function PublicMarshmallowScreen({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3">
+                <div className="flex items-center gap-3 rounded-lg border border-rose-100 bg-white/70 px-4 py-3">
                   <input
                     id="public-marshmallow-anonymous"
                     type="checkbox"
@@ -693,7 +546,7 @@ export function PublicMarshmallowScreen({
                       id="public-marshmallow-sender"
                       value={senderName}
                       onChange={(event) => setSenderName(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                      className="w-full rounded-lg border border-rose-100 bg-white/80 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
                       maxLength={64}
                       required={!isAnonymous}
                     />
@@ -724,7 +577,7 @@ export function PublicMarshmallowScreen({
                 <button
                   type="submit"
                   disabled={pendingSubmit || cannotSubmitDueToMissingCaptcha}
-                  className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                   style={{ backgroundColor: theme.accentColor, color: theme.accentText }}
                 >
                   <Send className="h-4 w-4" />
@@ -732,28 +585,28 @@ export function PublicMarshmallowScreen({
                 </button>
               </form>
             </div>
-          </GlassSurface>
+          </PublicPresenceSurface>
 
           <div className="space-y-5">
-            <GlassSurface variant="solid" className="p-6" style={{ backgroundColor: theme.panelBackground }}>
+            <PublicPresenceSurface className="p-6" style={{ backgroundColor: theme.panelBackground }}>
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.publicMarshmallow.feedEyebrow}</p>
+                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.feedEyebrow}</p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">{copy.publicMarshmallow.feedTitle}</h2>
                 </div>
                 <div className="text-right text-sm text-slate-500">{formatVisibleCount(messages.length, selectedLocale)}</div>
               </div>
-            </GlassSurface>
+            </PublicPresenceSurface>
 
             {messages.length === 0 ? (
-              <StateView
-                status="empty"
+              <PublicPresenceStateView
+                tone="neutral"
                 title={copy.publicMarshmallow.emptyTitle}
                 description={copy.publicMarshmallow.emptyDescription}
               />
             ) : (
               messages.map((message) => (
-                <MessageCard
+                <PublicMarshmallowMessageCard
                   key={message.id}
                   message={message}
                   accentColor={theme.accentColor}
@@ -772,7 +625,7 @@ export function PublicMarshmallowScreen({
                 type="button"
                 disabled={loadingMore}
                 onClick={() => void handleLoadMore()}
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
               >
                 {loadingMore ? copy.publicMarshmallow.loadMorePending : copy.publicMarshmallow.loadMore}
               </button>
@@ -781,11 +634,11 @@ export function PublicMarshmallowScreen({
         </div>
 
         {(localizedTerms || localizedPrivacy) ? (
-          <GlassSurface variant="solid" className="p-6" style={{ backgroundColor: theme.panelBackground }}>
+          <PublicPresenceSurface className="p-6" style={{ backgroundColor: theme.panelBackground }}>
             <div className="grid gap-6 md:grid-cols-2">
               {localizedTerms ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.publicMarshmallow.termsLabel}</p>
+                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.termsLabel}</p>
                   <div className="space-y-3 text-sm leading-7 text-slate-700">
                     <p>{localizedTerms}</p>
                   </div>
@@ -793,16 +646,16 @@ export function PublicMarshmallowScreen({
               ) : null}
               {localizedPrivacy ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.publicMarshmallow.privacyLabel}</p>
+                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.privacyLabel}</p>
                   <div className="space-y-3 text-sm leading-7 text-slate-700">
                     <p>{localizedPrivacy}</p>
                   </div>
                 </div>
               ) : null}
             </div>
-          </GlassSurface>
+          </PublicPresenceSurface>
         ) : null}
       </div>
-    </main>
+    </PublicPresenceShell>
   );
 }

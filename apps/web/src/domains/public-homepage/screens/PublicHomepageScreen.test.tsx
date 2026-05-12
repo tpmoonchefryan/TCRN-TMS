@@ -139,7 +139,7 @@ describe('PublicHomepageScreen', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Aki Rosenthal' })).toBeInTheDocument();
     expect(screen.getByText('Singing, streaming, and moonlit conversations.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'YouTube' })).toHaveAttribute('href', 'https://youtube.com/@aki');
+    expect(screen.getAllByRole('link', { name: 'YouTube' })[0]).toHaveAttribute('href', 'https://youtube.com/@aki');
     expect(screen.getByRole('heading', { name: 'About' })).toBeInTheDocument();
     expect(screen.getAllByText('Official public homepage.')).toHaveLength(2);
 

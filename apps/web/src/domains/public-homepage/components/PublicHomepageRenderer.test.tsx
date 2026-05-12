@@ -90,7 +90,7 @@ describe('PublicHomepageRenderer', () => {
     expect(screen.getByText('公开主页')).toBeInTheDocument();
     expect(screen.queryByText(/更新时间/)).not.toBeInTheDocument();
     expect(screen.queryByText(/已发布区块/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '打开链接' })).toHaveAttribute('href', 'https://example.com');
+    expect(screen.getAllByRole('link', { name: '打开链接' })[0]).toHaveAttribute('href', 'https://example.com');
     expect(screen.getByText('当前还没有已发布的公开日程。')).toBeInTheDocument();
     expect(screen.getByText('当前离线')).toBeInTheDocument();
     expect(screen.getByText('128 人正在观看')).toBeInTheDocument();
@@ -177,6 +177,97 @@ describe('PublicHomepageRenderer', () => {
       display: 'flex',
       flexWrap: 'wrap',
       gap: '24px',
+    });
+  });
+
+  it('does not guess marshmallow links or expose unsupported block props on the public page', () => {
+    const content: PublicHomepageContent = {
+      version: '1.0',
+      components: [
+        {
+          id: 'marshmallow-1',
+          type: 'MarshmallowWidget',
+          visible: true,
+          order: 1,
+          props: {
+            displayMode: 'compact',
+            showSubmitButton: true,
+          },
+        },
+        {
+          id: 'unsupported-1',
+          type: 'FutureBlock',
+          visible: true,
+          order: 2,
+          props: {
+            secretInternalField: 'do-not-render',
+          },
+        },
+      ],
+    };
+
+    renderWithLocale(
+      <PublicHomepageRenderer
+        content={content}
+        theme={DEFAULT_THEME}
+        updatedAt="2026-04-17T12:00:00.000Z"
+        hero={{
+          displayName: 'Marshmallow Proof',
+          avatarUrl: null,
+          timezone: 'Asia/Shanghai',
+          description: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('棉花糖')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '棉花糖' })).not.toBeInTheDocument();
+    expect(screen.getByText('部分主页内容会在这里以简化视图展示。')).toBeInTheDocument();
+    expect(screen.queryByText('secretInternalField')).not.toBeInTheDocument();
+    expect(screen.queryByText('do-not-render')).not.toBeInTheDocument();
+  });
+
+  it('keeps gallery columns responsive instead of forcing desktop columns on mobile', () => {
+    const content: PublicHomepageContent = {
+      version: '1.0',
+      components: [
+        {
+          id: 'gallery-1',
+          type: 'ImageGallery',
+          visible: true,
+          order: 1,
+          props: {
+            columns: 4,
+            images: [
+              {
+                url: 'https://cdn.example.com/one.png',
+                alt: 'One',
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const { container } = renderWithLocale(
+      <PublicHomepageRenderer
+        content={content}
+        theme={DEFAULT_THEME}
+        updatedAt="2026-04-17T12:00:00.000Z"
+        hero={{
+          displayName: 'Gallery Proof',
+          avatarUrl: null,
+          timezone: 'Asia/Shanghai',
+          description: null,
+        }}
+      />,
+    );
+
+    const galleryGrid = container.querySelector('[style*="--homepage-gallery-columns: 4"]');
+
+    expect(galleryGrid).toBeInTheDocument();
+    expect(galleryGrid).not.toHaveStyle({
+      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     });
   });
 });
