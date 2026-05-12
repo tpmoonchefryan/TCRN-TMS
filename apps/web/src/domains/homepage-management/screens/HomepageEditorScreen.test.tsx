@@ -13,7 +13,6 @@ import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider
 
 const mockRequest = vi.fn();
 const mockPush = vi.fn();
-const mockWindowOpen = vi.fn();
 const mockSession = {
   tenantId: 'tenant-1',
   tenantName: 'Test Tenant',
@@ -293,12 +292,7 @@ describe('HomepageEditorScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockPush.mockReset();
-    mockWindowOpen.mockReset();
     window.localStorage.clear();
-    Object.defineProperty(window, 'open', {
-      configurable: true,
-      value: mockWindowOpen,
-    });
     mockSession.user.preferredLanguage = 'en';
     setRuntimeLanguage('en-US');
   });
@@ -487,13 +481,17 @@ describe('HomepageEditorScreen', () => {
       expect(screen.queryByRole('heading', { name: 'Homepage preview' })).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
+    const livePreviewLink = screen.getByRole('link', { name: 'Open live preview' });
+    expect(livePreviewLink).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
+    );
+    expect(livePreviewLink).toHaveAttribute('target', '_blank');
+
+    fireEvent.click(livePreviewLink);
 
     await waitFor(() => {
-      expect(mockWindowOpen).toHaveBeenCalledWith(
-        expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
-        '_blank',
-      );
+      expect(window.localStorage.length).toBeGreaterThan(0);
     });
 
     const previewKey = Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
@@ -540,13 +538,17 @@ describe('HomepageEditorScreen', () => {
     expect(screen.getByText('Homepage URL')).toBeInTheDocument();
     expect(screen.getByTestId('homepage-editor-page-info-summary').className).toContain('auto-fit');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
+    const livePreviewLink = screen.getByRole('link', { name: 'Open live preview' });
+    expect(livePreviewLink).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
+    );
+    expect(livePreviewLink).toHaveAttribute('target', '_blank');
+
+    fireEvent.click(livePreviewLink);
 
     await waitFor(() => {
-      expect(mockWindowOpen).toHaveBeenCalledWith(
-        expect.stringMatching(/^\/homepage-editor\/tenant-1\/talent-1\/preview\?previewId=tenant-1\.talent-1\./),
-        '_blank',
-      );
+      expect(window.localStorage.length).toBeGreaterThan(0);
     });
   });
 

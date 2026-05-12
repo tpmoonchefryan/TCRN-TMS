@@ -14,8 +14,8 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run --config ./vitest.config.ts",
     "test:cov": "vitest run --config ./vitest.config.ts --coverage",
-    "test:integration": "vitest run test/integration --config ./vitest.integration.config.ts",
-    "test:isolation": "vitest run src/testing/isolation --config ./vitest.integration.config.ts"
+    "test:integration": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; if [ \"$#\" -eq 0 ]; then set -- test/integration; fi; vitest run --config ./vitest.integration.config.ts \"$@\"' --",
+    "test:isolation": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; if [ \"$#\" -eq 0 ]; then set -- src/testing/isolation; fi; vitest run --config ./vitest.integration.config.ts \"$@\"' --"
   },
   "dependencies": {
     "@nestjs/axios": "4.0.1",

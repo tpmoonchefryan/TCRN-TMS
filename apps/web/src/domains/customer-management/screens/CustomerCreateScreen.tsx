@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
+  checkCustomerProfilePermission,
   createCompanyCustomer,
   createCustomerMembership,
   createIndividualCustomer,
@@ -23,7 +24,7 @@ import { ApiRequestError } from '@/platform/http/api';
 import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { AsyncSubmitButton, GlassSurface } from '@/platform/ui';
+import { AsyncSubmitButton, GlassSurface, StateView } from '@/platform/ui';
 
 interface CustomerCreateScreenProps {
   tenantId: string;
@@ -55,6 +56,11 @@ interface MembershipOptionsState {
   classes: CustomerMembershipClassOption[];
   loading: boolean;
   error: string | null;
+}
+
+interface CreateAccessState {
+  status: 'loading' | 'allowed' | 'denied' | 'error';
+  message: string | null;
 }
 
 type CustomerCreateLocaleText = Parameters<typeof pickLocaleText>[1];
@@ -206,9 +212,14 @@ export function CustomerCreateScreen({
   const { currentLocale, selectedLocale } = useRuntimeLocale();
   const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
   const { request } = useSession();
+  const backToCustomersHref = `/tenant/${tenantId}/talent/${talentId}/customers`;
   const [profileType, setProfileType] = useState<CustomerProfileType>('individual');
   const [draft, setDraft] = useState<CustomerDraft>(DEFAULT_DRAFT);
   const [membershipDraft, setMembershipDraft] = useState<MembershipDraft>(() => buildDefaultMembershipDraft());
+  const [accessState, setAccessState] = useState<CreateAccessState>({
+    status: 'loading',
+    message: null,
+  });
   const [membershipOptions, setMembershipOptions] = useState<MembershipOptionsState>({
     platforms: [],
     classes: [],
@@ -230,6 +241,62 @@ export function CustomerCreateScreen({
   const membershipValidFromRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function verifyCreateAccess() {
+      setAccessState({
+        status: 'loading',
+        message: null,
+      });
+
+      try {
+        const allowed = await checkCustomerProfilePermission(request, talentId, 'create');
+
+        if (cancelled) {
+          return;
+        }
+
+        setAccessState({
+          status: allowed ? 'allowed' : 'denied',
+          message: null,
+        });
+      } catch (reason) {
+        if (cancelled) {
+          return;
+        }
+
+        setAccessState({
+          status: 'error',
+          message: getErrorMessage(
+            reason,
+            pickText(
+              effectiveSelectedLocale,
+              {
+                en: 'Customer-create access could not be verified.',
+                zh_HANS: '无法确认客户创建权限。',
+                zh_HANT: '無法確認客戶建立權限。',
+                ja: '顧客作成権限を確認できませんでした。',
+                ko: '고객 생성 권한을 확인하지 못했습니다.',
+                fr: 'Impossible de vérifier l’accès à la création client.',
+              },
+            ),
+          ),
+        });
+      }
+    }
+
+    void verifyCreateAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveSelectedLocale, request, talentId]);
+
+  useEffect(() => {
+    if (accessState.status !== 'allowed') {
+      return;
+    }
+
     let cancelled = false;
 
     async function loadMembershipOptions() {
@@ -287,7 +354,7 @@ export function CustomerCreateScreen({
     return () => {
       cancelled = true;
     };
-  }, [effectiveSelectedLocale, request, talentId]);
+  }, [accessState.status, effectiveSelectedLocale, request, talentId]);
 
   const membershipClassOptions = useMemo(
     () =>
@@ -528,6 +595,90 @@ export function CustomerCreateScreen({
     }
   }
 
+  const backToCustomersAction = (
+    <Link
+      href={backToCustomersHref}
+      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      {pickText(effectiveSelectedLocale, {
+        en: 'Back to customers',
+        zh_HANS: '返回客户列表',
+        zh_HANT: '返回客戶列表',
+        ja: '顧客一覧へ戻る',
+        ko: '고객 목록으로 돌아가기',
+        fr: 'Retour aux clients',
+      })}
+    </Link>
+  );
+
+  if (accessState.status === 'loading') {
+    return (
+      <StateView
+        status="unavailable"
+        title={pickText(effectiveSelectedLocale, {
+          en: 'Checking customer access',
+          zh_HANS: '正在确认客户权限',
+          zh_HANT: '正在確認客戶權限',
+          ja: '顧客権限を確認しています',
+          ko: '고객 권한을 확인하고 있습니다',
+          fr: 'Vérification de l’accès client',
+        })}
+        description={pickText(effectiveSelectedLocale, {
+          en: 'Confirming whether this workspace can create customer records before opening the form.',
+          zh_HANS: '正在确认当前工作区是否可以创建客户档案。',
+          zh_HANT: '正在確認目前工作區是否可以建立客戶檔案。',
+          ja: 'フォームを開く前に、このワークスペースで顧客を作成できるか確認しています。',
+          ko: '폼을 열기 전에 이 워크스페이스가 고객을 생성할 수 있는지 확인합니다.',
+          fr: 'Vérification du droit de créer des clients dans cet espace avant d’ouvrir le formulaire.',
+        })}
+      />
+    );
+  }
+
+  if (accessState.status === 'error') {
+    return (
+      <StateView
+        status="error"
+        title={pickText(effectiveSelectedLocale, {
+          en: 'Customer creation unavailable',
+          zh_HANS: '客户创建暂不可用',
+          zh_HANT: '客戶建立暫時不可用',
+          ja: '顧客作成を利用できません',
+          ko: '고객 생성을 사용할 수 없습니다',
+          fr: 'Création client indisponible',
+        })}
+        description={accessState.message || undefined}
+        action={backToCustomersAction}
+      />
+    );
+  }
+
+  if (accessState.status === 'denied') {
+    return (
+      <StateView
+        status="denied"
+        title={pickText(effectiveSelectedLocale, {
+          en: 'Customer creation denied',
+          zh_HANS: '无权创建客户',
+          zh_HANT: '無權建立客戶',
+          ja: '顧客を作成する権限がありません',
+          ko: '고객을 생성할 권한이 없습니다',
+          fr: 'Création client refusée',
+        })}
+        description={pickText(effectiveSelectedLocale, {
+          en: 'This workspace can review customers but cannot open customer creation forms without customer write access.',
+          zh_HANS: '当前工作区可以查看客户，但没有客户写入权限时不能打开创建表单。',
+          zh_HANT: '目前工作區可以檢視客戶，但沒有客戶寫入權限時不能開啟建立表單。',
+          ja: 'このワークスペースでは顧客一覧を確認できますが、顧客の書き込み権限がないため作成フォームは開けません。',
+          ko: '이 워크스페이스는 고객 목록만 볼 수 있으며 고객 쓰기 권한이 없으면 생성 폼을 열 수 없습니다.',
+          fr: 'Cet espace peut consulter les clients, mais ne peut pas ouvrir le formulaire de création sans droit d’écriture client.',
+        })}
+        action={backToCustomersAction}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <GlassSurface className="p-8">
@@ -571,20 +722,7 @@ export function CustomerCreateScreen({
             </div>
           </div>
 
-          <Link
-            href={`/tenant/${tenantId}/talent/${talentId}/customers`}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {pickText(effectiveSelectedLocale, {
-              en: 'Back to customers',
-              zh_HANS: '返回客户列表',
-              zh_HANT: '返回客戶列表',
-              ja: '顧客一覧へ戻る',
-              ko: '고객 목록으로 돌아가기',
-              fr: 'Retour aux clients',
-            })}
-          </Link>
+          {backToCustomersAction}
         </div>
       </GlassSurface>
 

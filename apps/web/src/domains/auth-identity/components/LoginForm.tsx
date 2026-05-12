@@ -2,7 +2,7 @@
 
 import { ArrowRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type CSSProperties, startTransition, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, startTransition, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type AuthenticatedSessionResult,
@@ -174,6 +174,7 @@ export function LoginForm() {
   const [talentSelector, setTalentSelector] = useState<TalentSelectorState | null>(null);
   const talentSelectorRef = useRef<HTMLElement | null>(null);
   const firstTalentButtonRef = useRef<HTMLButtonElement | null>(null);
+  const submitButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const nextHref = searchParams.get('next');
   const postLoginSelectorCopy = useMemo(
@@ -186,8 +187,32 @@ export function LoginForm() {
     active: talentSelector !== null,
     containerRef: talentSelectorRef,
     initialFocusRef: firstTalentButtonRef,
-    restoreFocus: false,
+    restoreFocus: true,
   });
+
+  useEffect(() => {
+    if (!talentSelector) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      setTalentSelector(null);
+      window.requestAnimationFrame(() => {
+        submitButtonRef.current?.focus();
+      });
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [talentSelector]);
 
   const ctaLabel = useMemo(() => {
     if (step === 'totp') {
@@ -561,6 +586,7 @@ export function LoginForm() {
             )}
 
             <button
+              ref={submitButtonRef}
               type="submit"
               disabled={isSubmitting}
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400"

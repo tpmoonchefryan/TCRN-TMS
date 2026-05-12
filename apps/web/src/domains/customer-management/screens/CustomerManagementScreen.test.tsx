@@ -61,6 +61,19 @@ function buildCustomerCopy(overrides: Partial<Record<string, string>> = {}) {
   };
 }
 
+function buildCreatePermissionResponse(allowed = true) {
+  return {
+    results: [
+      {
+        resource: 'customer.profile',
+        action: 'create',
+        checkedAction: 'write',
+        allowed,
+      },
+    ],
+  };
+}
+
 const mockRequest = vi.fn();
 const replace = vi.fn();
 let pathname = '/tenant/tenant-1/talent/talent-1/customers';
@@ -114,6 +127,13 @@ describe('CustomerManagementScreen', () => {
     replace.mockReset();
     pathname = '/tenant/tenant-1/talent/talent-1/customers';
     currentSearch = '';
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return buildCreatePermissionResponse();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
     replace.mockImplementation((href: string) => {
       const resolved = new URL(href, 'https://tcrn.local');
       pathname = resolved.pathname;
@@ -141,39 +161,49 @@ describe('CustomerManagementScreen', () => {
       workspaceSettingsLink: '设置',
     });
 
-    mockRequest.mockResolvedValueOnce({
-      success: true,
-      data: [
-        {
-          id: 'customer-1',
-          profileType: 'individual',
-          nickname: 'Aki',
-          primaryLanguage: 'ja',
-          status: {
-            id: 'status-1',
-            code: 'active',
-            name: 'Active',
-            color: '#16a34a',
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return buildCreatePermissionResponse();
+      }
+
+      if (path === '/api/v1/talents/talent-1/customers?page=1&pageSize=20') {
+        return {
+          success: true,
+          data: [
+            {
+              id: 'customer-1',
+              profileType: 'individual',
+              nickname: 'Aki',
+              primaryLanguage: 'ja',
+              status: {
+                id: 'status-1',
+                code: 'active',
+                name: 'Active',
+                color: '#16a34a',
+              },
+              tags: [],
+              isActive: true,
+              companyShortName: null,
+              originTalent: null,
+              membershipSummary: null,
+              createdAt: '2026-04-17T09:00:00.000Z',
+              updatedAt: '2026-04-17T10:00:00.000Z',
+            },
+          ],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 1,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
           },
-          tags: [],
-          isActive: true,
-          companyShortName: null,
-          originTalent: null,
-          membershipSummary: null,
-          createdAt: '2026-04-17T09:00:00.000Z',
-          updatedAt: '2026-04-17T10:00:00.000Z',
-        },
-      ],
-      meta: {
-        pagination: {
-          page: 1,
-          pageSize: 20,
-          totalCount: 1,
-          totalPages: 1,
-          hasNext: false,
-          hasPrev: false,
-        },
-      },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
     });
 
     render(<CustomerManagementScreen tenantId="tenant-1" talentId="talent-1" />);
@@ -195,7 +225,11 @@ describe('CustomerManagementScreen', () => {
   it('hydrates search and filters from the URL and keeps subsequent filter changes shareable', async () => {
     currentSearch = 'search=vip&membership=members&page=2&pageSize=50';
 
-    mockRequest.mockImplementation(async (path: string) => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return buildCreatePermissionResponse();
+      }
+
       if (path === '/api/v1/talents/talent-1/customers?page=2&pageSize=50&search=vip&hasMembership=true') {
         return {
           success: true,
@@ -311,6 +345,10 @@ describe('CustomerManagementScreen', () => {
     let isActive = true;
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return buildCreatePermissionResponse();
+      }
+
       if (path === '/api/v1/talents/talent-1/customers?page=1&pageSize=20') {
         return {
           success: true,
@@ -393,5 +431,37 @@ describe('CustomerManagementScreen', () => {
 
     expect(await screen.findByText('Aki was deactivated.')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
+  });
+
+  it('hides the add-customer affordance when create permission is denied', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return buildCreatePermissionResponse(false);
+      }
+
+      if (path === '/api/v1/talents/talent-1/customers?page=1&pageSize=20') {
+        return {
+          success: true,
+          data: [],
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 20,
+              totalCount: 0,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<CustomerManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Customer Management' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Add customer' })).not.toBeInTheDocument();
   });
 });

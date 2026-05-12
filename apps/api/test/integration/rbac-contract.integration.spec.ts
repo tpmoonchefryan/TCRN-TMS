@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { Prisma, PrismaClient } from '@tcrn/database';
 import {
+  createTestCustomerInTenant,
   type TenantFixture,
   type TestUser,
   createTestSubsidiaryInTenant,
@@ -26,6 +27,8 @@ describe('RBAC Contract Integration', () => {
   let prisma: PrismaClient;
   let tenantFixture: TenantFixture;
   let talentId: string;
+  let talentProfileStoreId: string;
+  let customerId: string;
   let tokenService: TokenService;
   let originalBaseDomainConfig: {
     value: Prisma.InputJsonValue;
@@ -142,6 +145,25 @@ describe('RBAC Contract Integration', () => {
     });
 
     talentId = talent.id;
+    talentProfileStoreId = (
+      await prisma.$queryRawUnsafe<Array<{ profileStoreId: string }>>(
+        `
+          SELECT profile_store_id as "profileStoreId"
+          FROM "${tenantFixture.schemaName}".talent
+          WHERE id = $1::uuid
+          LIMIT 1
+        `,
+        talent.id,
+      )
+    )[0].profileStoreId;
+    customerId = (
+      await createTestCustomerInTenant(prisma, tenantFixture, {
+        nickname: 'RBAC Fixture Customer',
+        talentId: talent.id,
+        profileStoreId: talentProfileStoreId,
+        createdBy: customerManager.id,
+      })
+    ).id;
   });
 
   afterAll(async () => {
@@ -326,6 +348,7 @@ describe('RBAC Contract Integration', () => {
     )
       .send({
         checks: [
+          { resource: 'customer.profile', action: 'create' },
           { resource: 'customer.profile', action: 'read' },
           { resource: 'customer.profile', action: 'update' },
           { resource: 'customer.pii', action: 'read' },
@@ -335,6 +358,12 @@ describe('RBAC Contract Integration', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.results).toEqual([
+      {
+        resource: 'customer.profile',
+        action: 'create',
+        checkedAction: 'write',
+        allowed: false,
+      },
       {
         resource: 'customer.profile',
         action: 'read',
@@ -354,5 +383,44 @@ describe('RBAC Contract Integration', () => {
         allowed: false,
       },
     ]);
+  });
+
+  it('denies VIEWER on customer create routes', async () => {
+    const response = await withAuth(
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/customers/individuals`),
+      'viewer'
+    )
+      .send({
+        nickname: 'Viewer Attempt',
+      })
+      .expect(403);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('PERM_ACCESS_DENIED');
+    expect(response.body.error.message).toContain('customer.profile:create');
+    expect(response.body.error.message).toContain('checked as customer.profile:write');
+  });
+
+  it('keeps ordinary customer reads available while blocking VIEWER pii access', async () => {
+    const detailResponse = await withAuth(
+      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/customers/${customerId}`),
+      'viewer'
+    ).expect(200);
+
+    expect(detailResponse.body.success).toBe(true);
+    expect(detailResponse.body.data.id).toBe(customerId);
+    expect(detailResponse.body.data.nickname).toBe('RBAC Fixture Customer');
+    expect(detailResponse.body.data).not.toHaveProperty('givenName');
+    expect(detailResponse.body.data).not.toHaveProperty('emails');
+    expect(detailResponse.body.data).not.toHaveProperty('phoneNumbers');
+
+    const piiResponse = await withAuth(
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/customers/individuals/${customerId}/pii-portal-session`),
+      'viewer'
+    ).expect(403);
+
+    expect(piiResponse.body.success).toBe(false);
+    expect(piiResponse.body.error.code).toBe('PERM_ACCESS_DENIED');
+    expect(piiResponse.body.error.message).toContain('customer.pii:read');
   });
 });

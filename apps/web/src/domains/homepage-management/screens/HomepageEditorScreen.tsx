@@ -16,7 +16,7 @@ import {
   Save,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import {
   type HomepageDraftComponentRecord,
@@ -483,6 +483,7 @@ export function HomepageEditorScreen({
   const [isPageInfoOpen, setIsPageInfoOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [livePreviewId, setLivePreviewId] = useState<string | null>(null);
+  const [initialLivePreviewId] = useState(() => createHomepageEditorPreviewId(tenantId, talentId));
   const [sourceMode, setSourceMode] = useState<SourceMode>('empty');
   const [sourceVersion, setSourceVersion] = useState<{ id: string; versionNumber: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -555,6 +556,11 @@ export function HomepageEditorScreen({
       sourceJson,
       theme,
     }) !== baselineSignature;
+  const activeLivePreviewId = livePreviewId ?? initialLivePreviewId;
+  const livePreviewPath = useMemo(
+    () => buildHomepageEditorPreviewPath(tenantId, talentId, activeLivePreviewId),
+    [activeLivePreviewId, talentId, tenantId],
+  );
   const previewHero = useMemo(() => buildPreviewHero(homepage, content), [content, homepage]);
   const devModeSelectedComponent = useMemo(
     () => resolveDevModeSelectedComponent(content, selectedPuckItem),
@@ -684,15 +690,13 @@ export function HomepageEditorScreen({
     });
   }
 
-  function handleOpenLivePreview() {
+  function handlePrepareLivePreview(event: MouseEvent<HTMLAnchorElement>) {
     if (!homepage) {
+      event.preventDefault();
       return;
     }
 
-    const previewId = livePreviewId || createHomepageEditorPreviewId(tenantId, talentId);
-    const previewPath = buildHomepageEditorPreviewPath(tenantId, talentId, previewId);
-
-    writeHomepageEditorPreviewSnapshot(previewId, {
+    writeHomepageEditorPreviewSnapshot(activeLivePreviewId, {
       schemaVersion: 1,
       tenantId,
       talentId,
@@ -702,8 +706,7 @@ export function HomepageEditorScreen({
       theme,
       hero: previewHero,
     });
-    setLivePreviewId(previewId);
-    window.open(previewPath, '_blank');
+    setLivePreviewId(activeLivePreviewId);
   }
 
   function requestLeave(href: string, label: string) {
@@ -895,14 +898,16 @@ export function HomepageEditorScreen({
               <Eye className="h-4 w-4" />
               {copy.actions.previewDraft}
             </button>
-            <button
-              type="button"
-              onClick={handleOpenLivePreview}
+            <a
+              href={livePreviewPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handlePrepareLivePreview}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <ExternalLink className="h-4 w-4" />
               {copy.actions.openLivePreview}
-            </button>
+            </a>
             <AsyncSubmitButton
               type="button"
               isPending={isSaving}
@@ -962,14 +967,16 @@ export function HomepageEditorScreen({
                   <Eye className="h-4 w-4" />
                   {copy.actions.previewDraft}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleOpenLivePreview}
+                <a
+                  href={livePreviewPath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handlePrepareLivePreview}
                   className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   <ExternalLink className="h-4 w-4" />
                   {copy.actions.openLivePreview}
-                </button>
+                </a>
                 <AsyncSubmitButton
                   type="button"
                   isPending={isSaving}
@@ -1137,14 +1144,16 @@ export function HomepageEditorScreen({
               </button>
             )}
             primary={(
-              <button
-                type="button"
-                onClick={handleOpenLivePreview}
+              <a
+                href={livePreviewPath}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handlePrepareLivePreview}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <ExternalLink className="h-4 w-4" />
                 {copy.actions.openLivePreview}
-              </button>
+              </a>
             )}
           />
         )}

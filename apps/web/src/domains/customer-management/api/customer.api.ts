@@ -174,6 +174,7 @@ interface DeactivateCustomerInput {
   reasonCode?: string;
 }
 
+type CustomerProfilePermissionAction = 'create' | 'read' | 'update' | 'delete';
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
 
@@ -193,6 +194,38 @@ function buildQueryString(input: Record<string, string | number | boolean | null
 
   const query = params.toString();
   return query ? `?${query}` : '';
+}
+
+export async function checkCustomerProfilePermission(
+  request: RequestFn,
+  talentId: string,
+  action: CustomerProfilePermissionAction,
+) {
+  const result = await request<{
+    results: Array<{
+      resource: string;
+      action: string;
+      checkedAction: string;
+      allowed: boolean;
+    }>;
+  }>('/api/v1/permissions/check', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      checks: [
+        {
+          resource: 'customer.profile',
+          action,
+          scopeType: 'talent',
+          scopeId: talentId,
+        },
+      ],
+    }),
+  });
+
+  return result.results[0]?.allowed ?? false;
 }
 
 export function listCustomers(

@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useDeferredValue, useEffect, useState } from 'react';
 
 import {
+  checkCustomerProfilePermission,
   type CustomerListItem,
   deactivateCustomer,
   listCustomers,
@@ -335,6 +336,7 @@ export function CustomerManagementScreen({
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [dialogPending, setDialogPending] = useState(false);
   const [preparingCustomerId, setPreparingCustomerId] = useState<string | null>(null);
+  const [canCreateCustomer, setCanCreateCustomer] = useState<boolean | null>(null);
 
   useEffect(() => {
     setSearch((current) => (current === urlSearch ? current : urlSearch));
@@ -370,6 +372,32 @@ export function CustomerManagementScreen({
       router.replace(nextHref);
     });
   }, [createdCustomerName, currentLocale, pathname, router, searchParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCreateAccess() {
+      setCanCreateCustomer(null);
+
+      try {
+        const allowed = await checkCustomerProfilePermission(request, talentId, 'create');
+
+        if (!cancelled) {
+          setCanCreateCustomer(allowed);
+        }
+      } catch {
+        if (!cancelled) {
+          setCanCreateCustomer(false);
+        }
+      }
+    }
+
+    void loadCreateAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request, talentId]);
 
   function applyQueryState(
     nextState: Partial<{
@@ -662,22 +690,24 @@ export function CustomerManagementScreen({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/tenant/${tenantId}/talent/${talentId}/customers/new`}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              <Plus className="h-4 w-4" />
-              {pickLocaleText(currentLocale, {
-                en: 'Add customer',
-                zh_HANS: '添加客户',
-                zh_HANT: '新增客戶',
-                ja: '顧客を追加',
-                ko: '고객 추가',
-                fr: 'Ajouter un client',
-              })}
-            </Link>
-          </div>
+          {canCreateCustomer ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href={`/tenant/${tenantId}/talent/${talentId}/customers/new`}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                <Plus className="h-4 w-4" />
+                {pickLocaleText(currentLocale, {
+                  en: 'Add customer',
+                  zh_HANS: '添加客户',
+                  zh_HANT: '新增客戶',
+                  ja: '顧客を追加',
+                  ko: '고객 추가',
+                  fr: 'Ajouter un client',
+                })}
+              </Link>
+            </div>
+          ) : null}
         </div>
       </GlassSurface>
 

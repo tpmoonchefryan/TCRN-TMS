@@ -1,4 +1,5 @@
 import { CustomerCreateScreen } from '@/domains/customer-management/screens/CustomerCreateScreen';
+import { TalentBusinessAccessGate } from '@/domains/talent-workspace/components/TalentBusinessAccessGate';
 
 export default async function CustomerCreatePage({
   params,
@@ -7,5 +8,9 @@ export default async function CustomerCreatePage({
 }>) {
   const { tenantId, talentId } = await params;
 
-  return <CustomerCreateScreen tenantId={tenantId} talentId={talentId} />;
+  return (
+    <TalentBusinessAccessGate tenantId={tenantId} talentId={talentId}>
+      <CustomerCreateScreen tenantId={tenantId} talentId={talentId} />
+    </TalentBusinessAccessGate>
+  );
 }

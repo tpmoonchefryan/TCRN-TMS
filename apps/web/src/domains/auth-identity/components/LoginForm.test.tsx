@@ -396,6 +396,45 @@ describe('LoginForm', () => {
     });
   });
 
+  it('closes the post-login selector on Escape and returns focus to the sign-in button', async () => {
+    const result = buildAuthenticatedResult();
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
+      buildTalent({
+        id: 'talent-aurora',
+        code: 'AURORA',
+        displayName: 'Aurora',
+      }),
+      buildTalent({
+        id: 'talent-luna',
+        code: 'LUNA',
+        displayName: 'Luna',
+      }),
+    ]));
+    mocks.login.mockResolvedValueOnce({
+      kind: 'authenticated',
+      data: result,
+    });
+
+    render(<LoginForm />);
+    fillCredentials();
+
+    const signInButton = screen.getByRole('button', { name: 'Sign in' });
+    fireEvent.click(signInButton);
+
+    expect(await screen.findByRole('dialog', { name: 'Choose a talent workspace' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Open Aurora workspace' })).toHaveFocus();
+    });
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Choose a talent workspace' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('Tenant code')).toHaveFocus();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
   it('falls back to organization structure when no published talent is selectable', async () => {
     const result = buildAuthenticatedResult();
     mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([

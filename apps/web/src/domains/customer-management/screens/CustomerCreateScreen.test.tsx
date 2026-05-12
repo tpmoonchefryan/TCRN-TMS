@@ -5,6 +5,7 @@ import { CustomerCreateScreen } from '@/domains/customer-management/screens/Cust
 
 const replace = vi.fn();
 const mockRequest = vi.fn();
+const checkCustomerProfilePermission = vi.fn();
 const createIndividualCustomer = vi.fn();
 const createCompanyCustomer = vi.fn();
 const createCustomerMembership = vi.fn();
@@ -32,6 +33,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/domains/customer-management/api/customer.api', () => ({
+  checkCustomerProfilePermission: (...args: unknown[]) => checkCustomerProfilePermission(...args),
   createIndividualCustomer: (...args: unknown[]) => createIndividualCustomer(...args),
   createCompanyCustomer: (...args: unknown[]) => createCompanyCustomer(...args),
   createCustomerMembership: (...args: unknown[]) => createCustomerMembership(...args),
@@ -45,6 +47,8 @@ describe('CustomerCreateScreen', () => {
     localeState.selectedLocale = undefined;
     replace.mockReset();
     mockRequest.mockReset();
+    checkCustomerProfilePermission.mockReset();
+    checkCustomerProfilePermission.mockResolvedValue(true);
     createIndividualCustomer.mockReset();
     createCompanyCustomer.mockReset();
     createCustomerMembership.mockReset();
@@ -122,7 +126,7 @@ describe('CustomerCreateScreen', () => {
   it('creates the customer and optional first membership in one pass', async () => {
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.change(screen.getByLabelText('Customer name'), {
+    fireEvent.change(await screen.findByLabelText('Customer name'), {
       target: { value: 'Aki' },
     });
 
@@ -177,6 +181,20 @@ describe('CustomerCreateScreen', () => {
     });
   });
 
+  it('renders a denied state when create permission is missing', async () => {
+    checkCustomerProfilePermission.mockResolvedValueOnce(false);
+
+    render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByText('Customer creation denied')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to customers' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-1/customers',
+    );
+    expect(listCustomerSocialPlatforms).not.toHaveBeenCalled();
+    expect(listCustomerMembershipTree).not.toHaveBeenCalled();
+  });
+
   it('falls back to zh_HANS copy when the runtime locale family is zh and no selected locale is pinned', async () => {
     localeState.currentLocale = 'zh';
 
@@ -226,7 +244,7 @@ describe('CustomerCreateScreen', () => {
   it('requires company legal name through localized React validation', async () => {
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Company' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Company' }));
     await screen.findByText('Company legal name');
     fireEvent.change(screen.getByLabelText('Customer name'), {
       target: { value: 'Acme' },
@@ -242,7 +260,7 @@ describe('CustomerCreateScreen', () => {
   it('keeps membership type and level disabled until their upstream selections are made', async () => {
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.click(screen.getByLabelText('Add membership now'));
+    fireEvent.click(await screen.findByLabelText('Add membership now'));
 
     await waitFor(() => {
       expect(listCustomerSocialPlatforms).toHaveBeenCalledWith(mockRequest);
