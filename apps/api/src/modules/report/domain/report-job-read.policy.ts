@@ -96,6 +96,8 @@ export interface ReportJobDownloadTarget {
   status: ReportJobStatus | string;
   file_path: string | null;
   file_name: string | null;
+  expires_at: Date | null;
+  downloaded_at: Date | null;
 }
 
 export const REPORT_JOB_DOWNLOAD_URL_EXPIRY_SECONDS = 300;

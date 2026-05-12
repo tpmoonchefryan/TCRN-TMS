@@ -95,6 +95,38 @@ export class ReportJobWriteRepository {
     return jobs[0] ?? null;
   }
 
+  markJobFailed(
+    tenantSchema: string,
+    jobId: string,
+    params: {
+      errorCode: string;
+      errorMessage: string;
+    },
+  ) {
+    return this.prisma.$executeRawUnsafe(`
+      UPDATE "${tenantSchema}".report_job
+      SET status = 'failed',
+          error_code = $2,
+          error_message = $3,
+          completed_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $1::uuid
+    `, jobId, params.errorCode, params.errorMessage);
+  }
+
+  cancelJob(
+    tenantSchema: string,
+    jobId: string,
+  ) {
+    return this.prisma.$executeRawUnsafe(`
+      UPDATE "${tenantSchema}".report_job
+      SET status = 'cancelled',
+          completed_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $1::uuid
+    `, jobId);
+  }
+
   insertCancellationChangeLog(
     tenantSchema: string,
     params: {

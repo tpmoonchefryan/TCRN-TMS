@@ -1,9 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
+import type { Queue } from 'bullmq';
 
 import { TechEventLogService } from '../../log';
+import { QUEUE_NAMES } from '../../queue';
 import {
   canCancelReportJob,
   exceedsReportJobRowLimit,
@@ -16,15 +24,27 @@ import {
   ReportType,
 } from '../dto/report.dto';
 import { ReportJobWriteRepository } from '../infrastructure/report-job-write.repository';
-import { ReportJobStateService } from '../services/report-job-state.service';
 import { ReportPiiPlatformApplicationService } from './report-pii-platform.service';
+
+interface ReportQueuePayload {
+  jobId: string;
+  reportType: ReportType;
+  format: ReportFormat;
+  tenantId: string;
+  tenantSchemaName: string;
+  userId: string;
+  talentId: string;
+  profileStoreId: string;
+  filters: MfrFilterCriteriaDto;
+}
 
 @Injectable()
 export class ReportJobWriteApplicationService {
   constructor(
     private readonly reportJobWriteRepository: ReportJobWriteRepository,
-    private readonly reportJobStateService: ReportJobStateService,
     private readonly techEventLog: TechEventLogService,
+    @InjectQueue(QUEUE_NAMES.REPORT)
+    private readonly reportQueue: Queue,
     private readonly reportPiiPlatformApplicationService?: ReportPiiPlatformApplicationService,
   ) {}
 
@@ -79,6 +99,35 @@ export class ReportJobWriteApplicationService {
       userId: context.userId,
     });
 
+    const queuePayload: ReportQueuePayload = {
+      jobId: job.id,
+      reportType,
+      format,
+      tenantId: context.tenantId ?? context.tenantSchema ?? 'unknown',
+      tenantSchemaName: context.tenantSchema,
+      userId: context.userId,
+      talentId,
+      profileStoreId: talent.profile_store_id,
+      filters,
+    };
+
+    try {
+      await this.reportQueue.add(reportType, queuePayload, {
+        jobId: job.id,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown report queue error';
+      await this.reportJobWriteRepository.markJobFailed(context.tenantSchema, job.id, {
+        errorCode: 'REPORT_QUEUE_ENQUEUE_FAILED',
+        errorMessage,
+      });
+      throw new InternalServerErrorException({
+        code: ErrorCodes.SYS_ERROR,
+        message: 'Failed to enqueue report job',
+      });
+    }
+
     await this.techEventLog.log({
       eventType: TechEventType.SYSTEM_INFO,
       scope: 'export',
@@ -128,7 +177,7 @@ export class ReportJobWriteApplicationService {
       });
     }
 
-    await this.reportJobStateService.transition(jobId, ReportJobStatus.CANCELLED);
+    await this.reportJobWriteRepository.cancelJob(context.tenantSchema, jobId);
     await this.reportJobWriteRepository.insertCancellationChangeLog(context.tenantSchema, {
       jobId,
       oldStatus: job.status,

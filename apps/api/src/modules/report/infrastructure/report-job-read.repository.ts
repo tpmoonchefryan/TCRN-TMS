@@ -94,13 +94,27 @@ export class ReportJobReadRepository {
     talentId: string,
   ): Promise<ReportJobDownloadTarget | null> {
     const jobs = await this.prisma.$queryRawUnsafe<ReportJobDownloadTarget[]>(`
-      SELECT id, status, file_path, file_name
+      SELECT id, status, file_path, file_name, expires_at, downloaded_at
       FROM "${tenantSchema}".report_job
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
     `, jobId, talentId);
 
     return jobs[0] ?? null;
+  }
+
+  markConsumed(
+    tenantSchema: string,
+    jobId: string,
+  ) {
+    return this.prisma.$executeRawUnsafe(`
+      UPDATE "${tenantSchema}".report_job
+      SET status = 'consumed',
+          downloaded_at = COALESCE(downloaded_at, NOW()),
+          updated_at = NOW()
+      WHERE id = $1::uuid
+        AND status = 'success'
+    `, jobId);
   }
 
   private buildListQuery(filters: ReportJobReadFilters): {

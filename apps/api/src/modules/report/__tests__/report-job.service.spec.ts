@@ -40,6 +40,10 @@ const mockMinioService = {
   getPresignedUrl: vi.fn(),
 };
 
+const mockQueue = {
+  add: vi.fn(),
+};
+
 const mockReportPiiPlatformApplicationService = {
   createMfrReportRequest: vi.fn(),
 };
@@ -65,8 +69,11 @@ describe('ReportJobService', () => {
       mockStateService as any,
       mockTechEventLog as any,
       mockMinioService as any,
+      mockQueue as any,
       mockReportPiiPlatformApplicationService as any,
     );
+
+    mockQueue.add.mockResolvedValue({ id: 'bull-job-123' });
   });
 
   describe('create', () => {
@@ -109,6 +116,17 @@ describe('ReportJobService', () => {
         createdAt: '2026-01-23T10:00:00.000Z',
       });
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        ReportType.MFR,
+        expect.objectContaining({
+          jobId: 'job-123',
+          tenantId: 'tenant-123',
+          tenantSchemaName: 'tenant_test',
+          talentId: 'talent-123',
+          profileStoreId: 'store-123',
+        }),
+        { jobId: 'job-123' },
+      );
       expect(mockTechEventLog.log).toHaveBeenCalled();
     });
 
@@ -198,6 +216,40 @@ describe('ReportJobService', () => {
       );
     });
 
+    it('marks the local job failed and throws when queue enqueue fails', async () => {
+      mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue(null);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
+        id: 'talent-123',
+        subsidiary_id: 'sub-123',
+        profile_store_id: 'store-123',
+      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
+        id: 'job-123',
+        status: ReportJobStatus.PENDING,
+        created_at: new Date('2026-01-23T10:00:00Z'),
+      }]);
+      mockQueue.add.mockRejectedValueOnce(new Error('redis unavailable'));
+
+      await expect(
+        service.create(
+          ReportType.MFR,
+          'talent-123',
+          validFilters,
+          ReportFormat.XLSX,
+          100,
+          mockContext,
+        ),
+      ).rejects.toThrow('Failed to enqueue report job');
+
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('error_code = $2'),
+        'job-123',
+        'REPORT_QUEUE_ENQUEUE_FAILED',
+        'redis unavailable',
+      );
+      expect(mockTechEventLog.log).not.toHaveBeenCalled();
+    });
+
     it('returns a pii-platform redirect response when an external handoff is enabled', async () => {
       mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue({
         deliveryMode: 'pii_platform_portal',
@@ -235,6 +287,7 @@ describe('ReportJobService', () => {
         mockContext,
       );
       expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
   });
 
@@ -415,8 +468,9 @@ describe('ReportJobService', () => {
         status: ReportJobStatus.SUCCESS,
         file_path: 'tenant_test/job-123/report.xlsx',
         file_name: 'report.xlsx',
+        expires_at: new Date('2099-01-23T10:07:00Z'),
+        downloaded_at: null,
       }]);
-      mockStateService.canDownload.mockResolvedValueOnce(true);
       mockMinioService.getPresignedUrl.mockResolvedValueOnce('https://minio.example/report.xlsx');
 
       await expect(
@@ -427,9 +481,9 @@ describe('ReportJobService', () => {
         fileName: 'report.xlsx',
       });
 
-      expect(mockStateService.transition).toHaveBeenCalledWith(
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining("SET status = 'consumed'"),
         'job-123',
-        ReportJobStatus.CONSUMED,
       );
       expect(mockMinioService.getPresignedUrl).toHaveBeenCalledWith(
         BUCKETS.TEMP_REPORTS,
@@ -462,8 +516,9 @@ describe('ReportJobService', () => {
         status: ReportJobStatus.RUNNING,
         file_path: 'tenant_test/job-123/report.xlsx',
         file_name: 'report.xlsx',
+        expires_at: new Date('2099-01-23T10:07:00Z'),
+        downloaded_at: null,
       }]);
-      mockStateService.canDownload.mockResolvedValueOnce(false);
 
       await expect(
         service.getDownloadUrl('job-123', 'talent-123', mockContext as any),
@@ -478,14 +533,15 @@ describe('ReportJobService', () => {
         status: ReportJobStatus.CONSUMED,
         file_path: null,
         file_name: 'report.xlsx',
+        expires_at: new Date('2099-01-23T10:07:00Z'),
+        downloaded_at: new Date('2026-01-23T10:03:00Z'),
       }]);
-      mockStateService.canDownload.mockResolvedValueOnce(true);
 
       await expect(
         service.getDownloadUrl('job-123', 'talent-123', mockContext as any),
       ).rejects.toThrow(BadRequestException);
 
-      expect(mockStateService.transition).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
     });
   });
 
@@ -503,11 +559,8 @@ describe('ReportJobService', () => {
         status: ReportJobStatus.CANCELLED,
       });
 
-      expect(mockStateService.transition).toHaveBeenCalledWith(
-        'job-123',
-        ReportJobStatus.CANCELLED,
-      );
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain("SET status = 'cancelled'");
     });
 
     it('rejects cancelling a non-cancellable job state', async () => {

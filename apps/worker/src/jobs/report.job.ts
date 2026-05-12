@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Report Job Processor (PRD §20)
 
-import { Prisma, PrismaClient } from '@tcrn/database';
+import { PrismaClient } from '@tcrn/database';
 import {
   resolveTrilingualLocaleFamily,
   type SupportedUiLocale,
@@ -58,10 +58,12 @@ export interface ReportJobData {
     membershipClassCodes?: string[];
     membershipTypeCodes?: string[];
     membershipLevelCodes?: string[];
-    customerStatusCodes?: string[];
-    dateFrom?: string;
-    dateTo?: string;
-    includeHistory?: boolean;
+    statusCodes?: string[];
+    validFromStart?: string;
+    validFromEnd?: string;
+    validToStart?: string;
+    validToEnd?: string;
+    includeExpired?: boolean;
     includeInactive?: boolean;
   };
   options?: {
@@ -108,6 +110,44 @@ interface ReportHeader {
   label: string;
 }
 
+interface RawMfrRecord {
+  customer_nickname: string;
+  profile_type: string;
+  platform_name_en: string;
+  platform_name_zh: string | null;
+  platform_name_ja: string | null;
+  membership_class_name_en: string;
+  membership_class_name_zh: string | null;
+  membership_class_name_ja: string | null;
+  membership_type_name_en: string;
+  membership_type_name_zh: string | null;
+  membership_type_name_ja: string | null;
+  membership_level_name_en: string;
+  membership_level_name_zh: string | null;
+  membership_level_name_ja: string | null;
+  valid_from: Date;
+  valid_to: Date | null;
+  auto_renew: boolean;
+  is_expired: boolean;
+  customer_status_name_en: string | null;
+  customer_status_name_zh: string | null;
+  customer_status_name_ja: string | null;
+  tags: string[] | null;
+  source: string | null;
+  created_at: Date;
+}
+
+interface LocalizedEntityRecord {
+  nameEn: string;
+  nameZh: string | null;
+  nameJa: string | null;
+}
+
+interface MembershipWhereQuery {
+  whereClause: string;
+  params: unknown[];
+}
+
 function getContentType(format: ReportFormat): string {
   return format === 'csv'
     ? 'text/csv'
@@ -125,13 +165,179 @@ function buildCsvRow(headers: ReportHeader[], row: MfrRow): string {
   return headers.map((header) => escapeCsvField(String(row[header.key] ?? ''))).join(',');
 }
 
+function toLocalizedEntity(
+  nameEn: string,
+  nameZh: string | null,
+  nameJa: string | null,
+): LocalizedEntityRecord {
+  return { nameEn, nameZh, nameJa };
+}
+
+function buildMembershipWhereQuery(
+  talentId: string,
+  filters: ReportJobData['filters'],
+): MembershipWhereQuery {
+  const conditions: string[] = ['cp.talent_id = $1::uuid'];
+  const params: unknown[] = [talentId];
+  let paramIndex = 2;
+
+  if (filters.platformCodes?.length) {
+    conditions.push(`sp.code = ANY($${paramIndex}::text[])`);
+    params.push(filters.platformCodes);
+    paramIndex += 1;
+  }
+
+  if (filters.membershipClassCodes?.length) {
+    conditions.push(`mc.code = ANY($${paramIndex}::text[])`);
+    params.push(filters.membershipClassCodes);
+    paramIndex += 1;
+  }
+
+  if (filters.membershipTypeCodes?.length) {
+    conditions.push(`mt.code = ANY($${paramIndex}::text[])`);
+    params.push(filters.membershipTypeCodes);
+    paramIndex += 1;
+  }
+
+  if (filters.membershipLevelCodes?.length) {
+    conditions.push(`ml.code = ANY($${paramIndex}::text[])`);
+    params.push(filters.membershipLevelCodes);
+    paramIndex += 1;
+  }
+
+  if (filters.statusCodes?.length) {
+    conditions.push(`cs.code = ANY($${paramIndex}::text[])`);
+    params.push(filters.statusCodes);
+    paramIndex += 1;
+  }
+
+  if (filters.validFromStart) {
+    conditions.push(`mr.valid_from >= $${paramIndex}::timestamptz`);
+    params.push(new Date(filters.validFromStart));
+    paramIndex += 1;
+  }
+
+  if (filters.validFromEnd) {
+    conditions.push(`mr.valid_from <= $${paramIndex}::timestamptz`);
+    params.push(new Date(filters.validFromEnd));
+    paramIndex += 1;
+  }
+
+  if (filters.validToStart) {
+    conditions.push(`mr.valid_to >= $${paramIndex}::timestamptz`);
+    params.push(new Date(filters.validToStart));
+    paramIndex += 1;
+  }
+
+  if (filters.validToEnd) {
+    conditions.push(`mr.valid_to <= $${paramIndex}::timestamptz`);
+    params.push(new Date(filters.validToEnd));
+    paramIndex += 1;
+  }
+
+  if (!filters.includeExpired) {
+    conditions.push('(mr.valid_to IS NULL OR mr.valid_to >= NOW())');
+  }
+
+  if (!filters.includeInactive) {
+    conditions.push('cp.is_active = true');
+  }
+
+  return {
+    whereClause: conditions.join(' AND '),
+    params,
+  };
+}
+
+async function countMembershipRows(
+  prisma: PrismaClient,
+  tenantSchemaName: string,
+  talentId: string,
+  filters: ReportJobData['filters'],
+): Promise<number> {
+  const { whereClause, params } = buildMembershipWhereQuery(talentId, filters);
+  const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    SELECT COUNT(*) AS count
+    FROM "${tenantSchemaName}".membership_record mr
+    JOIN "${tenantSchemaName}".customer_profile cp ON cp.id = mr.customer_id
+    JOIN "${tenantSchemaName}".social_platform sp ON sp.id = mr.platform_id
+    JOIN "${tenantSchemaName}".membership_class mc ON mc.id = mr.membership_class_id
+    JOIN "${tenantSchemaName}".membership_type mt ON mt.id = mr.membership_type_id
+    JOIN "${tenantSchemaName}".membership_level ml ON ml.id = mr.membership_level_id
+    LEFT JOIN "${tenantSchemaName}".customer_status cs ON cs.id = cp.status_id
+    WHERE ${whereClause}
+  `, ...params);
+
+  return Number(countResult[0]?.count ?? 0n);
+}
+
+async function fetchMembershipRows(
+  prisma: PrismaClient,
+  tenantSchemaName: string,
+  talentId: string,
+  filters: ReportJobData['filters'],
+  take: number,
+  skip: number,
+): Promise<RawMfrRecord[]> {
+  const { whereClause, params } = buildMembershipWhereQuery(talentId, filters);
+
+  return prisma.$queryRawUnsafe<RawMfrRecord[]>(`
+    SELECT
+      cp.nickname AS customer_nickname,
+      cp.profile_type,
+      sp.name_en AS platform_name_en,
+      sp.name_zh AS platform_name_zh,
+      sp.name_ja AS platform_name_ja,
+      mc.name_en AS membership_class_name_en,
+      mc.name_zh AS membership_class_name_zh,
+      mc.name_ja AS membership_class_name_ja,
+      mt.name_en AS membership_type_name_en,
+      mt.name_zh AS membership_type_name_zh,
+      mt.name_ja AS membership_type_name_ja,
+      ml.name_en AS membership_level_name_en,
+      ml.name_zh AS membership_level_name_zh,
+      ml.name_ja AS membership_level_name_ja,
+      mr.valid_from,
+      mr.valid_to,
+      mr.auto_renew,
+      mr.is_expired,
+      cs.name_en AS customer_status_name_en,
+      cs.name_zh AS customer_status_name_zh,
+      cs.name_ja AS customer_status_name_ja,
+      cp.tags,
+      cp.source,
+      mr.created_at
+    FROM "${tenantSchemaName}".membership_record mr
+    JOIN "${tenantSchemaName}".customer_profile cp ON cp.id = mr.customer_id
+    JOIN "${tenantSchemaName}".social_platform sp ON sp.id = mr.platform_id
+    JOIN "${tenantSchemaName}".membership_class mc ON mc.id = mr.membership_class_id
+    JOIN "${tenantSchemaName}".membership_type mt ON mt.id = mr.membership_type_id
+    JOIN "${tenantSchemaName}".membership_level ml ON ml.id = mr.membership_level_id
+    LEFT JOIN "${tenantSchemaName}".customer_status cs ON cs.id = cp.status_id
+    WHERE ${whereClause}
+    ORDER BY mr.created_at DESC
+    LIMIT ${take}
+    OFFSET ${skip}
+  `, ...params);
+}
+
 /**
  * Report job processor (PRD §20)
  */
 export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = async (
   job: Job<ReportJobData, ReportJobResult>
 ) => {
-  const { jobId, reportType, tenantId, tenantSchemaName, userId: _userId, talentId, profileStoreId, filters, options } = job.data;
+  const {
+    jobId,
+    reportType,
+    tenantId,
+    tenantSchemaName,
+    userId: _userId,
+    talentId,
+    profileStoreId: _profileStoreId,
+    filters,
+    options,
+  } = job.data;
   const startTime = Date.now();
   const format = job.data.format ?? 'xlsx';
 
@@ -151,40 +357,17 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     // 1. Update job status to processing
     await updateJobStatus(prisma, tenantSchemaName, jobId, 'processing');
 
-    // 2. Build query filters
-    const whereConditions: Prisma.MembershipRecordWhereInput = {
-      customer: {
-        talentId: talentId || undefined,
-        profileStoreId: profileStoreId || undefined,
-        isActive: filters.includeInactive ? undefined : true,
-        status: filters.customerStatusCodes?.length
-          ? { code: { in: filters.customerStatusCodes } }
-          : undefined,
-      },
-      platform: filters.platformCodes?.length
-        ? { code: { in: filters.platformCodes } }
-        : undefined,
-      membershipClass: filters.membershipClassCodes?.length
-        ? { code: { in: filters.membershipClassCodes } }
-        : undefined,
-      membershipType: filters.membershipTypeCodes?.length
-        ? { code: { in: filters.membershipTypeCodes } }
-        : undefined,
-      membershipLevel: filters.membershipLevelCodes?.length
-        ? { code: { in: filters.membershipLevelCodes } }
-        : undefined,
-      validFrom: filters.dateFrom
-        ? { gte: new Date(filters.dateFrom) }
-        : undefined,
-      validTo: filters.dateTo
-        ? { lte: new Date(filters.dateTo) }
-        : undefined,
-    };
+    if (!talentId) {
+      throw new Error('Report job is missing talentId');
+    }
 
     // 3. Count total records for progress tracking
-    const totalCount = await prisma.membershipRecord.count({
-      where: whereConditions,
-    });
+    const totalCount = await countMembershipRows(
+      prisma,
+      tenantSchemaName,
+      talentId,
+      filters,
+    );
 
     logger.info(`Total records to process: ${totalCount}`);
 
@@ -228,45 +411,71 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     let processedCount = 0;
 
     for (let skip = 0; skip < totalCount; skip += batchSize) {
-      const records = await prisma.membershipRecord.findMany({
-        where: whereConditions,
-        include: {
-          customer: {
-            include: {
-              status: true,
-            },
-          },
-          platform: true,
-          membershipClass: true,
-          membershipType: true,
-          membershipLevel: true,
-        },
+      const records = await fetchMembershipRows(
+        prisma,
+        tenantSchemaName,
+        talentId,
+        filters,
+        batchSize,
         skip,
-        take: batchSize,
-        orderBy: { createdAt: 'desc' },
-      });
+      );
 
       const csvLines: string[] = [];
 
       for (const record of records) {
         const row: MfrRow = {
-          customerNickname: record.customer.nickname,
-          profileType: record.customer.profileType,
-          platformName: getLocalizedName(record.platform, language),
+          customerNickname: record.customer_nickname,
+          profileType: record.profile_type,
+          platformName: getLocalizedName(
+            toLocalizedEntity(
+              record.platform_name_en,
+              record.platform_name_zh,
+              record.platform_name_ja,
+            ),
+            language,
+          ),
           platformUid: '', // Would need to fetch from platform_identity
-          membershipClass: getLocalizedName(record.membershipClass, language),
-          membershipType: getLocalizedName(record.membershipType, language),
-          membershipLevel: getLocalizedName(record.membershipLevel, language),
-          validFrom: record.validFrom.toISOString().split('T')[0],
-          validTo: record.validTo?.toISOString().split('T')[0] || '',
-          autoRenew: record.autoRenew,
-          isExpired: record.isExpired,
-          customerStatus: record.customer.status
-            ? getLocalizedName(record.customer.status, language)
+          membershipClass: getLocalizedName(
+            toLocalizedEntity(
+              record.membership_class_name_en,
+              record.membership_class_name_zh,
+              record.membership_class_name_ja,
+            ),
+            language,
+          ),
+          membershipType: getLocalizedName(
+            toLocalizedEntity(
+              record.membership_type_name_en,
+              record.membership_type_name_zh,
+              record.membership_type_name_ja,
+            ),
+            language,
+          ),
+          membershipLevel: getLocalizedName(
+            toLocalizedEntity(
+              record.membership_level_name_en,
+              record.membership_level_name_zh,
+              record.membership_level_name_ja,
+            ),
+            language,
+          ),
+          validFrom: record.valid_from.toISOString().split('T')[0],
+          validTo: record.valid_to?.toISOString().split('T')[0] || '',
+          autoRenew: record.auto_renew,
+          isExpired: record.is_expired,
+          customerStatus: record.customer_status_name_en
+            ? getLocalizedName(
+                toLocalizedEntity(
+                  record.customer_status_name_en,
+                  record.customer_status_name_zh,
+                  record.customer_status_name_ja,
+                ),
+                language,
+              )
             : '',
-          tags: record.customer.tags.join(', '),
-          source: record.customer.source || '',
-          createdAt: record.createdAt.toISOString().split('T')[0],
+          tags: (record.tags ?? []).join(', '),
+          source: record.source || '',
+          createdAt: record.created_at.toISOString().split('T')[0],
         };
 
         if (format === 'xlsx') {
@@ -433,7 +642,7 @@ async function updateJobProgress(
   await prisma.$executeRawUnsafe(`
     UPDATE "${schemaName}".report_job
     SET processed_rows = $1, progress_percentage = $2, updated_at = NOW()
-    WHERE id = $3
+    WHERE id = $3::uuid
   `, processedRows, progressPercentage, jobId);
 }
 
@@ -460,7 +669,7 @@ async function updateJobStatus(
     await prisma.$executeRawUnsafe(`
       UPDATE "${schemaName}".report_job
       SET status = $1, started_at = $2, updated_at = NOW()
-      WHERE id = $3
+      WHERE id = $3::uuid
     `, 'running', now, jobId);
   } else if (status === 'completed') {
     // PRD §20: 15 minutes expiry after completion
@@ -476,7 +685,7 @@ async function updateJobStatus(
           progress_percentage = 100,
           expires_at = $7,
           updated_at = NOW()
-      WHERE id = $8
+      WHERE id = $8::uuid
     `, 'success', now, data?.fileUrl, data?.fileName, data?.fileSize, data?.rowCount, 
        expiresAt, jobId);
   } else if (status === 'failed') {
@@ -486,7 +695,7 @@ async function updateJobStatus(
           completed_at = $2, 
           error_message = $3,
           updated_at = NOW()
-      WHERE id = $4
+      WHERE id = $4::uuid
     `, 'failed', now, data?.errorMessage, jobId);
   }
 }

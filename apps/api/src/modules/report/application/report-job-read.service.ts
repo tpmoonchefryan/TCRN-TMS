@@ -17,15 +17,14 @@ import {
   type ReportJobPagination,
   type ReportJobReadFilters,
 } from '../domain/report-job-read.policy';
+import { canDownloadReportJob } from '../domain/report-job-state.policy';
 import { ReportJobListQueryDto, ReportJobStatus } from '../dto/report.dto';
 import { ReportJobReadRepository } from '../infrastructure/report-job-read.repository';
-import { ReportJobStateService } from '../services/report-job-state.service';
 
 @Injectable()
 export class ReportJobReadApplicationService {
   constructor(
     private readonly reportJobReadRepository: ReportJobReadRepository,
-    private readonly reportJobStateService: ReportJobStateService,
     private readonly techEventLog: TechEventLogService,
     private readonly minioService: MinioService,
   ) {}
@@ -86,7 +85,10 @@ export class ReportJobReadApplicationService {
       });
     }
 
-    const canDownload = await this.reportJobStateService.canDownload(jobId);
+    const canDownload = canDownloadReportJob({
+      status: job.status as ReportJobStatus,
+      expiresAt: job.expires_at,
+    });
     if (!canDownload) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
@@ -102,7 +104,7 @@ export class ReportJobReadApplicationService {
     }
 
     if (job.status === ReportJobStatus.SUCCESS) {
-      await this.reportJobStateService.transition(jobId, ReportJobStatus.CONSUMED);
+      await this.reportJobReadRepository.markConsumed(context.tenantSchema, jobId);
     }
 
     const downloadUrl = await this.minioService.getPresignedUrl(

@@ -3,11 +3,14 @@
 import {
   Injectable,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
 import { type RequestContext } from '@tcrn/shared';
+import type { Queue } from 'bullmq';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
 import { MinioService } from '../../minio';
+import { QUEUE_NAMES } from '../../queue';
 import { ReportJobReadApplicationService } from '../application/report-job-read.service';
 import { ReportJobWriteApplicationService } from '../application/report-job-write.service';
 import { ReportPiiPlatformApplicationService } from '../application/report-pii-platform.service';
@@ -26,20 +29,21 @@ import { ReportJobStateService } from './report-job-state.service';
 export class ReportJobService {
   constructor(
     databaseService: DatabaseService,
-    stateService: ReportJobStateService,
+    _stateService: ReportJobStateService,
     techEventLog: TechEventLogService,
     minioService: MinioService,
+    @InjectQueue(QUEUE_NAMES.REPORT)
+    reportQueue: Queue,
     reportPiiPlatformApplicationService?: ReportPiiPlatformApplicationService,
     private readonly reportJobReadApplicationService: ReportJobReadApplicationService = new ReportJobReadApplicationService(
       new ReportJobReadRepository(databaseService),
-      stateService,
       techEventLog,
       minioService,
     ),
     private readonly reportJobWriteApplicationService: ReportJobWriteApplicationService = new ReportJobWriteApplicationService(
       new ReportJobWriteRepository(databaseService),
-      stateService,
       techEventLog,
+      reportQueue,
       reportPiiPlatformApplicationService,
     ),
   ) {}

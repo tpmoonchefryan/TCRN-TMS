@@ -6,13 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ReportJobData, reportJobProcessor, type ReportJobResult } from '../report.job';
 
 const mockPrisma = {
-  membershipRecord: {
-    count: vi.fn(),
-    findMany: vi.fn(),
-  },
-  profileStore: {
-    findUnique: vi.fn(),
-  },
+  $queryRawUnsafe: vi.fn(),
   $executeRawUnsafe: vi.fn(),
   $disconnect: vi.fn(),
 };
@@ -51,10 +45,8 @@ const mockExcel = vi.hoisted(() => {
 });
 
 vi.mock('@tcrn/database', () => ({
-  Prisma: {},
   PrismaClient: class MockPrismaClient {
-    membershipRecord = mockPrisma.membershipRecord;
-    profileStore = mockPrisma.profileStore;
+    $queryRawUnsafe = mockPrisma.$queryRawUnsafe;
     $executeRawUnsafe = mockPrisma.$executeRawUnsafe;
     $disconnect = mockPrisma.$disconnect;
   },
@@ -108,6 +100,7 @@ describe('reportJobProcessor', () => {
         tenantId: 'tenant-1',
         tenantSchemaName: 'tenant_test',
         userId: 'user-1',
+        talentId: 'talent-1',
         filters: {},
         options: {
           language: 'en',
@@ -117,28 +110,36 @@ describe('reportJobProcessor', () => {
       updateProgress: vi.fn(),
     } as unknown as Job<ReportJobData, ReportJobResult>;
 
-    mockPrisma.membershipRecord.count.mockResolvedValue(1);
-    mockPrisma.membershipRecord.findMany.mockResolvedValue([
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ count: 1n }])
+      .mockResolvedValueOnce([
       {
-        customer: {
-          nickname: 'Customer A',
-          profileType: 'individual',
-          status: { nameEn: 'Active' },
-          tags: ['vip'],
-          source: 'manual',
-        },
-        platform: { nameEn: 'YouTube' },
-        membershipClass: { nameEn: 'Gold' },
-        membershipType: { nameEn: 'Member' },
-        membershipLevel: { nameEn: 'Level 1' },
-        validFrom: new Date('2026-03-26T00:00:00.000Z'),
-        validTo: new Date('2026-03-27T00:00:00.000Z'),
-        autoRenew: true,
-        isExpired: false,
-        createdAt: new Date('2026-03-26T00:00:00.000Z'),
+        customer_nickname: 'Customer A',
+        profile_type: 'individual',
+        platform_name_en: 'YouTube',
+        platform_name_zh: 'YouTube',
+        platform_name_ja: 'YouTube',
+        membership_class_name_en: 'Gold',
+        membership_class_name_zh: 'Gold',
+        membership_class_name_ja: 'Gold',
+        membership_type_name_en: 'Member',
+        membership_type_name_zh: 'Member',
+        membership_type_name_ja: 'Member',
+        membership_level_name_en: 'Level 1',
+        membership_level_name_zh: 'Level 1',
+        membership_level_name_ja: 'Level 1',
+        valid_from: new Date('2026-03-26T00:00:00.000Z'),
+        valid_to: new Date('2026-03-27T00:00:00.000Z'),
+        auto_renew: true,
+        is_expired: false,
+        customer_status_name_en: 'Active',
+        customer_status_name_zh: 'Active',
+        customer_status_name_ja: 'Active',
+        tags: ['vip'],
+        source: 'manual',
+        created_at: new Date('2026-03-26T00:00:00.000Z'),
       },
     ]);
-    mockPrisma.profileStore.findUnique.mockResolvedValue(null);
     mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.bucketExists.mockResolvedValue(true);
@@ -153,6 +154,9 @@ describe('reportJobProcessor', () => {
     expect(result.fileName).toMatch(/^MFR_tenant-1_.+\.xlsx$/);
     expect(result.rowCount).toBe(1);
     expect(mockJob.updateProgress).toHaveBeenCalledWith(100);
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0]?.[0]).toContain('FROM "tenant_test".membership_record');
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0]).toContain('LIMIT 1000');
 
     expect(mockMinioClient.putObject).toHaveBeenCalledWith(
       'temp-reports',
@@ -240,7 +244,7 @@ describe('reportJobProcessor', () => {
       'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.',
     );
 
-    expect(mockPrisma.membershipRecord.count).not.toHaveBeenCalled();
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(1);
     expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain('error_message = $3');
     expect(mockMinioClient.putObject).not.toHaveBeenCalled();

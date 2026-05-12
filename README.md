@@ -241,9 +241,9 @@ End-to-end type-safe validation with Zod remains active in the shared/backend la
                │                     │                │                    │  │
                ▼                     ▼                ▼                    ▼  │
         ┌─────────────┐       ┌─────────────┐  ┌─────────────┐     ┌─────────┐│
-        │  External   │       │   NestJS    │  │   Worker    │     │  MinIO  ││
-        │  Browser UI │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
-        │ (out-of-repo)│      │   :4000     │  │             │     │  :9000  ││
+        │  Next.js    │       │   NestJS    │  │   Worker    │     │  MinIO  ││
+        │ apps/web UI │──────▶│   (API)     │  │  (BullMQ)   │     │  (S3)   ││
+        │ :3000/:3100 │       │   :4000     │  │             │     │  :9000  ││
         └─────────────┘       └──────┬──────┘  └──────┬──────┘     └─────────┘│
                                      │                │                       │
                               ┌──────┴──────┬─────────┴────┐                  │
@@ -360,12 +360,13 @@ pnpm dev
 
 | Service       | URL                            |
 | ------------- | ------------------------------ |
+| Web           | http://localhost:3000          |
 | API           | http://localhost:4000          |
 | API Docs      | http://localhost:4000/api/docs |
 | MinIO Console | http://localhost:9001          |
 | NATS Monitor  | http://localhost:8222          |
 
-There is no repo-owned browser UI in local development anymore. If you run an external browser app against this API, point it at the API URL above and configure `FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN` accordingly.
+Local development includes the repo-owned `apps/web` browser runtime on `http://localhost:3000` for login, admin, and public-page surfaces. If you drive the API with an alternate browser client or a separate port, keep `FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN` aligned with that active browser origin.
 
 ### Default Credentials
 
@@ -378,7 +379,8 @@ There is no repo-owned browser UI in local development anymore. If you run an ex
 
 ### Testing And Verification Boundary
 
-- The root browser validation entry remains `pnpm test:e2e`, backed by `playwright.config.ts` and `retired-browser-tests/*` as the current targeted deterministic browser proof suite.
+- The root browser validation entry remains `pnpm test:e2e`, backed by `playwright.config.ts` and the legacy-named `retired-browser-tests/*` directory as the current targeted deterministic Playwright browser proof suite.
+- For Dev acceptance, targeted CLI Playwright/Chrome proof is authoritative when Codex App browser sessions are unavailable or browser-extension plumbing is unstable.
 - `pnpm test:integration` at the repo root is an alias for `pnpm --filter @tcrn/api test:integration` and runs the API integration suite with `vitest.integration.config.ts`.
 - `pnpm test:isolation` at the repo root is an alias for `pnpm --filter @tcrn/api test:isolation` and runs the API isolation suite with the same Vitest integration config.
 - For schema-changing releases, run `db:verify-schema-rollout` together with the normal runtime health check; do not treat browser smoke checks as a substitute for direct schema rollout verification.
@@ -560,7 +562,7 @@ This path is intentionally conservative. It does not yet claim:
 
 - multi-node HA
 - HPA
-- any repo-owned browser runtime
+- an `apps/web` production rollout recipe in this specific section
 - in-cluster PostgreSQL for the first cut
 
 ### SSL/TLS Configuration
@@ -586,7 +588,7 @@ server {
 }
 ```
 
-Any browser UI reverse proxy now belongs to the external browser runtime, not to this repository.
+If you deploy `apps/web` behind its own reverse proxy, keep that browser origin aligned with the API `FRONTEND_URL` / `APP_URL` / `CORS_ORIGIN` contract.
 
 ### Environment Checklist
 
