@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RateLimiterGuard } from '../../common/guards/rate-limiter.guard';
 import { RateLimiterService } from '../../common/services/rate-limiter.service';
 import { LogModule } from '../log/log.module';
+import { MinioModule } from '../minio';
 import { HomepageAdminService } from './application/homepage-admin.service';
 import { HomepageSchedulerApplicationService } from './application/homepage-scheduler.service';
 import { HomepageVersionApplicationService } from './application/homepage-version.service';
@@ -24,6 +25,7 @@ import { PublicHomepageReadRepository } from './infrastructure/public-homepage-r
 import {
   CdnPurgeService,
   DomainLookupService,
+  HomepageAssetService,
   HomepageSchedulerService,
   HomepageService,
   HomepageVersionService,
@@ -31,7 +33,7 @@ import {
 } from './services';
 
 @Module({
-  imports: [HttpModule, LogModule, ScheduleModule.forRoot()],
+  imports: [HttpModule, LogModule, MinioModule, ScheduleModule.forRoot()],
   controllers: [
     CalendarController,
     HomepageController,
@@ -52,6 +54,7 @@ import {
     PublicHomepageReadRepository,
     PublicHomepageService,
     DomainLookupService,
+    HomepageAssetService,
     RateLimiterService,
     RateLimiterGuard,
     HomepageSchedulerService,

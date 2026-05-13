@@ -16,7 +16,7 @@ import {
   Save,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   type HomepageDraftComponentRecord,
@@ -25,6 +25,7 @@ import {
   readHomepage,
   readHomepageVersion,
   saveHomepageDraft,
+  uploadHomepageAsset,
 } from '@/domains/homepage-management/api/homepage.api';
 import { HomepageEditorDevModePanel } from '@/domains/homepage-management/editor/puck/HomepageEditorDevModePanel';
 import { HomepagePuckEditor } from '@/domains/homepage-management/editor/puck/HomepagePuckEditor';
@@ -571,6 +572,11 @@ export function HomepageEditorScreen({
     setSelectedPuckItem((previous) => (isSameSelectedPuckItem(previous, nextItem) ? previous : nextItem));
   }
 
+  const handleUploadHomepageImage = useCallback(async (file: File) => {
+    const result = await uploadHomepageAsset(request, talentId, file);
+    return result.url;
+  }, [request, talentId]);
+
   useEffect(() => {
     if (authoringMode !== 'source' && !sourceError) {
       setSourceJson(buildSourceJson(content, theme));
@@ -823,6 +829,7 @@ export function HomepageEditorScreen({
         setTheme(nextTheme);
         setNotice(null);
       }}
+      onUploadImage={handleUploadHomepageImage}
       theme={theme}
     />
   );

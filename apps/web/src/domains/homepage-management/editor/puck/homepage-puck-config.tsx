@@ -24,6 +24,7 @@ import {
   createHomepagePuckBackgroundField,
   createHomepagePuckBackgroundOverlayField,
   createHomepagePuckImageField,
+  type HomepagePuckImageUpload,
 } from '@/domains/homepage-management/editor/puck/HomepagePuckMediaField';
 import { type HomepageEditorCopy } from '@/domains/homepage-management/screens/homepage-editor.copy';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
@@ -201,6 +202,10 @@ interface HomepagePuckRootDropZoneElementProps {
   zone: string;
 }
 
+interface HomepagePuckConfigOptions {
+  onUploadImage?: HomepagePuckImageUpload;
+}
+
 function renderRootPreview(
   children: ReactNode,
   rootProps: HomepagePuckRootProps,
@@ -235,6 +240,7 @@ function renderRootPreview(
 export function createHomepagePuckConfig(
   copy: HomepageEditorCopy,
   theme: ThemeConfig,
+  options: HomepagePuckConfigOptions = {},
 ): Config<
   HomepagePuckComponents,
   HomepagePuckRootProps,
@@ -248,30 +254,42 @@ export function createHomepagePuckConfig(
   const imageField = createHomepagePuckImageField({
     clearLabel: copy.block.remove,
     label: copy.structured.imageUrl,
+    onUpload: options.onUploadImage,
     placeholder: 'https://cdn.example.com/image.png',
+    uploadErrorLabel: copy.structured.imageUploadFailed,
     uploadLabel: copy.structured.addImage,
+    uploadingLabel: copy.structured.imageUploading,
   });
   const backgroundValueFields = {
     solid: createHomepagePuckBackgroundField({
       clearLabel: copy.block.remove,
       kind: 'solid',
       label: copy.structured.backgroundValue,
+      onUpload: options.onUploadImage,
       placeholder: '#FAFBFC',
+      uploadErrorLabel: copy.structured.imageUploadFailed,
       uploadLabel: copy.structured.addImage,
+      uploadingLabel: copy.structured.imageUploading,
     }),
     gradient: createHomepagePuckBackgroundField({
       clearLabel: copy.block.remove,
       kind: 'gradient',
       label: copy.structured.backgroundValue,
+      onUpload: options.onUploadImage,
       placeholder: 'linear-gradient(135deg, #FAFBFC 0%, #E0E7FF 100%)',
+      uploadErrorLabel: copy.structured.imageUploadFailed,
       uploadLabel: copy.structured.addImage,
+      uploadingLabel: copy.structured.imageUploading,
     }),
     image: createHomepagePuckBackgroundField({
       clearLabel: copy.block.remove,
       kind: 'image',
       label: copy.structured.backgroundValue,
+      onUpload: options.onUploadImage,
       placeholder: 'https://cdn.example.com/background.jpg',
+      uploadErrorLabel: copy.structured.imageUploadFailed,
       uploadLabel: copy.structured.addImage,
+      uploadingLabel: copy.structured.imageUploading,
     }),
   } as const;
   const rootFields = {

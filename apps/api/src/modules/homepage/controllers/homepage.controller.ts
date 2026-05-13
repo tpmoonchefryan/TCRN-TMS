@@ -10,8 +10,11 @@ import {
     Post,
     Query,
     Req,
+    UploadedFile,
+    UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
@@ -28,6 +31,10 @@ import {
     VersionListQueryDto,
 } from '../dto/homepage.dto';
 import { HomepageService } from '../services/homepage.service';
+import {
+    HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES,
+    HomepageAssetService,
+} from '../services/homepage-asset.service';
 import { HomepageVersionService } from '../services/homepage-version.service';
 
 const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
@@ -176,6 +183,17 @@ const HOMEPAGE_UNPUBLISH_SCHEMA = {
   required: ['isPublished', 'unpublishedAt'],
 };
 
+const HOMEPAGE_ASSET_UPLOAD_SCHEMA = {
+  type: 'object',
+  properties: {
+    url: {
+      type: 'string',
+      example: 'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
+    },
+  },
+  required: ['url'],
+};
+
 const HOMEPAGE_VERSION_LIST_ITEM_SCHEMA = {
   type: 'object',
   properties: {
@@ -259,6 +277,8 @@ const HOMEPAGE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(HOMEPAGE_RESPONSE_SC
 const HOMEPAGE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema('RES_NOT_FOUND', 'Homepage not found');
 const HOMEPAGE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema('AUTH_UNAUTHORIZED', 'Authentication required');
 const HOMEPAGE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema('VALIDATION_FAILED', 'No draft to publish');
+const HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema('VALIDATION_FAILED', 'Invalid homepage asset upload');
+const HOMEPAGE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema('AUTH_FORBIDDEN', 'Permission denied');
 const HOMEPAGE_CONFLICT_SCHEMA = createErrorEnvelopeSchema('RES_CONFLICT', 'Homepage path already taken');
 
 @ApiTags('Ops - Homepage')
@@ -269,6 +289,7 @@ export class HomepageController {
   constructor(
     private readonly homepageService: HomepageService,
     private readonly versionService: HomepageVersionService,
+    private readonly assetService: HomepageAssetService,
   ) {}
 
   // =========================================================================
@@ -294,6 +315,49 @@ export class HomepageController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.homepageService.getOrCreate(talentId, user.tenantSchema);
+  }
+
+  /**
+   * Upload homepage asset
+   */
+  @Post('assets')
+  @RequirePermissions({ resource: 'talent.homepage', action: 'update' })
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES },
+  }))
+  @ApiOperation({ summary: 'Upload homepage image asset' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'talentId',
+    description: 'Talent identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Homepage asset uploaded successfully', schema: createSuccessEnvelopeSchema(HOMEPAGE_ASSET_UPLOAD_SCHEMA, {
+    url: 'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
+  }) })
+  @ApiResponse({ status: 400, description: 'Homepage asset upload is invalid', schema: HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA })
+  @ApiResponse({ status: 401, description: 'Authentication is required to upload homepage assets', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions to upload homepage assets', schema: HOMEPAGE_FORBIDDEN_SCHEMA })
+  @ApiResponse({ status: 404, description: 'Homepage or talent was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  async uploadAsset(
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assetService.uploadImage({
+      file,
+      talentId,
+      tenantSchema: user.tenantSchema,
+    });
   }
 
   /**

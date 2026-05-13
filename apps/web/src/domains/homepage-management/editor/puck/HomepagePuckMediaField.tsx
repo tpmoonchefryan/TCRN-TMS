@@ -1,5 +1,7 @@
 import { type CustomField } from '@puckeditor/core';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useId, useState } from 'react';
+
+export type HomepagePuckImageUpload = (file: File) => Promise<string>;
 
 function asString(value: unknown, fallback = '') {
   return typeof value === 'string' ? value : fallback;
@@ -115,9 +117,12 @@ function HomepagePuckImageFieldControl({
   label,
   name,
   onChange,
+  onUpload,
   placeholder,
   readOnly,
+  uploadErrorLabel,
   uploadLabel,
+  uploadingLabel,
   value,
 }: Readonly<{
   clearLabel: string;
@@ -125,13 +130,19 @@ function HomepagePuckImageFieldControl({
   label: string;
   name?: string;
   onChange: (value: string) => void;
+  onUpload?: HomepagePuckImageUpload;
   placeholder: string;
   readOnly?: boolean;
+  uploadErrorLabel?: string;
   uploadLabel: string;
+  uploadingLabel?: string;
   value: string;
 }>) {
   const uploadId = useId();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const currentValue = asString(value).trim();
+  const isUploadDisabled = Boolean(readOnly || isUploading);
 
   return (
     <FieldFrame label={label} description={description} tone="image">
@@ -143,50 +154,73 @@ function HomepagePuckImageFieldControl({
           name={name}
           value={currentValue}
           placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            setUploadError(null);
+            onChange(event.target.value);
+          }}
           readOnly={readOnly}
           className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50"
         />
         <div className="flex flex-wrap items-center gap-2">
           <label
             htmlFor={uploadId}
+            aria-disabled={isUploadDisabled ? 'true' : undefined}
+            aria-busy={isUploading ? 'true' : undefined}
             className={`inline-flex cursor-pointer items-center rounded-full border px-3 py-2 text-xs font-medium transition ${
-              readOnly
+              isUploadDisabled
                 ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
                 : 'border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50'
             }`}
           >
-            {uploadLabel}
+            {isUploading ? uploadingLabel || uploadLabel : uploadLabel}
           </label>
           <input
             id={uploadId}
             type="file"
-            accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+            accept="image/png,image/jpeg,image/gif,image/webp"
             className="sr-only"
+            disabled={isUploadDisabled}
             onChange={async (event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = '';
+              const input = event.currentTarget;
+              const file = input.files?.[0];
+              input.value = '';
 
-              if (!file || readOnly) {
+              if (!file || isUploadDisabled) {
                 return;
               }
 
+              setIsUploading(true);
+              setUploadError(null);
+
               try {
-                onChange(await readFileAsDataUrl(file));
+                const nextValue = onUpload
+                  ? await onUpload(file)
+                  : await readFileAsDataUrl(file);
+
+                onChange(nextValue);
               } catch {
+                setUploadError(uploadErrorLabel || 'Image upload failed.');
                 await asyncNoop();
+              } finally {
+                setIsUploading(false);
               }
             }}
           />
           <button
             type="button"
-            disabled={readOnly || !currentValue}
-            onClick={() => onChange('')}
+            disabled={readOnly || isUploading || !currentValue}
+            onClick={() => {
+              setUploadError(null);
+              onChange('');
+            }}
             className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {clearLabel}
           </button>
         </div>
+        {uploadError ? (
+          <p className="text-xs font-medium text-rose-700">{uploadError}</p>
+        ) : null}
       </div>
     </FieldFrame>
   );
@@ -199,9 +233,12 @@ function HomepagePuckBackgroundFieldControl({
   label,
   name,
   onChange,
+  onUpload,
   placeholder,
   readOnly,
+  uploadErrorLabel,
   uploadLabel,
+  uploadingLabel,
   value,
 }: Readonly<{
   clearLabel: string;
@@ -210,9 +247,12 @@ function HomepagePuckBackgroundFieldControl({
   label: string;
   name?: string;
   onChange: (value: string) => void;
+  onUpload?: HomepagePuckImageUpload;
   placeholder: string;
   readOnly?: boolean;
+  uploadErrorLabel?: string;
   uploadLabel: string;
+  uploadingLabel?: string;
   value: string;
 }>) {
   const currentValue = asString(value).trim();
@@ -225,9 +265,12 @@ function HomepagePuckBackgroundFieldControl({
         label={label}
         name={name}
         onChange={onChange}
+        onUpload={onUpload}
         placeholder={placeholder}
         readOnly={readOnly}
+        uploadErrorLabel={uploadErrorLabel}
         uploadLabel={uploadLabel}
+        uploadingLabel={uploadingLabel}
         value={currentValue}
       />
     );
@@ -395,14 +438,20 @@ export function createHomepagePuckImageField({
   clearLabel,
   description,
   label,
+  onUpload,
   placeholder,
+  uploadErrorLabel,
   uploadLabel,
+  uploadingLabel,
 }: Readonly<{
   clearLabel: string;
   description?: string;
   label: string;
+  onUpload?: HomepagePuckImageUpload;
   placeholder: string;
+  uploadErrorLabel?: string;
   uploadLabel: string;
+  uploadingLabel?: string;
 }>): CustomField<string> {
   return {
     type: 'custom',
@@ -414,9 +463,12 @@ export function createHomepagePuckImageField({
         label={label}
         name={name}
         onChange={onChange}
+        onUpload={onUpload}
         placeholder={placeholder}
         readOnly={readOnly}
+        uploadErrorLabel={uploadErrorLabel}
         uploadLabel={uploadLabel}
+        uploadingLabel={uploadingLabel}
         value={asString(value)}
       />
     ),
@@ -428,15 +480,21 @@ export function createHomepagePuckBackgroundField({
   description,
   kind,
   label,
+  onUpload,
   placeholder,
+  uploadErrorLabel,
   uploadLabel,
+  uploadingLabel,
 }: Readonly<{
   clearLabel: string;
   description?: string;
   kind: 'solid' | 'gradient' | 'image';
   label: string;
+  onUpload?: HomepagePuckImageUpload;
   placeholder: string;
+  uploadErrorLabel?: string;
   uploadLabel: string;
+  uploadingLabel?: string;
 }>): CustomField<string> {
   return {
     type: 'custom',
@@ -449,9 +507,12 @@ export function createHomepagePuckBackgroundField({
         label={label}
         name={name}
         onChange={onChange}
+        onUpload={onUpload}
         placeholder={placeholder}
         readOnly={readOnly}
+        uploadErrorLabel={uploadErrorLabel}
         uploadLabel={uploadLabel}
+        uploadingLabel={uploadingLabel}
         value={asString(value)}
       />
     ),

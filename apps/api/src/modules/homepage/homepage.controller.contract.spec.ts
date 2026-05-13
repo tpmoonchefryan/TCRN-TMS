@@ -4,6 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
+import { PERMISSIONS_KEY } from '../../common/decorators';
 import { HomepageController } from './controllers/homepage.controller';
 
 interface ControllerRoute {
@@ -71,6 +72,11 @@ describe('HomepageController private route contract', () => {
           path: 'draft',
         },
         {
+          methodName: 'uploadAsset',
+          requestMethod: RequestMethod.POST,
+          path: 'assets',
+        },
+        {
           methodName: 'publish',
           requestMethod: RequestMethod.POST,
           path: 'publish',
@@ -89,6 +95,7 @@ describe('HomepageController private route contract', () => {
       ).sort();
 
     expect(getStatuses('getHomepage')).toEqual(['200', '401', '404']);
+    expect(getStatuses('uploadAsset')).toEqual(['201', '400', '401', '403', '404']);
     expect(getStatuses('saveDraft')).toEqual(['200', '401', '404']);
     expect(getStatuses('publish')).toEqual(['200', '400', '401', '404']);
     expect(getStatuses('unpublish')).toEqual(['200', '401', '404']);
@@ -109,6 +116,7 @@ describe('HomepageController private route contract', () => {
         .sort());
 
     expect(getPathParamNames('getHomepage')).toEqual(['talentId']);
+    expect(getPathParamNames('uploadAsset')).toEqual(['talentId']);
     expect(getPathParamNames('saveDraft')).toEqual(['talentId']);
     expect(getPathParamNames('publish')).toEqual(['talentId']);
     expect(getPathParamNames('unpublish')).toEqual(['talentId']);
@@ -116,5 +124,12 @@ describe('HomepageController private route contract', () => {
     expect(getPathParamNames('listVersions')).toEqual(['talentId']);
     expect(getPathParamNames('getVersion')).toEqual(['talentId', 'versionId']);
     expect(getPathParamNames('restoreVersion')).toEqual(['talentId', 'versionId']);
+  });
+
+  it('protects homepage asset uploads with homepage update permission', () => {
+    expect(Reflect.getMetadata(
+      PERMISSIONS_KEY,
+      homepageControllerClass.prototype.uploadAsset,
+    )).toEqual([{ resource: 'talent.homepage', action: 'update' }]);
   });
 });

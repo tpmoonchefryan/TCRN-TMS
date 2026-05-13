@@ -42,12 +42,14 @@ vi.mock('@/domains/homepage-management/editor/puck/HomepagePuckEditor', () => ({
     onContentChange,
     onSaveDraft,
     onThemeChange,
+    onUploadImage,
   }: {
     content: HomepageDraftContent;
     fitToParent?: boolean;
     onContentChange: (content: HomepageDraftContent) => void;
     onSaveDraft: () => void;
     onThemeChange: (theme: ThemeConfig) => void;
+    onUploadImage?: (file: File) => Promise<string>;
   }) => (
     <div data-fit-to-parent={String(Boolean(fitToParent))} data-testid="homepage-puck-editor">
       <p>Puck visual editor</p>
@@ -135,6 +137,29 @@ vi.mock('@/domains/homepage-management/editor/puck/HomepagePuckEditor', () => ({
         }}
       >
         Mock Puck rename profile
+      </button>
+      <button
+        type="button"
+        onClick={async () => {
+          const imageUrl = await onUploadImage?.(new File(['avatar'], 'avatar.png', { type: 'image/png' }));
+
+          onContentChange({
+            ...content,
+            components: content.components.map((component) => (
+              component.type === 'ProfileCard'
+                ? {
+                  ...component,
+                  props: {
+                    ...component.props,
+                    avatarUrl: imageUrl,
+                  },
+                }
+                : component
+            )),
+          });
+        }}
+      >
+        Mock Puck upload image
       </button>
       <button type="button" onClick={onSaveDraft}>
         Mock Puck save
@@ -284,6 +309,12 @@ function mockHomepageRequests({
       };
     }
 
+    if (path === '/api/v1/talents/talent-1/homepage/assets' && init?.method === 'POST') {
+      return {
+        url: '/api/v1/public/assets/homepage-assets/tenant_default/talent-1/avatar.png',
+      };
+    }
+
     throw new Error(`Unhandled request: ${path}`);
   });
 }
@@ -334,6 +365,41 @@ describe('HomepageEditorScreen', () => {
     });
 
     expect(await screen.findByText('Homepage draft saved as v2.')).toBeInTheDocument();
+  });
+
+  it('uploads Puck images as homepage assets before saving the draft JSON', async () => {
+    let savedPayload: { content?: HomepageDraftContent } | null = null;
+    mockHomepageRequests({
+      onSave: (payload) => {
+        savedPayload = payload as { content?: HomepageDraftContent };
+      },
+    });
+
+    renderWithLocale(<HomepageEditorScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Homepage editor' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock Puck upload image' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/homepage/assets',
+        expect.objectContaining({
+          body: expect.any(FormData),
+          method: 'POST',
+        }),
+      );
+    });
+    expect(await screen.findByText('Unsaved changes')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Save draft/i }));
+
+    await waitFor(() => {
+      expect(savedPayload?.content?.components[0]?.props.avatarUrl).toBe(
+        '/api/v1/public/assets/homepage-assets/tenant_default/talent-1/avatar.png',
+      );
+      expect(JSON.stringify(savedPayload)).not.toContain('data:image/');
+    });
   });
 
   it('opens Dev Mode without ejecting the draft and shows inspector metadata', async () => {

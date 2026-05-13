@@ -21,6 +21,7 @@ import {
   sanitizeHomepagePuckSidebarUi,
   serializeHomepagePuckSidebarWidths,
 } from '@/domains/homepage-management/editor/puck/homepage-puck-ui';
+import { type HomepagePuckImageUpload } from '@/domains/homepage-management/editor/puck/HomepagePuckMediaField';
 import {
   markAdvancedSourceContent,
 } from '@/domains/homepage-management/editor/source/homepage-advanced-eject';
@@ -35,6 +36,7 @@ interface HomepagePuckEditorProps {
   onSaveDraft: () => void;
   onSelectedItemChange?: (item: HomepagePuckSelectedItem | null) => void;
   onThemeChange: (theme: ThemeConfig) => void;
+  onUploadImage?: HomepagePuckImageUpload;
   theme: ThemeConfig;
 }
 
@@ -260,9 +262,13 @@ export function HomepagePuckEditor({
   onSaveDraft,
   onSelectedItemChange,
   onThemeChange,
+  onUploadImage,
   theme,
 }: Readonly<HomepagePuckEditorProps>) {
-  const config = useMemo(() => createHomepagePuckConfig(copy, theme), [copy, theme]);
+  const config = useMemo(
+    () => createHomepagePuckConfig(copy, theme, { onUploadImage }),
+    [copy, onUploadImage, theme],
+  );
   const data = useMemo(() => mapHomepageContentToPuckData(content, theme), [content, theme]);
   const isEmptyDraft = content.components.length === 0;
   const [puckUi, setPuckUi] = useState(DEFAULT_HOMEPAGE_PUCK_SIDEBAR_UI);

@@ -132,6 +132,10 @@ export interface SaveHomepageDraftResponse {
   isNewVersion: boolean;
 }
 
+export interface UploadHomepageAssetResponse {
+  url: string;
+}
+
 interface ListHomepageVersionsOptions {
   page?: number;
   pageSize?: number;
@@ -210,6 +214,20 @@ export function saveHomepageDraft(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+  });
+}
+
+export function uploadHomepageAsset(
+  request: RequestFn,
+  talentId: string,
+  file: File,
+) {
+  const formData = new FormData();
+  formData.set('file', file);
+
+  return request<UploadHomepageAssetResponse>(`/api/v1/talents/${talentId}/homepage/assets`, {
+    method: 'POST',
+    body: formData,
   });
 }
 

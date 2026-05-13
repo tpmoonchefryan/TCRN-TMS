@@ -14,7 +14,51 @@ describe('HomepagePuckMediaField', () => {
     globalThis.FileReader = OriginalFileReader;
   });
 
-  it('renders an image URL field with a working upload path', async () => {
+  it('uploads image files through the provided asset uploader', async () => {
+    const onChange = vi.fn();
+    const onUpload = vi.fn().mockResolvedValue('/api/v1/public/assets/homepage-assets/tenant/talent/avatar.png');
+    const field = createHomepagePuckImageField({
+      clearLabel: 'Remove',
+      label: 'Image URL',
+      onUpload,
+      placeholder: 'https://cdn.example.com/image.png',
+      uploadErrorLabel: 'Image upload failed.',
+      uploadLabel: 'Add image',
+      uploadingLabel: 'Uploading image',
+    });
+
+    const { container } = render(field.render({
+      field,
+      id: 'image-url',
+      name: 'imageUrl',
+      onChange,
+      value: '',
+    }));
+
+    expect(screen.getByPlaceholderText('https://cdn.example.com/image.png')).toBeInTheDocument();
+    expect(screen.getByLabelText('Image URL')).toHaveAttribute('name', 'imageUrl');
+    expect(screen.getByText('Add image')).toBeInTheDocument();
+
+    const fileInput = container.querySelector('input[type="file"]');
+
+    expect(fileInput).not.toBeNull();
+
+    fireEvent.change(fileInput as HTMLInputElement, {
+      target: {
+        files: [new File(['avatar'], 'avatar.png', { type: 'image/png' })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(onUpload).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'avatar.png',
+        type: 'image/png',
+      }));
+      expect(onChange).toHaveBeenCalledWith('/api/v1/public/assets/homepage-assets/tenant/talent/avatar.png');
+    });
+  });
+
+  it('keeps a data-url fallback when no asset uploader is provided', async () => {
     const onChange = vi.fn();
     const field = createHomepagePuckImageField({
       clearLabel: 'Remove',
@@ -44,13 +88,7 @@ describe('HomepagePuckMediaField', () => {
       value: '',
     }));
 
-    expect(screen.getByPlaceholderText('https://cdn.example.com/image.png')).toBeInTheDocument();
-    expect(screen.getByLabelText('Image URL')).toHaveAttribute('name', 'imageUrl');
-    expect(screen.getByText('Add image')).toBeInTheDocument();
-
     const fileInput = container.querySelector('input[type="file"]');
-
-    expect(fileInput).not.toBeNull();
 
     fireEvent.change(fileInput as HTMLInputElement, {
       target: {

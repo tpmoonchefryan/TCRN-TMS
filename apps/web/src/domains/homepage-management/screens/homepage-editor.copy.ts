@@ -129,6 +129,8 @@ export interface HomepageEditorCopy {
   };
   structured: {
     addImage: string;
+    imageUploadFailed: string;
+    imageUploading: string;
     addSocialLink: string;
     advancedJson: string;
     align: string;
@@ -389,6 +391,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     structured: {
       addImage: 'Add image',
+      imageUploadFailed: 'Image upload failed.',
+      imageUploading: 'Uploading…',
       addSocialLink: 'Add social link',
       advancedJson: 'Advanced JSON',
       align: 'Alignment',
@@ -692,6 +696,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     structured: {
       addImage: '添加图片',
+      imageUploadFailed: '图片上传失败。',
+      imageUploading: '上传中…',
       addSocialLink: '添加社交链接',
       advancedJson: '高级 JSON',
       align: '对齐',
@@ -995,6 +1001,8 @@ const COPY: Record<RuntimeLocale, HomepageEditorCopy> = {
     },
     structured: {
       addImage: '画像を追加',
+      imageUploadFailed: '画像のアップロードに失敗しました。',
+      imageUploading: 'アップロード中…',
       addSocialLink: 'SNS リンクを追加',
       advancedJson: '高度な JSON',
       align: '配置',
