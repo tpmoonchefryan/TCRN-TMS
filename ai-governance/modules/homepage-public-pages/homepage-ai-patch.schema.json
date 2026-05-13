@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcrn.local/ai-governance/homepage-ai-patch.schema.json",
+  "title": "Homepage AI Patch Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "intentSummary",
+    "mode",
+    "patches",
+    "introducedExternalResources",
+    "introducedIframes",
+    "blockedRequests",
+    "requiresUserConfirmation"
+  ],
+  "properties": {
+    "intentSummary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "const": "template"
+    },
+    "patches": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "value"],
+            "properties": {
+              "op": { "const": "setThemeTokens" },
+              "value": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "sectionId", "props"],
+            "properties": {
+              "op": { "const": "updateSectionProps" },
+              "sectionId": { "type": "string", "minLength": 1 },
+              "props": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "sectionId", "enabled"],
+            "properties": {
+              "op": { "const": "toggleSection" },
+              "sectionId": { "type": "string", "minLength": 1 },
+              "enabled": { "type": "boolean" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "templateId", "migrationMode"],
+            "properties": {
+              "op": { "const": "setTemplate" },
+              "templateId": { "type": "string", "minLength": 1 },
+              "migrationMode": {
+                "enum": ["preserveContent", "resetLayout"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "sectionIds"],
+            "properties": {
+              "op": { "const": "setSectionOrder" },
+              "sectionIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "introducedExternalResources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "url", "licenseStatus"],
+        "properties": {
+          "kind": {
+            "enum": ["image", "font", "icon", "video", "audio", "link", "other"]
+          },
+          "url": { "type": "string" },
+          "licenseStatus": {
+            "enum": ["projectOwned", "userProvided", "reviewedCommercialUse", "blocked", "unknown"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "introducedIframes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["providerId", "src", "title"],
+        "properties": {
+          "providerId": { "type": "string", "minLength": 1 },
+          "src": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "blockedRequests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request", "reason", "safeAlternative"],
+        "properties": {
+          "request": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 },
+          "safeAlternative": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "requiresUserConfirmation": {
+      "type": "boolean"
+    }
+  }
+}

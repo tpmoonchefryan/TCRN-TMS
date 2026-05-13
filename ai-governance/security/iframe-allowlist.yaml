@@ -1,0 +1,109 @@
+version: 1
+defaultPolicy: deny
+scope:
+  description: "MVP public-page iframe policy for media embeds only."
+  arbitraryIframe: false
+  rawIframeHtml: false
+  srcdoc: false
+  allowForms: false
+  allowPopups: false
+  allowTopNavigation: false
+  allowDownloads: false
+  autoplayByDefault: false
+providers:
+  - providerId: youtube
+    label: YouTube
+    status: enabled
+    contentTypes:
+      - video
+      - livestream
+    inputUrlPatterns:
+      - "https://www.youtube.com/watch*"
+      - "https://youtu.be/*"
+      - "https://www.youtube.com/live/*"
+    embedUrlPatterns:
+      - "https://www.youtube-nocookie.com/embed/*"
+    allowedHosts:
+      - "www.youtube-nocookie.com"
+    requiredFields:
+      - title
+      - src
+    optionalFields:
+      - aspectRatio
+      - startAt
+    sandbox:
+      - allow-scripts
+      - allow-same-origin
+      - allow-presentation
+    allow:
+      - fullscreen
+      - picture-in-picture
+      - encrypted-media
+    referrerPolicy: strict-origin-when-cross-origin
+    loading: lazy
+  - providerId: bilibili
+    label: Bilibili
+    status: enabled
+    contentTypes:
+      - video
+      - livestream
+    inputUrlPatterns:
+      - "https://www.bilibili.com/video/*"
+      - "https://live.bilibili.com/*"
+      - "https://player.bilibili.com/player.html*"
+    embedUrlPatterns:
+      - "https://player.bilibili.com/player.html*"
+    allowedHosts:
+      - "player.bilibili.com"
+    requiredFields:
+      - title
+      - src
+    optionalFields:
+      - aspectRatio
+      - page
+    sandbox:
+      - allow-scripts
+      - allow-same-origin
+      - allow-presentation
+    allow:
+      - fullscreen
+      - picture-in-picture
+    referrerPolicy: no-referrer-when-downgrade
+    loading: lazy
+  - providerId: twitch
+    label: Twitch
+    status: enabled
+    contentTypes:
+      - livestream
+      - clip
+    inputUrlPatterns:
+      - "https://www.twitch.tv/*"
+      - "https://clips.twitch.tv/*"
+    embedUrlPatterns:
+      - "https://player.twitch.tv/*"
+      - "https://clips.twitch.tv/embed*"
+    allowedHosts:
+      - "player.twitch.tv"
+      - "clips.twitch.tv"
+    requiredFields:
+      - title
+      - src
+      - parent
+    optionalFields:
+      - aspectRatio
+      - channel
+      - clip
+    sandbox:
+      - allow-scripts
+      - allow-same-origin
+      - allow-presentation
+    allow:
+      - fullscreen
+      - picture-in-picture
+    referrerPolicy: strict-origin-when-cross-origin
+    loading: lazy
+aiRules:
+  - "AI must never invent iframe providers."
+  - "AI may only generate iframe embeds using enabled providers in this allowlist."
+  - "AI must not output raw iframe HTML as a template patch."
+  - "If the requested provider is not allowlisted, AI must return a blocked request and suggest a normal external link or a governance review."
