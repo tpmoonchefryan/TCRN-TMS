@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { SystemRoleController } from '../system-role/system-role.controller';
-import { UserRoleController } from './user-role.controller';
 import { RoleController } from './role.controller';
+import { UserRoleController } from './user-role.controller';
 
 interface ControllerRoute {
   methodName: string;

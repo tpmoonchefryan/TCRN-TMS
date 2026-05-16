@@ -14,6 +14,9 @@ import {
   inferRolloutArtifactsFromMigrations,
   type RequiredColumn,
 } from './verify-schema-rollout-helpers';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 export interface CliOptions {
   migrations: string[];

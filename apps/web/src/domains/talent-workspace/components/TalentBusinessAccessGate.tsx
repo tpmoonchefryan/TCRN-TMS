@@ -11,6 +11,7 @@ import { useSession } from '@/platform/runtime/session/session-provider';
 import { StateView } from '@/platform/ui';
 
 interface TalentBusinessAccessGateProps {
+  allowDraft?: boolean;
   tenantId: string;
   talentId: string;
   children: React.ReactNode;
@@ -27,6 +28,7 @@ function getErrorMessage(reason: unknown, fallback: string) {
 }
 
 export function TalentBusinessAccessGate({
+  allowDraft = false,
   tenantId,
   talentId,
   children,
@@ -181,7 +183,10 @@ export function TalentBusinessAccessGate({
     );
   }
 
-  if (state.detail.lifecycleStatus === 'published') {
+  if (
+    state.detail.lifecycleStatus === 'published'
+    || (allowDraft && state.detail.lifecycleStatus === 'draft')
+  ) {
     return <>{children}</>;
   }
 

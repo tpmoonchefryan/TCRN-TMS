@@ -11,8 +11,8 @@ import {
   AdapterTypeSchema,
   CreateAdapterSchema,
   CreateWebhookSchema,
-  UpdateWebhookSchema,
   UpdateAdapterConfigsSchema,
+  UpdateWebhookSchema,
 } from './index';
 
 describe('integration adapter config mutation schema', () => {

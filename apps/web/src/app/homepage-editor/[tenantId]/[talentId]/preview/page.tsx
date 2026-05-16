@@ -1,5 +1,6 @@
-import { HomepageEditorPreviewScreen } from '@/domains/homepage-management/screens/HomepageEditorPreviewScreen';
-import { TalentBusinessAccessGate } from '@/domains/talent-workspace/components/TalentBusinessAccessGate';
+import { redirect } from 'next/navigation';
+
+import { buildTalentWorkspaceSectionPath } from '@/platform/routing/workspace-paths';
 
 export default async function StandaloneHomepageEditorPreviewPage({
   params,
@@ -7,10 +8,5 @@ export default async function StandaloneHomepageEditorPreviewPage({
   params: Promise<{ tenantId: string; talentId: string }>;
 }>) {
   const { tenantId, talentId } = await params;
-
-  return (
-    <TalentBusinessAccessGate tenantId={tenantId} talentId={talentId}>
-      <HomepageEditorPreviewScreen tenantId={tenantId} talentId={talentId} />
-    </TalentBusinessAccessGate>
-  );
+  redirect(buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'));
 }

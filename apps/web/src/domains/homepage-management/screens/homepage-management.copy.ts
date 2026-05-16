@@ -24,7 +24,6 @@ interface HomepageManagementCopy {
     description: string;
   };
   actions: {
-    openEditor: string;
     workspaceSettings: string;
     openRoutingInSettings: string;
     publishDraft: string;
@@ -132,7 +131,6 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       description: 'Review publication status, version history, and public access for this talent homepage.',
     },
     actions: {
-      openEditor: 'Open editor',
       workspaceSettings: 'Public access settings',
       openRoutingInSettings: 'Manage public address',
       publishDraft: 'Publish draft',
@@ -248,7 +246,6 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       description: '查看该艺人主页的发布状态、版本历史与公开访问信息。',
     },
     actions: {
-      openEditor: '打开编辑器',
       workspaceSettings: '公开访问设置',
       openRoutingInSettings: '管理公开地址',
       publishDraft: '发布草稿',
@@ -364,7 +361,6 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       description: 'このタレントのホームページについて、公開状態、バージョン履歴、公開アクセスを確認します。',
     },
     actions: {
-      openEditor: 'エディターを開く',
       workspaceSettings: '公開アクセス設定',
       openRoutingInSettings: '公開アドレスを管理',
       publishDraft: '下書きを公開',

@@ -118,10 +118,6 @@ export function buildTalentSettingsPath(
   return query ? `${path}?${query}` : path;
 }
 
-export function buildTalentHomepageEditorPath(tenantId: string, talentId: string) {
-  return `/homepage-editor/${tenantId}/${talentId}`;
-}
-
 export function buildAcWorkspacePath(tenantId: string) {
   return `/ac/${tenantId}/tenants`;
 }

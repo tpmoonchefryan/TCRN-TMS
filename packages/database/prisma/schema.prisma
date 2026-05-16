@@ -258,6 +258,7 @@ model Talent {
   originCustomers       CustomerProfile[]    @relation("OriginTalent")
   lastModifiedCustomers CustomerProfile[]    @relation("LastModifiedTalent")
   homepage              TalentHomepage?
+  publicPresencePortal  PublicPresencePortal?
   marshmallowConfig     MarshmallowConfig?
   importJobs            ImportJob[]
   exportJobs            ExportJob[]
@@ -1391,6 +1392,131 @@ model HomepageVersion {
   @@unique([homepageId, versionNumber])
   @@index([homepageId, status])
   @@map("homepage_version")
+  @@schema("tenant_template")
+}
+
+/// Public Presence Portal
+model PublicPresencePortal {
+  id                    String    @id @default(uuid()) @db.Uuid
+  talentId              String    @unique @map("talent_id") @db.Uuid
+  draftVersionId        String?   @unique @map("draft_version_id") @db.Uuid
+  liveVersionId         String?   @unique @map("live_version_id") @db.Uuid
+  latestVersionNumber   Int       @default(0) @map("latest_version_number")
+  latestValidationState String?   @map("latest_validation_state") @db.VarChar(32)
+  lastValidatedAt       DateTime? @map("last_validated_at") @db.Timestamptz
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy             String?   @map("created_by") @db.Uuid
+  updatedBy             String?   @map("updated_by") @db.Uuid
+  version               Int       @default(1)
+
+  talent               Talent                           @relation(fields: [talentId], references: [id])
+  draftVersion         PublicPresenceDocumentVersion?   @relation("PublicPresenceDraftVersion", fields: [draftVersionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  liveVersion          PublicPresenceDocumentVersion?   @relation("PublicPresenceLiveVersion", fields: [liveVersionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  documentVersions     PublicPresenceDocumentVersion[]  @relation("PublicPresencePortalVersions")
+  validationSnapshots  PublicPresenceValidationSnapshot[] @relation("PublicPresencePortalValidationSnapshots")
+  workflowEvents       PublicPresenceWorkflowEvent[]    @relation("PublicPresencePortalWorkflowEvents")
+
+  @@index([draftVersionId])
+  @@index([liveVersionId])
+  @@index([latestValidationState])
+  @@map("public_presence_portal")
+  @@schema("tenant_template")
+}
+
+/// Public Presence Document Version
+model PublicPresenceDocumentVersion {
+  id                       String    @id @default(uuid()) @db.Uuid
+  portalId                 String    @map("portal_id") @db.Uuid
+  versionNumber            Int       @map("version_number")
+  documentSchemaVersion    String    @map("document_schema_version") @db.VarChar(32)
+  templateId               String    @map("template_id") @db.VarChar(64)
+  document                 Json      @db.JsonB
+  documentState            String    @default("draft") @map("document_state") @db.VarChar(32)
+  contentHashAlgorithm     String    @default("sha256") @map("content_hash_algorithm") @db.VarChar(32)
+  contentHash              String    @map("content_hash") @db.VarChar(64)
+  lastValidationSnapshotId String?   @unique @map("last_validation_snapshot_id") @db.Uuid
+  scheduledFor             DateTime? @map("scheduled_for") @db.Timestamptz
+  publishedAt              DateTime? @map("published_at") @db.Timestamptz
+  publishedBy              String?   @map("published_by") @db.Uuid
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy                String?   @map("created_by") @db.Uuid
+
+  portal                 PublicPresencePortal            @relation("PublicPresencePortalVersions", fields: [portalId], references: [id], onDelete: Cascade)
+  draftHeadForPortals    PublicPresencePortal[]          @relation("PublicPresenceDraftVersion")
+  liveHeadForPortals     PublicPresencePortal[]          @relation("PublicPresenceLiveVersion")
+  lastValidationSnapshot PublicPresenceValidationSnapshot? @relation("PublicPresenceLatestValidationSnapshot", fields: [lastValidationSnapshotId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  validationSnapshots    PublicPresenceValidationSnapshot[] @relation("PublicPresenceVersionSnapshots")
+  workflowEvents         PublicPresenceWorkflowEvent[]   @relation("PublicPresenceVersionWorkflowEvents")
+
+  @@unique([portalId, versionNumber])
+  @@index([portalId, documentState])
+  @@index([portalId, contentHash])
+  @@index([contentHash])
+  @@index([scheduledFor])
+  @@index([publishedAt])
+  @@map("public_presence_document_version")
+  @@schema("tenant_template")
+}
+
+/// Public Presence Validation Snapshot
+model PublicPresenceValidationSnapshot {
+  id                  String   @id @default(uuid()) @db.Uuid
+  portalId            String   @map("portal_id") @db.Uuid
+  versionId           String   @map("version_id") @db.Uuid
+  validationMode      String   @map("validation_mode") @db.VarChar(32)
+  validationState     String   @map("validation_state") @db.VarChar(32)
+  fatalCount          Int      @default(0) @map("fatal_count")
+  blockerCount        Int      @default(0) @map("blocker_count")
+  warningCount        Int      @default(0) @map("warning_count")
+  infoCount           Int      @default(0) @map("info_count")
+  issueCounts         Json     @default("{}") @map("issue_counts") @db.JsonB
+  blockerIds          Json     @default("[]") @map("blocker_ids") @db.JsonB
+  acknowledgementIds  Json     @default("[]") @map("acknowledgement_ids") @db.JsonB
+  blocksPublish       Boolean  @default(false) @map("blocks_publish")
+  blocksVisualEdit    Boolean  @default(false) @map("blocks_visual_edit")
+  blocksAiPatch       Boolean  @default(false) @map("blocks_ai_patch")
+  projectionHash      String?  @map("projection_hash") @db.VarChar(255)
+  registryVersion     String   @map("registry_version") @db.VarChar(64)
+  safetyPolicyVersion String   @map("safety_policy_version") @db.VarChar(64)
+  snapshot            Json     @db.JsonB
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+
+  portal            PublicPresencePortal             @relation("PublicPresencePortalValidationSnapshots", fields: [portalId], references: [id], onDelete: Cascade)
+  version           PublicPresenceDocumentVersion    @relation("PublicPresenceVersionSnapshots", fields: [versionId], references: [id], onDelete: Cascade)
+  latestForVersions PublicPresenceDocumentVersion[]  @relation("PublicPresenceLatestValidationSnapshot")
+
+  @@index([portalId, createdAt])
+  @@index([versionId, createdAt])
+  @@index([validationMode, validationState])
+  @@index([blocksPublish, blocksVisualEdit, blocksAiPatch])
+  @@map("public_presence_validation_snapshot")
+  @@schema("tenant_template")
+}
+
+/// Public Presence Workflow Event
+model PublicPresenceWorkflowEvent {
+  id                   String    @id @default(uuid()) @db.Uuid
+  portalId             String    @map("portal_id") @db.Uuid
+  versionId            String?   @map("version_id") @db.Uuid
+  eventType            String    @map("event_type") @db.VarChar(64)
+  fromDocumentState    String?   @map("from_document_state") @db.VarChar(32)
+  toDocumentState      String?   @map("to_document_state") @db.VarChar(32)
+  contentHashAlgorithm String?   @map("content_hash_algorithm") @db.VarChar(32)
+  contentHash          String?   @map("content_hash") @db.VarChar(64)
+  payload              Json      @default("{}") @db.JsonB
+  occurredAt           DateTime  @default(now()) @map("occurred_at") @db.Timestamptz
+  actorId              String?   @map("actor_id") @db.Uuid
+
+  portal  PublicPresencePortal           @relation("PublicPresencePortalWorkflowEvents", fields: [portalId], references: [id], onDelete: Cascade)
+  version PublicPresenceDocumentVersion? @relation("PublicPresenceVersionWorkflowEvents", fields: [versionId], references: [id], onDelete: SetNull)
+
+  @@index([portalId, occurredAt])
+  @@index([versionId, occurredAt])
+  @@index([eventType, occurredAt])
+  @@map("public_presence_workflow_event")
   @@schema("tenant_template")
 }
 

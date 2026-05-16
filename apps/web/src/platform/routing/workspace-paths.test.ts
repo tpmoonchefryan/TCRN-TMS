@@ -9,7 +9,6 @@ import {
   buildAcWorkspacePath,
   buildDefaultWorkspacePath,
   buildSubsidiaryBusinessPath,
-  buildTalentHomepageEditorPath,
   buildTalentSettingsPath,
   buildTalentWorkspacePath,
   buildTalentWorkspaceSectionPath,
@@ -103,11 +102,11 @@ describe('workspace-paths', () => {
   it('builds talent workspace paths', () => {
     expect(buildTalentWorkspacePath('tenant-3', 'talent-8')).toBe('/tenant/tenant-3/talent/talent-8');
     expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'overview')).toBe('/tenant/tenant-3/talent/talent-8');
+    expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'homepage')).toBe(
+      '/tenant/tenant-3/talent/talent-8/homepage',
+    );
     expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'reports')).toBe(
       '/tenant/tenant-3/talent/talent-8/reports',
-    );
-    expect(buildTalentHomepageEditorPath('tenant-3', 'talent-8')).toBe(
-      '/homepage-editor/tenant-3/talent-8',
     );
   });
 

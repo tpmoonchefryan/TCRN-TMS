@@ -1,14 +1,12 @@
 import { redirect } from 'next/navigation';
 
+import { buildTalentWorkspaceSectionPath } from '@/platform/routing/workspace-paths';
+
 export default async function TalentHomepageEditorPreviewPage({
   params,
-  searchParams,
 }: Readonly<{
   params: Promise<{ tenantId: string; talentId: string }>;
-  searchParams: Promise<{ previewId?: string }>;
 }>) {
   const { tenantId, talentId } = await params;
-  const { previewId } = await searchParams;
-  const query = previewId ? `?previewId=${encodeURIComponent(previewId)}` : '';
-  redirect(`/homepage-editor/${tenantId}/${talentId}/preview${query}`);
+  redirect(buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'));
 }

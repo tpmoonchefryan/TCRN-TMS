@@ -331,16 +331,15 @@ cd tcrn-tms
 # 2. 安装依赖
 pnpm install
 
-# 3. 启动基础设施服务
-# 默认只启动核心运行依赖
-docker compose up -d postgres redis minio nats
+# 3. 配置环境变量
+cp .env.local.sample .env.local
+# 编辑 .env.local 填入你的配置
+
+# 4. 启动基础设施服务
+pnpm infra:up
 
 # 可选：仅在需要调试 Loki/Tempo/OTEL 链路时启动本地观测服务
-docker compose --profile observability up -d loki tempo
-
-# 4. 配置环境变量
-cp .env.sample .env.local
-# 编辑 .env.local 填入你的配置
+pnpm infra:up:observability
 
 # 5. 初始化数据库
 cd packages/database

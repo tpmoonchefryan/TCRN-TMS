@@ -39,6 +39,7 @@ export * from './utils/string';
 
 // Feature schema - direct exports for non-conflicting modules
 export * from './homepage/public-routes';
+export * from './public-presence';
 export * from './rbac/catalog';
 export * from './types/config';
 export * from './types/homepage/presets';

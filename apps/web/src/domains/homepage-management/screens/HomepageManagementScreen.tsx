@@ -1,7 +1,6 @@
 'use client';
 
-import { Check, Copy, Globe2, History, Pencil, Rocket, RotateCcw } from 'lucide-react';
-import Link from 'next/link';
+import { Check, Copy, Globe2, History, Rocket, RotateCcw } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useState } from 'react';
 
@@ -26,9 +25,6 @@ import {
   ApiRequestError,
   buildFallbackPagination,
 } from '@/platform/http/api';
-import {
-  buildTalentHomepageEditorPath,
-} from '@/platform/routing/workspace-paths';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
@@ -278,7 +274,7 @@ function NoticeBanner({
 }
 
 export function HomepageManagementScreen({
-  tenantId,
+  tenantId: _tenantId,
   talentId,
 }: Readonly<{
   tenantId: string;
@@ -562,13 +558,6 @@ export function HomepageManagementScreen({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={buildTalentHomepageEditorPath(tenantId, talentId)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-            >
-              <Pencil className="h-4 w-4" />
-              {copy.actions.openEditor}
-            </Link>
             <ActionButton
               tone="primary"
               disabled={!homepage.draftVersion}

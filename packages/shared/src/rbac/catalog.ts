@@ -134,7 +134,14 @@ export const RBAC_RESOURCES = [
   resource('settings', 'config', { nameEn: 'Settings', nameZh: '设置', nameJa: '設定' }, ['read', 'write', 'admin'], 175),
 
   resource('talent.homepage', 'external', { nameEn: 'Homepage', nameZh: '个人主页', nameJa: 'ホームページ' }, ['read', 'write', 'admin'], 180),
-  resource('talent.marshmallow', 'external', { nameEn: 'Marshmallow', nameZh: '棉花糖', nameJa: 'マシュマロ' }, ['read', 'write', 'execute', 'admin'], 190),
+  resource('public_presence.document', 'external', { nameEn: 'Public Presence Document', nameZh: 'Public Presence 文档', nameJa: 'パブリックプレゼンス文書' }, ['read', 'write', 'admin'], 182),
+  resource('public_presence.review', 'external', { nameEn: 'Public Presence Review', nameZh: 'Public Presence 审核', nameJa: 'パブリックプレゼンスレビュー' }, ['read', 'write', 'execute', 'admin'], 184),
+  resource('public_presence.publish', 'external', { nameEn: 'Public Presence Publish', nameZh: 'Public Presence 发布', nameJa: 'パブリックプレゼンス公開' }, ['write', 'execute', 'admin'], 186),
+  resource('public_presence.rollback', 'external', { nameEn: 'Public Presence Rollback', nameZh: 'Public Presence 回滚', nameJa: 'パブリックプレゼンスロールバック' }, ['write', 'execute', 'admin'], 188),
+  resource('public_presence.validation', 'external', { nameEn: 'Public Presence Validation', nameZh: 'Public Presence 校验', nameJa: 'パブリックプレゼンス検証' }, ['read', 'write', 'execute', 'admin'], 190),
+  resource('public_presence.audit', 'external', { nameEn: 'Public Presence Audit', nameZh: 'Public Presence 审计', nameJa: 'パブリックプレゼンス監査' }, ['read', 'admin'], 192),
+  resource('public_presence.ai_patch', 'external', { nameEn: 'Public Presence AI Patch', nameZh: 'Public Presence AI 修补', nameJa: 'パブリックプレゼンスAIパッチ' }, ['execute', 'admin'], 194),
+  resource('talent.marshmallow', 'external', { nameEn: 'Marshmallow', nameZh: '棉花糖', nameJa: 'マシュマロ' }, ['read', 'write', 'execute', 'admin'], 196),
 
   resource('report.mfr', 'report', { nameEn: 'MFR Report', nameZh: 'MFR报表', nameJa: 'MFRレポート' }, ['read', 'execute', 'admin'], 200),
 
@@ -218,6 +225,13 @@ const adminPermissions = [
     'config.platform_settings',
     'settings',
     'talent.homepage',
+    'public_presence.document',
+    'public_presence.review',
+    'public_presence.publish',
+    'public_presence.rollback',
+    'public_presence.validation',
+    'public_presence.audit',
+    'public_presence.ai_patch',
     'talent.marshmallow',
     'report.mfr',
     'integration.adapter',
@@ -241,6 +255,7 @@ const viewerReadableResources = RBAC_RESOURCES
       definition.supportedActions.includes('read') &&
       definition.code !== 'tenant.manage' &&
       definition.code !== 'customer.pii' &&
+      definition.code !== 'public_presence.audit' &&
       !definition.code.startsWith('security.'),
   )
   .map((definition) => permission(definition.code, ['read']));
@@ -302,6 +317,12 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
     isSystem: false,
     permissions: [
       ...allActionsFor('talent.homepage', 'talent.marshmallow', 'security.external_blocklist'),
+      permission('public_presence.document', ['read', 'write']),
+      permission('public_presence.review', ['read', 'write']),
+      permission('public_presence.publish', ['write']),
+      permission('public_presence.rollback', ['write']),
+      permission('public_presence.validation', ['read', 'write']),
+      permission('public_presence.audit', ['read']),
       permission('config.platform_settings', ['read']),
       permission('settings', ['read']),
       permission('log.change_log', ['read']),

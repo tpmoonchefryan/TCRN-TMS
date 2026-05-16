@@ -2,11 +2,11 @@
 
 import {
   DEFAULT_THEME,
+  type HomepageContentInput,
   HomepageContentSchema,
+  type ThemeConfig,
   ThemeConfigSchema,
   ThemePreset,
-  type HomepageContentInput,
-  type ThemeConfig,
 } from '@tcrn/shared';
 
 export interface UatHomepageFixture {

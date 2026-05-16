@@ -1,4 +1,4 @@
-import { HomepageManagementScreen } from '@/domains/homepage-management/screens/HomepageManagementScreen';
+import { PublicPresenceStudioScreen } from '@/domains/public-presence-studio/screens/PublicPresenceStudioScreen';
 import { TalentBusinessAccessGate } from '@/domains/talent-workspace/components/TalentBusinessAccessGate';
 
 export default async function TalentHomepageManagementPage({
@@ -9,8 +9,8 @@ export default async function TalentHomepageManagementPage({
   const { tenantId, talentId } = await params;
 
   return (
-    <TalentBusinessAccessGate tenantId={tenantId} talentId={talentId}>
-      <HomepageManagementScreen tenantId={tenantId} talentId={talentId} />
+    <TalentBusinessAccessGate allowDraft tenantId={tenantId} talentId={talentId}>
+      <PublicPresenceStudioScreen tenantId={tenantId} talentId={talentId} />
     </TalentBusinessAccessGate>
   );
 }

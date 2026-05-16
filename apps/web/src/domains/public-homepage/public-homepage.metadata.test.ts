@@ -39,52 +39,69 @@ describe('buildPublicHomepageMetadata', () => {
       jsonResponse({
         success: true,
         data: {
-          talent: {
-            displayName: 'Hoshimachi Suisei',
-            avatarUrl: 'https://cdn.example.com/suisei.png',
+          projectionSchemaVersion: '1.0',
+          resolvedRevealPhase: 'always',
+          route: {
+            canonicalPath: '/tenant-a/suisei/homepage',
+            legacyPath: null,
+            tenantCode: 'tenant-a',
+            talentCode: 'suisei',
+            domainHostname: null,
           },
-          content: {
-            version: '1.0.0',
-            components: [],
-          },
-          theme: {
-            preset: 'soft',
-            visualStyle: 'flat',
-            colors: {
-              primary: '#7B9EE0',
-              accent: '#E0A0C0',
-              background: '#FAFBFC',
-              text: '#333333',
-              textSecondary: '#888888',
-            },
-            background: {
-              type: 'gradient',
-              value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
-            },
-            card: {
-              background: '#FFFFFF',
-              borderRadius: 'large',
-              shadow: 'small',
-            },
-            typography: {
-              fontFamily: 'noto-sans',
-              headingWeight: 'medium',
-            },
-            animation: {
-              enableEntrance: true,
-              enableHover: true,
-              intensity: 'low',
-            },
-            decorations: {
-              type: 'none',
-            },
-          },
-          seo: {
+          metadata: {
             title: 'Suisei Official Homepage',
             description: 'Public profile and schedule.',
-            ogImageUrl: 'https://cdn.example.com/seo/suisei-og.png',
+            canonicalPath: '/tenant-a/suisei/homepage',
+            ogImage: {
+              id: 'media-1',
+              kind: 'ogImage',
+              providerId: null,
+              assetId: null,
+              url: 'https://cdn.example.com/seo/suisei-og.png',
+              alt: 'Hoshimachi Suisei public homepage preview',
+              phaseVisibility: 'always',
+              fallbackBehavior: 'safePlaceholder',
+            },
+            ogImageAlt: 'Hoshimachi Suisei public homepage preview',
+            locale: null,
           },
-          updatedAt: '2026-04-23T00:00:00.000Z',
+          appearance: {
+            theme: {
+              preset: 'soft',
+              visualStyle: 'flat',
+              colors: {
+                primary: '#7B9EE0',
+                accent: '#E0A0C0',
+                background: '#FAFBFC',
+                text: '#333333',
+                textSecondary: '#888888',
+              },
+              background: {
+                type: 'gradient',
+                value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
+              },
+              card: {
+                background: '#FFFFFF',
+                borderRadius: 'large',
+                shadow: 'small',
+              },
+              typography: {
+                fontFamily: 'noto-sans',
+                headingWeight: 'medium',
+              },
+              animation: {
+                enableEntrance: true,
+                enableHover: true,
+                intensity: 'low',
+              },
+              decorations: {
+                type: 'none',
+              },
+            },
+          },
+          sections: [],
+          actions: [],
+          media: [],
         },
       }),
     );

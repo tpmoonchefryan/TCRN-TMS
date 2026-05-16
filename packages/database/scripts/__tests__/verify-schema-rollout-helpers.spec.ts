@@ -221,4 +221,38 @@ describe('inferRolloutArtifactsFromMigrations', () => {
       }
     );
   });
+
+  it('infers the Public Presence persistence foundation artifacts from the real migration', () => {
+    assert.deepEqual(
+      inferRolloutArtifactsFromMigrations(['20260515153000_add_public_presence_foundation']),
+      {
+        sourceMigrations: ['20260515153000_add_public_presence_foundation'],
+        requiredTables: [
+          'public_presence_document_version',
+          'public_presence_portal',
+          'public_presence_validation_snapshot',
+          'public_presence_workflow_event',
+        ],
+        requiredColumns: [],
+        requiredIndexes: [
+          'public_presence_document_version_content_hash_idx',
+          'public_presence_document_version_portal_id_content_hash_idx',
+          'public_presence_document_version_portal_id_document_state_idx',
+          'public_presence_document_version_published_at_idx',
+          'public_presence_document_version_scheduled_for_idx',
+          'public_presence_portal_latest_validation_state_idx',
+          'public_presence_validation_snapshot_blockers_idx',
+          'public_presence_validation_snapshot_mode_state_idx',
+          'public_presence_validation_snapshot_portal_id_created_at_idx',
+          'public_presence_validation_snapshot_version_id_created_at_idx',
+          'public_presence_workflow_event_event_type_occurred_at_idx',
+          'public_presence_workflow_event_portal_id_occurred_at_idx',
+          'public_presence_workflow_event_version_id_occurred_at_idx',
+        ],
+        requiredAbsentTables: [],
+        requiredAbsentColumns: [],
+        requiredAbsentIndexes: [],
+      }
+    );
+  });
 });

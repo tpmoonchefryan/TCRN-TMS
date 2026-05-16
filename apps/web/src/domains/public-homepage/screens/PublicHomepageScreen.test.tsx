@@ -41,96 +41,130 @@ describe('PublicHomepageScreen', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the published homepage content blocks', async () => {
+  it('renders the published homepage projection sections', async () => {
     mockFetch.mockResolvedValue(
       jsonResponse({
         success: true,
         data: {
-          talent: {
-            displayName: 'Aki Rosenthal',
-            avatarUrl: 'https://cdn.example.com/aki.png',
-            timezone: 'Asia/Tokyo',
+          projectionSchemaVersion: '1.0',
+          resolvedRevealPhase: 'always',
+          route: {
+            canonicalPath: '/p/aki-home',
+            legacyPath: 'aki-home',
+            tenantCode: null,
+            talentCode: null,
+            domainHostname: null,
           },
-          content: {
-            version: '1.0.0',
-            components: [
-              {
-                id: 'profile-1',
-                type: 'ProfileCard',
-                visible: true,
-                order: 1,
-                props: {
-                  displayName: 'Aki Rosenthal',
-                  bio: 'Singing, streaming, and moonlit conversations.',
-                  avatarUrl: 'https://cdn.example.com/aki.png',
-                  avatarShape: 'circle',
-                },
-              },
-              {
-                id: 'links-1',
-                type: 'SocialLinks',
-                visible: true,
-                order: 2,
-                props: {
-                  platforms: [
-                    {
-                      platformCode: 'youtube',
-                      url: 'https://youtube.com/@aki',
-                      label: 'YouTube',
-                    },
-                  ],
-                },
-              },
-              {
-                id: 'richtext-1',
-                type: 'RichText',
-                visible: true,
-                order: 3,
-                props: {
-                  contentHtml: '<h2>About</h2><p>Official public homepage.</p>',
-                  textAlign: 'left',
-                },
-              },
-            ],
-          },
-          theme: {
-            preset: 'soft',
-            visualStyle: 'flat',
-            colors: {
-              primary: '#7B9EE0',
-              accent: '#E0A0C0',
-              background: '#FAFBFC',
-              text: '#333333',
-              textSecondary: '#888888',
-            },
-            background: {
-              type: 'gradient',
-              value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
-            },
-            card: {
-              background: '#FFFFFF',
-              borderRadius: 'large',
-              shadow: 'small',
-            },
-            typography: {
-              fontFamily: 'noto-sans',
-              headingWeight: 'medium',
-            },
-            animation: {
-              enableEntrance: true,
-              enableHover: true,
-              intensity: 'low',
-            },
-            decorations: {
-              type: 'none',
-            },
-          },
-          seo: {
+          metadata: {
             title: 'Aki Homepage',
             description: 'Official public homepage.',
-            ogImageUrl: null,
+            canonicalPath: '/p/aki-home',
+            ogImage: null,
+            ogImageAlt: null,
+            locale: null,
           },
-          updatedAt: '2026-04-17T12:00:00.000Z',
+          appearance: {
+            theme: {
+              preset: 'soft',
+              visualStyle: 'flat',
+              colors: {
+                primary: '#7B9EE0',
+                accent: '#E0A0C0',
+                background: '#FAFBFC',
+                text: '#333333',
+                textSecondary: '#888888',
+              },
+              background: {
+                type: 'gradient',
+                value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
+              },
+              card: {
+                background: '#FFFFFF',
+                borderRadius: 'large',
+                shadow: 'small',
+              },
+              typography: {
+                fontFamily: 'noto-sans',
+                headingWeight: 'medium',
+              },
+              animation: {
+                enableEntrance: true,
+                enableHover: true,
+                intensity: 'low',
+              },
+              decorations: {
+                type: 'none',
+              },
+            },
+          },
+          sections: [
+            {
+              id: 'hero',
+              kind: 'firstEncounter',
+              sectionType: 'hero',
+              visibility: 'visible',
+              fallbackBehavior: 'safePlaceholder',
+              validationIssueIds: [],
+              title: 'Aki Rosenthal',
+              description: 'Official public homepage.',
+              timezone: 'Asia/Tokyo',
+              avatar: {
+                id: 'media-1',
+                kind: 'avatar',
+                providerId: null,
+                assetId: null,
+                url: 'https://cdn.example.com/aki.png',
+                alt: 'Aki Rosenthal avatar',
+                phaseVisibility: 'always',
+                fallbackBehavior: 'safePlaceholder',
+              },
+              primaryAction: {
+                id: 'action-1',
+                slot: 'officialChannel',
+                label: 'YouTube',
+                href: 'https://youtube.com/@aki',
+                providerId: 'youtube',
+                category: 'officialChannelUrl',
+                phaseVisibility: 'always',
+                fallbackBehavior: 'safePlaceholder',
+              },
+            },
+            {
+              id: 'social-1',
+              kind: 'officialChannels',
+              sectionType: 'socialLinks',
+              visibility: 'visible',
+              fallbackBehavior: 'safePlaceholder',
+              validationIssueIds: [],
+              title: null,
+              links: [
+                {
+                  id: 'action-2',
+                  slot: 'officialChannel',
+                  label: 'YouTube',
+                  href: 'https://youtube.com/@aki',
+                  providerId: 'youtube',
+                  category: 'officialChannelUrl',
+                  phaseVisibility: 'always',
+                  fallbackBehavior: 'safePlaceholder',
+                },
+              ],
+              layout: 'horizontal',
+              style: 'pill',
+            },
+            {
+              id: 'richtext-1',
+              kind: 'legacyCompatibility',
+              sectionType: 'richText',
+              visibility: 'visible',
+              fallbackBehavior: 'stripField',
+              validationIssueIds: [],
+              html: '<h2>About</h2><p>Official public homepage.</p>',
+              textAlign: 'left',
+            },
+          ],
+          actions: [],
+          media: [],
         },
       }),
     );
@@ -138,7 +172,6 @@ describe('PublicHomepageScreen', () => {
     renderWithLocale(<PublicHomepageScreen path="aki-home" />);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Aki Rosenthal' })).toBeInTheDocument();
-    expect(screen.getByText('Singing, streaming, and moonlit conversations.')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'YouTube' })[0]).toHaveAttribute('href', 'https://youtube.com/@aki');
     expect(screen.getByRole('heading', { name: 'About' })).toBeInTheDocument();
     expect(screen.getAllByText('Official public homepage.')).toHaveLength(2);
@@ -172,8 +205,8 @@ describe('PublicHomepageScreen', () => {
 
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
-    expect(await screen.findByText('Homepage unavailable')).toBeInTheDocument();
-    expect(screen.getByText('The homepage is not published, not reachable, or has been disabled.')).toBeInTheDocument();
+    expect(await screen.findByText('Fan page unavailable')).toBeInTheDocument();
+    expect(screen.getByText('This fan page is not live yet, is not reachable right now, or has been turned off.')).toBeInTheDocument();
   });
 
   it('uses runtime locale copy for unavailable public homepage states even when the API returns English copy', async () => {
@@ -197,7 +230,7 @@ describe('PublicHomepageScreen', () => {
 
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
-    expect(await screen.findByText('主页不可用')).toBeInTheDocument();
-    expect(screen.getByText('当前主页尚未发布、暂时不可达，或已被停用。')).toBeInTheDocument();
+    expect(await screen.findByText('粉丝页不可用')).toBeInTheDocument();
+    expect(screen.getByText('当前粉丝页尚未上线、暂时不可达，或已被关闭。')).toBeInTheDocument();
   });
 });

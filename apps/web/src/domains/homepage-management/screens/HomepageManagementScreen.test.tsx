@@ -170,10 +170,6 @@ describe('HomepageManagementScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Homepage management' })).toBeInTheDocument();
     expect(await screen.findByText('HeroBanner, ProfileCard')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open editor/i })).toHaveAttribute(
-      'href',
-      '/homepage-editor/tenant-1/talent-1',
-    );
     expect(screen.queryByRole('link', { name: 'Manage public address' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Published' }));
@@ -401,7 +397,6 @@ describe('HomepageManagementScreen', () => {
     render(<HomepageManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByRole('heading', { name: '主页管理' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '打开编辑器' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '管理公开地址' })).not.toBeInTheDocument();
     expect(screen.getByText('公开状态')).toBeInTheDocument();
     expect(screen.getByText('当前筛选下没有主页版本')).toBeInTheDocument();

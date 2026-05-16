@@ -12,8 +12,10 @@ import {
   readPublicHomepage,
 } from '@/domains/public-homepage/api/public-homepage.api';
 import {
+  PublicHomepageProjectionRenderer,
+} from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
+import {
   getHomepageCanvasStyle,
-  PublicHomepageRenderer,
 } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import {
   PublicPresenceBadge,
@@ -34,10 +36,6 @@ function getApiErrorMessage(reason: unknown) {
 
 function isUnavailableError(reason: unknown) {
   return reason instanceof ApiRequestError && reason.status === 404;
-}
-
-function getHeroDescription(data: PublicHomepageResponse) {
-  return data.seo.description || data.seo.title || null;
 }
 
 export function PublicHomepageScreen({
@@ -90,7 +88,7 @@ export function PublicHomepageScreen({
     };
   }, [path]);
 
-  const pageTheme: ThemeConfig = data?.theme || DEFAULT_THEME;
+  const pageTheme: ThemeConfig = data?.appearance.theme || DEFAULT_THEME;
   const canvasStyle = useMemo(() => getHomepageCanvasStyle(pageTheme), [pageTheme]);
 
   if (loading && !data) {
@@ -127,27 +125,17 @@ export function PublicHomepageScreen({
         width="sm"
       >
         <PublicPresenceStateView
-            tone={isUnavailable ? 'unavailable' : 'error'}
-            title={isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle}
-            description={description}
-          />
+          tone={isUnavailable ? 'unavailable' : 'error'}
+          title={isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle}
+          description={description}
+        />
       </PublicPresenceShell>
     );
   }
 
   return (
     <PublicPresenceShell decorationDensity="calm" style={canvasStyle}>
-      <PublicHomepageRenderer
-        content={data.content}
-        theme={data.theme}
-        updatedAt={data.updatedAt}
-        hero={{
-          displayName: data.talent.displayName,
-          avatarUrl: data.talent.avatarUrl,
-          timezone: data.talent.timezone,
-          description: getHeroDescription(data),
-        }}
-      />
+      <PublicHomepageProjectionRenderer projection={data} />
     </PublicPresenceShell>
   );
 }

@@ -20,6 +20,9 @@ import {
   type TenantMigrationExecutionSummary,
   type TenantMigrationSkipReasonCounts,
 } from './apply-migrations-helpers';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 const prisma = new PrismaClient();
 

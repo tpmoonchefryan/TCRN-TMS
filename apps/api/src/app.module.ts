@@ -44,13 +44,14 @@ import { SystemRoleModule } from './modules/system-role';
 import { SystemUserModule } from './modules/system-user';
 import { TalentModule } from './modules/talent';
 import { TenantMiddleware, TenantModule } from './modules/tenant';
+import { repoEnvFilePaths } from './repo-env';
 
 @Module({
   imports: [
     // Configuration module
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: repoEnvFilePaths,
       validationSchema: configValidationSchema,
       validationOptions: {
         abortEarly: false,

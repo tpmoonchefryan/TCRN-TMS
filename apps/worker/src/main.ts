@@ -22,17 +22,40 @@ for (const envFile of ['.env.local', '.env']) {
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const enableScheduledJobs = process.env.ENABLE_SCHEDULED_JOBS !== 'false';
 
-const redisConnection = new Redis(redisUrl, {
-  maxRetriesPerRequest: null,
-});
+async function bootstrap() {
+  const redisConnection = new Redis(redisUrl, {
+    lazyConnect: true,
+    maxRetriesPerRequest: null,
+    retryStrategy: () => null,
+  });
+  let firstRedisErrorMessage: string | null = null;
 
-const connection = redisConnection as unknown as ConnectionOptions;
+  redisConnection.on('error', (error) => {
+    firstRedisErrorMessage ??= error instanceof Error ? error.message : String(error);
+  });
 
-const workerRuntimeShell = createWorkerRuntimeShell({
-  connection,
-  redisConnection,
-  enableScheduledJobs,
-  logger,
-});
+  try {
+    await redisConnection.connect();
+  } catch (error) {
+    const redisFailureMessage =
+      firstRedisErrorMessage
+      ?? (error instanceof Error ? error.message : String(error));
+    logger.error(
+      `Unable to connect to Redis at ${redisUrl}: ${redisFailureMessage}. Start local infra first with "pnpm infra:up" or "docker compose --env-file .env.local up -d postgres redis minio nats".`
+    );
+    process.exit(1);
+  }
 
-void workerRuntimeShell.start();
+  const connection = redisConnection as unknown as ConnectionOptions;
+
+  const workerRuntimeShell = createWorkerRuntimeShell({
+    connection,
+    redisConnection,
+    enableScheduledJobs,
+    logger,
+  });
+
+  await workerRuntimeShell.start();
+}
+
+void bootstrap();

@@ -16,6 +16,9 @@ export * from './marshmallow';
 // Homepage Schemas
 export * from './homepage';
 
+// Public Presence Schemas
+export * from './public-presence';
+
 // Email Schemas
 export * from './email';
 

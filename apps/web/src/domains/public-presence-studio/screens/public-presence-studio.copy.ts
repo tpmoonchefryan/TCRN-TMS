@@ -1,0 +1,1629 @@
+import type {
+  PublicPresenceDocumentState,
+  PublicPresenceFieldValueType,
+  PublicPresencePhaseVisibility,
+  PublicPresenceWorkflowEventType,
+  SupportedUiLocale,
+} from '@tcrn/shared';
+
+import type {
+  PublicPresenceStudioStageSectionSummary,
+  PublicPresenceStudioTemplateSummary,
+} from '@/domains/public-presence-studio/api/public-presence-studio.api';
+import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import {
+  formatLocaleDateTime,
+  resolveLocaleRecord,
+} from '@/platform/runtime/locale/locale-text';
+
+export type PublicPresenceStudioTabId =
+  | 'overview'
+  | 'stageSections'
+  | 'personaKit'
+  | 'fanPreview'
+  | 'reviewPublish'
+  | 'advanced';
+
+export const PUBLIC_PRESENCE_PREVIEW_PHASES: Array<
+  PublicPresencePhaseVisibility | 'current'
+> = [
+  'current',
+  'teaser',
+  'countdown',
+  'preRevealHold',
+  'revealed',
+  'liveLaunch',
+  'postLaunch',
+  'expiredFallback',
+];
+
+const COPY = {
+  en: {
+    common: {
+      advancedOnly: 'Advanced only',
+      available: 'Available',
+      blocked: 'Blocked',
+      editingLocked: 'Editing locked',
+      hidden: 'Hidden',
+      locked: 'Locked',
+      na: 'n/a',
+      noComponents: 'No typed blocks',
+      notInitialized: 'Not started',
+      notPublished: 'Not live',
+      notSet: 'Not set',
+      ready: 'Ready',
+      publicPresence: 'Operator draft',
+      readOnly: 'Read-only',
+      requiredSectionsSuffix: 'required sections',
+      saved: 'Saved',
+      sourceSchemaLabel: 'Source Schema',
+      studioSectionsLabel: 'Studio sections',
+      tenantPrefix: 'Workspace',
+      unsaved: 'Unsaved',
+      validationPrefix: 'Readiness',
+      validationPending: 'Readiness pending',
+      needsFixes: 'Needs fixes',
+    },
+    tabs: {
+      overview: 'Overview',
+      stageSections: 'Stage Sections',
+      personaKit: 'Persona Kit',
+      fanPreview: 'Fan Preview',
+      reviewPublish: 'Review & Publish',
+      advanced: 'Advanced',
+    },
+    state: {
+      loadingTitle: 'Loading public page workspace',
+      loadingDescription:
+        'Loading the current operator draft, template guidance, and readiness signals.',
+      loadWorkspaceError: 'Unable to load the current public page workspace.',
+      unavailableTitle: 'Public page workspace unavailable',
+      previewLoadingTitle: 'Refreshing fan preview',
+      previewLoadingDescription:
+        'Building the current fan-facing output for the saved draft.',
+      previewBuildError: 'Unable to refresh the current fan preview.',
+      previewUnavailableTitle: 'Fan preview unavailable',
+      previewWaitingTitle: 'Fan preview is waiting for a saved draft',
+      previewWaitingDescription:
+        'Save or start a draft to generate the current fan-facing output.',
+      initializeTitle: 'Choose a starting layout',
+      initializeDescription:
+        'No operator draft exists yet. Start from a vetted layout to open the workbench.',
+    },
+    header: {
+      badge: 'Public Page Studio',
+      title: 'Public Page Studio',
+      description:
+        'Shape the fan-facing page from a compact operator workbench. Everyday editing stays here; specialist tools stay inside Advanced.',
+      draftSourceLabel: 'Draft mode',
+      draftSourceHint: 'You are editing the current operator draft for this talent.',
+      legacyCompatibilityLabel: 'Advanced tools',
+      legacyCompatibilityHint:
+        'Specialist tools stay tucked into Advanced when you need them.',
+    },
+    emptyWorkspace: {
+      startPrefix: 'Start',
+      defaultOrderPrefix: 'Default order',
+    },
+    overview: {
+      lastSavedLabel: 'Last saved',
+      lastSavedHint: 'Use this to confirm the latest saved operator work before review or release.',
+      livePathLabel: 'Public path',
+      livePathHint: 'The fan-facing route that goes live after publish.',
+      templateLabel: 'Layout',
+      templateHint: 'Sets the default section order and editing guidance.',
+      draftVersionLabel: 'Draft version',
+      draftVersionHint: 'Latest saved working draft.',
+      liveVersionLabel: 'Live page',
+      liveVersionHint: 'Current fan-facing published version.',
+    },
+    stageSections: {
+      closePanel: 'Close panel',
+      componentModeLabel: 'Editing mode',
+      configureAction: 'Configure',
+      configureTitle: 'Section settings',
+      dayPlaceholder: 'Day',
+      description:
+        'Scan the ordered section list first, then open one editor, settings panel, or inspector at a time.',
+      editAction: 'Edit',
+      entryLabelPrefix: 'Entry',
+      editorTitle: 'Section editor',
+      inspectAction: 'Inspect',
+      inspectTitle: 'Section details',
+      issueCountPrefix: 'Issues',
+      issueHintLocked: 'This section needs Advanced or a source update before it can change here.',
+      issueHintNeedsAttention: 'This section needs follow-up before release is ready.',
+      issueHintReady: 'This section is ready for the next workflow step.',
+      issuePanelTitle: 'Readiness details',
+      issueSeverityPrefix: 'Severity',
+      issueSummaryPrefix: 'Summary',
+      moveDown: 'Move down',
+      moveUp: 'Move up',
+      noChannelsYet: 'No official channels yet.',
+      noEventsYet: 'No schedule entries yet.',
+      noGoodsLinksYet: 'No goods or support links yet.',
+      noImagesYet: 'No media items yet.',
+      noTypedComponentYet: 'No typed content yet.',
+      panelSummaryTitle: 'Current panel',
+      phasePlaceholder: 'Choose a phase',
+      phasePrefix: 'Phase',
+      platformPlaceholder: 'Platform name',
+      presentInDraft: 'In draft',
+      missingFromDraft: 'Not added',
+      summaryPrefix: 'Current summary',
+      addSection: 'Add section',
+      addChannel: 'Add channel',
+      addEvent: 'Add schedule entry',
+      addGoodsLink: 'Add link',
+      addImage: 'Add image',
+      sourceOwnedDescription:
+        'This section is locked to source or compatibility content. Use Inspect for context and Advanced for raw edits.',
+      hiddenInSource: 'Hidden in saved source',
+      linkMode: 'Link button',
+      liveStatusMode: 'Live status',
+      galleryMode: 'Gallery',
+      videoMode: 'Video',
+      removeSection: 'Remove from draft',
+      resetField: 'Reset to inherited',
+      scheduleSummaryPrefix: 'Entries',
+      sectionStatePrefix: 'State',
+      sourceSummaryPrefix: 'Editing rule',
+      sourceDetailsPrefix: 'Source details',
+      sourceOwned: 'Locked by source',
+      fanActionsLabel: 'Fan actions',
+      fanActionsHint:
+        'Each action keeps a typed slot, fan-safe label, and validated destination URL.',
+      noActionsYet: 'No actions yet.',
+      addAction: 'Add action',
+      agencyNotesLabel: 'Agency notes',
+      agencyNotesHint:
+        'Keep notes structured so preview, publish, and audit all stay predictable.',
+      noNotesYet: 'No notes yet.',
+      addNote: 'Add note',
+      slotPlaceholder: 'Slot',
+      actionLabelPlaceholder: 'Label',
+      urlPlaceholder: 'https://...',
+      timePlaceholder: 'Time',
+      title: 'Stage Sections',
+      titlePlaceholder: 'Title',
+      noteKindPlaceholder: 'announcement',
+      noteTitlePlaceholder: 'Title',
+      noteBodyPlaceholder: 'Note body',
+      revealTimeExample: '2026-05-15T10:00:00.000Z',
+      saveTitle: 'Save section changes',
+      saveDescription:
+        'Save the current section work before moving into preview or release decisions.',
+      saveButton: 'Save sections',
+      timezoneExample: 'Asia/Tokyo',
+      recentCountExample: '3',
+    },
+    personaKit: {
+      title: 'Persona Kit',
+      description:
+        'Tune the bounded presentation details that shape the public page voice and tone.',
+      accentTone: 'Accent tone',
+      campaignLabel: 'Campaign label',
+      tagline: 'Tagline',
+      saveButton: 'Save persona kit',
+    },
+    fanPreview: {
+      badge: 'Fan preview',
+      desktopMode: 'Desktop',
+      frameHint: 'This frame mirrors the public page fans receive after publish.',
+      frameLabel: 'Preview frame',
+      lockedOverlay: 'Source-locked content stays fixed in preview.',
+      mobileMode: 'Mobile',
+      previewSectionsTitle: 'Preview sections',
+      previewInspectorTitle: 'Preview inspector',
+      noSections: 'No preview sections are available yet.',
+      savedState: 'Preview is showing the saved draft.',
+      selectedSectionEmpty: 'Select a preview section to inspect its current fan-facing state.',
+      selectedSectionLabel: 'Selected section',
+      sharedPathBadge: 'Same public output path',
+      phasePrefix: 'Phase',
+      description:
+        'Preview the same fan-facing output path in desktop or mobile mode. Unsaved work stays outside the frame until you save.',
+      simulatePhase: 'Phase',
+      unsavedWarning:
+        'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
+      fallbacksLabel: 'Preview safeguards',
+      fallbacksHint:
+        'Shows where safety rules simplified or removed unsafe public output.',
+      resolvedPhaseLabel: 'Resolved phase',
+      resolvedPhaseHint:
+        'This is the phase the server would currently show to fans.',
+      validationMarkersPrefix: 'Readiness markers',
+    },
+    reviewPublish: {
+      changeSummaryTitle: 'Change summary',
+      historyHint: 'Audit stays available without crowding the release decision surface.',
+      noIssues: 'No blocking readiness items are open.',
+      readinessDescription:
+        'Resolve critical and blocking issues first. Warnings stay visible for reviewer judgment.',
+      readinessTitle: 'Readiness queue',
+      reviewHistoryToggle: 'Show review history',
+      schedulingHint: 'Scheduling unlocks only after approval and keeps the chosen future time.',
+      unsavedChangesHint: 'Save the current draft before running release actions.',
+      validationBadge: 'Readiness',
+      draftVersionPrefix: 'Draft',
+      liveVersionPrefix: 'Live',
+      fatalLabel: 'Critical',
+      fatalHint: 'Critical issues stop release until they are cleared.',
+      blockerLabel: 'Blocking',
+      blockerHint: 'Blocking issues must be resolved before release actions unlock.',
+      warningLabel: 'Warnings',
+      warningHint: 'Warnings stay visible for reviewer judgment before release.',
+      infoLabel: 'Info',
+      infoHint: 'Safe informational signals remain part of the review trail.',
+      actionsTitle: 'Release actions',
+      actionsDescription:
+        'Work through readiness first, then submit, approve, schedule, publish, or roll back according to the current state.',
+      submit: 'Submit for review',
+      submitPending: 'Submitting...',
+      approve: 'Approve',
+      approvePending: 'Approving...',
+      publishNow: 'Publish now',
+      publishPending: 'Publishing...',
+      requestChanges: 'Request changes',
+      requestChangesPending: 'Saving...',
+      schedulePublish: 'Schedule publish',
+      schedulePending: 'Scheduling...',
+      cancelSchedule: 'Cancel schedule',
+      cancelSchedulePending: 'Cancelling...',
+      chooseFutureTimeError: 'Choose a future publish time before scheduling.',
+      reviewNote: 'Review note',
+      scheduleField: 'Publish time',
+      rollbackTitle: 'Rollback',
+      rollbackDescription:
+        'Create a rollback draft from the live page when you need to recover safely.',
+      rollback: 'Create rollback draft',
+      rollbackPending: 'Creating...',
+      workflowEventsTitle: 'Review history',
+      workflowEventsEmpty: 'No review history yet.',
+      versionPrefix: 'Version',
+      proofPrefix: 'Release proof',
+      transitionFallback: 'none',
+    },
+    advanced: {
+      title: 'Advanced',
+      description:
+        'Use this area for exact JSON edits, raw validation details, and migration tools that do not belong in everyday operator work.',
+      draftUpdatedPrefix: 'Last saved',
+      migrationToolsDescription:
+        'Older homepage tools stay here so everyday operators do not have to navigate them as a primary destination.',
+      migrationToolsTitle: 'Migration tools',
+      openMigrationTools: 'Open migration tools',
+      closeMigrationTools: 'Hide migration tools',
+      validationDetailsTitle: 'Raw validation details',
+      validationDetailsDescription:
+        'Raw issue payloads stay here for audits and technical follow-up, not in everyday operator panels.',
+      saveButton: 'Save source',
+      invalidJson: 'Source JSON must be valid before saving.',
+    },
+    notices: {
+      bootstrapSuccess: 'Starter draft created.',
+      bootstrapError: 'Unable to create the starter draft.',
+      saveDraftSuccess: 'Draft saved.',
+      saveDraftError: 'Unable to save the draft.',
+      saveSourceSuccess: 'Source draft saved.',
+      saveSourceError: 'Unable to save the source draft.',
+      workflowActionError: 'Unable to complete the release action.',
+      submitSuccess: 'Draft submitted for review.',
+      approveSuccess: 'Draft approved.',
+      publishSuccess: 'Public page published.',
+      requestChangesSuccess: 'Changes requested for the current draft.',
+      scheduleSuccess: 'Publish scheduled.',
+      cancelScheduleSuccess: 'Scheduled publish cancelled.',
+      rollbackSuccess: 'Rollback draft created from the live page.',
+    },
+  },
+  zh: {
+    common: {
+      advancedOnly: '仅高级区可用',
+      available: '可用',
+      blocked: '已阻止',
+      editingLocked: '此处不可编辑',
+      hidden: '已隐藏',
+      locked: '已锁定',
+      na: '不适用',
+      noComponents: '暂无类型化区块',
+      notInitialized: '尚未开始',
+      notPublished: '尚未上线',
+      notSet: '未设置',
+      ready: '可编辑',
+      publicPresence: '运营草稿',
+      readOnly: '只读',
+      requiredSectionsSuffix: '个必填分区',
+      saved: '已保存',
+      sourceSchemaLabel: '源稿结构',
+      studioSectionsLabel: '工作台分区',
+      tenantPrefix: '工作区',
+      unsaved: '未保存',
+      validationPrefix: '就绪度',
+      validationPending: '等待就绪度校验',
+      needsFixes: '需要修复',
+    },
+    tabs: {
+      overview: '概览',
+      stageSections: '舞台分区',
+      personaKit: '人设套件',
+      fanPreview: '粉丝预览',
+      reviewPublish: '审核与发布',
+      advanced: '高级',
+    },
+    state: {
+      loadingTitle: '正在加载公开页面工作区',
+      loadingDescription: '正在加载当前运营草稿、模板指引与就绪度信号。',
+      loadWorkspaceError: '无法加载当前公开页面工作区。',
+      unavailableTitle: '公开页面工作区暂不可用',
+      previewLoadingTitle: '正在刷新粉丝预览',
+      previewLoadingDescription: '正在为已保存草稿构建当前粉丝可见输出。',
+      previewBuildError: '无法刷新当前粉丝预览。',
+      previewUnavailableTitle: '粉丝预览暂不可用',
+      previewWaitingTitle: '粉丝预览正在等待已保存草稿',
+      previewWaitingDescription: '请先保存或开始草稿，再生成当前粉丝可见输出。',
+      initializeTitle: '选择起始布局',
+      initializeDescription: '当前还没有运营草稿。请从一个经过约束的布局开始，打开工作台。',
+    },
+    header: {
+      badge: '公开页面工作台',
+      title: '公开页面工作台',
+      description:
+        '在紧凑的运营工作台中整理粉丝可见页面。日常编辑留在这里，低频的高级工具收纳到高级区。',
+      draftSourceLabel: '草稿模式',
+      draftSourceHint: '你正在编辑这个艺人的当前运营草稿。',
+      legacyCompatibilityLabel: '高级工具',
+      legacyCompatibilityHint: '低频辅助入口仅在需要时收纳到高级区。',
+    },
+    emptyWorkspace: {
+      startPrefix: '开始使用',
+      defaultOrderPrefix: '默认顺序',
+    },
+    overview: {
+      lastSavedLabel: '最近保存',
+      lastSavedHint: '用于确认进入审核或发布前最近一次保存的运营修改。',
+      livePathLabel: '公开路径',
+      livePathHint: '发布后粉丝访问的页面路径。',
+      templateLabel: '布局',
+      templateHint: '决定默认分区顺序与编辑指引。',
+      draftVersionLabel: '草稿版本',
+      draftVersionHint: '最近一次保存的工作草稿。',
+      liveVersionLabel: '线上页面',
+      liveVersionHint: '当前面向粉丝的已发布版本。',
+    },
+    stageSections: {
+      closePanel: '关闭面板',
+      componentModeLabel: '编辑模式',
+      configureAction: '配置',
+      configureTitle: '分区设置',
+      dayPlaceholder: '日期',
+      description: '先扫读有序分区列表，再一次只打开一个编辑、设置或检查面板。',
+      editAction: '编辑',
+      entryLabelPrefix: '条目',
+      editorTitle: '分区编辑器',
+      inspectAction: '检查',
+      inspectTitle: '分区详情',
+      issueCountPrefix: '问题',
+      issueHintLocked: '这个分区需要到高级区或源内容侧处理，不能直接在这里修改。',
+      issueHintNeedsAttention: '这个分区在发布前还需要继续处理。',
+      issueHintReady: '这个分区已准备好进入下一步流程。',
+      issuePanelTitle: '就绪度详情',
+      issueSeverityPrefix: '严重级别',
+      issueSummaryPrefix: '处理建议',
+      moveDown: '下移',
+      moveUp: '上移',
+      noChannelsYet: '还没有官方渠道。',
+      noEventsYet: '还没有日程条目。',
+      noGoodsLinksYet: '还没有商品或支持链接。',
+      noImagesYet: '还没有媒体条目。',
+      noTypedComponentYet: '还没有类型化内容。',
+      panelSummaryTitle: '当前面板',
+      phasePlaceholder: '选择阶段',
+      phasePrefix: '阶段',
+      platformPlaceholder: '平台名称',
+      presentInDraft: '草稿中',
+      missingFromDraft: '尚未添加',
+      summaryPrefix: '当前摘要',
+      addSection: '添加分区',
+      addChannel: '添加渠道',
+      addEvent: '添加日程条目',
+      addGoodsLink: '添加链接',
+      addImage: '添加图片',
+      sourceOwnedDescription:
+        '这个分区受源内容或兼容内容锁定。可先用 Inspect 查看背景，再到高级区做原始编辑。',
+      hiddenInSource: '在已保存源中隐藏',
+      linkMode: '链接按钮',
+      liveStatusMode: '直播状态',
+      galleryMode: '图集',
+      videoMode: '视频',
+      removeSection: '从草稿移除',
+      resetField: '重置为继承值',
+      scheduleSummaryPrefix: '条目',
+      sectionStatePrefix: '状态',
+      sourceSummaryPrefix: '编辑规则',
+      sourceDetailsPrefix: '来源说明',
+      sourceOwned: '由源锁定',
+      fanActionsLabel: '粉丝动作',
+      fanActionsHint: '每个动作都保留类型化槽位、面向粉丝的标签，以及经过校验的目标 URL。',
+      noActionsYet: '还没有动作。',
+      addAction: '添加动作',
+      agencyNotesLabel: '机构备注',
+      agencyNotesHint: '请保持备注结构化，确保预览、发布和审计保持稳定。',
+      noNotesYet: '还没有备注。',
+      addNote: '添加备注',
+      slotPlaceholder: '槽位',
+      actionLabelPlaceholder: '标签',
+      urlPlaceholder: 'https://...',
+      timePlaceholder: '时间',
+      title: '舞台分区',
+      titlePlaceholder: '标题',
+      noteKindPlaceholder: 'announcement',
+      noteTitlePlaceholder: '标题',
+      noteBodyPlaceholder: '备注内容',
+      revealTimeExample: '2026-05-15T10:00:00.000Z',
+      saveTitle: '保存分区修改',
+      saveDescription: '在进入预览或发布决策前，先保存当前分区修改。',
+      saveButton: '保存分区',
+      timezoneExample: 'Asia/Tokyo',
+      recentCountExample: '3',
+    },
+    personaKit: {
+      title: '人设套件',
+      description: '调整有限边界内的展示细节，塑造公开页面的语气与识别感。',
+      accentTone: '强调色调',
+      campaignLabel: '活动标签',
+      tagline: '标语',
+      saveButton: '保存人设套件',
+    },
+    fanPreview: {
+      badge: '粉丝预览',
+      desktopMode: '桌面',
+      frameHint: '这个预览框会对照发布后粉丝看到的页面效果。',
+      frameLabel: '预览框',
+      lockedOverlay: '由源锁定的内容会在预览中保持固定。',
+      mobileMode: '移动端',
+      noSections: '当前还没有可检查的预览分区。',
+      previewSectionsTitle: '预览分区',
+      previewInspectorTitle: '预览检查',
+      savedState: '当前预览显示的是已保存草稿。',
+      selectedSectionEmpty: '请选择一个预览分区，查看它当前面向粉丝的状态。',
+      selectedSectionLabel: '已选分区',
+      sharedPathBadge: '与公开输出路径一致',
+      phasePrefix: '阶段',
+      description:
+        '在桌面或移动视口中预览同一条粉丝可见输出路径。未保存修改不会进入预览框。',
+      simulatePhase: '阶段',
+      unsavedWarning: '当前预览展示的是最近一次保存的草稿。请先保存修改再刷新粉丝视图。',
+      fallbacksLabel: '预览保护',
+      fallbacksHint: '展示安全规则在哪些位置简化或移除了不安全公开输出。',
+      resolvedPhaseLabel: '解析阶段',
+      resolvedPhaseHint: '这就是服务端当前会向粉丝展示的阶段。',
+      validationMarkersPrefix: '就绪标记',
+    },
+    reviewPublish: {
+      changeSummaryTitle: '变更摘要',
+      historyHint: '审计轨迹仍然保留，但不会挤占发布决策空间。',
+      noIssues: '当前没有阻塞发布的就绪问题。',
+      readinessDescription: '先解决严重和阻塞问题。警告会继续保留，供审核判断。',
+      readinessTitle: '就绪队列',
+      reviewHistoryToggle: '显示审核历史',
+      schedulingHint: '只有批准后才会解锁排程，并保留你选择的未来时间。',
+      unsavedChangesHint: '执行发布动作前，请先保存当前草稿。',
+      validationBadge: '就绪度',
+      draftVersionPrefix: '草稿',
+      liveVersionPrefix: '线上',
+      fatalLabel: '严重',
+      fatalHint: '严重问题未清除前不能发布。',
+      blockerLabel: '阻塞',
+      blockerHint: '阻塞问题清零前，不会解锁发布动作。',
+      warningLabel: '警告',
+      warningHint: '警告会继续显示，供审核人员判断。',
+      infoLabel: '信息',
+      infoHint: '安全的信息提示仍会保留在审核轨迹中。',
+      actionsTitle: '发布动作',
+      actionsDescription:
+        '先处理就绪度，再根据当前状态提交审核、批准、排程、发布或创建回滚草稿。',
+      submit: '提交审核',
+      submitPending: '提交中...',
+      approve: '批准',
+      approvePending: '批准中...',
+      publishNow: '立即发布',
+      publishPending: '发布中...',
+      requestChanges: '要求修改',
+      requestChangesPending: '保存中...',
+      schedulePublish: '定时发布',
+      schedulePending: '排程中...',
+      cancelSchedule: '取消排程',
+      cancelSchedulePending: '取消中...',
+      chooseFutureTimeError: '请先选择未来时间，再执行排程。',
+      reviewNote: '审核备注',
+      scheduleField: '发布时间',
+      rollbackTitle: '回滚',
+      rollbackDescription: '需要安全恢复时，可根据线上页面创建回滚草稿。',
+      rollback: '创建回滚草稿',
+      rollbackPending: '创建中...',
+      workflowEventsTitle: '审核历史',
+      workflowEventsEmpty: '还没有审核历史。',
+      versionPrefix: '版本',
+      proofPrefix: '发布凭证',
+      transitionFallback: '无',
+    },
+    advanced: {
+      title: '高级',
+      description: '在这里处理精确 JSON 编辑、原始校验细节，以及不适合日常运营操作的迁移工具。',
+      draftUpdatedPrefix: '最近保存',
+      migrationToolsDescription: '旧主页工具只保留在这里，避免它们继续占据日常运营的一线导航。',
+      migrationToolsTitle: '迁移工具',
+      openMigrationTools: '打开迁移工具',
+      closeMigrationTools: '隐藏迁移工具',
+      validationDetailsTitle: '原始校验详情',
+      validationDetailsDescription:
+        '原始问题载荷只保留在这里，用于审计和技术跟进，不直接平铺在日常运营界面。',
+      saveButton: '保存源稿',
+      invalidJson: '保存前必须保证源 JSON 合法。',
+    },
+    notices: {
+      bootstrapSuccess: '已创建起始草稿。',
+      bootstrapError: '无法创建起始草稿。',
+      saveDraftSuccess: '草稿已保存。',
+      saveDraftError: '无法保存草稿。',
+      saveSourceSuccess: '源稿已保存。',
+      saveSourceError: '无法保存源稿。',
+      workflowActionError: '无法完成发布动作。',
+      submitSuccess: '草稿已提交审核。',
+      approveSuccess: '草稿已批准。',
+      publishSuccess: '公开页面已发布。',
+      requestChangesSuccess: '已对当前草稿提出修改要求。',
+      scheduleSuccess: '已完成定时发布排程。',
+      cancelScheduleSuccess: '已取消定时发布。',
+      rollbackSuccess: '已根据线上页面创建回滚草稿。',
+    },
+  },
+  ja: {
+    common: {
+      advancedOnly: '高度設定のみ',
+      available: '利用可能',
+      blocked: '停止中',
+      editingLocked: 'ここでは編集できません',
+      hidden: '非表示',
+      locked: 'ロック済み',
+      na: '該当なし',
+      noComponents: '型付きブロックなし',
+      notInitialized: '未開始',
+      notPublished: '未公開',
+      notSet: '未設定',
+      ready: '編集可能',
+      publicPresence: '運用ドラフト',
+      readOnly: '閲覧のみ',
+      requiredSectionsSuffix: '個の必須セクション',
+      saved: '保存済み',
+      sourceSchemaLabel: 'ソース構造',
+      studioSectionsLabel: 'ワークベンチ区分',
+      tenantPrefix: 'ワークスペース',
+      unsaved: '未保存',
+      validationPrefix: '公開準備',
+      validationPending: '公開準備の確認待ち',
+      needsFixes: '修正が必要',
+    },
+    tabs: {
+      overview: '概要',
+      stageSections: 'ステージセクション',
+      personaKit: 'ペルソナキット',
+      fanPreview: 'ファンプレビュー',
+      reviewPublish: 'レビューと公開',
+      advanced: '高度設定',
+    },
+    state: {
+      loadingTitle: '公開ページのワークスペースを読み込み中',
+      loadingDescription: '現在の運用ドラフト、テンプレート指針、公開準備シグナルを読み込んでいます。',
+      loadWorkspaceError: '現在の公開ページワークスペースを読み込めませんでした。',
+      unavailableTitle: '公開ページワークスペースを利用できません',
+      previewLoadingTitle: 'ファンプレビューを更新中',
+      previewLoadingDescription: '保存済みドラフトから現在のファン向け出力を構築しています。',
+      previewBuildError: '現在のファンプレビューを更新できませんでした。',
+      previewUnavailableTitle: 'ファンプレビューを利用できません',
+      previewWaitingTitle: 'ファンプレビューは保存済みドラフトを待機しています',
+      previewWaitingDescription: 'ドラフトを保存または開始して、現在のファン向け出力を生成してください。',
+      initializeTitle: '開始レイアウトを選択',
+      initializeDescription: 'まだ運用ドラフトがありません。制約付きのレイアウトから始めて、作業台を開いてください。',
+    },
+    header: {
+      badge: '公開ページ作業台',
+      title: '公開ページ作業台',
+      description:
+        'コンパクトな運用ワークベンチでファン向けページを整えます。日常編集はここ、専門的な補助ツールは高度設定へ収めます。',
+      draftSourceLabel: 'ドラフトモード',
+      draftSourceHint: 'このタレントの現在の運用ドラフトを編集中です。',
+      legacyCompatibilityLabel: '補助ツール',
+      legacyCompatibilityHint: '低頻度の補助機能は必要なときだけ高度設定で開きます。',
+    },
+    emptyWorkspace: {
+      startPrefix: '開始',
+      defaultOrderPrefix: '既定順序',
+    },
+    overview: {
+      lastSavedLabel: '最終保存',
+      lastSavedHint: 'レビューや公開前に、最後に保存した運用内容を確認できます。',
+      livePathLabel: '公開パス',
+      livePathHint: '公開後にファンがアクセスするページ経路です。',
+      templateLabel: 'レイアウト',
+      templateHint: '既定のセクション順と編集ガイドを決めます。',
+      draftVersionLabel: 'ドラフト版',
+      draftVersionHint: '最後に保存した作業ドラフトです。',
+      liveVersionLabel: '公開ページ',
+      liveVersionHint: '現在ファンに表示されている公開版です。',
+    },
+    stageSections: {
+      closePanel: 'パネルを閉じる',
+      componentModeLabel: '編集モード',
+      configureAction: '設定',
+      configureTitle: 'セクション設定',
+      dayPlaceholder: '日付',
+      description: 'まず順序付きセクション一覧を見て、編集・設定・確認パネルは一度に一つだけ開きます。',
+      editAction: '編集',
+      entryLabelPrefix: '項目',
+      editorTitle: 'セクション編集',
+      inspectAction: '確認',
+      inspectTitle: 'セクション詳細',
+      issueCountPrefix: '課題',
+      issueHintLocked: 'このセクションは高度設定または元データ側での対応が必要です。',
+      issueHintNeedsAttention: '公開前にこのセクションの追加対応が必要です。',
+      issueHintReady: 'このセクションは次のワークフローへ進める状態です。',
+      issuePanelTitle: '公開準備の詳細',
+      issueSeverityPrefix: '重要度',
+      issueSummaryPrefix: '対応案内',
+      moveDown: '下へ',
+      moveUp: '上へ',
+      noChannelsYet: 'まだ公式チャンネルはありません。',
+      noEventsYet: 'まだ予定項目はありません。',
+      noGoodsLinksYet: 'まだグッズや支援リンクはありません。',
+      noImagesYet: 'まだメディア項目はありません。',
+      noTypedComponentYet: 'まだ型付きコンテンツはありません。',
+      panelSummaryTitle: '現在のパネル',
+      phasePlaceholder: 'フェーズを選択',
+      phasePrefix: 'フェーズ',
+      platformPlaceholder: 'プラットフォーム名',
+      presentInDraft: 'ドラフトにあり',
+      missingFromDraft: '未追加',
+      summaryPrefix: '現在の概要',
+      addSection: 'セクションを追加',
+      addChannel: 'チャンネルを追加',
+      addEvent: '予定項目を追加',
+      addGoodsLink: 'リンクを追加',
+      addImage: '画像を追加',
+      sourceOwnedDescription:
+        'このセクションはソースまたは互換コンテンツによりロックされています。まず Inspect で背景を確認し、必要なら高度設定で生データを編集してください。',
+      hiddenInSource: '保存済みソースで非表示',
+      linkMode: 'リンクボタン',
+      liveStatusMode: '配信ステータス',
+      galleryMode: 'ギャラリー',
+      videoMode: '動画',
+      removeSection: 'ドラフトから外す',
+      resetField: '継承値へ戻す',
+      scheduleSummaryPrefix: '項目',
+      sectionStatePrefix: '状態',
+      sourceSummaryPrefix: '編集ルール',
+      sourceDetailsPrefix: 'ソース情報',
+      sourceOwned: 'ソースでロック',
+      fanActionsLabel: 'ファンアクション',
+      fanActionsHint:
+        '各アクションは型付きスロット、ファン向けラベル、検証済み URL を維持します。',
+      noActionsYet: 'まだアクションはありません。',
+      addAction: 'アクションを追加',
+      agencyNotesLabel: '運営メモ',
+      agencyNotesHint:
+        'プレビュー、公開、監査を安定させるため、メモは構造化されたまま保ってください。',
+      noNotesYet: 'まだメモはありません。',
+      addNote: 'メモを追加',
+      slotPlaceholder: 'スロット',
+      actionLabelPlaceholder: 'ラベル',
+      urlPlaceholder: 'https://...',
+      timePlaceholder: '時間',
+      title: 'ステージセクション',
+      titlePlaceholder: 'タイトル',
+      noteKindPlaceholder: 'announcement',
+      noteTitlePlaceholder: 'タイトル',
+      noteBodyPlaceholder: 'メモ本文',
+      revealTimeExample: '2026-05-15T10:00:00.000Z',
+      saveTitle: 'セクション変更を保存',
+      saveDescription: 'プレビューや公開判断へ進む前に、現在のセクション作業を保存します。',
+      saveButton: 'セクションを保存',
+      timezoneExample: 'Asia/Tokyo',
+      recentCountExample: '3',
+    },
+    personaKit: {
+      title: 'ペルソナキット',
+      description: '公開ページの声色と見え方を整える、境界付きの表現設定です。',
+      accentTone: 'アクセントトーン',
+      campaignLabel: 'キャンペーンラベル',
+      tagline: 'タグライン',
+      saveButton: 'ペルソナキットを保存',
+    },
+    fanPreview: {
+      badge: 'ファンプレビュー',
+      desktopMode: 'デスクトップ',
+      frameHint: 'このフレームは公開後にファンが見るページの見え方をそのまま確認できます。',
+      frameLabel: 'プレビューフレーム',
+      lockedOverlay: 'ソース固定の内容はプレビューでも固定のまま表示されます。',
+      mobileMode: 'モバイル',
+      noSections: '確認できるプレビューセクションがまだありません。',
+      previewSectionsTitle: 'プレビューセクション',
+      previewInspectorTitle: 'プレビュー確認',
+      savedState: '現在のプレビューには保存済みドラフトが表示されています。',
+      selectedSectionEmpty: 'プレビュー内のセクションを選ぶと、現在のファン向け状態を確認できます。',
+      selectedSectionLabel: '選択中セクション',
+      sharedPathBadge: '公開出力と同じ経路',
+      phasePrefix: 'フェーズ',
+      description:
+        'デスクトップまたはモバイル表示で、同じファン向け出力経路を確認できます。未保存の変更はプレビューフレームに入りません。',
+      simulatePhase: 'フェーズ',
+      unsavedWarning: 'プレビューには最後に保存したドラフトが表示されています。変更を保存してからファン向け表示を更新してください。',
+      fallbacksLabel: 'プレビュー保護',
+      fallbacksHint: '安全ルールにより簡略化または削除された公開出力を示します。',
+      resolvedPhaseLabel: '解決済みフェーズ',
+      resolvedPhaseHint: '現在サーバーがファンに見せるフェーズです。',
+      validationMarkersPrefix: '公開準備マーカー',
+    },
+    reviewPublish: {
+      changeSummaryTitle: '変更サマリー',
+      historyHint: '監査履歴は残しつつ、公開判断の主画面を圧迫しません。',
+      noIssues: '現在、公開を止める準備項目はありません。',
+      readinessDescription: 'まず重大・阻害項目を解消します。警告はレビュー判断のため残ります。',
+      readinessTitle: '公開準備キュー',
+      reviewHistoryToggle: 'レビュー履歴を表示',
+      schedulingHint: '公開予約は承認後にだけ解放され、選択した未来時刻を保持します。',
+      unsavedChangesHint: '公開アクションを実行する前に、現在のドラフトを保存してください。',
+      validationBadge: '公開準備',
+      draftVersionPrefix: 'ドラフト',
+      liveVersionPrefix: '公開中',
+      fatalLabel: '重大',
+      fatalHint: '重大な問題が残っている間は公開できません。',
+      blockerLabel: 'ブロック',
+      blockerHint: 'ブロック項目が解消されるまで公開操作は開きません。',
+      warningLabel: '警告',
+      warningHint: '警告はレビュー判断のために残り続けます。',
+      infoLabel: '情報',
+      infoHint: '安全な情報シグナルもレビュー履歴に残ります。',
+      actionsTitle: '公開アクション',
+      actionsDescription:
+        'まず公開準備を整え、その後に現在の状態に応じて提出、承認、予約、公開、ロールバックを進めます。',
+      submit: 'レビューへ提出',
+      submitPending: '提出中...',
+      approve: '承認',
+      approvePending: '承認中...',
+      publishNow: '今すぐ公開',
+      publishPending: '公開中...',
+      requestChanges: '修正依頼',
+      requestChangesPending: '保存中...',
+      schedulePublish: '公開を予約',
+      schedulePending: '予約中...',
+      cancelSchedule: '予約を取り消す',
+      cancelSchedulePending: '取消中...',
+      chooseFutureTimeError: '予約する前に未来の公開時刻を選択してください。',
+      reviewNote: 'レビューメモ',
+      scheduleField: '公開時刻',
+      rollbackTitle: 'ロールバック',
+      rollbackDescription: '安全に戻したい場合は、公開中ページからロールバック用ドラフトを作成できます。',
+      rollback: 'ロールバックドラフトを作成',
+      rollbackPending: '作成中...',
+      workflowEventsTitle: 'レビュー履歴',
+      workflowEventsEmpty: 'まだレビュー履歴はありません。',
+      versionPrefix: '版',
+      proofPrefix: '公開証跡',
+      transitionFallback: 'なし',
+    },
+    advanced: {
+      title: '高度設定',
+      description: 'ここでは厳密な JSON 編集、生の検証詳細、日常運用に載せない移行ツールを扱います。',
+      draftUpdatedPrefix: '最終保存',
+      migrationToolsDescription: '旧ホームページ用ツールはここへ移し、日常運用の一級導線から外します。',
+      migrationToolsTitle: '移行ツール',
+      openMigrationTools: '移行ツールを開く',
+      closeMigrationTools: '移行ツールを隠す',
+      validationDetailsTitle: '生の検証詳細',
+      validationDetailsDescription:
+        '生の問題ペイロードは監査や技術フォロー用にここへ集約し、日常運用画面には広げません。',
+      saveButton: 'ソースを保存',
+      invalidJson: '保存前にソース JSON を有効にしてください。',
+    },
+    notices: {
+      bootstrapSuccess: '開始ドラフトを作成しました。',
+      bootstrapError: '開始ドラフトを作成できませんでした。',
+      saveDraftSuccess: 'ドラフトを保存しました。',
+      saveDraftError: 'ドラフトを保存できませんでした。',
+      saveSourceSuccess: 'ソースドラフトを保存しました。',
+      saveSourceError: 'ソースドラフトを保存できませんでした。',
+      workflowActionError: '公開アクションを完了できませんでした。',
+      submitSuccess: 'ドラフトをレビューへ提出しました。',
+      approveSuccess: 'ドラフトを承認しました。',
+      publishSuccess: '公開ページを公開しました。',
+      requestChangesSuccess: '現在のドラフトへ修正依頼を出しました。',
+      scheduleSuccess: '公開予約を保存しました。',
+      cancelScheduleSuccess: '公開予約を取り消しました。',
+      rollbackSuccess: '公開中ページからロールバックドラフトを作成しました。',
+    },
+  },
+} as const;
+
+export type PublicPresenceStudioCopy = (typeof COPY)['en'];
+
+type CopyLocale = SupportedUiLocale | RuntimeLocale | string;
+
+const TAB_LABELS: Record<RuntimeLocale, Record<PublicPresenceStudioTabId, string>> = {
+  en: COPY.en.tabs,
+  zh: COPY.zh.tabs,
+  ja: COPY.ja.tabs,
+};
+
+const PREVIEW_PHASE_LABELS: Record<
+  RuntimeLocale,
+  Record<PublicPresencePhaseVisibility | 'current', string>
+> = {
+  en: {
+    current: 'Current',
+    teaser: 'Teaser',
+    countdown: 'Countdown',
+    preRevealHold: 'Pre-reveal hold',
+    revealed: 'Revealed',
+    liveLaunch: 'Live launch',
+    postLaunch: 'Post launch',
+    expiredFallback: 'Expired fallback',
+    always: 'Always',
+  },
+  zh: {
+    current: '当前',
+    teaser: '预热',
+    countdown: '倒计时',
+    preRevealHold: '揭晓前保持',
+    revealed: '已揭晓',
+    liveLaunch: '正式上线',
+    postLaunch: '上线后',
+    expiredFallback: '过期回退',
+    always: '始终',
+  },
+  ja: {
+    current: '現在',
+    teaser: 'ティーザー',
+    countdown: 'カウントダウン',
+    preRevealHold: '公開前ホールド',
+    revealed: '公開済み',
+    liveLaunch: '本番公開',
+    postLaunch: '公開後',
+    expiredFallback: '期限切れフォールバック',
+    always: '常時',
+  },
+};
+
+const TEMPLATE_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    activeTalentHub: 'Active Talent Hub',
+    debutReveal: 'Debut / Reveal',
+  },
+  zh: {
+    activeTalentHub: '常驻艺人中枢',
+    debutReveal: '出道 / 揭晓',
+  },
+  ja: {
+    activeTalentHub: 'アクティブタレントハブ',
+    debutReveal: 'デビュー / 公開',
+  },
+};
+
+const TEMPLATE_USE_CASES: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    activeTalentHub: 'Always-on official public presence for an active talent.',
+    debutReveal: 'Reveal-safe campaign layout with pre-reveal controls.',
+  },
+  zh: {
+    activeTalentHub: '面向活跃艺人的常驻官方公开页面。',
+    debutReveal: '带有揭晓前控制的安全出道 / 揭晓布局。',
+  },
+  ja: {
+    activeTalentHub: '稼働中タレント向けの常設公式公開ページです。',
+    debutReveal: '公開前制御を備えた安全なデビュー / 公開レイアウトです。',
+  },
+};
+
+const SECTION_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    firstEncounter: 'First Encounter',
+    currentLaunchAction: 'Current Launch Action',
+    countdownReveal: 'Countdown / Reveal',
+    officialChannels: 'Official Channels',
+    stageSchedule: 'Stage Schedule',
+    teaserRevealMedia: 'Teaser / Reveal Media',
+    goodsSupport: 'Goods & Support',
+    fanInteraction: 'Fan Interaction',
+    agencyNotes: 'Agency Notes',
+    fanActions: 'Fan Actions',
+    milestoneUnlocks: 'Milestone Unlocks',
+    officialUpdatesFeed: 'Official Updates Feed',
+  },
+  zh: {
+    firstEncounter: '首屏信息',
+    currentLaunchAction: '当前上线动作',
+    countdownReveal: '倒计时 / 揭晓',
+    officialChannels: '官方渠道',
+    stageSchedule: '活动日程',
+    teaserRevealMedia: '预热 / 揭晓媒体',
+    goodsSupport: '商品与支持',
+    fanInteraction: '粉丝互动',
+    agencyNotes: '机构备注',
+    fanActions: '粉丝动作',
+    milestoneUnlocks: '里程碑解锁',
+    officialUpdatesFeed: '官方更新流',
+  },
+  ja: {
+    firstEncounter: 'ファーストビュー',
+    currentLaunchAction: '現在の導線',
+    countdownReveal: 'カウントダウン / 公開',
+    officialChannels: '公式チャンネル',
+    stageSchedule: 'スケジュール',
+    teaserRevealMedia: 'ティーザー / 公開メディア',
+    goodsSupport: 'グッズとサポート',
+    fanInteraction: 'ファン交流',
+    agencyNotes: '運営メモ',
+    fanActions: 'ファンアクション',
+    milestoneUnlocks: 'マイルストーン解放',
+    officialUpdatesFeed: '公式更新フィード',
+  },
+};
+
+const SECTION_PURPOSES: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    firstEncounter:
+      'Own the first fan impression with the main identity, headline, and primary call to action.',
+    currentLaunchAction: 'Highlight the one action fans should take right now.',
+    countdownReveal: 'Manage reveal timing, naming, and launch readiness cues.',
+    officialChannels: 'Keep official channel destinations clear and validated.',
+    stageSchedule: 'Show a bounded official schedule.',
+    teaserRevealMedia: 'Hold preview-safe media for teaser and reveal moments.',
+    goodsSupport: 'Point fans to official goods and support destinations.',
+    fanInteraction: 'Offer bounded fan interaction such as Marshmallow.',
+    agencyNotes: 'Publish structured notes without exposing raw technical detail.',
+    fanActions: 'Shape typed fan action slots with safe labels and URLs.',
+    milestoneUnlocks: 'Reserved for future unlock work.',
+    officialUpdatesFeed: 'Preserved compatibility feed content.',
+  },
+  zh: {
+    firstEncounter: '承载首屏身份、标题与主动作，决定粉丝的第一印象。',
+    currentLaunchAction: '突出此刻最重要的一条官方动作。',
+    countdownReveal: '管理揭晓时间、命名与上线前信号。',
+    officialChannels: '保持官方渠道清晰且通过校验。',
+    stageSchedule: '展示受边界约束的官方日程。',
+    teaserRevealMedia: '承载适合预热与揭晓阶段的安全媒体。',
+    goodsSupport: '把粉丝引导到官方商品与支持入口。',
+    fanInteraction: '提供受边界约束的粉丝互动入口，例如棉花糖。',
+    agencyNotes: '发布结构化备注，不暴露原始技术细节。',
+    fanActions: '用安全标签与 URL 组织类型化粉丝动作槽位。',
+    milestoneUnlocks: '为未来解锁工作预留。',
+    officialUpdatesFeed: '保留兼容型官方更新内容。',
+  },
+  ja: {
+    firstEncounter: 'ファンの第一印象となる名前、見出し、主導線を扱います。',
+    currentLaunchAction: '今もっとも見せたい公式アクションを強調します。',
+    countdownReveal: '公開時刻、呼称、公開前の準備シグナルを管理します。',
+    officialChannels: '公式チャンネル導線を明確かつ検証済みに保ちます。',
+    stageSchedule: '境界付きの公式スケジュールを表示します。',
+    teaserRevealMedia: 'ティーザーから公開まで安全なメディアを保持します。',
+    goodsSupport: '公式グッズと支援先へファンを案内します。',
+    fanInteraction: 'マシュマロなどの境界付きファン交流を用意します。',
+    agencyNotes: '生の技術情報を見せず、構造化メモを公開します。',
+    fanActions: '安全なラベルと URL で型付きファンアクションを整えます。',
+    milestoneUnlocks: '将来の解放作業のために予約されています。',
+    officialUpdatesFeed: '互換向けの公式更新内容を保持します。',
+  },
+};
+
+const FIELD_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    accentTone: 'Accent tone',
+    actions: 'Actions',
+    alt: 'Alt text',
+    artist: 'Artist',
+    avatarUrl: 'Avatar URL',
+    body: 'Body',
+    campaignLabel: 'Campaign label',
+    caption: 'Caption',
+    channelName: 'Channel name',
+    contentHtml: 'Content HTML',
+    day: 'Day',
+    displayName: 'Display name',
+    displayMode: 'Display mode',
+    events: 'Events',
+    headline: 'Headline',
+    heroMediaUrl: 'Hero media URL',
+    href: 'URL',
+    images: 'Images',
+    intro: 'Intro',
+    isLive: 'Live now',
+    kind: 'Kind',
+    label: 'Label',
+    notes: 'Notes',
+    phase: 'Phase',
+    platforms: 'Platforms',
+    primaryCtaLabel: 'Primary CTA label',
+    primaryCtaUrl: 'Primary CTA URL',
+    revealAtUtc: 'Reveal time (UTC)',
+    revealName: 'Reveal name',
+    showRecentCount: 'Recent message count',
+    showSubmitButton: 'Show submit button',
+    slot: 'Slot',
+    streamUrl: 'Stream URL',
+    tagline: 'Tagline',
+    teaserName: 'Teaser name',
+    time: 'Time',
+    timezone: 'Timezone',
+    title: 'Title',
+    uid: 'UID',
+    url: 'URL',
+    videoUrl: 'Video URL',
+    viewers: 'Viewers',
+    weekOf: 'Week of',
+  },
+  zh: {
+    accentTone: '强调色调',
+    actions: '动作',
+    alt: '替代文本',
+    artist: '艺人',
+    avatarUrl: '头像 URL',
+    body: '正文',
+    campaignLabel: '活动标签',
+    caption: '说明文字',
+    channelName: '频道名称',
+    contentHtml: '内容 HTML',
+    day: '日期',
+    displayName: '展示名称',
+    displayMode: '显示模式',
+    events: '事件',
+    headline: '标题',
+    heroMediaUrl: '主视觉媒体 URL',
+    href: 'URL',
+    images: '图片',
+    intro: '简介',
+    isLive: '正在直播',
+    kind: '类型',
+    label: '标签',
+    notes: '备注',
+    phase: '阶段',
+    platforms: '平台',
+    primaryCtaLabel: '主 CTA 标签',
+    primaryCtaUrl: '主 CTA URL',
+    revealAtUtc: '揭晓时间（UTC）',
+    revealName: '揭晓名称',
+    showRecentCount: '最近消息数量',
+    showSubmitButton: '显示提交按钮',
+    slot: '槽位',
+    streamUrl: '直播 URL',
+    tagline: '标语',
+    teaserName: '预热名称',
+    time: '时间',
+    timezone: '时区',
+    title: '标题',
+    uid: 'UID',
+    url: 'URL',
+    videoUrl: '视频 URL',
+    viewers: '观看人数',
+    weekOf: '周次',
+  },
+  ja: {
+    accentTone: 'アクセントトーン',
+    actions: 'アクション',
+    alt: '代替テキスト',
+    artist: 'アーティスト',
+    avatarUrl: 'アバター URL',
+    body: '本文',
+    campaignLabel: 'キャンペーンラベル',
+    caption: 'キャプション',
+    channelName: 'チャンネル名',
+    contentHtml: 'コンテンツ HTML',
+    day: '日付',
+    displayName: '表示名',
+    displayMode: '表示モード',
+    events: 'イベント',
+    headline: '見出し',
+    heroMediaUrl: 'ヒーローメディア URL',
+    href: 'URL',
+    images: '画像',
+    intro: '紹介文',
+    isLive: '配信中',
+    kind: '種別',
+    label: 'ラベル',
+    notes: 'メモ',
+    phase: 'フェーズ',
+    platforms: 'プラットフォーム',
+    primaryCtaLabel: '主 CTA ラベル',
+    primaryCtaUrl: '主 CTA URL',
+    revealAtUtc: '公開時刻 (UTC)',
+    revealName: '公開名',
+    showRecentCount: '最近メッセージ数',
+    showSubmitButton: '送信ボタンを表示',
+    slot: 'スロット',
+    streamUrl: '配信 URL',
+    tagline: 'タグライン',
+    teaserName: 'ティーザー名',
+    time: '時間',
+    timezone: 'タイムゾーン',
+    title: 'タイトル',
+    uid: 'UID',
+    url: 'URL',
+    videoUrl: '動画 URL',
+    viewers: '視聴者数',
+    weekOf: '対象週',
+  },
+};
+
+const PROVENANCE_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    inherited: 'Inherited',
+    override: 'Override',
+    publicPresence: 'Draft',
+    locked: 'Locked',
+    sourceOwned: 'Source-owned',
+  },
+  zh: {
+    inherited: '继承',
+    override: '覆盖',
+    publicPresence: '草稿',
+    locked: '锁定',
+    sourceOwned: '由源拥有',
+  },
+  ja: {
+    inherited: '継承',
+    override: '上書き',
+    publicPresence: 'ドラフト',
+    locked: 'ロック',
+    sourceOwned: 'ソース所有',
+  },
+};
+
+const VALUE_TYPE_LABELS: Record<
+  RuntimeLocale,
+  Record<PublicPresenceFieldValueType, string>
+> = {
+  en: {
+    string: 'Text',
+    richText: 'Rich text',
+    url: 'URL',
+    boolean: 'Boolean',
+    integer: 'Integer',
+    datetime: 'Date/time',
+    timezone: 'Timezone',
+    enum: 'Enum',
+    stringArray: 'Text list',
+    objectArray: 'Object list',
+    json: 'JSON',
+  },
+  zh: {
+    string: '文本',
+    richText: '富文本',
+    url: 'URL',
+    boolean: '布尔值',
+    integer: '整数',
+    datetime: '日期时间',
+    timezone: '时区',
+    enum: '枚举',
+    stringArray: '文本列表',
+    objectArray: '对象列表',
+    json: 'JSON',
+  },
+  ja: {
+    string: 'テキスト',
+    richText: 'リッチテキスト',
+    url: 'URL',
+    boolean: '真偽値',
+    integer: '整数',
+    datetime: '日時',
+    timezone: 'タイムゾーン',
+    enum: '列挙',
+    stringArray: '文字列一覧',
+    objectArray: 'オブジェクト一覧',
+    json: 'JSON',
+  },
+};
+
+const SOURCE_POLICY_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    registryOwned: 'Editable here',
+    preserveLocked: 'Locked summary',
+    sourceOnly: 'Advanced only',
+  },
+  zh: {
+    registryOwned: '可在此编辑',
+    preserveLocked: '锁定摘要',
+    sourceOnly: '仅高级区可编辑',
+  },
+  ja: {
+    registryOwned: 'ここで編集可能',
+    preserveLocked: 'ロック済み概要',
+    sourceOnly: '高度設定のみ',
+  },
+};
+
+const DOCUMENT_STATE_LABELS: Record<
+  RuntimeLocale,
+  Record<PublicPresenceDocumentState, string>
+> = {
+  en: {
+    draft: 'Draft',
+    inReview: 'In review',
+    changesRequested: 'Changes requested',
+    approved: 'Approved',
+    scheduled: 'Scheduled',
+    published: 'Published',
+    superseded: 'Superseded',
+    archived: 'Archived',
+    rollbackDraft: 'Rollback draft',
+  },
+  zh: {
+    draft: '草稿',
+    inReview: '审核中',
+    changesRequested: '要求修改',
+    approved: '已批准',
+    scheduled: '已排程',
+    published: '已发布',
+    superseded: '已被替代',
+    archived: '已归档',
+    rollbackDraft: '回滚草稿',
+  },
+  ja: {
+    draft: 'ドラフト',
+    inReview: 'レビュー中',
+    changesRequested: '修正依頼',
+    approved: '承認済み',
+    scheduled: '予約済み',
+    published: '公開済み',
+    superseded: '置換済み',
+    archived: 'アーカイブ済み',
+    rollbackDraft: 'ロールバックドラフト',
+  },
+};
+
+const WORKFLOW_EVENT_LABELS: Record<
+  RuntimeLocale,
+  Record<PublicPresenceWorkflowEventType, string>
+> = {
+  en: {
+    draftSaved: 'Draft saved',
+    submittedForReview: 'Submitted for review',
+    changesRequested: 'Changes requested',
+    approved: 'Approved',
+    scheduled: 'Scheduled',
+    scheduleCancelled: 'Schedule cancelled',
+    published: 'Published',
+    unpublished: 'Unpublished',
+    rollbackDraftCreated: 'Rollback draft created',
+    validationSnapshotted: 'Validation snapshotted',
+  },
+  zh: {
+    draftSaved: '草稿已保存',
+    submittedForReview: '已提交审核',
+    changesRequested: '已要求修改',
+    approved: '已批准',
+    scheduled: '已排程',
+    scheduleCancelled: '已取消排程',
+    published: '已发布',
+    unpublished: '已取消发布',
+    rollbackDraftCreated: '已创建回滚草稿',
+    validationSnapshotted: '已生成校验快照',
+  },
+  ja: {
+    draftSaved: 'ドラフト保存',
+    submittedForReview: 'レビュー提出',
+    changesRequested: '修正依頼',
+    approved: '承認',
+    scheduled: '予約',
+    scheduleCancelled: '予約取消',
+    published: '公開',
+    unpublished: '非公開',
+    rollbackDraftCreated: 'ロールバックドラフト作成',
+    validationSnapshotted: '検証スナップショット作成',
+  },
+};
+
+const FAN_ACTION_SLOT_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    follow: 'Follow',
+    notify: 'Notify me',
+    currentAction: 'Current action',
+    stream: 'Stream',
+    launch: 'Launch',
+    goods: 'Goods',
+    support: 'Support',
+    marshmallow: 'Marshmallow',
+    archive: 'Archive',
+  },
+  zh: {
+    follow: '关注',
+    notify: '提醒我',
+    currentAction: '当前动作',
+    stream: '直播',
+    launch: '上线',
+    goods: '商品',
+    support: '支持',
+    marshmallow: '棉花糖',
+    archive: '归档',
+  },
+  ja: {
+    follow: 'フォロー',
+    notify: '通知を受け取る',
+    currentAction: '現在の導線',
+    stream: '配信',
+    launch: '公開',
+    goods: 'グッズ',
+    support: 'サポート',
+    marshmallow: 'マシュマロ',
+    archive: 'アーカイブ',
+  },
+};
+
+const NOTE_KIND_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    announcement: 'Announcement',
+    campaignCaveat: 'Campaign note',
+    safetyNotice: 'Safety notice',
+    legalDisclaimer: 'Legal notice',
+    contentAdvisory: 'Content advisory',
+  },
+  zh: {
+    announcement: '公告',
+    campaignCaveat: '活动说明',
+    safetyNotice: '安全提示',
+    legalDisclaimer: '法律提示',
+    contentAdvisory: '内容提示',
+  },
+  ja: {
+    announcement: 'お知らせ',
+    campaignCaveat: 'キャンペーン注記',
+    safetyNotice: '安全案内',
+    legalDisclaimer: '法的案内',
+    contentAdvisory: '内容注意',
+  },
+};
+
+const EDITABILITY_STATE_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    validEditable: 'Editable',
+    validLocked: 'Locked',
+    invalidRecoverable: 'Needs attention',
+    unsafe: 'Unsafe',
+  },
+  zh: {
+    validEditable: '可编辑',
+    validLocked: '已锁定',
+    invalidRecoverable: '需要处理',
+    unsafe: '不安全',
+  },
+  ja: {
+    validEditable: '編集可能',
+    validLocked: 'ロック済み',
+    invalidRecoverable: '対応が必要',
+    unsafe: '安全ではありません',
+  },
+};
+
+const ISSUE_MESSAGE_LABELS: Record<RuntimeLocale, Record<string, string>> = {
+  en: {
+    'publicPresence.validation.missingRequiredSection': 'A required section is still missing.',
+    'publicPresence.validation.lockedComponent': 'This content is preserved from a locked source.',
+    warning: 'Review this section before release.',
+  },
+  zh: {
+    'publicPresence.validation.missingRequiredSection': '仍有必填分区尚未补齐。',
+    'publicPresence.validation.lockedComponent': '这部分内容来自锁定源，当前仅保留展示。',
+    warning: '这个分区在发布前仍需复核。',
+  },
+  ja: {
+    'publicPresence.validation.missingRequiredSection': '必須セクションがまだ不足しています。',
+    'publicPresence.validation.lockedComponent': 'この内容はロック済みソースから保持されています。',
+    warning: '公開前にこのセクションを再確認してください。',
+  },
+};
+
+function resolveCopy(locale: CopyLocale) {
+  return resolveLocaleRecord(
+    locale,
+    COPY as unknown as Record<RuntimeLocale, PublicPresenceStudioCopy>,
+  ) as PublicPresenceStudioCopy;
+}
+
+function resolveKeyedLabel(
+  locale: CopyLocale,
+  record: Record<RuntimeLocale, Record<string, string>>,
+  key: string,
+  fallback: string,
+) {
+  return (
+    resolveLocaleRecord(locale, record as Record<RuntimeLocale, Record<string, string>>)[key]
+    ?? fallback
+  );
+}
+
+export function usePublicPresenceStudioCopy() {
+  const { currentLocale, selectedLocale } = useRuntimeLocale();
+
+  return {
+    currentLocale,
+    selectedLocale,
+    copy: resolveLocaleRecord(
+      selectedLocale,
+      COPY as unknown as Record<RuntimeLocale, PublicPresenceStudioCopy>,
+      currentLocale,
+    ) as PublicPresenceStudioCopy,
+  };
+}
+
+export function getPublicPresenceStudioTabLabel(
+  locale: CopyLocale,
+  tabId: PublicPresenceStudioTabId,
+) {
+  return resolveLocaleRecord(
+    locale,
+    TAB_LABELS as Record<RuntimeLocale, Record<PublicPresenceStudioTabId, string>>,
+  )[tabId];
+}
+
+export function getPublicPresencePreviewPhaseLabel(
+  locale: CopyLocale,
+  value: PublicPresencePhaseVisibility | 'current',
+) {
+  return resolveLocaleRecord(
+    locale,
+    PREVIEW_PHASE_LABELS as Record<
+      RuntimeLocale,
+      Record<PublicPresencePhaseVisibility | 'current', string>
+    >,
+  )[value];
+}
+
+export function getPublicPresenceTemplateLabel(
+  locale: CopyLocale,
+  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'label'>,
+) {
+  return resolveKeyedLabel(locale, TEMPLATE_LABELS, template.templateId, template.label);
+}
+
+export function getPublicPresenceTemplateUseCase(
+  locale: CopyLocale,
+  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'useCase'>,
+) {
+  return resolveKeyedLabel(locale, TEMPLATE_USE_CASES, template.templateId, template.useCase);
+}
+
+export function getPublicPresenceStageSectionLabel(
+  locale: CopyLocale,
+  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind'>,
+) {
+  return resolveKeyedLabel(locale, SECTION_LABELS, section.kind, section.kind);
+}
+
+export function getPublicPresenceStageSectionPurpose(
+  locale: CopyLocale,
+  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind' | 'purpose'>,
+) {
+  return resolveKeyedLabel(locale, SECTION_PURPOSES, section.kind, section.purpose);
+}
+
+export function getPublicPresenceSourcePolicyLabel(
+  locale: CopyLocale,
+  sourcePolicy: string,
+) {
+  return resolveKeyedLabel(locale, SOURCE_POLICY_LABELS, sourcePolicy, sourcePolicy);
+}
+
+export function getPublicPresenceFieldLabel(locale: CopyLocale, fieldKey: string) {
+  return resolveKeyedLabel(locale, FIELD_LABELS, fieldKey, fieldKey);
+}
+
+export function getPublicPresenceFieldPlaceholder(
+  locale: CopyLocale,
+  fieldKey: string,
+) {
+  return getPublicPresenceFieldLabel(locale, fieldKey);
+}
+
+export function getPublicPresenceProvenanceLabel(
+  locale: CopyLocale,
+  provenance: string,
+) {
+  return resolveKeyedLabel(locale, PROVENANCE_LABELS, provenance, provenance);
+}
+
+export function getPublicPresenceValueTypeLabel(
+  locale: CopyLocale,
+  valueType: PublicPresenceFieldValueType | string,
+) {
+  if (!VALUE_TYPE_LABELS.en[valueType as PublicPresenceFieldValueType]) {
+    return valueType;
+  }
+
+  return resolveLocaleRecord(
+    locale,
+    VALUE_TYPE_LABELS as Record<
+      RuntimeLocale,
+      Record<PublicPresenceFieldValueType, string>
+    >,
+  )[valueType as PublicPresenceFieldValueType];
+}
+
+export function getPublicPresenceDocumentStateLabel(
+  locale: CopyLocale,
+  state: PublicPresenceDocumentState | string,
+) {
+  if (!DOCUMENT_STATE_LABELS.en[state as PublicPresenceDocumentState]) {
+    return state;
+  }
+
+  return resolveLocaleRecord(
+    locale,
+    DOCUMENT_STATE_LABELS as Record<
+      RuntimeLocale,
+      Record<PublicPresenceDocumentState, string>
+    >,
+  )[state as PublicPresenceDocumentState];
+}
+
+export function getPublicPresenceWorkflowEventLabel(
+  locale: CopyLocale,
+  eventType: PublicPresenceWorkflowEventType | string,
+) {
+  if (!WORKFLOW_EVENT_LABELS.en[eventType as PublicPresenceWorkflowEventType]) {
+    return eventType;
+  }
+
+  return resolveLocaleRecord(
+    locale,
+    WORKFLOW_EVENT_LABELS as Record<
+      RuntimeLocale,
+      Record<PublicPresenceWorkflowEventType, string>
+    >,
+  )[eventType as PublicPresenceWorkflowEventType];
+}
+
+export function getPublicPresenceFanActionSlotLabel(locale: CopyLocale, slot: string) {
+  return resolveKeyedLabel(locale, FAN_ACTION_SLOT_LABELS, slot, slot);
+}
+
+export function getPublicPresenceNoteKindLabel(locale: CopyLocale, kind: string) {
+  return resolveKeyedLabel(locale, NOTE_KIND_LABELS, kind, kind);
+}
+
+export function getPublicPresenceEditabilityStateLabel(
+  locale: CopyLocale,
+  state: string,
+) {
+  return resolveKeyedLabel(locale, EDITABILITY_STATE_LABELS, state, state);
+}
+
+export function getPublicPresenceIssueMessageLabel(
+  locale: CopyLocale,
+  messageKey: string,
+  fallback: string,
+) {
+  return resolveKeyedLabel(locale, ISSUE_MESSAGE_LABELS, messageKey, fallback);
+}
+
+export function formatPublicPresenceStudioDateTime(
+  locale: CopyLocale,
+  value: string | null,
+) {
+  return formatLocaleDateTime(locale, value, resolveCopy(locale).common.notSet);
+}
+
+export function formatPublicPresenceStudioValidationSummary(
+  locale: CopyLocale,
+  counts: {
+    blocker: number;
+    fatal: number;
+    info: number;
+    warning: number;
+  } | null,
+) {
+  const copy = resolveCopy(locale);
+
+  if (!counts) {
+    return copy.common.validationPending;
+  }
+
+  return `${copy.common.validationPrefix} ${counts.fatal}/${counts.blocker}/${counts.warning}/${counts.info}`;
+}

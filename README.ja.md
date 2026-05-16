@@ -331,16 +331,15 @@ cd tcrn-tms
 # 2. 依存関係をインストール
 pnpm install
 
-# 3. インフラサービスを起動
-# デフォルトではコア依存のみを起動します
-docker compose up -d postgres redis minio nats
+# 3. 環境変数を設定
+cp .env.local.sample .env.local
+# .env.localを編集して設定を入力
+
+# 4. インフラサービスを起動
+pnpm infra:up
 
 # 任意: Loki/Tempo/OTEL 経路を触るときだけローカル observability サービスを起動します
-docker compose --profile observability up -d loki tempo
-
-# 4. 環境変数を設定
-cp .env.sample .env.local
-# .env.localを編集して設定を入力
+pnpm infra:up:observability
 
 # 5. データベースを初期化
 cd packages/database

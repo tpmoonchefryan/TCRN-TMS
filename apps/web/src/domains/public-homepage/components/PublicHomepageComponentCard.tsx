@@ -15,13 +15,13 @@ import {
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
 import {
+  type PublicHomepageComponentRecord,
+} from '@/domains/public-homepage/api/public-homepage.api';
+import {
   normalizeHomepageLayoutProps,
   resolveHomepageLayoutSurfaceStyle,
   resolveHomepageLayoutWrapperStyle,
-} from '@/domains/homepage-management/editor/puck/homepage-layout-presets';
-import {
-  type PublicHomepageComponentRecord,
-} from '@/domains/public-homepage/api/public-homepage.api';
+} from '@/domains/public-homepage/components/public-homepage-layout';
 import {
   PublicPresenceBadge,
   PublicPresenceSurface,
@@ -697,7 +697,7 @@ export function PublicHomepageComponentCard({
             </div>
             {embedUrl ? (
               <iframe
-                title={`${title} embed`}
+                title={`${title} ${copy.embedSuffix}`}
                 src={embedUrl}
                 className="h-[152px] w-full rounded-2xl border-0"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -808,7 +808,6 @@ export function PublicHomepageComponentCard({
       const cardStyle = asString(props.cardStyle, 'standard');
       const showHeader = asBoolean(props.showHeader, true);
       const maxItems = asNumber(props.maxItems, 5);
-      const filterType = asString(props.filterType, 'all');
       const refreshInterval = asNumber(props.refreshInterval, 0);
 
       return (
@@ -826,7 +825,14 @@ export function PublicHomepageComponentCard({
             {copy.bilibiliDescription}
           </p>
           <p className="mt-3 text-xs font-medium" style={textStyles.secondary}>
-            {`Max ${maxItems} · ${filterType}${refreshInterval > 0 ? ` · ${refreshInterval}s refresh` : ''}`}
+            {copy.bilibiliFeedSummary
+              .replace('{count}', String(maxItems))
+              .replace(
+                '{refresh}',
+                refreshInterval > 0
+                  ? copy.refreshSuffix.replace('{seconds}', String(refreshInterval))
+                  : '',
+              )}
           </p>
           {uid ? (
             <a

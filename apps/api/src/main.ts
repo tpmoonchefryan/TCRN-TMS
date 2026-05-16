@@ -2,11 +2,14 @@
 
 import { Logger } from '@nestjs/common';
 
-import { initTelemetry } from './telemetry/init';
+import { loadRepoEnvFiles } from './repo-env';
 
 const logger = new Logger('Main');
 
 async function start(): Promise<void> {
+  loadRepoEnvFiles();
+
+  const { initTelemetry } = await import('./telemetry/init');
   await initTelemetry();
 
   const { bootstrap } = await import('./bootstrap');

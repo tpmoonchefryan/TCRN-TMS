@@ -12,6 +12,10 @@ import {
   RBAC_ROLE_PERMISSION_ENTRIES,
   RBAC_ROLE_TEMPLATES,
 } from '../prisma/seeds/_rbac-contract';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
+
 type RbacTableName = 'resource' | 'policy' | 'role' | 'role_policy';
 
 export interface CliOptions {

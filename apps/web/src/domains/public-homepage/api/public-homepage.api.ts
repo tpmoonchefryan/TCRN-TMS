@@ -1,4 +1,4 @@
-import { type ThemeConfig } from '@tcrn/shared';
+import type { PublicPresencePublicProjection } from '@tcrn/shared';
 
 import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/api';
 
@@ -15,21 +15,7 @@ export interface PublicHomepageContent {
   components: PublicHomepageComponentRecord[];
 }
 
-export interface PublicHomepageResponse {
-  talent: {
-    displayName: string;
-    avatarUrl: string | null;
-    timezone?: string | null;
-  };
-  content: PublicHomepageContent;
-  theme: ThemeConfig;
-  seo: {
-    title: string | null;
-    description: string | null;
-    ogImageUrl: string | null;
-  };
-  updatedAt: string;
-}
+export type PublicHomepageResponse = PublicPresencePublicProjection;
 
 function encodePublicPath(path: string) {
   return path
@@ -45,7 +31,10 @@ function splitSharedDomainPath(path: string) {
     .map((segment) => segment.trim())
     .filter(Boolean);
 
-  if (segments.length !== 2) {
+  const isCanonicalHomepagePath =
+    segments.length === 3 && segments[2]?.toLowerCase() === 'homepage';
+
+  if (segments.length !== 2 && !isCanonicalHomepagePath) {
     return null;
   }
 

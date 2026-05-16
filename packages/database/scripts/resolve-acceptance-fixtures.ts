@@ -3,11 +3,14 @@
 // Resolve the current local DB ids for the canonical WS6 UAT private surfaces.
 // This avoids baking transient UUIDs into acceptance ledgers or browser notes.
 
-import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
 import {
   buildUatPrivateFixtureRoutes,
   UAT_PRIVATE_ROUTE_FIXTURE,
 } from '../src/domains/acceptance/uat-private-route-fixtures';
+import { loadRepoEnvFiles } from './load-repo-env';
+import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
+
+loadRepoEnvFiles(import.meta.url);
 
 interface TenantLookupRow {
   id: string;

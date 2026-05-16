@@ -17,7 +17,10 @@ import {
 } from '@tcrn/shared';
 import Redis from 'ioredis';
 
+import { loadRepoEnvFiles } from './load-repo-env';
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
+
+loadRepoEnvFiles(import.meta.url);
 
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 

@@ -11,17 +11,22 @@ import { MinioModule } from '../minio';
 import { HomepageAdminService } from './application/homepage-admin.service';
 import { HomepageSchedulerApplicationService } from './application/homepage-scheduler.service';
 import { HomepageVersionApplicationService } from './application/homepage-version.service';
+import { PublicPresenceFoundationService } from './application/public-presence-foundation.service';
+import { PublicPresenceStudioService } from './application/public-presence-studio.service';
+import { PublicPresenceWorkflowService } from './application/public-presence-workflow.service';
 import {
   CalendarController,
   DomainLookupController,
   HomepageController,
   InternalDomainController,
   PublicHomepageController,
+  PublicPresenceController,
 } from './controllers';
 import { HomepageAdminRepository } from './infrastructure/homepage-admin.repository';
 import { HomepageSchedulerRepository } from './infrastructure/homepage-scheduler.repository';
 import { HomepageVersionRepository } from './infrastructure/homepage-version.repository';
 import { PublicHomepageReadRepository } from './infrastructure/public-homepage-read.repository';
+import { PublicPresenceFoundationRepository } from './infrastructure/public-presence-foundation.repository';
 import {
   CdnPurgeService,
   DomainLookupService,
@@ -29,7 +34,9 @@ import {
   HomepageSchedulerService,
   HomepageService,
   HomepageVersionService,
+  PublicHomepageProjectionService,
   PublicHomepageService,
+  PublicPresencePublishSchedulerService,
 } from './services';
 
 @Module({
@@ -38,6 +45,7 @@ import {
     CalendarController,
     HomepageController,
     PublicHomepageController,
+    PublicPresenceController,
     DomainLookupController,
     InternalDomainController,
   ],
@@ -52,7 +60,13 @@ import {
     HomepageVersionRepository,
     HomepageVersionApplicationService,
     PublicHomepageReadRepository,
+    PublicPresenceFoundationRepository,
     PublicHomepageService,
+    PublicHomepageProjectionService,
+    PublicPresenceFoundationService,
+    PublicPresenceStudioService,
+    PublicPresenceWorkflowService,
+    PublicPresencePublishSchedulerService,
     DomainLookupService,
     HomepageAssetService,
     RateLimiterService,
@@ -62,7 +76,10 @@ import {
   exports: [
     HomepageService,
     HomepageVersionService,
+    PublicHomepageProjectionService,
     PublicHomepageService,
+    PublicPresenceStudioService,
+    PublicPresenceWorkflowService,
     DomainLookupService,
   ],
 })

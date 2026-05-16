@@ -32,7 +32,16 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
     private readonly configService: ConfigService,
   ) {}
 
+  private isBypassedEnvironment() {
+    const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'development';
+    return nodeEnv === 'development' || nodeEnv === 'test';
+  }
+
   async onModuleInit() {
+    if (this.isBypassedEnvironment()) {
+      this.logger.log('Auth rate limiting bypassed in development/test');
+      return;
+    }
     await this.initializeLimiters();
   }
 
@@ -88,6 +97,10 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (this.isBypassedEnvironment()) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse();
 

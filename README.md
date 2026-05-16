@@ -331,16 +331,15 @@ cd tcrn-tms
 # 2. Install dependencies
 pnpm install
 
-# 3. Start infrastructure services
-# Core runtime dependencies
-docker compose up -d postgres redis minio nats
+# 3. Configure environment
+cp .env.local.sample .env.local
+# Edit .env.local with your settings
+
+# 4. Start infrastructure services
+pnpm infra:up
 
 # Optional: start local observability services only when working on Loki/Tempo/OTEL paths
-docker compose --profile observability up -d loki tempo
-
-# 4. Configure environment
-cp .env.sample .env.local
-# Edit .env.local with your settings
+pnpm infra:up:observability
 
 # 5. Initialize database
 cd packages/database

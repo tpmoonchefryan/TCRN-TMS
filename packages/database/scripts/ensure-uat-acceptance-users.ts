@@ -4,10 +4,13 @@
 // This avoids rerunning the full UAT seed, which would duplicate customer and
 // membership sample data in a reused local DB.
 
-import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
+import type { UatTenantResult } from '../prisma/seeds/20-uat-tenant';
 import type { UatOrganizationResult } from '../prisma/seeds/21-uat-organization';
 import { seedUatUsers } from '../prisma/seeds/22-uat-users';
-import type { UatTenantResult } from '../prisma/seeds/20-uat-tenant';
+import { loadRepoEnvFiles } from './load-repo-env';
+import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
+
+loadRepoEnvFiles(import.meta.url);
 
 interface PublicTenantRow {
   id: string;

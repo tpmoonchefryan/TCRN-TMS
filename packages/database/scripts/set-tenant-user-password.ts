@@ -5,7 +5,10 @@
 
 import argon2 from 'argon2';
 
+import { loadRepoEnvFiles } from './load-repo-env';
 import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
+
+loadRepoEnvFiles(import.meta.url);
 
 interface CliOptions {
   schema: string;

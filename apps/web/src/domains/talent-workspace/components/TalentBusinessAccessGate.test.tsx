@@ -92,6 +92,22 @@ describe('TalentBusinessAccessGate', () => {
     );
   });
 
+  it('renders children for draft talents when the workspace explicitly allows pre-publish work', async () => {
+    mockReadTalentDetail.mockResolvedValue({
+      id: 'talent-1',
+      lifecycleStatus: 'draft',
+    });
+
+    render(
+      <TalentBusinessAccessGate allowDraft tenantId="tenant-1" talentId="talent-1">
+        <div>Draft homepage workspace content</div>
+      </TalentBusinessAccessGate>,
+    );
+
+    expect(await screen.findByText('Draft homepage workspace content')).toBeInTheDocument();
+    expect(screen.queryByText('Talent not published')).not.toBeInTheDocument();
+  });
+
   it('renders a disabled-state explanation and keeps the organization structure escape hatch', async () => {
     mockReadTalentDetail.mockResolvedValue({
       id: 'talent-1',

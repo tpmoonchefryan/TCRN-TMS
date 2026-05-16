@@ -21,6 +21,10 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "infra:up": "docker compose --env-file .env.local up -d postgres redis minio nats",
+    "infra:up:observability": "docker compose --env-file .env.local --profile observability up -d loki tempo",
+    "infra:ps": "docker compose --env-file .env.local ps",
+    "infra:down": "docker compose --env-file .env.local down",
     "build": "turbo build",
     "lint": "turbo lint",
     "lint:fix": "turbo lint:fix",
