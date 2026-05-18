@@ -158,8 +158,8 @@ export async function seedUatCustomers(
   
   if ((existingStatuses[0]?.count || 0) === 0) {
     await prisma.$executeRawUnsafe(`
-      INSERT INTO "${soloSchema}".customer_status (id, owner_type, owner_id, code, name_en, name_zh, name_ja, color, sort_order, is_active, created_at, updated_at, version)
-      SELECT gen_random_uuid(), owner_type, owner_id, code, name_en, name_zh, name_ja, color, sort_order, is_active, created_at, updated_at, version
+      INSERT INTO "${soloSchema}".customer_status (id, owner_type, owner_id, code, name, description, color, sort_order, is_active, created_at, updated_at, version)
+      SELECT gen_random_uuid(), owner_type, owner_id, code, name, description, color, sort_order, is_active, created_at, updated_at, version
       FROM tenant_template.customer_status
     `);
   }

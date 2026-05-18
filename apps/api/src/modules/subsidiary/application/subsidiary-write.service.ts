@@ -1,9 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  mergeLocalizedText,
+  normalizeLocalizedText,
+} from '@tcrn/shared';
 
-import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import {
   assertSubsidiaryVersion,
   buildSubsidiaryPath,
@@ -26,7 +29,6 @@ export class SubsidiaryWriteApplicationService {
     data: SubsidiaryCreateInput,
     userId: string,
   ) {
-    const translationPayload = buildManagedNameTranslationPayload(data);
     const existing = await this.subsidiaryReadApplicationService.findByCode(
       data.code,
       tenantSchema,
@@ -54,10 +56,7 @@ export class SubsidiaryWriteApplicationService {
       tenantSchema,
       {
         ...data,
-        nameEn: translationPayload.nameEn,
-        nameZh: translationPayload.nameZh ?? undefined,
-        nameJa: translationPayload.nameJa ?? undefined,
-        extraData: translationPayload.extraData,
+        description: normalizeLocalizedText(data.description, data.name.en),
         ...buildSubsidiaryPath(data.code, parent),
       },
       userId,
@@ -73,17 +72,18 @@ export class SubsidiaryWriteApplicationService {
     const current = await this.getSubsidiaryOrThrow(id, tenantSchema);
     assertSubsidiaryVersion(current.version, data.version);
 
-    const translationPayload = buildManagedNameTranslationPayload(data, current);
-
     return this.subsidiaryWriteRepository.update(
       id,
       tenantSchema,
       {
         ...data,
-        nameEn: translationPayload.nameEn,
-        nameZh: translationPayload.nameZh ?? undefined,
-        nameJa: translationPayload.nameJa ?? undefined,
-        extraData: translationPayload.extraData,
+        name: data.name ? mergeLocalizedText(current.name, data.name) : undefined,
+        description: data.description
+          ? normalizeLocalizedText({
+              ...current.description,
+              ...data.description,
+            }, current.description.en)
+          : undefined,
       },
       userId,
     );

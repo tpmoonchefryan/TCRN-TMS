@@ -3,6 +3,28 @@
 
 import { z } from 'zod';
 
+import { SUPPORTED_UI_LOCALES } from '../constants/locale';
+
+// ============================================================================
+// Localized Text Schema
+// ============================================================================
+const localizedTextShape = Object.fromEntries(
+  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string()]),
+) as Record<(typeof SUPPORTED_UI_LOCALES)[number], z.ZodString>;
+
+const partialLocalizedTextShape = Object.fromEntries(
+  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string().optional()]),
+) as Record<(typeof SUPPORTED_UI_LOCALES)[number], z.ZodOptional<z.ZodString>>;
+
+export const LocalizedTextSchema = z.object(localizedTextShape).strict();
+
+export const PartialLocalizedTextSchema = z.object(partialLocalizedTextShape).strict();
+
+export const SupportedUiLocaleSchema = z.enum(SUPPORTED_UI_LOCALES);
+
+export type LocalizedTextInput = z.infer<typeof LocalizedTextSchema>;
+export type PartialLocalizedTextInput = z.infer<typeof PartialLocalizedTextSchema>;
+
 // ============================================================================
 // Pagination Schema
 // ============================================================================

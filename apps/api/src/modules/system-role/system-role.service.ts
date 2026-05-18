@@ -5,7 +5,10 @@ import {
   type CreateSystemRoleInput,
   ErrorCodes,
   isRbacRoleAvailableForTenantTier,
-  normalizeSupportedUiLocale,
+  normalizeLocalizedText,
+  pickLocalizedText,
+  type LocalizedText,
+  type PartialLocalizedText,
   type RbacRolePolicyEffect,
   type RbacTenantTier,
   resolveRbacPermission,
@@ -42,37 +45,13 @@ export interface SystemRoleAssignedUserData {
   expiresAt: Date | null;
 }
 
-type TranslationMap = Record<string, string>;
-
-interface RoleTranslationCarrier {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  extraData?: Prisma.JsonValue | null;
-}
-
-interface RoleTranslationPayload {
-  extraData: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
-  nameEn: string;
-  nameJa: string | null;
-  nameZh: string | null;
-  translations: TranslationMap;
-}
-
 @Injectable()
 export class SystemRoleService {
   constructor(private db: DatabaseService) {}
 
   async create(createDto: CreateSystemRoleInput) {
-    const {
-      nameEn: _nameEn,
-      nameJa: _nameJa,
-      nameZh: _nameZh,
-      permissions,
-      translations: _translations,
-      ...roleData
-    } = createDto;
-    const translationPayload = this.buildRoleTranslationPayload(createDto);
+    const { permissions, ...roleData } = createDto;
+    const name = this.normalizeRoleName(createDto.name);
 
     const existing = await this.db.getPrisma().role.findUnique({
       where: { code: createDto.code },
@@ -87,11 +66,8 @@ export class SystemRoleService {
       const role = await tx.role.create({
         data: {
           ...roleData,
-          extraData: translationPayload.extraData,
           isSystem: true,
-          nameEn: translationPayload.nameEn,
-          nameJa: translationPayload.nameJa,
-          nameZh: translationPayload.nameZh,
+          name,
         },
       });
 
@@ -100,7 +76,7 @@ export class SystemRoleService {
         await this.assignPermissions(tx, role.id, permissions);
       }
 
-      return this.decorateRoleTranslations(role);
+      return this.mapRoleRecord(role);
     });
   }
 
@@ -123,9 +99,12 @@ export class SystemRoleService {
     if (filters?.search) {
       where.OR = [
         { code: { contains: filters.search, mode: 'insensitive' } },
-        { nameEn: { contains: filters.search, mode: 'insensitive' } },
-        { nameZh: { contains: filters.search, mode: 'insensitive' } },
-        { nameJa: { contains: filters.search, mode: 'insensitive' } },
+        { name: { path: ['en'], string_contains: filters.search } },
+        { name: { path: ['zh_HANS'], string_contains: filters.search } },
+        { name: { path: ['zh_HANT'], string_contains: filters.search } },
+        { name: { path: ['ja'], string_contains: filters.search } },
+        { name: { path: ['ko'], string_contains: filters.search } },
+        { name: { path: ['fr'], string_contains: filters.search } },
       ];
     }
 
@@ -162,7 +141,7 @@ export class SystemRoleService {
     return roles
       .filter((role) => (tenantTier ? isRbacRoleAvailableForTenantTier(role.code, tenantTier) : true))
       .map((role) => ({
-        ...this.decorateRoleTranslations(role),
+        ...this.mapRoleRecord(role),
         permissionCount: role._count?.rolePolicies ?? 0,
         userCount: userCountMap.get(role.id) ?? role._count?.userRoles ?? 0,
         _count: undefined,
@@ -206,7 +185,7 @@ export class SystemRoleService {
             CASE
               WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
               WHEN ur.scope_type = 'subsidiary' THEN (
-                SELECT COALESCE(s.name_zh, s.name_en)
+                SELECT COALESCE(s.name->>'zh_HANS', s.name->>'en')
                 FROM "${tenantSchema}".subsidiary s
                 WHERE s.id = ur.scope_id
               )
@@ -262,7 +241,7 @@ export class SystemRoleService {
             CASE
               WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
               WHEN ur.scope_type = 'subsidiary' THEN (
-                SELECT COALESCE(s.name_zh, s.name_en)
+                SELECT COALESCE(s.name->>'zh_HANS', s.name->>'en')
                 FROM "${tenantSchema}".subsidiary s
                 WHERE s.id = ur.scope_id
               )
@@ -309,7 +288,7 @@ export class SystemRoleService {
     ).size;
 
     return {
-      ...this.decorateRoleTranslations(role),
+      ...this.mapRoleRecord(role),
       permissions,
       permissionCount: permissions.length,
       userCount: distinctAssignedUserCount,
@@ -331,15 +310,10 @@ export class SystemRoleService {
       });
     }
 
-    const {
-      nameEn: _nameEn,
-      nameJa: _nameJa,
-      nameZh: _nameZh,
-      permissions,
-      translations: _translations,
-      ...roleData
-    } = updateDto;
-    const translationPayload = this.buildRoleTranslationPayload(updateDto, existing);
+    const { permissions, name: namePatch, ...roleData } = updateDto;
+    const name = namePatch
+      ? this.normalizeRoleName({ ...(existing.name as LocalizedText), ...namePatch })
+      : undefined;
 
     return this.db.getPrisma().$transaction(async (tx) => {
       // 1. Update Role basic info
@@ -347,10 +321,7 @@ export class SystemRoleService {
         where: { id },
         data: {
           ...roleData,
-          extraData: translationPayload.extraData,
-          nameEn: translationPayload.nameEn,
-          nameJa: translationPayload.nameJa,
-          nameZh: translationPayload.nameZh,
+          ...(name ? { name } : {}),
         },
       });
 
@@ -367,7 +338,7 @@ export class SystemRoleService {
         }
       }
 
-      return this.decorateRoleTranslations(role);
+      return this.mapRoleRecord(role);
     });
   }
 
@@ -481,186 +452,23 @@ export class SystemRoleService {
     }
   }
 
-  private decorateRoleTranslations<T extends RoleTranslationCarrier>(role: T) {
-    return {
-      ...role,
-      translations: this.buildRoleTranslations(role),
-    };
-  }
+  private normalizeRoleName(name: PartialLocalizedText): LocalizedText {
+    const normalized = normalizeLocalizedText(name);
 
-  private buildRoleTranslationPayload(
-    input: {
-      nameEn?: string;
-      nameZh?: string | null;
-      nameJa?: string | null;
-      translations?: Record<string, string>;
-    },
-    current?: RoleTranslationCarrier | null,
-  ): RoleTranslationPayload {
-    const translations = input.translations !== undefined
-      ? this.normalizeTranslationInput(input.translations)
-      : this.buildRoleTranslations(current);
-
-    this.applyLegacyTranslation(translations, 'en', input.nameEn);
-    this.applyLegacyTranslation(translations, 'zh_HANS', input.nameZh);
-    this.applyLegacyTranslation(translations, 'ja', input.nameJa);
-
-    const nextNameEn = this.pickLegacyValue(input.nameEn, translations.en, current?.nameEn);
-    if (!nextNameEn) {
+    if (!normalized.en.trim()) {
       throw new BadRequestException('English role name is required');
     }
 
+    return normalized;
+  }
+
+  private mapRoleRecord<T extends { name: Prisma.JsonValue }>(role: T) {
+    const name = this.normalizeRoleName(role.name as PartialLocalizedText);
+
     return {
-      translations,
-      extraData: this.toNullableJsonInput(
-        this.mergeRoleExtraData(this.asRecord(current?.extraData), translations),
-      ),
-      nameEn: nextNameEn,
-      nameZh: this.pickLegacyValue(input.nameZh, translations.zh_HANS, current?.nameZh),
-      nameJa: this.pickLegacyValue(input.nameJa, translations.ja, current?.nameJa),
+      ...role,
+      name,
+      displayName: pickLocalizedText(name, 'en'),
     };
-  }
-
-  private buildRoleTranslations(current?: RoleTranslationCarrier | null): TranslationMap {
-    if (!current) {
-      return {};
-    }
-
-    const translations: TranslationMap = {};
-    this.applyLegacyTranslation(translations, 'en', current.nameEn);
-    this.applyLegacyTranslation(translations, 'zh_HANS', current.nameZh);
-    this.applyLegacyTranslation(translations, 'ja', current.nameJa);
-
-    const extraTranslations = this.readExtraTranslationMap(current.extraData);
-    Object.entries(extraTranslations).forEach(([localeCode, value]) => {
-      if (!translations[localeCode]) {
-        translations[localeCode] = value;
-      }
-    });
-
-    return translations;
-  }
-
-  private readExtraTranslationMap(input?: Prisma.JsonValue | null): TranslationMap {
-    const extraData = this.asRecord(input);
-    const candidate = extraData?.translations;
-
-    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-      return {};
-    }
-
-    const result: TranslationMap = {};
-
-    Object.entries(candidate as Record<string, unknown>).forEach(([localeCode, value]) => {
-      if (typeof value !== 'string') {
-        return;
-      }
-
-      const normalizedValue = value.trim();
-      if (!normalizedValue) {
-        return;
-      }
-
-      result[localeCode] = normalizedValue;
-    });
-
-    return result;
-  }
-
-  private normalizeTranslationInput(input: Record<string, string>): TranslationMap {
-    const result: TranslationMap = {};
-
-    Object.entries(input).forEach(([localeCode, value]) => {
-      if (typeof value !== 'string') {
-        return;
-      }
-
-      const normalizedValue = value.trim();
-      if (!normalizedValue) {
-        return;
-      }
-
-      const supportedLocale = normalizeSupportedUiLocale(localeCode);
-      const normalizedLocale = supportedLocale ?? localeCode.trim().replace(/-/g, '_');
-
-      if (!normalizedLocale) {
-        return;
-      }
-
-      result[normalizedLocale] = normalizedValue;
-    });
-
-    return result;
-  }
-
-  private mergeRoleExtraData(
-    current: Record<string, unknown> | null,
-    translations: TranslationMap,
-  ) {
-    const nextExtraData = current ? { ...current } : {};
-    const extraTranslations = Object.fromEntries(
-      Object.entries(translations).filter(([localeCode]) => !['en', 'zh_HANS', 'ja'].includes(localeCode)),
-    );
-
-    delete nextExtraData.translations;
-
-    if (Object.keys(extraTranslations).length > 0) {
-      nextExtraData.translations = extraTranslations;
-    }
-
-    return Object.keys(nextExtraData).length > 0 ? nextExtraData : null;
-  }
-
-  private applyLegacyTranslation(
-    translations: TranslationMap,
-    localeCode: 'en' | 'zh_HANS' | 'ja',
-    value: string | null | undefined,
-  ) {
-    if (value === undefined || value === null) {
-      return;
-    }
-
-    const normalizedValue = value.trim();
-    if (!normalizedValue) {
-      delete translations[localeCode];
-      return;
-    }
-
-    translations[localeCode] = normalizedValue;
-  }
-
-  private pickLegacyValue(
-    explicitValue: string | null | undefined,
-    translationValue: string | undefined,
-    currentValue?: string | null,
-  ) {
-    if (explicitValue !== undefined && explicitValue !== null) {
-      const trimmed = explicitValue.trim();
-      return trimmed || null;
-    }
-
-    if (translationValue !== undefined) {
-      return translationValue;
-    }
-
-    return currentValue ?? null;
-  }
-
-  private asRecord(input?: Prisma.JsonValue | Record<string, unknown> | null) {
-    if (!input || typeof input !== 'object' || Array.isArray(input)) {
-      return null;
-    }
-
-    return input as Record<string, unknown>;
-  }
-
-  private toNullableJsonInput(
-    input: Record<string, unknown> | null,
-  ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
-    if (!input) {
-      return Prisma.DbNull;
-    }
-
-    return input as Prisma.InputJsonValue;
   }
 }

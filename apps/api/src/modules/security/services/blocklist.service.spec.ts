@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { BlocklistScopeSummary } from '@tcrn/shared';
+import { createLocalizedText, type BlocklistScopeSummary } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BlocklistReadService } from '../application/blocklist-read.service';
@@ -23,13 +23,8 @@ describe('BlocklistService facade', () => {
     ownerId: null,
     pattern: 'badword',
     patternType: 'keyword',
-    nameEn: 'Profanity Filter',
-    nameZh: null,
-    nameJa: null,
+    name: createLocalizedText({ en: 'Profanity Filter' }),
     extraData: null,
-    translations: {
-      en: 'Profanity Filter',
-    },
     description: null,
     category: 'profanity',
     severity: 'medium',
@@ -84,13 +79,8 @@ describe('BlocklistService facade', () => {
       ownerId: null,
       pattern: 'badword',
       patternType: 'keyword',
-      nameEn: 'Profanity Filter',
-      nameZh: null,
-      nameJa: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       extraData: null,
-      translations: {
-        en: 'Profanity Filter',
-      },
       description: null,
       category: 'profanity',
       severity: 'medium',
@@ -157,7 +147,7 @@ describe('BlocklistService facade', () => {
           ownerType: 'tenant',
           pattern: 'badword',
           patternType: BlocklistPatternType.KEYWORD,
-          nameEn: 'Profanity Filter',
+          name: createLocalizedText({ en: 'Profanity Filter' }),
         },
         { tenantSchema: 'tenant_test' },
       ),

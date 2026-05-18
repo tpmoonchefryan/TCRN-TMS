@@ -1,10 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ADAPTER_CONFIG_KEYS } from '@tcrn/shared';
+import { ADAPTER_CONFIG_KEYS, type LocalizedText } from '@tcrn/shared';
 
 import type { UpdateAdapterDto } from '../dto/integration.dto';
 import type { IntegrationAdapterOwnerScope } from './adapter-read.policy';
-import { buildNameTranslations } from './name-translation.policy';
 
 export interface IntegrationAdapterMutationRecord {
   id: string;
@@ -12,9 +11,7 @@ export interface IntegrationAdapterMutationRecord {
   ownerId: string | null;
   platformId: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
@@ -27,6 +24,7 @@ export interface IntegrationAdapterMutationRecord {
 export interface IntegrationAdapterPlatformRecord {
   id: string;
   code: string;
+  name: LocalizedText;
   displayName: string;
   iconUrl: string | null;
 }
@@ -43,9 +41,7 @@ export interface IntegrationAdapterOverrideRecord {
 }
 
 export interface AdapterUpdateMutationPlan {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   inherit: boolean;
   oldValue: Record<string, unknown>;
@@ -124,34 +120,15 @@ export const hasAdapterVersionMismatch = (
 export const buildAdapterUpdateMutationPlan = (
   adapter: IntegrationAdapterMutationRecord,
   dto: UpdateAdapterDto,
-  nextTranslations: Record<string, string>,
-  nextExtraData: Record<string, unknown> | null,
+  nextName: LocalizedText,
 ): AdapterUpdateMutationPlan => {
   const oldValue: Record<string, unknown> = {};
   const newValue: Record<string, unknown> = {};
-  const nextNameEn = dto.nameEn ?? adapter.nameEn;
-  const nextNameZh = dto.nameZh ?? adapter.nameZh;
-  const nextNameJa = dto.nameJa ?? adapter.nameJa;
   const nextInherit = dto.inherit ?? adapter.inherit;
 
-  if (dto.nameEn !== undefined) {
-    oldValue.nameEn = adapter.nameEn;
-    newValue.nameEn = nextNameEn;
-  }
-
-  if (dto.nameZh !== undefined) {
-    oldValue.nameZh = adapter.nameZh;
-    newValue.nameZh = nextNameZh;
-  }
-
-  if (dto.nameJa !== undefined) {
-    oldValue.nameJa = adapter.nameJa;
-    newValue.nameJa = nextNameJa;
-  }
-
-  if (dto.translations !== undefined) {
-    oldValue.translations = buildNameTranslations(adapter);
-    newValue.translations = nextTranslations;
+  if (dto.name !== undefined) {
+    oldValue.name = adapter.name;
+    newValue.name = nextName;
   }
 
   if (dto.inherit !== undefined) {
@@ -160,10 +137,8 @@ export const buildAdapterUpdateMutationPlan = (
   }
 
   return {
-    nameEn: nextNameEn,
-    nameZh: nextNameZh,
-    nameJa: nextNameJa,
-    extraData: nextExtraData,
+    name: nextName,
+    extraData: adapter.extraData,
     inherit: nextInherit,
     oldValue,
     newValue,

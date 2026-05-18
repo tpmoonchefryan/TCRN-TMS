@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import {
+  createLocalizedText,
   createTestTenantFixture,
   createTestUserInTenant,
   type TenantFixture,
@@ -196,7 +197,7 @@ describe('Security Integration Tests', () => {
           ownerType: 'tenant',
           pattern: 'test_spam_word',
           patternType: 'keyword',
-          nameEn: 'Test Entry',
+          name: createLocalizedText({ en: 'Test Entry' }),
           action: 'flag',
           severity: 'low',
           scope: ['marshmallow'],

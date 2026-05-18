@@ -7,7 +7,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
-import { getPrimaryAcceptLanguage, getTrilingualNameColumn } from '../../common/request-locale.util';
+import { buildLocalizedJsonTextSql, getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
@@ -52,7 +52,8 @@ export class MyPermissionsController {
     @Query() query: GetMyPermissionsQueryDto,
     @Req() req: Request,
   ) {
-    const nameField = getTrilingualNameColumn(getPrimaryAcceptLanguage(req));
+    const scopeNameSql = buildLocalizedJsonTextSql('name', getPrimaryAcceptLanguage(req));
+    const roleNameSql = buildLocalizedJsonTextSql('r.name', getPrimaryAcceptLanguage(req));
 
     const scopeType = query.scopeType || 'tenant';
     const scopeId = query.scopeId || null;
@@ -74,7 +75,7 @@ export class MyPermissionsController {
 
     if (scopeType === 'subsidiary' && scopeId) {
       const subsidiaries = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
-        SELECT COALESCE(${nameField}, name_en) as name 
+        SELECT ${scopeNameSql} as name
         FROM "${user.tenantSchema}".subsidiary 
         WHERE id = $1::uuid
       `, scopeId);
@@ -98,7 +99,7 @@ export class MyPermissionsController {
       user.id,
       scopeType,
       scopeId,
-      nameField,
+      roleNameSql,
     );
 
     return success({
@@ -117,7 +118,7 @@ export class MyPermissionsController {
     userId: string,
     targetScopeType: ScopeType,
     targetScopeId: string | null,
-    nameField: string,
+    localizedNameSql: string,
   ): Promise<UserRoleInfo[]> {
     // Get all user role assignments
     const assignments = await prisma.$queryRawUnsafe<Array<{
@@ -130,7 +131,7 @@ export class MyPermissionsController {
     }>>(`
       SELECT 
         r.code as "roleCode",
-        COALESCE(r.${nameField}, r.name_en) as "roleName",
+        ${localizedNameSql} as "roleName",
         ur.scope_type as "scopeType",
         ur.scope_id as "scopeId",
         ur.inherit,

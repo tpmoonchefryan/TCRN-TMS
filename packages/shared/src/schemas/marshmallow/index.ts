@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 
-import { PaginationSchema } from '../common.schema';
+import { LocalizedTextSchema, PaginationSchema, PartialLocalizedTextSchema } from '../common.schema';
 
 // ============================================================================
 // Enums
@@ -53,13 +53,8 @@ export const UpdateMarshmallowConfigSchema = z.object({
   allowedReactions: z.array(z.string()).optional(),
   theme: z.record(z.string(), z.unknown()).optional(),
   avatarUrl: z.string().max(512).optional(),
-  // Multi-language content
-  termsContentEn: z.string().max(50000).optional(),
-  termsContentZh: z.string().max(50000).optional(),
-  termsContentJa: z.string().max(50000).optional(),
-  privacyContentEn: z.string().max(50000).optional(),
-  privacyContentZh: z.string().max(50000).optional(),
-  privacyContentJa: z.string().max(50000).optional(),
+  termsContent: PartialLocalizedTextSchema.optional(),
+  privacyContent: PartialLocalizedTextSchema.optional(),
   version: z.number().int(),
 });
 
@@ -196,10 +191,7 @@ export const CreateExternalBlocklistSchema = z.object({
   ownerId: z.string().optional(),
   pattern: z.string().min(1, 'Pattern is required').max(512),
   patternType: PatternTypeSchema,
-  nameEn: z.string().min(1, 'English name is required').max(128),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: z.record(z.string(), z.string().max(128)).optional(),
+  name: LocalizedTextSchema,
   description: z.string().max(1000).optional(),
   category: z.string().max(64).optional(),
   severity: BlocklistSeveritySchema.optional().default('medium'),
@@ -213,10 +205,7 @@ export const CreateExternalBlocklistSchema = z.object({
 export const UpdateExternalBlocklistSchema = z.object({
   pattern: z.string().min(1).max(512).optional(),
   patternType: PatternTypeSchema.optional(),
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: z.record(z.string(), z.string().max(128)).optional(),
+  name: PartialLocalizedTextSchema.optional(),
   description: z.string().max(1000).optional(),
   category: z.string().max(64).optional(),
   severity: BlocklistSeveritySchema.optional(),

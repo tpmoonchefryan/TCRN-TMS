@@ -6,13 +6,12 @@ Use this order when assembling prompt context for Homepage AI authoring tasks.
 
 Inject or summarize these first:
 
-1. `.context/standards/00-governance.md`
-2. `.context/standards/04-web-frontend.md`
-3. `.context/standards/09-web-ui-foundations.md`
-4. `.context/standards/10-web-runtime-dataflow.md`
-5. `.context/modules/06-homepage-public-pages/technical_details.md`
-6. `.context/modules/06-homepage-public-pages/current_issues.md`
-7. `.context/modules/06-homepage-public-pages/current_progress.md`
+1. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/20-spec.md`
+2. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/40-decisions.md`
+3. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/50-implementation-plan.md`
+4. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/70-verification.md`
+5. `vault/knowledge/projects/TCRN-TMS/ui-ux/uiux-specification-granularity-standard.md`
+6. `vault/knowledge/projects/TCRN-TMS/workflow/plan-materialization-granularity.md`
 
 ## 2. Shared AI Governance
 
@@ -37,7 +36,9 @@ Use `homepage-ai-patch.schema.json` as the machine-readable output contract when
 
 Before returning a final AI patch, verify:
 
-- the output stays in template mode unless the user explicitly requested Advanced Source;
+- the output stays in registry-bounded settings patch mode unless the user explicitly requested template/component authoring or Advanced Source;
+- template/component authoring output is an IDE review proposal, not a runtime tenant patch;
+- the output does not change layout, section order, slots, custom CSS/JS, or component registration outside reviewed template/component code;
 - any iframe uses an enabled provider from `ai-governance/security/iframe-allowlist.yaml`;
 - any external asset has known commercial-use rights or is rejected;
 - the output does not add visible renderer-only content;

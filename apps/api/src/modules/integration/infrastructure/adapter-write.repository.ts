@@ -2,9 +2,13 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
-import type { IntegrationAdapterPlatformBindingDefinition } from '@tcrn/shared';
+import type { IntegrationAdapterPlatformBindingDefinition, LocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
+import {
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import type { IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
 import type {
   IntegrationAdapterMutationRecord,
@@ -18,9 +22,7 @@ export interface AdapterCreatePersistenceInput {
   ownerId: string | null;
   platformId: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
@@ -28,9 +30,7 @@ export interface AdapterCreatePersistenceInput {
 }
 
 export interface AdapterUpdatePersistenceInput {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   inherit: boolean;
   userId: string | null;
@@ -68,6 +68,7 @@ export class AdapterWriteRepository {
         SELECT
           id,
           code,
+          name,
           display_name as "displayName",
           icon_url as "iconUrl"
         FROM "${tenantSchema}".social_platform
@@ -90,6 +91,7 @@ export class AdapterWriteRepository {
         SELECT
           id,
           code,
+          name,
           display_name as "displayName",
           icon_url as "iconUrl"
         FROM "${tenantSchema}".social_platform
@@ -112,9 +114,7 @@ export class AdapterWriteRepository {
         INSERT INTO "${tenantSchema}".social_platform (
           id,
           code,
-          name_en,
-          name_zh,
-          name_ja,
+          name,
           display_name,
           icon_url,
           base_url,
@@ -129,14 +129,12 @@ export class AdapterWriteRepository {
         ) VALUES (
           gen_random_uuid(),
           $1,
-          $2,
+          $2::jsonb,
           $3,
           $4,
           $5,
-          $6,
-          $7,
           NULL,
-          $8,
+          $6,
           900,
           true,
           true,
@@ -146,9 +144,7 @@ export class AdapterWriteRepository {
         )
         ON CONFLICT (code)
         DO UPDATE SET
-          name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
+          name = EXCLUDED.name,
           display_name = EXCLUDED.display_name,
           icon_url = EXCLUDED.icon_url,
           base_url = EXCLUDED.base_url,
@@ -160,13 +156,12 @@ export class AdapterWriteRepository {
         RETURNING
           id,
           code,
+          name,
           display_name as "displayName",
           icon_url as "iconUrl"
       `,
       platform.code,
-      platform.nameEn,
-      platform.nameZh ?? null,
-      platform.nameJa ?? null,
+      stringifyLocalizedText(platform.name),
       platform.displayName,
       platform.iconUrl ?? null,
       platform.baseUrl ?? null,
@@ -236,9 +231,7 @@ export class AdapterWriteRepository {
           owner_id,
           platform_id,
           code,
-          name_en,
-          name_zh,
-          name_ja,
+          name,
           extra_data,
           adapter_type,
           inherit,
@@ -253,17 +246,15 @@ export class AdapterWriteRepository {
           $2::uuid,
           $3::uuid,
           $4,
-          $5,
-          $6,
+          $5::jsonb,
+          $6::jsonb,
           $7,
-          $8::jsonb,
-          $9,
-          $10,
+          $8,
           true,
           NOW(),
           NOW(),
-          $11::uuid,
-          $11::uuid
+          $9::uuid,
+          $9::uuid
         )
         RETURNING id
       `,
@@ -271,9 +262,7 @@ export class AdapterWriteRepository {
       input.ownerId,
       input.platformId,
       input.code,
-      input.nameEn,
-      input.nameZh,
-      input.nameJa,
+      stringifyLocalizedText(input.name),
       input.extraData ? JSON.stringify(input.extraData) : null,
       input.adapterType,
       input.inherit,
@@ -353,9 +342,7 @@ export class AdapterWriteRepository {
           owner_id as "ownerId",
           platform_id as "platformId",
           code,
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           adapter_type as "adapterType",
           inherit,
@@ -370,7 +357,13 @@ export class AdapterWriteRepository {
       adapterId,
     );
 
-    return rows[0] ?? null;
+    const row = rows[0];
+    return row
+      ? {
+          ...row,
+          name: readLocalizedText(row.name, 'integration_adapter.name'),
+        }
+      : null;
   }
 
   update(
@@ -383,20 +376,16 @@ export class AdapterWriteRepository {
       `
         UPDATE "${tenantSchema}".integration_adapter
         SET
-          name_en = $2,
-          name_zh = $3,
-          name_ja = $4,
-          extra_data = $5::jsonb,
-          inherit = $6,
-          updated_by = $7::uuid,
+          name = $2::jsonb,
+          extra_data = $3::jsonb,
+          inherit = $4,
+          updated_by = $5::uuid,
           version = version + 1,
           updated_at = NOW()
         WHERE id = $1::uuid
       `,
       adapterId,
-      input.nameEn,
-      input.nameZh,
-      input.nameJa,
+      stringifyLocalizedText(input.name),
       input.extraData ? JSON.stringify(input.extraData) : null,
       input.inherit,
       input.userId,

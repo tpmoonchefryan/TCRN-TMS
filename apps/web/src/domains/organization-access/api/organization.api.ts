@@ -1,3 +1,8 @@
+import type {
+  LocalizedText,
+  PartialLocalizedText,
+} from '@tcrn/shared';
+
 export interface OrganizationTalent {
   id: string;
   code: string;
@@ -38,10 +43,7 @@ export interface CreateOrganizationTalentInput {
   subsidiaryId?: string | null;
   profileStoreId: string;
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   displayName: string;
   timezone?: string;
 }
@@ -51,11 +53,8 @@ export interface OrganizationTalentCreateResponse {
   subsidiaryId: string | null;
   code: string;
   path: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
-  name: string;
+  name: LocalizedText;
+  localizedName: string;
   displayName: string;
   avatarUrl: string | null;
   homepagePath: string | null;
@@ -84,13 +83,8 @@ export interface OrganizationTalentLifecycleInput {
 export interface CreateOrganizationSubsidiaryInput {
   parentId?: string | null;
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
+  name: LocalizedText;
+  description?: PartialLocalizedText;
   sortOrder?: number;
 }
 
@@ -100,11 +94,8 @@ export interface OrganizationSubsidiaryCreateResponse {
   code: string;
   path: string;
   depth: number;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
-  name: string;
+  name: LocalizedText;
+  localizedName: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;

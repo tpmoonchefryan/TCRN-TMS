@@ -1,21 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { SUPPORTED_UI_LOCALES } from './locale';
-
 /**
  * Application configuration constants
  */
 export const AppConfig = {
-  /**
-   * Supported UI language tags. Keep aligned with runtime locale normalization.
-   */
-  SUPPORTED_LANGUAGES: SUPPORTED_UI_LOCALES,
-
-  /**
-   * Default language
-   */
-  DEFAULT_LANGUAGE: 'en' as const,
-
   /**
    * Pagination defaults
    */

@@ -1,20 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import type { TalentLifecycleStatus } from './talent-read.policy';
 
 export interface TalentCreateInput {
   subsidiaryId?: string | null;
   profileStoreId: string;
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   extraData?: Record<string, unknown> | null;
   displayName: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
+  description?: PartialLocalizedText | null;
   avatarUrl?: string;
   homepagePath?: string;
   timezone?: string;
@@ -22,15 +21,10 @@ export interface TalentCreateInput {
 }
 
 export interface TalentUpdateInput {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   extraData?: Record<string, unknown> | null;
   displayName?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
+  description?: PartialLocalizedText | null;
   avatarUrl?: string;
   homepagePath?: string;
   timezone?: string;
@@ -184,17 +178,9 @@ export const buildTalentUpdateMutation = (
   const params: unknown[] = [];
   let paramIndex = 3;
 
-  if (data.nameEn !== undefined) {
-    updates.push(`name_en = $${paramIndex++}`);
-    params.push(data.nameEn);
-  }
-  if (data.nameZh !== undefined) {
-    updates.push(`name_zh = $${paramIndex++}`);
-    params.push(data.nameZh);
-  }
-  if (data.nameJa !== undefined) {
-    updates.push(`name_ja = $${paramIndex++}`);
-    params.push(data.nameJa);
+  if (data.name !== undefined) {
+    updates.push(`name = $${paramIndex++}::jsonb`);
+    params.push(stringifyLocalizedText(data.name as LocalizedText));
   }
   if (data.extraData !== undefined) {
     updates.push(`extra_data = $${paramIndex++}::jsonb`);
@@ -204,17 +190,9 @@ export const buildTalentUpdateMutation = (
     updates.push(`display_name = $${paramIndex++}`);
     params.push(data.displayName);
   }
-  if (data.descriptionEn !== undefined) {
-    updates.push(`description_en = $${paramIndex++}`);
-    params.push(data.descriptionEn);
-  }
-  if (data.descriptionZh !== undefined) {
-    updates.push(`description_zh = $${paramIndex++}`);
-    params.push(data.descriptionZh);
-  }
-  if (data.descriptionJa !== undefined) {
-    updates.push(`description_ja = $${paramIndex++}`);
-    params.push(data.descriptionJa);
+  if (data.description !== undefined) {
+    updates.push(`description = $${paramIndex++}::jsonb`);
+    params.push(stringifyLocalizedText(data.description as LocalizedText));
   }
   if (data.avatarUrl !== undefined) {
     updates.push(`avatar_url = $${paramIndex++}`);

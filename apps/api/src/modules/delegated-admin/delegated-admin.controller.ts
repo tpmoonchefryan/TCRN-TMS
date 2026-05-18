@@ -17,7 +17,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
-import { getRequestTrilingualLocaleFamily } from '../../common/request-locale.util';
+import { getRequestUiLocale } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { DelegatedAdminService, DelegateScopeType, DelegateType } from './delegated-admin.service';
 
@@ -69,7 +69,7 @@ export class DelegatedAdminController {
     @Query() query: ListDelegatedAdminsQueryDto,
     @Req() req: Request,
   ) {
-    const language = getRequestTrilingualLocaleFamily(req);
+    const language = getRequestUiLocale(req);
 
     const delegations = await this.delegatedAdminService.list(
       user.tenantSchema,

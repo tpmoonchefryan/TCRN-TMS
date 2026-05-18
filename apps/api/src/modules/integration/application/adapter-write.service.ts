@@ -11,7 +11,10 @@ import {
   ErrorCodes,
   getIntegrationAdapterCreateDefinition,
   type IntegrationAdapterDefinition,
+  normalizeLocalizedText,
   LogSeverity,
+  type LocalizedText,
+  type PartialLocalizedText,
   type RequestContext,
   TechEventScope,
   TechEventType,
@@ -32,7 +35,6 @@ import {
   isAdapterOwnedByScope,
   isSecretAdapterConfigKey,
 } from '../domain/adapter-write.policy';
-import { buildNameTranslationPayload } from '../domain/name-translation.policy';
 import {
   CreateAdapterDto,
   OwnerType,
@@ -65,9 +67,8 @@ export class AdapterWriteApplicationService {
     const tenantSchema = getAdapterTenantSchema(context);
     const definition = this.resolveCreateDefinition(dto.definitionKey);
     const createInput = this.buildCreateInput(dto, definition);
-    const translationPayload = buildNameTranslationPayload(createInput);
 
-    if (!translationPayload.nameEn) {
+    if (!createInput.name.en.trim()) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
         message: 'Adapter English name is required',
@@ -128,11 +129,9 @@ export class AdapterWriteApplicationService {
         ownerId: scope.ownerId,
         platformId: platform.id,
         code: createInput.code,
-        nameEn: translationPayload.nameEn,
-        nameZh: translationPayload.nameZh,
-        nameJa: translationPayload.nameJa,
+        name: createInput.name,
         extraData: this.mergeDefinitionExtraData(
-          translationPayload.extraData,
+          null,
           definition,
           createInput.configs,
         ),
@@ -203,29 +202,23 @@ export class AdapterWriteApplicationService {
   ): {
     platformId: string;
     code: string;
-    nameEn: string;
-    nameZh?: string;
-    nameJa?: string;
-    translations?: Record<string, string>;
+    name: LocalizedText;
     adapterType: string;
     inherit: boolean;
     configs: Array<{ configKey: string; configValue: string }>;
   } {
     if (!definition) {
-      if (!dto.platformId || !dto.adapterType || !dto.code || !dto.nameEn) {
+      if (!dto.platformId || !dto.adapterType || !dto.code || !dto.name) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
-          message: 'Platform, adapter type, code, and English name are required without a definition key',
+          message: 'Platform, adapter type, code, and localized name are required without a definition key',
         });
       }
 
       return {
         platformId: dto.platformId,
         code: dto.code.trim().toUpperCase(),
-        nameEn: dto.nameEn.trim(),
-        nameZh: dto.nameZh,
-        nameJa: dto.nameJa,
-        translations: dto.translations,
+        name: this.normalizeAdapterName(dto.name),
         adapterType: dto.adapterType,
         inherit: dto.inherit ?? true,
         configs: dto.configs ?? [],
@@ -237,10 +230,7 @@ export class AdapterWriteApplicationService {
     return {
       platformId: '',
       code: definition.code,
-      nameEn: definition.name.en,
-      nameZh: definition.name.zh_HANS,
-      nameJa: definition.name.ja,
-      translations: { ...definition.name },
+      name: definition.name,
       adapterType: definition.adapterType,
       inherit: dto.inherit ?? true,
       configs: this.buildDefinitionConfigs(definition, dto.configs ?? []),
@@ -255,10 +245,7 @@ export class AdapterWriteApplicationService {
       dto.platformId
       || dto.adapterType
       || dto.code
-      || dto.nameEn
-      || dto.nameZh
-      || dto.nameJa
-      || dto.translations,
+      || dto.name,
     );
 
     if (hasLockedField) {
@@ -358,8 +345,10 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      const translationPayload = buildNameTranslationPayload(dto, adapter);
-      if (!translationPayload.nameEn) {
+      const nextName = dto.name
+        ? this.normalizeAdapterName({ ...adapter.name, ...dto.name }, adapter.name.en)
+        : adapter.name;
+      if (!nextName.en.trim()) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
           message: 'Adapter English name is required',
@@ -369,13 +358,10 @@ export class AdapterWriteApplicationService {
       const updatePlan = buildAdapterUpdateMutationPlan(
         adapter,
         dto,
-        translationPayload.translations,
-        translationPayload.extraData,
+        nextName,
       );
       await this.adapterWriteRepository.update(prisma, tenantSchema, id, {
-        nameEn: updatePlan.nameEn,
-        nameZh: updatePlan.nameZh,
-        nameJa: updatePlan.nameJa,
+        name: updatePlan.name,
         extraData: updatePlan.extraData,
         inherit: updatePlan.inherit,
         userId: context.userId ?? null,
@@ -396,6 +382,13 @@ export class AdapterWriteApplicationService {
     });
 
     return this.adapterReadApplicationService.findById(id, context);
+  }
+
+  private normalizeAdapterName(
+    name: PartialLocalizedText,
+    fallback = '',
+  ): LocalizedText {
+    return normalizeLocalizedText(name, fallback);
   }
 
   async updateConfigs(adapterId: string, dto: UpdateAdapterConfigsDto, context: RequestContext) {

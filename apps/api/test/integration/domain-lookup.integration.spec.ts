@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestTalentInTenant,
   createTestTenantFixture,
   createTestUserInTenant,
@@ -78,21 +79,21 @@ describe('Domain Lookup Integration Tests', () => {
 
     const publishedTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_DOMAIN_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Published Domain Lookup Test Talent',
+      name: createLocalizedText({ en: 'Published Domain Lookup Test Talent' }),
       displayName: 'Published Domain Lookup Test Talent',
       homepagePath: `domain-home-${Date.now()}`,
       createdBy,
     });
     const draftTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_DOMAIN_DRAFT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Draft Domain Lookup Test Talent',
+      name: createLocalizedText({ en: 'Draft Domain Lookup Test Talent' }),
       displayName: 'Draft Domain Lookup Test Talent',
       homepagePath: `domain-draft-${Date.now()}`,
       createdBy,
     });
     const disabledTalent = await createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_DOMAIN_DISABLED_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Disabled Domain Lookup Test Talent',
+      name: createLocalizedText({ en: 'Disabled Domain Lookup Test Talent' }),
       displayName: 'Disabled Domain Lookup Test Talent',
       homepagePath: `domain-disabled-${Date.now()}`,
       createdBy,

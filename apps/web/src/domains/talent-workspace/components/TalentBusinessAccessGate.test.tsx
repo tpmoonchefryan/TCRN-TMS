@@ -26,9 +26,8 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => ({
-    currentLocale: 'en',
-    selectedLocale: 'en',
+  useUiLocale: () => ({
+    locale: 'en',
   }),
 }));
 

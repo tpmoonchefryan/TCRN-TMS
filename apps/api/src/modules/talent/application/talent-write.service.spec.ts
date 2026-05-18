@@ -5,6 +5,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TalentWriteRepository } from '../infrastructure/talent-write.repository';
@@ -55,7 +56,7 @@ describe('TalentWriteService', () => {
           subsidiaryId: 'sub-1',
           profileStoreId: 'store-1',
           code: 'SORA',
-          nameEn: 'Sora',
+          name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
         'user-1',
@@ -74,7 +75,7 @@ describe('TalentWriteService', () => {
         {
           profileStoreId: 'store-1',
           code: 'SORA',
-          nameEn: 'Sora',
+          name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
         'user-1',
@@ -95,7 +96,7 @@ describe('TalentWriteService', () => {
           subsidiaryId: 'sub-1',
           profileStoreId: 'store-1',
           code: 'SORA',
-          nameEn: 'Sora',
+          name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
         'user-1',
@@ -106,7 +107,8 @@ describe('TalentWriteService', () => {
   it('fails closed on optimistic-lock mismatch during update', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue({
       id: 'talent-123',
-      nameEn: 'Sora',
+      name: createLocalizedText({ en: 'Sora' }),
+      description: createLocalizedText({ en: 'Sora' }),
       version: 1,
       homepagePath: 'sora',
     } as never);
@@ -127,7 +129,8 @@ describe('TalentWriteService', () => {
   it('updates a talent after homepage-path uniqueness validation', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue({
       id: 'talent-123',
-      nameEn: 'Sora',
+      name: createLocalizedText({ en: 'Sora' }),
+      description: createLocalizedText({ en: 'Sora' }),
       version: 1,
       homepagePath: 'sora',
     } as never);

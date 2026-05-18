@@ -127,7 +127,7 @@ export class ProfileStoreApplicationService {
         objectName: dto.code,
         newValue: {
           code: dto.code,
-          nameEn: dto.nameEn,
+          name: dto.name,
           isDefault: dto.isDefault,
         },
       },

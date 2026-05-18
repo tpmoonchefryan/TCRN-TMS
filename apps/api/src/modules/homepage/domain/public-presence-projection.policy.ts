@@ -1694,8 +1694,6 @@ function buildAgencyNoteSections(
     const note = asRecord(entry);
     const title = asString(note.title);
     const body = asString(note.body);
-    const kind = asString(note.kind);
-
     if (!title || !body) {
       return;
     }
@@ -1709,7 +1707,7 @@ function buildAgencyNoteSections(
       validationIssueIds: collectValidationIssueIds(context.snapshot, {
         sectionId: section.id,
       }),
-      title: kind ? `${kind}: ${title}` : title,
+      title,
       description: body,
     });
   });

@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { prisma } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, createLocalizedText } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database
@@ -28,12 +28,13 @@ describe('SubsidiaryService', () => {
     code: 'SUB001',
     path: '/SUB001',
     depth: 0,
-    nameEn: 'Main Office',
-    nameZh: '总部',
-    nameJa: '本社',
-    descriptionEn: 'Main office description',
-    descriptionZh: null,
-    descriptionJa: null,
+    name: createLocalizedText({
+      en: 'Main Office',
+      zh_HANS: '总部',
+      zh_HANT: '總部',
+      ja: '本社',
+    }),
+    description: createLocalizedText({ en: 'Main office description' }),
     sortOrder: 1,
     isActive: true,
     createdAt: new Date(),

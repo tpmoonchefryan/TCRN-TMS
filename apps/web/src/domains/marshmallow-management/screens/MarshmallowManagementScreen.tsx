@@ -454,7 +454,7 @@ export function MarshmallowManagementScreen({
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
   const {
-    selectedLocale,
+    locale,
     copy,
     captchaOptions,
     messageStatusOptions,
@@ -907,7 +907,7 @@ export function MarshmallowManagementScreen({
   }
 
   const pageRange = getPaginationRange(messagesPanel.pagination, messagesPanel.data.length);
-  const paginationLabel = pickLocaleText(selectedLocale, {
+  const paginationLabel = pickLocaleText(locale, {
     en: `Page ${messagesPanel.pagination.page} of ${messagesPanel.pagination.totalPages}`,
     zh_HANS: `第 ${messagesPanel.pagination.page} / ${messagesPanel.pagination.totalPages} 页`,
     zh_HANT: `第 ${messagesPanel.pagination.page} / ${messagesPanel.pagination.totalPages} 頁`,
@@ -917,7 +917,7 @@ export function MarshmallowManagementScreen({
   });
   const paginationRangeLabel =
     messagesPanel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No messages are currently available.',
           zh_HANS: '当前没有消息记录。',
           zh_HANT: '目前沒有訊息紀錄。',
@@ -925,7 +925,7 @@ export function MarshmallowManagementScreen({
           ko: '표시할 메시지가 없습니다.',
           fr: "Aucun message n'est disponible pour le moment.",
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${pageRange.start}-${pageRange.end} of ${messagesPanel.pagination.totalCount}`,
           zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${messagesPanel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${messagesPanel.pagination.totalCount} 筆`,
@@ -933,7 +933,7 @@ export function MarshmallowManagementScreen({
           ko: `${messagesPanel.pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
           fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${messagesPanel.pagination.totalCount}`,
         });
-  const pageSizeLabel = pickLocaleText(selectedLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页显示',
     zh_HANT: '每頁顯示',
@@ -941,7 +941,7 @@ export function MarshmallowManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(selectedLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -949,7 +949,7 @@ export function MarshmallowManagementScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(selectedLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -991,12 +991,12 @@ export function MarshmallowManagementScreen({
             />
             <SummaryCard
               label={copy.summary.messageVolumeLabel}
-              value={formatMarshmallowNumber(selectedLocale, config.stats.totalMessages)}
+              value={formatMarshmallowNumber(locale, config.stats.totalMessages)}
               hint={copy.summary.messageVolumeHint}
             />
             <SummaryCard
               label={copy.summary.unreadPendingLabel}
-              value={`${formatMarshmallowNumber(selectedLocale, config.stats.unreadCount)} / ${formatMarshmallowNumber(selectedLocale, config.stats.pendingCount)}`}
+              value={`${formatMarshmallowNumber(locale, config.stats.unreadCount)} / ${formatMarshmallowNumber(locale, config.stats.pendingCount)}`}
               hint={copy.summary.unreadPendingHint}
             />
             <SummaryCard
@@ -1048,7 +1048,7 @@ export function MarshmallowManagementScreen({
             <SummaryCard label={copy.config.stats.versionLabel} value={String(config.version)} hint={copy.config.stats.versionHint} />
             <SummaryCard
               label={copy.config.stats.updatedAtLabel}
-              value={formatMarshmallowDateTime(selectedLocale, config.updatedAt, copy.common.never)}
+              value={formatMarshmallowDateTime(locale, config.updatedAt, copy.common.never)}
               hint={copy.config.stats.updatedAtHint}
             />
             <SummaryCard
@@ -1253,7 +1253,7 @@ export function MarshmallowManagementScreen({
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-2">
-                        <StatusBadge status={message.status} label={getMarshmallowMessageStatusLabel(selectedLocale, message.status)} />
+                        <StatusBadge status={message.status} label={getMarshmallowMessageStatusLabel(locale, message.status)} />
                         {message.rejectionReason ? (
                           <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{message.rejectionReason}</p>
                         ) : null}
@@ -1274,7 +1274,7 @@ export function MarshmallowManagementScreen({
                         : copy.moderation.table.noReactions}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-700">
-                      {formatMarshmallowDateTime(selectedLocale, message.createdAt, copy.common.never)}
+                      {formatMarshmallowDateTime(locale, message.createdAt, copy.common.never)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -1292,7 +1292,7 @@ export function MarshmallowManagementScreen({
                             })
                           }
                           disabled={message.status === 'approved'}
-                          ariaLabel={getMarshmallowActionAriaLabel(selectedLocale, 'approve', message.id)}
+                          ariaLabel={getMarshmallowActionAriaLabel(locale, 'approve', message.id)}
                         >
                           <Sparkles className="h-3.5 w-3.5" />
                           {copy.actions.approve}
@@ -1325,8 +1325,8 @@ export function MarshmallowManagementScreen({
                           }
                           ariaLabel={
                             message.status === 'rejected'
-                              ? getMarshmallowActionAriaLabel(selectedLocale, 'restore', message.id)
-                              : getMarshmallowActionAriaLabel(selectedLocale, 'reject', message.id)
+                              ? getMarshmallowActionAriaLabel(locale, 'restore', message.id)
+                              : getMarshmallowActionAriaLabel(locale, 'reject', message.id)
                           }
                         >
                           <ShieldAlert className="h-3.5 w-3.5" />
@@ -1336,8 +1336,8 @@ export function MarshmallowManagementScreen({
                           onClick={() => void handleToggleFlags(message, { isRead: !message.isRead })}
                           ariaLabel={
                             message.isRead
-                              ? getMarshmallowActionAriaLabel(selectedLocale, 'markUnread', message.id)
-                              : getMarshmallowActionAriaLabel(selectedLocale, 'markRead', message.id)
+                              ? getMarshmallowActionAriaLabel(locale, 'markUnread', message.id)
+                              : getMarshmallowActionAriaLabel(locale, 'markRead', message.id)
                           }
                         >
                           <Search className="h-3.5 w-3.5" />
@@ -1347,8 +1347,8 @@ export function MarshmallowManagementScreen({
                           onClick={() => void handleToggleFlags(message, { isStarred: !message.isStarred })}
                           ariaLabel={
                             message.isStarred
-                              ? getMarshmallowActionAriaLabel(selectedLocale, 'unstar', message.id)
-                              : getMarshmallowActionAriaLabel(selectedLocale, 'star', message.id)
+                              ? getMarshmallowActionAriaLabel(locale, 'unstar', message.id)
+                              : getMarshmallowActionAriaLabel(locale, 'star', message.id)
                           }
                         >
                           <Star className="h-3.5 w-3.5" />
@@ -1422,7 +1422,7 @@ export function MarshmallowManagementScreen({
               <p className="text-sm font-semibold text-slate-900">{copy.export.currentScopeTitle}</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {copy.export.currentScopeStatusPrefix}{' '}
-                {messageStatusFilter === 'all' ? copy.export.allVisibleStatuses : getMarshmallowMessageStatusLabel(selectedLocale, messageStatusFilter)}
+                {messageStatusFilter === 'all' ? copy.export.allVisibleStatuses : getMarshmallowMessageStatusLabel(locale, messageStatusFilter)}
               </p>
             </div>
           </div>
@@ -1434,15 +1434,15 @@ export function MarshmallowManagementScreen({
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.export.latestJobTitle}</p>
                   <p className="text-base font-semibold text-slate-950">{exportJob.fileName || exportJob.id}</p>
                   <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                    <p>{copy.export.fields.status}: {getMarshmallowExportStatusLabel(selectedLocale, exportJob.status)}</p>
+                    <p>{copy.export.fields.status}: {getMarshmallowExportStatusLabel(locale, exportJob.status)}</p>
                     <p>{copy.export.fields.format}: {exportJob.format.toUpperCase()}</p>
                     <p>
-                      {copy.export.fields.processed}: {formatMarshmallowNumber(selectedLocale, exportJob.processedRecords)} /{' '}
-                      {formatMarshmallowNumber(selectedLocale, exportJob.totalRecords)}
+                      {copy.export.fields.processed}: {formatMarshmallowNumber(locale, exportJob.processedRecords)} /{' '}
+                      {formatMarshmallowNumber(locale, exportJob.totalRecords)}
                     </p>
-                    <p>{copy.export.fields.created}: {formatMarshmallowDateTime(selectedLocale, exportJob.createdAt, copy.common.never)}</p>
-                    <p>{copy.export.fields.completed}: {formatMarshmallowDateTime(selectedLocale, exportJob.completedAt, copy.common.never)}</p>
-                    <p>{copy.export.fields.expires}: {formatMarshmallowDateTime(selectedLocale, exportJob.expiresAt, copy.common.never)}</p>
+                    <p>{copy.export.fields.created}: {formatMarshmallowDateTime(locale, exportJob.createdAt, copy.common.never)}</p>
+                    <p>{copy.export.fields.completed}: {formatMarshmallowDateTime(locale, exportJob.completedAt, copy.common.never)}</p>
+                    <p>{copy.export.fields.expires}: {formatMarshmallowDateTime(locale, exportJob.expiresAt, copy.common.never)}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1471,7 +1471,7 @@ export function MarshmallowManagementScreen({
                   onClick={() => void handleCreateExport()}
                   isPending={exportPending}
                   pendingText={copy.actions.queueExportPending}
-                  aria-label={pickLocaleText(selectedLocale, {
+                  aria-label={pickLocaleText(locale, {
                     en: 'Create export job from empty state',
                     zh_HANS: '从空状态创建导出任务',
                     zh_HANT: '從空狀態建立匯出任務',
@@ -1494,7 +1494,7 @@ export function MarshmallowManagementScreen({
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText ?? copy.actions.approve}
-        cancelText={pickLocaleText(selectedLocale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        cancelText={pickLocaleText(locale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
         intent={dialogState?.intent}
         isPending={dialogPending}
         onCancel={() => {

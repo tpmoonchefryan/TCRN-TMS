@@ -1,3 +1,4 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,7 +8,7 @@ const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('next/navigation', () => ({
@@ -28,13 +29,13 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('ObservabilityScreen', () => {
   beforeEach(() => {
     searchQuery = '';
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     mockReplace.mockReset();
     mockRequest.mockReset();
   });
@@ -361,7 +362,7 @@ describe('ObservabilityScreen', () => {
   });
 
   it('renders localized zh copy for the header chrome', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/logs/changes?page=1&pageSize=20') {

@@ -11,6 +11,8 @@ import {
   ErrorCodes,
   PublicPresenceDocumentSchema,
   type PublicPresenceDocumentState,
+  type PublicPresenceWorkflowEventType,
+  PublicPresenceTemplateIdSchema,
   type RequestContext,
 } from '@tcrn/shared';
 
@@ -50,8 +52,13 @@ export class PublicPresenceWorkflowService {
     talentId: string,
     context: RequestContext,
     expectedCurrentContentHash?: string | null,
+    templateId?: string | null,
   ) {
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      templateId,
+    );
     this.assertCurrentHash(target.version, expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['draft', 'changesRequested']);
 
@@ -81,9 +88,14 @@ export class PublicPresenceWorkflowService {
     input: {
       comment?: string | null;
       expectedCurrentContentHash?: string | null;
+      templateId?: string | null;
     },
   ) {
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      input.templateId,
+    );
     this.assertCurrentHash(target.version, input.expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['inReview', 'approved', 'scheduled']);
 
@@ -112,8 +124,13 @@ export class PublicPresenceWorkflowService {
     talentId: string,
     context: RequestContext,
     expectedCurrentContentHash?: string | null,
+    templateId?: string | null,
   ) {
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      templateId,
+    );
     this.assertCurrentHash(target.version, expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['inReview', 'changesRequested']);
 
@@ -145,6 +162,7 @@ export class PublicPresenceWorkflowService {
     input: {
       expectedCurrentContentHash?: string | null;
       scheduledFor: string;
+      templateId?: string | null;
     },
   ) {
     const scheduledFor = new Date(input.scheduledFor);
@@ -155,7 +173,11 @@ export class PublicPresenceWorkflowService {
       });
     }
 
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      input.templateId,
+    );
     this.assertCurrentHash(target.version, input.expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['approved']);
 
@@ -186,8 +208,13 @@ export class PublicPresenceWorkflowService {
     talentId: string,
     context: RequestContext,
     expectedCurrentContentHash?: string | null,
+    templateId?: string | null,
   ) {
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      templateId,
+    );
     this.assertCurrentHash(target.version, expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['scheduled']);
 
@@ -215,8 +242,13 @@ export class PublicPresenceWorkflowService {
     talentId: string,
     context: RequestContext,
     expectedCurrentContentHash?: string | null,
+    templateId?: string | null,
   ) {
-    const target = await this.loadWorkflowTarget(talentId, context.tenantSchema ?? '');
+    const target = await this.loadWorkflowTarget(
+      talentId,
+      context.tenantSchema ?? '',
+      templateId,
+    );
     this.assertCurrentHash(target.version, expectedCurrentContentHash);
     this.assertDocumentState(target.version, ['approved', 'scheduled']);
 
@@ -250,7 +282,10 @@ export class PublicPresenceWorkflowService {
       }
     }
 
+    const autoSwitched = await this.executeDueRevealAutoSwitches(tenantSchema);
+
     return {
+      autoSwitched,
       failed,
       published,
     };
@@ -328,10 +363,10 @@ export class PublicPresenceWorkflowService {
     );
   }
 
-  private async loadWorkflowTarget(
+  private async loadPortalContext(
     talentId: string,
     tenantSchema: string,
-  ): Promise<WorkflowTargetContext> {
+  ): Promise<Omit<WorkflowTargetContext, 'version'>> {
     const talent = await this.homepageAdminRepository.findTalentById(
       tenantSchema,
       talentId,
@@ -350,23 +385,10 @@ export class PublicPresenceWorkflowService {
         talentId,
       );
 
-    if (!portal?.draftVersionId) {
+    if (!portal) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Public Presence draft not found',
-      });
-    }
-
-    const draftVersion =
-      await this.publicPresenceFoundationRepository.findDocumentVersionById(
-        tenantSchema,
-        portal.draftVersionId,
-      );
-
-    if (!draftVersion) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Public Presence version not found',
+        message: 'Public Presence workspace not found',
       });
     }
 
@@ -379,7 +401,43 @@ export class PublicPresenceWorkflowService {
       talent,
       tenantCode,
       tenantSchema,
-      version: draftVersion,
+    };
+  }
+
+  private async loadWorkflowTarget(
+    talentId: string,
+    tenantSchema: string,
+    templateIdInput?: string | null,
+  ): Promise<WorkflowTargetContext> {
+    const base = await this.loadPortalContext(talentId, tenantSchema);
+    const requestedTemplateId = PublicPresenceTemplateIdSchema.safeParse(
+      templateIdInput ?? null,
+    );
+    const version = requestedTemplateId.success
+      ? await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+          tenantSchema,
+          base.portal.id,
+          requestedTemplateId.data,
+        )
+      : base.portal.draftVersionId
+        ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
+            tenantSchema,
+            base.portal.draftVersionId,
+          )
+        : null;
+
+    if (!version) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: requestedTemplateId.success
+          ? `Public Presence ${requestedTemplateId.data} version not found`
+          : 'Public Presence draft not found',
+      });
+    }
+
+    return {
+      ...base,
+      version,
     };
   }
 
@@ -388,7 +446,7 @@ export class PublicPresenceWorkflowService {
     tenantSchema: string,
     versionId: string,
   ): Promise<WorkflowTargetContext> {
-    const base = await this.loadWorkflowTarget(talentId, tenantSchema);
+    const base = await this.loadPortalContext(talentId, tenantSchema);
     const version =
       await this.publicPresenceFoundationRepository.findDocumentVersionById(
         tenantSchema,
@@ -406,6 +464,65 @@ export class PublicPresenceWorkflowService {
       ...base,
       version,
     };
+  }
+
+  private async executeDueRevealAutoSwitches(tenantSchema: string) {
+    const liveRevealVersions =
+      await this.publicPresenceFoundationRepository.findLiveDebutRevealVersions(
+        tenantSchema,
+      );
+    let autoSwitched = 0;
+
+    for (const liveRevealVersion of liveRevealVersions) {
+      const revealTarget = await this.loadVersionTarget(
+        liveRevealVersion.talentId,
+        tenantSchema,
+        liveRevealVersion.versionId,
+      );
+      const revealAt = this.extractRevealAutoSwitchAt(revealTarget.version);
+
+      if (!revealAt || Date.parse(revealAt) > Date.now()) {
+        continue;
+      }
+
+      const nextHubVersion =
+        await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+          tenantSchema,
+          revealTarget.portal.id,
+          'activeTalentHub',
+          ['approved', 'published'],
+        );
+
+      if (!nextHubVersion || nextHubVersion.id === revealTarget.version.id) {
+        continue;
+      }
+
+      const nextHubTarget = await this.loadVersionTarget(
+        liveRevealVersion.talentId,
+        tenantSchema,
+        nextHubVersion.id,
+      );
+
+      await this.publishVersion(
+        nextHubTarget,
+        {
+          tenantSchema,
+          userId: null,
+          userName: 'reveal-scheduler',
+        },
+        {
+          eventType: 'revealAutoSwitched',
+          extraPayload: {
+            autoSwitchedFromVersionId: revealTarget.version.id,
+            autoSwitchAt: revealAt,
+            switchReason: 'countdownRevealCompleted',
+          },
+        },
+      );
+      autoSwitched += 1;
+    }
+
+    return autoSwitched;
   }
 
   private assertCurrentHash(
@@ -466,6 +583,27 @@ export class PublicPresenceWorkflowService {
       });
     }
 
+    if (
+      document.templateId === 'debutReveal'
+      && this.extractRevealAutoSwitchAt(target.version)
+    ) {
+      const activeHubTarget =
+        await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+          target.tenantSchema,
+          target.portal.id,
+          'activeTalentHub',
+          ['approved', 'published'],
+        );
+
+      if (!activeHubTarget) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message:
+            'An approved Active Talent Hub version is required before releasing Debut / Reveal with automatic switch.',
+        });
+      }
+    }
+
     const projection = buildPublicPresenceProjectionFromDocument({
       contentHash: target.version.contentHash,
       createdAt: target.version.createdAt.toISOString(),
@@ -520,6 +658,10 @@ export class PublicPresenceWorkflowService {
   private async publishVersion(
     target: WorkflowTargetContext,
     context: RequestContext,
+    options?: {
+      eventType?: PublicPresenceWorkflowEventType;
+      extraPayload?: Record<string, unknown>;
+    },
   ) {
     const validation = await this.validateForPublish(target, context, 'published');
     const publishedAt = new Date();
@@ -530,8 +672,9 @@ export class PublicPresenceWorkflowService {
         actorId: context.userId ?? null,
         contentHash: target.version.contentHash,
         contentHashAlgorithm: 'sha256',
-        eventType: 'published',
+        eventType: options?.eventType ?? 'published',
         payload: {
+          ...options?.extraPayload,
           publishedBy: context.userName ?? null,
           projectionEvent: buildPublicHomepageProjectionEvent(validation.projection),
           scheduledFor: target.version.scheduledFor?.toISOString() ?? null,
@@ -554,5 +697,27 @@ export class PublicPresenceWorkflowService {
     } catch {
       // Preserve the publish transition even if CDN invalidation is temporarily unavailable.
     }
+  }
+
+  private extractRevealAutoSwitchAt(
+    version: PublicPresenceDocumentVersionRecord,
+  ): string | null {
+    if (version.templateId !== 'debutReveal') {
+      return null;
+    }
+
+    const document = PublicPresenceDocumentSchema.parse(version.document);
+    const countdownSection = document.sections.find(
+      (section) => section.kind === 'countdownReveal',
+    );
+    const revealField = countdownSection?.fields?.revealAtUtc;
+
+    if (!revealField || typeof revealField !== 'object' || !('value' in revealField)) {
+      return null;
+    }
+
+    return typeof revealField.value === 'string' && revealField.value.trim().length > 0
+      ? revealField.value.trim()
+      : null;
   }
 }

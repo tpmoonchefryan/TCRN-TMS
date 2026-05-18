@@ -3,11 +3,20 @@
 import { CreateSystemRoleSchema, UpdateSystemRoleSchema } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
+const roleName = {
+  en: 'Export Deny',
+  zh_HANS: '导出拒绝',
+  zh_HANT: '匯出拒絕',
+  ja: 'エクスポート拒否',
+  ko: '내보내기 거부',
+  fr: "Refus d'exportation",
+};
+
 describe('SystemRole contract schemas', () => {
   it('accepts optional permission effects in create payloads', () => {
     const result = CreateSystemRoleSchema.parse({
       code: 'EXPORT_DENY',
-      nameEn: 'Export Deny',
+      name: roleName,
       permissions: [
         { resource: 'customer.export', action: 'read', effect: 'deny' },
         { resource: 'customer.export', action: 'write' },
@@ -22,12 +31,12 @@ describe('SystemRole contract schemas', () => {
 
   it('does not require version in update payloads', () => {
     const result = UpdateSystemRoleSchema.parse({
-      nameEn: 'Updated Role',
+      name: { en: 'Updated Role' },
       permissions: [{ resource: 'customer.export', action: 'read', effect: 'grant' }],
     });
 
     expect(result).toEqual({
-      nameEn: 'Updated Role',
+      name: { en: 'Updated Role' },
       permissions: [{ resource: 'customer.export', action: 'read', effect: 'grant' }],
     });
   });
@@ -35,7 +44,7 @@ describe('SystemRole contract schemas', () => {
   it('rejects resource codes outside the shared RBAC catalog', () => {
     const result = CreateSystemRoleSchema.safeParse({
       code: 'INVALID_RESOURCE_ROLE',
-      nameEn: 'Invalid Resource Role',
+      name: roleName,
       permissions: [{ resource: 'config.unknown', action: 'read' }],
     });
 
@@ -45,7 +54,7 @@ describe('SystemRole contract schemas', () => {
   it('rejects non-canonical permission actions in role payloads', () => {
     const result = CreateSystemRoleSchema.safeParse({
       code: 'INVALID_ACTION_ROLE',
-      nameEn: 'Invalid Action Role',
+      name: roleName,
       permissions: [{ resource: 'customer.export', action: 'create' }],
     });
 

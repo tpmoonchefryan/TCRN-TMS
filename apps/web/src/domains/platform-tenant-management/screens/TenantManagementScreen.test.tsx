@@ -1,3 +1,4 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TenantManagementScreen } from '@/domains/platform-tenant-management/screens/TenantManagementScreen';
@@ -7,7 +8,7 @@ const replace = vi.fn();
 let pathname = '/ac/tenant-ac/tenants';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
@@ -27,7 +28,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -40,7 +41,7 @@ vi.mock('next/navigation', () => ({
 
 describe('TenantManagementScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     replace.mockReset();
     pathname = '/ac/tenant-ac/tenants';

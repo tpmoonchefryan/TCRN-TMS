@@ -16,13 +16,13 @@ export {
     export * from './types/api';
     export * from './types/auth';
     export * from './types/db-schema';
-    export * from './types/enums';
+export * from './types/enums';
 
 // Export only non-conflicting types from entity.ts
 // (BaseEntity is in db-schema.ts, ConfigEntity is in config.ts, ProfileType is in enums.ts)
 export type {
-    Gender, MultilingualText,
-    OwnerLevel, SupportedLanguage
+    Gender,
+    OwnerLevel
 } from './types/entity';
 
 // Export change-log types (ChangeAction is also in enums.ts but different definition)

@@ -9,14 +9,14 @@ export interface LocaleOption {
 }
 
 export interface LocaleSwitcherProps {
-  currentLocale: string;
+  locale: string;
   options: LocaleOption[];
   onChange: (localeCode: string) => void;
   ariaLabel: string;
 }
 
 export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
-  currentLocale,
+  locale,
   options,
   onChange,
   ariaLabel,
@@ -38,7 +38,7 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
   });
   const triggerId = useId();
 
-  const currentLabel = options.find((o) => o.code === currentLocale)?.label || currentLocale;
+  const currentLabel = options.find((o) => o.code === locale)?.label || locale;
   const animationClass = isExiting ? tokens.motion.popoverExit : tokens.motion.popoverEnter;
 
   return (
@@ -73,7 +73,7 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
         >
           <div className="py-1">
             {options.map((option) => {
-              const isSelected = option.code === currentLocale;
+              const isSelected = option.code === locale;
               return (
                 <button
                   key={option.code}

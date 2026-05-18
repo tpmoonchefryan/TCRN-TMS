@@ -1,19 +1,19 @@
-import { type SupportedUiLocale } from '@tcrn/shared';
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { type PublicMarshmallowMessageRecord } from '@/domains/public-marshmallow/api/public-marshmallow.api';
 import {
   PublicPresenceBadge,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
-import { type RuntimeLocale, type useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   formatLocaleNumber,
   pickLocaleText,
 } from '@/platform/runtime/locale/locale-text';
 
-type MarshmallowLocale = SupportedUiLocale | RuntimeLocale;
-type PublicMarshmallowCopy = ReturnType<typeof useRuntimeLocale>['copy']['publicMarshmallow'];
+type MarshmallowLocale = SupportedUiLocale ;
+type PublicMarshmallowCopy = ReturnType<typeof useUiLocale>['copy']['publicMarshmallow'];
 
 function formatReplyHeading(replyLabel: string, repliedBy: string | null, locale: MarshmallowLocale) {
   if (!repliedBy) {

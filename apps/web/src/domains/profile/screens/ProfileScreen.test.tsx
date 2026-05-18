@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProfileScreen } from '@/domains/profile/screens/ProfileScreen';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
 const mockUpdateSessionUser = vi.fn();
@@ -52,7 +52,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/domains/profile/screens/profile.copy', () => ({
   useProfileCopy: () => ({
-    currentLocale: 'en',
+    locale: 'en',
     copy: {
       header: {
         chipPrefix: 'Current Scope',
@@ -233,9 +233,9 @@ function buildProfile(overrides: Record<string, unknown> = {}) {
 
 function renderProfileScreen(props: ComponentProps<typeof ProfileScreen>) {
   return render(
-    <RuntimeLocaleProvider>
+    <UiLocaleProvider>
       <ProfileScreen {...props} />
-    </RuntimeLocaleProvider>,
+    </UiLocaleProvider>,
   );
 }
 

@@ -67,12 +67,10 @@ export class MfrReportRepository {
       SELECT
         cp.nickname,
         sp.display_name AS platform_display_name,
-        ml.name_zh AS level_name_zh,
-        ml.name_en AS level_name_en,
+        ml.name AS level_name,
         mr.valid_from,
         mr.valid_to,
-        cs.name_zh AS status_name_zh,
-        cs.name_en AS status_name_en
+        cs.name AS status_name
       FROM "${tenantSchema}".membership_record mr
       JOIN "${tenantSchema}".customer_profile cp ON cp.id = mr.customer_id
       JOIN "${tenantSchema}".social_platform sp ON sp.id = mr.platform_id

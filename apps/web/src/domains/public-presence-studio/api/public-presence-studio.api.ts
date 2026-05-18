@@ -50,9 +50,19 @@ export interface PublicPresenceStudioVersionSummary {
   versionNumber: number;
 }
 
+export interface PublicPresenceStudioPageVersionSummary {
+  latestVersion: PublicPresenceStudioVersionSummary | null;
+  liveVersion: PublicPresenceStudioVersionSummary | null;
+  revealAutoSwitchAt: string | null;
+  scheduledVersion: PublicPresenceStudioVersionSummary | null;
+  templateId: string;
+}
+
 export interface PublicPresenceStudioWorkspaceResponse {
   draftVersion: PublicPresenceStudioVersionSummary | null;
   liveVersion: PublicPresenceStudioVersionSummary | null;
+  liveTemplateId: string | null;
+  pageVersions: PublicPresenceStudioPageVersionSummary[];
   portal: {
     createdAt: string;
     draftVersionId: string | null;
@@ -72,6 +82,7 @@ export interface PublicPresenceStudioWorkspaceResponse {
     talentCode: string;
     tenantCode: string;
   } | null;
+  selectedTemplateId: string;
   stageSections: PublicPresenceStudioStageSectionSummary[];
   templates: PublicPresenceStudioTemplateSummary[];
   workflowEvents: Array<{
@@ -89,12 +100,29 @@ export interface PublicPresenceStudioWorkspaceResponse {
 
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 
+function appendTemplateId(
+  path: string,
+  templateId?: string | null,
+  extraParams?: URLSearchParams,
+) {
+  const params = extraParams ?? new URLSearchParams();
+
+  if (templateId) {
+    params.set('templateId', templateId);
+  }
+
+  const query = params.toString();
+
+  return query ? `${path}?${query}` : path;
+}
+
 export function readPublicPresenceWorkspace(
   request: RequestFn,
   talentId: string,
+  templateId?: string | null,
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
-    `/api/v1/talents/${talentId}/public-presence`,
+    appendTemplateId(`/api/v1/talents/${talentId}/public-presence`, templateId),
   );
 }
 
@@ -139,11 +167,16 @@ export function readPublicPresenceDraftPreview(
   request: RequestFn,
   talentId: string,
   phase: PublicPresencePhaseVisibility | 'current' = 'current',
+  templateId?: string | null,
 ) {
-  const query = phase === 'current' ? '' : `?phase=${encodeURIComponent(phase)}`;
+  const params = new URLSearchParams();
+
+  if (phase !== 'current') {
+    params.set('phase', phase);
+  }
 
   return request<PublicPresenceProjection>(
-    `/api/v1/talents/${talentId}/public-presence/preview${query}`,
+    appendTemplateId(`/api/v1/talents/${talentId}/public-presence/preview`, templateId, params),
   );
 }
 
@@ -151,11 +184,12 @@ export function submitPublicPresenceForReview(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
+  templateId?: string | null,
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/review/submit`,
     {
-      body: JSON.stringify({ expectedCurrentContentHash }),
+      body: JSON.stringify({ expectedCurrentContentHash, templateId }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -170,6 +204,7 @@ export function requestPublicPresenceChanges(
   input: {
     comment?: string | null;
     expectedCurrentContentHash?: string | null;
+    templateId?: string | null;
   },
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
@@ -188,11 +223,12 @@ export function approvePublicPresenceReview(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
+  templateId?: string | null,
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/review/approve`,
     {
-      body: JSON.stringify({ expectedCurrentContentHash }),
+      body: JSON.stringify({ expectedCurrentContentHash, templateId }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -205,11 +241,12 @@ export function publishPublicPresenceNow(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
+  templateId?: string | null,
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/publish`,
     {
-      body: JSON.stringify({ expectedCurrentContentHash }),
+      body: JSON.stringify({ expectedCurrentContentHash, templateId }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -224,6 +261,7 @@ export function schedulePublicPresencePublish(
   input: {
     expectedCurrentContentHash?: string | null;
     scheduledFor: string;
+    templateId?: string | null;
   },
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
@@ -242,11 +280,12 @@ export function cancelPublicPresenceSchedule(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
+  templateId?: string | null,
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/publish/cancel`,
     {
-      body: JSON.stringify({ expectedCurrentContentHash }),
+      body: JSON.stringify({ expectedCurrentContentHash, templateId }),
       headers: {
         'Content-Type': 'application/json',
       },

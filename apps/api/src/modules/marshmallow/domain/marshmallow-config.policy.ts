@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { buildSharedMarshmallowUrl } from '@tcrn/shared';
+import { buildSharedMarshmallowUrl, type LocalizedText } from '@tcrn/shared';
 
 import { CaptchaMode, type UpdateConfigDto } from '../dto/marshmallow.dto';
 import {
@@ -51,12 +51,8 @@ export interface MarshmallowConfigRecord {
   allowedReactions: string[];
   theme: Record<string, unknown>;
   avatarUrl: string | null;
-  termsContentEn: string | null;
-  termsContentZh: string | null;
-  termsContentJa: string | null;
-  privacyContentEn: string | null;
-  privacyContentZh: string | null;
-  privacyContentJa: string | null;
+  termsContent: LocalizedText;
+  privacyContent: LocalizedText;
   createdAt: Date;
   updatedAt: Date;
   version: number;
@@ -155,12 +151,8 @@ export const buildMarshmallowConfigResponse = (params: {
     allowedReactions: config.allowedReactions,
     theme: config.theme,
     avatarUrl: config.avatarUrl,
-    termsContentEn: config.termsContentEn,
-    termsContentZh: config.termsContentZh,
-    termsContentJa: config.termsContentJa,
-    privacyContentEn: config.privacyContentEn,
-    privacyContentZh: config.privacyContentZh,
-    privacyContentJa: config.privacyContentJa,
+    termsContent: config.termsContent,
+    privacyContent: config.privacyContent,
     stats,
     turnstile,
     marshmallowUrl: buildSharedMarshmallowUrl(appUrl, tenantCode, talentCode),
@@ -202,12 +194,8 @@ export const buildMarshmallowConfigChanges = (
     'allowedReactions',
     'theme',
     'avatarUrl',
-    'termsContentEn',
-    'termsContentZh',
-    'termsContentJa',
-    'privacyContentEn',
-    'privacyContentZh',
-    'privacyContentJa',
+    'termsContent',
+    'privacyContent',
   ] as const;
 
   for (const field of fields) {

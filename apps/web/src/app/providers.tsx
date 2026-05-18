@@ -1,6 +1,6 @@
 'use client';
 
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import { SessionProvider } from '@/platform/runtime/session/session-provider';
 
 export function Providers({
@@ -10,7 +10,7 @@ export function Providers({
 }>) {
   return (
     <SessionProvider>
-      <RuntimeLocaleProvider>{children}</RuntimeLocaleProvider>
+      <UiLocaleProvider>{children}</UiLocaleProvider>
     </SessionProvider>
   );
 }

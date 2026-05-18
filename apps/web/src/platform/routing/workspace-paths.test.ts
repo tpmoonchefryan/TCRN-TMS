@@ -8,6 +8,11 @@ import {
   buildAcUserManagementPath,
   buildAcWorkspacePath,
   buildDefaultWorkspacePath,
+  buildPublicPresenceStudioEditorPath,
+  buildPublicPresenceTemplateAuthoringPath,
+  buildPublicPresenceComponentAuthoringPath,
+  buildPublicPresenceHomepageSurfacePath,
+  buildPublicPresenceStudioPreviewPath,
   buildSubsidiaryBusinessPath,
   buildTalentSettingsPath,
   buildTalentWorkspacePath,
@@ -107,6 +112,39 @@ describe('workspace-paths', () => {
     );
     expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'reports')).toBe(
       '/tenant/tenant-3/talent/talent-8/reports',
+    );
+    expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8')).toBe(
+      '/studio/public-presence/tenant-3/talent-8',
+    );
+    expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal')).toBe(
+      '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal',
+    );
+    expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal', 'release')).toBe(
+      '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal&focus=release',
+    );
+    expect(buildPublicPresenceStudioPreviewPath('tenant-3', 'talent-8', 'activeTalentHub')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/preview?templateId=activeTalentHub',
+    );
+    expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8')).toBe(
+      '/tenant/tenant-3/talent/talent-8/homepage',
+    );
+    expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'templates')).toBe(
+      '/tenant/tenant-3/talent/talent-8/homepage?surface=templates',
+    );
+    expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'components')).toBe(
+      '/tenant/tenant-3/talent/talent-8/homepage?surface=components',
+    );
+    expect(buildPublicPresenceTemplateAuthoringPath('tenant-3', 'talent-8')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/templates/new',
+    );
+    expect(buildPublicPresenceTemplateAuthoringPath('tenant-3', 'talent-8', 'debutReveal')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/templates/new?templateId=debutReveal',
+    );
+    expect(buildPublicPresenceComponentAuthoringPath('tenant-3', 'talent-8')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/components/new',
+    );
+    expect(buildPublicPresenceComponentAuthoringPath('tenant-3', 'talent-8', 'VideoEmbed')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/components/new?componentType=VideoEmbed',
     );
   });
 

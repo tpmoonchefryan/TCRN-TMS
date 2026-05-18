@@ -1,6 +1,9 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
+import type {
+  PartialLocalizedText,
+  SupportedUiLocale,
+} from '@tcrn/shared';
 import {
   Activity,
   Fingerprint,
@@ -91,8 +94,14 @@ import {
   useSecurityManagementCopy,
 } from '@/domains/security-management/screens/security-management.copy';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  buildLocalizedTextPayload,
+  extractLocalizedTextPayload,
+  extractSingleFieldTranslationPayload,
+  loadTranslationLanguageOptions,
+  pickLocaleText,
+  type TranslationLanguageOption,
+} from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
@@ -103,14 +112,6 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import {
-  buildManagedTranslations,
-  extractManagedTranslations,
-  extractSingleFieldTranslationPayload,
-  loadTranslationLanguageOptions,
-  pickLegacyLocaleValue,
-  type TranslationLanguageOption,
-} from '@/platform/runtime/translations/managed-translations';
 import {
   ActionDrawer,
   AsyncSubmitButton,
@@ -168,10 +169,8 @@ interface BlocklistDraft {
   ownerId: string;
   pattern: string;
   patternType: BlocklistPatternType;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
   description: string;
   category: string;
   severity: BlocklistSeverity;
@@ -197,10 +196,8 @@ interface ExternalBlocklistDraft {
   ownerId: string;
   pattern: string;
   patternType: ExternalPatternType;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
   description: string;
   category: string;
   severity: BlocklistSeverity;
@@ -384,10 +381,8 @@ function createEmptyBlocklistDraft(scopeType: SecurityScopeType, scopeId: string
     ownerId: scopeType === 'tenant' ? '' : scopeId,
     pattern: '',
     patternType: 'keyword',
-    nameEn: '',
-    nameTranslations: {},
-    nameZh: '',
-    nameJa: '',
+    nameBase: '',
+    nameLocaleValues: {},
     description: '',
     category: '',
     severity: 'medium',
@@ -409,10 +404,8 @@ function createEmptyExternalDraft(scopeType: SecurityScopeType, scopeId: string)
     ownerId: scopeType === 'tenant' ? '' : scopeId,
     pattern: '',
     patternType: 'url_regex',
-    nameEn: '',
-    nameTranslations: {},
-    nameZh: '',
-    nameJa: '',
+    nameBase: '',
+    nameLocaleValues: {},
     description: '',
     category: '',
     severity: 'medium',
@@ -535,13 +528,8 @@ function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
     ownerId: entry.ownerId || '',
     pattern: entry.pattern,
     patternType: entry.patternType,
-    nameEn: entry.nameEn,
-    nameTranslations: extractManagedTranslations(entry.nameEn, entry.translations, {
-      zh_HANS: entry.nameZh,
-      ja: entry.nameJa,
-    }),
-    nameZh: entry.nameZh || '',
-    nameJa: entry.nameJa || '',
+    nameBase: entry.name.en,
+    nameLocaleValues: extractLocalizedTextPayload(entry.name),
     description: entry.description || '',
     category: entry.category || '',
     severity: entry.severity,
@@ -565,13 +553,8 @@ function mapExternalToDraft(entry: ExternalBlocklistRecord): ExternalBlocklistDr
     ownerId: entry.ownerId || '',
     pattern: entry.pattern,
     patternType: entry.patternType,
-    nameEn: entry.nameEn,
-    nameTranslations: extractManagedTranslations(entry.nameEn, entry.translations, {
-      zh_HANS: entry.nameZh,
-      ja: entry.nameJa,
-    }),
-    nameZh: entry.nameZh || '',
-    nameJa: entry.nameJa || '',
+    nameBase: entry.name.en,
+    nameLocaleValues: extractLocalizedTextPayload(entry.name),
     description: entry.description || '',
     category: entry.category || '',
     severity: entry.severity,
@@ -686,41 +669,25 @@ function Field({
 }
 
 function getSecurityPaginationLabels(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   pagination: ApiPaginationMeta,
   itemCount: number,
 ) {
   const pageRange = getPaginationRange(pagination, itemCount);
-  const pageSizeLabel = pickLocaleText(locale, {
-    en: 'Rows per page',
-    zh: '每页条数',
-    ja: '1 ページの件数',
-  });
-  const paginationLabel = pickLocaleText(locale, {
-    en: `Page ${pagination.page} of ${pagination.totalPages}`,
-    zh: `第 ${pagination.page} / ${pagination.totalPages} 页`,
-    ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
-  });
+  const pageSizeLabel = pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条数', zh_HANT: '每页条数', ja: '1 ページの件数', ko: 'Rows per page', fr: 'Rows per page' });
+  const paginationLabel = pickLocaleText(locale, { en: `Page ${pagination.page} of ${pagination.totalPages}`, zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`, zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`, ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`, ko: `Page ${pagination.page} of ${pagination.totalPages}`, fr: `Page ${pagination.page} of ${pagination.totalPages}` });
   const paginationRangeLabel =
     pagination.totalCount === 0
-      ? pickLocaleText(locale, {
-          en: 'No records are currently visible.',
-          zh: '当前没有可显示的记录。',
-          ja: '現在表示できるレコードはありません。',
-        })
-      : pickLocaleText(locale, {
-          en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
-          zh: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
-          ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
-        });
+      ? pickLocaleText(locale, { en: 'No records are currently visible.', zh_HANS: '当前没有可显示的记录。', zh_HANT: '当前没有可显示的记录。', ja: '現在表示できるレコードはありません。', ko: 'No records are currently visible.', fr: 'No records are currently visible.' })
+      : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}` });
 
   return {
     pageLabel: paginationLabel,
     rangeLabel: paginationRangeLabel,
     rowsPerPageLabel: pageSizeLabel,
     pageSizeAriaLabel: pageSizeLabel,
-    previousLabel: pickLocaleText(locale, { en: 'Previous', zh: '上一页', ja: '前へ' }),
-    nextLabel: pickLocaleText(locale, { en: 'Next', zh: '下一页', ja: '次へ' }),
+    previousLabel: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
+    nextLabel: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
   };
 }
 
@@ -733,7 +700,7 @@ export function SecurityManagementScreen({
   tenantId: string;
 }>) {
   const { request, requestEnvelope, session } = useSession();
-  const { selectedLocale, copy } = useSecurityManagementCopy();
+  const { locale, copy } = useSecurityManagementCopy();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -849,7 +816,7 @@ export function SecurityManagementScreen({
       const result = await loadTranslationLanguageOptions(
         request,
         requestEnvelope,
-        selectedLocale,
+        locale,
         externalTranslationDrawerOpen
           ? copy.sections.externalEditor.translationManagement.languageLoadError
           : copy.sections.blocklistEditor.translationManagement.languageLoadError,
@@ -878,7 +845,7 @@ export function SecurityManagementScreen({
     externalTranslationDrawerOpen,
     request,
     requestEnvelope,
-    selectedLocale,
+    locale,
   ]);
 
   useEffect(() => {
@@ -1048,7 +1015,7 @@ export function SecurityManagementScreen({
     ? workspaceName
     : activeScopeOptions.find((option) => option.id === scopeId)?.label
       || `${copy.options.scopeType[scopeType]} · ${copy.scopeLens.unresolvedSelection}`;
-  const scopeLockTitle = pickLocaleText(selectedLocale, {
+  const scopeLockTitle = pickLocaleText(locale, {
     en: 'Scope lock',
     zh_HANS: '范围锁定',
     zh_HANT: '範圍鎖定',
@@ -1057,7 +1024,7 @@ export function SecurityManagementScreen({
     fr: 'Verrou de périmètre',
   });
   const scopeLockDescription = scopeType === 'tenant'
-    ? pickLocaleText(selectedLocale, {
+    ? pickLocaleText(locale, {
         en: `Policy edits below will be created at the tenant-wide level for ${activeScopeLabel}.`,
         zh_HANS: `下方策略编辑将按租户级生效，当前范围是 ${activeScopeLabel}。`,
         zh_HANT: `下方策略編輯將按租戶級生效，目前範圍是 ${activeScopeLabel}。`,
@@ -1065,7 +1032,7 @@ export function SecurityManagementScreen({
         ko: `아래 정책 편집은 ${activeScopeLabel}의 테넌트 전체 수준에 생성됩니다.`,
         fr: `Les modifications de règles ci-dessous seront créées au niveau tenant pour ${activeScopeLabel}.`,
       })
-    : pickLocaleText(selectedLocale, {
+    : pickLocaleText(locale, {
         en: `Policy edits below are locked to ${activeScopeLabel}. Change the level only if you need a different owner before opening or creating rules.`,
         zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。只有需要更换归属范围时，才需要先切换层级。`,
         zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。只有需要更換歸屬範圍時，才需要先切換層級。`,
@@ -1073,7 +1040,7 @@ export function SecurityManagementScreen({
         ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 다른 소유 범위가 필요할 때만 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
         fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau seulement si vous devez choisir un autre propriétaire avant d’ouvrir ou de créer des règles.`,
       });
-  const advancedScopeTitle = pickLocaleText(selectedLocale, {
+  const advancedScopeTitle = pickLocaleText(locale, {
     en: 'Advanced usage scopes',
     zh_HANS: '高级使用范围',
     zh_HANT: '進階使用範圍',
@@ -1081,7 +1048,7 @@ export function SecurityManagementScreen({
     ko: '고급 사용 범위',
     fr: 'Périmètres d’usage avancés',
   });
-  const structuredScopeTitle = pickLocaleText(selectedLocale, {
+  const structuredScopeTitle = pickLocaleText(locale, {
     en: 'Structured scope builder',
     zh_HANS: '结构化范围构建器',
     zh_HANT: '結構化範圍建構器',
@@ -1089,7 +1056,7 @@ export function SecurityManagementScreen({
     ko: '구조화된 범위 빌더',
     fr: 'Constructeur de périmètres',
   });
-  const structuredScopeDescription = pickLocaleText(selectedLocale, {
+  const structuredScopeDescription = pickLocaleText(locale, {
     en: 'Choose allow-list categories for this rule. Surface controls current runtime matching; other categories keep the policy intent readable.',
     zh_HANS: '为此规则选择白名单范围。Surface 会影响当前运行时匹配，其它分类用于保留策略意图。',
     zh_HANT: '為此規則選擇允許清單範圍。Surface 會影響目前執行時匹配，其它分類用於保留策略意圖。',
@@ -1097,7 +1064,7 @@ export function SecurityManagementScreen({
     ko: '이 규칙의 허용 범위 분류를 선택합니다. Surface는 현재 런타임 매칭에 영향을 주고, 다른 분류는 정책 의도를 읽기 쉽게 유지합니다.',
     fr: 'Choisissez les catégories autorisées pour cette règle. Surface pilote le filtrage actuel; les autres catégories rendent l’intention lisible.',
   });
-  const surfaceScopeLabel = pickLocaleText(selectedLocale, {
+  const surfaceScopeLabel = pickLocaleText(locale, {
     en: 'Marshmallow surface',
     zh_HANS: '棉花糖公开面',
     zh_HANT: '棉花糖公開面',
@@ -1105,7 +1072,7 @@ export function SecurityManagementScreen({
     ko: 'Marshmallow 공개 영역',
     fr: 'Surface Marshmallow',
   });
-  const unsupportedScopeTitle = pickLocaleText(selectedLocale, {
+  const unsupportedScopeTitle = pickLocaleText(locale, {
     en: 'Older scope format retained',
     zh_HANS: '已保留旧版范围格式',
     zh_HANT: '已保留舊版範圍格式',
@@ -1113,7 +1080,7 @@ export function SecurityManagementScreen({
     ko: '이전 범위 형식 유지됨',
     fr: 'Ancien format de perimetre conserve',
   });
-  const unsupportedScopeDescription = pickLocaleText(selectedLocale, {
+  const unsupportedScopeDescription = pickLocaleText(locale, {
     en: 'This rule was created before the structured builder existed. The old scope text stays in Advanced mode for audit history; replace it only when you intentionally migrate the rule.',
     zh_HANS: '这条规则创建时还没有结构化范围构建器。旧范围文本会保留在高级模式中作为审计历史；只有在有意迁移规则时才需要替换。',
     zh_HANT: '這條規則建立時還沒有結構化範圍建構器。舊範圍文字會保留在進階模式中作為稽核歷史；只有在有意遷移規則時才需要替換。',
@@ -1125,7 +1092,7 @@ export function SecurityManagementScreen({
     tenant: copy.options.scopeType.tenant,
     subsidiary: copy.options.scopeType.subsidiary,
     talent: copy.options.scopeType.talent,
-    'profile-store': pickLocaleText(selectedLocale, {
+    'profile-store': pickLocaleText(locale, {
       en: 'Profile store',
       zh_HANS: '档案库',
       zh_HANT: '檔案庫',
@@ -1151,7 +1118,7 @@ export function SecurityManagementScreen({
     });
   };
   const advancedScopeToggle = blocklistAdvancedOpen
-    ? pickLocaleText(selectedLocale, {
+    ? pickLocaleText(locale, {
         en: 'Hide advanced scopes',
         zh_HANS: '收起高级范围',
         zh_HANT: '收合進階範圍',
@@ -1159,7 +1126,7 @@ export function SecurityManagementScreen({
         ko: '고급 범위 숨기기',
         fr: 'Masquer les périmètres avancés',
       })
-    : pickLocaleText(selectedLocale, {
+    : pickLocaleText(locale, {
         en: 'Edit advanced scopes',
         zh_HANS: '编辑高级范围',
         zh_HANT: '編輯進階範圍',
@@ -1449,7 +1416,7 @@ export function SecurityManagementScreen({
       ownerId: baseDraft.ownerType === 'tenant' ? undefined : baseDraft.ownerId || undefined,
       pattern: normalizedPattern,
       patternType: 'keyword' as const,
-      nameEn: buildBlocklistAutoName(normalizedPattern),
+      name: buildLocalizedTextPayload(buildBlocklistAutoName(normalizedPattern), {}),
       description: undefined,
       category: undefined,
       severity: 'medium' as const,
@@ -1469,7 +1436,7 @@ export function SecurityManagementScreen({
     if (normalizedPattern.length === 0) {
       setNotice({
         tone: 'error',
-        message: getSecurityBlocklistQuickAddError(selectedLocale),
+        message: getSecurityBlocklistQuickAddError(locale),
       });
       return;
     }
@@ -1483,12 +1450,12 @@ export function SecurityManagementScreen({
       setBlocklistQuickAddPattern('');
       setNotice({
         tone: 'success',
-        message: formatSecurityBlocklistSaveSuccess(selectedLocale, 'create'),
+        message: formatSecurityBlocklistSaveSuccess(locale, 'create'),
       });
     } catch (error) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(error, getSecurityBlocklistSaveError(selectedLocale)),
+        message: getErrorMessage(error, getSecurityBlocklistSaveError(locale)),
       });
     } finally {
       setBlocklistQuickAddPending(false);
@@ -1499,7 +1466,7 @@ export function SecurityManagementScreen({
     if (blocklistBatchPreview.validPatterns.length === 0) {
       setNotice({
         tone: 'error',
-        message: getSecurityBlocklistBatchValidationError(selectedLocale),
+        message: getSecurityBlocklistBatchValidationError(locale),
       });
       return;
     }
@@ -1525,7 +1492,7 @@ export function SecurityManagementScreen({
 
     setNotice({
       tone: failedPatterns.length > 0 ? 'error' : 'success',
-      message: formatSecurityBlocklistBatchResult(selectedLocale, createdCount, failedPatterns.length),
+      message: formatSecurityBlocklistBatchResult(locale, createdCount, failedPatterns.length),
     });
 
     if (failedPatterns.length > 0) {
@@ -1665,18 +1632,12 @@ export function SecurityManagementScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(blocklistDraft.nameEn, blocklistDraft.nameTranslations);
-      const nameZh = pickLegacyLocaleValue(translations, 'zh_HANS');
-      const nameJa = pickLegacyLocaleValue(translations, 'ja');
       const payload = {
         ownerType: blocklistDraft.ownerType,
         ownerId: blocklistDraft.ownerType === 'tenant' ? undefined : blocklistDraft.ownerId || undefined,
         pattern: blocklistDraft.pattern,
         patternType: blocklistDraft.patternType,
-        nameEn: blocklistDraft.nameEn,
-        nameZh,
-        nameJa,
-        translations,
+        name: buildLocalizedTextPayload(blocklistDraft.nameBase, blocklistDraft.nameLocaleValues),
         description: blocklistDraft.description || undefined,
         category: blocklistDraft.category || undefined,
         severity: blocklistDraft.severity,
@@ -1706,7 +1667,7 @@ export function SecurityManagementScreen({
       await refreshBlocklist();
       setNotice({
         tone: 'success',
-        message: formatSecurityBlocklistSaveSuccess(selectedLocale, blocklistMode),
+        message: formatSecurityBlocklistSaveSuccess(locale, blocklistMode),
       });
       const savedDraft = mapBlocklistToDraft(saved);
       setBlocklistMode('edit');
@@ -1717,7 +1678,7 @@ export function SecurityManagementScreen({
     } catch (error) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(error, getSecurityBlocklistSaveError(selectedLocale)),
+        message: getErrorMessage(error, getSecurityBlocklistSaveError(locale)),
       });
     } finally {
       setBlocklistSavePending(false);
@@ -1737,12 +1698,12 @@ export function SecurityManagementScreen({
       const testPatternType = blocklistDraft.patternType || selectedEntry?.patternType || 'keyword';
 
       if (testPattern.length === 0) {
-        setBlocklistTestError(getSecurityBlocklistTestValidationError(selectedLocale, 'pattern'));
+        setBlocklistTestError(getSecurityBlocklistTestValidationError(locale, 'pattern'));
         return;
       }
 
       if (blocklistTestText.trim().length === 0) {
-        setBlocklistTestError(getSecurityBlocklistTestValidationError(selectedLocale, 'sampleText'));
+        setBlocklistTestError(getSecurityBlocklistTestValidationError(locale, 'sampleText'));
         return;
       }
 
@@ -1752,9 +1713,9 @@ export function SecurityManagementScreen({
         patternType: testPatternType,
       });
 
-      setBlocklistTestResult(formatSecurityBlocklistTestResult(selectedLocale, result));
+      setBlocklistTestResult(formatSecurityBlocklistTestResult(locale, result));
     } catch (error) {
-      setBlocklistTestError(getErrorMessage(error, getSecurityBlocklistTestError(selectedLocale)));
+      setBlocklistTestError(getErrorMessage(error, getSecurityBlocklistTestError(locale)));
     } finally {
       setBlocklistTestPending(false);
     }
@@ -1765,18 +1726,12 @@ export function SecurityManagementScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(externalDraft.nameEn, externalDraft.nameTranslations);
-      const nameZh = pickLegacyLocaleValue(translations, 'zh_HANS');
-      const nameJa = pickLegacyLocaleValue(translations, 'ja');
       const payload = {
         ownerType: externalDraft.ownerType,
         ownerId: externalDraft.ownerType === 'tenant' ? undefined : externalDraft.ownerId || undefined,
         pattern: externalDraft.pattern,
         patternType: externalDraft.patternType,
-        nameEn: externalDraft.nameEn,
-        nameZh,
-        nameJa,
-        translations,
+        name: buildLocalizedTextPayload(externalDraft.nameBase, externalDraft.nameLocaleValues),
         description: externalDraft.description || undefined,
         category: externalDraft.category || undefined,
         severity: externalDraft.severity,
@@ -1804,7 +1759,7 @@ export function SecurityManagementScreen({
       await refreshExternalBlocklist();
       setNotice({
         tone: 'success',
-        message: formatSecurityExternalSaveSuccess(selectedLocale, externalMode),
+        message: formatSecurityExternalSaveSuccess(locale, externalMode),
       });
       const savedDraft = mapExternalToDraft(saved);
       setExternalMode('edit');
@@ -1815,21 +1770,21 @@ export function SecurityManagementScreen({
     } catch (error) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(error, getSecurityExternalSaveError(selectedLocale)),
+        message: getErrorMessage(error, getSecurityExternalSaveError(locale)),
       });
     } finally {
       setExternalSavePending(false);
     }
   }
 
-  const configuredBlocklistTranslationCount = Object.values(blocklistDraft.nameTranslations).filter(
+  const configuredBlocklistTranslationCount = Object.values(blocklistDraft.nameLocaleValues).filter(
     (value) => value.trim().length > 0,
   ).length;
-  const configuredExternalTranslationCount = Object.values(externalDraft.nameTranslations).filter(
+  const configuredExternalTranslationCount = Object.values(externalDraft.nameLocaleValues).filter(
     (value) => value.trim().length > 0,
   ).length;
   const translationDrawerLabels = {
-    addLanguageLabel: pickLocaleText(selectedLocale, {
+    addLanguageLabel: pickLocaleText(locale, {
       en: 'Add language',
       zh_HANS: '添加语言',
       zh_HANT: '新增語言',
@@ -1837,7 +1792,7 @@ export function SecurityManagementScreen({
       ko: '언어 추가',
       fr: 'Ajouter une langue',
     }),
-    addOtherLanguageLabel: pickLocaleText(selectedLocale, {
+    addOtherLanguageLabel: pickLocaleText(locale, {
       en: 'Add other language...',
       zh_HANS: '添加其它语言…',
       zh_HANT: '新增其它語言…',
@@ -1845,7 +1800,7 @@ export function SecurityManagementScreen({
       ko: '다른 언어 추가…',
       fr: 'Ajouter une autre langue…',
     }),
-    removeLanguageVisibleLabel: pickLocaleText(selectedLocale, {
+    removeLanguageVisibleLabel: pickLocaleText(locale, {
       en: 'Remove',
       zh_HANS: '移除',
       zh_HANT: '移除',
@@ -1853,7 +1808,7 @@ export function SecurityManagementScreen({
       ko: '제거',
       fr: 'Retirer',
     }),
-    emptyTranslationsText: pickLocaleText(selectedLocale, {
+    emptyTranslationsText: pickLocaleText(locale, {
       en: 'No translations added yet.',
       zh_HANS: '当前还没有添加翻译。',
       zh_HANT: '目前尚未新增翻譯。',
@@ -1861,7 +1816,7 @@ export function SecurityManagementScreen({
       ko: '아직 추가된 번역이 없습니다.',
       fr: 'Aucune traduction n’a encore été ajoutée.',
     }),
-    baseValueSuffix: pickLocaleText(selectedLocale, {
+    baseValueSuffix: pickLocaleText(locale, {
       en: '(Base / English)',
       zh_HANS: '（英文主值）',
       zh_HANT: '（英文主值）',
@@ -1886,7 +1841,7 @@ export function SecurityManagementScreen({
       await refreshIpRules();
       setNotice({
         tone: 'success',
-        message: formatSecurityIpRuleCreateSuccess(selectedLocale),
+        message: formatSecurityIpRuleCreateSuccess(locale),
       });
       const nextDraft = createEmptyIpRuleDraft();
       setIpRuleDraft(nextDraft);
@@ -1895,7 +1850,7 @@ export function SecurityManagementScreen({
     } catch (error) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(error, getSecurityIpRuleCreateError(selectedLocale)),
+        message: getErrorMessage(error, getSecurityIpRuleCreateError(locale)),
       });
     } finally {
       setIpRuleSavePending(false);
@@ -1912,9 +1867,9 @@ export function SecurityManagementScreen({
         ip: ipCheckIp,
         scope: ipCheckScope,
       });
-      setIpCheckResult(formatSecurityIpCheckResult(selectedLocale, result));
+      setIpCheckResult(formatSecurityIpCheckResult(locale, result));
     } catch (error) {
-      setIpCheckError(getErrorMessage(error, getSecurityIpCheckError(selectedLocale)));
+      setIpCheckError(getErrorMessage(error, getSecurityIpCheckError(locale)));
     } finally {
       setIpCheckPending(false);
     }
@@ -1937,7 +1892,7 @@ export function SecurityManagementScreen({
     } catch (error) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(error, getSecurityMutationError(selectedLocale)),
+        message: getErrorMessage(error, getSecurityMutationError(locale)),
       });
     } finally {
       setDialogPending(false);
@@ -1959,7 +1914,7 @@ export function SecurityManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{formatSecurityHeaderDescription(selectedLocale, workspaceName)}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">{formatSecurityHeaderDescription(locale, workspaceName)}</p>
             </div>
           </div>
 
@@ -2150,7 +2105,7 @@ export function SecurityManagementScreen({
                     emptyDescription={copy.sections.blocklistList.emptyDescription}
                   >
                     {blocklistPanel.data.map((entry) => {
-                      const entryName = pickSecurityLocalizedName(selectedLocale, entry, entry.pattern);
+                      const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
 
                       return (
                       <tr key={entry.id} className="align-top">
@@ -2166,7 +2121,7 @@ export function SecurityManagementScreen({
                         <td className="px-6 py-4">
                           <ToneBadge
                             tone={entry.severity === 'high' ? 'danger' : entry.severity === 'medium' ? 'warning' : 'info'}
-                            label={getSecuritySeverityLabel(selectedLocale, entry.severity)}
+                            label={getSecuritySeverityLabel(locale, entry.severity)}
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">{entry.scope.join(', ') || copy.common.all}</td>
@@ -2198,7 +2153,7 @@ export function SecurityManagementScreen({
                                       await refreshBlocklist();
                                       setNotice({
                                         tone: 'success',
-                                        message: formatSecurityDisableSuccess(selectedLocale, entryName),
+                                        message: formatSecurityDisableSuccess(locale, entryName),
                                       });
                                     },
                                   })
@@ -2225,7 +2180,7 @@ export function SecurityManagementScreen({
                                       await refreshBlocklist();
                                       setNotice({
                                         tone: 'success',
-                                        message: formatSecurityReEnableSuccess(selectedLocale, entryName),
+                                        message: formatSecurityReEnableSuccess(locale, entryName),
                                       });
                                     },
                                   })
@@ -2252,7 +2207,7 @@ export function SecurityManagementScreen({
                                       }
                                       setNotice({
                                         tone: 'success',
-                                        message: formatSecurityDeleteSuccess(selectedLocale, entryName),
+                                        message: formatSecurityDeleteSuccess(locale, entryName),
                                       });
                                     },
                                   })
@@ -2270,7 +2225,7 @@ export function SecurityManagementScreen({
                   <PaginationFooter
                     pagination={blocklistPanel.pagination}
                     itemCount={blocklistPanel.data.length}
-                    labels={getSecurityPaginationLabels(selectedLocale, blocklistPanel.pagination, blocklistPanel.data.length)}
+                    labels={getSecurityPaginationLabels(locale, blocklistPanel.pagination, blocklistPanel.data.length)}
                     onPageChange={setBlocklistPage}
                     onPageSizeChange={(nextPageSize) => {
                       setBlocklistPageSize(nextPageSize as PageSizeOption);
@@ -2397,11 +2352,11 @@ export function SecurityManagementScreen({
                     <Field label={copy.fields.ruleName}>
                       <input
                         aria-label={copy.fields.ruleName}
-                        value={blocklistDraft.nameEn}
+                        value={blocklistDraft.nameBase}
                         onChange={(event) =>
                           setBlocklistDraft((current) => ({
                             ...current,
-                            nameEn: event.target.value,
+                            nameBase: event.target.value,
                           }))
                         }
                         placeholder={copy.placeholders.ruleName}
@@ -2880,7 +2835,7 @@ export function SecurityManagementScreen({
                     emptyDescription={copy.sections.externalList.emptyDescription}
                   >
                     {externalPanel.data.map((entry) => {
-                      const entryName = pickSecurityLocalizedName(selectedLocale, entry, entry.pattern);
+                      const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
 
                       return (
                       <tr key={entry.id} className="align-top">
@@ -2896,7 +2851,7 @@ export function SecurityManagementScreen({
                       <td className="px-6 py-4">
                         <ToneBadge
                           tone={entry.severity === 'high' ? 'danger' : entry.severity === 'medium' ? 'warning' : 'info'}
-                          label={getSecuritySeverityLabel(selectedLocale, entry.severity)}
+                          label={getSecuritySeverityLabel(locale, entry.severity)}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -2927,7 +2882,7 @@ export function SecurityManagementScreen({
                                     await refreshExternalBlocklist();
                                     setNotice({
                                       tone: 'success',
-                                      message: formatSecurityDisableSuccess(selectedLocale, entryName),
+                                      message: formatSecurityDisableSuccess(locale, entryName),
                                     });
                                   },
                                 })
@@ -2954,7 +2909,7 @@ export function SecurityManagementScreen({
                                     await refreshExternalBlocklist();
                                     setNotice({
                                       tone: 'success',
-                                      message: formatSecurityReEnableSuccess(selectedLocale, entryName),
+                                      message: formatSecurityReEnableSuccess(locale, entryName),
                                     });
                                   },
                                 })
@@ -2981,7 +2936,7 @@ export function SecurityManagementScreen({
                                     }
                                     setNotice({
                                       tone: 'success',
-                                      message: formatSecurityDeleteSuccess(selectedLocale, entryName),
+                                      message: formatSecurityDeleteSuccess(locale, entryName),
                                     });
                                   },
                                 })
@@ -2999,7 +2954,7 @@ export function SecurityManagementScreen({
                   <PaginationFooter
                     pagination={externalPanel.pagination}
                     itemCount={externalPanel.data.length}
-                    labels={getSecurityPaginationLabels(selectedLocale, externalPanel.pagination, externalPanel.data.length)}
+                    labels={getSecurityPaginationLabels(locale, externalPanel.pagination, externalPanel.data.length)}
                     onPageChange={setExternalPage}
                     onPageSizeChange={(nextPageSize) => {
                       setExternalPageSize(nextPageSize as PageSizeOption);
@@ -3126,11 +3081,11 @@ export function SecurityManagementScreen({
                     <Field label={copy.fields.ruleName}>
                       <input
                         aria-label={copy.fields.ruleName}
-                        value={externalDraft.nameEn}
+                        value={externalDraft.nameBase}
                         onChange={(event) =>
                           setExternalDraft((current) => ({
                             ...current,
-                            nameEn: event.target.value,
+                            nameBase: event.target.value,
                           }))
                         }
                         placeholder={copy.placeholders.externalRuleName}
@@ -3354,11 +3309,11 @@ export function SecurityManagementScreen({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <ToneBadge tone={rule.ruleType === 'blacklist' ? 'danger' : 'success'} label={getSecurityIpRuleTypeLabel(selectedLocale, rule.ruleType)} />
+                          <ToneBadge tone={rule.ruleType === 'blacklist' ? 'danger' : 'success'} label={getSecurityIpRuleTypeLabel(locale, rule.ruleType)} />
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{getSecurityIpRuleScopeLabel(selectedLocale, rule.scope)}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{getSecurityIpRuleScopeLabel(locale, rule.scope)}</td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatSecurityRuleHits(selectedLocale, rule.hitCount, rule.lastHitAt)}
+                          {formatSecurityRuleHits(locale, rule.hitCount, rule.lastHitAt)}
                         </td>
                         <td className="px-6 py-4">
                           <ToneBadge tone={rule.isActive ? 'success' : 'neutral'} label={rule.isActive ? copy.common.active : copy.common.inactive} />
@@ -3369,7 +3324,7 @@ export function SecurityManagementScreen({
                             onClick={() =>
                               openDialog({
                                 intent: 'danger',
-                                title: pickLocaleText(selectedLocale, {
+                                title: pickLocaleText(locale, {
                                   en: `Delete ${rule.ipPattern}?`,
                                   zh_HANS: `删除 ${rule.ipPattern}？`,
                                   zh_HANT: `刪除 ${rule.ipPattern}？`,
@@ -3385,7 +3340,7 @@ export function SecurityManagementScreen({
                                   await refreshIpRules();
                                   setNotice({
                                     tone: 'success',
-                                    message: formatSecurityIpRuleDeleteSuccess(selectedLocale, rule.ipPattern),
+                                    message: formatSecurityIpRuleDeleteSuccess(locale, rule.ipPattern),
                                   });
                                 },
                               })
@@ -3401,7 +3356,7 @@ export function SecurityManagementScreen({
                   <PaginationFooter
                     pagination={ipRulesPanel.pagination}
                     itemCount={ipRulesPanel.data.length}
-                    labels={getSecurityPaginationLabels(selectedLocale, ipRulesPanel.pagination, ipRulesPanel.data.length)}
+                    labels={getSecurityPaginationLabels(locale, ipRulesPanel.pagination, ipRulesPanel.data.length)}
                     onPageChange={setIpRulesPage}
                     onPageSizeChange={(nextPageSize) => {
                       setIpRulesPageSize(nextPageSize as PageSizeOption);
@@ -3638,7 +3593,7 @@ export function SecurityManagementScreen({
                       </p>
                       <p>
                         <span className="font-semibold text-slate-900">{copy.sections.runtimeSignals.fingerprintGenerated}:</span>{' '}
-                        {formatSecurityDateTime(selectedLocale, fingerprintPanel.data.generatedAt, copy.common.never)}
+                        {formatSecurityDateTime(locale, fingerprintPanel.data.generatedAt, copy.common.never)}
                       </p>
                     </div>
                   ) : null}
@@ -3727,7 +3682,7 @@ export function SecurityManagementScreen({
                       <td className="px-6 py-4 text-sm text-slate-700">{item.method}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.current}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.limit}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{formatSecurityResetIn(selectedLocale, item.resetIn)}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{formatSecurityResetIn(locale, item.resetIn)}</td>
                     </tr>
                   ))}
                 </TableShell>
@@ -3775,7 +3730,7 @@ export function SecurityManagementScreen({
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1">
                             <p className="text-sm font-semibold text-slate-900">
-                              {pickSecurityLocalizedName(selectedLocale, store, store.code)}
+                              {pickSecurityLocalizedName(locale, store, store.code)}
                             </p>
                             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{store.code}</p>
                           </div>
@@ -3846,8 +3801,8 @@ export function SecurityManagementScreen({
         open={blocklistTranslationDrawerOpen}
         onOpenChange={setBlocklistTranslationDrawerOpen}
         title={copy.sections.blocklistEditor.translationManagement.title}
-        baseValue={blocklistDraft.nameEn}
-        translations={blocklistDraft.nameTranslations}
+        baseValue={blocklistDraft.nameBase}
+        translations={blocklistDraft.nameLocaleValues}
         legacyFieldLabel={copy.fields.ruleName}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
@@ -3855,7 +3810,7 @@ export function SecurityManagementScreen({
 
           setBlocklistDraft((current) => ({
             ...current,
-            nameTranslations: translations,
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={copy.sections.blocklistEditor.translationManagement.save}
@@ -3874,8 +3829,8 @@ export function SecurityManagementScreen({
         open={externalTranslationDrawerOpen}
         onOpenChange={setExternalTranslationDrawerOpen}
         title={copy.sections.externalEditor.translationManagement.title}
-        baseValue={externalDraft.nameEn}
-        translations={externalDraft.nameTranslations}
+        baseValue={externalDraft.nameBase}
+        translations={externalDraft.nameLocaleValues}
         legacyFieldLabel={copy.fields.ruleName}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
@@ -3883,7 +3838,7 @@ export function SecurityManagementScreen({
 
           setExternalDraft((current) => ({
             ...current,
-            nameTranslations: translations,
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={copy.sections.externalEditor.translationManagement.save}

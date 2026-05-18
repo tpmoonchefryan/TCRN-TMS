@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { describe, expect, it, vi } from 'vitest';
 
 import { BlocklistReadRepository } from '../infrastructure/blocklist-read.repository';
@@ -30,9 +31,7 @@ describe('BlocklistReadService', () => {
         ownerId: null,
         pattern: 'badword',
         patternType: 'keyword',
-        nameEn: 'Profanity Filter',
-        nameZh: null,
-        nameJa: null,
+        name: createLocalizedText({ en: 'Profanity Filter' }),
         extraData: null,
         description: null,
         category: 'profanity',
@@ -57,9 +56,7 @@ describe('BlocklistReadService', () => {
         ownerId: 'sub-1',
         pattern: 'another',
         patternType: 'keyword',
-        nameEn: 'Local Filter',
-        nameZh: null,
-        nameJa: null,
+        name: createLocalizedText({ en: 'Local Filter' }),
         extraData: null,
         description: null,
         category: 'profanity',
@@ -96,13 +93,8 @@ describe('BlocklistReadService', () => {
           ownerId: 'sub-1',
           pattern: 'another',
           patternType: 'keyword',
-          nameEn: 'Local Filter',
-          nameZh: null,
-          nameJa: null,
+          name: createLocalizedText({ en: 'Local Filter' }),
           extraData: null,
-          translations: {
-            en: 'Local Filter',
-          },
           description: null,
           category: 'profanity',
           severity: 'low',
@@ -153,9 +145,7 @@ describe('BlocklistReadService', () => {
       ownerId: null,
       pattern: 'badword',
       patternType: 'keyword',
-      nameEn: 'Profanity Filter',
-      nameZh: null,
-      nameJa: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       extraData: null,
       description: null,
       category: 'profanity',
@@ -183,13 +173,8 @@ describe('BlocklistReadService', () => {
       ownerId: null,
       pattern: 'badword',
       patternType: 'keyword',
-      nameEn: 'Profanity Filter',
-      nameZh: null,
-      nameJa: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       extraData: null,
-      translations: {
-        en: 'Profanity Filter',
-      },
       description: null,
       category: 'profanity',
       severity: 'medium',

@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestTalentInTenant,
   createTestTenantFixture,
   createTestUserInTenant,
@@ -72,7 +73,7 @@ describe('Homepage Public Lifecycle Integration', () => {
 
     const talent = await createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_HOME_PUBLIC_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Homepage Public Lifecycle Talent',
+      name: createLocalizedText({ en: 'Homepage Public Lifecycle Talent' }),
       displayName: 'Homepage Public Lifecycle Talent',
       homepagePath: `homepage-public-${Date.now()}`,
       createdBy: testUser.id,

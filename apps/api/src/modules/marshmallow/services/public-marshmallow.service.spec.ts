@@ -1,4 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -119,12 +120,8 @@ describe('PublicMarshmallowService', () => {
           allowedReactions: [],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: createLocalizedText({ en: '' }),
+          privacyContent: createLocalizedText({ en: '' }),
           ...configOverrides,
         },
       ])
@@ -176,12 +173,8 @@ describe('PublicMarshmallowService', () => {
           allowedReactions: [],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: createLocalizedText({ en: '' }),
+          privacyContent: createLocalizedText({ en: '' }),
         },
       ]);
 
@@ -312,12 +305,8 @@ describe('PublicMarshmallowService', () => {
           allowedReactions: [],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: createLocalizedText({ en: '' }),
+          privacyContent: createLocalizedText({ en: '' }),
         },
       ])
       .mockResolvedValueOnce([

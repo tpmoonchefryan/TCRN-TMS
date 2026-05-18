@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AcShell } from '@/platform/routing/AcShell';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 
 const push = vi.fn();
@@ -71,11 +71,11 @@ describe('AcShell', () => {
 
   it('uses runtime locale copy and routes account menu actions for ac users', async () => {
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     expect(
@@ -129,11 +129,11 @@ describe('AcShell', () => {
     logoutCurrentSession.mockRejectedValueOnce(new Error('logout failed'));
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
@@ -150,11 +150,11 @@ describe('AcShell', () => {
     recoverSession.mockResolvedValueOnce(true);
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     await waitFor(() => {
@@ -169,11 +169,11 @@ describe('AcShell', () => {
     mockPathname = '/ac/tenant-ac/profile/security';
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <AcShell tenantId="tenant-ac">
           <div>AC profile security</div>
         </AcShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
@@ -186,11 +186,11 @@ describe('AcShell', () => {
     mockPathname = '/ac/tenant-ac/api-clients';
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <AcShell tenantId="tenant-ac">
           <div>AC API clients</div>
         </AcShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });

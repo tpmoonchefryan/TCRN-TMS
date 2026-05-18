@@ -1,11 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { Prisma } from '@tcrn/database';
-
-import {
-  buildManagedNameTranslations,
-  resolveManagedNameTranslation,
-} from '../../../platform/persistence/managed-name-translations';
+import { pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 
 export type OrganizationTalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 
@@ -27,10 +22,7 @@ export interface RawSubsidiary {
   code: string;
   path: string;
   depth: number;
-  name_en: string;
-  name_zh: string | null;
-  name_ja: string | null;
-  extra_data?: Prisma.JsonValue | Record<string, unknown> | null;
+  name: LocalizedText;
   is_active: boolean;
 }
 
@@ -38,10 +30,7 @@ export interface RawTalent {
   id: string;
   subsidiary_id: string | null;
   code: string;
-  name_en: string;
-  name_zh: string | null;
-  name_ja: string | null;
-  extra_data?: Prisma.JsonValue | Record<string, unknown> | null;
+  name: LocalizedText;
   display_name: string;
   avatar_url: string | null;
   homepage_path: string | null;
@@ -82,24 +71,9 @@ export const getTalentVisibilityClause = (includeInactive: boolean): string =>
   includeInactive ? '1=1' : `lifecycle_status <> 'disabled'`;
 
 export const localizeOrganizationName = (
-  record: {
-    name_en: string;
-    name_zh: string | null;
-    name_ja: string | null;
-    extra_data?: Prisma.JsonValue | Record<string, unknown> | null;
-  },
+  record: { name: LocalizedText },
   language: string,
-): string =>
-  resolveManagedNameTranslation(
-    buildManagedNameTranslations({
-      extraData: record.extra_data,
-      nameEn: record.name_en,
-      nameZh: record.name_zh,
-      nameJa: record.name_ja,
-    }),
-    language,
-    record.name_en,
-  ) || record.name_en;
+): string => pickLocalizedText(record.name, language);
 
 export const mapTalentSummary = (talent: RawTalent, language: string): TalentSummary => ({
   id: talent.id,

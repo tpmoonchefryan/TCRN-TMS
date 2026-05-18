@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText, PartialLocalizedText } from '../constants/locale';
 import type {
   PermissionAction,
   PermissionActionInput,
@@ -18,9 +19,7 @@ export interface Permission {
 }
 
 export interface LocalizedPermissionData extends Omit<Permission, 'name'> {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -55,9 +54,7 @@ export interface SystemRolePermission {
 export interface SystemRoleRecord {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   description: string | null;
   isSystem: boolean;
   isActive: boolean;
@@ -190,9 +187,7 @@ export interface RoleDetail {
   id: string;
   code: string;
   name: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  nameTranslations: LocalizedText;
   description: string | null;
   isSystem: boolean;
   isActive: boolean;
@@ -206,17 +201,13 @@ export interface RoleDetail {
 
 export interface CreateRoleRequest {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
+  name: LocalizedText;
   description?: string;
   permissionIds: string[];
 }
 
 export interface UpdateRoleRequest {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
+  name?: PartialLocalizedText;
   description?: string;
   version: number;
 }

@@ -168,16 +168,12 @@ describe('Swagger admin RBAC family contract', () => {
     expect(getDocumentedDtoProperties(CreateRoleDto)).toEqual([
       'code',
       'description',
-      'nameEn',
-      'nameJa',
-      'nameZh',
+      'name',
       'permissionIds',
     ]);
     expect(getDocumentedDtoProperties(UpdateRoleDto)).toEqual([
       'description',
-      'nameEn',
-      'nameJa',
-      'nameZh',
+      'name',
       'version',
     ]);
     expect(getDocumentedDtoProperties(SetPermissionsDto)).toEqual(['permissionIds', 'version']);

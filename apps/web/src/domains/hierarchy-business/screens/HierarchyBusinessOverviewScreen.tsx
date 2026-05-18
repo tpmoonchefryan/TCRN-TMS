@@ -14,7 +14,7 @@ import { ApiRequestError } from '@/platform/http/api';
 import {
   buildTalentWorkspacePath,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
@@ -86,7 +86,7 @@ export function HierarchyBusinessOverviewScreen({
   const searchParams = useSearchParams();
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const { request, session } = useSession();
   const [talents, setTalents] = useState<OrganizationTalent[]>([]);
   const [scopeName, setScopeName] = useState<string | null>(scopeType === 'tenant' ? session?.tenantName ?? null : null);
@@ -166,7 +166,7 @@ export function HierarchyBusinessOverviewScreen({
             setScopeName(null);
             setScopePath(null);
             setError(
-              pickLocaleText(selectedLocale, {
+              pickLocaleText(locale, {
                 en: 'The selected subsidiary could not be found in the current organization tree.',
                 zh_HANS: '当前组织结构中找不到所选分目录。',
                 zh_HANT: '目前組織結構中找不到所選分目錄。',
@@ -186,7 +186,7 @@ export function HierarchyBusinessOverviewScreen({
           setError(
             getErrorMessage(
               reason,
-              pickLocaleText(selectedLocale, {
+              pickLocaleText(locale, {
                 en: 'Failed to load hierarchy business workspace.',
                 zh_HANS: '加载层级业务工作区失败。',
                 zh_HANT: '載入層級業務工作區失敗。',
@@ -209,7 +209,7 @@ export function HierarchyBusinessOverviewScreen({
     return () => {
       cancelled = true;
     };
-  }, [request, scopeType, selectedLocale, session?.tenantCode, session?.tenantName, subsidiaryId]);
+  }, [request, scopeType, locale, session?.tenantCode, session?.tenantName, subsidiaryId]);
 
   const publishedTalents = useMemo(
     () => talents.filter((talent) => talent.lifecycleStatus === 'published' && talent.isActive).length,
@@ -258,7 +258,7 @@ export function HierarchyBusinessOverviewScreen({
     return (
       <GlassSurface className="p-8">
         <p className="text-sm font-medium text-slate-500">
-          {pickLocaleText(selectedLocale, {
+          {pickLocaleText(locale, {
             en: 'Loading hierarchy business workspace…',
             zh_HANS: '正在加载层级业务工作区…',
             zh_HANT: '正在載入層級業務工作區…',
@@ -275,7 +275,7 @@ export function HierarchyBusinessOverviewScreen({
     return (
       <StateView
         status="error"
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Hierarchy business unavailable',
           zh_HANS: '层级业务不可用',
           zh_HANT: '層級業務不可用',
@@ -289,7 +289,7 @@ export function HierarchyBusinessOverviewScreen({
   }
 
   const scopeLabel = scopeType === 'tenant'
-    ? pickLocaleText(selectedLocale, {
+    ? pickLocaleText(locale, {
         en: 'Tenant scope',
         zh_HANS: '租户范围',
         zh_HANT: '租戶範圍',
@@ -297,7 +297,7 @@ export function HierarchyBusinessOverviewScreen({
         ko: '테넌트 범위',
         fr: 'Portée du tenant',
       })
-    : pickLocaleText(selectedLocale, {
+    : pickLocaleText(locale, {
         en: 'Subsidiary scope',
         zh_HANS: '分目录范围',
         zh_HANT: '分目錄範圍',
@@ -305,7 +305,7 @@ export function HierarchyBusinessOverviewScreen({
         ko: '하위 조직 범위',
         fr: 'Portée du périmètre',
       });
-  const scopeSummary = scopePath || pickLocaleText(selectedLocale, {
+  const scopeSummary = scopePath || pickLocaleText(locale, {
     en: 'Current organization scope',
     zh_HANS: '当前组织范围',
     zh_HANT: '目前組織範圍',
@@ -317,7 +317,7 @@ export function HierarchyBusinessOverviewScreen({
     {
       key: 'reports',
       icon: <BarChart3 className="h-4 w-4" />,
-      title: pickLocaleText(selectedLocale, {
+      title: pickLocaleText(locale, {
         en: 'Reports',
         zh_HANS: '报表',
         zh_HANT: '報表',
@@ -325,7 +325,7 @@ export function HierarchyBusinessOverviewScreen({
         ko: '리포트',
         fr: 'Rapports',
       }),
-      description: pickLocaleText(selectedLocale, {
+      description: pickLocaleText(locale, {
         en: 'Reserve this space for scope-level report suites and operational dashboards.',
         zh_HANS: '为层级报表套件和运营看板预留入口。',
         zh_HANT: '為層級報表套件與營運儀表板預留入口。',
@@ -337,7 +337,7 @@ export function HierarchyBusinessOverviewScreen({
     {
       key: 'crm',
       icon: <BriefcaseBusiness className="h-4 w-4" />,
-      title: pickLocaleText(selectedLocale, {
+      title: pickLocaleText(locale, {
         en: 'B2B CRM',
         zh_HANS: 'ToB CRM',
         zh_HANT: 'ToB CRM',
@@ -345,7 +345,7 @@ export function HierarchyBusinessOverviewScreen({
         ko: 'B2B CRM',
         fr: 'CRM B2B',
       }),
-      description: pickLocaleText(selectedLocale, {
+      description: pickLocaleText(locale, {
         en: 'Keep enterprise relationship operations separate from artist-facing business pages.',
         zh_HANS: '将企业客户关系运营与艺人侧业务页面彻底分开。',
         zh_HANT: '將企業客戶關係營運與藝人側業務頁面徹底分開。',
@@ -357,7 +357,7 @@ export function HierarchyBusinessOverviewScreen({
     {
       key: 'membership',
       icon: <Gem className="h-4 w-4" />,
-      title: pickLocaleText(selectedLocale, {
+      title: pickLocaleText(locale, {
         en: 'Membership operations',
         zh_HANS: '会员运营',
         zh_HANT: '會員營運',
@@ -365,7 +365,7 @@ export function HierarchyBusinessOverviewScreen({
         ko: '멤버십 운영',
         fr: 'Opérations membres',
       }),
-      description: pickLocaleText(selectedLocale, {
+      description: pickLocaleText(locale, {
         en: 'Prepare this area for scope-level membership programs, benefits, and renewal policies.',
         zh_HANS: '为层级会员方案、权益和续费规则预留空间。',
         zh_HANT: '為層級會員方案、權益與續費規則預留空間。',
@@ -388,7 +388,7 @@ export function HierarchyBusinessOverviewScreen({
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{scopeName || scopeLabel}</h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'This scope-level business workspace stays separate from governance screens. Use it for cross-talent operations and jump into individual talent workspaces only when you need artist-facing modules.',
                   zh_HANS: '这里是独立于治理界面的层级业务工作区，用于跨艺人的运营工作；只有在需要进入艺人业务模块时才跳转到具体艺人工作区。',
                   zh_HANT: '這裡是獨立於治理介面的層級業務工作區，用於跨藝人的營運工作；只有在需要進入藝人業務模組時才跳轉到具體藝人工作區。',
@@ -402,7 +402,7 @@ export function HierarchyBusinessOverviewScreen({
 
           <div className="rounded-3xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Scope path',
                 zh_HANS: '范围路径',
                 zh_HANT: '範圍路徑',
@@ -419,7 +419,7 @@ export function HierarchyBusinessOverviewScreen({
       <div className="grid gap-4 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Managed talents',
               zh_HANS: '管理艺人数',
               zh_HANT: '管理藝人數',
@@ -432,7 +432,7 @@ export function HierarchyBusinessOverviewScreen({
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Published',
               zh_HANS: '已发布',
               zh_HANT: '已發佈',
@@ -445,7 +445,7 @@ export function HierarchyBusinessOverviewScreen({
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Draft',
               zh_HANS: '草稿',
               zh_HANT: '草稿',
@@ -458,7 +458,7 @@ export function HierarchyBusinessOverviewScreen({
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Disabled',
               zh_HANS: '停用',
               zh_HANT: '停用',
@@ -477,7 +477,7 @@ export function HierarchyBusinessOverviewScreen({
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
                 {card.icon}
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Planned',
                   zh_HANS: '规划中',
                   zh_HANT: '規劃中',
@@ -499,7 +499,7 @@ export function HierarchyBusinessOverviewScreen({
             <div className="flex items-center gap-2">
               <Users2 className="h-4 w-4 text-slate-500" />
               <h2 className="text-lg font-semibold text-slate-900">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Talent inventory',
                   zh_HANS: '艺人清单',
                   zh_HANT: '藝人清單',
@@ -510,7 +510,7 @@ export function HierarchyBusinessOverviewScreen({
               </h2>
             </div>
             <p className="text-sm leading-6 text-slate-600">
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Review the talents under this scope, then open the artist workspace only when you need artist-facing operations.',
                 zh_HANS: '先在这里查看当前范围下的艺人，再在需要艺人侧操作时进入具体艺人工作区。',
                 zh_HANT: '先在這裡查看目前範圍下的藝人，再在需要藝人側操作時進入具體藝人工作區。',
@@ -525,7 +525,7 @@ export function HierarchyBusinessOverviewScreen({
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <Building2 className="h-4 w-4" />
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Back to organization structure',
               zh_HANS: '返回组织结构',
               zh_HANT: '返回組織結構',
@@ -540,7 +540,7 @@ export function HierarchyBusinessOverviewScreen({
           <div className="mt-6">
             <StateView
               status="empty"
-              title={pickLocaleText(selectedLocale, {
+              title={pickLocaleText(locale, {
                 en: 'No talents in this scope',
                 zh_HANS: '当前范围下没有艺人',
                 zh_HANT: '目前範圍下沒有藝人',
@@ -548,7 +548,7 @@ export function HierarchyBusinessOverviewScreen({
                 ko: '이 범위에 탤런트가 없습니다',
                 fr: 'Aucun talent dans cette portée',
               })}
-              description={pickLocaleText(selectedLocale, {
+              description={pickLocaleText(locale, {
                 en: 'Create or move talents from organization structure before using this workspace.',
                 zh_HANS: '请先在组织结构中创建或调整艺人后，再使用此业务工作区。',
                 zh_HANT: '請先在組織結構中建立或調整藝人後，再使用此業務工作區。',
@@ -573,7 +573,7 @@ export function HierarchyBusinessOverviewScreen({
                         {talent.code}
                       </span>
                       <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[11px] font-medium text-white">
-                        {pickLocaleText(selectedLocale, {
+                        {pickLocaleText(locale, {
                           en: talent.lifecycleStatus,
                           zh_HANS:
                             talent.lifecycleStatus === 'published'
@@ -614,7 +614,7 @@ export function HierarchyBusinessOverviewScreen({
                     href={buildTalentWorkspacePath(tenantId, talent.id)}
                     className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                   >
-                    {pickLocaleText(selectedLocale, {
+                    {pickLocaleText(locale, {
                       en: 'Open talent workspace',
                       zh_HANS: '进入艺人工作区',
                       zh_HANT: '進入藝人工作區',
@@ -631,7 +631,7 @@ export function HierarchyBusinessOverviewScreen({
               pagination={pagination}
               itemCount={paginatedTalents.length}
               labels={{
-                pageLabel: pickLocaleText(selectedLocale, {
+                pageLabel: pickLocaleText(locale, {
                   en: `Page ${pagination.page} of ${pagination.totalPages}`,
                   zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
                   zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 頁`,
@@ -639,7 +639,7 @@ export function HierarchyBusinessOverviewScreen({
                   ko: `${pagination.totalPages}페이지 중 ${pagination.page}페이지`,
                   fr: `Page ${pagination.page} sur ${pagination.totalPages}`,
                 }),
-                rangeLabel: pickLocaleText(selectedLocale, {
+                rangeLabel: pickLocaleText(locale, {
                   en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
                   zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
                   zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${pagination.totalCount} 筆`,
@@ -647,7 +647,7 @@ export function HierarchyBusinessOverviewScreen({
                   ko: `${pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
                   fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${pagination.totalCount}`,
                 }),
-                rowsPerPageLabel: pickLocaleText(selectedLocale, {
+                rowsPerPageLabel: pickLocaleText(locale, {
                   en: 'Rows per page',
                   zh_HANS: '每页条目',
                   zh_HANT: '每頁項目',
@@ -655,7 +655,7 @@ export function HierarchyBusinessOverviewScreen({
                   ko: '페이지당 행 수',
                   fr: 'Lignes par page',
                 }),
-                previousLabel: pickLocaleText(selectedLocale, {
+                previousLabel: pickLocaleText(locale, {
                   en: 'Previous',
                   zh_HANS: '上一页',
                   zh_HANT: '上一頁',
@@ -663,7 +663,7 @@ export function HierarchyBusinessOverviewScreen({
                   ko: '이전',
                   fr: 'Précédent',
                 }),
-                nextLabel: pickLocaleText(selectedLocale, {
+                nextLabel: pickLocaleText(locale, {
                   en: 'Next',
                   zh_HANS: '下一页',
                   zh_HANT: '下一頁',

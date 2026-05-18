@@ -10,7 +10,7 @@ import {
   resolveHierarchyBusinessRoute,
   resolveTalentWorkspaceRoute,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { StateView } from '@/platform/ui';
@@ -28,12 +28,12 @@ export function PrivateShell({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const { status, session, recoverSession, logoutCurrentSession } = useSession();
   const [isSignOutPending, setIsSignOutPending] = useState(false);
   const [isRecoverySuppressed, setIsRecoverySuppressed] = useState(false);
   const loadingCopy = {
-    title: pickLocaleText(selectedLocale, {
+    title: pickLocaleText(locale, {
       en: 'Checking account',
       zh_HANS: '正在确认账户',
       zh_HANT: '正在確認帳戶',
@@ -41,7 +41,7 @@ export function PrivateShell({
       ko: '계정을 확인하고 있습니다',
       fr: 'Vérification du compte en cours',
     }),
-    description: pickLocaleText(selectedLocale, {
+    description: pickLocaleText(locale, {
       en: 'Verifying your current session.',
       zh_HANS: '正在验证当前会话。',
       zh_HANT: '正在驗證目前工作階段。',
@@ -49,7 +49,7 @@ export function PrivateShell({
       ko: '현재 세션을 확인하고 있습니다.',
       fr: 'Vérification de votre session en cours.',
     }),
-    unavailableTitle: pickLocaleText(selectedLocale, {
+    unavailableTitle: pickLocaleText(locale, {
       en: 'Account unavailable',
       zh_HANS: '账户不可用',
       zh_HANT: '帳戶不可用',
@@ -57,7 +57,7 @@ export function PrivateShell({
       ko: '계정을 사용할 수 없습니다',
       fr: 'Compte indisponible',
     }),
-    unavailableDescription: pickLocaleText(selectedLocale, {
+    unavailableDescription: pickLocaleText(locale, {
       en: 'Session information is unavailable.',
       zh_HANS: '当前会话信息不可用。',
       zh_HANT: '目前工作階段資訊不可用。',

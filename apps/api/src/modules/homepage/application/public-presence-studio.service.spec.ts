@@ -141,6 +141,8 @@ describe('PublicPresenceStudioService', () => {
     publicPresenceFoundationRepository = {
       findDocumentVersionById: vi.fn(),
       findDraftVersion: vi.fn(),
+      findLatestVersionByTemplate: vi.fn().mockResolvedValue(null),
+      findLatestVersionsByPortal: vi.fn().mockResolvedValue([createVersionRecord()]),
       findPortalByTalentId: vi.fn(),
       findValidationSnapshotById: vi.fn(),
       findWorkflowEventsByPortalId: vi.fn().mockResolvedValue([]),

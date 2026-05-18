@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
@@ -32,6 +32,8 @@ describe('AdapterReadApplicationService', () => {
   } as unknown as AdapterReadRepository;
 
   const service = new AdapterReadApplicationService(mockRepository);
+  const localized = (en: string, values: Partial<ReturnType<typeof createLocalizedText>> = {}) =>
+    createLocalizedText({ en, ...values });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,9 +50,7 @@ describe('AdapterReadApplicationService', () => {
         platformDisplayName: 'Bilibili',
         platformIconUrl: 'https://example.com/icon.png',
         code: 'BILI_SYNC',
-        nameEn: 'Bili Sync',
-        nameZh: '哔哩同步',
-        nameJa: null,
+        name: localized('Bili Sync', { zh_HANS: '哔哩同步' }),
         extraData: null,
         adapterType: 'oauth',
         inherit: true,
@@ -76,13 +76,7 @@ describe('AdapterReadApplicationService', () => {
           iconUrl: 'https://example.com/icon.png',
         },
         code: 'BILI_SYNC',
-        nameEn: 'Bili Sync',
-        nameZh: '哔哩同步',
-        nameJa: null,
-        translations: {
-          en: 'Bili Sync',
-          zh_HANS: '哔哩同步',
-        },
+        name: localized('Bili Sync', { zh_HANS: '哔哩同步' }),
         adapterType: 'oauth',
         inherit: true,
         isActive: true,
@@ -113,9 +107,7 @@ describe('AdapterReadApplicationService', () => {
       platformCode: 'BILIBILI',
       platformDisplayName: 'Bilibili',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       extraData: null,
       adapterType: 'oauth',
       inherit: true,
@@ -153,12 +145,7 @@ describe('AdapterReadApplicationService', () => {
         displayName: 'Bilibili',
       },
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
-      translations: {
-        en: 'Bili Sync',
-      },
+      name: localized('Bili Sync'),
       adapterType: 'oauth',
       inherit: true,
       isActive: true,

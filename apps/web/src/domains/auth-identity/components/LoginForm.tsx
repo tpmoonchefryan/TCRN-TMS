@@ -24,7 +24,7 @@ import {
   isAcTenantTier,
   normalizeInternalWorkspacePath,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { LocaleSwitcher, useBodyScrollLock, useModalFocus } from '@/platform/ui';
@@ -155,7 +155,7 @@ function buildPostLoginSelectorCopy(locale: string) {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
+  const { copy, locale, localeOptions, setLocale } = useUiLocale();
   const { authenticate } = useSession();
   const loginCopy = copy.auth.login;
   const [step, setStep] = useState<AuthStep>('credentials');
@@ -178,8 +178,8 @@ export function LoginForm() {
 
   const nextHref = searchParams.get('next');
   const postLoginSelectorCopy = useMemo(
-    () => buildPostLoginSelectorCopy(selectedLocale),
-    [selectedLocale],
+    () => buildPostLoginSelectorCopy(locale),
+    [locale],
   );
 
   useBodyScrollLock(talentSelector !== null);
@@ -370,11 +370,11 @@ export function LoginForm() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(148,163,184,0.18),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)]">
       <div className="mx-auto flex w-full max-w-6xl justify-end px-6 pt-6">
         <LocaleSwitcher
-          currentLocale={selectedLocale}
+          locale={locale}
           options={localeOptions}
           onChange={setLocale}
           ariaLabel={`${copy.common.languageSwitcherLabel}: ${
-            localeOptions.find((option) => option.code === selectedLocale)?.label || selectedLocale
+            localeOptions.find((option) => option.code === locale)?.label || locale
           }`}
         />
       </div>

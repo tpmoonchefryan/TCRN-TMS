@@ -15,6 +15,9 @@ AI should not return:
 - arbitrary CSS outside Advanced Source;
 - hidden renderer behavior;
 - direct save, publish, or deployment instructions.
+- section reordering unless the selected template explicitly declares a bounded setting for it;
+- new unregistered components;
+- runtime template/component code.
 
 ## Patch Result Requirements
 
@@ -28,13 +31,35 @@ Patch results must include:
 - `blockedRequests`: any rejected request with reason and safe alternative.
 - `requiresUserConfirmation`: `true` when the change switches templates, introduces external embeds, touches public CTA behavior, or asks for Advanced Source.
 
+## Template / Component Authoring Requests
+
+For requests such as "create a new template", "add a custom component", or "build a component for the component store", AI must not return a runtime page patch. It should return an authoring proposal for the full-screen Web IDE workflow.
+
+Authoring proposals should include:
+
+- target: `template` or `component`;
+- files or modules to create or modify;
+- registry manifest fields;
+- props schema or template section matrix;
+- fixture states for preview;
+- validation and test suggestions;
+- safety/policy notes;
+- human review requirements.
+
+Authoring proposals must not:
+
+- execute or store code in tenant content;
+- publish or schedule anything;
+- bypass review, tests, safety policy, or release;
+- mutate route/domain/provider allowlists.
+
 ## Advanced Source Requests
 
 If the user explicitly asks for Advanced Source:
 
-- explain one-way eject;
-- preserve or reference the low-code snapshot;
-- output source-mode changes only after user confirmation;
+- explain that Advanced Source is not the ordinary Visual Mode path and cannot change template-owned layout for a released template without code review;
+- preserve or reference the current registry-backed document state;
+- output source-mode data changes only after user confirmation;
 - obey `safety-guardrails.md`;
 - never include JavaScript, event attributes, arbitrary forms, or non-allowlisted iframes.
 

@@ -10,6 +10,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
   createTestTenantFixture,
@@ -212,16 +213,16 @@ async function configureTenantDefaultProfileStore(
 ): Promise<void> {
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${schemaName}".profile_store (
-      id, code, name_en, is_default, is_active, sort_order, created_at, updated_at, version
+      id, code, name, is_default, is_active, sort_order, created_at, updated_at, version
     )
     VALUES (
-      gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', true, true, 0, NOW(), NOW(), 1
+      gen_random_uuid(), 'DEFAULT_STORE', $1::jsonb, true, true, 0, NOW(), NOW(), 1
     )
     ON CONFLICT (code) DO UPDATE
     SET is_default = true,
         is_active = true,
         updated_at = NOW()
-  `);
+  `, JSON.stringify(createLocalizedText({ en: 'Default Profile Store' })));
 }
 
 async function configureTalentPiiPlatformAdapter(
@@ -237,9 +238,7 @@ async function configureTalentPiiPlatformAdapter(
         id,
         code,
         display_name,
-        name_en,
-        name_zh,
-        name_ja,
+        name,
         base_url,
         profile_url_template,
         color,
@@ -252,9 +251,7 @@ async function configureTalentPiiPlatformAdapter(
         gen_random_uuid(),
         'TCRN_PII_PLATFORM',
         'TCRN PII Platform',
-        'TCRN PII Platform',
-        'TCRN PII Platform',
-        'TCRN PII Platform',
+        $2::jsonb,
         $1,
         NULL,
         '#2563eb',
@@ -266,15 +263,14 @@ async function configureTalentPiiPlatformAdapter(
       )
       ON CONFLICT (code) DO UPDATE
       SET display_name = EXCLUDED.display_name,
-          name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
+          name = EXCLUDED.name,
           base_url = EXCLUDED.base_url,
           is_active = true,
           updated_at = NOW()
       RETURNING id
     `,
     baseUrl,
+    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' })),
   );
 
   const adapterRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -285,9 +281,7 @@ async function configureTalentPiiPlatformAdapter(
         owner_id,
         platform_id,
         code,
-        name_en,
-        name_zh,
-        name_ja,
+        name,
         adapter_type,
         inherit,
         is_active,
@@ -301,9 +295,7 @@ async function configureTalentPiiPlatformAdapter(
         $1::uuid,
         $2::uuid,
         'TCRN_PII_PLATFORM',
-        'TCRN PII Platform',
-        'TCRN PII Platform',
-        'TCRN PII Platform',
+        $4::jsonb,
         'api_key',
         false,
         true,
@@ -314,9 +306,7 @@ async function configureTalentPiiPlatformAdapter(
       )
       ON CONFLICT (owner_type, owner_id, code) DO UPDATE
       SET platform_id = EXCLUDED.platform_id,
-          name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
+          name = EXCLUDED.name,
           adapter_type = EXCLUDED.adapter_type,
           inherit = EXCLUDED.inherit,
           is_active = true,
@@ -327,6 +317,7 @@ async function configureTalentPiiPlatformAdapter(
     talentId,
     platformRows[0].id,
     userId,
+    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' })),
   );
 
   await prisma.$executeRawUnsafe(
@@ -466,12 +457,12 @@ describe('Customer Integration Tests', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Customer Test Subsidiary',
+      name: createLocalizedText({ en: 'Customer Test Subsidiary' }),
       createdBy: testUser.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TALENT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Customer Test Talent',
+      name: createLocalizedText({ en: 'Customer Test Talent' }),
       displayName: 'Customer Test Talent',
       homepagePath: `customer-test-${Date.now()}`,
       createdBy: testUser.id,
@@ -496,7 +487,7 @@ describe('Customer Integration Tests', () => {
 
     const localOnlyTalent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TALENT_LOCAL_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Customer Local Only Talent',
+      name: createLocalizedText({ en: 'Customer Local Only Talent' }),
       displayName: 'Customer Local Only Talent',
       homepagePath: `customer-local-only-${Date.now()}`,
       profileStoreId: localOnlyStoreRows[0].id,

@@ -4,7 +4,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
-import { getTrilingualNameColumn } from '../../common/request-locale.util';
+import { buildLocalizedJsonTextSql } from '../../common/request-locale.util';
 
 export type DelegateType = 'user' | 'role';
 export type DelegateScopeType = 'subsidiary' | 'talent';
@@ -40,7 +40,7 @@ export class DelegatedAdminService {
     } = {},
     language: string = 'en'
   ): Promise<DelegatedAdminData[]> {
-    const nameField = getTrilingualNameColumn(language);
+    const localizedNameSql = buildLocalizedJsonTextSql('name', language);
 
     let whereClause = '1=1';
     const params: unknown[] = [];
@@ -85,7 +85,7 @@ export class DelegatedAdminService {
       let scopeName: string | null = null;
       if (row.scopeType === 'subsidiary') {
         const subs = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
-          SELECT COALESCE(${nameField}, name_en) as name FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
+          SELECT ${localizedNameSql} as name FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
         `, row.scopeId);
         scopeName = subs[0]?.name || null;
       } else if (row.scopeType === 'talent') {
@@ -111,7 +111,7 @@ export class DelegatedAdminService {
         delegateType = 'role';
         delegateId = row.adminRoleId!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
         const roles = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
-          SELECT COALESCE(${nameField}, name_en) as name FROM "${tenantSchema}".role WHERE id = $1::uuid
+          SELECT ${localizedNameSql} as name FROM "${tenantSchema}".role WHERE id = $1::uuid
         `, row.adminRoleId);
         delegateName = roles[0]?.name || null;
       }

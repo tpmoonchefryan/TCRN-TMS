@@ -1,8 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
+import { Prisma, prisma } from '@tcrn/database';
 
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import {
   buildTalentListQuery,
   TALENT_SELECT_FIELDS,
@@ -13,10 +14,32 @@ import {
   type TalentStats,
 } from '../domain/talent-read.policy';
 
+type TalentRawData = Omit<TalentData, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type TalentProfileStoreRawRecord = Omit<TalentProfileStoreRecord, 'name'> & {
+  name: Prisma.JsonValue;
+};
+
+const mapTalentData = (row: TalentRawData): TalentData => ({
+  ...row,
+  name: readLocalizedText(row.name, 'talent.name'),
+  description: readLocalizedText(row.description, 'talent.description'),
+});
+
+const mapTalentProfileStoreRecord = (
+  row: TalentProfileStoreRawRecord,
+): TalentProfileStoreRecord => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+});
+
 @Injectable()
 export class TalentReadRepository {
   async findById(id: string, tenantSchema: string): Promise<TalentData | null> {
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
@@ -24,14 +47,14 @@ export class TalentReadRepository {
       id,
     );
 
-    return results[0] || null;
+    return results[0] ? mapTalentData(results[0]) : null;
   }
 
   async findByCode(
     code: string,
     tenantSchema: string,
   ): Promise<TalentData | null> {
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
@@ -39,14 +62,14 @@ export class TalentReadRepository {
       code,
     );
 
-    return results[0] || null;
+    return results[0] ? mapTalentData(results[0]) : null;
   }
 
   async findByHomepagePath(
     homepagePath: string,
     tenantSchema: string,
   ): Promise<TalentData | null> {
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
@@ -54,14 +77,14 @@ export class TalentReadRepository {
       homepagePath,
     );
 
-    return results[0] || null;
+    return results[0] ? mapTalentData(results[0]) : null;
   }
 
   async findByCustomDomain(
     customDomain: string,
     tenantSchema: string,
   ): Promise<TalentData | null> {
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
@@ -69,7 +92,7 @@ export class TalentReadRepository {
       customDomain.toLowerCase(),
     );
 
-    return results[0] || null;
+    return results[0] ? mapTalentData(results[0]) : null;
   }
 
   async getProfileStoreById(
@@ -77,12 +100,10 @@ export class TalentReadRepository {
     tenantSchema: string,
   ): Promise<TalentProfileStoreRecord | null> {
     try {
-      const results = await prisma.$queryRawUnsafe<TalentProfileStoreRecord[]>(
+      const results = await prisma.$queryRawUnsafe<TalentProfileStoreRawRecord[]>(
         `SELECT
           id, code,
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           is_default as "isDefault",
           pii_proxy_url as "piiProxyUrl"
@@ -91,7 +112,7 @@ export class TalentReadRepository {
         profileStoreId,
       );
 
-      return results[0] || null;
+      return results[0] ? mapTalentProfileStoreRecord(results[0]) : null;
     } catch {
       return null;
     }
@@ -199,7 +220,7 @@ export class TalentReadRepository {
        WHERE ${query.whereClause}`,
       ...query.params,
     );
-    const data = await prisma.$queryRawUnsafe<TalentData[]>(
+    const rows = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
@@ -210,7 +231,7 @@ export class TalentReadRepository {
     );
 
     return {
-      data,
+      data: rows.map(mapTalentData),
       total: Number(countResult[0]?.count || 0),
     };
   }

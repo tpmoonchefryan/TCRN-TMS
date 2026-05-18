@@ -287,7 +287,7 @@ export function HomepageManagementScreen({
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
-  const { selectedLocale, copy } = useHomepageManagementCopy();
+  const { locale, copy } = useHomepageManagementCopy();
   const [homepage, setHomepage] = useState<HomepageResponse | null>(null);
   const [versionsPanel, setVersionsPanel] = useState<VersionsPanelState>({
     data: [],
@@ -491,7 +491,7 @@ export function HomepageManagementScreen({
   const currentPublicState = homepage.isPublished ? copy.summary.publicPublishedValue : copy.summary.publicDraftOnlyValue;
   const sharedHomepageRoute = extractPathnameFromUrl(homepage.homepageUrl);
   const pageRange = getPaginationRange(versionsPanel.pagination, versionsPanel.data.length);
-  const paginationLabel = pickLocaleText(selectedLocale, {
+  const paginationLabel = pickLocaleText(locale, {
     en: `Page ${versionsPanel.pagination.page} of ${versionsPanel.pagination.totalPages}`,
     zh_HANS: `第 ${versionsPanel.pagination.page} / ${versionsPanel.pagination.totalPages} 页`,
     zh_HANT: `第 ${versionsPanel.pagination.page} / ${versionsPanel.pagination.totalPages} 頁`,
@@ -501,7 +501,7 @@ export function HomepageManagementScreen({
   });
   const paginationRangeLabel =
     versionsPanel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No versions are currently available.',
           zh_HANS: '当前没有版本记录。',
           zh_HANT: '目前沒有版本紀錄。',
@@ -509,7 +509,7 @@ export function HomepageManagementScreen({
           ko: '표시할 버전 기록이 없습니다.',
           fr: "Aucune version n'est disponible pour le moment.",
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${pageRange.start}-${pageRange.end} of ${versionsPanel.pagination.totalCount}`,
           zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${versionsPanel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${versionsPanel.pagination.totalCount} 筆`,
@@ -517,7 +517,7 @@ export function HomepageManagementScreen({
           ko: `${versionsPanel.pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
           fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${versionsPanel.pagination.totalCount}`,
         });
-  const pageSizeLabel = pickLocaleText(selectedLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页显示',
     zh_HANT: '每頁顯示',
@@ -525,7 +525,7 @@ export function HomepageManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(selectedLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -533,7 +533,7 @@ export function HomepageManagementScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(selectedLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -665,7 +665,7 @@ export function HomepageManagementScreen({
               label={copy.facts.publishedVersionLabel}
               value={publishedVersionNumber ? `v${publishedVersionNumber}` : copy.facts.noPublishedVersion}
               hint={`${copy.facts.updatedAtPrefix} ${formatHomepageManagementDateTime(
-                selectedLocale,
+                locale,
                 homepage.updatedAt,
                 copy.facts.updatedAtUnknown,
               )}.`}
@@ -701,7 +701,7 @@ export function HomepageManagementScreen({
                         : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-white'
                     }`}
                   >
-                    {getHomepageVersionFilterLabel(selectedLocale, candidate)}
+                    {getHomepageVersionFilterLabel(locale, candidate)}
                   </button>
                 );
               })}
@@ -734,17 +734,17 @@ export function HomepageManagementScreen({
                   <tr key={item.id} className="align-top">
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">v{item.versionNumber}</td>
                     <td className="px-6 py-4">
-                      <StatusBadge status={item.status} label={getHomepageVersionStatusLabel(selectedLocale, item.status)} />
+                      <StatusBadge status={item.status} label={getHomepageVersionStatusLabel(locale, item.status)} />
                     </td>
                     <td className="px-6 py-4 text-sm leading-6 text-slate-600">
                       <div className="space-y-1">
                         <p>{item.contentPreview || copy.ledger.noPreview}</p>
-                        <p className="text-xs text-slate-500">{formatHomepageComponentCount(selectedLocale, item.componentCount)}</p>
+                        <p className="text-xs text-slate-500">{formatHomepageComponentCount(locale, item.componentCount)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       <div className="space-y-1">
-                        <p>{formatHomepageManagementDateTime(selectedLocale, item.createdAt, copy.common.never)}</p>
+                        <p>{formatHomepageManagementDateTime(locale, item.createdAt, copy.common.never)}</p>
                         <p className="text-xs text-slate-500">
                           {copy.ledger.createdByPrefix} {item.createdBy?.username || copy.ledger.createdBySystem}
                         </p>
@@ -752,7 +752,7 @@ export function HomepageManagementScreen({
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       <div className="space-y-1">
-                        <p>{formatHomepageManagementDateTime(selectedLocale, item.publishedAt, copy.common.never)}</p>
+                        <p>{formatHomepageManagementDateTime(locale, item.publishedAt, copy.common.never)}</p>
                         <p className="text-xs text-slate-500">{item.publishedBy?.username || copy.ledger.publishedByUnpublished}</p>
                       </div>
                     </td>

@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
   createTestTenantFixture,
@@ -52,17 +53,17 @@ describe('Organization Move Retired Integration', () => {
 
     const sourceSubsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_MOVE_SRC_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Organization Move Source Subsidiary',
+      name: createLocalizedText({ en: 'Organization Move Source Subsidiary' }),
       createdBy: testUser.id,
     });
     const targetSubsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_MOVE_DST_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Organization Move Target Subsidiary',
+      name: createLocalizedText({ en: 'Organization Move Target Subsidiary' }),
       createdBy: testUser.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, sourceSubsidiary.id, {
       code: `TAL_MOVE_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Organization Move Talent',
+      name: createLocalizedText({ en: 'Organization Move Talent' }),
       displayName: 'Organization Move Talent',
       homepagePath: `organization-move-${Date.now()}`,
       createdBy: testUser.id,

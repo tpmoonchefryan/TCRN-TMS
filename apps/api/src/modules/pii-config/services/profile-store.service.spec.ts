@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ProfileStoreApplicationService } from '../application/profile-store.service';
@@ -24,6 +24,16 @@ describe('ProfileStoreService', () => {
   } as unknown as ProfileStoreApplicationService;
 
   const service = new ProfileStoreService(mockApplicationService);
+  const defaultStoreName = createLocalizedText({
+    en: 'Default Profile Store',
+    zh_HANS: '默认档案库',
+    ja: 'デフォルトプロフィールストア',
+  });
+  const defaultStoreDescription = createLocalizedText({
+    en: 'Primary customer profile store',
+    zh_HANS: '主要客户档案库',
+    ja: '主要な顧客プロフィールストア',
+  });
 
   it('delegates all profile-store paths to the layered application service', async () => {
     vi.mocked(mockApplicationService.findMany).mockResolvedValue({
@@ -42,22 +52,8 @@ describe('ProfileStoreService', () => {
     vi.mocked(mockApplicationService.findById).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      name: 'Default Profile Store',
-      nameZh: '默认档案库',
-      nameJa: 'デフォルトプロフィールストア',
-      translations: {
-        en: 'Default Profile Store',
-        zh_HANS: '默认档案库',
-        ja: 'デフォルトプロフィールストア',
-      },
-      description: 'Primary customer profile store',
-      descriptionZh: '主要客户档案库',
-      descriptionJa: '主要な顧客プロフィールストア',
-      descriptionTranslations: {
-        en: 'Primary customer profile store',
-        zh_HANS: '主要客户档案库',
-        ja: '主要な顧客プロフィールストア',
-      },
+      name: defaultStoreName,
+      description: defaultStoreDescription,
       talentCount: 2,
       customerCount: 10,
       isDefault: true,
@@ -69,7 +65,7 @@ describe('ProfileStoreService', () => {
     vi.mocked(mockApplicationService.create).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      name: 'Default Profile Store',
+      name: defaultStoreName,
       isDefault: true,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
@@ -90,7 +86,7 @@ describe('ProfileStoreService', () => {
       service.create(
         {
           code: 'DEFAULT_STORE',
-          nameEn: 'Default Profile Store',
+          name: defaultStoreName,
         },
         context,
       ),
@@ -103,7 +99,7 @@ describe('ProfileStoreService', () => {
         'store-1',
         {
           version: 1,
-          nameEn: 'Updated Store',
+          name: { en: 'Updated Store' },
         },
         context,
       ),

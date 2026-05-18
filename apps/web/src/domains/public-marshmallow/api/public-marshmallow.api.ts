@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@tcrn/shared';
+
 import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/api';
 
 export type PublicCaptchaMode = 'always' | 'never' | 'auto';
@@ -29,16 +31,8 @@ export interface PublicMarshmallowConfigResponse {
   reactionsEnabled: boolean;
   allowedReactions: string[];
   theme: Record<string, unknown>;
-  terms: {
-    en: string | null;
-    zh: string | null;
-    ja: string | null;
-  };
-  privacy: {
-    en: string | null;
-    zh: string | null;
-    ja: string | null;
-  };
+  terms: LocalizedText;
+  privacy: LocalizedText;
 }
 
 export interface PublicMarshmallowMessageRecord {

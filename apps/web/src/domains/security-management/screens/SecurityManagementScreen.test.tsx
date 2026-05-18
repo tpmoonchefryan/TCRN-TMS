@@ -1,5 +1,7 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { SecurityManagementScreen } from '@/domains/security-management/screens/SecurityManagementScreen';
 
@@ -8,8 +10,7 @@ const mockRequestEnvelope = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = 'tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en',
+  locale: 'en' as SupportedUiLocale,
 };
 const organizationTreeResponse = {
   tenantId: 'tenant-1',
@@ -81,14 +82,14 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('SecurityManagementScreen', () => {
   beforeEach(() => {
     searchQuery = 'tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1';
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     mockReplace.mockReset();
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
@@ -132,14 +133,7 @@ describe('SecurityManagementScreen', () => {
             ownerId: null,
             pattern: 'badword',
             patternType: 'keyword',
-            nameEn: 'Profanity rule',
-            nameZh: '敏感词规则',
-            nameJa: null,
-            translations: {
-              en: 'Profanity rule',
-              zh_HANS: '敏感词规则',
-              ko: '비속어 규칙',
-            },
+            name: localizedFixture('Profanity rule', { zh_HANS: '敏感词规则' }),
             description: null,
             category: 'profanity',
             severity: 'medium',
@@ -241,18 +235,10 @@ describe('SecurityManagementScreen', () => {
               id: 'lang-1',
               dictionaryCode: 'language',
               code: 'zh_HANS',
-              nameEn: 'Simplified Chinese',
-              nameZh: '简体中文',
-              nameJa: null,
-              translations: {
-                en: 'Simplified Chinese',
-                zh_HANS: '简体中文',
-              },
-              name: 'Simplified Chinese',
-              descriptionEn: null,
-              descriptionZh: null,
-              descriptionJa: null,
-              descriptionTranslations: {},
+              name: localizedFixture('Simplified Chinese', { zh_HANS: '简体中文' }),
+              localizedName: 'Simplified Chinese',
+              description: localizedFixture(''),
+              localizedDescription: null,
               sortOrder: 0,
               isActive: true,
               extraData: null,
@@ -264,18 +250,10 @@ describe('SecurityManagementScreen', () => {
               id: 'lang-2',
               dictionaryCode: 'language',
               code: 'ko',
-              nameEn: 'Korean',
-              nameZh: '韩语',
-              nameJa: null,
-              translations: {
-                en: 'Korean',
-                zh_HANS: '韩语',
-              },
-              name: 'Korean',
-              descriptionEn: null,
-              descriptionZh: null,
-              descriptionJa: null,
-              descriptionTranslations: {},
+              name: localizedFixture('Korean', { zh_HANS: '韩语' }),
+              localizedName: 'Korean',
+              description: localizedFixture(''),
+              localizedDescription: null,
               sortOrder: 1,
               isActive: true,
               extraData: null,
@@ -356,13 +334,10 @@ describe('SecurityManagementScreen', () => {
     await waitFor(() => {
       expect(createdPayload).toEqual(
         expect.objectContaining({
-          nameEn: 'Profanity rule',
-          nameZh: '敏感词规则',
-          translations: {
-            en: 'Profanity rule',
+          name: localizedFixture('Profanity rule', {
             zh_HANS: '敏感词规则',
             ko: '비속어 규칙',
-          },
+          }),
           structuredScope: {
             entries: [
               { category: 'tenant' },
@@ -544,10 +519,7 @@ describe('SecurityManagementScreen', () => {
             ownerId: null,
             pattern: payload.pattern,
             patternType: payload.patternType,
-            nameEn: payload.nameEn,
-            nameZh: null,
-            nameJa: null,
-            translations: { en: payload.nameEn },
+            name: payload.name,
             description: null,
             category: null,
             severity: payload.severity,
@@ -660,7 +632,7 @@ describe('SecurityManagementScreen', () => {
         ownerType: 'tenant',
         pattern: 'badword',
         patternType: 'keyword',
-        nameEn: 'badword',
+        name: localizedFixture('badword'),
         severity: 'medium',
         action: 'reject',
         inherit: true,
@@ -709,10 +681,7 @@ describe('SecurityManagementScreen', () => {
           ownerId: null,
           pattern: payload.pattern,
           patternType: payload.patternType,
-          nameEn: payload.nameEn,
-          nameZh: null,
-          nameJa: null,
-          translations: { en: payload.nameEn },
+          name: payload.name,
           description: null,
           category: null,
           severity: payload.severity,
@@ -995,9 +964,7 @@ describe('SecurityManagementScreen', () => {
             {
               id: 'store-1',
               code: 'PRIMARY',
-              nameEn: 'Primary Store',
-              nameZh: '主档案库',
-              nameJa: null,
+              name: localizedFixture('Primary Store', { zh_HANS: '主档案库' }),
               isActive: true,
               isDefault: true,
               talentCount: 2,
@@ -1026,9 +993,7 @@ describe('SecurityManagementScreen', () => {
               ownerId: 'sub-1',
               pattern: 'discord\\.gg/',
               patternType: 'url_regex',
-              nameEn: 'Discord Invite Filter',
-              nameZh: 'Discord 邀请链接过滤',
-              nameJa: null,
+              name: localizedFixture('Discord Invite Filter', { zh_HANS: 'Discord 邀请链接过滤' }),
               description: null,
               category: 'spam',
               severity: 'high',
@@ -1171,9 +1136,7 @@ describe('SecurityManagementScreen', () => {
               ownerId: 'sub-1',
               pattern: `pattern-${itemNumber}`,
               patternType: 'domain',
-              nameEn: `External Pattern ${itemNumber}`,
-              nameZh: null,
-              nameJa: null,
+              name: localizedFixture(`External Pattern ${itemNumber}`),
               description: null,
               category: 'spam',
               severity: 'medium',
@@ -1292,9 +1255,7 @@ describe('SecurityManagementScreen', () => {
               ownerId: 'sub-1',
               pattern: 'discord\\.gg/',
               patternType: 'url_regex',
-              nameEn: 'Discord Invite Filter',
-              nameZh: null,
-              nameJa: null,
+              name: localizedFixture('Discord Invite Filter'),
               description: null,
               category: 'spam',
               severity: 'high',
@@ -1359,7 +1320,7 @@ describe('SecurityManagementScreen', () => {
   });
 
   it('renders localized zh copy for the security header', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/organization/tree?includeInactive=true') {

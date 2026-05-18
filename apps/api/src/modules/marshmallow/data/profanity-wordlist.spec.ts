@@ -14,7 +14,7 @@ describe('getProfanityByLanguage', () => {
     expect(getProfanityByLanguage('ja-JP')).toBe(PROFANITY_JA);
   });
 
-  it('falls non-trilingual UI locale tags back to the English wordlist', () => {
+  it('falls untranslated supported UI locale tags back to the English wordlist', () => {
     expect(getProfanityByLanguage('fr')).toBe(PROFANITY_EN);
     expect(getProfanityByLanguage('ko')).toBe(PROFANITY_EN);
     expect(getProfanityByLanguage('de')).toBe(PROFANITY_EN);

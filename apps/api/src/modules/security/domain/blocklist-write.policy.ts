@@ -5,13 +5,12 @@ import type {
   DisableScopeDto,
   UpdateBlocklistDto,
 } from '../dto/security.dto';
+import type { LocalizedText } from '@tcrn/shared';
 
 export interface BlocklistWriteLookupRow {
   id: string;
   extraData: Record<string, unknown> | null;
-  nameEn: string;
-  nameJa: string | null;
-  nameZh: string | null;
+  name: LocalizedText;
   version: number;
 }
 
@@ -20,7 +19,7 @@ export interface BlocklistScopeEntryRow {
   ownerType: string;
   ownerId: string | null;
   isForceUse: boolean;
-  nameEn: string;
+  name: LocalizedText;
 }
 
 export const isValidBlocklistRegexPattern = (pattern: string): boolean => {
@@ -43,10 +42,7 @@ export const buildBlocklistUpdateData = (dto: UpdateBlocklistDto) => {
   const fields = [
     'pattern',
     'patternType',
-    'nameEn',
-    'nameZh',
-    'nameJa',
-    'translations',
+    'name',
     'description',
     'category',
     'severity',

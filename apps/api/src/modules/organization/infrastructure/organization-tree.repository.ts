@@ -13,6 +13,9 @@ import type {
   RawTalentCount,
 } from '../domain/organization-tree.policy';
 
+const organizationNameSearchExpression = (columnName: string, parameter: string) =>
+  `EXISTS (SELECT 1 FROM jsonb_each_text(${columnName}) AS localized_text(locale, value) WHERE localized_text.value ILIKE ${parameter})`;
+
 @Injectable()
 export class OrganizationTreeRepository {
   findTenant(tenantId: string) {
@@ -26,10 +29,10 @@ export class OrganizationTreeRepository {
     const whereClause = includeInactive ? '1=1' : 'is_active = true';
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
-      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data, is_active
+      `SELECT id, parent_id, code, path, depth, name, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}
-       ORDER BY depth, sort_order, name_en`,
+       ORDER BY depth, sort_order, NULLIF(name->>'en', ''), code`,
     );
   }
 
@@ -45,7 +48,7 @@ export class OrganizationTreeRepository {
     }
 
     whereClause +=
-      ' AND (code ILIKE $1 OR name_en ILIKE $1 OR name_zh ILIKE $1 OR name_ja ILIKE $1)';
+      ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')})`;
 
     return prisma.$queryRawUnsafe<Array<{ path: string }>>(
       `SELECT path
@@ -67,7 +70,7 @@ export class OrganizationTreeRepository {
     }
 
     whereClause +=
-      ' AND (code ILIKE $1 OR name_en ILIKE $1 OR display_name ILIKE $1)';
+      ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
 
     return prisma.$queryRawUnsafe<Array<{ subsidiary_id: string }>>(
       `SELECT DISTINCT subsidiary_id
@@ -102,10 +105,10 @@ export class OrganizationTreeRepository {
     }
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
-      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data, is_active
+      `SELECT id, parent_id, code, path, depth, name, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE path = ANY($1::text[])
-       ORDER BY depth, sort_order, name_en`,
+       ORDER BY depth, sort_order, NULLIF(name->>'en', ''), code`,
       paths,
     );
   }
@@ -120,12 +123,12 @@ export class OrganizationTreeRepository {
 
     if (search) {
       whereClause +=
-        ' AND (code ILIKE $1 OR name_en ILIKE $1 OR display_name ILIKE $1)';
+        ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
     return prisma.$queryRawUnsafe<RawTalent[]>(
-      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, extra_data, display_name, avatar_url, homepage_path,
+      `SELECT id, subsidiary_id, code, name, display_name, avatar_url, homepage_path,
               lifecycle_status, published_at
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
@@ -148,12 +151,12 @@ export class OrganizationTreeRepository {
 
     if (search) {
       whereClause +=
-        ' AND (code ILIKE $1 OR name_en ILIKE $1 OR display_name ILIKE $1)';
+        ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
     return prisma.$queryRawUnsafe<RawTalent[]>(
-      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, extra_data, display_name, avatar_url, homepage_path,
+      `SELECT id, subsidiary_id, code, name, display_name, avatar_url, homepage_path,
               lifecycle_status, published_at
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}

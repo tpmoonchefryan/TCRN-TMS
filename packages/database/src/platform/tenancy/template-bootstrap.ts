@@ -409,8 +409,7 @@ export async function copyTenantTemplateSeedData(
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${schemaName}".membership_class
-      (id, owner_type, owner_id, code, name_en, name_zh, name_ja,
-       description_en, description_zh, description_ja, sort_order,
+      (id, owner_type, owner_id, code, name, description, sort_order,
        is_active, is_force_use, is_system, created_at, updated_at,
        created_by, updated_by, version)
     SELECT
@@ -418,12 +417,8 @@ export async function copyTenantTemplateSeedData(
       template_class.owner_type,
       template_class.owner_id,
       template_class.code,
-      template_class.name_en,
-      template_class.name_zh,
-      template_class.name_ja,
-      template_class.description_en,
-      template_class.description_zh,
-      template_class.description_ja,
+      template_class.name,
+      template_class.description,
       template_class.sort_order,
       template_class.is_active,
       template_class.is_force_use,
@@ -437,12 +432,8 @@ export async function copyTenantTemplateSeedData(
     ON CONFLICT (code) DO UPDATE SET
       owner_type = EXCLUDED.owner_type,
       owner_id = EXCLUDED.owner_id,
-      name_en = EXCLUDED.name_en,
-      name_zh = EXCLUDED.name_zh,
-      name_ja = EXCLUDED.name_ja,
-      description_en = EXCLUDED.description_en,
-      description_zh = EXCLUDED.description_zh,
-      description_ja = EXCLUDED.description_ja,
+      name = EXCLUDED.name,
+      description = EXCLUDED.description,
       sort_order = EXCLUDED.sort_order,
       is_active = EXCLUDED.is_active,
       is_force_use = EXCLUDED.is_force_use,
@@ -454,20 +445,15 @@ export async function copyTenantTemplateSeedData(
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${schemaName}".membership_type
-      (id, membership_class_id, code, name_en, name_zh, name_ja,
-       description_en, description_zh, description_ja, external_control,
+      (id, membership_class_id, code, name, description, external_control,
        default_renewal_days, sort_order, is_active, is_force_use, is_system,
        created_at, updated_at, created_by, updated_by, version)
     SELECT
       gen_random_uuid(),
       target_class.id,
       template_type.code,
-      template_type.name_en,
-      template_type.name_zh,
-      template_type.name_ja,
-      template_type.description_en,
-      template_type.description_zh,
-      template_type.description_ja,
+      template_type.name,
+      template_type.description,
       template_type.external_control,
       template_type.default_renewal_days,
       template_type.sort_order,
@@ -486,12 +472,8 @@ export async function copyTenantTemplateSeedData(
       ON target_class.code = template_class.code
     ON CONFLICT (code) DO UPDATE SET
       membership_class_id = EXCLUDED.membership_class_id,
-      name_en = EXCLUDED.name_en,
-      name_zh = EXCLUDED.name_zh,
-      name_ja = EXCLUDED.name_ja,
-      description_en = EXCLUDED.description_en,
-      description_zh = EXCLUDED.description_zh,
-      description_ja = EXCLUDED.description_ja,
+      name = EXCLUDED.name,
+      description = EXCLUDED.description,
       external_control = EXCLUDED.external_control,
       default_renewal_days = EXCLUDED.default_renewal_days,
       sort_order = EXCLUDED.sort_order,
@@ -505,20 +487,15 @@ export async function copyTenantTemplateSeedData(
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${schemaName}".membership_level
-      (id, membership_type_id, code, name_en, name_zh, name_ja,
-       description_en, description_zh, description_ja, rank, color,
+      (id, membership_type_id, code, name, description, rank, color,
        badge_url, sort_order, is_active, is_force_use, is_system,
        created_at, updated_at, created_by, updated_by, version)
     SELECT
       gen_random_uuid(),
       target_type.id,
       template_level.code,
-      template_level.name_en,
-      template_level.name_zh,
-      template_level.name_ja,
-      template_level.description_en,
-      template_level.description_zh,
-      template_level.description_ja,
+      template_level.name,
+      template_level.description,
       template_level.rank,
       template_level.color,
       template_level.badge_url,
@@ -538,12 +515,8 @@ export async function copyTenantTemplateSeedData(
       ON target_type.code = template_type.code
     ON CONFLICT (code) DO UPDATE SET
       membership_type_id = EXCLUDED.membership_type_id,
-      name_en = EXCLUDED.name_en,
-      name_zh = EXCLUDED.name_zh,
-      name_ja = EXCLUDED.name_ja,
-      description_en = EXCLUDED.description_en,
-      description_zh = EXCLUDED.description_zh,
-      description_ja = EXCLUDED.description_ja,
+      name = EXCLUDED.name,
+      description = EXCLUDED.description,
       rank = EXCLUDED.rank,
       color = EXCLUDED.color,
       badge_url = EXCLUDED.badge_url,

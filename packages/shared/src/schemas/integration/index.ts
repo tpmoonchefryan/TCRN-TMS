@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 
-const TranslationMapSchema = z.record(z.string(), z.string().max(128));
+import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
 
 // ============================================================================
 // Enums
@@ -73,10 +73,7 @@ export const CreateAdapterSchema = z.object({
   definitionKey: z.string().max(64).optional(),
   platformId: z.string().uuid().optional(),
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores').optional(),
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
+  name: LocalizedTextSchema.optional(),
   adapterType: AdapterTypeSchema.optional(),
   inherit: z.boolean().optional().default(true),
   configs: z.array(AdapterConfigItemSchema).optional(),
@@ -86,10 +83,7 @@ export const CreateAdapterSchema = z.object({
       ['platformId', value.platformId],
       ['adapterType', value.adapterType],
       ['code', value.code],
-      ['nameEn', value.nameEn],
-      ['nameZh', value.nameZh],
-      ['nameJa', value.nameJa],
-      ['translations', value.translations],
+      ['name', value.name],
     ] as const;
 
     lockedDefinitionFields.forEach(([field, fieldValue]) => {
@@ -127,20 +121,17 @@ export const CreateAdapterSchema = z.object({
     });
   }
 
-  if (!value.definitionKey && !value.nameEn) {
+  if (!value.definitionKey && !value.name) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['nameEn'],
-      message: 'English adapter name is required for legacy adapter creation without a definition key',
+      path: ['name'],
+      message: 'Adapter name is required for custom adapter creation without a definition key',
     });
   }
 });
 
 export const UpdateAdapterSchema = z.object({
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
+  name: PartialLocalizedTextSchema.optional(),
   inherit: z.boolean().optional(),
   version: z.number().int(),
 });
@@ -169,10 +160,7 @@ const MonitoredTalentIdsSchema = z.array(z.string().uuid()).optional();
 export const CreateWebhookSchema = z.object({
   definitionKey: z.string().max(64).optional(),
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/).optional(),
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
+  name: LocalizedTextSchema.optional(),
   url: z.string().url().max(512),
   secret: z.string().max(128).optional(),
   events: z.array(WebhookEventTypeSchema).optional(),
@@ -183,10 +171,7 @@ export const CreateWebhookSchema = z.object({
   if (value.definitionKey) {
     const lockedDefinitionFields = [
       ['code', value.code],
-      ['nameEn', value.nameEn],
-      ['nameZh', value.nameZh],
-      ['nameJa', value.nameJa],
-      ['translations', value.translations],
+      ['name', value.name],
       ['events', value.events],
     ] as const;
 
@@ -209,11 +194,11 @@ export const CreateWebhookSchema = z.object({
     });
   }
 
-  if (!value.definitionKey && !value.nameEn) {
+  if (!value.definitionKey && !value.name) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['nameEn'],
-      message: 'English webhook name is required without a definition key',
+      path: ['name'],
+      message: 'Webhook name is required without a definition key',
     });
   }
 
@@ -227,10 +212,7 @@ export const CreateWebhookSchema = z.object({
 });
 
 export const UpdateWebhookSchema = z.object({
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
+  name: PartialLocalizedTextSchema.optional(),
   url: z.string().url().max(512).optional(),
   secret: z.string().max(128).optional(),
   events: z.array(WebhookEventTypeSchema).optional(),

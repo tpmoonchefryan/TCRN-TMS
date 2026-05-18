@@ -10,10 +10,13 @@ import {
   type BlocklistStructuredScopeInput,
   ErrorCodes,
   normalizeBlocklistScopeInput,
+  pickLocalizedText,
   type RequestContext,
 } from '@tcrn/shared';
 
-import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
+import {
+  mergeLocalizedTextPatch,
+} from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
@@ -57,17 +60,13 @@ export class BlocklistWriteService {
 
     const tenantSchema = context.tenantSchema;
     const prisma = this.databaseService.getPrisma();
-    const translationPayload = buildManagedNameTranslationPayload(dto);
     const entry = await prisma.$transaction(async (tx) => {
       const newEntry = await this.blocklistWriteRepository.create(
         tx,
         tenantSchema,
         {
           ...normalizedDto,
-          extraData: translationPayload.extraData,
-          nameEn: translationPayload.nameEn,
-          nameJa: translationPayload.nameJa,
-          nameZh: translationPayload.nameZh,
+          extraData: null,
         },
         context.userId as string,
       );
@@ -78,7 +77,7 @@ export class BlocklistWriteService {
           action: 'create',
           objectType: 'blocklist_entry',
           objectId: newEntry.id,
-          objectName: normalizedDto.nameEn,
+          objectName: pickLocalizedText(normalizedDto.name, 'en'),
           newValue: buildBlocklistCreateLogPayload(normalizedDto),
         },
         context,
@@ -129,19 +128,18 @@ export class BlocklistWriteService {
 
     const prisma = this.databaseService.getPrisma();
     const normalizedDto = this.normalizeUpdateDto(dto);
-    const translationPayload = buildManagedNameTranslationPayload(normalizedDto, entry);
+    const updateData = buildBlocklistUpdateData(normalizedDto);
+
+    if (normalizedDto.name) {
+      updateData.name = mergeLocalizedTextPatch(entry.name, normalizedDto.name);
+    }
+
     await prisma.$transaction(async (tx) => {
       await this.blocklistWriteRepository.update(
         tx,
         tenantSchema,
         id,
-        {
-          ...buildBlocklistUpdateData(normalizedDto),
-          extraData: translationPayload.extraData,
-          nameEn: translationPayload.nameEn,
-          nameJa: translationPayload.nameJa,
-          nameZh: translationPayload.nameZh,
-        },
+        updateData,
         context.userId,
       );
 
@@ -151,7 +149,7 @@ export class BlocklistWriteService {
           action: 'update',
           objectType: 'blocklist_entry',
           objectId: id,
-          objectName: entry.nameEn,
+          objectName: pickLocalizedText(entry.name, 'en'),
         },
         context,
       );
@@ -232,7 +230,7 @@ export class BlocklistWriteService {
           action: 'delete',
           objectType: 'blocklist_entry',
           objectId: id,
-          objectName: entry.nameEn,
+          objectName: pickLocalizedText(entry.name, 'en'),
         },
         context,
       );

@@ -1,5 +1,7 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { RoleEditorScreen } from '@/domains/user-management/screens/RoleEditorScreen';
 
@@ -7,8 +9,7 @@ const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
 const mockReplace = vi.fn();
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en' as 'en' | 'zh_HANS' | 'zh_HANT' | 'ja' | 'ko' | 'fr',
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('next/navigation', () => ({
@@ -25,13 +26,13 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('RoleEditorScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
     mockReplace.mockReset();
@@ -43,12 +44,7 @@ describe('RoleEditorScreen', () => {
         return {
           id: 'role-2',
           code: 'REVIEWER',
-          nameEn: 'Reviewer',
-          nameZh: null,
-          nameJa: null,
-          translations: {
-            en: 'Reviewer',
-          },
+          name: localizedFixture('Reviewer'),
           description: null,
           isSystem: false,
           isActive: true,
@@ -86,10 +82,7 @@ describe('RoleEditorScreen', () => {
           },
           body: JSON.stringify({
             code: 'REVIEWER',
-            nameEn: 'Reviewer',
-            translations: {
-              en: 'Reviewer',
-            },
+            name: localizedFixture('Reviewer'),
             isActive: true,
             permissions: [
               {
@@ -136,12 +129,7 @@ describe('RoleEditorScreen', () => {
     let detail = {
       id: 'role-1',
       code: 'EDITOR',
-      nameEn: 'Editor',
-      nameZh: null,
-      nameJa: null,
-      translations: {
-        en: 'Editor',
-      },
+      name: localizedFixture('Editor'),
       description: 'Can manage tenant content.',
       isSystem: false,
       isActive: true,
@@ -168,7 +156,7 @@ describe('RoleEditorScreen', () => {
       if (path === '/api/v1/system-roles/role-1' && init?.method === 'PATCH') {
         detail = {
           ...detail,
-          nameEn: 'Senior Editor',
+          name: localizedFixture('Senior Editor'),
           permissions: [
             {
               resource: 'system_user',
@@ -188,12 +176,7 @@ describe('RoleEditorScreen', () => {
         return {
           id: 'role-1',
           code: 'EDITOR',
-          nameEn: 'Senior Editor',
-          nameZh: null,
-          nameJa: null,
-          translations: {
-            en: 'Senior Editor',
-          },
+          name: localizedFixture('Senior Editor'),
           description: 'Can manage tenant content.',
           isSystem: false,
           isActive: true,
@@ -245,10 +228,7 @@ describe('RoleEditorScreen', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            nameEn: 'Senior Editor',
-            translations: {
-              en: 'Senior Editor',
-            },
+            name: localizedFixture('Senior Editor'),
             description: 'Can manage tenant content.',
             isActive: true,
             permissions: [
@@ -276,12 +256,7 @@ describe('RoleEditorScreen', () => {
     const detail = {
       id: 'role-1',
       code: 'EDITOR',
-      nameEn: 'Editor',
-      nameZh: null,
-      nameJa: null,
-      translations: {
-        en: 'Editor',
-      },
+      name: localizedFixture('Editor'),
       description: 'Can manage tenant content.',
       isSystem: false,
       isActive: true,

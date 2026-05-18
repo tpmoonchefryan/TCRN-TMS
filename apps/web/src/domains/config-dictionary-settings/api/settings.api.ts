@@ -1,4 +1,9 @@
-import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
+import {
+  normalizeSupportedUiLocale,
+  type LocalizedText,
+  type PartialLocalizedText,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 
 import {
   type ApiPaginationMeta,
@@ -66,10 +71,7 @@ export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 export interface ProfileStoreListItem {
   id: string;
   code: string;
-  name: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   talentCount: number;
   customerCount: number;
   isDefault: boolean;
@@ -97,14 +99,8 @@ interface ProfileStoreListApiResponse {
 export interface ProfileStoreDetailResponse {
   id: string;
   code: string;
-  name: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
-  description: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
-  descriptionTranslations: Record<string, string>;
+  name: LocalizedText;
+  description: LocalizedText;
   talentCount: number;
   customerCount: number;
   isDefault: boolean;
@@ -116,26 +112,14 @@ export interface ProfileStoreDetailResponse {
 
 export interface CreateProfileStoreInput {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  descriptionTranslations?: Record<string, string>;
+  name: LocalizedText;
+  description?: PartialLocalizedText;
   isDefault?: boolean;
 }
 
 export interface UpdateProfileStoreInput {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  descriptionTranslations?: Record<string, string>;
+  name?: PartialLocalizedText;
+  description?: PartialLocalizedText;
   isDefault?: boolean;
   isActive?: boolean;
   version: number;
@@ -144,7 +128,7 @@ export interface UpdateProfileStoreInput {
 export interface ProfileStoreCreateResponse {
   id: string;
   code: string;
-  name: string;
+  name: LocalizedText;
   isDefault: boolean;
   createdAt: string;
 }
@@ -178,16 +162,10 @@ export interface ConfigEntityRecord {
   ownerType: ConfigEntityScopeType | null;
   ownerId: string | null;
   code: string | null;
-  name: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
-  description: string | null;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
-  descriptionTranslations: Record<string, string>;
+  name: LocalizedText;
+  localizedName: string;
+  description: LocalizedText | null;
+  localizedDescription: string | null;
   sortOrder: number;
   isActive: boolean;
   isForceUse: boolean;
@@ -199,16 +177,13 @@ export interface ConfigEntityRecord {
   createdAt: string;
   updatedAt: string;
   version: number;
-  contentTranslations?: Record<string, string>;
+  contentMarkdown?: LocalizedText | null;
   color?: string | null;
   channelCategoryId?: string | null;
   reasonCategoryId?: string | null;
   consentVersion?: string | null;
   effectiveFrom?: string | null;
   expiresAt?: string | null;
-  contentMarkdownEn?: string | null;
-  contentMarkdownZh?: string | null;
-  contentMarkdownJa?: string | null;
   contentUrl?: string | null;
   isRequired?: boolean;
   membershipClassId?: string | null;
@@ -236,14 +211,8 @@ export interface ListConfigEntitiesOptions {
 
 export interface CreateConfigEntityInput {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  descriptionTranslations?: Record<string, string>;
+  name: LocalizedText;
+  description?: PartialLocalizedText | null;
   sortOrder?: number;
   ownerType?: ConfigEntityScopeType;
   ownerId?: string;
@@ -259,10 +228,7 @@ export interface CreateConfigEntityInput {
   consentVersion?: string;
   effectiveFrom?: string;
   expiresAt?: string;
-  contentMarkdownEn?: string;
-  contentMarkdownZh?: string;
-  contentMarkdownJa?: string;
-  contentTranslations?: Record<string, string>;
+  contentMarkdown?: PartialLocalizedText | null;
   contentUrl?: string;
   isRequired?: boolean;
 }
@@ -277,13 +243,10 @@ export interface SubsidiaryDetailResponse {
   code: string;
   path: string;
   depth: number;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  name: string;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
+  name: LocalizedText;
+  localizedName: string;
+  description: LocalizedText;
+  localizedDescription: string | null;
   sortOrder: number;
   isActive: boolean;
   childrenCount: number;
@@ -296,10 +259,7 @@ export interface SubsidiaryDetailResponse {
 export interface TalentProfileStoreBinding {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   isDefault: boolean;
 }
 
@@ -325,14 +285,11 @@ export interface TalentDetailResponse {
   profileStore: TalentProfileStoreBinding | null;
   code: string;
   path: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  name: string;
+  name: LocalizedText;
+  localizedName: string;
   displayName: string;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
+  description: LocalizedText;
+  localizedDescription: string | null;
   avatarUrl: string | null;
   homepagePath: string | null;
   timezone: string | null;

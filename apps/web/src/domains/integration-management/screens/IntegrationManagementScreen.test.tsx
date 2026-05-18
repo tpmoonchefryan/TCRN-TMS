@@ -1,10 +1,11 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { IntegrationManagementScreen } from '@/domains/integration-management/screens/IntegrationManagementScreen';
 import { ApiRequestError } from '@/platform/http/api';
-import { type RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
@@ -12,11 +13,10 @@ const mockReplace = vi.fn();
 let searchQuery = '';
 let pathname = '/tenant/tenant-1/integration-management';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: 'en' as string,
+  locale: 'en' as SupportedUiLocale,
   copy: null,
   setLocale: vi.fn(),
-  availableLocales: ['en', 'zh', 'ja'] as RuntimeLocale[],
+  availableLocales: [...SUPPORTED_UI_LOCALES],
 };
 const organizationTreeResponse = {
   tenantId: 'tenant-1',
@@ -85,7 +85,14 @@ const aiAdapterDefinition = {
   platform: {
     code: 'AI_ADAPTER',
     displayName: 'AI Adapter',
-    nameEn: 'AI Adapter',
+    name: {
+      en: 'AI Adapter',
+      zh_HANS: 'AI 适配器',
+      zh_HANT: 'AI 適配器',
+      ja: 'AI アダプター',
+      ko: 'AI 어댑터',
+      fr: 'Adaptateur IA',
+    },
     baseUrl: null,
     iconUrl: null,
     color: '#6366F1',
@@ -257,15 +264,15 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('IntegrationManagementScreen', () => {
   beforeEach(() => {
     searchQuery = '';
     pathname = '/tenant/tenant-1/integration-management';
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     mockReplace.mockReset();
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
@@ -303,9 +310,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'BILI_EXPORT',
-            nameEn: 'Bilibili Export',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Bilibili Export'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -329,9 +334,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'BILI_EXPORT',
-          nameEn: 'Bilibili Export',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Bilibili Export'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -410,8 +413,8 @@ describe('IntegrationManagementScreen', () => {
   });
 
   it('uses 分目录 wording in zh_HANS tenant scope copy instead of 子公司', async () => {
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/tree?includeInactive=false') {
@@ -440,8 +443,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'BILIBILI',
-            name: 'Bilibili',
-            nameEn: 'Bilibili',
+            name: localizedFixture('Bilibili'),
+            localizedName: 'Bilibili',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -463,9 +466,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TOKYO_SYNC',
-            nameEn: 'Tokyo Sync',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Tokyo Sync'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -489,9 +490,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'TOKYO_SYNC',
-          nameEn: 'Tokyo Sync',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Tokyo Sync'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -560,9 +559,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TOKYO_SYNC',
-            nameEn: 'Tokyo Sync',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Tokyo Sync'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -586,9 +583,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'TOKYO_SYNC',
-          nameEn: 'Tokyo Sync',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Tokyo Sync'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -626,9 +621,7 @@ describe('IntegrationManagementScreen', () => {
           iconUrl: null,
         },
         code: 'TENANT_SYNC',
-        nameEn: 'Tenant Sync',
-        nameZh: null,
-        nameJa: null,
+        name: localizedFixture('Tenant Sync'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -659,8 +652,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'BILIBILI',
-            name: 'Bilibili',
-            nameEn: 'Bilibili',
+            name: localizedFixture('Bilibili'),
+            localizedName: 'Bilibili',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -682,9 +675,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'BILI_EXPORT',
-            nameEn: 'Bilibili Export',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Bilibili Export'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -708,9 +699,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'BILI_EXPORT',
-          nameEn: 'Bilibili Export',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Bilibili Export'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -743,10 +732,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'consumer-1',
             code: 'CRM_SYNC',
-            name: 'CRM Sync',
-            nameEn: 'CRM Sync',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('CRM Sync'),
+            localizedName: 'CRM Sync',
             sortOrder: 0,
             isActive: true,
             version: 4,
@@ -762,18 +749,10 @@ describe('IntegrationManagementScreen', () => {
         return [
           {
             code: 'WELCOME_EMAIL',
-            nameEn: 'Welcome Email',
-            nameZh: null,
-            nameJa: null,
-            subjectEn: 'Welcome to TCRN',
-            subjectZh: null,
-            subjectJa: null,
-            bodyHtmlEn: '<p>Hello {{name}}</p>',
-            bodyHtmlZh: null,
-            bodyHtmlJa: null,
-            bodyTextEn: 'Hello {{name}}',
-            bodyTextZh: null,
-            bodyTextJa: null,
+            name: localizedFixture('Welcome Email'),
+            subject: localizedFixture('Welcome to TCRN'),
+            bodyHtml: localizedFixture('<p>Hello {{name}}</p>'),
+            bodyText: localizedFixture('Hello {{name}}'),
             variables: ['name'],
             category: 'system',
             isActive: true,
@@ -852,9 +831,7 @@ describe('IntegrationManagementScreen', () => {
         iconUrl: null,
       },
       code: `ADAPTER_${String(index + 1).padStart(2, '0')}`,
-      nameEn: `Adapter ${index + 1}`,
-      nameZh: null,
-      nameJa: null,
+      name: localizedFixture(`Adapter ${index + 1}`),
       adapterType: 'api_key' as const,
       inherit: true,
       isActive: true,
@@ -875,8 +852,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'BILIBILI',
-            name: 'Bilibili',
-            nameEn: 'Bilibili',
+            name: localizedFixture('Bilibili'),
+            localizedName: 'Bilibili',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -900,9 +877,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'ADAPTER_01',
-          nameEn: 'Adapter 1',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Adapter 1'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -955,9 +930,7 @@ describe('IntegrationManagementScreen', () => {
         iconUrl: null,
       },
       code: `ADAPTER_${String(index + 1).padStart(2, '0')}`,
-      nameEn: `Adapter ${index + 1}`,
-      nameZh: null,
-      nameJa: null,
+      name: localizedFixture(`Adapter ${index + 1}`),
       adapterType: 'api_key' as const,
       inherit: true,
       isActive: true,
@@ -978,8 +951,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'BILIBILI',
-            name: 'Bilibili',
-            nameEn: 'Bilibili',
+            name: localizedFixture('Bilibili'),
+            localizedName: 'Bilibili',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1003,9 +976,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'Bilibili',
           },
           code: 'ADAPTER_51',
-          nameEn: 'Adapter 51',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Adapter 51'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1048,8 +1019,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'PII_PLATFORM',
-            name: 'PII Platform',
-            nameEn: 'PII Platform',
+            name: localizedFixture('PII Platform'),
+            localizedName: 'PII Platform',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1071,9 +1042,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TCRN_PII_PLATFORM',
-            nameEn: 'PII Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('PII Relay'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -1097,9 +1066,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'TCRN_PII_PLATFORM',
-          nameEn: 'PII Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('PII Relay'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1249,8 +1216,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'PII_PLATFORM',
-            name: 'PII Platform',
-            nameEn: 'PII Platform',
+            name: localizedFixture('PII Platform'),
+            localizedName: 'PII Platform',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1272,9 +1239,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TCRN_PII_PLATFORM',
-            nameEn: 'PII Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('PII Relay'),
             adapterType: 'oauth',
             inherit: true,
             isActive: true,
@@ -1298,9 +1263,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'TCRN_PII_PLATFORM',
-          nameEn: 'PII Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('PII Relay'),
           adapterType: 'oauth',
           inherit: true,
           isActive: true,
@@ -1422,8 +1385,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'PII_PLATFORM',
-            name: 'PII Platform',
-            nameEn: 'PII Platform',
+            name: localizedFixture('PII Platform'),
+            localizedName: 'PII Platform',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1445,9 +1408,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TCRN_PII_PLATFORM',
-            nameEn: 'PII Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('PII Relay'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -1471,9 +1432,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'TCRN_PII_PLATFORM',
-          nameEn: 'PII Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('PII Relay'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1525,8 +1484,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'PII_PLATFORM',
-            name: 'PII Platform',
-            nameEn: 'PII Platform',
+            name: localizedFixture('PII Platform'),
+            localizedName: 'PII Platform',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1548,9 +1507,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TCRN_PII_PLATFORM',
-            nameEn: 'PII Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('PII Relay'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -1571,9 +1528,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'CHAT_EXPORT',
-            nameEn: 'Chat Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Chat Relay'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -1597,9 +1552,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'TCRN_PII_PLATFORM',
-          nameEn: 'PII Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('PII Relay'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1623,9 +1576,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'CHAT_EXPORT',
-          nameEn: 'Chat Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Chat Relay'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1682,8 +1633,8 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'platform-1',
             code: 'PII_PLATFORM',
-            name: 'PII Platform',
-            nameEn: 'PII Platform',
+            name: localizedFixture('PII Platform'),
+            localizedName: 'PII Platform',
             sortOrder: 0,
             isActive: true,
             version: 1,
@@ -1705,9 +1656,7 @@ describe('IntegrationManagementScreen', () => {
               iconUrl: null,
             },
             code: 'TCRN_PII_PLATFORM',
-            nameEn: 'PII Relay',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('PII Relay'),
             adapterType: 'api_key',
             inherit: true,
             isActive: true,
@@ -1731,9 +1680,7 @@ describe('IntegrationManagementScreen', () => {
             displayName: 'PII Platform',
           },
           code: 'TCRN_PII_PLATFORM',
-          nameEn: 'PII Relay',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('PII Relay'),
           adapterType: 'api_key',
           inherit: true,
           isActive: true,
@@ -1841,9 +1788,7 @@ describe('IntegrationManagementScreen', () => {
                 },
                 definitionKey: 'ai-adapter',
                 code: 'AI_ADAPTER',
-                nameEn: 'AI Adapter',
-                nameZh: null,
-                nameJa: null,
+                name: localizedFixture('AI Adapter'),
                 adapterType: 'ai',
                 inherit: true,
                 isActive: true,
@@ -1871,9 +1816,7 @@ describe('IntegrationManagementScreen', () => {
           },
           definitionKey: 'ai-adapter',
           code: 'AI_ADAPTER',
-          nameEn: 'AI Adapter',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('AI Adapter'),
           adapterType: 'ai',
           inherit: true,
           isActive: true,
@@ -1898,9 +1841,7 @@ describe('IntegrationManagementScreen', () => {
           },
           definitionKey: 'ai-adapter',
           code: 'AI_ADAPTER',
-          nameEn: 'AI Adapter',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('AI Adapter'),
           adapterType: 'ai',
           inherit: true,
           isActive: true,
@@ -1979,9 +1920,7 @@ describe('IntegrationManagementScreen', () => {
           return {
             id: 'webhook-customer',
             code: 'CUSTOMER_LIFECYCLE',
-            nameEn: 'Customer lifecycle webhook',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Customer lifecycle webhook'),
             definitionKey: 'customer-lifecycle',
             monitoredTalentIds: ['talent-1'],
             url: 'https://example.com/webhooks/customer',
@@ -2007,9 +1946,7 @@ describe('IntegrationManagementScreen', () => {
               {
                 id: 'webhook-customer',
                 code: 'CUSTOMER_LIFECYCLE',
-                nameEn: 'Customer lifecycle webhook',
-                nameZh: null,
-                nameJa: null,
+                name: localizedFixture('Customer lifecycle webhook'),
                 definitionKey: 'customer-lifecycle',
                 monitoredTalentIds: ['talent-1'],
                 url: 'https://example.com/webhooks/customer',
@@ -2055,9 +1992,7 @@ describe('IntegrationManagementScreen', () => {
         return {
           id: 'webhook-customer',
           code: 'CUSTOMER_LIFECYCLE',
-          nameEn: 'Customer lifecycle webhook',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Customer lifecycle webhook'),
           definitionKey: 'customer-lifecycle',
           monitoredTalentIds: ['talent-1'],
           url: 'https://example.com/webhooks/customer',
@@ -2133,9 +2068,7 @@ describe('IntegrationManagementScreen', () => {
           {
             id: 'webhook-tenant-root',
             code: 'TENANT_ROOT_WEBHOOK',
-            nameEn: 'Tenant root webhook',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Tenant root webhook'),
             definitionKey: 'customer-lifecycle',
             monitoredTalentIds: [],
             url: 'https://example.com/webhooks/tenant-root',
@@ -2161,9 +2094,7 @@ describe('IntegrationManagementScreen', () => {
         return {
           id: 'webhook-tenant-root',
           code: 'TENANT_ROOT_WEBHOOK',
-          nameEn: 'Tenant root webhook',
-          nameZh: null,
-          nameJa: null,
+          name: localizedFixture('Tenant root webhook'),
           definitionKey: 'customer-lifecycle',
           monitoredTalentIds: [],
           url: 'https://example.com/webhooks/tenant-root',
@@ -2197,7 +2128,7 @@ describe('IntegrationManagementScreen', () => {
 
   it('renders localized integration management copy for zh locale', async () => {
     const user = userEvent.setup();
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/tree?includeInactive=false') {

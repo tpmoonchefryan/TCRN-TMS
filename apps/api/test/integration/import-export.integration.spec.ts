@@ -7,6 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
   createTestTenantFixture,
@@ -206,13 +207,13 @@ describe('Import/Export Integration Tests', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_IE_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Import Export Test Subsidiary',
+      name: createLocalizedText({ en: 'Import Export Test Subsidiary' }),
       createdBy: testUser.id,
     });
     subsidiaryId = subsidiary.id;
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiaryId, {
       code: `TAL_IE_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Import Export Test Talent',
+      name: createLocalizedText({ en: 'Import Export Test Talent' }),
       displayName: 'Import Export Test Talent',
       homepagePath: `impexp-${Date.now()}`,
       createdBy: testUser.id,
@@ -561,7 +562,7 @@ describe('Import/Export Integration Tests', () => {
       const jobId = createResponse.body.data.jobId as string;
       const anotherTalent = await createTestTalentInTenant(prisma, tenantFixture, subsidiaryId, {
         code: `TAL_MAR_SCOPE_${Date.now().toString(36).toUpperCase()}`,
-        nameEn: 'Other Marshmallow Talent',
+        name: createLocalizedText({ en: 'Other Marshmallow Talent' }),
         displayName: 'Other Marshmallow Talent',
         homepagePath: `marshmallow-scope-${Date.now()}`,
         createdBy: testUser.id,

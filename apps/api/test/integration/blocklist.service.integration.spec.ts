@@ -4,6 +4,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestTenantFixture,
   createTestUserInTenant,
   type TenantFixture,
@@ -167,9 +168,7 @@ describe('BlocklistService', () => {
         ownerId: null,
         pattern: 'test_integration_pattern',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Integration Test Entry',
-        nameZh: '集成测试条目',
-        nameJa: '統合テストエントリ',
+        name: createLocalizedText({ en: 'Integration Test Entry', zh_HANS: '集成测试条目', zh_HANT: '集成测试条目', ja: '統合テストエントリ' }),
         category: 'test',
         severity: BlocklistSeverity.MEDIUM,
         action: BlocklistAction.REPLACE,
@@ -182,7 +181,7 @@ describe('BlocklistService', () => {
 
       expect(result).toHaveProperty('id');
       expect(result.pattern).toBe('test_integration_pattern');
-      expect(result.nameEn).toBe('Integration Test Entry');
+      expect(result.name.en).toBe('Integration Test Entry');
     });
 
     it('should validate regex pattern - reject invalid', async () => {
@@ -190,7 +189,7 @@ describe('BlocklistService', () => {
         ownerType: 'tenant' as const,
         pattern: '[invalid(regex',
         patternType: BlocklistPatternType.REGEX,
-        nameEn: 'Invalid Regex',
+        name: createLocalizedText({ en: 'Invalid Regex' }),
         category: 'test',
         severity: BlocklistSeverity.LOW,
         action: BlocklistAction.REJECT,
@@ -205,7 +204,7 @@ describe('BlocklistService', () => {
         ownerType: 'tenant' as const,
         pattern: '\\b(test|word)\\b',
         patternType: BlocklistPatternType.REGEX,
-        nameEn: 'Valid Regex',
+        name: createLocalizedText({ en: 'Valid Regex' }),
         category: 'test',
         severity: BlocklistSeverity.LOW,
         action: BlocklistAction.REJECT,
@@ -238,7 +237,7 @@ describe('BlocklistService', () => {
         ownerType: 'tenant' as const,
         pattern: 'version_test_pattern',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Version Test',
+        name: createLocalizedText({ en: 'Version Test' }),
         category: 'test',
         severity: BlocklistSeverity.LOW,
         action: BlocklistAction.REJECT,
@@ -250,7 +249,7 @@ describe('BlocklistService', () => {
       try {
         // Try to update with wrong version
         await expect(
-          service.update(created.id, { version: 999, nameEn: 'Updated' }, mockContext),
+          service.update(created.id, { version: 999, name: createLocalizedText({ en: 'Updated' }) }, mockContext),
         ).rejects.toThrow(ConflictException);
       } finally {
         // Cleanup
@@ -265,7 +264,7 @@ describe('BlocklistService', () => {
         ownerType: 'tenant' as const,
         pattern: 'simple_pattern',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Regex Validation Test',
+        name: createLocalizedText({ en: 'Regex Validation Test' }),
         category: 'test',
         severity: BlocklistSeverity.LOW,
         action: BlocklistAction.REJECT,
@@ -296,7 +295,7 @@ describe('BlocklistService', () => {
         ownerType: 'tenant' as const,
         pattern: 'delete_test_pattern',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Delete Test',
+        name: createLocalizedText({ en: 'Delete Test' }),
         category: 'test',
         severity: BlocklistSeverity.LOW,
         action: BlocklistAction.REJECT,

@@ -1,3 +1,8 @@
+import type {
+  LocalizedText,
+  PartialLocalizedText,
+} from '@tcrn/shared';
+
 import type { ApiSuccessEnvelope } from '@/platform/http/api';
 
 export type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
@@ -37,10 +42,7 @@ export interface BlocklistEntryRecord {
   ownerId: string | null;
   pattern: string;
   patternType: BlocklistPatternType;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   description: string | null;
   category: string | null;
   severity: BlocklistSeverity;
@@ -77,10 +79,7 @@ export interface CreateBlocklistPayload {
   ownerId?: string;
   pattern: string;
   patternType: BlocklistPatternType;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   description?: string;
   category?: string;
   severity?: BlocklistSeverity;
@@ -96,10 +95,7 @@ export interface CreateBlocklistPayload {
 export interface UpdateBlocklistPayload {
   pattern?: string;
   patternType?: BlocklistPatternType;
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   description?: string;
   category?: string;
   severity?: BlocklistSeverity;
@@ -138,10 +134,7 @@ export interface ExternalBlocklistRecord {
   ownerId: string | null;
   pattern: string;
   patternType: ExternalPatternType;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   description: string | null;
   category: string | null;
   severity: BlocklistSeverity;
@@ -165,10 +158,7 @@ export interface CreateExternalBlocklistPayload {
   ownerId?: string;
   pattern: string;
   patternType: ExternalPatternType;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   description?: string;
   category?: string;
   severity?: BlocklistSeverity;
@@ -182,10 +172,7 @@ export interface CreateExternalBlocklistPayload {
 export interface UpdateExternalBlocklistPayload {
   pattern?: string;
   patternType?: ExternalPatternType;
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   description?: string;
   category?: string;
   severity?: BlocklistSeverity;
@@ -287,9 +274,7 @@ export interface RateLimitStatsResponse {
 export interface ProfileStoreSummaryRecord {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
   isActive: boolean;
   isDefault: boolean;
   talentCount: number;

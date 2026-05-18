@@ -1,18 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  localizedTextOrderExpression,
+  localizedTextSearchExpression,
+} from '../../../platform/persistence/localized-text.persistence';
+import type { LocalizedText } from '@tcrn/shared';
+
 export interface SubsidiaryData {
   id: string;
   parentId: string | null;
   code: string;
   path: string;
   depth: number;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
+  description: LocalizedText;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -64,7 +66,7 @@ export const buildSubsidiaryListQuery = (
   }
 
   if (search) {
-    whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex})`;
+    whereClause += ` AND (code ILIKE $${paramIndex} OR ${localizedTextSearchExpression('name', `$${paramIndex}`)})`;
     params.push(`%${search}%`);
     paramIndex += 1;
   }
@@ -92,7 +94,7 @@ const getSubsidiaryListOrder = (sort?: string): string => {
   const field = isDesc ? sort.substring(1) : sort;
   const fieldMap: Record<string, string> = {
     code: 'code',
-    name: 'name_en',
+    name: localizedTextOrderExpression('name'),
     sortOrder: 'sort_order',
     createdAt: 'created_at',
   };

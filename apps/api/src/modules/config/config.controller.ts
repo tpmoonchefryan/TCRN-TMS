@@ -14,6 +14,7 @@ import {
     Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
@@ -27,6 +28,33 @@ import { ConfigService } from './config.service';
 import { OwnerType } from './config.types';
 import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConsumerKeyService } from './consumer-key.service';
+
+const CONFIG_NAME_EXAMPLE: LocalizedText = {
+  en: 'VIP Status',
+  zh_HANS: 'VIP状态',
+  zh_HANT: 'VIP狀態',
+  ja: 'VIPステータス',
+  ko: 'VIP 상태',
+  fr: 'Statut VIP',
+};
+
+const CONFIG_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Customer VIP status indicator',
+  zh_HANS: '客户VIP状态指示器',
+  zh_HANT: '客戶VIP狀態指示器',
+  ja: '顧客VIPステータスインジケーター',
+  ko: '고객 VIP 상태 표시기',
+  fr: 'Indicateur de statut VIP client',
+};
+
+const CONSENT_CONTENT_EXAMPLE: LocalizedText = {
+  en: 'Consent content',
+  zh_HANS: '同意内容',
+  zh_HANT: '同意內容',
+  ja: '同意内容',
+  ko: '동의 내용',
+  fr: 'Contenu du consentement',
+};
 
 // DTOs
 class ListConfigQueryDto {
@@ -100,65 +128,34 @@ class CreateConfigDto {
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
-  @ApiProperty({ description: 'Name in English', example: 'VIP Status', minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  nameEn: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: 'VIP状态' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'VIPステータス' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Locale-keyed name translations',
+  @ApiProperty({
+    description: 'Localized config name keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
-    example: { en: 'VIP Status', zh_HANS: 'VIP状态', zh_HANT: 'VIP狀態', ja: 'VIPステータス', ko: 'VIP 상태', fr: 'Statut VIP' },
+    example: CONFIG_NAME_EXAMPLE,
+  })
+  @IsObject()
+  name: LocalizedText;
+
+  @ApiPropertyOptional({
+    description: 'Localized config description keyed by SupportedUiLocale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: CONFIG_DESCRIPTION_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Customer VIP status indicator' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '客户VIP状态指示器' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '顧客VIPステータスインジケーター' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Locale-keyed description translations',
+    description: 'Localized consent content keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
-    example: { en: 'Customer VIP status indicator', zh_HANS: '客户VIP状态指示器', ja: '顧客VIPステータスインジケーター' },
+    example: CONSENT_CONTENT_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  descriptionTranslations?: Record<string, string>;
-
-  @ApiPropertyOptional({
-    description: 'Locale-keyed consent content translations',
-    type: 'object',
-    additionalProperties: { type: 'string' },
-    example: { en: 'Consent content', zh_HANS: '同意内容', ja: '同意内容' },
-  })
-  @IsOptional()
-  @IsObject()
-  contentTranslations?: Record<string, string>;
+  contentMarkdown?: PartialLocalizedText;
 
   @ApiPropertyOptional({
     description: 'Entity-specific JSON metadata',
@@ -280,62 +277,35 @@ class CreateConfigDto {
 }
 
 class UpdateConfigDto {
-  @ApiPropertyOptional({ description: 'Name in English', example: 'Updated Name' })
-  @IsOptional()
-  @IsString()
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '更新的名称' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: '更新された名前' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Locale-keyed name translations',
+    description: 'Localized config name patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { en: 'Updated Name' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Description in English' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Locale-keyed description translations',
+    description: 'Localized config description patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { en: 'Updated description' },
   })
   @IsOptional()
   @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Locale-keyed consent content translations',
+    description: 'Localized consent content patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { en: 'Updated consent content' },
   })
   @IsOptional()
   @IsObject()
-  contentTranslations?: Record<string, string>;
+  contentMarkdown?: PartialLocalizedText;
 
   @ApiPropertyOptional({
     description: 'Entity-specific JSON metadata',

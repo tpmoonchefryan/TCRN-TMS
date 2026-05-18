@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createLocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from './database.service';
 
@@ -31,18 +32,21 @@ describe('DatabaseService', () => {
 
   describe('getLocalizedField', () => {
     const entity = {
-      nameEn: 'English name',
-      nameZh: '中文名',
-      nameJa: '日本語名',
+      name: createLocalizedText({
+        en: 'English name',
+        zh_HANS: '中文名',
+        zh_HANT: '繁體中文名',
+        ja: '日本語名',
+      }),
     };
 
-    it('normalizes full UI locale tags before selecting legacy trilingual fields', () => {
-      expect(service.getLocalizedField(entity, 'name', 'zh_HANT')).toBe('中文名');
+    it('normalizes full UI locale tags before selecting LocalizedText values', () => {
+      expect(service.getLocalizedField(entity, 'name', 'zh_HANT')).toBe('繁體中文名');
       expect(service.getLocalizedField(entity, 'name', 'zh-CN')).toBe('中文名');
       expect(service.getLocalizedField(entity, 'name', 'ja-JP')).toBe('日本語名');
     });
 
-    it('falls non-trilingual UI locale tags back to English legacy fields', () => {
+    it('uses supported locale values and falls unsupported tags back to English', () => {
       expect(service.getLocalizedField(entity, 'name', 'fr')).toBe('English name');
       expect(service.getLocalizedField(entity, 'name', 'ko')).toBe('English name');
       expect(service.getLocalizedField(entity, 'name', 'de')).toBe('English name');

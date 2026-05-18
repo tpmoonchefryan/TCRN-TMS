@@ -167,13 +167,13 @@ describe('UserRoleService', () => {
   });
 
   describe('getUserRoles', () => {
-    it('normalizes full Chinese locale tags before selecting legacy name columns', async () => {
+    it('normalizes full Chinese locale tags before selecting LocalizedText JSON values', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await service.getUserRoles('user-2', testSchema, 'zh-Hant-TW');
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('name_zh'),
+        expect.stringContaining("r.name->>'zh_HANT'"),
         'user-2',
       );
     });

@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Transform, Type } from 'class-transformer';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import {
     ArrayUnique,
     IsArray,
@@ -148,23 +149,8 @@ export class CreateAdapterDto {
   code?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: LocalizedText;
 
   @IsOptional()
   @IsEnum(AdapterType)
@@ -183,23 +169,8 @@ export class CreateAdapterDto {
 
 export class UpdateAdapterDto {
   @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @IsOptional()
   @IsBoolean()
@@ -251,23 +222,8 @@ export class CreateWebhookDto {
   code?: string;
 
   @ValidateIf((dto: CreateWebhookDto) => !dto.definitionKey)
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: LocalizedText;
 
   @IsUrl()
   @MaxLength(512)
@@ -301,23 +257,8 @@ export class CreateWebhookDto {
 
 export class UpdateWebhookDto {
   @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @IsOptional()
   @IsUrl()

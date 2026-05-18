@@ -117,11 +117,21 @@ export async function seedAcAdminUser(prisma: PrismaClient, acTenant: AcTenantRe
   if (platformAdminRoles.length === 0) {
     // Create PLATFORM_ADMIN role in the tenant schema if it doesn't exist
     console.log('    → Creating PLATFORM_ADMIN role in tenant schema...');
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO "${schemaName}".role (id, code, name_en, name_zh, name_ja, description, is_system, is_active, created_at, updated_at, version)
-      VALUES (gen_random_uuid(), 'PLATFORM_ADMIN', 'Platform Administrator', '平台管理员', 'プラットフォーム管理者', 'Full platform-level administrative access', true, true, now(), now(), 1)
-      ON CONFLICT (code) DO NOTHING
-    `);
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${schemaName}".role (id, code, name, description, is_system, is_active, created_at, updated_at, version)
+        VALUES (gen_random_uuid(), 'PLATFORM_ADMIN', $1::jsonb, 'Full platform-level administrative access', true, true, now(), now(), 1)
+        ON CONFLICT (code) DO NOTHING
+      `,
+      JSON.stringify({
+        en: 'Platform Administrator',
+        zh_HANS: '平台管理员',
+        zh_HANT: '平台管理员',
+        ja: 'プラットフォーム管理者',
+        ko: 'Platform Administrator',
+        fr: 'Platform Administrator',
+      }),
+    );
   }
 
   const platformAdminRole = await prisma.$queryRawUnsafe<Array<{ id: string }>>(

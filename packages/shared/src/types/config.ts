@@ -6,14 +6,12 @@ import {
   OwnerType,
   SeverityLevel
 } from './enums';
+import type { LocalizedText } from '../constants/locale';
 
 // System Dictionary Types
 export interface DictionaryItem {
   code: string;
-  name: string;
-  name_en: string;
-  name_zh?: string;
-  name_ja?: string;
+  name: LocalizedText;
   offset?: string; // For timezone
 }
 
@@ -30,14 +28,8 @@ export interface ConfigEntity {
   owner_id?: string | null;
   owner_name?: string; // Hydrated field
   code: string;
-  name: string; // Current locale
-  name_en: string;
-  name_zh?: string;
-  name_ja?: string;
-  description?: string; // Current locale
-  description_en?: string;
-  description_zh?: string;
-  description_ja?: string;
+  name: LocalizedText;
+  description?: LocalizedText;
   sort_order: number;
   is_active: boolean;
   is_force_use: boolean;

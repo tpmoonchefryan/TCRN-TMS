@@ -1,4 +1,4 @@
-import { SUPPORTED_UI_LOCALES, TRILINGUAL_LOCALE_FAMILIES } from '@tcrn/shared';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
 import { PUBLIC_MARSHMALLOW_CONFIG_SCHEMA, PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA } from './marshmallow-swagger.schemas';
@@ -12,17 +12,16 @@ type OpenApiObjectSchema = {
 const asObjectSchema = (value: unknown): OpenApiObjectSchema => value as OpenApiObjectSchema;
 
 describe('marshmallow swagger locale contracts', () => {
-  it('documents public legal copy as trilingual families instead of supported UI locale tags', () => {
+  it('documents public legal copy with the canonical supported UI locale tags', () => {
     const schema = asObjectSchema(PUBLIC_MARSHMALLOW_CONFIG_SCHEMA);
     const properties = schema.properties ?? {};
-    const expectedFamilies = [...TRILINGUAL_LOCALE_FAMILIES];
+    const expectedLocales = [...SUPPORTED_UI_LOCALES];
 
     for (const field of ['terms', 'privacy']) {
       const localizedSchema = asObjectSchema(properties[field]);
 
-      expect(Object.keys(localizedSchema.properties ?? {})).toEqual(expectedFamilies);
-      expect(localizedSchema.required).toEqual(expectedFamilies);
-      expect(localizedSchema.required).not.toEqual([...SUPPORTED_UI_LOCALES]);
+      expect(Object.keys(localizedSchema.properties ?? {})).toEqual(expectedLocales);
+      expect(localizedSchema.required).toEqual(expectedLocales);
     }
   });
 

@@ -1,5 +1,7 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { UserManagementScreen } from '@/domains/user-management/screens/UserManagementScreen';
 import type { ApiPaginationMeta, ApiSuccessEnvelope } from '@/platform/http/api';
@@ -9,7 +11,7 @@ const mockRequestEnvelope = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 const organizationTreeResponse = {
@@ -76,13 +78,13 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('UserManagementScreen', () => {
   beforeEach(() => {
     searchQuery = '';
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     mockReplace.mockReset();
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
@@ -117,9 +119,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-1',
             code: 'EDITOR',
-            nameEn: 'Editor',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Editor'),
             description: 'Can manage tenant content.',
             isSystem: false,
             isActive: true,
@@ -176,7 +176,7 @@ describe('UserManagementScreen', () => {
   });
 
   it('uses 分目录 wording in zh copy for delegation scope instead of 子公司', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (path === '/api/v1/system-users?page=1&pageSize=20') {
@@ -366,9 +366,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-1',
             code: 'EDITOR',
-            nameEn: 'Editor',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Editor'),
             description: 'Can manage tenant content.',
             isSystem: false,
             isActive: true,
@@ -380,9 +378,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-2',
             code: 'VIEWER',
-            nameEn: 'Viewer',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Viewer'),
             description: 'Read only access.',
             isSystem: true,
             isActive: true,
@@ -437,9 +433,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-1',
             code: 'ADMIN',
-            nameEn: 'Administrator',
-            nameZh: '管理员',
-            nameJa: null,
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             description: 'Tenant administrator',
             isSystem: true,
             isActive: true,
@@ -451,9 +445,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-2',
             code: 'PLATFORM_ADMIN',
-            nameEn: 'Platform Administrator',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Platform Administrator'),
             description: 'AC only',
             isSystem: true,
             isActive: true,
@@ -525,9 +517,7 @@ describe('UserManagementScreen', () => {
           {
             id: 'role-1',
             code: 'EDITOR',
-            nameEn: 'Editor',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Editor'),
             description: 'Can manage tenant content.',
             isSystem: false,
             isActive: true,
@@ -612,7 +602,7 @@ describe('UserManagementScreen', () => {
   });
 
   it('renders zh runtime copy and locale-aware timestamps', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (path === '/api/v1/system-users?page=1&pageSize=20') {
@@ -701,9 +691,7 @@ describe('UserManagementScreen', () => {
     const roleItems = Array.from({ length: 21 }, (_, index) => ({
       id: `role-${index + 1}`,
       code: `ROLE_${index + 1}`,
-      nameEn: `Role ${index + 1}`,
-      nameZh: null,
-      nameJa: null,
+      name: localizedFixture(`Role ${index + 1}`),
       description: `Role description ${index + 1}`,
       isSystem: false,
       isActive: true,

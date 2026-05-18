@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
@@ -35,12 +35,17 @@ describe('MfrReportService', () => {
   const mockMembershipRecord = {
     nickname: 'Test Customer',
     platform_display_name: 'YouTube',
-    level_name_en: 'Gold',
-    level_name_zh: '金卡会员',
+    level_name: createLocalizedText({
+      en: 'Gold',
+      zh_HANS: '金卡会员',
+      zh_HANT: '金卡會員',
+      ja: 'ゴールド',
+      ko: '골드',
+      fr: 'Or',
+    }),
     valid_from: new Date(),
     valid_to: null,
-    status_name_zh: null,
-    status_name_en: null,
+    status_name: null,
   };
 
   beforeEach(() => {

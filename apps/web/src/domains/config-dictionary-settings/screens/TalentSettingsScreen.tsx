@@ -67,11 +67,9 @@ import {
   type TalentSettingsFocus,
   type TalentSettingsSection,
 } from '@/platform/routing/workspace-paths';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { pickLocaleText, resolveLocalizedLabel } from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
 import { ActionDrawer, ActionDrawerFooter, ConfirmActionDialog, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
@@ -206,17 +204,13 @@ function formatTurnstileHint(
 
 function resolveProfileStoreName(
   detail: TalentDetailResponse,
-  locale: RuntimeLocale | SupportedUiLocale,
+  locale: SupportedUiLocale ,
 ) {
   if (!detail.profileStore) {
     return '';
   }
 
-  return resolveLocalizedLabel(
-    detail.profileStore.translations,
-    locale,
-    detail.profileStore.nameEn || detail.profileStore.nameZh || detail.profileStore.nameJa || detail.profileStore.code,
-  );
+  return resolveLocalizedLabel(detail.profileStore.name, locale, detail.profileStore.code);
 }
 
 function parseTalentSettingsSection(section: string | null): TalentSettingsSection {
@@ -336,8 +330,7 @@ export function TalentSettingsScreen({
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
-    currentLocale,
-    selectedLocale,
+    locale,
     dictionaryExplorerCopy,
     formatDateTime,
     localizedConfigEntityCatalog,
@@ -345,7 +338,7 @@ export function TalentSettingsScreen({
   } = useSettingsFamilyCopy();
   const text = (valueOrEn: SettingsFamilyLocalizedText | string, zh?: string, ja?: string) =>
     pickLocaleText(
-      selectedLocale,
+      locale,
       typeof valueOrEn === 'string'
         ? {
             en: valueOrEn,
@@ -632,7 +625,7 @@ export function TalentSettingsScreen({
             readTalentCustomDomainConfig(request, talentId),
             readMarshmallowConfig(request, talentId),
             readTalentPublishReadiness(request, talentId),
-            listDictionaryTypes(request, selectedLocale),
+            listDictionaryTypes(request, locale),
           ]);
 
         if (cancelled) {
@@ -750,7 +743,7 @@ export function TalentSettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [currentLocale, request, selectedLocale, talentId]);
+  }, [locale, request, locale, talentId]);
 
   if (loading) {
     return (
@@ -1540,7 +1533,7 @@ export function TalentSettingsScreen({
                   <FieldRow label={text('Lifecycle', '生命周期', 'ライフサイクル')} value={lifecycleStatusLabel(detail.lifecycleStatus)} />
                   <FieldRow
                     label={text('Profile Store', '档案库', 'プロフィールストア')}
-                    value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
+                    value={detail.profileStore ? resolveProfileStoreName(detail, locale) : text('Unbound', '未绑定', '未紐付け')}
                   />
                 </div>
               </div>
@@ -1557,7 +1550,7 @@ export function TalentSettingsScreen({
               >
                 <div className="grid gap-4 xl:grid-cols-2">
                   <FieldRow label={text('Talent Code', '艺人代码', 'タレントコード')} value={detail.code} />
-                  <FieldRow label={text('Legal Name', '法定名称', '正式名称')} value={detail.name} />
+                  <FieldRow label={text('Legal Name', '法定名称', '正式名称')} value={pickLocaleText(locale, detail.name)} />
                   <FieldRow label={text('Talent Path', '艺人路径', 'タレントパス')} value={detail.path} />
                   <FieldRow
                     label={text('Shared Homepage Route', '共享主页路径', '共有ホームページルート')}
@@ -1770,7 +1763,7 @@ export function TalentSettingsScreen({
               >
                 {detail.profileStore ? (
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <FieldRow label={text('Archive Store', '档案库', 'アーカイブストア')} value={resolveProfileStoreName(detail, selectedLocale)} />
+                    <FieldRow label={text('Archive Store', '档案库', 'アーカイブストア')} value={resolveProfileStoreName(detail, locale)} />
                     <FieldRow label={text('Archive Code', '档案库代码', 'アーカイブコード')} value={detail.profileStore.code} />
                     <FieldRow
                       label={text('Binding Type', '绑定方式', '連携方式')}
@@ -1885,7 +1878,7 @@ export function TalentSettingsScreen({
                 requestEnvelope={requestEnvelope}
                 scopeType="talent"
                 scopeId={talentId}
-                locale={selectedLocale}
+                locale={locale}
                 copy={scopedConfigCopy}
                 catalog={localizedConfigEntityCatalog}
               />
@@ -1959,7 +1952,7 @@ export function TalentSettingsScreen({
                     />
                     <FieldRow
                       label={text('Profile Store', '档案库', 'プロフィールストア')}
-                      value={detail.profileStore ? resolveProfileStoreName(detail, selectedLocale) : text('Unbound', '未绑定', '未紐付け')}
+                      value={detail.profileStore ? resolveProfileStoreName(detail, locale) : text('Unbound', '未绑定', '未紐付け')}
                     />
                   </div>
 
@@ -2637,7 +2630,7 @@ export function TalentSettingsScreen({
                     request={request}
                     requestEnvelope={requestEnvelope}
                     types={dictionaryPanel.data}
-                    locale={selectedLocale}
+                    locale={locale}
                     copy={dictionaryExplorerCopy}
                     allowIncludeInactiveToggle
                     intro={(

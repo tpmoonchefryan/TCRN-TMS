@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createLocalizedText } from '../../constants/locale';
 import {
   INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
   INTEGRATION_ADAPTER_DEFINITIONS,
@@ -99,6 +100,8 @@ describe('integration adapter config mutation schema', () => {
 });
 
 describe('integration definition-backed create schema', () => {
+  const localized = (en: string) => createLocalizedText({ en });
+
   it('accepts adapter creation by developer-provided definition key without free platform/type fields', () => {
     expect(CreateAdapterSchema.parse({
       definitionKey: 'ai-adapter',
@@ -127,7 +130,7 @@ describe('integration definition-backed create schema', () => {
         platformId: '11111111-1111-4111-8111-111111111111',
         adapterType: 'api_key',
         code: 'FREE_FORM',
-        nameEn: 'Free form',
+        name: localized('Free form'),
         configs: [
           { configKey: 'provider', configValue: 'OPENAI' },
           { configKey: 'endpoint_path', configValue: '/v1/responses' },
@@ -138,11 +141,11 @@ describe('integration definition-backed create schema', () => {
     ).toThrow();
   });
 
-  it('keeps legacy adapter creation explicit when no definition key is provided', () => {
+  it('keeps custom adapter creation explicit when no definition key is provided', () => {
     expect(() =>
       CreateAdapterSchema.parse({
         code: 'LEGACY_SYNC',
-        nameEn: 'Legacy Sync',
+        name: localized('Legacy Sync'),
       }),
     ).toThrow();
 
@@ -150,12 +153,12 @@ describe('integration definition-backed create schema', () => {
       platformId: '11111111-1111-4111-8111-111111111111',
       adapterType: 'api_key',
       code: 'LEGACY_SYNC',
-      nameEn: 'Legacy Sync',
+      name: localized('Legacy Sync'),
     })).toMatchObject({
       platformId: '11111111-1111-4111-8111-111111111111',
       adapterType: 'api_key',
       code: 'LEGACY_SYNC',
-      nameEn: 'Legacy Sync',
+      name: localized('Legacy Sync'),
     });
   });
 
@@ -224,14 +227,14 @@ describe('integration definition-backed create schema', () => {
       CreateWebhookSchema.parse({
         definitionKey: 'customer-lifecycle',
         code: 'CUSTOMER_LIFECYCLE',
-        nameEn: 'Customer lifecycle',
+        name: localized('Customer lifecycle'),
         url: 'https://example.com/webhook',
         events: ['customer.created'],
       }),
     ).toThrow();
   });
 
-  it('keeps legacy webhook creation explicit when no definition key is provided', () => {
+  it('keeps custom webhook creation explicit when no definition key is provided', () => {
     expect(() =>
       CreateWebhookSchema.parse({
         url: 'https://example.com/webhook',
@@ -240,7 +243,7 @@ describe('integration definition-backed create schema', () => {
 
     expect(CreateWebhookSchema.parse({
       code: 'CUSTOMER_LIFECYCLE',
-      nameEn: 'Customer lifecycle',
+      name: localized('Customer lifecycle'),
       url: 'https://example.com/webhook',
       events: ['customer.created'],
       monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
@@ -255,7 +258,7 @@ describe('integration definition-backed create schema', () => {
     expect(() =>
       CreateWebhookSchema.parse({
         code: 'CUSTOMER_LIFECYCLE',
-        nameEn: 'Customer lifecycle',
+        name: localized('Customer lifecycle'),
         url: 'https://example.com/webhook',
         events: ['customer.created'],
         monitoredTalentIds: ['not-a-uuid'],

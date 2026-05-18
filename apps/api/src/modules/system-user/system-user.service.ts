@@ -2,7 +2,7 @@
 
 import { BadRequestException, forwardRef,Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, type LocalizedText } from '@tcrn/shared';
 import * as crypto from 'crypto';
 
 import { PasswordService } from '../auth/password.service';
@@ -28,9 +28,7 @@ export interface SystemUserRoleAssignmentData {
   id: string;
   roleId: string;
   roleCode: string;
-  roleNameEn: string;
-  roleNameZh: string | null;
-  roleNameJa: string | null;
+  roleName: LocalizedText;
   roleIsActive: boolean;
   scopeType: string;
   scopeId: string | null;
@@ -176,16 +174,14 @@ export class SystemUserService {
         ur.id,
         r.id as "roleId",
         r.code as "roleCode",
-        r.name_en as "roleNameEn",
-        r.name_zh as "roleNameZh",
-        r.name_ja as "roleNameJa",
+        r.name as "roleName",
         r.is_active as "roleIsActive",
         ur.scope_type as "scopeType",
         ur.scope_id as "scopeId",
         CASE
           WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
           WHEN ur.scope_type = 'subsidiary' THEN (
-            SELECT COALESCE(s.name_zh, s.name_en)
+            SELECT COALESCE(NULLIF(s.name->>'zh_HANS', ''), s.name->>'en')
             FROM "${tenantSchema}".subsidiary s
             WHERE s.id = ur.scope_id
           )
@@ -233,7 +229,7 @@ export class SystemUserService {
         CASE
           WHEN usa.scope_type = 'tenant' THEN 'Tenant root'
           WHEN usa.scope_type = 'subsidiary' THEN (
-            SELECT COALESCE(s.name_zh, s.name_en)
+            SELECT COALESCE(NULLIF(s.name->>'zh_HANS', ''), s.name->>'en')
             FROM "${tenantSchema}".subsidiary s
             WHERE s.id = usa.scope_id
           )

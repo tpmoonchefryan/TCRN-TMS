@@ -121,6 +121,105 @@ export class PublicPresenceFoundationRepository {
     return versions[0] ?? null;
   }
 
+  async findLatestVersionByTemplate(
+    schema: string,
+    portalId: string,
+    templateId: string,
+    states?: string[],
+  ): Promise<PublicPresenceDocumentVersionRecord | null> {
+    const prisma = this.databaseService.getPrisma();
+    const rows = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+      `
+        SELECT
+          id,
+          portal_id as "portalId",
+          version_number as "versionNumber",
+          document_schema_version as "documentSchemaVersion",
+          template_id as "templateId",
+          document,
+          document_state as "documentState",
+          content_hash_algorithm as "contentHashAlgorithm",
+          content_hash as "contentHash",
+          last_validation_snapshot_id as "lastValidationSnapshotId",
+          scheduled_for as "scheduledFor",
+          published_at as "publishedAt",
+          published_by as "publishedBy",
+          created_at as "createdAt",
+          updated_at as "updatedAt",
+          created_by as "createdBy"
+        FROM "${schema}".public_presence_document_version
+        WHERE portal_id = $1::uuid
+          AND template_id = $2
+          AND ($3::text[] IS NULL OR document_state = ANY($3::text[]))
+        ORDER BY version_number DESC
+        LIMIT 1
+      `,
+      portalId,
+      templateId,
+      states ?? null,
+    );
+
+    return rows[0] ?? null;
+  }
+
+  async findLatestVersionsByPortal(
+    schema: string,
+    portalId: string,
+  ): Promise<PublicPresenceDocumentVersionRecord[]> {
+    const prisma = this.databaseService.getPrisma();
+
+    return prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+      `
+        WITH ranked_versions AS (
+          SELECT
+            id,
+            portal_id as "portalId",
+            version_number as "versionNumber",
+            document_schema_version as "documentSchemaVersion",
+            template_id as "templateId",
+            document,
+            document_state as "documentState",
+            content_hash_algorithm as "contentHashAlgorithm",
+            content_hash as "contentHash",
+            last_validation_snapshot_id as "lastValidationSnapshotId",
+            scheduled_for as "scheduledFor",
+            published_at as "publishedAt",
+            published_by as "publishedBy",
+            created_at as "createdAt",
+            updated_at as "updatedAt",
+            created_by as "createdBy",
+            row_number() OVER (
+              PARTITION BY template_id
+              ORDER BY version_number DESC
+            ) as row_rank
+          FROM "${schema}".public_presence_document_version
+          WHERE portal_id = $1::uuid
+        )
+        SELECT
+          id,
+          "portalId",
+          "versionNumber",
+          "documentSchemaVersion",
+          "templateId",
+          document,
+          "documentState",
+          "contentHashAlgorithm",
+          "contentHash",
+          "lastValidationSnapshotId",
+          "scheduledFor",
+          "publishedAt",
+          "publishedBy",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        FROM ranked_versions
+        WHERE row_rank = 1
+        ORDER BY "versionNumber" DESC
+      `,
+      portalId,
+    );
+  }
+
   async findDocumentVersionById(
     schema: string,
     versionId: string,
@@ -1084,6 +1183,26 @@ export class PublicPresenceFoundationRepository {
           AND v.scheduled_for <= $1::timestamptz
       `,
       dueBefore,
+    );
+  }
+
+  async findLiveDebutRevealVersions(
+    schema: string,
+  ): Promise<PublicPresenceScheduledVersionRecord[]> {
+    const prisma = this.databaseService.getPrisma();
+
+    return prisma.$queryRawUnsafe<PublicPresenceScheduledVersionRecord[]>(
+      `
+        SELECT
+          p.id as "portalId",
+          p.talent_id as "talentId",
+          v.id as "versionId"
+        FROM "${schema}".public_presence_portal p
+        JOIN "${schema}".public_presence_document_version v
+          ON v.id = p.live_version_id
+        WHERE v.template_id = 'debutReveal'
+          AND v.document_state = 'published'
+      `,
     );
   }
 }

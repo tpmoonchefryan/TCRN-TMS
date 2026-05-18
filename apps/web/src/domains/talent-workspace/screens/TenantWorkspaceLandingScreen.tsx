@@ -13,7 +13,7 @@ import {
 } from '@/domains/organization-access/api/organization.api';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildTalentWorkspacePath } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   formatLocaleNumber,
@@ -130,7 +130,7 @@ export function TenantWorkspaceLandingScreen({
   const searchParams = useSearchParams();
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const { request, session } = useSession();
   const [talents, setTalents] = useState<OrganizationTalent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,7 +211,7 @@ export function TenantWorkspaceLandingScreen({
           setError(
             getErrorMessage(
               reason,
-              pickLocaleText(selectedLocale, {
+              pickLocaleText(locale, {
                 en: 'Failed to load published talents.',
                 zh_HANS: '加载已发布艺人失败。',
                 zh_HANT: '載入已發佈藝人失敗。',
@@ -234,7 +234,7 @@ export function TenantWorkspaceLandingScreen({
     return () => {
       cancelled = true;
     };
-  }, [request, selectedLocale]);
+  }, [request, locale]);
 
   const pagination = buildPaginationMeta(talents.length, page, pageSize);
   const paginatedTalents = talents.slice(
@@ -243,7 +243,7 @@ export function TenantWorkspaceLandingScreen({
   );
   const pageRange = getPaginationRange(pagination, paginatedTalents.length);
   const paginationCopy = getLandingPaginationCopy(
-    selectedLocale,
+    locale,
     pagination.page,
     pagination.totalPages,
     pageRange.start,
@@ -275,7 +275,7 @@ export function TenantWorkspaceLandingScreen({
   }, [loading, page, pageSize, pagination.totalPages, pathname, router]);
 
   const tenantName = session?.tenantName
-    || pickLocaleText(selectedLocale, {
+    || pickLocaleText(locale, {
       en: 'Current tenant',
       zh_HANS: '当前租户',
       zh_HANT: '目前租戶',
@@ -283,7 +283,7 @@ export function TenantWorkspaceLandingScreen({
       ko: '현재 테넌트',
       fr: 'Tenant actuel',
     });
-  const publishedLabel = pickLocaleText(selectedLocale, {
+  const publishedLabel = pickLocaleText(locale, {
     en: 'Published',
     zh_HANS: '已发布',
     zh_HANT: '已發佈',
@@ -292,15 +292,15 @@ export function TenantWorkspaceLandingScreen({
     fr: 'Publié',
   });
   const publishedCount = useMemo(
-    () => formatLocaleNumber(selectedLocale, talents.length),
-    [selectedLocale, talents.length],
+    () => formatLocaleNumber(locale, talents.length),
+    [locale, talents.length],
   );
 
   if (loading) {
     return (
       <GlassSurface className="p-8">
         <p className="text-sm font-medium text-slate-500">
-          {pickLocaleText(selectedLocale, {
+          {pickLocaleText(locale, {
             en: 'Loading available talents…',
             zh_HANS: '正在加载可进入的艺人…',
             zh_HANT: '正在載入可進入的藝人…',
@@ -317,7 +317,7 @@ export function TenantWorkspaceLandingScreen({
     return (
       <StateView
         status="error"
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Talent list unavailable',
           zh_HANS: '艺人列表不可用',
           zh_HANT: '藝人列表不可用',
@@ -335,7 +335,7 @@ export function TenantWorkspaceLandingScreen({
       <div className="space-y-6">
         <StateView
           status="empty"
-          title={pickLocaleText(selectedLocale, {
+          title={pickLocaleText(locale, {
             en: 'No published talent is ready yet',
             zh_HANS: '还没有可进入的已发布艺人',
             zh_HANT: '還沒有可進入的已發佈藝人',
@@ -343,7 +343,7 @@ export function TenantWorkspaceLandingScreen({
             ko: '아직 접속 가능한 게시 탤런트가 없습니다',
             fr: 'Aucun talent publié n’est encore prêt',
           })}
-          description={pickLocaleText(selectedLocale, {
+          description={pickLocaleText(locale, {
             en: 'Publish a talent from organization structure before entering business modules.',
             zh_HANS: '请先在组织架构里发布艺人，然后再进入业务模块。',
             zh_HANT: '請先在組織結構中發佈藝人，再進入業務模組。',
@@ -360,7 +360,7 @@ export function TenantWorkspaceLandingScreen({
               className="inline-flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               <LayoutPanelTop className="h-4 w-4" />
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Open organization structure',
                 zh_HANS: '打开组织架构',
                 zh_HANT: '打開組織結構',
@@ -382,7 +382,7 @@ export function TenantWorkspaceLandingScreen({
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
               <Sparkles className="h-3.5 w-3.5" />
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Talent selection',
                 zh_HANS: '艺人选择',
                 zh_HANT: '藝人選擇',
@@ -393,7 +393,7 @@ export function TenantWorkspaceLandingScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Choose a published talent',
                   zh_HANS: '选择一个已发布艺人',
                   zh_HANT: '選擇一位已發佈藝人',
@@ -403,7 +403,7 @@ export function TenantWorkspaceLandingScreen({
                 })}
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Start day-to-day work from the published talent you want to operate right now.',
                   zh_HANS: '从你当前要运营的已发布艺人开始进入日常业务。',
                   zh_HANT: '從你目前要營運的已發佈藝人開始進入日常業務。',
@@ -418,7 +418,7 @@ export function TenantWorkspaceLandingScreen({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Tenant',
                   zh_HANS: '租户',
                   zh_HANT: '租戶',
@@ -431,7 +431,7 @@ export function TenantWorkspaceLandingScreen({
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Published talents',
                   zh_HANS: '已发布艺人',
                   zh_HANT: '已發佈藝人',
@@ -449,7 +449,7 @@ export function TenantWorkspaceLandingScreen({
       <div className="space-y-4">
         <div className="grid gap-4 xl:grid-cols-2">
           {paginatedTalents.map((talent) => {
-          const publishedAt = formatLocaleDateTime(selectedLocale, talent.publishedAt, publishedLabel);
+          const publishedAt = formatLocaleDateTime(locale, talent.publishedAt, publishedLabel);
           const scopeLabel = talent.subsidiaryName || tenantName;
           const sharedHomepagePath =
             session?.tenantCode ? buildSharedHomepagePath(session.tenantCode, talent.code) : null;
@@ -476,7 +476,7 @@ export function TenantWorkspaceLandingScreen({
                     ) : null}
                     {publishedAt ? (
                       <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                        {pickLocaleText(selectedLocale, {
+                        {pickLocaleText(locale, {
                           en: `Published ${publishedAt}`,
                           zh_HANS: `发布于 ${publishedAt}`,
                           zh_HANT: `發佈於 ${publishedAt}`,
@@ -490,7 +490,7 @@ export function TenantWorkspaceLandingScreen({
                 </div>
 
                 <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition group-hover:border-slate-300 group-hover:bg-slate-50">
-                  {pickLocaleText(selectedLocale, {
+                  {pickLocaleText(locale, {
                     en: 'Open',
                     zh_HANS: '进入',
                     zh_HANT: '進入',

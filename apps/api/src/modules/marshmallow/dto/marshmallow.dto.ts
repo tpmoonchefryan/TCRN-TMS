@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsArray,
@@ -168,43 +169,23 @@ export class UpdateConfigDto {
   @MaxLength(512)
   avatarUrl?: string;
 
-  // Terms content (multi-language)
-  @ApiPropertyOptional({ description: 'Terms content in English', maxLength: 50000 })
+  @ApiPropertyOptional({
+    description: 'Terms content by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  termsContentEn?: string;
+  @IsObject()
+  termsContent?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Terms content in Chinese', maxLength: 50000 })
+  @ApiPropertyOptional({
+    description: 'Privacy content by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  termsContentZh?: string;
-
-  @ApiPropertyOptional({ description: 'Terms content in Japanese', maxLength: 50000 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  termsContentJa?: string;
-
-  // Privacy content (multi-language)
-  @ApiPropertyOptional({ description: 'Privacy content in English', maxLength: 50000 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  privacyContentEn?: string;
-
-  @ApiPropertyOptional({ description: 'Privacy content in Chinese', maxLength: 50000 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  privacyContentZh?: string;
-
-  @ApiPropertyOptional({ description: 'Privacy content in Japanese', maxLength: 50000 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50000)
-  privacyContentJa?: string;
+  @IsObject()
+  privacyContent?: PartialLocalizedText;
 
   @ApiProperty({ description: 'Optimistic lock version', example: 2, minimum: 1 })
   @IsInt()

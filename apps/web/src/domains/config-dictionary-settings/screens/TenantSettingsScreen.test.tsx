@@ -3,14 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { TenantSettingsScreen } from '@/domains/config-dictionary-settings/screens/TenantSettingsScreen';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const replace = vi.fn();
 const pathname = '/tenant/tenant-1/settings';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
+  locale: 'en' as SupportedUiLocale,
 };
 
 
@@ -35,7 +36,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 function buildConfigEntityRecord(overrides: Partial<ConfigEntityRecord> = {}): ConfigEntityRecord {
@@ -44,16 +45,10 @@ function buildConfigEntityRecord(overrides: Partial<ConfigEntityRecord> = {}): C
     ownerType: 'tenant',
     ownerId: null,
     code: 'DEFAULT_STORE',
-    name: 'Default Store',
-    nameEn: 'Default Store',
-    nameZh: null,
-    nameJa: null,
-    translations: { en: 'Default Store' },
-    description: 'Default profile store',
-    descriptionEn: 'Default profile store',
-    descriptionZh: null,
-    descriptionJa: null,
-    descriptionTranslations: { en: 'Default profile store' },
+    name: localizedFixture('Default Store'),
+    localizedName: 'Default Store',
+    description: localizedFixture('Default profile store'),
+    localizedDescription: 'Default profile store',
     sortOrder: 1,
     isActive: true,
     isForceUse: false,
@@ -93,13 +88,10 @@ const dictionaryItemsResponse = [
     id: 'dictionary-item-1',
     dictionaryCode: 'CUSTOMER_STATUS',
     code: 'ACTIVE',
-    nameEn: 'Active customer',
-    nameZh: '活跃客户',
-    nameJa: null,
-    name: 'Active customer',
-    descriptionEn: 'Currently active',
-    descriptionZh: null,
-    descriptionJa: null,
+    name: localizedFixture('Active customer', { zh_HANS: '活跃客户' }),
+    localizedName: 'Active customer',
+    description: localizedFixture('Currently active'),
+    localizedDescription: 'Currently active',
     sortOrder: 0,
     isActive: true,
     extraData: null,
@@ -113,11 +105,11 @@ describe('TenantSettingsScreen', () => {
   beforeEach(() => {
     currentSearch = '';
     mockRequest.mockReset();
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
   });
 
   it('passes a localized settings section navigation label to the shared settings layout', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/settings') {
@@ -261,7 +253,8 @@ describe('TenantSettingsScreen', () => {
           buildConfigEntityRecord({
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            name: 'Default Store',
+            name: localizedFixture('Default Store'),
+            localizedName: 'Default Store',
           }),
         ]);
       }
@@ -518,7 +511,7 @@ describe('TenantSettingsScreen', () => {
 
 
   it('renders zh copy when runtime locale is zh', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/organization/settings' && !init) {
@@ -595,7 +588,7 @@ describe('TenantSettingsScreen', () => {
   });
 
   it('keeps tenant defaults drawer copy free of backend contract wording in zh-HANS', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/organization/settings' && !init) {

@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createLocalizedText } from '@tcrn/shared';
 
 import { TalentCustomDomainService } from '../application/talent-custom-domain.service';
 import { TalentLifecycleService } from '../application/talent-lifecycle.service';
@@ -206,7 +207,7 @@ describe('TalentService facade', () => {
         {
           profileStoreId: 'store-123',
           code: 'TALENT001',
-          nameEn: 'Talent',
+          name: createLocalizedText({ en: 'Talent' }),
           displayName: 'Talent',
         },
         'user-1',

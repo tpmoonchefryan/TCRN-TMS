@@ -129,7 +129,7 @@ describe('CustomerExternalIdApplicationService', () => {
     vi.mocked(mockRepository.findActiveConsumerByCode).mockResolvedValue({
       id: 'consumer-1',
       code: 'CRM',
-      nameEn: 'CRM System',
+      name: 'CRM System',
     });
     vi.mocked(mockRepository.findDuplicateExternalId).mockResolvedValue({
       id: 'external-id-1',
@@ -157,7 +157,7 @@ describe('CustomerExternalIdApplicationService', () => {
     vi.mocked(mockRepository.findActiveConsumerByCode).mockResolvedValue({
       id: 'consumer-1',
       code: 'CRM',
-      nameEn: 'CRM System',
+      name: 'CRM System',
     });
     vi.mocked(mockRepository.findDuplicateExternalId).mockResolvedValue(null);
     vi.mocked(mockRepository.create).mockResolvedValue({

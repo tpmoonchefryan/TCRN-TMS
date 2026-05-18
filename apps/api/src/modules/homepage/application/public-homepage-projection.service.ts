@@ -103,6 +103,7 @@ export class PublicHomepageProjectionService {
     talentId: string,
     tenantSchema: string,
     revealPhaseOverride?: PublicPresencePhaseVisibility | 'current' | null,
+    templateIdInput?: string | null,
   ): Promise<PublicPresenceProjection> {
     const talent = await this.homepageAdminRepository.findTalentById(
       tenantSchema,
@@ -122,19 +123,32 @@ export class PublicHomepageProjectionService {
         talentId,
       );
 
-    const versionId = portal?.draftVersionId ?? portal?.liveVersionId ?? null;
-    if (!portal || !versionId) {
+    if (!portal) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Public Presence draft not found',
       });
     }
 
+    const requestedTemplateId = templateIdInput?.trim();
     const version =
-      await this.publicPresenceFoundationRepository.findDocumentVersionById(
-        tenantSchema,
-        versionId,
-      );
+      requestedTemplateId
+        ? await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+            tenantSchema,
+            portal.id,
+            requestedTemplateId,
+          )
+        : portal.draftVersionId
+          ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
+              tenantSchema,
+              portal.draftVersionId,
+            )
+          : portal.liveVersionId
+            ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
+                tenantSchema,
+                portal.liveVersionId,
+              )
+            : null;
 
     if (!version) {
       throw new NotFoundException({

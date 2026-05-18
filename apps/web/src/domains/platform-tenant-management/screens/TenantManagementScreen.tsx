@@ -124,7 +124,7 @@ export function TenantManagementScreen({
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, requestEnvelope, session } = useSession();
-  const { copy, selectedLocale } = useTenantManagementCopy();
+  const { copy, locale } = useTenantManagementCopy();
   const managementCopy = copy.management;
   const filterCopy = copy.filters;
   const [search, setSearch] = useState(urlSearch);
@@ -284,7 +284,7 @@ export function TenantManagementScreen({
   const acCount = panel.data.filter((tenant) => tenant.tier === 'ac').length;
   const standardCount = panel.data.filter((tenant) => tenant.tier === 'standard').length;
   const pageRange = getPaginationRange(panel.pagination, panel.data.length);
-  const paginationLabel = pickLocaleText(selectedLocale, {
+  const paginationLabel = pickLocaleText(locale, {
     en: `Page ${panel.pagination.page} of ${panel.pagination.totalPages}`,
     zh_HANS: `第 ${panel.pagination.page} / ${panel.pagination.totalPages} 页`,
     zh_HANT: `第 ${panel.pagination.page} / ${panel.pagination.totalPages} 頁`,
@@ -294,7 +294,7 @@ export function TenantManagementScreen({
   });
   const paginationRangeLabel =
     panel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No tenants are currently visible.',
           zh_HANS: '当前没有租户记录。',
           zh_HANT: '目前沒有可見的租戶記錄。',
@@ -302,7 +302,7 @@ export function TenantManagementScreen({
           ko: '현재 표시할 테넌트가 없습니다.',
           fr: 'Aucun tenant n’est actuellement visible.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${pageRange.start}-${pageRange.end} of ${panel.pagination.totalCount}`,
           zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${panel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${panel.pagination.totalCount} 筆`,
@@ -310,7 +310,7 @@ export function TenantManagementScreen({
           ko: `${panel.pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
           fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${panel.pagination.totalCount}`,
         });
-  const pageSizeLabel = pickLocaleText(selectedLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页条数',
     zh_HANT: '每頁筆數',
@@ -318,7 +318,7 @@ export function TenantManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(selectedLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -326,7 +326,7 @@ export function TenantManagementScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(selectedLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -478,16 +478,16 @@ export function TenantManagementScreen({
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
                 <div className="space-y-1">
-                  <p>{formatTenantMetric(tenant.stats.subsidiaryCount, 'subsidiaries', selectedLocale)}</p>
-                  <p>{formatTenantMetric(tenant.stats.talentCount, 'talents', selectedLocale)}</p>
-                  <p>{formatTenantMetric(tenant.stats.userCount, 'users', selectedLocale)}</p>
+                  <p>{formatTenantMetric(tenant.stats.subsidiaryCount, 'subsidiaries', locale)}</p>
+                  <p>{formatTenantMetric(tenant.stats.talentCount, 'talents', locale)}</p>
+                  <p>{formatTenantMetric(tenant.stats.userCount, 'users', locale)}</p>
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
                 <div className="space-y-1">
-                  <p>{formatDateTime(tenant.updatedAt, selectedLocale, managementCopy.updatedColumn)}</p>
+                  <p>{formatDateTime(tenant.updatedAt, locale, managementCopy.updatedColumn)}</p>
                   <p className="text-xs text-slate-500">
-                    {formatTenantCreatedAt(tenant.createdAt, selectedLocale, managementCopy.updatedColumn)}
+                    {formatTenantCreatedAt(tenant.createdAt, locale, managementCopy.updatedColumn)}
                   </p>
                 </div>
               </td>

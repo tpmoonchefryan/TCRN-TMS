@@ -82,6 +82,11 @@ export const REPORT_CATALOG: ReportCatalogItem[] = [
           },
           description: {
             en: 'Limit the report to configured social platform codes.',
+            zh_HANS: '将报表限制在已配置的社交平台代码内。',
+            zh_HANT: '將報表限制在已設定的社群平台代碼內。',
+            ja: '設定済みのソーシャルプラットフォームコードにレポートを絞り込みます。',
+            ko: '설정된 소셜 플랫폼 코드로 보고서를 제한합니다.',
+            fr: 'Limite le rapport aux codes de plateformes sociales configures.',
           },
           source: {
             kind: 'config-entity',

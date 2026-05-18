@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
   createTestTenantFixture,
@@ -57,14 +58,14 @@ describe('Integration Runtime Integration', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_INT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Integration Runtime Subsidiary',
+      name: createLocalizedText({ en: 'Integration Runtime Subsidiary' }),
       createdBy: testUser.id,
     });
     subsidiaryId = subsidiary.id;
 
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TAL_INT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Integration Runtime Talent',
+      name: createLocalizedText({ en: 'Integration Runtime Talent' }),
       displayName: 'Integration Runtime Talent',
       homepagePath: `integration-runtime-${Date.now()}`,
       createdBy: testUser.id,
@@ -85,7 +86,7 @@ describe('Integration Runtime Integration', () => {
     )
       .send({
         code: `INTEGRATION_${Date.now().toString(36).toUpperCase()}`,
-        nameEn: 'Integration Runtime Platform',
+        name: createLocalizedText({ en: 'Integration Runtime Platform' }),
         displayName: 'Integration Runtime Platform',
         isActive: true,
       })
@@ -99,7 +100,7 @@ describe('Integration Runtime Integration', () => {
     )
       .send({
         code: consumerCode,
-        nameEn: 'Integration Runtime Consumer',
+        name: createLocalizedText({ en: 'Integration Runtime Consumer' }),
         consumerCategory: 'partner',
         isActive: true,
       })
@@ -121,7 +122,7 @@ describe('Integration Runtime Integration', () => {
       .send({
         platformId,
         code: 'TENANT_ADAPTER',
-        nameEn: 'Tenant Adapter',
+        name: createLocalizedText({ en: 'Tenant Adapter' }),
         adapterType: 'oauth',
       });
 
@@ -135,7 +136,7 @@ describe('Integration Runtime Integration', () => {
       .send({
         platformId,
         code: 'SUBSIDIARY_ADAPTER',
-        nameEn: 'Subsidiary Adapter',
+        name: createLocalizedText({ en: 'Subsidiary Adapter' }),
         adapterType: 'api_key',
       })
       .expect(201);
@@ -146,7 +147,7 @@ describe('Integration Runtime Integration', () => {
       .send({
         platformId,
         code: 'TALENT_ADAPTER',
-        nameEn: 'Talent Adapter',
+        name: createLocalizedText({ en: 'Talent Adapter' }),
         adapterType: 'webhook',
       })
       .expect(201);
@@ -228,7 +229,7 @@ describe('Integration Runtime Integration', () => {
     )
       .send({
         code: 'TENANT_WEBHOOK',
-        nameEn: 'Tenant Webhook',
+        name: createLocalizedText({ en: 'Tenant Webhook' }),
         url: 'https://example.com/integration/webhook',
         events: ['customer.created'],
         secret: 'super-secret',
@@ -256,7 +257,7 @@ describe('Integration Runtime Integration', () => {
       request(app.getHttpServer()).patch(`/api/v1/integration/webhooks/${webhookId}`),
     )
       .send({
-        nameEn: 'Tenant Webhook Updated',
+        name: createLocalizedText({ en: 'Tenant Webhook Updated' }),
         url: 'https://example.com/integration/webhook-updated',
         headers: {
           'x-test-webhook': 'updated',
@@ -300,7 +301,7 @@ describe('Integration Runtime Integration', () => {
     });
     expect(updateWebhookResponse.body.data).toMatchObject({
       id: webhookId,
-      nameEn: 'Tenant Webhook Updated',
+      name: createLocalizedText({ en: 'Tenant Webhook Updated' }),
       url: 'https://example.com/integration/webhook-updated',
       headers: {
         'x-test-webhook': 'updated',

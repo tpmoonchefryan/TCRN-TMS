@@ -3,6 +3,9 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 
+import {
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import type {
   BlocklistScopeEntryRow,
@@ -28,9 +31,7 @@ export class BlocklistWriteRepository {
           owner_id,
           pattern,
           pattern_type,
-          name_en,
-          name_zh,
-          name_ja,
+          name,
           extra_data,
           description,
           category,
@@ -55,26 +56,24 @@ export class BlocklistWriteRepository {
           $2::uuid,
           $3,
           $4,
-          $5,
+          $5::jsonb,
           $6,
           $7,
           $8,
           $9,
           $10,
           $11,
-          $12,
+          $12::text[],
           $13,
-          $14::text[],
-          $15,
-          $16,
+          $14,
           true,
-          $17,
+          $15,
           false,
           0,
           NOW(),
           NOW(),
-          $18::uuid,
-          $18::uuid,
+          $16::uuid,
+          $16::uuid,
           1
         )
         RETURNING id
@@ -83,9 +82,7 @@ export class BlocklistWriteRepository {
       dto.ownerId ?? null,
       dto.pattern,
       dto.patternType,
-      dto.nameEn,
-      dto.nameZh ?? null,
-      dto.nameJa ?? null,
+      stringifyLocalizedText(dto.name),
       dto.extraData ? JSON.stringify(dto.extraData) : null,
       dto.description ?? null,
       dto.category ?? null,
@@ -112,9 +109,7 @@ export class BlocklistWriteRepository {
         SELECT
           id,
           extra_data as "extraData",
-          name_en as "nameEn",
-          name_ja as "nameJa",
-          name_zh as "nameZh",
+          name,
           version
         FROM "${tenantSchema}".blocklist_entry
         WHERE id = $1::uuid
@@ -136,9 +131,7 @@ export class BlocklistWriteRepository {
     const columnMappings: Record<string, { column: string; cast?: string }> = {
       pattern: { column: 'pattern' },
       patternType: { column: 'pattern_type' },
-      nameEn: { column: 'name_en' },
-      nameZh: { column: 'name_zh' },
-      nameJa: { column: 'name_ja' },
+      name: { column: 'name', cast: '::jsonb' },
       extraData: { column: 'extra_data', cast: '::jsonb' },
       description: { column: 'description' },
       category: { column: 'category' },
@@ -163,6 +156,8 @@ export class BlocklistWriteRepository {
       params.push(
         key === 'extraData' && value && typeof value === 'object'
           ? JSON.stringify(value)
+          : key === 'name' && value && typeof value === 'object'
+            ? JSON.stringify(value)
           : value,
       );
       assignments.push(
@@ -219,7 +214,7 @@ export class BlocklistWriteRepository {
           owner_type as "ownerType",
           owner_id as "ownerId",
           is_force_use as "isForceUse",
-          name_en as "nameEn"
+          name
         FROM "${tenantSchema}".blocklist_entry
         WHERE id = $1::uuid
       `,

@@ -174,9 +174,7 @@ export class PublicHomepageController {
     res.set({
       'Cache-Control': 'public, max-age=300, s-maxage=900',
       'CDN-Cache-Control': 'public, max-age=900',
-      'ETag': `"${internalProjection.projectionHash}"`,
       'Surrogate-Key': internalProjection.route.cacheKeys.join(' '),
-      'X-Public-Presence-Projection-Hash': internalProjection.projectionHash,
     });
 
     return projection;
@@ -209,9 +207,7 @@ export class PublicHomepageController {
     res.set({
       'Cache-Control': 'public, max-age=300, s-maxage=900',
       'CDN-Cache-Control': 'public, max-age=900',
-      'ETag': `"${internalProjection.projectionHash}"`,
       'Surrogate-Key': internalProjection.route.cacheKeys.join(' '),
-      'X-Public-Presence-Projection-Hash': internalProjection.projectionHash,
     });
 
     return projection;

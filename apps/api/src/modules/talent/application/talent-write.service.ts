@@ -6,9 +6,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  mergeLocalizedText,
+  normalizeLocalizedText,
+} from '@tcrn/shared';
 
-import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
 import type { TalentData } from '../domain/talent-read.policy';
 import {
   buildTalentDefaultSettings,
@@ -35,7 +38,6 @@ export class TalentWriteService {
     data: TalentCreateInput,
     userId: string,
   ): Promise<TalentData> {
-    const translationPayload = buildManagedNameTranslationPayload(data);
     const hasActiveProfileStore =
       await this.talentWriteRepository.hasActiveProfileStore(
         tenantSchema,
@@ -91,10 +93,7 @@ export class TalentWriteService {
       tenantSchema,
       {
         ...data,
-        nameEn: translationPayload.nameEn,
-        nameZh: translationPayload.nameZh ?? undefined,
-        nameJa: translationPayload.nameJa ?? undefined,
-        extraData: translationPayload.extraData,
+        description: normalizeLocalizedText(data.description, data.name.en),
         path: buildTalentPath(data.code, subsidiaryPath),
         settings: buildTalentDefaultSettings(data.settings),
       },
@@ -140,17 +139,18 @@ export class TalentWriteService {
       }
     }
 
-    const translationPayload = buildManagedNameTranslationPayload(data, current);
-
     return this.talentWriteRepository.update(
       id,
       tenantSchema,
       {
         ...data,
-        nameEn: translationPayload.nameEn,
-        nameZh: translationPayload.nameZh ?? undefined,
-        nameJa: translationPayload.nameJa ?? undefined,
-        extraData: translationPayload.extraData,
+        name: data.name ? mergeLocalizedText(current.name, data.name) : undefined,
+        description: data.description
+          ? normalizeLocalizedText({
+              ...current.description,
+              ...data.description,
+            }, current.description.en)
+          : undefined,
       },
       userId,
     );

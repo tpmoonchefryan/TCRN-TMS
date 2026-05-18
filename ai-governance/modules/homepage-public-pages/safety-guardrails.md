@@ -4,14 +4,28 @@ This file is suitable for direct injection into Homepage AI authoring flows.
 
 ## Structured Mode
 
-- Default output must be a template config patch.
-- AI must not change layout except through approved template selection or explicitly allowed section controls.
+- Default output must be a registry-bounded template/component settings patch.
+- AI must not change layout, section order, slot structure, CSS, JS, or component registration except through reviewed template/component code in the Web IDE authoring workflow.
 - AI must not invent public routes, Marshmallow URLs, iframe providers, asset rights, or unavailable runtime capabilities.
 - AI must not expose tenant internal IDs, user emails, private API paths, unpublished data, backend errors, schema names, or migration details.
+- AI must not create unregistered components or insert components into a template unless the selected template and component registry explicitly allow that setting.
+
+## Template And Component Authoring
+
+Template/component authoring is code-governed. AI may draft code, manifests, fixtures, schema, or tests inside the Template Center / Component Store Web IDE workflow, but those drafts require human review, validation, tests, and release before operator Studio can use them.
+
+AI authoring must not:
+
+- write executable code into tenant content;
+- bypass registry validation or safety policy;
+- publish, schedule, roll back, or move live pointers;
+- change route/domain/provider allowlists;
+- add raw iframe/raw HTML/script/tracking behavior;
+- serialize hidden reveal payloads into public JSON, DOM, metadata, alt text, source maps, or fixtures intended for public preview.
 
 ## Advanced Source
 
-Advanced Source is a one-way eject path. It may use HTML/CSS/layout only after explicit user confirmation.
+Advanced Source is not the ordinary Visual Mode path. It may change source-owned data only after explicit user confirmation and shared safety validation. It must not become a back door for runtime template layout or executable component code.
 
 Forbidden in Advanced Source:
 

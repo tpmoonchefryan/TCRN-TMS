@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ErrorCodes, TRILINGUAL_LOCALE_FAMILIES, type TrilingualLocaleFamily } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES, type LocalizedText } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
   type: 'object',
@@ -22,15 +22,15 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
-const createTrilingualTextSchema = (examples: Record<TrilingualLocaleFamily, string>) => ({
+const createLocalizedTextSchema = (examples: LocalizedText) => ({
   type: 'object',
   properties: Object.fromEntries(
-    TRILINGUAL_LOCALE_FAMILIES.map((locale) => [
+    SUPPORTED_UI_LOCALES.map((locale) => [
       locale,
       { type: 'string', nullable: true, example: examples[locale] },
     ]),
   ),
-  required: [...TRILINGUAL_LOCALE_FAMILIES],
+  required: [...SUPPORTED_UI_LOCALES],
 });
 
 const createSuccessEnvelopeSchema = (
@@ -136,12 +136,22 @@ export const MARSHMALLOW_CONFIG_SCHEMA = {
       nullable: true,
       example: 'https://cdn.example.com/avatars/aki.png',
     },
-    termsContentEn: { type: 'string', nullable: true, example: 'Be respectful.' },
-    termsContentZh: { type: 'string', nullable: true, example: '请保持礼貌。' },
-    termsContentJa: { type: 'string', nullable: true, example: '礼儀を守ってください。' },
-    privacyContentEn: { type: 'string', nullable: true, example: 'We only keep moderation metadata.' },
-    privacyContentZh: { type: 'string', nullable: true, example: '我们仅保存审核所需元数据。' },
-    privacyContentJa: { type: 'string', nullable: true, example: '審査に必要なメタデータのみ保存します。' },
+    termsContent: createLocalizedTextSchema({
+      en: 'Be respectful.',
+      zh_HANS: '请保持礼貌。',
+      zh_HANT: '請保持禮貌。',
+      ja: '礼儀を守ってください。',
+      ko: 'Be respectful.',
+      fr: 'Be respectful.',
+    }),
+    privacyContent: createLocalizedTextSchema({
+      en: 'We only keep moderation metadata.',
+      zh_HANS: '我们仅保存审核所需元数据。',
+      zh_HANT: '我們僅保存審核所需中繼資料。',
+      ja: '審査に必要なメタデータのみ保存します。',
+      ko: 'We only keep moderation metadata.',
+      fr: 'We only keep moderation metadata.',
+    }),
     stats: MESSAGE_STATS_SCHEMA,
     turnstile: TURNSTILE_CONFIG_STATUS_SCHEMA,
     marshmallowUrl: {
@@ -201,12 +211,22 @@ export const MARSHMALLOW_CONFIG_SCHEMA = {
       backgroundColor: '#fff7f7',
     },
     avatarUrl: 'https://cdn.example.com/avatars/aki.png',
-    termsContentEn: 'Be respectful.',
-    termsContentZh: '请保持礼貌。',
-    termsContentJa: '礼儀を守ってください。',
-    privacyContentEn: 'We only keep moderation metadata.',
-    privacyContentZh: '我们仅保存审核所需元数据。',
-    privacyContentJa: '審査に必要なメタデータのみ保存します。',
+    termsContent: {
+      en: 'Be respectful.',
+      zh_HANS: '请保持礼貌。',
+      zh_HANT: '請保持禮貌。',
+      ja: '礼儀を守ってください。',
+      ko: 'Be respectful.',
+      fr: 'Be respectful.',
+    },
+    privacyContent: {
+      en: 'We only keep moderation metadata.',
+      zh_HANS: '我们仅保存审核所需元数据。',
+      zh_HANT: '我們僅保存審核所需中繼資料。',
+      ja: '審査に必要なメタデータのみ保存します。',
+      ko: 'We only keep moderation metadata.',
+      fr: 'We only keep moderation metadata.',
+    },
     stats: {
       totalMessages: 128,
       pendingCount: 12,
@@ -560,6 +580,15 @@ export const MARSHMALLOW_EXPORT_DOWNLOAD_SCHEMA = {
   },
 };
 
+const EXTERNAL_BLOCKLIST_NAME_EXAMPLE: LocalizedText = {
+  en: 'Discord Invite Filter',
+  zh_HANS: 'Discord 邀请过滤',
+  zh_HANT: 'Discord 邀請過濾',
+  ja: 'Discord 招待フィルター',
+  ko: 'Discord 초대 차단',
+  fr: 'Filtre invitations Discord',
+};
+
 const EXTERNAL_BLOCKLIST_ITEM_SCHEMA = {
   type: 'object',
   properties: {
@@ -568,9 +597,7 @@ const EXTERNAL_BLOCKLIST_ITEM_SCHEMA = {
     ownerId: { type: 'string', format: 'uuid', nullable: true, example: null },
     pattern: { type: 'string', example: 'discord.gg/' },
     patternType: { type: 'string', example: 'url_regex' },
-    nameEn: { type: 'string', example: 'Discord Invite Filter' },
-    nameZh: { type: 'string', nullable: true, example: 'Discord 邀请过滤' },
-    nameJa: { type: 'string', nullable: true, example: 'Discord 招待フィルター' },
+    name: createLocalizedTextSchema(EXTERNAL_BLOCKLIST_NAME_EXAMPLE),
     description: { type: 'string', nullable: true, example: 'Reject external Discord invite links' },
     category: { type: 'string', nullable: true, example: 'spam' },
     severity: { type: 'string', example: 'high' },
@@ -593,7 +620,7 @@ const EXTERNAL_BLOCKLIST_ITEM_SCHEMA = {
     'ownerType',
     'pattern',
     'patternType',
-    'nameEn',
+    'name',
     'severity',
     'action',
     'replacement',
@@ -640,9 +667,7 @@ export const EXTERNAL_BLOCKLIST_LIST_SCHEMA = {
         ownerId: null,
         pattern: 'discord.gg/',
         patternType: 'url_regex',
-        nameEn: 'Discord Invite Filter',
-        nameZh: 'Discord 邀请过滤',
-        nameJa: 'Discord 招待フィルター',
+        name: EXTERNAL_BLOCKLIST_NAME_EXAMPLE,
         description: 'Reject external Discord invite links',
         category: 'spam',
         severity: 'high',
@@ -684,9 +709,7 @@ export const EXTERNAL_BLOCKLIST_SCOPE_SCHEMA = createSuccessEnvelopeSchema(
       ownerId: null,
       pattern: 'discord.gg/',
       patternType: 'url_regex',
-      nameEn: 'Discord Invite Filter',
-      nameZh: 'Discord 邀请过滤',
-      nameJa: 'Discord 招待フィルター',
+      name: EXTERNAL_BLOCKLIST_NAME_EXAMPLE,
       description: 'Reject external Discord invite links',
       category: 'spam',
       severity: 'high',
@@ -715,9 +738,7 @@ export const EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA = createSuccessEnvelopeSche
     ownerId: null,
     pattern: 'discord.gg/',
     patternType: 'url_regex',
-    nameEn: 'Discord Invite Filter',
-    nameZh: 'Discord 邀请过滤',
-    nameJa: 'Discord 招待フィルター',
+    name: EXTERNAL_BLOCKLIST_NAME_EXAMPLE,
     description: 'Reject external Discord invite links',
     category: 'spam',
     severity: 'high',
@@ -830,15 +851,21 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
         backgroundColor: '#fff7f7',
       },
     },
-    terms: createTrilingualTextSchema({
+    terms: createLocalizedTextSchema({
       en: 'Be respectful.',
-      zh: '请保持礼貌。',
+      zh_HANS: '请保持礼貌。',
+      zh_HANT: '請保持禮貌。',
       ja: '礼儀を守ってください。',
+      ko: 'Be respectful.',
+      fr: 'Be respectful.',
     }),
-    privacy: createTrilingualTextSchema({
+    privacy: createLocalizedTextSchema({
       en: 'We only keep moderation metadata.',
-      zh: '我们仅保存审核所需元数据。',
+      zh_HANS: '我们仅保存审核所需元数据。',
+      zh_HANT: '我們僅保存審核所需中繼資料。',
       ja: '審査に必要なメタデータのみ保存します。',
+      ko: 'We only keep moderation metadata.',
+      fr: 'We only keep moderation metadata.',
     }),
   },
   required: [
@@ -882,13 +909,19 @@ export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
     },
     terms: {
       en: 'Be respectful.',
-      zh: '请保持礼貌。',
+      zh_HANS: '请保持礼貌。',
+      zh_HANT: '請保持禮貌。',
       ja: '礼儀を守ってください。',
+      ko: 'Be respectful.',
+      fr: 'Be respectful.',
     },
     privacy: {
       en: 'We only keep moderation metadata.',
-      zh: '我们仅保存审核所需元数据。',
+      zh_HANS: '我们仅保存审核所需元数据。',
+      zh_HANT: '我們僅保存審核所需中繼資料。',
       ja: '審査に必要なメタデータのみ保存します。',
+      ko: 'We only keep moderation metadata.',
+      fr: 'We only keep moderation metadata.',
     },
   },
 };

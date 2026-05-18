@@ -1,6 +1,8 @@
 import type {
   IntegrationAdapterDefinition,
   IntegrationWebhookDefinition,
+  LocalizedText,
+  PartialLocalizedText,
   SupportedUiLocale,
 } from '@tcrn/shared';
 
@@ -38,10 +40,8 @@ export interface SocialPlatformRecord {
   ownerType?: OwnerType | null;
   ownerId?: string | null;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
+  localizedName: string;
   description?: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -65,11 +65,8 @@ export interface IntegrationConsumerRecord {
   ownerType?: OwnerType | null;
   ownerId?: string | null;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  translations?: Record<string, string>;
+  name: LocalizedText;
+  localizedName: string;
   description?: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -108,10 +105,7 @@ export interface IntegrationAdapterListItemRecord {
     iconUrl?: string | null;
   };
   code: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   definitionKey?: string;
   adapterType: AdapterType;
   inherit: boolean;
@@ -140,10 +134,7 @@ export interface IntegrationAdapterDetailRecord {
     displayName: string;
   };
   code: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   definitionKey?: string;
   adapterType: AdapterType;
   inherit: boolean;
@@ -184,10 +175,7 @@ export interface WebhookEventDefinition {
 export interface IntegrationWebhookListItemRecord {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   definitionKey?: string;
   monitoredTalentIds: string[];
   url: string;
@@ -285,22 +273,10 @@ export interface EmailSenderTenantTarget {
 
 export interface EmailTemplateRecord {
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations?: Record<string, string>;
-  subjectEn: string;
-  subjectZh: string | null;
-  subjectJa: string | null;
-  subjectTranslations?: Record<string, string>;
-  bodyHtmlEn: string;
-  bodyHtmlZh: string | null;
-  bodyHtmlJa: string | null;
-  bodyHtmlTranslations?: Record<string, string>;
-  bodyTextEn: string | null;
-  bodyTextZh: string | null;
-  bodyTextJa: string | null;
-  bodyTextTranslations?: Record<string, string>;
+  name: LocalizedText;
+  subject: LocalizedText;
+  bodyHtml: LocalizedText;
+  bodyText: LocalizedText;
   variables: string[];
   category: EmailTemplateCategory;
   isActive: boolean;
@@ -323,10 +299,7 @@ export interface CreateTenantAdapterPayload {
   definitionKey?: string;
   platformId?: string;
   code?: string;
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: LocalizedText;
   adapterType?: AdapterType;
   inherit?: boolean;
   configs?: Array<{
@@ -336,10 +309,7 @@ export interface CreateTenantAdapterPayload {
 }
 
 export interface UpdateTenantAdapterPayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   inherit?: boolean;
   version: number;
 }
@@ -356,10 +326,7 @@ export interface UpdateTenantAdapterConfigsPayload {
 export interface CreateWebhookPayload {
   definitionKey?: string;
   code?: string;
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: LocalizedText;
   url: string;
   secret?: string;
   events?: WebhookEventType[];
@@ -372,10 +339,7 @@ export interface CreateWebhookPayload {
 }
 
 export interface UpdateWebhookPayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   url?: string;
   secret?: string;
   events?: WebhookEventType[];
@@ -390,10 +354,7 @@ export interface UpdateWebhookPayload {
 
 export interface CreateConsumerPayload {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   consumerCategory: ConsumerCategory;
   contactName?: string;
   contactEmail?: string;
@@ -403,10 +364,7 @@ export interface CreateConsumerPayload {
 }
 
 export interface UpdateConsumerPayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   consumerCategory?: ConsumerCategory;
   contactName?: string;
   contactEmail?: string;
@@ -418,43 +376,19 @@ export interface UpdateConsumerPayload {
 
 export interface CreateEmailTemplatePayload {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  subjectEn: string;
-  subjectZh?: string;
-  subjectJa?: string;
-  subjectTranslations?: Record<string, string>;
-  bodyHtmlEn: string;
-  bodyHtmlZh?: string;
-  bodyHtmlJa?: string;
-  bodyHtmlTranslations?: Record<string, string>;
-  bodyTextEn?: string;
-  bodyTextZh?: string;
-  bodyTextJa?: string;
-  bodyTextTranslations?: Record<string, string>;
+  name: LocalizedText;
+  subject: LocalizedText;
+  bodyHtml: LocalizedText;
+  bodyText?: LocalizedText;
   variables?: string[];
   category: EmailTemplateCategory;
 }
 
 export interface UpdateEmailTemplatePayload {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
-  subjectEn?: string;
-  subjectZh?: string;
-  subjectJa?: string;
-  subjectTranslations?: Record<string, string>;
-  bodyHtmlEn?: string;
-  bodyHtmlZh?: string;
-  bodyHtmlJa?: string;
-  bodyHtmlTranslations?: Record<string, string>;
-  bodyTextEn?: string;
-  bodyTextZh?: string;
-  bodyTextJa?: string;
-  bodyTextTranslations?: Record<string, string>;
+  name?: PartialLocalizedText;
+  subject?: PartialLocalizedText;
+  bodyHtml?: PartialLocalizedText;
+  bodyText?: PartialLocalizedText;
   variables?: string[];
   category?: EmailTemplateCategory;
   isActive?: boolean;

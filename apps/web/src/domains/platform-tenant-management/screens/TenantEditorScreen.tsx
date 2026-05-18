@@ -46,7 +46,7 @@ export function TenantEditorScreen({
 }>) {
   const router = useRouter();
   const { request, session } = useSession();
-  const { copy, selectedLocale } = useTenantManagementCopy();
+  const { copy, locale } = useTenantManagementCopy();
   const editorCopy = copy.editor;
   const sendingDomainCopy = editorCopy.sendingDomains;
   const [draft, setDraft] = useState<TenantDraft>(emptyTenantDraft);
@@ -480,7 +480,7 @@ export function TenantEditorScreen({
               </p>
               {tenantState ? (
                 <p>
-                  {editorCopy.updatedLabel}: {formatTenantDateTime(tenantState.updatedAt, selectedLocale, editorCopy.updatedLabel)}
+                  {editorCopy.updatedLabel}: {formatTenantDateTime(tenantState.updatedAt, locale, editorCopy.updatedLabel)}
                 </p>
               ) : null}
             </div>
@@ -544,7 +544,7 @@ export function TenantEditorScreen({
                 label={tenantState.isActive ? editorCopy.activeStatus : editorCopy.inactiveStatus}
               />
               <p className="text-sm text-slate-600">
-                {editorCopy.createdLabel} {formatDateTime(tenantState.createdAt, selectedLocale, editorCopy.createdLabel)}
+                {editorCopy.createdLabel} {formatDateTime(tenantState.createdAt, locale, editorCopy.createdLabel)}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

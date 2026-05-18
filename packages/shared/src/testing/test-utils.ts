@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { createLocalizedText, type LocalizedText } from '../constants/locale';
 import {
   RBAC_POLICY_DEFINITIONS,
   RBAC_RESOURCES,
@@ -109,6 +110,9 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
     })),
   ),
 );
+
+const stringifyLocalizedText = (value: LocalizedText): string =>
+  JSON.stringify(value);
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -313,18 +317,16 @@ async function seedRbacContractIntoSchema(
   for (const resource of RBAC_RESOURCES) {
     await prisma.$executeRawUnsafe(`
       INSERT INTO "${schemaName}".resource (
-        id, code, module, name_en, name_zh, name_ja, sort_order, is_active, created_at, updated_at
+        id, code, module, name, sort_order, is_active, created_at, updated_at
       )
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, NOW(), NOW())
+      VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, NOW(), NOW())
       ON CONFLICT (code) DO UPDATE
       SET module = EXCLUDED.module,
-          name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
+          name = EXCLUDED.name,
           sort_order = EXCLUDED.sort_order,
           is_active = true,
           updated_at = NOW()
-    `, resource.code, resource.module, resource.nameEn, resource.nameZh, resource.nameJa, resource.sortOrder);
+    `, resource.code, resource.module, stringifyLocalizedText(resource.name), resource.sortOrder);
   }
 
   for (const policy of RBAC_POLICY_DEFINITIONS) {
@@ -346,18 +348,16 @@ async function seedRbacContractIntoSchema(
   for (const role of RBAC_ROLE_TEMPLATES) {
     await prisma.$executeRawUnsafe(`
       INSERT INTO "${schemaName}".role (
-        id, code, name_en, name_zh, name_ja, description, is_system, is_active, created_at, updated_at, version
+        id, code, name, description, is_system, is_active, created_at, updated_at, version
       )
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, NOW(), NOW(), 1)
+      VALUES (gen_random_uuid(), $1, $2::jsonb, $3, $4, true, NOW(), NOW(), 1)
       ON CONFLICT (code) DO UPDATE
-      SET name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
+      SET name = EXCLUDED.name,
           description = EXCLUDED.description,
           is_system = EXCLUDED.is_system,
           is_active = true,
           updated_at = NOW()
-    `, role.code, role.nameEn, role.nameZh, role.nameJa, role.description, role.isSystem);
+    `, role.code, stringifyLocalizedText(role.name), role.description, role.isSystem);
   }
 
   for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
@@ -603,29 +603,41 @@ export async function createTestTenantFixture(
     }
 
     if (templateTables.some((item) => item.tablename === 'profile_store')) {
+      const profileStoreName = createLocalizedText({
+        en: 'Default Profile Store',
+        zh_HANS: '默认档案存储',
+        zh_HANT: '預設檔案儲存',
+        ja: 'デフォルトプロファイルストア',
+        ko: 'Default Profile Store',
+        fr: 'Default Profile Store',
+      });
+      const profileStoreDescription = createLocalizedText({
+        en: 'Default customer archive boundary',
+        zh_HANS: '默认客户档案边界',
+        zh_HANT: '預設客戶檔案邊界',
+        ja: 'デフォルト顧客アーカイブ境界',
+        ko: 'Default customer archive boundary',
+        fr: 'Default customer archive boundary',
+      });
+
       await prisma.$executeRawUnsafe(`
         INSERT INTO "${schemaName}".profile_store
           (
-            id, code, name_en, name_zh, name_ja, description_en, description_zh, description_ja,
+            id, code, name, description,
             pii_service_config_id, is_default, is_active, created_at, updated_at, created_by, updated_by, version
           )
         VALUES
           (
-            gen_random_uuid(), 'DEFAULT_STORE', 'Default Profile Store', '默认档案存储', 'デフォルトプロファイルストア',
-            'Default customer archive boundary', '默认客户档案边界', 'デフォルト顧客アーカイブ境界',
+            gen_random_uuid(), 'DEFAULT_STORE', $1::jsonb, $2::jsonb,
             NULL, true, true, NOW(), NOW(), NULL, NULL, 1
           )
         ON CONFLICT (code) DO UPDATE SET
-          name_en = EXCLUDED.name_en,
-          name_zh = EXCLUDED.name_zh,
-          name_ja = EXCLUDED.name_ja,
-          description_en = EXCLUDED.description_en,
-          description_zh = EXCLUDED.description_zh,
-          description_ja = EXCLUDED.description_ja,
+          name = EXCLUDED.name,
+          description = EXCLUDED.description,
           is_default = true,
           is_active = true,
           updated_at = NOW()
-      `);
+      `, stringifyLocalizedText(profileStoreName), stringifyLocalizedText(profileStoreDescription));
     }
 
     await seedRbacContractIntoSchema(prisma, schemaName);
@@ -812,12 +824,15 @@ export async function createTestSubsidiaryInTenant(
   tenantFixture: TenantFixture,
   overrides: Partial<{
     code: string;
-    nameEn: string;
+    name: LocalizedText | string;
     createdBy: string;
   }> = {}
 ): Promise<{ id: string; code: string }> {
   const subsidiaryId = crypto.randomUUID();
   const code = overrides.code || `SUB_${Date.now().toString(36)}`;
+  const name = typeof overrides.name === 'string'
+    ? createLocalizedText({ en: overrides.name })
+    : overrides.name ?? createLocalizedText({ en: 'Test Subsidiary' });
   const createdBy = overrides.createdBy || (
     await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
       SELECT id
@@ -833,9 +848,9 @@ export async function createTestSubsidiaryInTenant(
 
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".subsidiary 
-    (id, code, path, depth, name_en, is_active, created_at, updated_at, created_by, updated_by)
-    VALUES ($1::uuid, $2, $3, 0, $4, true, NOW(), NOW(), $5::uuid, $5::uuid)
-  `, subsidiaryId, code, `/${code}/`, overrides.nameEn || 'Test Subsidiary', createdBy);
+    (id, code, path, depth, name, is_active, created_at, updated_at, created_by, updated_by)
+    VALUES ($1::uuid, $2, $3, 0, $4::jsonb, true, NOW(), NOW(), $5::uuid, $5::uuid)
+  `, subsidiaryId, code, `/${code}/`, stringifyLocalizedText(name), createdBy);
 
   return { id: subsidiaryId, code };
 }
@@ -852,7 +867,7 @@ export async function createTestTalentInTenant(
   subsidiaryId: string | null,
   overrides: Partial<{
     code: string;
-    nameEn: string;
+    name: LocalizedText | string;
     homepagePath: string;
     displayName: string;
     profileStoreId: string;
@@ -863,6 +878,10 @@ export async function createTestTalentInTenant(
 ): Promise<{ id: string; code: string; homepagePath: string }> {
   const talentId = crypto.randomUUID();
   const code = overrides.code || `TALENT_${Date.now().toString(36)}`;
+  const name = typeof overrides.name === 'string'
+    ? createLocalizedText({ en: overrides.name })
+    : overrides.name ?? createLocalizedText({ en: 'Test Talent' });
+  const displayName = overrides.displayName || name.en;
   const homepagePath = overrides.homepagePath || code.toLowerCase().replace(/_/g, '-');
   const createdBy = overrides.createdBy || (
     await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
@@ -911,12 +930,12 @@ export async function createTestTalentInTenant(
   await prisma.$executeRawUnsafe(`
     INSERT INTO "${tenantFixture.schemaName}".talent 
     (
-      id, code, path, name_en, display_name, subsidiary_id, profile_store_id,
+      id, code, path, name, display_name, subsidiary_id, profile_store_id,
       homepage_path, lifecycle_status, published_at, published_by,
       is_active, created_at, updated_at, created_by, updated_by
     )
-    VALUES ($1::uuid, $2, $3, $4, $5, $6::uuid, $7::uuid, $8, $9, $10::timestamptz, $11::uuid, true, NOW(), NOW(), $12::uuid, $12::uuid)
-  `, talentId, code, `${subsidiaryPath}${code}/`, overrides.nameEn || 'Test Talent', overrides.displayName || overrides.nameEn || 'Test Talent', subsidiaryId, profileStoreId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
+    VALUES ($1::uuid, $2, $3, $4::jsonb, $5, $6::uuid, $7::uuid, $8, $9, $10::timestamptz, $11::uuid, true, NOW(), NOW(), $12::uuid, $12::uuid)
+  `, talentId, code, `${subsidiaryPath}${code}/`, stringifyLocalizedText(name), displayName, subsidiaryId, profileStoreId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
 
   return { id: talentId, code, homepagePath };
 }

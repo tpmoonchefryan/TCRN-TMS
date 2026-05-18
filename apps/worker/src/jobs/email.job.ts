@@ -7,9 +7,12 @@ import {
   DEFAULT_EMAIL_PROVIDER,
   DEFAULT_TENCENT_SES_REGION,
   EMAIL_CONFIG_KEY,
+  SUPPORTED_UI_LOCALES,
   type EmailProvider,
+  pickLocalizedText,
   mask,
   normalizeStoredEmailConfig,
+  type LocalizedText,
 } from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import { createDecipheriv } from 'crypto';
@@ -66,6 +69,21 @@ interface EmailConfig {
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm';
 const AUTH_TAG_LENGTH = 16;
+
+function readLocalizedText(value: unknown, fieldName: string): LocalizedText {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${fieldName} must be stored as LocalizedText`);
+  }
+
+  const candidate = value as Record<string, unknown>;
+  for (const locale of SUPPORTED_UI_LOCALES) {
+    if (typeof candidate[locale] !== 'string') {
+      throw new Error(`${fieldName} must include ${locale}`);
+    }
+  }
+
+  return candidate as LocalizedText;
+}
 
 /**
  * Get encryption key from environment
@@ -239,27 +257,12 @@ async function renderTemplate(
     throw new Error(`Email template is not active: ${templateCode}`);
   }
 
-  // Select locale-specific content with fallback to English
-  let subject: string;
-  let htmlBody: string;
-  let textBody: string | undefined;
-
-  switch (locale) {
-    case 'zh':
-      subject = template.subjectZh || template.subjectEn;
-      htmlBody = template.bodyHtmlZh || template.bodyHtmlEn;
-      textBody = template.bodyTextZh || template.bodyTextEn || undefined;
-      break;
-    case 'ja':
-      subject = template.subjectJa || template.subjectEn;
-      htmlBody = template.bodyHtmlJa || template.bodyHtmlEn;
-      textBody = template.bodyTextJa || template.bodyTextEn || undefined;
-      break;
-    default:
-      subject = template.subjectEn;
-      htmlBody = template.bodyHtmlEn;
-      textBody = template.bodyTextEn || undefined;
-  }
+  const subjectText = readLocalizedText(template.subject, 'email_template.subject');
+  const bodyHtmlText = readLocalizedText(template.bodyHtml, 'email_template.body_html');
+  const bodyTextValue = template.bodyText ? readLocalizedText(template.bodyText, 'email_template.body_text') : null;
+  let subject = pickLocalizedText(subjectText, locale);
+  let htmlBody = pickLocalizedText(bodyHtmlText, locale);
+  let textBody = bodyTextValue ? pickLocalizedText(bodyTextValue, locale) || undefined : undefined;
 
   // Replace variables using {{variableName}} pattern
   for (const [key, value] of Object.entries(variables)) {

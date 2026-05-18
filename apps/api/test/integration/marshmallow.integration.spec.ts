@@ -5,6 +5,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
   createTestTenantFixture,
@@ -127,13 +128,13 @@ describe('Marshmallow Integration Tests', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_MARSH_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Marshmallow Test Subsidiary',
+      name: createLocalizedText({ en: 'Marshmallow Test Subsidiary' }),
       createdBy: testUser.id,
     });
 
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TAL_MARSH_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Marshmallow Test Talent',
+      name: createLocalizedText({ en: 'Marshmallow Test Talent' }),
       displayName: 'Marshmallow Test Talent',
       homepagePath: `marsh-home-${Date.now()}`,
       createdBy: testUser.id,

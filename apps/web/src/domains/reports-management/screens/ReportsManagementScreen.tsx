@@ -7,8 +7,7 @@ import {
   type ReportFilterField,
   type ReportFormat,
   type ReportJobStatus,
-  resolveTrilingualLocaleFamily,
-} from '@tcrn/shared';
+  } from '@tcrn/shared';
 import {
   Download,
   ExternalLink,
@@ -927,7 +926,7 @@ export function ReportsManagementScreen({
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const { request, session } = useSession();
-  const { selectedLocale, copy, jobStatusOptions, reportFormatOptions } = useReportsManagementCopy();
+  const { locale, copy, jobStatusOptions, reportFormatOptions } = useReportsManagementCopy();
   const [draft, setDraft] = useState<ReportFilterDraft>(DEFAULT_FILTER_DRAFT);
   const [previewPanel, setPreviewPanel] = useState<PreviewPanelState>({
     data: null,
@@ -1261,7 +1260,7 @@ export function ReportsManagementScreen({
         setNotice({
           tone: 'success',
           message: `${copy.state.piiPortalHandoffPrefix} ${formatReportsNumber(
-            selectedLocale,
+            locale,
             result.customerCount,
             copy.ledger.pendingRows,
           )} ${copy.state.piiPortalHandoffSuffix}`,
@@ -1274,7 +1273,7 @@ export function ReportsManagementScreen({
       setNotice({
         tone: 'success',
         message: `${copy.state.createLocalJobPrefix} ${result.jobId} ${copy.state.createLocalJobSuffix} ${formatReportsNumber(
-          selectedLocale,
+          locale,
           result.estimatedRows,
           copy.ledger.pendingRows,
         )} ${copy.state.createLocalJobRowsSuffix}`,
@@ -1418,7 +1417,7 @@ export function ReportsManagementScreen({
   ).length;
   const jobsPagination = buildPaginationMeta(jobsPanel.total, jobsPanel.page, jobsPanel.pageSize);
   const jobsRange = getPaginationRange(jobsPagination, jobsPanel.data.length);
-  const paginationLabel = pickLocaleText(selectedLocale, {
+  const paginationLabel = pickLocaleText(locale, {
     en: `Page ${jobsPagination.page} of ${jobsPagination.totalPages}`,
     zh_HANS: `第 ${jobsPagination.page} / ${jobsPagination.totalPages} 页`,
     zh_HANT: `第 ${jobsPagination.page} / ${jobsPagination.totalPages} 頁`,
@@ -1428,7 +1427,7 @@ export function ReportsManagementScreen({
   });
   const paginationRangeLabel =
     jobsPagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No jobs are currently available.',
           zh_HANS: '当前没有任务记录。',
           zh_HANT: '目前沒有任務記錄。',
@@ -1436,7 +1435,7 @@ export function ReportsManagementScreen({
           ko: '현재 표시할 작업이 없습니다.',
           fr: 'Aucune tâche n’est actuellement disponible.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${jobsRange.start}-${jobsRange.end} of ${jobsPagination.totalCount}`,
           zh_HANS: `显示第 ${jobsRange.start}-${jobsRange.end} 条，共 ${jobsPagination.totalCount} 条`,
           zh_HANT: `顯示第 ${jobsRange.start}-${jobsRange.end} 筆，共 ${jobsPagination.totalCount} 筆`,
@@ -1444,7 +1443,7 @@ export function ReportsManagementScreen({
           ko: `${jobsPagination.totalCount}개 중 ${jobsRange.start}-${jobsRange.end}개 표시`,
           fr: `Affichage de ${jobsRange.start} à ${jobsRange.end} sur ${jobsPagination.totalCount}`,
         });
-  const pageSizeLabel = pickLocaleText(selectedLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页显示',
     zh_HANT: '每頁顯示',
@@ -1452,7 +1451,7 @@ export function ReportsManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(selectedLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -1460,7 +1459,7 @@ export function ReportsManagementScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(selectedLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -1469,8 +1468,8 @@ export function ReportsManagementScreen({
     fr: 'Suivant',
   });
   const reportsViewCopy =
-    resolveTrilingualLocaleFamily(selectedLocale) === 'zh'
-      ? selectedLocale === 'zh_HANT'
+    (locale === 'zh_HANS' || locale === 'zh_HANT')
+      ? locale === 'zh_HANT'
         ? {
             directory: '報表目錄',
             history: '執行紀錄',
@@ -1493,7 +1492,7 @@ export function ReportsManagementScreen({
             cardEmpty: '更多报表可用后会显示在此目录。',
             historyDescription: '查看报表运行记录。',
           }
-      : selectedLocale === 'ko'
+      : locale === 'ko'
         ? {
             directory: '보고서 디렉터리',
             history: '실행 기록',
@@ -1505,7 +1504,7 @@ export function ReportsManagementScreen({
             cardEmpty: '사용 가능한 보고서 없음',
             historyDescription: '보고서 실행 기록을 검토하세요.',
           }
-        : selectedLocale === 'fr'
+        : locale === 'fr'
           ? {
               directory: 'Répertoire des rapports',
               history: "Historique d'exécution",
@@ -1517,7 +1516,7 @@ export function ReportsManagementScreen({
               cardEmpty: 'Aucun rapport disponible',
               historyDescription: "Consultez l'historique d'exécution des rapports.",
             }
-          : resolveTrilingualLocaleFamily(selectedLocale) === 'ja'
+          : locale === 'ja'
         ? {
             directory: 'レポートディレクトリ',
             history: '実行履歴',
@@ -1545,9 +1544,9 @@ export function ReportsManagementScreen({
     ?? null;
   const primaryFilterFields = selectedReport?.filterSchema.fields.filter((field) => !field.advanced) ?? [];
   const advancedFilterFields = selectedReport?.filterSchema.fields.filter((field) => field.advanced) ?? [];
-  const selectedReportName = selectedReport ? pickLocaleText(selectedLocale, selectedReport.name) : copy.summary.reportName;
+  const selectedReportName = selectedReport ? pickLocaleText(locale, selectedReport.name) : copy.summary.reportName;
   const selectedReportDescription = selectedReport
-    ? pickLocaleText(selectedLocale, selectedReport.description)
+    ? pickLocaleText(locale, selectedReport.description)
     : copy.summary.reportDescription;
   const selectedReportIsAvailable = selectedReport?.availability.status === 'available';
   const reportDirectoryCountLabel = jobsPanel.loading ? copy.summary.jobsLoading : String(jobsPanel.total);
@@ -1555,9 +1554,9 @@ export function ReportsManagementScreen({
   const optionPickerField = optionPicker
     ? [...primaryFilterFields, ...advancedFilterFields].find((field) => field.id === optionPicker.fieldId)
     : null;
-  const optionPickerFieldLabel = optionPickerField ? pickLocaleText(selectedLocale, optionPickerField.label) : '';
+  const optionPickerFieldLabel = optionPickerField ? pickLocaleText(locale, optionPickerField.label) : '';
   const optionPickerFieldDescription = optionPickerField?.description
-    ? pickLocaleText(selectedLocale, optionPickerField.description)
+    ? pickLocaleText(locale, optionPickerField.description)
     : null;
   const optionPickerOptions =
     optionPickerField?.type === 'config-multi-select' || optionPickerField?.type === 'dictionary-multi-select'
@@ -1584,7 +1583,7 @@ export function ReportsManagementScreen({
   );
   const optionPickerRange = getPaginationRange(optionPickerPagination, optionPickerVisibleOptions.length);
   const optionPickerSource = optionPickerField ? describeFilterFieldSource(optionPickerField) : null;
-  const optionPickerPageLabel = pickLocaleText(selectedLocale, {
+  const optionPickerPageLabel = pickLocaleText(locale, {
     en: `Page ${optionPickerPagination.page} of ${optionPickerPagination.totalPages}`,
     zh_HANS: `第 ${optionPickerPagination.page} / ${optionPickerPagination.totalPages} 页`,
     zh_HANT: `第 ${optionPickerPagination.page} / ${optionPickerPagination.totalPages} 頁`,
@@ -1594,7 +1593,7 @@ export function ReportsManagementScreen({
   });
   const optionPickerRangeLabel =
     optionPickerPagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No options match this picker.',
           zh_HANS: '没有匹配的选项。',
           zh_HANT: '沒有符合的選項。',
@@ -1602,7 +1601,7 @@ export function ReportsManagementScreen({
           ko: '일치하는 옵션이 없습니다.',
           fr: 'Aucune option ne correspond.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${optionPickerRange.start}-${optionPickerRange.end} of ${optionPickerPagination.totalCount}`,
           zh_HANS: `显示第 ${optionPickerRange.start}-${optionPickerRange.end} 项，共 ${optionPickerPagination.totalCount} 项`,
           zh_HANT: `顯示第 ${optionPickerRange.start}-${optionPickerRange.end} 項，共 ${optionPickerPagination.totalCount} 項`,
@@ -1610,7 +1609,7 @@ export function ReportsManagementScreen({
           ko: `${optionPickerPagination.totalCount}개 중 ${optionPickerRange.start}-${optionPickerRange.end}개 표시`,
           fr: `Affichage de ${optionPickerRange.start} à ${optionPickerRange.end} sur ${optionPickerPagination.totalCount}`,
         });
-  const optionPickerRowsPerPageLabel = pickLocaleText(selectedLocale, {
+  const optionPickerRowsPerPageLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页显示',
     zh_HANT: '每頁顯示',
@@ -1618,7 +1617,7 @@ export function ReportsManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const optionPickerSelectedCountLabel = pickLocaleText(selectedLocale, {
+  const optionPickerSelectedCountLabel = pickLocaleText(locale, {
     en: `${optionPickerSelectedCodes.length} selected`,
     zh_HANS: `已选择 ${optionPickerSelectedCodes.length} 项`,
     zh_HANT: `已選擇 ${optionPickerSelectedCodes.length} 項`,
@@ -1700,8 +1699,8 @@ export function ReportsManagementScreen({
               <h2 className="text-lg font-semibold text-slate-950">{copy.portal.title}</h2>
               <p className="max-w-2xl text-sm leading-6 text-slate-600">{copy.portal.description}</p>
               <p className="text-sm text-slate-600">
-                {copy.portal.expiresPrefix} {formatReportsDateTime(selectedLocale, portalHandoff.expiresAt, copy.common.never)};{' '}
-                {copy.portal.estimatedPrefix} {formatReportsNumber(selectedLocale, portalHandoff.estimatedRows, copy.ledger.pendingRows)}{' '}
+                {copy.portal.expiresPrefix} {formatReportsDateTime(locale, portalHandoff.expiresAt, copy.common.never)};{' '}
+                {copy.portal.estimatedPrefix} {formatReportsNumber(locale, portalHandoff.estimatedRows, copy.ledger.pendingRows)}{' '}
                 {copy.portal.estimatedSuffix}
               </p>
               <div className="grid gap-3 pt-2 md:grid-cols-3">
@@ -1901,16 +1900,16 @@ export function ReportsManagementScreen({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={job.status} label={getReportsJobStatusLabel(selectedLocale, job.status)} />
+                          <StatusBadge status={job.status} label={getReportsJobStatusLabel(locale, job.status)} />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsNumber(selectedLocale, job.totalRows, copy.ledger.pendingRows)}
+                          {formatReportsNumber(locale, job.totalRows, copy.ledger.pendingRows)}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsDateTime(selectedLocale, job.createdAt, copy.common.never)}
+                          {formatReportsDateTime(locale, job.createdAt, copy.common.never)}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsDateTime(selectedLocale, job.completedAt, copy.common.never)}
+                          {formatReportsDateTime(locale, job.completedAt, copy.common.never)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
@@ -2040,7 +2039,7 @@ export function ReportsManagementScreen({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <SummaryCard
                 label={copy.detail.requestedAt}
-                value={formatReportsDateTime(selectedLocale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}
+                value={formatReportsDateTime(locale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}
                 hint={copy.detail.format}
               />
               <SummaryCard
@@ -2051,7 +2050,7 @@ export function ReportsManagementScreen({
               <SummaryCard
                 label={copy.detail.failureTitle}
                 value={detailPanel.data.failureReason || copy.detail.noFailureReason}
-                hint={getReportsJobStatusLabel(selectedLocale, detailPanel.data.status)}
+                hint={getReportsJobStatusLabel(locale, detailPanel.data.status)}
               />
               <SummaryCard
                 label={copy.detail.downloadState}
@@ -2063,7 +2062,7 @@ export function ReportsManagementScreen({
             <GlassSurface className="p-4">
               <FormSection title={copy.detail.snapshotTitle} description={copy.detail.description}>
                 <div className="space-y-3 text-sm text-slate-700">
-                  <p><span className="font-semibold">{copy.detail.requestedAt}:</span> {formatReportsDateTime(selectedLocale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}</p>
+                  <p><span className="font-semibold">{copy.detail.requestedAt}:</span> {formatReportsDateTime(locale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}</p>
                   <p><span className="font-semibold">{copy.detail.format}:</span> {detailPanel.data.parameterSnapshot.format}</p>
                   <div className="space-y-2">
                     <p className="font-semibold text-slate-900">{copy.detail.filters}</p>
@@ -2086,7 +2085,7 @@ export function ReportsManagementScreen({
                     <SummaryCard
                       key={step.phase}
                       label={copy.detail.timelinePhases[step.phase]}
-                      value={formatReportsDateTime(selectedLocale, step.at, copy.common.never)}
+                      value={formatReportsDateTime(locale, step.at, copy.common.never)}
                       hint={step.phase}
                     />
                   ))}
@@ -2104,11 +2103,11 @@ export function ReportsManagementScreen({
                           <div className="space-y-1">
                             <p className="font-semibold text-slate-900">{artifact.fileName || copy.ledger.pendingFileAssignment}</p>
                             <p>{copy.detail.downloadState}: {copy.detail.downloadStates[artifact.downloadState]}</p>
-                            <p>{copy.detail.fileSize}: {formatReportsNumber(selectedLocale, artifact.fileSizeBytes, copy.ledger.pendingRows)}</p>
+                            <p>{copy.detail.fileSize}: {formatReportsNumber(locale, artifact.fileSizeBytes, copy.ledger.pendingRows)}</p>
                           </div>
                           <div className="space-y-1 text-right">
-                            <p>{copy.detail.expiresAt}: {formatReportsDateTime(selectedLocale, artifact.expiresAt, copy.common.never)}</p>
-                            <p>{copy.detail.downloadedAt}: {formatReportsDateTime(selectedLocale, artifact.downloadedAt, copy.common.never)}</p>
+                            <p>{copy.detail.expiresAt}: {formatReportsDateTime(locale, artifact.expiresAt, copy.common.never)}</p>
+                            <p>{copy.detail.downloadedAt}: {formatReportsDateTime(locale, artifact.downloadedAt, copy.common.never)}</p>
                           </div>
                         </div>
                       </div>
@@ -2215,7 +2214,7 @@ export function ReportsManagementScreen({
                       key={field.id}
                       field={field}
                       draft={draft}
-                      locale={selectedLocale}
+                      locale={locale}
                       options={filterOptionsPanel.data[field.id]}
                       optionsLoading={filterOptionsPanel.loading}
                       optionsError={filterOptionsPanel.error}
@@ -2253,7 +2252,7 @@ export function ReportsManagementScreen({
                           key={field.id}
                           field={field}
                           draft={draft}
-                          locale={selectedLocale}
+                          locale={locale}
                           options={filterOptionsPanel.data[field.id]}
                           optionsLoading={filterOptionsPanel.loading}
                           optionsError={filterOptionsPanel.error}
@@ -2282,7 +2281,7 @@ export function ReportsManagementScreen({
                 <div className="grid gap-3 sm:grid-cols-3">
                   <MetricChip
                     label={copy.preview.matchedRowsLabel}
-                    value={formatReportsNumber(selectedLocale, previewPanel.data.totalCount, copy.ledger.pendingRows)}
+                    value={formatReportsNumber(locale, previewPanel.data.totalCount, copy.ledger.pendingRows)}
                     hint={copy.preview.matchedRowsHint}
                   />
                   <MetricChip
@@ -2337,7 +2336,7 @@ export function ReportsManagementScreen({
             setOptionPicker(null);
           }
         }}
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: optionPickerFieldLabel ? `Select ${optionPickerFieldLabel}` : 'Select options',
           zh_HANS: optionPickerFieldLabel ? `选择${optionPickerFieldLabel}` : '选择选项',
           zh_HANT: optionPickerFieldLabel ? `選擇${optionPickerFieldLabel}` : '選擇選項',
@@ -2345,7 +2344,7 @@ export function ReportsManagementScreen({
           ko: optionPickerFieldLabel ? `${optionPickerFieldLabel} 선택` : '옵션 선택',
           fr: optionPickerFieldLabel ? `Sélectionner ${optionPickerFieldLabel}` : 'Sélectionner des options',
         })}
-        description={pickLocaleText(selectedLocale, {
+        description={pickLocaleText(locale, {
           en: 'Search and page through catalog options without expanding the report drawer.',
           zh_HANS: '在不展开报表抽屉的情况下搜索并分页选择目录选项。',
           zh_HANT: '在不展開報表抽屜的情況下搜尋並分頁選擇目錄選項。',
@@ -2354,7 +2353,7 @@ export function ReportsManagementScreen({
           fr: 'Recherchez et parcourez les options du catalogue sans étendre le tiroir du rapport.',
         })}
         size="lg"
-        closeButtonAriaLabel={pickLocaleText(selectedLocale, {
+        closeButtonAriaLabel={pickLocaleText(locale, {
           en: 'Close report option picker',
           zh_HANS: '关闭报表选项选择器',
           zh_HANT: '關閉報表選項選擇器',
@@ -2374,7 +2373,7 @@ export function ReportsManagementScreen({
               disabled={!optionPickerTargetField || optionPickerSelectedCodes.length === 0 || previewPending || createPending}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Clear selected',
                 zh_HANS: '清空已选',
                 zh_HANT: '清空已選',
@@ -2388,7 +2387,7 @@ export function ReportsManagementScreen({
               onClick={() => setOptionPicker(null)}
               className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Done',
                 zh_HANS: '完成',
                 zh_HANT: '完成',
@@ -2420,7 +2419,7 @@ export function ReportsManagementScreen({
 
             <label className="relative block">
               <span className="sr-only">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: `Search ${optionPickerFieldLabel}`,
                   zh_HANS: `搜索${optionPickerFieldLabel}`,
                   zh_HANT: `搜尋${optionPickerFieldLabel}`,
@@ -2438,7 +2437,7 @@ export function ReportsManagementScreen({
                     ? { ...current, page: 1, search: event.target.value }
                     : current)
                 }
-                placeholder={pickLocaleText(selectedLocale, {
+                placeholder={pickLocaleText(locale, {
                   en: 'Search label or code',
                   zh_HANS: '搜索标签或代码',
                   zh_HANT: '搜尋標籤或代碼',
@@ -2492,7 +2491,7 @@ export function ReportsManagementScreen({
             ) : (
               <StateView
                 status="empty"
-                title={pickLocaleText(selectedLocale, {
+                title={pickLocaleText(locale, {
                   en: 'No options found',
                   zh_HANS: '未找到选项',
                   zh_HANT: '未找到選項',
@@ -2500,7 +2499,7 @@ export function ReportsManagementScreen({
                   ko: '옵션을 찾을 수 없습니다',
                   fr: 'Aucune option trouvée',
                 })}
-                description={pickLocaleText(selectedLocale, {
+                description={pickLocaleText(locale, {
                   en: 'Adjust the search or check the underlying catalog configuration.',
                   zh_HANS: '调整搜索条件，或检查底层目录配置。',
                   zh_HANT: '調整搜尋條件，或檢查底層目錄設定。',
@@ -2531,7 +2530,7 @@ export function ReportsManagementScreen({
         ) : (
           <StateView
             status="empty"
-            title={pickLocaleText(selectedLocale, {
+            title={pickLocaleText(locale, {
               en: 'No option field selected',
               zh_HANS: '未选择选项字段',
               zh_HANT: '未選擇選項欄位',

@@ -1,8 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
+import {
+  localizedTextSearchExpression,
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import type {
   ProfileStoreCreatePayload,
   ProfileStoreCreateRow,
@@ -12,6 +18,65 @@ import type {
   ProfileStoreUpdateLookupRow,
   ProfileStoreUpdateRow,
 } from '../domain/profile-store.policy';
+
+type ProfileStoreListRawRow = Omit<ProfileStoreListRow, 'name'> & {
+  name: Prisma.JsonValue;
+};
+
+type ProfileStoreDetailRawRow = Omit<ProfileStoreDetailRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type ProfileStoreCreateRawRow = Omit<ProfileStoreCreateRow, 'name'> & {
+  name: Prisma.JsonValue;
+};
+
+type ProfileStoreUpdateLookupRawRow = Omit<ProfileStoreUpdateLookupRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type ProfileStoreUpdateRawRow = Omit<ProfileStoreUpdateRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+const mapProfileStoreListRow = (row: ProfileStoreListRawRow): ProfileStoreListRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+});
+
+const mapProfileStoreDetailRow = (
+  row: ProfileStoreDetailRawRow,
+): ProfileStoreDetailRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+  description: readLocalizedText(row.description, 'profile_store.description'),
+});
+
+const mapProfileStoreCreateRow = (
+  row: ProfileStoreCreateRawRow,
+): ProfileStoreCreateRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+});
+
+const mapProfileStoreUpdateLookupRow = (
+  row: ProfileStoreUpdateLookupRawRow,
+): ProfileStoreUpdateLookupRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+  description: readLocalizedText(row.description, 'profile_store.description'),
+});
+
+const mapProfileStoreUpdateRow = (
+  row: ProfileStoreUpdateRawRow,
+): ProfileStoreUpdateRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'profile_store.name'),
+  description: readLocalizedText(row.description, 'profile_store.description'),
+});
 
 @Injectable()
 export class ProfileStoreRepository {
@@ -37,9 +102,7 @@ export class ProfileStoreRepository {
       whereClauses.push(
         `(
           ps.code ILIKE $${paramIndex}
-          OR ps.name_en ILIKE $${paramIndex}
-          OR COALESCE(ps.name_zh, '') ILIKE $${paramIndex}
-          OR COALESCE(ps.name_ja, '') ILIKE $${paramIndex}
+          OR ${localizedTextSearchExpression('ps.name', `$${paramIndex}`)}
           OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
         )`,
       );
@@ -52,14 +115,12 @@ export class ProfileStoreRepository {
     const offsetParamIndex = paramIndex + 1;
     params.push(pageSize, offset);
 
-    return prisma.$queryRawUnsafe<ProfileStoreListRow[]>(
+    const rows = await prisma.$queryRawUnsafe<ProfileStoreListRawRow[]>(
       `
         SELECT
           ps.id,
           ps.code,
-          ps.name_en as "nameEn",
-          ps.name_zh as "nameZh",
-          ps.name_ja as "nameJa",
+          ps.name,
           ps.extra_data as "extraData",
           ps.is_default as "isDefault",
           ps.is_active as "isActive",
@@ -72,6 +133,8 @@ export class ProfileStoreRepository {
       `,
       ...params,
     );
+
+    return rows.map(mapProfileStoreListRow);
   }
 
   async countMany(
@@ -92,9 +155,7 @@ export class ProfileStoreRepository {
       whereClauses.push(
         `(
           ps.code ILIKE $${paramIndex}
-          OR ps.name_en ILIKE $${paramIndex}
-          OR COALESCE(ps.name_zh, '') ILIKE $${paramIndex}
-          OR COALESCE(ps.name_ja, '') ILIKE $${paramIndex}
+          OR ${localizedTextSearchExpression('ps.name', `$${paramIndex}`)}
           OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
         )`,
       );
@@ -150,17 +211,13 @@ export class ProfileStoreRepository {
     id: string,
   ): Promise<ProfileStoreDetailRow | null> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<ProfileStoreDetailRow[]>(
+    const result = await prisma.$queryRawUnsafe<ProfileStoreDetailRawRow[]>(
       `
         SELECT
           ps.id,
           ps.code,
-          ps.name_en as "nameEn",
-          ps.name_zh as "nameZh",
-          ps.name_ja as "nameJa",
-          ps.description_en as "descriptionEn",
-          ps.description_zh as "descriptionZh",
-          ps.description_ja as "descriptionJa",
+          ps.name,
+          ps.description,
           ps.extra_data as "extraData",
           ps.is_default as "isDefault",
           ps.is_active as "isActive",
@@ -173,7 +230,7 @@ export class ProfileStoreRepository {
       id,
     );
 
-    return result[0] ?? null;
+    return result[0] ? mapProfileStoreDetailRow(result[0]) : null;
   }
 
   async findByCode(
@@ -208,18 +265,13 @@ export class ProfileStoreRepository {
     userId: string,
   ): Promise<ProfileStoreCreateRow> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<ProfileStoreCreateRow[]>(
+    const result = await prisma.$queryRawUnsafe<ProfileStoreCreateRawRow[]>(
       `
         INSERT INTO "${schema}".profile_store (
           id,
           code,
-          name_en,
-          name_zh,
-          name_ja,
-          description_en,
-          description_zh,
-          description_ja,
-          extra_data,
+          name,
+          description,
           is_default,
           is_active,
           sort_order,
@@ -231,42 +283,32 @@ export class ProfileStoreRepository {
         ) VALUES (
           gen_random_uuid(),
           $1,
-          $2,
-          $3,
+          $2::jsonb,
+          $3::jsonb,
           $4,
-          $5,
-          $6,
-          $7,
-          $8::jsonb,
-          $9,
           true,
           0,
           now(),
           now(),
-          $10::uuid,
-          $10::uuid,
+          $5::uuid,
+          $5::uuid,
           1
         )
         RETURNING
           id,
           code,
-          name_en as "nameEn",
+          name,
           is_default as "isDefault",
           created_at as "createdAt"
       `,
       payload.code,
-      payload.nameEn,
-      payload.nameZh,
-      payload.nameJa,
-      payload.descriptionEn,
-      payload.descriptionZh,
-      payload.descriptionJa,
-      payload.extraData ? JSON.stringify(payload.extraData) : null,
+      stringifyLocalizedText(payload.name),
+      stringifyLocalizedText(payload.description),
       payload.isDefault,
       userId,
     );
 
-    return result[0];
+    return mapProfileStoreCreateRow(result[0]);
   }
 
   async findForUpdate(
@@ -274,17 +316,13 @@ export class ProfileStoreRepository {
     id: string,
   ): Promise<ProfileStoreUpdateLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<ProfileStoreUpdateLookupRow[]>(
+    const result = await prisma.$queryRawUnsafe<ProfileStoreUpdateLookupRawRow[]>(
       `
         SELECT
           id,
           code,
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
-          description_en as "descriptionEn",
-          description_zh as "descriptionZh",
-          description_ja as "descriptionJa",
+          name,
+          description,
           extra_data as "extraData",
           is_active as "isActive",
           is_default as "isDefault",
@@ -295,7 +333,7 @@ export class ProfileStoreRepository {
       id,
     );
 
-    return result[0] ?? null;
+    return result[0] ? mapProfileStoreUpdateLookupRow(result[0]) : null;
   }
 
   async update(
@@ -314,15 +352,13 @@ export class ProfileStoreRepository {
     let paramIndex = 3;
 
     for (const change of changes) {
-      const cast = change.field === 'extraData' ? '::jsonb' : '';
+      const cast = change.field === 'name' || change.field === 'description' ? '::jsonb' : '';
       updates.push(`${this.toSnakeCase(change.field)} = $${paramIndex}${cast}`);
-      params.push(change.field === 'extraData' && change.value && typeof change.value === 'object'
-        ? JSON.stringify(change.value)
-        : change.value);
+      params.push(cast ? stringifyLocalizedText(change.value as ProfileStoreUpdateRow['name']) : change.value);
       paramIndex++;
     }
 
-    const result = await prisma.$queryRawUnsafe<ProfileStoreUpdateRow[]>(
+    const result = await prisma.$queryRawUnsafe<ProfileStoreUpdateRawRow[]>(
       `
         UPDATE "${schema}".profile_store
         SET ${updates.join(', ')}
@@ -330,12 +366,8 @@ export class ProfileStoreRepository {
         RETURNING
           id,
           code,
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
-          description_en as "descriptionEn",
-          description_zh as "descriptionZh",
-          description_ja as "descriptionJa",
+          name,
+          description,
           extra_data as "extraData",
           is_active as "isActive",
           is_default as "isDefault",
@@ -345,7 +377,7 @@ export class ProfileStoreRepository {
       ...params,
     );
 
-    return result[0];
+    return mapProfileStoreUpdateRow(result[0]);
   }
 
   private toSnakeCase(value: string): string {

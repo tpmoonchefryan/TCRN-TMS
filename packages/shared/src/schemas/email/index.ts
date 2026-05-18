@@ -4,8 +4,7 @@
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
-
-const TranslationMapSchema = z.record(z.string(), z.string());
+import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
 
 // ============================================================================
 // Enums
@@ -70,43 +69,19 @@ export type TestEmailInput = z.infer<typeof TestEmailSchema>;
 // ============================================================================
 export const CreateEmailTemplateSchema = z.object({
   code: z.string().min(1).max(64),
-  nameEn: z.string().max(128),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
-  subjectEn: z.string().max(255),
-  subjectZh: z.string().max(255).optional(),
-  subjectJa: z.string().max(255).optional(),
-  subjectTranslations: TranslationMapSchema.optional(),
-  bodyHtmlEn: z.string(),
-  bodyHtmlZh: z.string().optional(),
-  bodyHtmlJa: z.string().optional(),
-  bodyHtmlTranslations: TranslationMapSchema.optional(),
-  bodyTextEn: z.string().optional(),
-  bodyTextZh: z.string().optional(),
-  bodyTextJa: z.string().optional(),
-  bodyTextTranslations: TranslationMapSchema.optional(),
+  name: LocalizedTextSchema,
+  subject: LocalizedTextSchema,
+  bodyHtml: LocalizedTextSchema,
+  bodyText: LocalizedTextSchema.optional(),
   variables: z.array(z.string()).optional(),
   category: EmailTemplateCategorySchema,
 });
 
 export const UpdateEmailTemplateSchema = z.object({
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: TranslationMapSchema.optional(),
-  subjectEn: z.string().max(255).optional(),
-  subjectZh: z.string().max(255).optional(),
-  subjectJa: z.string().max(255).optional(),
-  subjectTranslations: TranslationMapSchema.optional(),
-  bodyHtmlEn: z.string().optional(),
-  bodyHtmlZh: z.string().optional(),
-  bodyHtmlJa: z.string().optional(),
-  bodyHtmlTranslations: TranslationMapSchema.optional(),
-  bodyTextEn: z.string().optional(),
-  bodyTextZh: z.string().optional(),
-  bodyTextJa: z.string().optional(),
-  bodyTextTranslations: TranslationMapSchema.optional(),
+  name: PartialLocalizedTextSchema.optional(),
+  subject: PartialLocalizedTextSchema.optional(),
+  bodyHtml: PartialLocalizedTextSchema.optional(),
+  bodyText: PartialLocalizedTextSchema.optional(),
   variables: z.array(z.string()).optional(),
   category: EmailTemplateCategorySchema.optional(),
   isActive: z.boolean().optional(),

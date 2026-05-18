@@ -8,7 +8,7 @@ import {
   isRbacRoleAvailableForTenantTier,
 } from '@tcrn/shared';
 
-import { getTrilingualNameColumn } from '../../common/request-locale.util';
+import { buildLocalizedJsonTextSql } from '../../common/request-locale.util';
 import { DelegatedAdminService, DelegateScopeType } from '../delegated-admin/delegated-admin.service';
 import { PermissionSnapshotService, ScopeType } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant/tenant.service';
@@ -77,7 +77,8 @@ export class UserRoleService {
    * Get user's role assignments
    */
   async getUserRoles(userId: string, tenantSchema: string, language: string = 'en'): Promise<UserRoleAssignment[]> {
-    const nameField = getTrilingualNameColumn(language);
+    const roleNameSql = buildLocalizedJsonTextSql('r.name', language);
+    const subsidiaryNameSql = buildLocalizedJsonTextSql('s.name', language);
 
     const assignments = await prisma.$queryRawUnsafe<UserRoleAssignment[]>(`
       SELECT 
@@ -85,12 +86,12 @@ export class UserRoleService {
         ur.user_id as "userId",
         ur.role_id as "roleId",
         r.code as "roleCode",
-        COALESCE(r.${nameField}, r.name_en) as "roleName",
+        ${roleNameSql} as "roleName",
         ur.scope_type as "scopeType",
         ur.scope_id as "scopeId",
         CASE 
           WHEN ur.scope_type = 'subsidiary' THEN (
-            SELECT COALESCE(s.${nameField}, s.name_en) 
+            SELECT ${subsidiaryNameSql}
             FROM "${tenantSchema}".subsidiary s WHERE s.id = ur.scope_id
           )
           WHEN ur.scope_type = 'talent' THEN (

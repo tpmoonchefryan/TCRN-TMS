@@ -33,9 +33,6 @@ describe('PermissionService', () => {
         id: 'perm-1',
         resourceCode: 'customer.profile',
         action: 'read',
-        nameEn: 'Customer Profile',
-        nameZh: '客户档案',
-        nameJa: '顧客プロファイル',
         description: 'Read customer profiles',
         isActive: true,
         createdAt: new Date('2026-03-27T00:00:00.000Z'),
@@ -71,9 +68,6 @@ describe('PermissionService', () => {
         id: 'perm-1',
         resourceCode: 'customer.profile',
         action: 'read',
-        nameEn: 'Customer Profile',
-        nameZh: null,
-        nameJa: null,
         description: null,
         isActive: true,
         createdAt: new Date('2026-03-27T00:00:00.000Z'),
@@ -95,17 +89,11 @@ describe('PermissionService', () => {
       {
         code: 'customer.export',
         module: 'customer',
-        nameEn: 'Customer Export',
-        nameZh: '客户导出',
-        nameJa: '顧客エクスポート',
         actions: 'read,write,delete',
       },
       {
         code: 'legacy.unknown',
         module: 'legacy',
-        nameEn: 'Legacy Unknown',
-        nameZh: null,
-        nameJa: null,
         actions: 'read',
       },
     ]);
@@ -132,9 +120,6 @@ describe('PermissionService', () => {
       {
         code: 'customer.export',
         module: 'customer',
-        nameEn: 'Customer Export',
-        nameZh: '客户导出',
-        nameJa: '顧客エクスポート',
         actions: 'read',
       },
     ]);
@@ -154,14 +139,11 @@ describe('PermissionService', () => {
     });
   });
 
-  it('falls non-trilingual UI locales back to English RBAC resource display names', async () => {
+  it('falls untranslated supported UI locales back to English RBAC resource display names', async () => {
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
       {
         code: 'customer.export',
         module: 'customer',
-        nameEn: 'Customer Export',
-        nameZh: '客户导出',
-        nameJa: '顧客エクスポート',
         actions: 'read',
       },
     ]);

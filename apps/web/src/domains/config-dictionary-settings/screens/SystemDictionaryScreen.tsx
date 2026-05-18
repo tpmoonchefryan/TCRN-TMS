@@ -15,16 +15,15 @@ import {
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import {
-  buildManagedTranslations,
-  countManagedLocaleValues,
-  extractManagedTranslations,
-  pickLegacyLocaleValue,
+  buildLocalizedTextPayload,
+  countLocaleValues,
+  extractLocalizedTextPayload,
   TranslationManagementDrawer,
   TranslationManagementTrigger,
 } from '@/domains/config-dictionary-settings/components/TranslationManagement';
 import { useSystemDictionaryCopy } from '@/domains/config-dictionary-settings/screens/system-dictionary.copy';
 import { ApiRequestError } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
   ActionDrawer,
@@ -48,19 +47,19 @@ interface NoticeState {
 
 interface DictionaryTypeDraft {
   code: string;
-  nameEn: string;
-  descriptionEn: string;
-  nameTranslations: Record<string, string>;
-  descriptionTranslations: Record<string, string>;
+  nameBase: string;
+  descriptionBase: string;
+  nameLocaleValues: Record<string, string>;
+  descriptionLocaleValues: Record<string, string>;
   sortOrder: string;
 }
 
 interface DictionaryItemDraft {
   code: string;
-  nameEn: string;
-  descriptionEn: string;
-  nameTranslations: Record<string, string>;
-  descriptionTranslations: Record<string, string>;
+  nameBase: string;
+  descriptionBase: string;
+  nameLocaleValues: Record<string, string>;
+  descriptionLocaleValues: Record<string, string>;
   sortOrder: string;
   extraDataJson: string;
 }
@@ -78,19 +77,19 @@ interface ConfirmState {
 
 const EMPTY_TYPE_DRAFT: DictionaryTypeDraft = {
   code: '',
-  nameEn: '',
-  descriptionEn: '',
-  nameTranslations: {},
-  descriptionTranslations: {},
+  nameBase: '',
+  descriptionBase: '',
+  nameLocaleValues: {},
+  descriptionLocaleValues: {},
   sortOrder: '0',
 };
 
 const EMPTY_ITEM_DRAFT: DictionaryItemDraft = {
   code: '',
-  nameEn: '',
-  descriptionEn: '',
-  nameTranslations: {},
-  descriptionTranslations: {},
+  nameBase: '',
+  descriptionBase: '',
+  nameLocaleValues: {},
+  descriptionLocaleValues: {},
   sortOrder: '0',
   extraDataJson: '',
 };
@@ -114,24 +113,13 @@ function NoticeBanner({
   return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
 }
 
-function normalizeOptionalString(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 function buildItemDraft(item: DictionaryItemRecord): DictionaryItemDraft {
   return {
     code: item.code,
-    nameEn: item.nameEn,
-    descriptionEn: item.descriptionEn ?? '',
-    nameTranslations: extractManagedTranslations(item.nameEn, item.translations, {
-      zh_HANS: item.nameZh,
-      ja: item.nameJa,
-    }),
-    descriptionTranslations: extractManagedTranslations(item.descriptionEn, item.descriptionTranslations, {
-      zh_HANS: item.descriptionZh,
-      ja: item.descriptionJa,
-    }),
+    nameBase: item.name.en,
+    descriptionBase: item.description.en,
+    nameLocaleValues: extractLocalizedTextPayload(item.name),
+    descriptionLocaleValues: extractLocalizedTextPayload(item.description),
     sortOrder: String(item.sortOrder),
     extraDataJson: item.extraData ? JSON.stringify(item.extraData, null, 2) : '',
   };
@@ -161,7 +149,7 @@ function parseExtraData(value: string, invalidMessage: string) {
 export function SystemDictionaryScreen() {
   const { request, requestEnvelope } = useSession();
   const { dictionaryExplorerCopy, text } = useSystemDictionaryCopy();
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const [typesPanel, setTypesPanel] = useState<AsyncPanelState<DictionaryTypeSummary[]>>({
     data: null,
     error: null,
@@ -190,38 +178,38 @@ export function SystemDictionaryScreen() {
     () => [
       {
         id: 'name',
-        baseValue: typeDraft.nameEn,
+        baseValue: typeDraft.nameBase,
         label: text('Type name', '类型名称', 'タイプ名'),
-        values: typeDraft.nameTranslations,
+        values: typeDraft.nameLocaleValues,
       },
       {
-        baseValue: typeDraft.descriptionEn,
+        baseValue: typeDraft.descriptionBase,
         id: 'description',
         label: text('Type description', '类型描述', 'タイプ説明'),
         kind: 'textarea' as const,
-        values: typeDraft.descriptionTranslations,
+        values: typeDraft.descriptionLocaleValues,
       },
     ],
-    [text, typeDraft.descriptionEn, typeDraft.descriptionTranslations, typeDraft.nameEn, typeDraft.nameTranslations],
+    [text, typeDraft.descriptionBase, typeDraft.descriptionLocaleValues, typeDraft.nameBase, typeDraft.nameLocaleValues],
   );
 
   const itemTranslationSections = useMemo(
     () => [
       {
         id: 'name',
-        baseValue: itemDraft.nameEn,
+        baseValue: itemDraft.nameBase,
         label: text('Item name', '词典项名称', '項目名'),
-        values: itemDraft.nameTranslations,
+        values: itemDraft.nameLocaleValues,
       },
       {
-        baseValue: itemDraft.descriptionEn,
+        baseValue: itemDraft.descriptionBase,
         id: 'description',
         label: text('Item description', '词典项描述', '項目説明'),
         kind: 'textarea' as const,
-        values: itemDraft.descriptionTranslations,
+        values: itemDraft.descriptionLocaleValues,
       },
     ],
-    [itemDraft.descriptionEn, itemDraft.descriptionTranslations, itemDraft.nameEn, itemDraft.nameTranslations, text],
+    [itemDraft.descriptionBase, itemDraft.descriptionLocaleValues, itemDraft.nameBase, itemDraft.nameLocaleValues, text],
   );
 
   useEffect(() => {
@@ -235,7 +223,7 @@ export function SystemDictionaryScreen() {
       }));
 
       try {
-        const types = await listDictionaryTypes(request, selectedLocale);
+        const types = await listDictionaryTypes(request, locale);
 
         if (cancelled) {
           return;
@@ -274,7 +262,7 @@ export function SystemDictionaryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [request, refreshToken, selectedLocale]);
+  }, [request, refreshToken, locale]);
 
   function openCreateTypeDrawer() {
     setTypeDraft(EMPTY_TYPE_DRAFT);
@@ -321,7 +309,7 @@ export function SystemDictionaryScreen() {
       return;
     }
 
-    if (typeDraft.code.trim().length < 2 || typeDraft.nameEn.trim().length === 0) {
+    if (typeDraft.code.trim().length < 2 || typeDraft.nameBase.trim().length === 0) {
       setTypeDraftError(
         text({
           en: 'Dictionary type code and English name are required.',
@@ -339,22 +327,10 @@ export function SystemDictionaryScreen() {
     setTypeDraftError(null);
 
     try {
-      const translations = buildManagedTranslations(typeDraft.nameEn, typeDraft.nameTranslations);
-      const descriptionTranslations = buildManagedTranslations(
-        typeDraft.descriptionEn,
-        typeDraft.descriptionTranslations,
-      );
-
       const created = await createDictionaryType(request, {
         code: typeDraft.code.trim().toUpperCase(),
-        nameEn: typeDraft.nameEn.trim(),
-        nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-        nameJa: pickLegacyLocaleValue(translations, 'ja'),
-        descriptionEn: normalizeOptionalString(typeDraft.descriptionEn),
-        descriptionZh: pickLegacyLocaleValue(descriptionTranslations, 'zh_HANS'),
-        descriptionJa: pickLegacyLocaleValue(descriptionTranslations, 'ja'),
-        translations,
-        descriptionTranslations,
+        name: buildLocalizedTextPayload(typeDraft.nameBase, typeDraft.nameLocaleValues),
+        description: buildLocalizedTextPayload(typeDraft.descriptionBase, typeDraft.descriptionLocaleValues),
         sortOrder: parseSortOrder(typeDraft.sortOrder),
       });
 
@@ -409,7 +385,7 @@ export function SystemDictionaryScreen() {
       return;
     }
 
-    if (itemDraft.nameEn.trim().length === 0) {
+    if (itemDraft.nameBase.trim().length === 0) {
       setItemDraftError(
         text({
           en: 'Dictionary item English name is required.',
@@ -442,22 +418,10 @@ export function SystemDictionaryScreen() {
 
     try {
       if (itemMutationState.mode === 'create') {
-        const translations = buildManagedTranslations(itemDraft.nameEn, itemDraft.nameTranslations);
-        const descriptionTranslations = buildManagedTranslations(
-          itemDraft.descriptionEn,
-          itemDraft.descriptionTranslations,
-        );
-
         await createDictionaryItem(request, itemMutationState.dictionaryType.type, {
           code: itemDraft.code.trim().toUpperCase(),
-          nameEn: itemDraft.nameEn.trim(),
-          nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-          nameJa: pickLegacyLocaleValue(translations, 'ja'),
-          descriptionEn: normalizeOptionalString(itemDraft.descriptionEn),
-          descriptionZh: pickLegacyLocaleValue(descriptionTranslations, 'zh_HANS'),
-          descriptionJa: pickLegacyLocaleValue(descriptionTranslations, 'ja'),
-          translations,
-          descriptionTranslations,
+          name: buildLocalizedTextPayload(itemDraft.nameBase, itemDraft.nameLocaleValues),
+          description: buildLocalizedTextPayload(itemDraft.descriptionBase, itemDraft.descriptionLocaleValues),
           sortOrder: parseSortOrder(itemDraft.sortOrder),
           extraData,
         });
@@ -471,21 +435,9 @@ export function SystemDictionaryScreen() {
           ),
         });
       } else if (itemMutationState.item) {
-        const translations = buildManagedTranslations(itemDraft.nameEn, itemDraft.nameTranslations);
-        const descriptionTranslations = buildManagedTranslations(
-          itemDraft.descriptionEn,
-          itemDraft.descriptionTranslations,
-        );
-
         await updateDictionaryItem(request, itemMutationState.dictionaryType.type, itemMutationState.item.id, {
-          nameEn: itemDraft.nameEn.trim(),
-          nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-          nameJa: pickLegacyLocaleValue(translations, 'ja'),
-          descriptionEn: normalizeOptionalString(itemDraft.descriptionEn),
-          descriptionZh: pickLegacyLocaleValue(descriptionTranslations, 'zh_HANS'),
-          descriptionJa: pickLegacyLocaleValue(descriptionTranslations, 'ja'),
-          translations,
-          descriptionTranslations,
+          name: buildLocalizedTextPayload(itemDraft.nameBase, itemDraft.nameLocaleValues),
+          description: buildLocalizedTextPayload(itemDraft.descriptionBase, itemDraft.descriptionLocaleValues),
           sortOrder: parseSortOrder(itemDraft.sortOrder),
           extraData,
           version: itemMutationState.item.version,
@@ -617,7 +569,7 @@ export function SystemDictionaryScreen() {
             request={request}
             requestEnvelope={requestEnvelope}
             types={typesPanel.data}
-            locale={selectedLocale}
+            locale={locale}
             copy={dictionaryExplorerCopy}
             refreshToken={refreshToken}
             allowIncludeInactiveToggle
@@ -779,7 +731,7 @@ export function SystemDictionaryScreen() {
                 </p>
               </div>
               <TranslationManagementTrigger
-                count={countManagedLocaleValues(typeTranslationSections)}
+                count={countLocaleValues(typeTranslationSections)}
                 onClick={() => setIsTypeTranslationsOpen(true)}
               />
             </div>
@@ -789,8 +741,8 @@ export function SystemDictionaryScreen() {
             <span>{text('Name (EN)', '名称（英文）', '名称（英語）')}</span>
             <input
               aria-label={text('Dictionary type English name', '词典类型英文名称', '辞書タイプの英語名')}
-              value={typeDraft.nameEn}
-              onChange={(event) => setTypeDraft((current) => ({ ...current, nameEn: event.target.value }))}
+              value={typeDraft.nameBase}
+              onChange={(event) => setTypeDraft((current) => ({ ...current, nameBase: event.target.value }))}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -799,8 +751,8 @@ export function SystemDictionaryScreen() {
             <span>{text('Description (EN)', '描述（英文）', '説明（英語）')}</span>
             <textarea
               aria-label={text('Dictionary type English description', '词典类型英文描述', '辞書タイプの英語説明')}
-              value={typeDraft.descriptionEn}
-              onChange={(event) => setTypeDraft((current) => ({ ...current, descriptionEn: event.target.value }))}
+              value={typeDraft.descriptionBase}
+              onChange={(event) => setTypeDraft((current) => ({ ...current, descriptionBase: event.target.value }))}
               rows={4}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
@@ -835,16 +787,14 @@ export function SystemDictionaryScreen() {
           ko: '사전 유형 번역 서랍 닫기',
           fr: 'Fermer le panneau des traductions du type de dictionnaire',
         })}
-        request={request}
-        requestEnvelope={requestEnvelope}
         sections={typeTranslationSections}
         onChange={(sectionId, localeCode, value) => {
           setTypeDraft((current) => {
             if (sectionId === 'description') {
               return {
                 ...current,
-                descriptionTranslations: {
-                  ...current.descriptionTranslations,
+                descriptionLocaleValues: {
+                  ...current.descriptionLocaleValues,
                   [localeCode]: value,
                 },
               };
@@ -852,8 +802,8 @@ export function SystemDictionaryScreen() {
 
             return {
               ...current,
-              nameTranslations: {
-                ...current.nameTranslations,
+              nameLocaleValues: {
+                ...current.nameLocaleValues,
                 [localeCode]: value,
               },
             };
@@ -970,7 +920,7 @@ export function SystemDictionaryScreen() {
                 </p>
               </div>
               <TranslationManagementTrigger
-                count={countManagedLocaleValues(itemTranslationSections)}
+                count={countLocaleValues(itemTranslationSections)}
                 onClick={() => setIsItemTranslationsOpen(true)}
               />
             </div>
@@ -980,8 +930,8 @@ export function SystemDictionaryScreen() {
             <span>{text('Name (EN)', '名称（英文）', '名称（英語）')}</span>
             <input
               aria-label={text('Dictionary item English name', '词典项英文名称', '辞書項目の英語名')}
-              value={itemDraft.nameEn}
-              onChange={(event) => setItemDraft((current) => ({ ...current, nameEn: event.target.value }))}
+              value={itemDraft.nameBase}
+              onChange={(event) => setItemDraft((current) => ({ ...current, nameBase: event.target.value }))}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -990,8 +940,8 @@ export function SystemDictionaryScreen() {
             <span>{text('Description (EN)', '描述（英文）', '説明（英語）')}</span>
             <textarea
               aria-label={text('Dictionary item English description', '词典项英文描述', '辞書項目の英語説明')}
-              value={itemDraft.descriptionEn}
-              onChange={(event) => setItemDraft((current) => ({ ...current, descriptionEn: event.target.value }))}
+              value={itemDraft.descriptionBase}
+              onChange={(event) => setItemDraft((current) => ({ ...current, descriptionBase: event.target.value }))}
               rows={4}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
@@ -1038,16 +988,14 @@ export function SystemDictionaryScreen() {
           ko: '사전 항목 번역 서랍 닫기',
           fr: 'Fermer le panneau des traductions de l’élément du dictionnaire',
         })}
-        request={request}
-        requestEnvelope={requestEnvelope}
         sections={itemTranslationSections}
         onChange={(sectionId, localeCode, value) => {
           setItemDraft((current) => {
             if (sectionId === 'description') {
               return {
                 ...current,
-                descriptionTranslations: {
-                  ...current.descriptionTranslations,
+                descriptionLocaleValues: {
+                  ...current.descriptionLocaleValues,
                   [localeCode]: value,
                 },
               };
@@ -1055,8 +1003,8 @@ export function SystemDictionaryScreen() {
 
             return {
               ...current,
-              nameTranslations: {
-                ...current.nameTranslations,
+              nameLocaleValues: {
+                ...current.nameLocaleValues,
                 [localeCode]: value,
               },
             };

@@ -2,6 +2,7 @@
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import { createLocalizedText } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @tcrn/database before importing service
@@ -153,9 +154,14 @@ describe('SystemUserService', () => {
             id: 'assignment-1',
             roleId: 'role-1',
             roleCode: 'EDITOR',
-            roleNameEn: 'Editor',
-            roleNameZh: '编辑',
-            roleNameJa: '編集者',
+            roleName: createLocalizedText({
+              en: 'Editor',
+              zh_HANS: '编辑',
+              zh_HANT: '編輯',
+              ja: '編集者',
+              ko: '편집자',
+              fr: 'Editeur',
+            }),
             roleIsActive: true,
             scopeType: 'talent',
             scopeId: 'talent-1',

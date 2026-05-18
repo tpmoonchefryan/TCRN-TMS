@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestCustomerInTenant,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
@@ -155,12 +156,12 @@ describe('Export Runtime Smoke Integration', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_EXRT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Export Runtime Smoke Subsidiary',
+      name: createLocalizedText({ en: 'Export Runtime Smoke Subsidiary' }),
       createdBy: testUser.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TAL_EXRT_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Export Runtime Smoke Talent',
+      name: createLocalizedText({ en: 'Export Runtime Smoke Talent' }),
       displayName: 'Export Runtime Smoke Talent',
       homepagePath: `export-runtime-${Date.now()}`,
       createdBy: testUser.id,

@@ -13,36 +13,51 @@ import type {
   PublicPresenceValidationSnapshot,
 } from '@tcrn/shared';
 import {
+  DEFAULT_THEME,
   PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
   PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
   PUBLIC_PRESENCE_NOTE_KINDS,
+  normalizeTheme,
 } from '@tcrn/shared';
 import {
   AlertCircle,
-  ArrowDown,
-  ArrowRight,
-  ArrowUp,
-  ClipboardList,
+  ArrowLeftRight,
+  CheckCircle2,
   Eye,
   FileCode2,
+  Globe2,
   Layers3,
-  LayoutTemplate,
+  Monitor,
+  PencilLine,
   RefreshCcw,
   Save,
+  Settings2,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   X,
 } from 'lucide-react';
-import { type ReactNode, startTransition, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  type RefObject,
+  type ReactNode,
+  startTransition,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 
-import { HomepageManagementScreen } from '@/domains/homepage-management/screens/HomepageManagementScreen';
-import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
   PublicPresenceStateView,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
+import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
+import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import {
   approvePublicPresenceReview,
   bootstrapPublicPresenceWorkspace,
@@ -60,10 +75,12 @@ import {
   submitPublicPresenceForReview,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import {
-  getPublicPresenceEditabilityStateLabel,
   formatPublicPresenceStudioDateTime,
   formatPublicPresenceStudioValidationSummary,
+  getHomepageSurfaceActionLabel,
+  getHomepageSurfaceLabel,
   getPublicPresenceDocumentStateLabel,
+  getPublicPresenceEditabilityStateLabel,
   getPublicPresenceFanActionSlotLabel,
   getPublicPresenceFieldLabel,
   getPublicPresenceFieldPlaceholder,
@@ -74,64 +91,80 @@ import {
   getPublicPresenceSourcePolicyLabel,
   getPublicPresenceStageSectionLabel,
   getPublicPresenceStageSectionPurpose,
-  getPublicPresenceStudioTabLabel,
   getPublicPresenceTemplateLabel,
   getPublicPresenceTemplateUseCase,
-  getPublicPresenceValueTypeLabel,
   getPublicPresenceWorkflowEventLabel,
   PUBLIC_PRESENCE_PREVIEW_PHASES,
   type PublicPresenceStudioCopy,
-  type PublicPresenceStudioTabId,
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
+import {
+  buildPublicPresenceHomepageSurfacePath,
+  buildPublicPresenceStudioPreviewPath,
+  buildTalentWorkspaceSectionPath,
+} from '@/platform/routing/workspace-paths';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
+
+type StudioViewportMode = 'desktop' | 'mobile';
+type LeftDrawerMode = 'sections' | 'release' | 'advanced' | 'persona';
+type StagePanelMode = 'configure' | 'edit' | 'inspect';
+type StudioEntryFocus = 'countdown' | 'overview' | 'release';
+
+const STUDIO_VIEWPORT_QUERY_VALUES = ['desktop', 'mobile'] as const;
+const LEFT_DRAWER_QUERY_VALUES = ['sections', 'release', 'advanced', 'persona'] as const;
+const MOBILE_SHEET_QUERY_VALUES = ['manage', 'preview-tools'] as const;
+const STAGE_PANEL_MODE_QUERY_VALUES = ['configure', 'edit', 'inspect'] as const;
 
 interface NoticeState {
   message: string;
   tone: 'error' | 'success';
 }
 
-interface TabDefinition {
-  icon: ReactNode;
-  id: PublicPresenceStudioTabId;
-}
-
-type StagePanelMode = 'configure' | 'edit' | 'inspect';
-
 interface StagePanelState {
   mode: StagePanelMode;
   sectionKind: string;
 }
 
-interface PreviewViewportMode {
-  frameClassName: string;
-  id: 'desktop' | 'mobile';
+function parseStagePanelSearchParam(value: string | null): StagePanelState | null {
+  if (!value) {
+    return null;
+  }
+
+  const [rawMode, ...sectionParts] = value.split(':');
+  const mode = parseEnumSearchParam(rawMode, STAGE_PANEL_MODE_QUERY_VALUES);
+  const sectionKind = sectionParts.join(':').trim();
+
+  if (!mode || !sectionKind) {
+    return null;
+  }
+
+  return {
+    mode,
+    sectionKind,
+  };
 }
 
-const STUDIO_TABS: TabDefinition[] = [
-  { icon: <LayoutTemplate aria-hidden="true" />, id: 'overview' },
-  { icon: <Layers3 aria-hidden="true" />, id: 'stageSections' },
-  { icon: <Sparkles aria-hidden="true" />, id: 'personaKit' },
-  { icon: <Eye aria-hidden="true" />, id: 'fanPreview' },
-  { icon: <ShieldCheck aria-hidden="true" />, id: 'reviewPublish' },
-  { icon: <FileCode2 aria-hidden="true" />, id: 'advanced' },
-];
-
-const PREVIEW_VIEWPORTS: PreviewViewportMode[] = [
-  { id: 'desktop', frameClassName: 'min-h-[28rem] w-full' },
-  { id: 'mobile', frameClassName: 'mx-auto min-h-[32rem] w-full max-w-[23rem]' },
-];
+function serializeStagePanelSearchParam(value: StagePanelState | null) {
+  return value ? `${value.mode}:${value.sectionKind}` : null;
+}
 
 function getErrorMessage(_reason: unknown, fallback: string) {
   return fallback;
 }
 
-function formatDateTime(locale: string, value: string | null) {
-  return formatPublicPresenceStudioDateTime(locale, value);
-}
-
 function toPrettyJson(value: unknown) {
   return JSON.stringify(value, null, 2);
+}
+
+function formatDateTime(locale: string, value: string | null) {
+  return formatPublicPresenceStudioDateTime(locale, value);
 }
 
 function resolveWorkspacePublicPath(
@@ -140,7 +173,7 @@ function resolveWorkspacePublicPath(
   fallback: string,
 ) {
   return (
-    previewProjection?.route.canonicalPath
+    previewProjection?.route?.canonicalPath
     || workspace?.publicRoute?.canonicalPath
     || workspace?.liveVersion?.document.metadata?.canonicalPath
     || workspace?.draftVersion?.document.metadata?.canonicalPath
@@ -177,125 +210,11 @@ function readFieldProvenance(
   return readFieldEntry(document, sectionKind, fieldKey)?.provenance ?? 'publicPresence';
 }
 
-function readFieldInheritedFrom(
+function getCurrentSectionDocument(
   document: PublicPresenceDocument | null,
   sectionKind: string,
-  fieldKey: string,
 ) {
-  return readFieldEntry(document, sectionKind, fieldKey)?.inheritedFrom ?? null;
-}
-
-function getValidationTone(
-  snapshot: PublicPresenceValidationSnapshot | null,
-): 'success' | 'warning' | 'error' | 'info' {
-  if (!snapshot) {
-    return 'info';
-  }
-
-  if (snapshot.issueCounts.fatal > 0 || snapshot.issueCounts.blocker > 0) {
-    return 'error';
-  }
-
-  if (snapshot.issueCounts.warning > 0) {
-    return 'warning';
-  }
-
-  return 'success';
-}
-
-function SummaryCard({
-  hint,
-  label,
-  value,
-}: Readonly<{
-  hint: string;
-  label: string;
-  value: string;
-}>) {
-  return (
-    <PublicPresenceSurface className="p-4 sm:p-5" variant="inset">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{hint}</p>
-    </PublicPresenceSurface>
-  );
-}
-
-function EmptyWorkspaceState({
-  copy,
-  locale,
-  onBootstrap,
-  pendingTemplateId,
-  templates,
-}: Readonly<{
-  copy: PublicPresenceStudioCopy;
-  locale: string;
-  onBootstrap: (templateId: string) => void;
-  pendingTemplateId: string | null;
-  templates: PublicPresenceStudioTemplateSummary[];
-}>) {
-  return (
-    <div className="space-y-6">
-      <PublicPresenceStateView
-        actions={
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {templates.map((template) => (
-              <button
-                key={template.templateId}
-                type="button"
-                onClick={() => onBootstrap(template.templateId)}
-                disabled={pendingTemplateId !== null}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {pendingTemplateId === template.templateId ? (
-                  <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                )}
-                {copy.emptyWorkspace.startPrefix} {getPublicPresenceTemplateLabel(locale, template)}
-              </button>
-            ))}
-          </div>
-        }
-        description={copy.state.initializeDescription}
-        icon={<Sparkles />}
-        title={copy.state.initializeTitle}
-        tone="info"
-      />
-      <div className="grid gap-4 lg:grid-cols-2">
-        {templates.map((template) => (
-          <PublicPresenceSurface key={template.templateId} className="space-y-3" interactive>
-            <div className="flex flex-wrap items-center gap-3">
-              <PublicPresenceBadge tone="rose">
-                {getPublicPresenceTemplateLabel(locale, template)}
-              </PublicPresenceBadge>
-              <PublicPresenceBadge tone="slate" variant="outline">
-                {template.requiredSections.length} {copy.common.requiredSectionsSuffix}
-              </PublicPresenceBadge>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-slate-950">
-                {getPublicPresenceTemplateLabel(locale, template)}
-              </h2>
-              <p className="text-sm leading-6 text-slate-600">
-                {getPublicPresenceTemplateUseCase(locale, template)}
-              </p>
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-              {copy.emptyWorkspace.defaultOrderPrefix}:{' '}
-              {template.defaultSectionOrder
-                .map((sectionKind) =>
-                  getPublicPresenceStageSectionLabel(locale, { kind: sectionKind }),
-                )
-                .join(' / ')}
-            </p>
-          </PublicPresenceSurface>
-        ))}
-      </div>
-    </div>
-  );
+  return document?.sections.find((entry) => entry.kind === sectionKind) ?? null;
 }
 
 function buildSectionDocument(
@@ -374,13 +293,6 @@ function buildEmptySectionDraft(
   };
 }
 
-function getCurrentSectionDocument(
-  document: PublicPresenceDocument | null,
-  sectionKind: string,
-) {
-  return document?.sections.find((entry) => entry.kind === sectionKind) ?? null;
-}
-
 function buildDefaultComponentForType(type: HomepageComponentType): PublicPresenceComponentNode {
   const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[type];
 
@@ -392,6 +304,20 @@ function buildDefaultComponentForType(type: HomepageComponentType): PublicPresen
   };
 }
 
+function resolveFieldEditability(
+  definition:
+    | Pick<PublicPresenceFieldDefinition, 'sourceOnly' | 'visualEditable'>
+    | undefined,
+  canEditVisually: boolean,
+) {
+  return Boolean(
+    canEditVisually
+      && definition
+      && definition.visualEditable
+      && !definition.sourceOnly,
+  );
+}
+
 function sortSectionsForTemplate(
   currentTemplate: PublicPresenceStudioTemplateSummary | null,
   stageSections: PublicPresenceStudioStageSectionSummary[],
@@ -400,6 +326,10 @@ function sortSectionsForTemplate(
     return stageSections;
   }
 
+  const hiddenKinds =
+    currentTemplate.templateId === 'activeTalentHub'
+      ? new Set(['countdownReveal', 'teaserRevealMedia'])
+      : new Set<string>();
   const visibleKinds = new Set([
     ...currentTemplate.defaultSectionOrder,
     ...currentTemplate.requiredSections,
@@ -412,7 +342,7 @@ function sortSectionsForTemplate(
   );
 
   return stageSections
-    .filter((section) => visibleKinds.has(section.kind))
+    .filter((section) => visibleKinds.has(section.kind) && !hiddenKinds.has(section.kind))
     .sort((left, right) => {
       const leftOrder = orderMap.get(left.kind) ?? Number.MAX_SAFE_INTEGER;
       const rightOrder = orderMap.get(right.kind) ?? Number.MAX_SAFE_INTEGER;
@@ -454,6 +384,24 @@ function getIssueTone(issues: PublicPresenceValidationIssue[]) {
   return 'success' as const;
 }
 
+function getValidationTone(
+  snapshot: PublicPresenceValidationSnapshot | null,
+): 'success' | 'warning' | 'error' | 'info' {
+  if (!snapshot) {
+    return 'info';
+  }
+
+  if (snapshot.issueCounts.fatal > 0 || snapshot.issueCounts.blocker > 0) {
+    return 'error';
+  }
+
+  if (snapshot.issueCounts.warning > 0) {
+    return 'warning';
+  }
+
+  return 'success';
+}
+
 function buildStageSectionSummary(
   document: PublicPresenceDocument | null,
   section: PublicPresenceStudioStageSectionSummary,
@@ -492,6 +440,100 @@ function getIssueSummaryCopy(
   );
 }
 
+function SummaryCard({
+  hint,
+  label,
+  value,
+}: Readonly<{
+  hint: string;
+  label: string;
+  value: string;
+}>) {
+  return (
+    <PublicPresenceSurface className="p-4 sm:p-5" variant="inset">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{hint}</p>
+    </PublicPresenceSurface>
+  );
+}
+
+function EmptyWorkspaceState({
+  copy,
+  locale,
+  onBootstrap,
+  pendingTemplateId,
+  templates,
+}: Readonly<{
+  copy: PublicPresenceStudioCopy;
+  locale: string;
+  onBootstrap: (templateId: string) => void;
+  pendingTemplateId: string | null;
+  templates: PublicPresenceStudioTemplateSummary[];
+}>) {
+  return (
+    <div className="space-y-6">
+      <PublicPresenceStateView
+        actions={
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {templates.map((template) => (
+              <button
+                key={template.templateId}
+                type="button"
+                onClick={() => onBootstrap(template.templateId)}
+                disabled={pendingTemplateId !== null}
+                className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pendingTemplateId === template.templateId ? (
+                  <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                )}
+                {copy.emptyWorkspace.startPrefix} {getPublicPresenceTemplateLabel(locale, template)}
+              </button>
+            ))}
+          </div>
+        }
+        description={copy.state.initializeDescription}
+        icon={<Sparkles />}
+        title={copy.state.initializeTitle}
+        tone="info"
+      />
+      <div className="grid gap-4 lg:grid-cols-2">
+        {templates.map((template) => (
+          <PublicPresenceSurface key={template.templateId} className="space-y-3" interactive>
+            <div className="flex flex-wrap items-center gap-3">
+              <PublicPresenceBadge tone="rose">
+                {getPublicPresenceTemplateLabel(locale, template)}
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {template.requiredSections.length} {copy.common.requiredSectionsSuffix}
+              </PublicPresenceBadge>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-slate-950">
+                {getPublicPresenceTemplateLabel(locale, template)}
+              </h2>
+              <p className="text-sm leading-6 text-slate-600">
+                {getPublicPresenceTemplateUseCase(locale, template)}
+              </p>
+            </div>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+              {copy.emptyWorkspace.defaultOrderPrefix}:{' '}
+              {template.defaultSectionOrder
+                .map((sectionKind) =>
+                  getPublicPresenceStageSectionLabel(locale, { kind: sectionKind }))
+                .join(' / ')}
+            </p>
+          </PublicPresenceSurface>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ControlledTextInput({
   disabled = false,
   footer,
@@ -514,7 +556,7 @@ function ControlledTextInput({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
       {footer}
@@ -544,7 +586,7 @@ function ControlledTextArea({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
       {footer}
@@ -574,7 +616,7 @@ function ControlledSelect({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -619,30 +661,191 @@ function ControlledCheckbox({
   );
 }
 
-function resolveFieldEditability(
-  definition:
-    | Pick<PublicPresenceFieldDefinition, 'sourceOnly' | 'visualEditable'>
-    | undefined,
-  canEditVisually: boolean,
-) {
-  return Boolean(
-    canEditVisually
-      && definition
-      && definition.visualEditable
-      && !definition.sourceOnly,
+function StudioSectionCard({
+  copy,
+  configureExpanded,
+  editExpanded,
+  editorDrawerId,
+  hasDraftSection,
+  inspectExpanded,
+  issueCount,
+  locale,
+  onDrawerFallbackTriggerRef,
+  onConfigure,
+  onEdit,
+  onInspect,
+  section,
+  summary,
+}: Readonly<{
+  copy: PublicPresenceStudioCopy;
+  configureExpanded: boolean;
+  editExpanded: boolean;
+  editorDrawerId: string;
+  hasDraftSection: boolean;
+  inspectExpanded: boolean;
+  issueCount: number;
+  locale: string;
+  onDrawerFallbackTriggerRef: RefObject<HTMLButtonElement | null>;
+  onConfigure: (target: EventTarget | null) => void;
+  onEdit: (target: EventTarget | null) => void;
+  onInspect: (target: EventTarget | null) => void;
+  section: PublicPresenceStudioStageSectionSummary;
+  summary: string;
+}>) {
+  const tone = section.editabilityState === 'validLocked'
+    ? 'warning'
+    : issueCount > 0
+      ? 'info'
+      : 'success';
+
+  return (
+    <div
+      data-testid={`stage-card-${section.kind}`}
+      className="rounded-[2rem] border border-slate-200 bg-white/90 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <PublicPresenceBadge tone="rose" variant="outline">
+              {getPublicPresenceStageSectionLabel(locale, section)}
+            </PublicPresenceBadge>
+            <PublicPresenceBadge tone={tone} variant="outline">
+              {getPublicPresenceEditabilityStateLabel(locale, section.editabilityState)}
+            </PublicPresenceBadge>
+            {issueCount > 0 ? (
+              <PublicPresenceBadge tone="warning" variant="outline">
+                {copy.stageSections.issueCountPrefix} {issueCount}
+              </PublicPresenceBadge>
+            ) : null}
+          </div>
+          <p className="text-sm leading-6 text-slate-600">
+            {getPublicPresenceStageSectionPurpose(locale, section)}
+          </p>
+        </div>
+        <div className="space-y-2 text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            {copy.stageSections.summaryPrefix}
+          </p>
+          <p className="text-sm font-semibold text-slate-900">
+            {summary || (hasDraftSection ? copy.common.ready : copy.stageSections.missingFromDraft)}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          aria-controls={editorDrawerId}
+          aria-expanded={editExpanded}
+          ref={editExpanded ? onDrawerFallbackTriggerRef : undefined}
+          onClick={(event) => onEdit(event.currentTarget)}
+          className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+        >
+          <PencilLine className="h-4 w-4" aria-hidden="true" />
+          {copy.stageSections.editAction}
+        </button>
+        <button
+          type="button"
+          aria-controls={editorDrawerId}
+          aria-expanded={configureExpanded}
+          ref={configureExpanded ? onDrawerFallbackTriggerRef : undefined}
+          onClick={(event) => onConfigure(event.currentTarget)}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          <Settings2 className="h-4 w-4" aria-hidden="true" />
+          {copy.stageSections.configureAction}
+        </button>
+        <button
+          type="button"
+          aria-controls={editorDrawerId}
+          aria-expanded={inspectExpanded}
+          ref={inspectExpanded ? onDrawerFallbackTriggerRef : undefined}
+          onClick={(event) => onInspect(event.currentTarget)}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+          {copy.stageSections.inspectAction}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PreviewViewportToggle({
+  compact = false,
+  locale,
+  value,
+  onChange,
+}: Readonly<{
+  compact?: boolean;
+  locale: string;
+  onChange: (value: StudioViewportMode) => void;
+  value: StudioViewportMode;
+}>) {
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={pickLocaleText(locale, {
+      en: 'Preview viewport',
+      zh_HANS: '预览视口',
+      zh_HANT: '預覽視口',
+      ja: 'プレビュー表示幅',
+      ko: '미리보기 뷰포트',
+      fr: 'Viewport d’aperçu',
+    })}>
+      {([
+        ['desktop', <Monitor key="desktop" className="h-4 w-4" aria-hidden="true" />],
+        ['mobile', <Smartphone key="mobile" className="h-4 w-4" aria-hidden="true" />],
+      ] as const).map(([nextValue, icon]) => (
+        <button
+          key={nextValue}
+          type="button"
+          aria-pressed={value === nextValue}
+          onClick={() => onChange(nextValue)}
+          className={`inline-flex items-center ${compact ? 'gap-1.5 px-3 py-1.5 text-sm' : 'gap-2 px-4 py-2 text-sm'} rounded-full border font-semibold transition ${
+            value === nextValue
+              ? 'border-rose-300 bg-rose-50 text-rose-700'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          {icon}
+          {nextValue === 'desktop'
+            ? pickLocaleText(locale, {
+                en: 'Desktop',
+                zh_HANS: '桌面端',
+                zh_HANT: '桌面端',
+                ja: 'デスクトップ',
+                ko: '데스크톱',
+                fr: 'Desktop',
+              })
+            : pickLocaleText(locale, {
+                en: 'Mobile',
+                zh_HANS: '移动端',
+                zh_HANT: '行動端',
+                ja: 'モバイル',
+                ko: '모바일',
+                fr: 'Mobile',
+              })}
+        </button>
+      ))}
+    </div>
   );
 }
 
 function PublicPresenceStudioScreenInner({
+  initialFocus,
+  initialTemplateId,
   tenantId,
   talentId,
 }: Readonly<{
+  initialFocus?: string | null;
+  initialTemplateId?: string | null;
   talentId: string;
   tenantId: string;
 }>) {
-  const { copy, selectedLocale } = usePublicPresenceStudioCopy();
-  const { request, session } = useSession();
-  const [activeTab, setActiveTab] = useState<PublicPresenceStudioTabId>('overview');
+  const { copy, locale } = usePublicPresenceStudioCopy();
+  const { request } = useSession();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchKey = searchParams.toString();
   const [workspace, setWorkspace] = useState<PublicPresenceStudioWorkspaceResponse | null>(null);
   const [editorDocument, setEditorDocument] = useState<PublicPresenceDocument | null>(null);
   const [sourceText, setSourceText] = useState('');
@@ -650,7 +853,6 @@ function PublicPresenceStudioScreenInner({
   const [saving, setSaving] = useState(false);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
   const [previewPhase, setPreviewPhase] = useState<PublicPresencePhaseVisibility | 'current'>('current');
   const [previewProjection, setPreviewProjection] = useState<PublicPresenceProjection | null>(null);
   const [reviewComment, setReviewComment] = useState('');
@@ -659,19 +861,59 @@ function PublicPresenceStudioScreenInner({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [stagePanel, setStagePanel] = useState<StagePanelState | null>(null);
-  const [previewViewport, setPreviewViewport] = useState<PreviewViewportMode['id']>('desktop');
-  const [selectedPreviewSectionId, setSelectedPreviewSectionId] = useState<string | null>(null);
-  const [showReviewHistory, setShowReviewHistory] = useState(false);
-  const [showMigrationTools, setShowMigrationTools] = useState(false);
-
-  const previewPhaseOptions = useMemo(
-    () =>
-      PUBLIC_PRESENCE_PREVIEW_PHASES.map((value) => ({
-        value,
-        label: getPublicPresencePreviewPhaseLabel(selectedLocale, value),
-      })),
-    [selectedLocale],
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    initialTemplateId ?? 'activeTalentHub',
   );
+  const [showReviewHistory, setShowReviewHistory] = useState(false);
+  const [leftDrawerMode, setLeftDrawerMode] = useState<LeftDrawerMode>('sections');
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [mobileManageOpen, setMobileManageOpen] = useState(false);
+  const [mobilePreviewToolsOpen, setMobilePreviewToolsOpen] = useState(false);
+  const [previewFocus, setPreviewFocus] = useState(false);
+  const [previewViewport, setPreviewViewport] = useState<StudioViewportMode>('desktop');
+  const mobileManageSheetId = useId();
+  const mobilePreviewToolsSheetId = useId();
+  const leftDrawerId = useId();
+  const rightDrawerId = useId();
+
+  const queryState = useMemo(() => {
+    const previewViewportValue = parseEnumSearchParam(
+      searchParams.get('viewport'),
+      STUDIO_VIEWPORT_QUERY_VALUES,
+    ) ?? 'desktop';
+    const previewPhaseValue = parseEnumSearchParam(
+      searchParams.get('phase'),
+      ['current', ...PUBLIC_PRESENCE_PREVIEW_PHASES] as const,
+    ) ?? 'current';
+    const previewFocusValue = parseBooleanSearchParam(searchParams.get('previewFocus')) ?? false;
+    const leftDrawerValue = parseEnumSearchParam(
+      searchParams.get('leftPanel'),
+      LEFT_DRAWER_QUERY_VALUES,
+    );
+    const mobileSheetValue = parseEnumSearchParam(
+      searchParams.get('sheet'),
+      MOBILE_SHEET_QUERY_VALUES,
+    );
+    const stagePanelValue = parseStagePanelSearchParam(searchParams.get('stagePanel'));
+
+    return {
+      hasExplicitWorkbenchState: [
+        'viewport',
+        'previewFocus',
+        'phase',
+        'leftPanel',
+        'stagePanel',
+        'sheet',
+      ].some((key) => searchParams.has(key)),
+      leftDrawerMode: previewFocusValue ? null : leftDrawerValue,
+      mobileSheet: mobileSheetValue,
+      previewFocus: previewFocusValue,
+      previewPhase: previewPhaseValue,
+      previewViewport: previewViewportValue,
+      stagePanel: previewFocusValue ? null : stagePanelValue,
+      templateId: searchParams.get('templateId'),
+    };
+  }, [searchKey, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -681,18 +923,20 @@ function PublicPresenceStudioScreenInner({
       setError(null);
 
       try {
-        const result = await readPublicPresenceWorkspace(request, talentId);
+        const result = await readPublicPresenceWorkspace(
+          request,
+          talentId,
+          selectedTemplateId,
+        );
 
         if (cancelled) {
           return;
         }
 
-        startTransition(() => {
-          setWorkspace(result);
-          setEditorDocument(result.draftVersion?.document ?? null);
-          setSourceText(result.draftVersion ? toPrettyJson(result.draftVersion.document) : '');
-          setLoading(false);
-        });
+        setWorkspace(result);
+        setEditorDocument(result.draftVersion?.document ?? null);
+        setSourceText(result.draftVersion ? toPrettyJson(result.draftVersion.document) : '');
+        setLoading(false);
       } catch (reason) {
         if (cancelled) {
           return;
@@ -708,17 +952,18 @@ function PublicPresenceStudioScreenInner({
     return () => {
       cancelled = true;
     };
-  }, [copy.state.loadWorkspaceError, request, talentId]);
+  }, [copy.state.loadWorkspaceError, request, selectedTemplateId, talentId]);
 
   useEffect(() => {
-    if (activeTab !== 'fanPreview' || !workspace?.draftVersion) {
+    if (!workspace?.draftVersion) {
+      setPreviewProjection(null);
+      setPreviewError(null);
       return;
     }
 
     let cancelled = false;
 
     const loadPreview = async () => {
-      setPreviewLoading(true);
       setPreviewError(null);
 
       try {
@@ -726,7 +971,10 @@ function PublicPresenceStudioScreenInner({
           request,
           talentId,
           previewPhase,
+          selectedTemplateId,
         );
+
+        await preloadPublicHomepageProjectionMedia(result);
 
         if (cancelled) {
           return;
@@ -734,8 +982,6 @@ function PublicPresenceStudioScreenInner({
 
         startTransition(() => {
           setPreviewProjection(result);
-          setSelectedPreviewSectionId(result.sections[0]?.id ?? null);
-          setPreviewLoading(false);
         });
       } catch (reason) {
         if (cancelled) {
@@ -744,7 +990,6 @@ function PublicPresenceStudioScreenInner({
 
         setPreviewProjection(null);
         setPreviewError(getErrorMessage(reason, copy.state.previewBuildError));
-        setPreviewLoading(false);
       }
     };
 
@@ -754,17 +999,18 @@ function PublicPresenceStudioScreenInner({
       cancelled = true;
     };
   }, [
-    activeTab,
+    copy.state.previewBuildError,
     previewPhase,
     request,
+    selectedTemplateId,
     talentId,
     workspace?.draftVersion?.contentHash,
     workspace?.draftVersion?.id,
-    copy.state.previewBuildError,
   ]);
 
   const applyWorkspace = (result: PublicPresenceStudioWorkspaceResponse) => {
     setWorkspace(result);
+    setSelectedTemplateId(result.selectedTemplateId || selectedTemplateId);
     setEditorDocument(result.draftVersion?.document ?? null);
     setSourceText(result.draftVersion ? toPrettyJson(result.draftVersion.document) : '');
   };
@@ -888,7 +1134,7 @@ function PublicPresenceStudioScreenInner({
   };
 
   const currentTemplate = workspace?.templates.find(
-    (template) => template.templateId === workspace?.draftVersion?.document.templateId,
+    (template) => template.templateId === (workspace?.selectedTemplateId ?? selectedTemplateId),
   ) ?? null;
   const currentSnapshot = workspace?.draftVersion?.validationSnapshot ?? null;
   const currentDraftHash = workspace?.draftVersion?.contentHash ?? null;
@@ -899,24 +1145,148 @@ function PublicPresenceStudioScreenInner({
   const hasUnsavedDraftChanges = Boolean(
     workspace?.draftVersion && sourceText !== persistedSourceText,
   );
-  const orderedSections = sortSectionsForTemplate(currentTemplate, workspace?.stageSections ?? []);
+  const orderedSections = useMemo(
+    () => sortSectionsForTemplate(currentTemplate, workspace?.stageSections ?? []),
+    [currentTemplate, workspace?.stageSections],
+  );
+
+  useEffect(() => {
+    setPreviewViewport((current) => (
+      current === queryState.previewViewport ? current : queryState.previewViewport
+    ));
+    setPreviewFocus((current) => (
+      current === queryState.previewFocus ? current : queryState.previewFocus
+    ));
+    setPreviewPhase((current) => (
+      current === queryState.previewPhase ? current : queryState.previewPhase
+    ));
+
+    const nextMobileManageOpen = queryState.mobileSheet === 'manage';
+    const nextMobilePreviewToolsOpen = queryState.mobileSheet === 'preview-tools';
+    const nextLeftDrawerMode = queryState.leftDrawerMode;
+
+    setMobileManageOpen((current) => (
+      current === nextMobileManageOpen ? current : nextMobileManageOpen
+    ));
+    setMobilePreviewToolsOpen((current) => (
+      current === nextMobilePreviewToolsOpen ? current : nextMobilePreviewToolsOpen
+    ));
+
+    if (nextLeftDrawerMode) {
+      setLeftDrawerMode((current) => (
+        current === nextLeftDrawerMode ? current : nextLeftDrawerMode
+      ));
+      setLeftDrawerOpen((current) => (current ? current : true));
+    } else {
+      setLeftDrawerOpen((current) => (current ? false : current));
+    }
+
+  }, [
+    queryState.leftDrawerMode,
+    queryState.mobileSheet,
+    queryState.previewFocus,
+    queryState.previewPhase,
+    queryState.previewViewport,
+  ]);
+
+  useEffect(() => {
+    const nextStagePanel = queryState.stagePanel
+      && orderedSections.some((section) => section.kind === queryState.stagePanel?.sectionKind)
+      ? queryState.stagePanel
+      : null;
+
+    setStagePanel((current) => (
+      (current?.mode ?? null) === (nextStagePanel?.mode ?? null)
+      && (current?.sectionKind ?? null) === (nextStagePanel?.sectionKind ?? null)
+        ? current
+        : nextStagePanel
+    ));
+  }, [
+    orderedSections,
+    queryState.stagePanel,
+  ]);
+
+  useEffect(() => {
+    const entryFocus = initialFocus as StudioEntryFocus | null | undefined;
+
+    if (!workspace || !editorDocument || !entryFocus || queryState.hasExplicitWorkbenchState) {
+      return;
+    }
+
+    if (entryFocus === 'release') {
+      setLeftDrawerMode('release');
+      setLeftDrawerOpen(true);
+      setPreviewFocus(false);
+      return;
+    }
+
+    if (entryFocus === 'countdown') {
+      const countdownSection = orderedSections.find((section) => section.kind === 'countdownReveal');
+
+      if (countdownSection) {
+        setLeftDrawerMode('sections');
+        setLeftDrawerOpen(true);
+        setStagePanel({ mode: 'edit', sectionKind: countdownSection.kind });
+        setPreviewFocus(false);
+        return;
+      }
+    }
+
+    setLeftDrawerMode('sections');
+    setLeftDrawerOpen(false);
+  }, [editorDocument, initialFocus, orderedSections, queryState.hasExplicitWorkbenchState, workspace]);
+
+  useEffect(() => {
+    if (!stagePanel) {
+      return;
+    }
+
+    const stillVisible = orderedSections.some((section) => section.kind === stagePanel.sectionKind);
+
+    if (!stillVisible) {
+      setStagePanel(null);
+    }
+  }, [orderedSections, stagePanel]);
+
   const selectedStageSection = orderedSections.find(
     (section) => section.kind === stagePanel?.sectionKind,
   ) ?? null;
   const selectedStageSectionDocument = selectedStageSection
     ? getCurrentSectionDocument(editorDocument, selectedStageSection.kind)
     : null;
-  const selectedPreviewSection = previewProjection?.sections.find(
-    (section) => section.id === selectedPreviewSectionId,
-  ) ?? null;
-  const workspacePublicPath = resolveWorkspacePublicPath(
-    previewProjection,
-    workspace,
-    copy.common.notSet,
+  const selectedSectionIssues = selectedStageSection
+    ? collectIssuesForSection(
+        currentSnapshot,
+        selectedStageSection.kind,
+        selectedStageSectionDocument?.id ?? null,
+      )
+    : [];
+  const managementHref = buildTalentWorkspaceSectionPath(
+    tenantId,
+    talentId,
+    'homepage',
   );
-  const viewportFrameClass = PREVIEW_VIEWPORTS.find((viewport) => viewport.id === previewViewport)
-    ?.frameClassName ?? PREVIEW_VIEWPORTS[0].frameClassName;
-  const workspaceLabel = session?.tenantName || `${copy.common.tenantPrefix} ${tenantId}`;
+  const previewHref = buildPublicPresenceStudioPreviewPath(
+    tenantId,
+    talentId,
+    workspace?.selectedTemplateId ?? selectedTemplateId,
+  );
+  const templateCenterHref = buildPublicPresenceHomepageSurfacePath(
+    tenantId,
+    talentId,
+    'templates',
+  );
+  const previewTheme = useMemo(
+    () => normalizeTheme(previewProjection?.appearance.theme || DEFAULT_THEME),
+    [previewProjection],
+  );
+  const previewCanvasStyle = useMemo(
+    () => ({
+      ...getHomepageCanvasStyle(previewTheme),
+      minHeight: '100%',
+    }),
+    [previewTheme],
+  );
 
   const isWorkflowActionDisabled =
     workflowAction !== null || hasUnsavedDraftChanges;
@@ -1014,79 +1384,6 @@ function PublicPresenceStudioScreenInner({
     }));
   };
 
-  const addComponentToSection = (
-    sectionKind: string,
-    componentType: HomepageComponentType,
-  ) => {
-    if (!editorDocument) {
-      return;
-    }
-
-    const nextSections = editorDocument.sections.map((section) => {
-      if (section.kind !== sectionKind) {
-        return section;
-      }
-
-      return {
-        ...section,
-        components: [
-          ...(section.components ?? []),
-          buildDefaultComponentForType(componentType),
-        ],
-      };
-    });
-
-    updateDocument({
-      ...editorDocument,
-      sections: nextSections,
-    });
-  };
-
-  const replaceSectionComponents = (
-    sectionKind: string,
-    components: PublicPresenceComponentNode[],
-  ) => {
-    if (!editorDocument) {
-      return;
-    }
-
-    const nextSections = editorDocument.sections.map((section) => (
-      section.kind === sectionKind
-        ? {
-            ...section,
-            components,
-          }
-        : section
-    ));
-
-    updateDocument({
-      ...editorDocument,
-      sections: nextSections,
-    });
-  };
-
-  const removeComponentFromSection = (sectionKind: string, componentIndex: number) => {
-    if (!editorDocument) {
-      return;
-    }
-
-    const nextSections = editorDocument.sections.map((section) => {
-      if (section.kind !== sectionKind) {
-        return section;
-      }
-
-      return {
-        ...section,
-        components: (section.components ?? []).filter((_, index) => index !== componentIndex),
-      };
-    });
-
-    updateDocument({
-      ...editorDocument,
-      sections: nextSections,
-    });
-  };
-
   const ensureSectionExists = (section: PublicPresenceStudioStageSectionSummary) => {
     if (!editorDocument) {
       return;
@@ -1096,51 +1393,62 @@ function PublicPresenceStudioScreenInner({
       return;
     }
 
+    const nextSection: PublicPresenceDocument['sections'][number] = buildEmptySectionDraft(
+      section,
+      editorDocument.sections.length,
+    );
+
+    if (section.allowedComponents.length === 1) {
+      nextSection.components = [
+        buildDefaultComponentForType(section.allowedComponents[0] as HomepageComponentType),
+      ];
+    }
+
     updateDocument({
       ...editorDocument,
       sections: [
         ...editorDocument.sections,
-        buildEmptySectionDraft(section, editorDocument.sections.length),
+        nextSection,
       ],
     });
   };
 
-  const moveSection = (sectionKind: string, direction: 'up' | 'down') => {
-    if (!editorDocument) {
-      return;
-    }
+  const renderFieldFooter = (
+    sectionKind: string,
+    fieldKey: string,
+    definition: PublicPresenceStudioStageSectionSummary['fieldDefinitions'][number] | undefined,
+  ) => {
+    const provenance = readFieldProvenance(editorDocument, sectionKind, fieldKey);
+    const canReset = Boolean(readFieldEntry(editorDocument, sectionKind, fieldKey))
+      && provenance !== 'locked'
+      && provenance !== 'sourceOwned';
 
-    const currentIndex = editorDocument.sections.findIndex((section) => section.kind === sectionKind);
-    if (currentIndex === -1) {
-      return;
-    }
-
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= editorDocument.sections.length) {
-      return;
-    }
-
-    const nextSections = [...editorDocument.sections];
-    const [current] = nextSections.splice(currentIndex, 1);
-    nextSections.splice(targetIndex, 0, current);
-    updateDocument({
-      ...editorDocument,
-      sections: nextSections,
-    });
-  };
-
-  const removeSection = (sectionKind: string) => {
-    if (!editorDocument) {
-      return;
-    }
-
-    updateDocument({
-      ...editorDocument,
-      sections: editorDocument.sections.filter((section) => section.kind !== sectionKind),
-    });
-    if (stagePanel?.sectionKind === sectionKind) {
-      setStagePanel(null);
-    }
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <PublicPresenceBadge tone="slate" variant="outline">
+          {getPublicPresenceProvenanceLabel(locale, provenance)}
+        </PublicPresenceBadge>
+        {definition?.sourceOnly ? (
+          <PublicPresenceBadge tone="warning" variant="outline">
+            {copy.common.advancedOnly}
+          </PublicPresenceBadge>
+        ) : null}
+        {definition && !definition.visualEditable ? (
+          <PublicPresenceBadge tone="warning" variant="outline">
+            {copy.common.locked}
+          </PublicPresenceBadge>
+        ) : null}
+        {canReset ? (
+          <button
+            type="button"
+            onClick={() => resetFieldValue(sectionKind, fieldKey)}
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            {copy.stageSections.resetField}
+          </button>
+        ) : null}
+      </div>
+    );
   };
 
   const renderStructuredSectionEditor = (section: PublicPresenceStudioStageSectionSummary) => {
@@ -1150,42 +1458,6 @@ function PublicPresenceStudioScreenInner({
     const fieldDefinitions = new Map(
       section.fieldDefinitions.map((definition) => [definition.fieldKey, definition]),
     );
-
-    const renderFieldFooter = (fieldKey: string) => {
-      const definition = fieldDefinitions.get(fieldKey);
-      const provenance = readFieldProvenance(editorDocument, section.kind, fieldKey);
-      const canReset = Boolean(readFieldEntry(editorDocument, section.kind, fieldKey))
-        && provenance !== 'locked'
-        && provenance !== 'sourceOwned';
-
-      return (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <PublicPresenceBadge tone="slate" variant="outline">
-            {getPublicPresenceProvenanceLabel(selectedLocale, provenance)}
-          </PublicPresenceBadge>
-          {definition?.sourceOnly ? (
-            <PublicPresenceBadge tone="warning" variant="outline">
-              {copy.common.advancedOnly}
-            </PublicPresenceBadge>
-          ) : null}
-          {definition && !definition.visualEditable ? (
-            <PublicPresenceBadge tone="warning" variant="outline">
-              {copy.common.locked}
-            </PublicPresenceBadge>
-          ) : null}
-          {canReset ? (
-            <button
-              type="button"
-              onClick={() => resetFieldValue(section.kind, fieldKey)}
-              className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-            >
-              {copy.stageSections.resetField}
-            </button>
-          ) : null}
-        </div>
-      );
-    };
-
     const isFieldEditable = (fieldKey: string) =>
       resolveFieldEditability(fieldDefinitions.get(fieldKey), canEditVisually);
 
@@ -1224,7 +1496,7 @@ function PublicPresenceStudioScreenInner({
       const countdownPhaseOptions = PUBLIC_PRESENCE_PREVIEW_PHASES
         .filter((value) => value !== 'current' && value !== 'always')
         .map((value) => ({
-          label: getPublicPresencePreviewPhaseLabel(selectedLocale, value),
+          label: getPublicPresencePreviewPhaseLabel(locale, value),
           value,
         }));
 
@@ -1232,59 +1504,59 @@ function PublicPresenceStudioScreenInner({
         <div className="grid gap-4">
           <ControlledSelect
             disabled={!isFieldEditable('phase')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'phase')}
+            label={getPublicPresenceFieldLabel(locale, 'phase')}
             onChange={(value) => setFieldValue(section.kind, 'phase', value)}
             options={countdownPhaseOptions}
             value={String(readFieldValue(editorDocument, section.kind, 'phase') || 'teaser')}
-            footer={renderFieldFooter('phase')}
+            footer={renderFieldFooter(section.kind, 'phase', fieldDefinitions.get('phase'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('revealAtUtc')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'revealAtUtc')}
+            label={getPublicPresenceFieldLabel(locale, 'revealAtUtc')}
             onChange={(value) => setFieldValue(section.kind, 'revealAtUtc', value)}
             placeholder={copy.stageSections.revealTimeExample}
             value={String(readFieldValue(editorDocument, section.kind, 'revealAtUtc') ?? '')}
-            footer={renderFieldFooter('revealAtUtc')}
+            footer={renderFieldFooter(section.kind, 'revealAtUtc', fieldDefinitions.get('revealAtUtc'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('timezone')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'timezone')}
+            label={getPublicPresenceFieldLabel(locale, 'timezone')}
             onChange={(value) => setFieldValue(section.kind, 'timezone', value)}
             placeholder={copy.stageSections.timezoneExample}
             value={String(readFieldValue(editorDocument, section.kind, 'timezone') ?? '')}
-            footer={renderFieldFooter('timezone')}
+            footer={renderFieldFooter(section.kind, 'timezone', fieldDefinitions.get('timezone'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('teaserName')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'teaserName')}
+            label={getPublicPresenceFieldLabel(locale, 'teaserName')}
             onChange={(value) => setFieldValue(section.kind, 'teaserName', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'teaserName')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'teaserName')}
             value={String(readFieldValue(editorDocument, section.kind, 'teaserName') ?? '')}
-            footer={renderFieldFooter('teaserName')}
+            footer={renderFieldFooter(section.kind, 'teaserName', fieldDefinitions.get('teaserName'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('revealName')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'revealName')}
+            label={getPublicPresenceFieldLabel(locale, 'revealName')}
             onChange={(value) => setFieldValue(section.kind, 'revealName', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'revealName')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'revealName')}
             value={String(readFieldValue(editorDocument, section.kind, 'revealName') ?? '')}
-            footer={renderFieldFooter('revealName')}
+            footer={renderFieldFooter(section.kind, 'revealName', fieldDefinitions.get('revealName'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('streamUrl')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'streamUrl')}
+            label={getPublicPresenceFieldLabel(locale, 'streamUrl')}
             onChange={(value) => setFieldValue(section.kind, 'streamUrl', value)}
             placeholder={copy.stageSections.urlPlaceholder}
             value={String(readFieldValue(editorDocument, section.kind, 'streamUrl') ?? '')}
-            footer={renderFieldFooter('streamUrl')}
+            footer={renderFieldFooter(section.kind, 'streamUrl', fieldDefinitions.get('streamUrl'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('launchUrl')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'launchUrl')}
+            label={getPublicPresenceFieldLabel(locale, 'launchUrl')}
             onChange={(value) => setFieldValue(section.kind, 'launchUrl', value)}
             placeholder={copy.stageSections.urlPlaceholder}
             value={String(readFieldValue(editorDocument, section.kind, 'launchUrl') ?? '')}
-            footer={renderFieldFooter('launchUrl')}
+            footer={renderFieldFooter(section.kind, 'launchUrl', fieldDefinitions.get('launchUrl'))}
           />
         </div>
       );
@@ -1304,21 +1576,21 @@ function PublicPresenceStudioScreenInner({
             <div key={`${section.kind}-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
               <ControlledSelect
                 disabled={!isFieldEditable('actions')}
-                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'slot')}`}
+                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'slot')}`}
                 onChange={(value) => {
                   const next = [...actions];
                   next[index] = { ...action, slot: value };
                   setFieldValue(section.kind, 'actions', next);
                 }}
                 options={PUBLIC_PRESENCE_FAN_ACTION_SLOTS.map((slot) => ({
-                  label: getPublicPresenceFanActionSlotLabel(selectedLocale, slot),
+                  label: getPublicPresenceFanActionSlotLabel(locale, slot),
                   value: slot,
                 }))}
                 value={String(action.slot ?? '')}
               />
               <ControlledTextInput
                 disabled={!isFieldEditable('actions')}
-                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'label')}`}
+                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'label')}`}
                 onChange={(value) => {
                   const next = [...actions];
                   next[index] = { ...action, label: value };
@@ -1329,7 +1601,7 @@ function PublicPresenceStudioScreenInner({
               />
               <ControlledTextInput
                 disabled={!isFieldEditable('actions')}
-                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'url')}`}
+                label={`${copy.stageSections.fanActionsLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'url')}`}
                 onChange={(value) => {
                   const next = [...actions];
                   next[index] = { ...action, url: value };
@@ -1353,7 +1625,7 @@ function PublicPresenceStudioScreenInner({
           >
             {copy.stageSections.addAction}
           </button>
-          {renderFieldFooter('actions')}
+          {renderFieldFooter(section.kind, 'actions', fieldDefinitions.get('actions'))}
         </div>
       );
     }
@@ -1372,21 +1644,21 @@ function PublicPresenceStudioScreenInner({
             <div key={`${section.kind}-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
               <ControlledSelect
                 disabled={!isFieldEditable('notes')}
-                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'kind')}`}
+                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'kind')}`}
                 onChange={(value) => {
                   const next = [...notes];
                   next[index] = { ...note, kind: value };
                   setFieldValue(section.kind, 'notes', next);
                 }}
                 options={PUBLIC_PRESENCE_NOTE_KINDS.map((kind) => ({
-                  label: getPublicPresenceNoteKindLabel(selectedLocale, kind),
+                  label: getPublicPresenceNoteKindLabel(locale, kind),
                   value: kind,
                 }))}
                 value={String(note.kind ?? 'announcement')}
               />
               <ControlledTextInput
                 disabled={!isFieldEditable('notes')}
-                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'title')}`}
+                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'title')}`}
                 onChange={(value) => {
                   const next = [...notes];
                   next[index] = { ...note, title: value };
@@ -1397,7 +1669,7 @@ function PublicPresenceStudioScreenInner({
               />
               <ControlledTextArea
                 disabled={!isFieldEditable('notes')}
-                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(selectedLocale, 'body')}`}
+                label={`${copy.stageSections.agencyNotesLabel} ${index + 1} ${getPublicPresenceFieldLabel(locale, 'body')}`}
                 onChange={(value) => {
                   const next = [...notes];
                   next[index] = { ...note, body: value };
@@ -1421,7 +1693,7 @@ function PublicPresenceStudioScreenInner({
           >
             {copy.stageSections.addNote}
           </button>
-          {renderFieldFooter('notes')}
+          {renderFieldFooter(section.kind, 'notes', fieldDefinitions.get('notes'))}
         </div>
       );
     }
@@ -1431,173 +1703,84 @@ function PublicPresenceStudioScreenInner({
         <div className="grid gap-4">
           <ControlledTextInput
             disabled={!isFieldEditable('displayName')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'displayName')}
+            label={getPublicPresenceFieldLabel(locale, 'displayName')}
             onChange={(value) => setFieldValue(section.kind, 'displayName', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'displayName')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'displayName')}
             value={String(readFieldValue(editorDocument, section.kind, 'displayName') ?? '')}
-            footer={renderFieldFooter('displayName')}
+            footer={renderFieldFooter(section.kind, 'displayName', fieldDefinitions.get('displayName'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('headline')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'headline')}
+            label={getPublicPresenceFieldLabel(locale, 'headline')}
             onChange={(value) => setFieldValue(section.kind, 'headline', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'headline')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'headline')}
             value={String(readFieldValue(editorDocument, section.kind, 'headline') ?? '')}
-            footer={renderFieldFooter('headline')}
+            footer={renderFieldFooter(section.kind, 'headline', fieldDefinitions.get('headline'))}
           />
           <ControlledTextArea
             disabled={!isFieldEditable('intro')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'intro')}
+            label={getPublicPresenceFieldLabel(locale, 'intro')}
             onChange={(value) => setFieldValue(section.kind, 'intro', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'intro')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'intro')}
             value={String(readFieldValue(editorDocument, section.kind, 'intro') ?? '')}
-            footer={renderFieldFooter('intro')}
+            footer={renderFieldFooter(section.kind, 'intro', fieldDefinitions.get('intro'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('avatarUrl')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'avatarUrl')}
+            label={getPublicPresenceFieldLabel(locale, 'avatarUrl')}
             onChange={(value) => setFieldValue(section.kind, 'avatarUrl', value)}
             placeholder={copy.stageSections.urlPlaceholder}
             value={String(readFieldValue(editorDocument, section.kind, 'avatarUrl') ?? '')}
-            footer={renderFieldFooter('avatarUrl')}
+            footer={renderFieldFooter(section.kind, 'avatarUrl', fieldDefinitions.get('avatarUrl'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('heroMediaUrl')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'heroMediaUrl')}
+            label={getPublicPresenceFieldLabel(locale, 'heroMediaUrl')}
             onChange={(value) => setFieldValue(section.kind, 'heroMediaUrl', value)}
             placeholder={copy.stageSections.urlPlaceholder}
             value={String(readFieldValue(editorDocument, section.kind, 'heroMediaUrl') ?? '')}
-            footer={renderFieldFooter('heroMediaUrl')}
+            footer={renderFieldFooter(section.kind, 'heroMediaUrl', fieldDefinitions.get('heroMediaUrl'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('teaserName')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'teaserName')}
+            label={getPublicPresenceFieldLabel(locale, 'teaserName')}
             onChange={(value) => setFieldValue(section.kind, 'teaserName', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'teaserName')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'teaserName')}
             value={String(readFieldValue(editorDocument, section.kind, 'teaserName') ?? '')}
-            footer={renderFieldFooter('teaserName')}
+            footer={renderFieldFooter(section.kind, 'teaserName', fieldDefinitions.get('teaserName'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('revealName')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'revealName')}
+            label={getPublicPresenceFieldLabel(locale, 'revealName')}
             onChange={(value) => setFieldValue(section.kind, 'revealName', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'revealName')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'revealName')}
             value={String(readFieldValue(editorDocument, section.kind, 'revealName') ?? '')}
-            footer={renderFieldFooter('revealName')}
+            footer={renderFieldFooter(section.kind, 'revealName', fieldDefinitions.get('revealName'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('primaryCtaLabel')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'primaryCtaLabel')}
+            label={getPublicPresenceFieldLabel(locale, 'primaryCtaLabel')}
             onChange={(value) => setFieldValue(section.kind, 'primaryCtaLabel', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'primaryCtaLabel')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'primaryCtaLabel')}
             value={String(readFieldValue(editorDocument, section.kind, 'primaryCtaLabel') ?? '')}
-            footer={renderFieldFooter('primaryCtaLabel')}
+            footer={renderFieldFooter(section.kind, 'primaryCtaLabel', fieldDefinitions.get('primaryCtaLabel'))}
           />
           <ControlledTextInput
             disabled={!isFieldEditable('primaryCtaUrl')}
-            label={getPublicPresenceFieldLabel(selectedLocale, 'primaryCtaUrl')}
+            label={getPublicPresenceFieldLabel(locale, 'primaryCtaUrl')}
             onChange={(value) => setFieldValue(section.kind, 'primaryCtaUrl', value)}
             placeholder={copy.stageSections.urlPlaceholder}
             value={String(readFieldValue(editorDocument, section.kind, 'primaryCtaUrl') ?? '')}
-            footer={renderFieldFooter('primaryCtaUrl')}
+            footer={renderFieldFooter(section.kind, 'primaryCtaUrl', fieldDefinitions.get('primaryCtaUrl'))}
           />
         </div>
       );
     }
 
-    if (section.kind === 'currentLaunchAction') {
-      const component = getFirstComponent();
-
-      return (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-900">
-              {copy.stageSections.componentModeLabel}
-            </span>
-            <button
-              type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('LinkButton')])}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                component?.type === 'LinkButton'
-                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {copy.stageSections.linkMode}
-            </button>
-            <button
-              type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('LiveStatus')])}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                component?.type === 'LiveStatus'
-                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {copy.stageSections.liveStatusMode}
-            </button>
-          </div>
-          {component?.type === 'LinkButton' ? (
-            <div className="grid gap-4">
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'label')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'label', value)}
-                placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'label')}
-                value={String(component.props.label ?? '')}
-              />
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'url')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'url', value)}
-                placeholder={copy.stageSections.urlPlaceholder}
-                value={String(component.props.url ?? '')}
-              />
-            </div>
-          ) : null}
-          {component?.type === 'LiveStatus' ? (
-            <div className="grid gap-4">
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'platform')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'platform', value)}
-                placeholder={copy.stageSections.platformPlaceholder}
-                value={String(component.props.platform ?? '')}
-              />
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'channelName')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'channelName', value)}
-                placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'channelName')}
-                value={String(component.props.channelName ?? '')}
-              />
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'title')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'title', value)}
-                placeholder={copy.stageSections.titlePlaceholder}
-                value={String(component.props.title ?? '')}
-              />
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'streamUrl')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'streamUrl', value)}
-                placeholder={copy.stageSections.urlPlaceholder}
-                value={String(component.props.streamUrl ?? '')}
-              />
-              <ControlledTextInput
-                label={getPublicPresenceFieldLabel(selectedLocale, 'viewers')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'viewers', value)}
-                placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'viewers')}
-                value={String(component.props.viewers ?? '')}
-              />
-              <ControlledCheckbox
-                checked={Boolean(component.props.isLive)}
-                label={getPublicPresenceFieldLabel(selectedLocale, 'isLive')}
-                onChange={(checked) => setComponentPropValue(section.kind, 0, 'isLive', checked)}
-              />
-            </div>
-          ) : null}
-        </div>
-      );
-    }
+    const component = getFirstComponent();
 
     if (section.kind === 'officialChannels') {
-      const component = getFirstComponent();
+      const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.SocialLinks;
       const platforms = component?.type === 'SocialLinks' && Array.isArray(component.props.platforms)
         ? (component.props.platforms as Array<Record<string, unknown>>)
         : [];
@@ -1605,9 +1788,37 @@ function PublicPresenceStudioScreenInner({
       if (!component || component.type !== 'SocialLinks') {
         return (
           <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'This template owns one official channel cluster. Add the fixed Social Links slot to begin editing.',
+                zh_HANS: '这个模板拥有一个固定的官方渠道组。先启用固定的 Social Links 槽位，再开始编辑。',
+                zh_HANT: '這個模板擁有一個固定的官方渠道組。先啟用固定的 Social Links 槽位，再開始編輯。',
+                ja: 'このテンプレートは固定の公式チャンネル群を 1 つ持ちます。編集を始めるには固定 Social Links スロットを有効にしてください。',
+                ko: '이 템플릿은 고정된 공식 채널 묶음 1개를 가집니다. 편집을 시작하려면 고정 Social Links 슬롯을 먼저 활성화하세요.',
+                fr: 'Ce template possède un cluster officiel fixe. Activez d’abord le slot Social Links fixe pour commencer.',
+              })}
+            </p>
             <button
               type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('SocialLinks')])}
+              onClick={() => {
+                if (!editorDocument) {
+                  return;
+                }
+
+                const nextSections = editorDocument.sections.map((entry) => (
+                  entry.kind === section.kind
+                    ? {
+                        ...entry,
+                        components: [buildDefaultComponentForType('SocialLinks')],
+                      }
+                    : entry
+                ));
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: nextSections,
+                });
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
             >
               {copy.stageSections.addChannel}
@@ -1616,15 +1827,40 @@ function PublicPresenceStudioScreenInner({
         );
       }
 
+      const layoutField = definition.fieldDefinitions.find((field) => field.fieldKey === 'layout');
+      const styleField = definition.fieldDefinitions.find((field) => field.fieldKey === 'style');
+
       return (
         <div className="space-y-4">
+          <ControlledSelect
+            disabled={!resolveFieldEditability(layoutField, true)}
+            label={getPublicPresenceFieldLabel(locale, 'layout')}
+            onChange={(value) => setComponentPropValue(section.kind, 0, 'layout', value)}
+            options={[
+              { label: 'horizontal', value: 'horizontal' },
+              { label: 'stack', value: 'stack' },
+            ]}
+            value={String(component.props.layout ?? 'horizontal')}
+            footer={renderFieldFooter(section.kind, 'layout', layoutField)}
+          />
+          <ControlledSelect
+            disabled={!resolveFieldEditability(styleField, true)}
+            label={getPublicPresenceFieldLabel(locale, 'style')}
+            onChange={(value) => setComponentPropValue(section.kind, 0, 'style', value)}
+            options={[
+              { label: 'pill', value: 'pill' },
+              { label: 'outline', value: 'outline' },
+            ]}
+            value={String(component.props.style ?? 'pill')}
+            footer={renderFieldFooter(section.kind, 'style', styleField)}
+          />
           {platforms.length === 0 ? (
             <p className="text-sm text-slate-500">{copy.stageSections.noChannelsYet}</p>
           ) : null}
           {platforms.map((platform, index) => (
             <div key={`${section.kind}-platform-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'platform')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'platform')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...platforms];
                   next[index] = { ...platform, platformCode: value };
@@ -1634,7 +1870,7 @@ function PublicPresenceStudioScreenInner({
                 value={String(platform.platformCode ?? '')}
               />
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'label')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'label')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...platforms];
                   next[index] = { ...platform, label: value };
@@ -1644,7 +1880,7 @@ function PublicPresenceStudioScreenInner({
                 value={String(platform.label ?? '')}
               />
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'url')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'url')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...platforms];
                   next[index] = { ...platform, url: value };
@@ -1671,8 +1907,127 @@ function PublicPresenceStudioScreenInner({
       );
     }
 
+    if (section.kind === 'currentLaunchAction') {
+      const linkDefinition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.LinkButton;
+      const liveDefinition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.LiveStatus;
+      const activeDefinition = component?.type === 'LiveStatus' ? liveDefinition : linkDefinition;
+
+      if (!component) {
+        return (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'This slot is template-owned. The draft may host one approved launch-action component.',
+                zh_HANS: '这个槽位由模板定义。草稿中只能承载一个已批准的上线动作组件。',
+                zh_HANT: '這個槽位由模板定義。草稿中只能承載一個已批准的上線動作元件。',
+                ja: 'このスロットはテンプレート所有です。ドラフトでは承認済みの導線コンポーネントを 1 つだけ保持できます。',
+                ko: '이 슬롯은 템플릿 소유입니다. 드래프트에는 승인된 런치 액션 컴포넌트 하나만 둘 수 있습니다.',
+                fr: 'Ce slot appartient au template. Le brouillon ne peut contenir qu’un composant d’action approuve.',
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!editorDocument) {
+                  return;
+                }
+
+                const nextSections = editorDocument.sections.map((entry) => (
+                  entry.kind === section.kind
+                    ? {
+                        ...entry,
+                        components: [buildDefaultComponentForType('LinkButton')],
+                      }
+                    : entry
+                ));
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: nextSections,
+                });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              {copy.stageSections.editAction}
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+            {pickLocaleText(locale, {
+              en: 'The template governs this single launch slot. You may tune the approved component fields, but not replace the slot with arbitrary blocks.',
+              zh_HANS: '模板治理这个单一上线槽位。你可以调整已批准组件的字段，但不能用任意区块替换这个槽位。',
+              zh_HANT: '模板治理這個單一上線槽位。你可以調整已批准元件的欄位，但不能用任意區塊替換這個槽位。',
+              ja: 'テンプレートがこの単一導線スロットを管理します。承認済みコンポーネントの項目は調整できますが、任意のブロックに置き換えることはできません。',
+              ko: '템플릿이 이 단일 런치 슬롯을 관리합니다. 승인된 컴포넌트 필드는 조정할 수 있지만 임의 블록으로 교체할 수는 없습니다.',
+              fr: 'Le template gouverne ce slot unique. Vous pouvez ajuster les champs approuves, mais pas le remplacer par des blocs arbitraires.',
+            })}
+          </p>
+          {component.type === 'LinkButton' ? (
+            <div className="grid gap-4">
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'label')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'label', value)}
+                placeholder={getPublicPresenceFieldPlaceholder(locale, 'label')}
+                value={String(component.props.label ?? '')}
+                footer={renderFieldFooter(section.kind, 'label', activeDefinition.fieldDefinitions.find((field) => field.fieldKey === 'label'))}
+              />
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'url')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'url', value)}
+                placeholder={copy.stageSections.urlPlaceholder}
+                value={String(component.props.url ?? '')}
+                footer={renderFieldFooter(section.kind, 'url', activeDefinition.fieldDefinitions.find((field) => field.fieldKey === 'url'))}
+              />
+            </div>
+          ) : null}
+          {component.type === 'LiveStatus' ? (
+            <div className="grid gap-4">
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'platform')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'platform', value)}
+                placeholder={copy.stageSections.platformPlaceholder}
+                value={String(component.props.platform ?? '')}
+              />
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'channelName')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'channelName', value)}
+                placeholder={getPublicPresenceFieldPlaceholder(locale, 'channelName')}
+                value={String(component.props.channelName ?? '')}
+              />
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'title')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'title', value)}
+                placeholder={copy.stageSections.titlePlaceholder}
+                value={String(component.props.title ?? '')}
+              />
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'streamUrl')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'streamUrl', value)}
+                placeholder={copy.stageSections.urlPlaceholder}
+                value={String(component.props.streamUrl ?? '')}
+              />
+              <ControlledTextInput
+                label={getPublicPresenceFieldLabel(locale, 'viewers')}
+                onChange={(value) => setComponentPropValue(section.kind, 0, 'viewers', value)}
+                placeholder={getPublicPresenceFieldPlaceholder(locale, 'viewers')}
+                value={String(component.props.viewers ?? '')}
+              />
+              <ControlledCheckbox
+                checked={Boolean(component.props.isLive)}
+                label={getPublicPresenceFieldLabel(locale, 'isLive')}
+                onChange={(checked) => setComponentPropValue(section.kind, 0, 'isLive', checked)}
+              />
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
     if (section.kind === 'stageSchedule') {
-      const component = getFirstComponent();
       const events = component?.type === 'Schedule' && Array.isArray(component.props.events)
         ? (component.props.events as Array<Record<string, unknown>>)
         : [];
@@ -1680,9 +2035,37 @@ function PublicPresenceStudioScreenInner({
       if (!component || component.type !== 'Schedule') {
         return (
           <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'This template owns one bounded schedule surface. Enable the fixed schedule slot to start editing.',
+                zh_HANS: '这个模板拥有一个固定且受边界约束的日程面。先启用固定 schedule 槽位，再开始编辑。',
+                zh_HANT: '這個模板擁有一個固定且受邊界約束的日程面。先啟用固定 schedule 槽位，再開始編輯。',
+                ja: 'このテンプレートは固定のスケジュール面を 1 つ持ちます。編集を始めるには固定 schedule スロットを有効にしてください。',
+                ko: '이 템플릿은 고정된 일정 표면 1개를 가집니다. 편집을 시작하려면 고정 schedule 슬롯을 활성화하세요.',
+                fr: 'Ce template possède une surface planning fixe et bornee. Activez le slot schedule fixe pour commencer.',
+              })}
+            </p>
             <button
               type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('Schedule')])}
+              onClick={() => {
+                if (!editorDocument) {
+                  return;
+                }
+
+                const nextSections = editorDocument.sections.map((entry) => (
+                  entry.kind === section.kind
+                    ? {
+                        ...entry,
+                        components: [buildDefaultComponentForType('Schedule')],
+                      }
+                    : entry
+                ));
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: nextSections,
+                });
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
             >
               {copy.stageSections.addEvent}
@@ -1694,15 +2077,15 @@ function PublicPresenceStudioScreenInner({
       return (
         <div className="space-y-4">
           <ControlledTextInput
-            label={getPublicPresenceFieldLabel(selectedLocale, 'title')}
+            label={getPublicPresenceFieldLabel(locale, 'title')}
             onChange={(value) => setComponentPropValue(section.kind, 0, 'title', value)}
             placeholder={copy.stageSections.titlePlaceholder}
             value={String(component.props.title ?? '')}
           />
           <ControlledTextInput
-            label={getPublicPresenceFieldLabel(selectedLocale, 'weekOf')}
+            label={getPublicPresenceFieldLabel(locale, 'weekOf')}
             onChange={(value) => setComponentPropValue(section.kind, 0, 'weekOf', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'weekOf')}
+            placeholder={getPublicPresenceFieldPlaceholder(locale, 'weekOf')}
             value={String(component.props.weekOf ?? '')}
           />
           {events.length === 0 ? (
@@ -1711,7 +2094,7 @@ function PublicPresenceStudioScreenInner({
           {events.map((event, index) => (
             <div key={`${section.kind}-event-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'day')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'day')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...events];
                   next[index] = { ...event, day: value };
@@ -1721,7 +2104,7 @@ function PublicPresenceStudioScreenInner({
                 value={String(event.day ?? '')}
               />
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'time')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'time')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...events];
                   next[index] = { ...event, time: value };
@@ -1731,7 +2114,7 @@ function PublicPresenceStudioScreenInner({
                 value={String(event.time ?? '')}
               />
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'title')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'title')} ${index + 1}`}
                 onChange={(value) => {
                   const next = [...events];
                   next[index] = { ...event, title: value };
@@ -1758,143 +2141,258 @@ function PublicPresenceStudioScreenInner({
       );
     }
 
-    if (section.kind === 'teaserRevealMedia') {
-      const component = getFirstComponent();
-      const images = component?.type === 'ImageGallery' && Array.isArray(component.props.images)
-        ? (component.props.images as Array<Record<string, unknown>>)
-        : [];
+    if (section.kind === 'fanInteraction') {
+      const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.MarshmallowWidget;
+
+      if (!component || component.type !== 'MarshmallowWidget') {
+        return (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'This template reserves one bounded Marshmallow surface. The slot stays fixed and only approved fields can change here.',
+                zh_HANS: '这个模板预留了一个受边界约束的棉花糖面。这个槽位保持固定，且这里只能调整已批准字段。',
+                zh_HANT: '這個模板預留了一個受邊界約束的棉花糖面。這個槽位保持固定，且這裡只能調整已批准欄位。',
+                ja: 'このテンプレートは境界付き Marshmallow 面を 1 つ予約しています。スロットは固定で、ここで変更できるのは承認済み項目のみです。',
+                ko: '이 템플릿은 경계가 있는 Marshmallow 표면 하나를 예약합니다. 슬롯은 고정되며 여기서는 승인된 필드만 바꿀 수 있습니다.',
+                fr: 'Ce template reserve une surface Marshmallow bornee. Le slot reste fixe et seuls les champs approuves peuvent changer ici.',
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!editorDocument) {
+                  return;
+                }
+
+                const nextSections = editorDocument.sections.map((entry) => (
+                  entry.kind === section.kind
+                    ? {
+                        ...entry,
+                        components: [buildDefaultComponentForType('MarshmallowWidget')],
+                      }
+                    : entry
+                ));
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: nextSections,
+                });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              {copy.stageSections.editAction}
+            </button>
+          </div>
+        );
+      }
 
       return (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-900">
-              {copy.stageSections.componentModeLabel}
-            </span>
+          {definition.fieldDefinitions.map((field) => {
+            const fieldValue = component.props[field.fieldKey];
+            if (field.valueType === 'boolean') {
+              return (
+                <ControlledCheckbox
+                  key={field.fieldKey}
+                  checked={Boolean(fieldValue)}
+                  disabled={!field.visualEditable}
+                  label={getPublicPresenceFieldLabel(locale, field.fieldKey)}
+                  onChange={(checked) => setComponentPropValue(section.kind, 0, field.fieldKey, checked)}
+                />
+              );
+            }
+
+            return (
+              <ControlledTextInput
+                key={field.fieldKey}
+                disabled={!field.visualEditable}
+                label={getPublicPresenceFieldLabel(locale, field.fieldKey)}
+                onChange={(value) => setComponentPropValue(section.kind, 0, field.fieldKey, value)}
+                placeholder={getPublicPresenceFieldPlaceholder(locale, field.fieldKey)}
+                value={String(fieldValue ?? '')}
+              />
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (section.kind === 'teaserRevealMedia') {
+      const definition = component?.type === 'ImageGallery'
+        ? PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.ImageGallery
+        : PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.VideoEmbed;
+
+      if (!component) {
+        return (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'This reveal-safe slot stays under the template setup. Enable the approved media block before editing.',
+                zh_HANS: '这个揭晓安全槽位保持在模板设置内。请先启用已批准的媒体模块，再开始编辑。',
+                zh_HANT: '這個揭曉安全槽位保持在模板設定內。請先啟用已批准的媒體模組，再開始編輯。',
+                ja: 'この公開安全スロットはテンプレート設定の範囲に残ります。編集前に承認済みメディアブロックを有効にしてください。',
+                ko: '이 리빌 안전 슬롯은 템플릿 설정 범위에 머뭅니다. 편집 전에 승인된 미디어 블록을 먼저 활성화하세요.',
+                fr: 'Ce slot reveal-safe reste dans la configuration du template. Activez d’abord le bloc media approuvé avant de modifier.',
+              })}
+            </p>
             <button
               type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('ImageGallery')])}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                component?.type === 'ImageGallery'
-                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
+              onClick={() => {
+                if (!editorDocument) {
+                  return;
+                }
+
+                const nextSections = editorDocument.sections.map((entry) => (
+                  entry.kind === section.kind
+                    ? {
+                        ...entry,
+                        components: [buildDefaultComponentForType('ImageGallery')],
+                      }
+                    : entry
+                ));
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: nextSections,
+                });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
             >
-              {copy.stageSections.galleryMode}
-            </button>
-            <button
-              type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('VideoEmbed')])}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                component?.type === 'VideoEmbed'
-                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {copy.stageSections.videoMode}
+              {copy.stageSections.editAction}
             </button>
           </div>
-          {component?.type === 'ImageGallery' ? (
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+            {pickLocaleText(locale, {
+              en: 'This slot keeps one approved reveal-safe media block. You may tune its approved fields only.',
+              zh_HANS: '这个槽位保留一个已批准的揭晓安全媒体模块。你只能调整其已批准字段。',
+              zh_HANT: '這個槽位保留一個已批准的揭曉安全媒體模組。你只能調整其已批准欄位。',
+              ja: 'このスロットには承認済みの公開安全メディアブロックが 1 つ入ります。調整できるのは承認済み項目のみです。',
+              ko: '이 슬롯에는 승인된 리빌 안전 미디어 블록 하나가 들어갑니다. 승인된 필드만 조정할 수 있습니다.',
+              fr: 'Ce slot garde un bloc media reveal-safe approuve. Vous ne pouvez ajuster que les champs approuves.',
+            })}
+          </p>
+          {component.type === 'ImageGallery' ? (
             <>
-              {images.length === 0 ? (
+              {Array.isArray(component.props.images) && component.props.images.length === 0 ? (
                 <p className="text-sm text-slate-500">{copy.stageSections.noImagesYet}</p>
               ) : null}
-              {images.map((image, index) => (
-                <div key={`${section.kind}-image-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
-                  <ControlledTextInput
-                    label={`${getPublicPresenceFieldLabel(selectedLocale, 'url')} ${index + 1}`}
-                    onChange={(value) => {
-                      const next = [...images];
-                      next[index] = { ...image, url: value };
-                      setComponentPropValue(section.kind, 0, 'images', next);
-                    }}
-                    placeholder={copy.stageSections.urlPlaceholder}
-                    value={String(image.url ?? '')}
-                  />
-                  <ControlledTextInput
-                    label={`${getPublicPresenceFieldLabel(selectedLocale, 'alt')} ${index + 1}`}
-                    onChange={(value) => {
-                      const next = [...images];
-                      next[index] = { ...image, alt: value };
-                      setComponentPropValue(section.kind, 0, 'images', next);
-                    }}
-                    placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'alt')}
-                    value={String(image.alt ?? '')}
-                  />
-                  <ControlledTextInput
-                    label={`${getPublicPresenceFieldLabel(selectedLocale, 'caption')} ${index + 1}`}
-                    onChange={(value) => {
-                      const next = [...images];
-                      next[index] = { ...image, caption: value };
-                      setComponentPropValue(section.kind, 0, 'images', next);
-                    }}
-                    placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'caption')}
-                    value={String(image.caption ?? '')}
-                  />
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  setComponentPropValue(section.kind, 0, 'images', [
-                    ...images,
-                    { alt: '', caption: '', url: '' },
-                  ])
-                }
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                {copy.stageSections.addImage}
-              </button>
+              {Array.isArray(component.props.images)
+                ? (component.props.images as Array<Record<string, unknown>>).map((image, index) => (
+                    <div key={`${section.kind}-image-${index}`} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
+                      <ControlledTextInput
+                        label={`${getPublicPresenceFieldLabel(locale, 'url')} ${index + 1}`}
+                        onChange={(value) => {
+                          const next = [...(component.props.images as Array<Record<string, unknown>>)];
+                          next[index] = { ...image, url: value };
+                          setComponentPropValue(section.kind, 0, 'images', next);
+                        }}
+                        placeholder={copy.stageSections.urlPlaceholder}
+                        value={String(image.url ?? '')}
+                      />
+                      <ControlledTextInput
+                        label={`${getPublicPresenceFieldLabel(locale, 'alt')} ${index + 1}`}
+                        onChange={(value) => {
+                          const next = [...(component.props.images as Array<Record<string, unknown>>)];
+                          next[index] = { ...image, alt: value };
+                          setComponentPropValue(section.kind, 0, 'images', next);
+                        }}
+                        placeholder={getPublicPresenceFieldPlaceholder(locale, 'alt')}
+                        value={String(image.alt ?? '')}
+                      />
+                      <ControlledTextInput
+                        label={`${getPublicPresenceFieldLabel(locale, 'caption')} ${index + 1}`}
+                        onChange={(value) => {
+                          const next = [...(component.props.images as Array<Record<string, unknown>>)];
+                          next[index] = { ...image, caption: value };
+                          setComponentPropValue(section.kind, 0, 'images', next);
+                        }}
+                        placeholder={getPublicPresenceFieldPlaceholder(locale, 'caption')}
+                        value={String(image.caption ?? '')}
+                      />
+                    </div>
+                  ))
+                : null}
             </>
           ) : null}
-          {component?.type === 'VideoEmbed' ? (
-            <div className="grid gap-4">
-              <ControlledTextInput
-                disabled
-                label={getPublicPresenceFieldLabel(selectedLocale, 'title')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'title', value)}
-                placeholder={copy.stageSections.titlePlaceholder}
-                value={String(component.props.title ?? '')}
-              />
-              <ControlledTextInput
-                disabled
-                label={getPublicPresenceFieldLabel(selectedLocale, 'videoUrl')}
-                onChange={(value) => setComponentPropValue(section.kind, 0, 'videoUrl', value)}
-                placeholder={copy.stageSections.urlPlaceholder}
-                value={String(component.props.videoUrl ?? '')}
-              />
-            </div>
-          ) : null}
+          {component.type === 'VideoEmbed'
+            ? definition.fieldDefinitions.map((field) => (
+                <ControlledTextInput
+                  key={field.fieldKey}
+                  disabled={!field.visualEditable}
+                  label={getPublicPresenceFieldLabel(locale, field.fieldKey)}
+                  onChange={(value) => setComponentPropValue(section.kind, 0, field.fieldKey, value)}
+                  placeholder={getPublicPresenceFieldPlaceholder(locale, field.fieldKey)}
+                  value={String(component.props[field.fieldKey] ?? '')}
+                />
+              ))
+            : null}
         </div>
       );
     }
 
     if (section.kind === 'goodsSupport') {
-      const components = getSectionComponents().filter((component) => component.type === 'LinkButton');
+      const components = getSectionComponents().filter((entry) => entry.type === 'LinkButton');
 
       return (
         <div className="space-y-4">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+            {pickLocaleText(locale, {
+              en: 'This template reserves goods/support links only. The slot stays fixed, and each row remains a typed destination.',
+              zh_HANS: '这个模板只预留商品与支持链接。槽位保持固定，每一行都必须是类型化目标。',
+              zh_HANT: '這個模板只預留商品與支援連結。槽位保持固定，每一行都必須是型別化目標。',
+              ja: 'このテンプレートはグッズ/サポートリンク専用です。スロットは固定で、各行は型付き導線のまま保たれます。',
+              ko: '이 템플릿은 굿즈/지원 링크 전용입니다. 슬롯은 고정되며 각 행은 타입이 있는 목적지로 유지됩니다.',
+              fr: 'Ce template reserve uniquement des liens goods/support. Le slot reste fixe et chaque ligne garde une destination typée.',
+            })}
+          </p>
           {components.length === 0 ? (
             <p className="text-sm text-slate-500">{copy.stageSections.noGoodsLinksYet}</p>
           ) : null}
-          {components.map((component, index) => (
-            <div key={component.id} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
+          {components.map((entry, index) => (
+            <div key={entry.id} className="grid gap-3 rounded-3xl border border-slate-200 bg-white/80 p-4">
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'label')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'label')} ${index + 1}`}
                 onChange={(value) => setComponentPropValue(section.kind, index, 'label', value)}
                 placeholder={copy.stageSections.actionLabelPlaceholder}
-                value={String(component.props.label ?? '')}
+                value={String(entry.props.label ?? '')}
               />
               <ControlledTextInput
-                label={`${getPublicPresenceFieldLabel(selectedLocale, 'url')} ${index + 1}`}
+                label={`${getPublicPresenceFieldLabel(locale, 'url')} ${index + 1}`}
                 onChange={(value) => setComponentPropValue(section.kind, index, 'url', value)}
                 placeholder={copy.stageSections.urlPlaceholder}
-                value={String(component.props.url ?? '')}
+                value={String(entry.props.url ?? '')}
               />
             </div>
           ))}
           <button
             type="button"
-            onClick={() => addComponentToSection(section.kind, 'LinkButton')}
+            onClick={() => {
+              if (!editorDocument) {
+                return;
+              }
+
+              const nextSections = editorDocument.sections.map((entry) => (
+                entry.kind === section.kind
+                  ? {
+                      ...entry,
+                      components: [
+                        ...(entry.components ?? []),
+                        buildDefaultComponentForType('LinkButton'),
+                      ],
+                    }
+                  : entry
+              ));
+
+              updateDocument({
+                ...editorDocument,
+                sections: nextSections,
+              });
+            }}
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             {copy.stageSections.addGoodsLink}
@@ -1903,104 +2401,56 @@ function PublicPresenceStudioScreenInner({
       );
     }
 
-    if (section.kind === 'fanInteraction') {
-      const component = getFirstComponent();
-
-      if (!component || component.type !== 'MarshmallowWidget') {
-        return (
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={() => replaceSectionComponents(section.kind, [buildDefaultComponentForType('MarshmallowWidget')])}
-              className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-            >
-              {copy.stageSections.addSection}
-            </button>
-          </div>
-        );
-      }
-
-      return (
-        <div className="grid gap-4">
-          <ControlledTextInput
-            disabled
-            label={getPublicPresenceFieldLabel(selectedLocale, 'displayMode')}
-            onChange={(value) => setComponentPropValue(section.kind, 0, 'displayMode', value)}
-            placeholder={getPublicPresenceFieldPlaceholder(selectedLocale, 'displayMode')}
-            value={String(component.props.displayMode ?? '')}
-          />
-          <ControlledTextInput
-            disabled
-            label={getPublicPresenceFieldLabel(selectedLocale, 'showRecentCount')}
-            onChange={(value) => setComponentPropValue(section.kind, 0, 'showRecentCount', Number(value) || 0)}
-            placeholder={copy.stageSections.recentCountExample}
-            value={String(component.props.showRecentCount ?? '')}
-          />
-          <ControlledCheckbox
-            checked={Boolean(component.props.showSubmitButton)}
-            disabled
-            label={getPublicPresenceFieldLabel(selectedLocale, 'showSubmitButton')}
-            onChange={(checked) => setComponentPropValue(section.kind, 0, 'showSubmitButton', checked)}
-          />
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-4">
-        <p className="text-sm text-slate-500">{copy.stageSections.noTypedComponentYet}</p>
-        {section.allowedComponents.map((component) => (
-          <PublicPresenceBadge key={component} tone="slate" variant="outline">
-            {component}
-          </PublicPresenceBadge>
-        ))}
+        <p className="text-sm leading-6 text-slate-600">
+          {pickLocaleText(locale, {
+            en: 'This slot follows the approved page setup. Use Inspect for its current boundary and Advanced for source detail.',
+            zh_HANS: '这个槽位遵循已批准的页面设置。可用 Inspect 查看当前边界，用 Advanced 查看源细节。',
+            zh_HANT: '這個槽位遵循已批准的頁面設定。可用 Inspect 查看目前邊界，用 Advanced 查看來源細節。',
+            ja: 'このスロットは承認済みのページ設定に従います。現在の境界は Inspect、ソース詳細は Advanced を使ってください。',
+            ko: '이 슬롯은 승인된 페이지 설정을 따릅니다. 현재 경계는 Inspect, 소스 세부 정보는 Advanced를 사용하세요.',
+            fr: 'Ce slot suit la configuration de page approuvée. Utilisez Inspect pour la frontière actuelle et Advanced pour le détail source.',
+          })}
+        </p>
       </div>
     );
   };
 
   const renderStagePanel = () => {
     if (!selectedStageSection || !stagePanel) {
-      return (
-        <PublicPresenceSurface className="space-y-3" variant="inset">
-          <h2 className="text-lg font-semibold text-slate-950">
-            {copy.stageSections.panelSummaryTitle}
-          </h2>
-          <p className="text-sm leading-6 text-slate-600">{copy.stageSections.description}</p>
-        </PublicPresenceSurface>
-      );
+      return null;
     }
 
-    const sectionIssues = collectIssuesForSection(
-      currentSnapshot,
-      selectedStageSection.kind,
-      selectedStageSectionDocument?.id ?? null,
-    );
-    const panelTitle =
-      stagePanel.mode === 'edit'
-        ? copy.stageSections.editorTitle
-        : stagePanel.mode === 'configure'
-          ? copy.stageSections.configureTitle
-          : copy.stageSections.inspectTitle;
+    const title = stagePanel.mode === 'edit'
+      ? copy.stageSections.editorTitle
+      : stagePanel.mode === 'configure'
+        ? copy.stageSections.configureTitle
+        : copy.stageSections.inspectTitle;
+
+    const sectionIssues = selectedSectionIssues;
+    const sectionIssueTone = getIssueTone(sectionIssues);
+    const sectionDocument = selectedStageSectionDocument;
 
     return (
       <PublicPresenceSurface
-        className="space-y-4"
+        className="space-y-5"
         data-testid="stage-section-panel"
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-lg font-semibold text-slate-950">{panelTitle}</h2>
             <div className="flex flex-wrap items-center gap-2">
               <PublicPresenceBadge tone="rose">
-                {getPublicPresenceStageSectionLabel(selectedLocale, selectedStageSection)}
+                {getPublicPresenceStageSectionLabel(locale, selectedStageSection)}
               </PublicPresenceBadge>
-              <PublicPresenceBadge
-                tone={getIssueTone(sectionIssues)}
-                variant="outline"
-              >
+              <PublicPresenceBadge tone={sectionIssueTone} variant="outline">
                 {copy.stageSections.issueCountPrefix} {sectionIssues.length}
               </PublicPresenceBadge>
             </div>
+            <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
+            <p className="text-sm leading-6 text-slate-600">
+              {getPublicPresenceStageSectionPurpose(locale, selectedStageSection)}
+            </p>
           </div>
           <button
             type="button"
@@ -2011,463 +2461,1366 @@ function PublicPresenceStudioScreenInner({
             {copy.stageSections.closePanel}
           </button>
         </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SummaryCard
+            hint={getPublicPresenceStageSectionPurpose(locale, selectedStageSection)}
+            label={copy.stageSections.sectionStatePrefix}
+            value={getPublicPresenceEditabilityStateLabel(
+              locale,
+              selectedStageSection.editabilityState,
+            )}
+          />
+          <SummaryCard
+            hint={pickLocaleText(locale, {
+              en: 'Template guidance decides whether work stays here or moves into Advanced.',
+              zh_HANS: '模板指引决定工作留在这里，还是转入 Advanced。',
+              zh_HANT: '模板指引決定工作留在這裡，還是轉入 Advanced。',
+              ja: 'テンプレートのガイドが、ここで扱うか Advanced へ回すかを決めます。',
+              ko: '템플릿 가이드가 작업을 여기서 처리할지 Advanced로 보낼지 결정합니다.',
+              fr: 'Le guide du template decide si le travail reste ici ou passe par Advanced.',
+            })}
+            label={copy.stageSections.sourceSummaryPrefix}
+            value={getPublicPresenceSourcePolicyLabel(locale, selectedStageSection.sourcePolicy)}
+          />
+        </div>
+
         {stagePanel.mode === 'inspect' ? (
           <div className="space-y-4">
-            <p className="text-sm leading-6 text-slate-600">
-              {getPublicPresenceStageSectionPurpose(selectedLocale, selectedStageSection)}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <PublicPresenceBadge tone="slate" variant="outline">
-                {copy.stageSections.sectionStatePrefix}:{' '}
-                {getPublicPresenceEditabilityStateLabel(
-                  selectedLocale,
-                  selectedStageSection.editabilityState,
-                )}
-              </PublicPresenceBadge>
-              <PublicPresenceBadge tone="slate" variant="outline">
-                {copy.stageSections.sourceSummaryPrefix}:{' '}
-                {getPublicPresenceSourcePolicyLabel(
-                  selectedLocale,
-                  selectedStageSection.sourcePolicy,
-                )}
-              </PublicPresenceBadge>
+            <PublicPresenceSurface className="space-y-3" variant="inset">
+              <p className="text-sm font-semibold text-slate-900">
+                {copy.stageSections.sourceDetailsPrefix}
+              </p>
+              <p className="text-sm leading-6 text-slate-600">
+                {selectedStageSection.sourcePolicy === 'registryOwned'
+                  ? getPublicPresenceStageSectionPurpose(locale, selectedStageSection)
+                  : copy.stageSections.sourceOwnedDescription}
+              </p>
               {selectedStageSection.sourcePolicy !== 'registryOwned' ? (
-                <>
-                  <PublicPresenceBadge tone="warning" variant="outline">
-                    {copy.stageSections.sourceOwned}
-                  </PublicPresenceBadge>
-                  <PublicPresenceBadge tone="warning" variant="outline">
-                    {copy.common.advancedOnly}
-                  </PublicPresenceBadge>
-                </>
+                <PublicPresenceBadge tone="warning" variant="outline">
+                  {copy.stageSections.sourceOwned}
+                </PublicPresenceBadge>
               ) : null}
-            </div>
-            <div className="grid gap-3">
-              {sectionIssues.length === 0 ? (
-                <p className="text-sm text-slate-500">{copy.reviewPublish.noIssues}</p>
-              ) : (
-                sectionIssues.map((issue) => (
-                  <PublicPresenceSurface key={issue.id} className="space-y-2" variant="inset">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <PublicPresenceBadge tone={issue.severity === 'info' ? 'info' : 'warning'}>
-                        {copy.stageSections.issueSeverityPrefix}: {issue.severity}
-                      </PublicPresenceBadge>
+            </PublicPresenceSurface>
+            {sectionIssues.length > 0 ? (
+              <PublicPresenceSurface className="space-y-3" variant="inset">
+                <p className="text-sm font-semibold text-slate-900">
+                  {copy.stageSections.issuePanelTitle}
+                </p>
+                <div className="space-y-3">
+                  {sectionIssues.map((issue) => (
+                    <div key={issue.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <PublicPresenceBadge tone={issue.severity === 'fatal' || issue.severity === 'blocker' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info'}>
+                          {copy.stageSections.issueSeverityPrefix}: {issue.severity}
+                        </PublicPresenceBadge>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {copy.stageSections.issueSummaryPrefix}:{' '}
+                        {getIssueSummaryCopy(locale, issue)}
+                      </p>
                     </div>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.stageSections.issueSummaryPrefix}:{' '}
-                      {getIssueSummaryCopy(selectedLocale, issue)}
-                    </p>
-                  </PublicPresenceSurface>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
+              </PublicPresenceSurface>
+            ) : null}
           </div>
         ) : null}
+
         {stagePanel.mode === 'configure' ? (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {selectedStageSection.phaseVisibility.map((phase) => (
-                <PublicPresenceBadge key={phase} tone="slate" variant="outline">
-                  {copy.stageSections.phasePrefix}{' '}
-                  {getPublicPresencePreviewPhaseLabel(
-                    selectedLocale,
-                    phase as PublicPresencePhaseVisibility,
-                  )}
-                </PublicPresenceBadge>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => moveSection(selectedStageSection.kind, 'up')}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <ArrowUp className="h-4 w-4" aria-hidden="true" />
-                {copy.stageSections.moveUp}
-              </button>
-              <button
-                type="button"
-                onClick={() => moveSection(selectedStageSection.kind, 'down')}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <ArrowDown className="h-4 w-4" aria-hidden="true" />
-                {copy.stageSections.moveDown}
-              </button>
-              <button
-                type="button"
-                onClick={() => removeSection(selectedStageSection.kind)}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-              >
-                {copy.stageSections.removeSection}
-              </button>
+            <ControlledSelect
+              disabled={selectedStageSection.phaseVisibility.length <= 1}
+              label={copy.stageSections.phasePrefix}
+              onChange={(value) => {
+                if (!editorDocument || !sectionDocument) {
+                  return;
+                }
+
+                updateDocument({
+                  ...editorDocument,
+                  sections: editorDocument.sections.map((entry) => (
+                    entry.kind === selectedStageSection.kind
+                      ? {
+                          ...entry,
+                          phaseVisibility: value as PublicPresencePhaseVisibility,
+                        }
+                      : entry
+                  )),
+                });
+              }}
+              options={selectedStageSection.phaseVisibility.map((phase) => ({
+                label: getPublicPresencePreviewPhaseLabel(
+                  locale,
+                  phase as PublicPresencePhaseVisibility,
+                ),
+                value: phase,
+              }))}
+              value={
+                sectionDocument?.phaseVisibility
+                ?? (selectedStageSection.phaseVisibility[0] as PublicPresencePhaseVisibility | undefined)
+                ?? 'always'
+              }
+            />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'Template order stays fixed here. Configuration only tunes typed visibility or slot-local setup.',
+                zh_HANS: '模板顺序在这里保持固定。这里的配置只调整类型化可见性或槽位内设置。',
+                zh_HANT: '模板順序在這裡保持固定。這裡的設定只調整型別化可見性或槽位內設定。',
+                ja: 'テンプレート順序はここでは固定です。ここでは型付きの表示条件やスロット内設定のみ調整します。',
+                ko: '템플릿 순서는 여기서 고정됩니다. 여기서는 타입이 있는 가시성이나 슬롯 내부 설정만 조정합니다.',
+                fr: 'L’ordre du template reste fixe ici. La configuration n’ajuste que la visibilité typée ou le réglage local du slot.',
+              })}
             </div>
           </div>
         ) : null}
+
         {stagePanel.mode === 'edit' ? renderStructuredSectionEditor(selectedStageSection) : null}
       </PublicPresenceSurface>
     );
   };
 
+  const renderReleaseQueue = () => (
+    <div className="space-y-4">
+      <PublicPresenceSurface className="space-y-4" variant="inset">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">
+            {copy.reviewPublish.readinessTitle}
+          </h2>
+          <p className="text-sm leading-6 text-slate-600">
+            {copy.reviewPublish.readinessDescription}
+          </p>
+        </div>
+        {hasUnsavedDraftChanges ? (
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {copy.reviewPublish.unsavedChangesHint}
+          </div>
+        ) : null}
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard
+            hint={copy.reviewPublish.fatalHint}
+            label={copy.reviewPublish.fatalLabel}
+            value={String(currentSnapshot?.issueCounts.fatal ?? 0)}
+          />
+          <SummaryCard
+            hint={copy.reviewPublish.blockerHint}
+            label={copy.reviewPublish.blockerLabel}
+            value={String(currentSnapshot?.issueCounts.blocker ?? 0)}
+          />
+          <SummaryCard
+            hint={copy.reviewPublish.warningHint}
+            label={copy.reviewPublish.warningLabel}
+            value={String(currentSnapshot?.issueCounts.warning ?? 0)}
+          />
+          <SummaryCard
+            hint={copy.reviewPublish.infoHint}
+            label={copy.reviewPublish.infoLabel}
+            value={String(currentSnapshot?.issueCounts.info ?? 0)}
+          />
+        </div>
+      </PublicPresenceSurface>
+
+      <PublicPresenceSurface className="space-y-4" variant="inset">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">
+            {copy.reviewPublish.actionsTitle}
+          </h2>
+          <p className="text-sm leading-6 text-slate-600">
+            {copy.reviewPublish.actionsDescription}
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'submit',
+                copy.notices.submitSuccess,
+                () =>
+                  submitPublicPresenceForReview(
+                    request,
+                    talentId,
+                    currentDraftHash,
+                    workspace.selectedTemplateId,
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || !['draft', 'changesRequested'].includes(currentDocumentState)}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'submit'
+              ? copy.reviewPublish.submitPending
+              : copy.reviewPublish.submit}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'approve',
+                copy.notices.approveSuccess,
+                () =>
+                  approvePublicPresenceReview(
+                    request,
+                    talentId,
+                    currentDraftHash,
+                    workspace.selectedTemplateId,
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || !['inReview', 'changesRequested'].includes(currentDocumentState)}
+            className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'approve'
+              ? copy.reviewPublish.approvePending
+              : copy.reviewPublish.approve}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'publish',
+                copy.notices.publishSuccess,
+                () =>
+                  publishPublicPresenceNow(
+                    request,
+                    talentId,
+                    currentDraftHash,
+                    workspace.selectedTemplateId,
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || !['approved', 'scheduled'].includes(currentDocumentState)}
+            className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'publish'
+              ? copy.reviewPublish.publishPending
+              : copy.reviewPublish.publishNow}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'requestChanges',
+                copy.notices.requestChangesSuccess,
+                () =>
+                  requestPublicPresenceChanges(
+                    request,
+                    talentId,
+                    {
+                      comment: reviewComment || null,
+                      expectedCurrentContentHash: currentDraftHash,
+                      templateId: workspace.selectedTemplateId,
+                    },
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || !['inReview', 'approved', 'scheduled'].includes(currentDocumentState)}
+            className="rounded-full border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'requestChanges'
+              ? copy.reviewPublish.requestChangesPending
+              : copy.reviewPublish.requestChanges}
+          </button>
+        </div>
+        <label className="block space-y-2">
+          <span className="text-sm font-semibold text-slate-900">
+            {copy.reviewPublish.reviewNote}
+          </span>
+          <textarea
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+          />
+        </label>
+        <label className="block space-y-2">
+          <span className="text-sm font-semibold text-slate-900">
+            {copy.reviewPublish.scheduleField}
+          </span>
+          <input
+            type="datetime-local"
+            value={scheduledFor}
+            onChange={(event) => setScheduledFor(event.target.value)}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+          />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              if (!scheduledFor) {
+                setNotice({
+                  message: copy.reviewPublish.chooseFutureTimeError,
+                  tone: 'error',
+                });
+                return;
+              }
+
+              void runWorkflowAction(
+                'schedule',
+                copy.notices.scheduleSuccess,
+                () =>
+                  schedulePublicPresencePublish(
+                    request,
+                    talentId,
+                    {
+                      expectedCurrentContentHash: currentDraftHash,
+                      scheduledFor: new Date(scheduledFor).toISOString(),
+                      templateId: workspace.selectedTemplateId,
+                    },
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || !['approved', 'scheduled'].includes(currentDocumentState)}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'schedule'
+              ? copy.reviewPublish.schedulePending
+              : copy.reviewPublish.schedulePublish}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'cancelSchedule',
+                copy.notices.cancelScheduleSuccess,
+                () =>
+                  cancelPublicPresenceSchedule(
+                    request,
+                    talentId,
+                    currentDraftHash,
+                    workspace.selectedTemplateId,
+                  ),
+              );
+            }}
+            disabled={isWorkflowActionDisabled || currentDocumentState !== 'scheduled'}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'cancelSchedule'
+              ? copy.reviewPublish.cancelSchedulePending
+              : copy.reviewPublish.cancelSchedule}
+          </button>
+        </div>
+        <div className="border-t border-slate-200 pt-4">
+          <p className="text-sm font-semibold text-slate-900">
+            {copy.reviewPublish.rollbackTitle}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {copy.reviewPublish.rollbackDescription}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!workspace) {
+                return;
+              }
+
+              void runWorkflowAction(
+                'rollback',
+                copy.notices.rollbackSuccess,
+                () =>
+                  createPublicPresenceRollbackDraft(
+                    request,
+                    talentId,
+                    workspace.selectedTemplateId,
+                  ),
+              );
+            }}
+            disabled={workflowAction !== null || !workspace?.liveVersion}
+            className="mt-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {workflowAction === 'rollback'
+              ? copy.reviewPublish.rollbackPending
+              : copy.reviewPublish.rollback}
+          </button>
+        </div>
+      </PublicPresenceSurface>
+
+      <PublicPresenceSurface className="space-y-4" variant="inset">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950">
+            {copy.reviewPublish.workflowEventsTitle}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowReviewHistory((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            {copy.reviewPublish.reviewHistoryToggle}
+          </button>
+        </div>
+        {showReviewHistory ? (
+          workspace?.workflowEvents.length ? (
+            <div className="grid gap-3">
+              {workspace.workflowEvents.map((event) => (
+                <PublicPresenceSurface key={event.id} className="space-y-2" variant="inset">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PublicPresenceBadge tone="slate">
+                      {getPublicPresenceWorkflowEventLabel(locale, event.eventType)}
+                    </PublicPresenceBadge>
+                    {event.toDocumentState ? (
+                      <PublicPresenceBadge tone="slate" variant="outline">
+                        {getPublicPresenceDocumentStateLabel(
+                          locale,
+                          event.fromDocumentState ?? copy.reviewPublish.transitionFallback,
+                        )}{' '}
+                        {'->'}{' '}
+                        {getPublicPresenceDocumentStateLabel(
+                          locale,
+                          event.toDocumentState,
+                        )}
+                      </PublicPresenceBadge>
+                    ) : null}
+                    <PublicPresenceBadge tone="slate" variant="outline">
+                      {formatDateTime(locale, event.occurredAt)}
+                    </PublicPresenceBadge>
+                  </div>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {copy.reviewPublish.proofPrefix} {event.contentHash?.slice(0, 12) ?? copy.common.na}
+                  </p>
+                </PublicPresenceSurface>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-slate-600">
+              {copy.reviewPublish.workflowEventsEmpty}
+            </p>
+          )
+        ) : (
+          <p className="text-sm leading-6 text-slate-600">
+            {copy.reviewPublish.historyHint}
+          </p>
+        )}
+      </PublicPresenceSurface>
+    </div>
+  );
+
+  const renderAdvancedDrawer = () => (
+    <div className="space-y-4">
+      <PublicPresenceSurface className="space-y-4" variant="inset">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">
+            {copy.advanced.title}
+          </h2>
+          <p className="text-sm leading-6 text-slate-600">
+            {copy.advanced.description}
+          </p>
+        </div>
+        <textarea
+          value={sourceText}
+          onChange={(event) => setSourceText(event.target.value)}
+          spellCheck={false}
+          aria-label={copy.common.sourceSchemaLabel}
+          className="min-h-[20rem] w-full rounded-[2rem] border border-slate-200 bg-slate-950 px-5 py-5 font-mono text-sm leading-6 text-slate-100 outline-none ring-0 transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            {copy.advanced.draftUpdatedPrefix}{' '}
+            {formatDateTime(locale, workspace?.draftVersion?.updatedAt ?? null)}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void handleSaveSourceDocument();
+            }}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? (
+              <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Save className="h-4 w-4" aria-hidden="true" />
+            )}
+            {copy.advanced.saveButton}
+          </button>
+        </div>
+      </PublicPresenceSurface>
+      <PublicPresenceSurface className="space-y-4" variant="inset">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">
+            {copy.advanced.validationDetailsTitle}
+          </h2>
+          <p className="text-sm leading-6 text-slate-600">
+            {copy.advanced.validationDetailsDescription}
+          </p>
+        </div>
+        <pre className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
+          {JSON.stringify(currentSnapshot, null, 2)}
+        </pre>
+      </PublicPresenceSurface>
+    </div>
+  );
+
+  const renderLeftDrawer = () => {
+    if (leftDrawerMode === 'release') {
+      return renderReleaseQueue();
+    }
+
+    if (leftDrawerMode === 'advanced') {
+      return renderAdvancedDrawer();
+    }
+
+    if (leftDrawerMode === 'persona') {
+      return (
+        <PublicPresenceSurface className="space-y-4" variant="inset">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-slate-950">
+              {copy.personaKit.title}
+            </h2>
+            <p className="text-sm leading-6 text-slate-600">
+              {copy.personaKit.description}
+            </p>
+          </div>
+          <ControlledTextInput
+            label={copy.personaKit.accentTone}
+            onChange={(value) => {
+              if (!editorDocument) {
+                return;
+              }
+
+              updateDocument({
+                ...editorDocument,
+                personaKit: {
+                  ...(editorDocument.personaKit ?? {}),
+                  accentTone: value,
+                },
+              });
+            }}
+            value={editorDocument?.personaKit?.accentTone ?? ''}
+          />
+          <ControlledTextInput
+            label={copy.personaKit.campaignLabel}
+            onChange={(value) => {
+              if (!editorDocument) {
+                return;
+              }
+
+              updateDocument({
+                ...editorDocument,
+                personaKit: {
+                  ...(editorDocument.personaKit ?? {}),
+                  campaignLabel: value,
+                },
+              });
+            }}
+            value={editorDocument?.personaKit?.campaignLabel ?? ''}
+          />
+          <ControlledTextArea
+            label={copy.personaKit.tagline}
+            onChange={(value) => {
+              if (!editorDocument) {
+                return;
+              }
+
+              updateDocument({
+                ...editorDocument,
+                personaKit: {
+                  ...(editorDocument.personaKit ?? {}),
+                  tagline: value,
+                },
+              });
+            }}
+            value={editorDocument?.personaKit?.tagline ?? ''}
+          />
+        </PublicPresenceSurface>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <PublicPresenceSurface className="space-y-4" variant="inset">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-slate-950">
+              {copy.stageSections.title}
+            </h2>
+            <p className="text-sm leading-6 text-slate-600">
+              {copy.stageSections.description}
+            </p>
+          </div>
+          <div className="space-y-3" data-testid="stage-sections-list">
+            {orderedSections.map((section) => {
+              const sectionDocument = getCurrentSectionDocument(editorDocument, section.kind);
+              const issues = collectIssuesForSection(
+                currentSnapshot,
+                section.kind,
+                sectionDocument?.id ?? null,
+              );
+              const summaryValue = buildStageSectionSummary(editorDocument, section);
+
+              return (
+                <StudioSectionCard
+                  key={section.kind}
+                  copy={copy}
+                  configureExpanded={
+                    stagePanel?.mode === 'configure' && stagePanel.sectionKind === section.kind
+                  }
+                  editExpanded={
+                    stagePanel?.mode === 'edit' && stagePanel.sectionKind === section.kind
+                  }
+                  editorDrawerId={rightDrawerId}
+                  hasDraftSection={Boolean(sectionDocument)}
+                  inspectExpanded={
+                    stagePanel?.mode === 'inspect' && stagePanel.sectionKind === section.kind
+                  }
+                  issueCount={issues.length}
+                  locale={locale}
+                  onDrawerFallbackTriggerRef={rightDrawerOverlay.fallbackTriggerRef}
+                  onConfigure={(target) => {
+                    rightDrawerOverlay.registerTrigger(target);
+                    setStagePanel({ mode: 'configure', sectionKind: section.kind });
+                  }}
+                  onEdit={(target) => {
+                    rightDrawerOverlay.registerTrigger(target);
+                    setStagePanel({ mode: 'edit', sectionKind: section.kind });
+                  }}
+                  onInspect={(target) => {
+                    rightDrawerOverlay.registerTrigger(target);
+                    setStagePanel({ mode: 'inspect', sectionKind: section.kind });
+                  }}
+                  section={section}
+                  summary={summaryValue}
+                />
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void handleSaveVisualDocument();
+            }}
+            disabled={saving || !editorDocument}
+            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? (
+              <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Save className="h-4 w-4" aria-hidden="true" />
+            )}
+            {copy.stageSections.saveButton}
+          </button>
+        </PublicPresenceSurface>
+      </div>
+    );
+  };
+
+  const currentValidationSummary = formatPublicPresenceStudioValidationSummary(
+    locale,
+    currentSnapshot?.issueCounts ?? null,
+  );
+  const showLeftDrawer = !previewFocus && leftDrawerOpen;
+  const showRightDrawer = !previewFocus && Boolean(stagePanel);
+  const showDrawerScrim = showLeftDrawer || showRightDrawer;
+  const leftDrawerOverlay = useOverlayFocusManager({
+    desktopBreakpoint: 1280,
+    onClose: () => setLeftDrawerOpen(false),
+    open: showLeftDrawer,
+  });
+  const mobileManageOverlay = useOverlayFocusManager({
+    onClose: () => setMobileManageOpen(false),
+    open: mobileManageOpen,
+  });
+  const mobilePreviewToolsOverlay = useOverlayFocusManager({
+    onClose: () => setMobilePreviewToolsOpen(false),
+    open: mobilePreviewToolsOpen,
+  });
+  const rightDrawerOverlay = useOverlayFocusManager({
+    desktopBreakpoint: 1280,
+    onClose: () => setStagePanel(null),
+    open: showRightDrawer,
+  });
+  const leftDrawerContent = showLeftDrawer ? renderLeftDrawer() : null;
+  const rightDrawerContent = showRightDrawer ? renderStagePanel() : null;
+  const leftDrawerLabel = leftDrawerMode === 'sections'
+    ? pickLocaleText(locale, {
+        en: 'Stage sections panel',
+        zh_HANS: '舞台分区面板',
+        zh_HANT: '舞台分區面板',
+        ja: 'ステージセクションパネル',
+        ko: '스테이지 섹션 패널',
+        fr: 'Panneau sections de scene',
+      })
+    : leftDrawerMode === 'persona'
+      ? pickLocaleText(locale, {
+          en: 'Persona Kit panel',
+          zh_HANS: '人设工具面板',
+          zh_HANT: '人設工具面板',
+          ja: 'ペルソナキットパネル',
+          ko: '페르소나 킷 패널',
+          fr: 'Panneau kit persona',
+        })
+      : leftDrawerMode === 'release'
+        ? pickLocaleText(locale, {
+            en: 'Readiness queue panel',
+            zh_HANS: '就绪队列面板',
+            zh_HANT: '就緒佇列面板',
+            ja: '準備キューパネル',
+            ko: '준비 큐 패널',
+            fr: 'Panneau file de readiness',
+          })
+        : pickLocaleText(locale, {
+            en: 'Advanced panel',
+            zh_HANS: '高级面板',
+            zh_HANT: '進階面板',
+            ja: '詳細パネル',
+            ko: '고급 패널',
+            fr: 'Panneau avance',
+          });
+  const rightDrawerLabel = stagePanel?.mode === 'edit'
+    ? pickLocaleText(locale, {
+        en: 'Edit section panel',
+        zh_HANS: '编辑分区面板',
+        zh_HANT: '編輯分區面板',
+        ja: 'セクション編集パネル',
+        ko: '섹션 편집 패널',
+        fr: 'Panneau edition de section',
+      })
+    : stagePanel?.mode === 'configure'
+      ? pickLocaleText(locale, {
+          en: 'Configure section panel',
+          zh_HANS: '配置分区面板',
+          zh_HANT: '配置分區面板',
+          ja: 'セクション設定パネル',
+          ko: '섹션 구성 패널',
+          fr: 'Panneau configuration de section',
+        })
+      : pickLocaleText(locale, {
+          en: 'Inspect section panel',
+          zh_HANS: '查看分区面板',
+          zh_HANT: '查看分區面板',
+          ja: 'セクション確認パネル',
+          ko: '섹션 검사 패널',
+          fr: 'Panneau inspection de section',
+        });
+  const drawerCloseLabel = pickLocaleText(locale, {
+    en: 'Close panel',
+    zh_HANS: '关闭面板',
+    zh_HANT: '關閉面板',
+    ja: 'パネルを閉じる',
+    ko: '패널 닫기',
+    fr: 'Fermer le panneau',
+  });
+  const workbenchGridClass = previewFocus
+    ? 'xl:grid-cols-[minmax(0,1fr)]'
+    : 'xl:grid-cols-[3.5rem_minmax(0,1fr)]';
+
+  useEffect(() => {
+    if (!workspace?.draftVersion || !editorDocument) {
+      return;
+    }
+
+    const nextSearch = mergeUrlSearchParams(searchParams, {
+      focus: null,
+      leftPanel: !previewFocus && leftDrawerOpen ? leftDrawerMode : null,
+      phase: previewPhase === 'current' ? null : previewPhase,
+      previewFocus: previewFocus ? '1' : null,
+      sheet: mobileManageOpen
+        ? 'manage'
+        : mobilePreviewToolsOpen
+          ? 'preview-tools'
+          : null,
+      stagePanel: !previewFocus ? serializeStagePanelSearchParam(stagePanel) : null,
+      templateId: selectedTemplateId === 'activeTalentHub' ? null : selectedTemplateId,
+      viewport: previewViewport === 'desktop' ? null : previewViewport,
+    }).toString();
+
+    if (nextSearch === searchKey) {
+      return;
+    }
+
+    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, {
+      scroll: false,
+    });
+  }, [
+    editorDocument,
+    leftDrawerMode,
+    leftDrawerOpen,
+    mobileManageOpen,
+    mobilePreviewToolsOpen,
+    pathname,
+    previewFocus,
+    previewPhase,
+    previewViewport,
+    router,
+    searchKey,
+    searchParams,
+    selectedTemplateId,
+    stagePanel,
+    workspace?.draftVersion,
+  ]);
+
+  if (loading) {
+    return (
+      <PublicPresenceShell decorationDensity="calm" width="xl">
+        <PublicPresenceStateView
+          description={copy.state.loadingDescription}
+          icon={<RefreshCcw className="animate-spin" />}
+          title={copy.state.loadingTitle}
+          tone="info"
+        />
+      </PublicPresenceShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <PublicPresenceShell decorationDensity="calm" width="xl">
+        <PublicPresenceStateView
+          description={error}
+          title={copy.state.unavailableTitle}
+          tone="error"
+        />
+      </PublicPresenceShell>
+    );
+  }
+
+  if (!workspace) {
+    return null;
+  }
+
+  if (!workspace.draftVersion || !editorDocument) {
+    return (
+      <PublicPresenceShell decorationDensity="calm" width="xl">
+        <EmptyWorkspaceState
+          copy={copy}
+          locale={locale}
+          onBootstrap={(templateId) => {
+            void handleBootstrap(templateId);
+          }}
+          pendingTemplateId={pendingTemplateId}
+          templates={workspace.templates}
+        />
+      </PublicPresenceShell>
+    );
+  }
+
   return (
-    <PublicPresenceShell decorationDensity="calm">
-      <div className="space-y-6">
-        <PublicPresenceSurface className="space-y-5 overflow-visible">
-          <div className="flex flex-wrap items-center gap-3">
+    <PublicPresenceShell
+      className="px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-3"
+      contentClassName="max-w-none"
+      decorationDensity="calm"
+    >
+      <div className="space-y-2">
+        <PublicPresenceSurface
+          className="sticky top-2 z-20 px-3 py-2 sm:px-3 sm:py-2 lg:px-3 lg:py-2 shadow-sm backdrop-blur"
+          data-testid="studio-topbar"
+        >
+          <div className="space-y-2 xl:hidden">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <PublicPresenceBadge icon={<Sparkles />} tone="rose">
+                  {copy.header.badge}
+                </PublicPresenceBadge>
+                <PublicPresenceBadge tone={getValidationTone(currentSnapshot)} variant="outline">
+                  {currentValidationSummary}
+                </PublicPresenceBadge>
+              </div>
+              <button
+                type="button"
+                data-testid="studio-mobile-manage-button"
+                aria-controls={mobileManageSheetId}
+                aria-expanded={mobileManageOpen}
+                aria-haspopup="dialog"
+                ref={mobileManageOverlay.fallbackTriggerRef}
+                onClick={(event) => {
+                  mobileManageOverlay.registerTrigger(event.currentTarget);
+                  setMobileManageOpen(true);
+                }}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                {pickLocaleText(locale, {
+                  en: 'Manage',
+                  zh_HANS: '管理',
+                  zh_HANT: '管理',
+                  ja: '管理',
+                  ko: '관리',
+                  fr: 'Gérer',
+                })}
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden flex-wrap items-center gap-2 xl:flex">
             <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {copy.header.badge}
             </PublicPresenceBadge>
-            <PublicPresenceBadge tone="slate" variant="outline">
-              {workspaceLabel}
+            <PublicPresenceBadge tone={getValidationTone(currentSnapshot)} variant="outline">
+              {currentValidationSummary}
             </PublicPresenceBadge>
-            {workspace?.draftVersion ? (
-              <PublicPresenceBadge tone={getValidationTone(currentSnapshot)}>
-                {formatPublicPresenceStudioValidationSummary(
-                  selectedLocale,
-                  currentSnapshot?.issueCounts ?? null,
-                )}
-              </PublicPresenceBadge>
-            ) : null}
-            {workspace?.draftVersion ? (
-              <PublicPresenceBadge tone={hasUnsavedDraftChanges ? 'warning' : 'success'} variant="outline">
-                {hasUnsavedDraftChanges ? copy.common.unsaved : copy.common.saved}
-              </PublicPresenceBadge>
-            ) : null}
-          </div>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-            <div className="space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-                {copy.header.title}
-              </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-                {copy.header.description}
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <SummaryCard
-                hint={copy.header.draftSourceHint}
-                label={copy.header.draftSourceLabel}
-                value={workspace?.draftVersion ? copy.common.publicPresence : copy.common.notInitialized}
-              />
-              <SummaryCard
-                hint={copy.header.legacyCompatibilityHint}
-                label={copy.header.legacyCompatibilityLabel}
-                value={copy.common.advancedOnly}
-              />
-            </div>
-          </div>
-          {notice ? (
-            <div
-              role={notice.tone === 'success' ? 'status' : 'alert'}
-              className={`rounded-3xl border px-4 py-3 text-sm ${
-                notice.tone === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-rose-200 bg-rose-50 text-rose-800'
-              }`}
+            <PublicPresenceBadge
+              className="hidden 2xl:inline-flex"
+              tone={hasUnsavedDraftChanges ? 'warning' : 'success'}
+              variant="outline"
             >
-              {notice.message}
-            </div>
-          ) : null}
+              {hasUnsavedDraftChanges ? copy.common.unsaved : copy.common.saved}
+            </PublicPresenceBadge>
+            <span className="hidden h-5 w-px shrink-0 bg-slate-200 2xl:block" aria-hidden="true" />
+            <Link
+              href={managementHref}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+              {getHomepageSurfaceActionLabel(locale, 'homepageMenu')}
+            </Link>
+            <Link
+              href={templateCenterHref}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              <Layers3 className="h-4 w-4" aria-hidden="true" />
+              {getHomepageSurfaceLabel(locale, 'templates')}
+            </Link>
+            <Link
+              href={previewHref}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              <Eye className="h-4 w-4" aria-hidden="true" />
+              {pickLocaleText(locale, {
+                en: 'Open preview',
+                zh_HANS: '打开预览',
+                zh_HANT: '打開預覽',
+                ja: 'プレビューを開く',
+                ko: '미리보기 열기',
+                fr: 'Ouvrir l’aperçu',
+              })}
+            </Link>
+          </div>
         </PublicPresenceSurface>
 
-        {loading ? (
-          <PublicPresenceStateView
-            description={copy.state.loadingDescription}
-            icon={<RefreshCcw className="animate-spin" />}
-            title={copy.state.loadingTitle}
-            tone="info"
-          />
-        ) : error ? (
-          <PublicPresenceStateView
-            description={error}
-            icon={<AlertCircle />}
-            title={copy.state.unavailableTitle}
-            tone="error"
-          />
-        ) : !workspace ? null : !workspace.draftVersion ? (
-          <EmptyWorkspaceState
-            copy={copy}
-            locale={selectedLocale}
-            onBootstrap={handleBootstrap}
-            pendingTemplateId={pendingTemplateId}
-            templates={workspace.templates}
-          />
-        ) : (
-          <div className="space-y-6">
-            <div
-              aria-label={copy.common.studioSectionsLabel}
-              className="flex flex-wrap gap-2"
-              role="tablist"
-            >
-              {STUDIO_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  aria-selected={activeTab === tab.id}
-                  role="tab"
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                    activeTab === tab.id
-                      ? 'border-rose-300 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center [&>svg]:h-4 [&>svg]:w-4">
-                    {tab.icon}
-                  </span>
-                  <span>{getPublicPresenceStudioTabLabel(selectedLocale, tab.id)}</span>
-                </button>
-              ))}
+        {mobileManageOpen ? (
+          <PublicPresenceSurface
+            aria-label={pickLocaleText(locale, {
+              en: 'Studio destinations sheet',
+              zh_HANS: 'Studio 入口抽屉',
+              zh_HANT: 'Studio 入口抽屜',
+              ja: 'Studio 移動シート',
+              ko: 'Studio 이동 시트',
+              fr: 'Feuille destinations studio',
+            })}
+            aria-modal
+            className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
+            data-testid="studio-mobile-manage-sheet"
+            id={mobileManageSheetId}
+            role="dialog"
+            variant="inset"
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-slate-950">
+                  {pickLocaleText(locale, {
+                    en: 'Studio destinations',
+                    zh_HANS: 'Studio 入口',
+                    zh_HANT: 'Studio 入口',
+                    ja: 'Studio 移動先',
+                    ko: 'Studio 이동',
+                    fr: 'Destinations studio',
+                  })}
+                </h2>
+                <p className="text-sm text-slate-600">
+                  {pickLocaleText(locale, {
+                    en: 'Open management, templates, or preview from one place.',
+                    zh_HANS: '在这里统一打开管理页、模板中心或预览。',
+                    zh_HANT: '在這裡統一打開管理頁、模板中心或預覽。',
+                    ja: 'ここから管理、テンプレート、プレビューをまとめて開きます。',
+                    ko: '여기에서 관리, 템플릿, 미리보기를 한 번에 엽니다.',
+                    fr: 'Ouvrez ici la gestion, les templates ou l’aperçu depuis un seul endroit.',
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileManageOpen(false)}
+                ref={mobileManageOverlay.mobileInitialFocusRef}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+                {pickLocaleText(locale, {
+                  en: 'Close',
+                  zh_HANS: '关闭',
+                  zh_HANT: '關閉',
+                  ja: '閉じる',
+                  ko: '닫기',
+                  fr: 'Fermer',
+                })}
+              </button>
             </div>
+            <div className="grid gap-2">
+              <Link
+                href={managementHref}
+                className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span>{getHomepageSurfaceActionLabel(locale, 'homepageMenu')}</span>
+                <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href={templateCenterHref}
+                className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span>{getHomepageSurfaceLabel(locale, 'templates')}</span>
+                <Layers3 className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href={previewHref}
+                className="inline-flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+              >
+                <span>{pickLocaleText(locale, {
+                  en: 'Open preview',
+                  zh_HANS: '打开预览',
+                  zh_HANT: '打開預覽',
+                  ja: 'プレビューを開く',
+                  ko: '미리보기 열기',
+                  fr: 'Ouvrir l’aperçu',
+                })}</span>
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </PublicPresenceSurface>
+        ) : null}
 
-            {activeTab === 'overview' ? (
-              <div className="space-y-4">
-                <div className="grid gap-4 xl:grid-cols-4">
-                  <SummaryCard
-                    hint={copy.overview.templateHint}
-                    label={copy.overview.templateLabel}
-                    value={
-                      currentTemplate
-                        ? getPublicPresenceTemplateLabel(selectedLocale, currentTemplate)
-                        : workspace.draftVersion.document.templateId
-                    }
-                  />
-                  <SummaryCard
-                    hint={copy.overview.draftVersionHint}
-                    label={copy.overview.draftVersionLabel}
-                    value={`v${workspace.draftVersion.versionNumber}`}
-                  />
-                  <SummaryCard
-                    hint={copy.overview.lastSavedHint}
-                    label={copy.overview.lastSavedLabel}
-                    value={formatDateTime(selectedLocale, workspace.draftVersion.updatedAt)}
-                  />
-                  <SummaryCard
-                    hint={copy.overview.liveVersionHint}
-                    label={copy.overview.liveVersionLabel}
-                    value={
-                      workspace.liveVersion
-                        ? `v${workspace.liveVersion.versionNumber}`
-                        : copy.common.notPublished
-                    }
-                  />
-                  <SummaryCard
-                    hint={copy.overview.livePathHint}
-                    label={copy.overview.livePathLabel}
-                    value={workspacePublicPath}
-                  />
+        {notice ? (
+          <div
+            role={notice.tone === 'error' ? 'alert' : 'status'}
+            className={`fixed top-4 right-4 z-40 max-w-sm rounded-3xl border px-4 py-3 text-sm shadow-lg ${
+              notice.tone === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-800'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            }`}
+          >
+            {notice.message}
+          </div>
+        ) : null}
+
+        {showDrawerScrim ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-x-0 bottom-0 top-20 z-[25] hidden bg-[rgba(255,250,245,0.38)] backdrop-blur-[3px] xl:block"
+            data-testid="studio-drawer-scrim"
+          />
+        ) : null}
+
+        <div className={`grid min-h-[calc(100vh-4.75rem)] gap-2 ${workbenchGridClass}`}>
+          {!previewFocus ? (
+            <PublicPresenceSurface
+              className="!fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-2 md:py-3 md:shadow-none md:backdrop-blur-0"
+              data-testid="left-rail"
+              variant="inset"
+            >
+              {([
+                ['sections', <Layers3 key="sections" className="h-4 w-4" aria-hidden="true" />, pickLocaleText(locale, {
+                  en: 'Stage Sections',
+                  zh_HANS: '舞台分区',
+                  zh_HANT: '舞台分區',
+                  ja: 'ステージセクション',
+                  ko: '스테이지 섹션',
+                  fr: 'Sections de scène',
+                })],
+                ['persona', <Sparkles key="persona" className="h-4 w-4" aria-hidden="true" />, copy.personaKit.title],
+                ['release', <ShieldCheck key="release" className="h-4 w-4" aria-hidden="true" />, copy.reviewPublish.readinessTitle],
+                ['advanced', <FileCode2 key="advanced" className="h-4 w-4" aria-hidden="true" />, copy.advanced.title],
+              ] as const).map(([mode, icon, label]) => {
+                const isActive = leftDrawerOpen && leftDrawerMode === mode;
+
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-controls={leftDrawerId}
+                    aria-expanded={isActive}
+                    aria-label={label}
+                    aria-pressed={isActive}
+                    ref={isActive ? leftDrawerOverlay.fallbackTriggerRef : undefined}
+                    onClick={(event) => {
+                      leftDrawerOverlay.registerTrigger(event.currentTarget);
+                      if (isActive) {
+                        setLeftDrawerOpen(false);
+                        return;
+                      }
+
+                      setLeftDrawerMode(mode);
+                      setLeftDrawerOpen(true);
+                    }}
+                    className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                      isActive
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                    title={label}
+                  >
+                    {icon}
+                  </button>
+                );
+              })}
+            </PublicPresenceSurface>
+          ) : null}
+
+          {showLeftDrawer ? (
+            <div className="contents">
+              <div
+                aria-label={leftDrawerLabel}
+                className="fixed inset-y-24 left-[5.5rem] z-30 hidden w-[20rem] overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-1 ring-white/90 xl:block"
+                data-testid="studio-left-drawer-desktop"
+                id={leftDrawerId}
+                role="region"
+              >
+                <div className="relative h-full overflow-auto rounded-[1.85rem] bg-[linear-gradient(180deg,#ffffff_0%,#fcfbf8_100%)] p-3">
+                  <button
+                    type="button"
+                    aria-label={drawerCloseLabel}
+                    onClick={() => setLeftDrawerOpen(false)}
+                    ref={leftDrawerOverlay.desktopInitialFocusRef}
+                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <div className="pr-12">{leftDrawerContent}</div>
                 </div>
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <PublicPresenceBadge icon={<ShieldCheck />} tone={getValidationTone(currentSnapshot)}>
-                      {copy.reviewPublish.readinessTitle}
-                    </PublicPresenceBadge>
-                    <PublicPresenceBadge tone="slate" variant="outline">
-                      {getPublicPresenceDocumentStateLabel(selectedLocale, currentDocumentState)}
-                    </PublicPresenceBadge>
-                  </div>
-                  <p className="text-sm leading-6 text-slate-600">
-                    {copy.reviewPublish.readinessDescription}
-                  </p>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <SummaryCard
-                      hint={copy.reviewPublish.fatalHint}
-                      label={copy.reviewPublish.fatalLabel}
-                      value={String(currentSnapshot?.issueCounts.fatal ?? 0)}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.blockerHint}
-                      label={copy.reviewPublish.blockerLabel}
-                      value={String(currentSnapshot?.issueCounts.blocker ?? 0)}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.warningHint}
-                      label={copy.reviewPublish.warningLabel}
-                      value={String(currentSnapshot?.issueCounts.warning ?? 0)}
-                    />
-                  </div>
-                </PublicPresenceSurface>
               </div>
-            ) : null}
+              <div
+                aria-label={leftDrawerLabel}
+                aria-modal
+                className="xl:hidden fixed inset-x-3 bottom-20 z-40 max-h-[72vh] overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-1 ring-white/90"
+                id={leftDrawerId}
+                role="dialog"
+              >
+                <div className="relative max-h-[72vh] overflow-auto rounded-[1.85rem] bg-[linear-gradient(180deg,#ffffff_0%,#fcfbf8_100%)] p-3">
+                <button
+                  type="button"
+                  aria-label={drawerCloseLabel}
+                  onClick={() => setLeftDrawerOpen(false)}
+                  ref={leftDrawerOverlay.mobileInitialFocusRef}
+                  className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <div className="pr-12">{leftDrawerContent}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
-            {activeTab === 'stageSections' ? (
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)]">
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-semibold text-slate-950">
-                      {copy.stageSections.title}
-                    </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.stageSections.description}
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    {orderedSections.map((section) => {
-                      const sectionDocument = getCurrentSectionDocument(editorDocument, section.kind);
-                      const issues = collectIssuesForSection(
-                        currentSnapshot,
-                        section.kind,
-                        sectionDocument?.id ?? null,
-                      );
-                      const summaryValue = buildStageSectionSummary(editorDocument, section);
-
-                      return (
-                        <div
-                          key={section.kind}
-                          className="rounded-3xl border border-slate-200 bg-white/90 px-4 py-4"
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="space-y-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <PublicPresenceBadge tone="rose">
-                                  {getPublicPresenceStageSectionLabel(selectedLocale, section)}
-                                </PublicPresenceBadge>
-                                <PublicPresenceBadge tone="slate" variant="outline">
-                                  {sectionDocument
-                                    ? copy.stageSections.presentInDraft
-                                    : copy.stageSections.missingFromDraft}
-                                </PublicPresenceBadge>
-                                <PublicPresenceBadge
-                                  tone={getIssueTone(issues)}
-                                  variant="outline"
-                                >
-                                  {copy.stageSections.issueCountPrefix} {issues.length}
-                                </PublicPresenceBadge>
-                              </div>
-                              <h3 className="text-base font-semibold text-slate-950">
-                                {getPublicPresenceStageSectionPurpose(selectedLocale, section)}
-                              </h3>
-                              <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                                <span>
-                                  {copy.stageSections.sourceSummaryPrefix}:{' '}
-                                  {getPublicPresenceSourcePolicyLabel(
-                                    selectedLocale,
-                                    section.sourcePolicy,
-                                  )}
-                                </span>
-                                {summaryValue ? (
-                                  <span>
-                                    {copy.stageSections.summaryPrefix}: {summaryValue}
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  ensureSectionExists(section);
-                                  setStagePanel({ mode: 'edit', sectionKind: section.kind });
-                                }}
-                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              >
-                                {copy.stageSections.editAction} {getPublicPresenceStageSectionLabel(selectedLocale, section)}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setStagePanel({ mode: 'configure', sectionKind: section.kind })}
-                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              >
-                                {copy.stageSections.configureAction} {getPublicPresenceStageSectionLabel(selectedLocale, section)}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setStagePanel({ mode: 'inspect', sectionKind: section.kind })}
-                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              >
-                                {copy.stageSections.inspectAction} {getPublicPresenceStageSectionLabel(selectedLocale, section)}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
+          <div className="flex min-h-0 flex-col gap-2">
+            <PublicPresenceSurface className="px-3 py-2 shadow-sm backdrop-blur">
+              <div className="space-y-2 xl:hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <PublicPresenceBadge icon={<Eye />} tone="rose">
+                    {copy.fanPreview.badge}
+                  </PublicPresenceBadge>
+                  <button
+                    type="button"
+                    aria-controls={mobilePreviewToolsSheetId}
+                    aria-expanded={mobilePreviewToolsOpen}
+                    aria-haspopup="dialog"
+                    aria-pressed={mobilePreviewToolsOpen}
+                    ref={mobilePreviewToolsOverlay.fallbackTriggerRef}
+                    onClick={(event) => {
+                      mobilePreviewToolsOverlay.registerTrigger(event.currentTarget);
+                      setMobilePreviewToolsOpen(true);
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                      mobilePreviewToolsOpen
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Settings2 className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Preview tools',
+                      zh_HANS: '预览工具',
+                      zh_HANT: '預覽工具',
+                      ja: 'プレビュー操作',
+                      ko: '미리보기 도구',
+                      fr: 'Outils aperçu',
                     })}
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleSaveVisualDocument();
-                      }}
-                      disabled={saving}
-                      className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {saving ? (
-                        <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Save className="h-4 w-4" aria-hidden="true" />
-                      )}
-                      {copy.stageSections.saveButton}
-                    </button>
-                  </div>
-                </PublicPresenceSurface>
-                {renderStagePanel()}
-              </div>
-            ) : null}
-
-            {activeTab === 'personaKit' ? (
-              <PublicPresenceSurface className="space-y-5">
-                <div className="space-y-2">
-                  <h2 className="text-xl font-semibold text-slate-950">
-                    {copy.personaKit.title}
-                  </h2>
-                  <p className="text-sm leading-6 text-slate-600">
-                    {copy.personaKit.description}
-                  </p>
+                  </button>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <ControlledTextInput
-                    label={copy.personaKit.accentTone}
-                    onChange={(value) => {
-                      if (!editorDocument) {
-                        return;
-                      }
-
-                      updateDocument({
-                        ...editorDocument,
-                        personaKit: {
-                          ...(editorDocument.personaKit ?? {}),
-                          accentTone: value,
-                        },
-                      });
-                    }}
-                    value={editorDocument?.personaKit?.accentTone ?? ''}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <PreviewViewportToggle
+                    compact
+                    locale={locale}
+                    onChange={setPreviewViewport}
+                    value={previewViewport}
                   />
-                  <ControlledTextInput
-                    label={copy.personaKit.campaignLabel}
-                    onChange={(value) => {
-                      if (!editorDocument) {
-                        return;
-                      }
+                  <button
+                    type="button"
+                    aria-pressed={previewFocus}
+                    onClick={() => setPreviewFocus((current) => !current)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                      previewFocus
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Monitor className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Preview focus',
+                      zh_HANS: '预览聚焦',
+                      zh_HANT: '預覽聚焦',
+                      ja: 'プレビュー集中',
+                      ko: '미리보기 집중',
+                      fr: 'Focus aperçu',
+                    })}
+                  </button>
+                </div>
+              </div>
 
-                      updateDocument({
-                        ...editorDocument,
-                        personaKit: {
-                          ...(editorDocument.personaKit ?? {}),
-                          campaignLabel: value,
-                        },
-                      });
-                    }}
-                    value={editorDocument?.personaKit?.campaignLabel ?? ''}
+              <div className="hidden flex-wrap items-center justify-between gap-3 xl:flex">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PublicPresenceBadge icon={<Eye />} tone="rose">
+                    {copy.fanPreview.badge}
+                  </PublicPresenceBadge>
+                  <PublicPresenceBadge tone="slate" variant="outline">
+                    {currentTemplate
+                      ? getPublicPresenceTemplateLabel(locale, currentTemplate)
+                      : selectedTemplateId}
+                  </PublicPresenceBadge>
+                  <PublicPresenceBadge tone="slate" variant="outline">
+                    {copy.fanPreview.resolvedPhaseLabel}:{' '}
+                    {previewProjection
+                      ? getPublicPresencePreviewPhaseLabel(
+                          locale,
+                          previewProjection.resolvedRevealPhase,
+                        )
+                      : getPublicPresencePreviewPhaseLabel(locale, previewPhase)}
+                  </PublicPresenceBadge>
+                  {selectedStageSection ? (
+                    <PublicPresenceBadge tone="slate" variant="outline">
+                      {copy.fanPreview.selectedSectionLabel}:{' '}
+                      {getPublicPresenceStageSectionLabel(locale, selectedStageSection)}
+                    </PublicPresenceBadge>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <PreviewViewportToggle
+                    locale={locale}
+                    onChange={setPreviewViewport}
+                    value={previewViewport}
                   />
-                  <div className="md:col-span-2">
-                    <ControlledTextArea
-                      label={copy.personaKit.tagline}
+                  <button
+                    type="button"
+                    aria-pressed={previewFocus}
+                    onClick={() => setPreviewFocus((current) => !current)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      previewFocus
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Monitor className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Preview focus',
+                      zh_HANS: '预览聚焦',
+                      zh_HANT: '預覽聚焦',
+                      ja: 'プレビュー集中',
+                      ko: '미리보기 집중',
+                      fr: 'Focus aperçu',
+                    })}
+                  </button>
+                </div>
+              </div>
+            </PublicPresenceSurface>
+
+            <PublicPresenceSurface
+              className="relative flex min-h-[calc(100vh-4.75rem)] flex-1 flex-col border border-slate-200/80 bg-white/95 p-0 sm:p-0 lg:p-0"
+              data-testid="canvas-stage"
+            >
+              {previewError ? (
+                <PublicPresenceStateView
+                  description={previewError}
+                  icon={<AlertCircle />}
+                  title={copy.state.previewUnavailableTitle}
+                  tone="error"
+                />
+              ) : previewProjection ? (
+                <div className={`min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 ${previewViewport === 'mobile' ? 'mx-auto w-full max-w-[27rem]' : ''}`}>
+                  <div className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-3">
+                    <div
+                      className="h-full overflow-auto rounded-[1.5rem] px-4 py-5 sm:px-6 sm:py-6"
+                      style={previewCanvasStyle}
+                    >
+                      <div className={previewViewport === 'mobile' ? 'mx-auto w-full' : 'mx-auto max-w-4xl'}>
+                        <PublicHomepageProjectionRenderer
+                          projection={previewProjection}
+                          responsiveMode={previewViewport}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-[calc(100vh-8rem)] flex-1 items-center justify-center px-4 pt-16">
+                  <PublicPresenceStateView
+                    description={copy.state.previewWaitingDescription}
+                    title={copy.state.previewWaitingTitle}
+                    tone="info"
+                  />
+                </div>
+              )}
+            </PublicPresenceSurface>
+
+            <div
+              className="rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2"
+              data-testid="bottom-preview-bar"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="min-w-[12rem]">
+                    <ControlledSelect
+                      label={copy.fanPreview.simulatePhase}
                       onChange={(value) => {
-                        if (!editorDocument) {
-                          return;
+                        if (
+                          PUBLIC_PRESENCE_PREVIEW_PHASES.includes(
+                            value as PublicPresencePhaseVisibility | 'current',
+                          )
+                        ) {
+                          setPreviewPhase(value as PublicPresencePhaseVisibility | 'current');
                         }
-
-                        updateDocument({
-                          ...editorDocument,
-                          personaKit: {
-                            ...(editorDocument.personaKit ?? {}),
-                            tagline: value,
-                          },
-                        });
                       }}
-                      value={editorDocument?.personaKit?.tagline ?? ''}
+                      options={PUBLIC_PRESENCE_PREVIEW_PHASES.map((value) => ({
+                        label: getPublicPresencePreviewPhaseLabel(locale, value),
+                        value,
+                      }))}
+                      value={previewPhase}
                     />
                   </div>
+                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                    {copy.fanPreview.resolvedPhaseLabel}:{' '}
+                    {previewProjection
+                      ? getPublicPresencePreviewPhaseLabel(
+                          locale,
+                          previewProjection.resolvedRevealPhase,
+                        )
+                      : getPublicPresencePreviewPhaseLabel(locale, previewPhase)}
+                  </PublicPresenceBadge>
+                  {selectedStageSection ? (
+                    <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                      {copy.fanPreview.selectedSectionLabel}:{' '}
+                      {getPublicPresenceStageSectionLabel(locale, selectedStageSection)}
+                    </PublicPresenceBadge>
+                  ) : null}
+                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                    {copy.fanPreview.sharedPathBadge}
+                  </PublicPresenceBadge>
                 </div>
                 <button
                   type="button"
@@ -2475,612 +3828,164 @@ function PublicPresenceStudioScreenInner({
                     void handleSaveVisualDocument();
                   }}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {saving ? (
                     <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : (
                     <Save className="h-4 w-4" aria-hidden="true" />
                   )}
-                  {copy.personaKit.saveButton}
+                  {pickLocaleText(locale, {
+                    en: 'Save draft',
+                    zh_HANS: '保存草稿',
+                    zh_HANT: '儲存草稿',
+                    ja: 'ドラフト保存',
+                    ko: '드래프트 저장',
+                    fr: 'Enregistrer le brouillon',
+                  })}
                 </button>
-              </PublicPresenceSurface>
-            ) : null}
-
-            {activeTab === 'fanPreview' ? (
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <PublicPresenceBadge icon={<Eye />} tone="rose">
-                      {copy.fanPreview.badge}
-                    </PublicPresenceBadge>
-                    <PublicPresenceBadge tone="slate" variant="outline">
-                      {copy.fanPreview.sharedPathBadge}
-                    </PublicPresenceBadge>
-                  </div>
-                  <p className="text-sm leading-7 text-slate-600">
-                    {copy.fanPreview.description}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {PREVIEW_VIEWPORTS.map((viewport) => (
-                      <button
-                        key={viewport.id}
-                        type="button"
-                        onClick={() => setPreviewViewport(viewport.id)}
-                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                          previewViewport === viewport.id
-                            ? 'border-rose-300 bg-rose-50 text-rose-700'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        {viewport.id === 'desktop'
-                          ? copy.fanPreview.desktopMode
-                          : copy.fanPreview.mobileMode}
-                      </button>
-                    ))}
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                      <span className="font-semibold">{copy.fanPreview.simulatePhase}</span>
-                      <select
-                        value={previewPhase}
-                        onChange={(event) =>
-                          setPreviewPhase(
-                            event.target.value as PublicPresencePhaseVisibility | 'current',
-                          )
-                        }
-                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300"
-                      >
-                        {previewPhaseOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  {hasUnsavedDraftChanges ? (
-                    <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                      {copy.fanPreview.unsavedWarning}
-                    </div>
-                  ) : (
-                    <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                      {copy.fanPreview.savedState}
-                    </div>
-                  )}
-                  {previewError ? (
-                    <PublicPresenceStateView
-                      description={previewError}
-                      title={copy.state.previewUnavailableTitle}
-                      tone="error"
-                    />
-                  ) : previewLoading && !previewProjection ? (
-                    <PublicPresenceStateView
-                      description={copy.state.previewLoadingDescription}
-                      icon={<RefreshCcw className="animate-spin" />}
-                      title={copy.state.previewLoadingTitle}
-                      tone="info"
-                    />
-                  ) : previewProjection ? (
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                        <span>{copy.fanPreview.frameHint}</span>
-                        <PublicPresenceBadge tone="slate" variant="outline">
-                          {copy.fanPreview.resolvedPhaseLabel}:{' '}
-                          {getPublicPresencePreviewPhaseLabel(
-                            selectedLocale,
-                            previewProjection.resolvedRevealPhase,
-                          )}
-                        </PublicPresenceBadge>
-                      </div>
-                      <div
-                        aria-label={copy.fanPreview.frameLabel}
-                        className={`overflow-hidden rounded-[2rem] border border-slate-200 bg-white/80 p-3 sm:p-4 ${viewportFrameClass}`}
-                      >
-                        <PublicHomepageProjectionRenderer projection={previewProjection} />
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <PublicPresenceSurface className="space-y-2" variant="inset">
-                          <h3 className="text-sm font-semibold text-slate-900">
-                            {copy.fanPreview.fallbacksLabel}
-                          </h3>
-                          <p className="text-sm leading-6 text-slate-600">
-                            {copy.fanPreview.fallbacksHint}
-                          </p>
-                          <p className="text-sm leading-6 text-slate-900">
-                            {previewProjection.fallbackDecisions?.length ?? 0}
-                          </p>
-                        </PublicPresenceSurface>
-                        <PublicPresenceSurface className="space-y-2" variant="inset">
-                          <h3 className="text-sm font-semibold text-slate-900">
-                            {copy.fanPreview.resolvedPhaseLabel}
-                          </h3>
-                          <p className="text-sm leading-6 text-slate-600">
-                            {copy.fanPreview.resolvedPhaseHint}
-                          </p>
-                          <p className="text-sm leading-6 text-slate-900">
-                            {getPublicPresencePreviewPhaseLabel(
-                              selectedLocale,
-                              previewProjection.resolvedRevealPhase,
-                            )}
-                          </p>
-                        </PublicPresenceSurface>
-                      </div>
-                    </div>
-                  ) : (
-                    <PublicPresenceStateView
-                      description={copy.state.previewWaitingDescription}
-                      title={copy.state.previewWaitingTitle}
-                      tone="info"
-                    />
-                  )}
-                </PublicPresenceSurface>
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                      {copy.fanPreview.previewInspectorTitle}
-                    </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.fanPreview.selectedSectionEmpty}
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      {copy.fanPreview.previewSectionsTitle}
-                    </h3>
-                    {previewProjection?.sections.length ? (
-                      previewProjection.sections.map((section) => (
-                        <button
-                          key={section.id}
-                          type="button"
-                          onClick={() => setSelectedPreviewSectionId(section.id)}
-                          className={`w-full rounded-3xl border px-4 py-3 text-left transition ${
-                            selectedPreviewSectionId === section.id
-                              ? 'border-rose-300 bg-rose-50'
-                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <PublicPresenceBadge tone="rose">
-                              {getPublicPresenceStageSectionLabel(selectedLocale, section)}
-                            </PublicPresenceBadge>
-                            <PublicPresenceBadge tone="slate" variant="outline">
-                              {copy.fanPreview.validationMarkersPrefix} {section.validationIssueIds.length}
-                            </PublicPresenceBadge>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-sm leading-6 text-slate-600">
-                        {copy.fanPreview.noSections}
-                      </p>
-                    )}
-                  </div>
-                  {selectedPreviewSection ? (
-                    <PublicPresenceSurface className="space-y-3" variant="inset">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <PublicPresenceBadge tone="rose">
-                          {copy.fanPreview.selectedSectionLabel}
-                        </PublicPresenceBadge>
-                        <PublicPresenceBadge tone="slate" variant="outline">
-                          {getPublicPresenceStageSectionLabel(selectedLocale, selectedPreviewSection)}
-                        </PublicPresenceBadge>
-                      </div>
-                      <p className="text-sm leading-6 text-slate-600">
-                        {copy.fanPreview.validationMarkersPrefix}: {selectedPreviewSection.validationIssueIds.length}
-                      </p>
-                      {selectedPreviewSection.fallbackBehavior === 'lockedSourceOwned' ? (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                          {copy.fanPreview.lockedOverlay}
-                        </div>
-                      ) : null}
-                    </PublicPresenceSurface>
-                  ) : null}
-                </PublicPresenceSurface>
               </div>
-            ) : null}
-
-            {activeTab === 'reviewPublish' ? (
-              <div className="space-y-4">
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                      {copy.reviewPublish.readinessTitle}
+            </div>
+            {mobilePreviewToolsOpen ? (
+              <PublicPresenceSurface
+                aria-label={pickLocaleText(locale, {
+                  en: 'Studio preview tools sheet',
+                  zh_HANS: 'Studio 预览工具抽屉',
+                  zh_HANT: 'Studio 預覽工具抽屜',
+                  ja: 'Studio プレビュー操作シート',
+                  ko: 'Studio 미리보기 도구 시트',
+                  fr: 'Feuille outils aperçu studio',
+                })}
+                aria-modal
+                className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
+                data-testid="studio-mobile-preview-tools-sheet"
+                id={mobilePreviewToolsSheetId}
+                role="dialog"
+                variant="inset"
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-base font-semibold text-slate-950">
+                      {pickLocaleText(locale, {
+                        en: 'Preview tools',
+                        zh_HANS: '预览工具',
+                        zh_HANT: '預覽工具',
+                        ja: 'プレビュー操作',
+                        ko: '미리보기 도구',
+                        fr: 'Outils aperçu',
+                      })}
                     </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.reviewPublish.readinessDescription}
-                    </p>
-                  </div>
-                  {hasUnsavedDraftChanges ? (
-                    <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                      {copy.reviewPublish.unsavedChangesHint}
-                    </div>
-                  ) : null}
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <SummaryCard
-                      hint={copy.reviewPublish.fatalHint}
-                      label={copy.reviewPublish.fatalLabel}
-                      value={String(currentSnapshot?.issueCounts.fatal ?? 0)}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.blockerHint}
-                      label={copy.reviewPublish.blockerLabel}
-                      value={String(currentSnapshot?.issueCounts.blocker ?? 0)}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.warningHint}
-                      label={copy.reviewPublish.warningLabel}
-                      value={String(currentSnapshot?.issueCounts.warning ?? 0)}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.infoHint}
-                      label={copy.reviewPublish.infoLabel}
-                      value={String(currentSnapshot?.issueCounts.info ?? 0)}
-                    />
-                  </div>
-                </PublicPresenceSurface>
-
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-                  <PublicPresenceSurface className="space-y-4">
-                    <div className="space-y-2">
-                      <h2 className="text-lg font-semibold text-slate-950">
-                        {copy.reviewPublish.actionsTitle}
-                      </h2>
-                      <p className="text-sm leading-6 text-slate-600">
-                        {copy.reviewPublish.actionsDescription}
-                      </p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void runWorkflowAction(
-                            'submit',
-                            copy.notices.submitSuccess,
-                            () =>
-                              submitPublicPresenceForReview(
-                                request,
-                                talentId,
-                                currentDraftHash,
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || !['draft', 'changesRequested'].includes(currentDocumentState)}
-                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'submit'
-                          ? copy.reviewPublish.submitPending
-                          : copy.reviewPublish.submit}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void runWorkflowAction(
-                            'approve',
-                            copy.notices.approveSuccess,
-                            () =>
-                              approvePublicPresenceReview(
-                                request,
-                                talentId,
-                                currentDraftHash,
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || !['inReview', 'changesRequested'].includes(currentDocumentState)}
-                        className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'approve'
-                          ? copy.reviewPublish.approvePending
-                          : copy.reviewPublish.approve}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void runWorkflowAction(
-                            'publish',
-                            copy.notices.publishSuccess,
-                            () =>
-                              publishPublicPresenceNow(
-                                request,
-                                talentId,
-                                currentDraftHash,
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || !['approved', 'scheduled'].includes(currentDocumentState)}
-                        className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'publish'
-                          ? copy.reviewPublish.publishPending
-                          : copy.reviewPublish.publishNow}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void runWorkflowAction(
-                            'requestChanges',
-                            copy.notices.requestChangesSuccess,
-                            () =>
-                              requestPublicPresenceChanges(
-                                request,
-                                talentId,
-                                {
-                                  comment: reviewComment || null,
-                                  expectedCurrentContentHash: currentDraftHash,
-                                },
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || !['inReview', 'approved', 'scheduled'].includes(currentDocumentState)}
-                        className="rounded-full border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'requestChanges'
-                          ? copy.reviewPublish.requestChangesPending
-                          : copy.reviewPublish.requestChanges}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!scheduledFor) {
-                            setNotice({
-                              message: copy.reviewPublish.chooseFutureTimeError,
-                              tone: 'error',
-                            });
-                            return;
-                          }
-
-                          void runWorkflowAction(
-                            'schedule',
-                            copy.notices.scheduleSuccess,
-                            () =>
-                              schedulePublicPresencePublish(
-                                request,
-                                talentId,
-                                {
-                                  expectedCurrentContentHash: currentDraftHash,
-                                  scheduledFor: new Date(scheduledFor).toISOString(),
-                                },
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || currentDocumentState !== 'approved'}
-                        className="rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'schedule'
-                          ? copy.reviewPublish.schedulePending
-                          : copy.reviewPublish.schedulePublish}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void runWorkflowAction(
-                            'cancelSchedule',
-                            copy.notices.cancelScheduleSuccess,
-                            () =>
-                              cancelPublicPresenceSchedule(
-                                request,
-                                talentId,
-                                currentDraftHash,
-                              ),
-                          );
-                        }}
-                        disabled={isWorkflowActionDisabled || currentDocumentState !== 'scheduled'}
-                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {workflowAction === 'cancelSchedule'
-                          ? copy.reviewPublish.cancelSchedulePending
-                          : copy.reviewPublish.cancelSchedule}
-                      </button>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <ControlledTextArea
-                        label={copy.reviewPublish.reviewNote}
-                        onChange={setReviewComment}
-                        value={reviewComment}
-                      />
-                      <label className="block space-y-2">
-                        <span className="text-sm font-semibold text-slate-900">
-                          {copy.reviewPublish.scheduleField}
-                        </span>
-                        <input
-                          type="datetime-local"
-                          value={scheduledFor}
-                          onChange={(event) => setScheduledFor(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300"
-                        />
-                        <p className="text-xs leading-5 text-slate-500">
-                          {copy.reviewPublish.schedulingHint}
-                        </p>
-                      </label>
-                    </div>
-                  </PublicPresenceSurface>
-
-                  <PublicPresenceSurface className="space-y-4">
-                    <div className="space-y-2">
-                      <h2 className="text-lg font-semibold text-slate-950">
-                        {copy.reviewPublish.changeSummaryTitle}
-                      </h2>
-                      <p className="text-sm leading-6 text-slate-600">
-                        {copy.reviewPublish.historyHint}
-                      </p>
-                    </div>
-                    <SummaryCard
-                      hint={copy.reviewPublish.draftVersionPrefix}
-                      label={copy.reviewPublish.versionPrefix}
-                      value={`v${workspace.draftVersion.versionNumber}`}
-                    />
-                    <SummaryCard
-                      hint={copy.reviewPublish.liveVersionPrefix}
-                      label={copy.reviewPublish.rollbackTitle}
-                      value={workspace.liveVersion ? `v${workspace.liveVersion.versionNumber}` : copy.common.notPublished}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void runWorkflowAction(
-                          'rollback',
-                          copy.notices.rollbackSuccess,
-                          () =>
-                            createPublicPresenceRollbackDraft(
-                              request,
-                              talentId,
-                              workspace.liveVersion?.id ?? null,
-                            ),
-                        );
-                      }}
-                      disabled={isWorkflowActionDisabled || !workspace.liveVersion}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {workflowAction === 'rollback'
-                        ? copy.reviewPublish.rollbackPending
-                        : copy.reviewPublish.rollback}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowReviewHistory((current) => !current)}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                    >
-                      {copy.reviewPublish.reviewHistoryToggle}
-                    </button>
-                  </PublicPresenceSurface>
-                </div>
-
-                {showReviewHistory ? (
-                  <PublicPresenceSurface className="space-y-4">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                      {copy.reviewPublish.workflowEventsTitle}
-                    </h2>
-                    {workspace.workflowEvents.length === 0 ? (
-                      <p className="text-sm leading-6 text-slate-600">
-                        {copy.reviewPublish.workflowEventsEmpty}
-                      </p>
-                    ) : (
-                      <div className="grid gap-3">
-                        {workspace.workflowEvents.map((event) => (
-                          <PublicPresenceSurface key={event.id} className="space-y-2" variant="inset">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <PublicPresenceBadge tone="slate">
-                                {getPublicPresenceWorkflowEventLabel(
-                                  selectedLocale,
-                                  event.eventType,
-                                )}
-                              </PublicPresenceBadge>
-                              {event.toDocumentState ? (
-                                <PublicPresenceBadge tone="slate" variant="outline">
-                                  {getPublicPresenceDocumentStateLabel(
-                                    selectedLocale,
-                                    event.fromDocumentState
-                                      ?? copy.reviewPublish.transitionFallback,
-                                  )}{' '}
-                                  {'->'}{' '}
-                                  {getPublicPresenceDocumentStateLabel(
-                                    selectedLocale,
-                                    event.toDocumentState,
-                                  )}
-                                </PublicPresenceBadge>
-                              ) : null}
-                              <PublicPresenceBadge tone="slate" variant="outline">
-                                {formatDateTime(selectedLocale, event.occurredAt)}
-                              </PublicPresenceBadge>
-                            </div>
-                            <p className="text-sm leading-6 text-slate-600">
-                              {copy.reviewPublish.proofPrefix}{' '}
-                              {event.contentHash?.slice(0, 12) ?? copy.common.na}
-                            </p>
-                          </PublicPresenceSurface>
-                        ))}
-                      </div>
-                    )}
-                  </PublicPresenceSurface>
-                ) : null}
-              </div>
-            ) : null}
-
-            {activeTab === 'advanced' ? (
-              <div className="space-y-4">
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-semibold text-slate-950">
-                      {copy.advanced.title}
-                    </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.advanced.description}
-                    </p>
-                  </div>
-                  <textarea
-                    value={sourceText}
-                    onChange={(event) => setSourceText(event.target.value)}
-                    spellCheck={false}
-                    aria-label={copy.common.sourceSchemaLabel}
-                    className="min-h-[28rem] w-full rounded-[2rem] border border-slate-200 bg-slate-950 px-5 py-5 font-mono text-sm leading-6 text-slate-100 outline-none ring-0 transition focus:border-rose-300"
-                  />
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {copy.advanced.draftUpdatedPrefix}{' '}
-                      {formatDateTime(selectedLocale, workspace.draftVersion.updatedAt)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleSaveSourceDocument();
-                      }}
-                      disabled={saving}
-                      className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {saving ? (
-                        <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Save className="h-4 w-4" aria-hidden="true" />
-                      )}
-                      {copy.advanced.saveButton}
-                    </button>
-                  </div>
-                </PublicPresenceSurface>
-
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                      {copy.advanced.validationDetailsTitle}
-                    </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.advanced.validationDetailsDescription}
-                    </p>
-                  </div>
-                  <pre className="overflow-x-auto rounded-3xl border border-slate-200 bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
-                    {JSON.stringify(currentSnapshot, null, 2)}
-                  </pre>
-                </PublicPresenceSurface>
-
-                <PublicPresenceSurface className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                      {copy.advanced.migrationToolsTitle}
-                    </h2>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {copy.advanced.migrationToolsDescription}
+                    <p className="text-sm text-slate-600">
+                      {pickLocaleText(locale, {
+                        en: 'Check phase, selected section, and saved preview details here.',
+                        zh_HANS: '在这里查看阶段、当前分区和已保存的预览信息。',
+                        zh_HANT: '在這裡查看階段、目前分區與已儲存的預覽資訊。',
+                        ja: 'ここでフェーズ、選択中セクション、保存済みプレビュー情報を確認します。',
+                        ko: '여기에서 단계, 선택 섹션, 저장된 미리보기 정보를 확인합니다.',
+                        fr: 'Vérifiez ici la phase, la section sélectionnée et les détails de l’aperçu enregistré.',
+                      })}
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowMigrationTools((current) => !current)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    onClick={() => setMobilePreviewToolsOpen(false)}
+                    ref={mobilePreviewToolsOverlay.mobileInitialFocusRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
-                    <ClipboardList className="h-4 w-4" aria-hidden="true" />
-                    {showMigrationTools
-                      ? copy.advanced.closeMigrationTools
-                      : copy.advanced.openMigrationTools}
+                    <X className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Close',
+                      zh_HANS: '关闭',
+                      zh_HANT: '關閉',
+                      ja: '閉じる',
+                      ko: '닫기',
+                      fr: 'Fermer',
+                    })}
                   </button>
-                  {showMigrationTools ? (
-                    <HomepageManagementScreen tenantId={tenantId} talentId={talentId} />
+                </div>
+                <div className="grid gap-3">
+                  <PublicPresenceBadge tone="slate" variant="outline">
+                    {currentTemplate
+                      ? getPublicPresenceTemplateLabel(locale, currentTemplate)
+                      : selectedTemplateId}
+                  </PublicPresenceBadge>
+                  <PublicPresenceBadge tone="slate" variant="outline">
+                    {copy.fanPreview.resolvedPhaseLabel}:{' '}
+                    {previewProjection
+                      ? getPublicPresencePreviewPhaseLabel(
+                          locale,
+                          previewProjection.resolvedRevealPhase,
+                        )
+                      : getPublicPresencePreviewPhaseLabel(locale, previewPhase)}
+                  </PublicPresenceBadge>
+                  {selectedStageSection ? (
+                    <PublicPresenceBadge tone="slate" variant="outline">
+                      {copy.fanPreview.selectedSectionLabel}:{' '}
+                      {getPublicPresenceStageSectionLabel(locale, selectedStageSection)}
+                    </PublicPresenceBadge>
                   ) : null}
-                </PublicPresenceSurface>
-              </div>
+                </div>
+              </PublicPresenceSurface>
             ) : null}
           </div>
-        )}
+
+          {showRightDrawer ? (
+            <div className="contents">
+              <div
+                aria-label={rightDrawerLabel}
+                className="fixed inset-y-24 right-4 z-30 hidden w-[24rem] overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-1 ring-white/90 xl:block"
+                data-testid="studio-right-drawer-desktop"
+                id={rightDrawerId}
+                role="region"
+              >
+                <div className="relative h-full overflow-auto rounded-[1.85rem] bg-[linear-gradient(180deg,#ffffff_0%,#fcfbf8_100%)] p-3">
+                  <button
+                    type="button"
+                    aria-label={drawerCloseLabel}
+                    onClick={() => setStagePanel(null)}
+                    ref={rightDrawerOverlay.desktopInitialFocusRef}
+                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <div className="pr-12">{rightDrawerContent}</div>
+                </div>
+              </div>
+              <div
+                aria-label={rightDrawerLabel}
+                aria-modal
+                className="xl:hidden fixed inset-x-3 bottom-20 z-40 max-h-[72vh] overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-1 ring-white/90"
+                id={rightDrawerId}
+                role="dialog"
+              >
+                <div className="relative max-h-[72vh] overflow-auto rounded-[1.85rem] bg-[linear-gradient(180deg,#ffffff_0%,#fcfbf8_100%)] p-3">
+                <button
+                  type="button"
+                  aria-label={drawerCloseLabel}
+                  onClick={() => setStagePanel(null)}
+                  ref={rightDrawerOverlay.mobileInitialFocusRef}
+                  className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <div className="pr-12">{rightDrawerContent}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </PublicPresenceShell>
   );
 }
 
-export function PublicPresenceStudioScreen(props: Readonly<{ talentId: string; tenantId: string }>) {
+export function PublicPresenceStudioScreen(
+  props: Readonly<{
+    initialFocus?: string | null;
+    initialTemplateId?: string | null;
+    talentId: string;
+    tenantId: string;
+  }>,
+) {
   return <PublicPresenceStudioScreenInner {...props} />;
 }

@@ -2,6 +2,7 @@
 
 import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { normalizeSupportedUiLocale, pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 import { addDays, addHours, isValid, parseISO, setHours, setMinutes, startOfWeek } from 'date-fns';
 import { Response } from 'express';
 import ical, { ICalCalendarMethod } from 'ical-generator';
@@ -58,17 +59,21 @@ export class CalendarController {
   @ApiResponse({ status: 404, description: 'Homepage not found', schema: PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA })
   async getCalendar(
     @Param('path') path: string,
-    @Query('lang') lang: string = 'zh',
+    @Query('lang') lang: string = 'zh_HANS',
     @Res() res: Response,
   ) {
     const data = await this.publicHomepageService.getPublishedHomepageOrThrow(path);
     const talentName = data.talent.displayName;
-    const targetLang = ['zh', 'en', 'ja'].includes(lang) ? lang : 'zh';
+    const targetLocale = normalizeSupportedUiLocale(lang) ?? 'zh_HANS';
 
-    // Localize Calendar Name
-    let calendarName = `${talentName}的日程表`;
-    if (targetLang === 'en') calendarName = `${talentName}'s Schedule`;
-    if (targetLang === 'ja') calendarName = `${talentName}のスケジュール`;
+    const calendarName = pickLocalizedText({
+      en: `${talentName}'s Schedule`,
+      zh_HANS: `${talentName}的日程表`,
+      zh_HANT: `${talentName}的行程表`,
+      ja: `${talentName}のスケジュール`,
+      ko: `${talentName} schedule`,
+      fr: `Programme de ${talentName}`,
+    }, targetLocale);
 
     // Parse content to find Schedule components
     // Content structure is { components: [...] }
@@ -108,28 +113,34 @@ export class CalendarController {
         sun: 6,
       };
 
-      const getEventTypeLabel = (type: string, locale: string) => {
-        const typeMap: Record<string, Record<string, string>> = {
-          game: { zh: '游戏', en: 'GAME', ja: 'ゲーム' },
-          chat: { zh: '杂谈', en: 'CHAT', ja: '雑談' },
-          singing: { zh: '歌回', en: 'SINGING', ja: '歌枠' },
-          collab: { zh: '联动', en: 'COLLAB', ja: 'コラボ' },
-          other: { zh: '其他', en: 'OTHER', ja: 'その他' },
+      const getEventTypeLabel = (type: string) => {
+        const typeMap: Record<string, LocalizedText> = {
+          game: { en: 'GAME', zh_HANS: '游戏', zh_HANT: '遊戲', ja: 'ゲーム', ko: 'GAME', fr: 'JEU' },
+          chat: { en: 'CHAT', zh_HANS: '杂谈', zh_HANT: '雜談', ja: '雑談', ko: 'CHAT', fr: 'DISCUSSION' },
+          singing: { en: 'SINGING', zh_HANS: '歌回', zh_HANT: '歌回', ja: '歌枠', ko: 'SINGING', fr: 'CHANT' },
+          collab: { en: 'COLLAB', zh_HANS: '联动', zh_HANT: '聯動', ja: 'コラボ', ko: 'COLLAB', fr: 'COLLAB' },
+          other: { en: 'OTHER', zh_HANS: '其他', zh_HANT: '其他', ja: 'その他', ko: 'OTHER', fr: 'AUTRE' },
         };
-        return typeMap[type]?.[locale] || typeMap.other[locale];
+        return pickLocalizedText(typeMap[type] ?? typeMap.other, targetLocale);
       };
 
-      const getStreamerLabel = (locale: string) => {
-        if (locale === 'en') return 'Streamer';
-        if (locale === 'ja') return '配信者';
-        return '主播';
-      };
+      const getStreamerLabel = () => pickLocalizedText({
+        en: 'Streamer',
+        zh_HANS: '主播',
+        zh_HANT: '主播',
+        ja: '配信者',
+        ko: 'Streamer',
+        fr: 'Streamer',
+      }, targetLocale);
 
-      const getTypeLabel = (locale: string) => {
-        if (locale === 'en') return 'Type';
-        if (locale === 'ja') return 'タイプ';
-        return '类型';
-      };
+      const getTypeLabel = () => pickLocalizedText({
+        en: 'Type',
+        zh_HANS: '类型',
+        zh_HANT: '類型',
+        ja: 'タイプ',
+        ko: 'Type',
+        fr: 'Type',
+      }, targetLocale);
 
       for (const event of events) {
         const dayIndex = dayMap[event.day];
@@ -145,14 +156,14 @@ export class CalendarController {
         eventDate = setHours(eventDate, hours);
         eventDate = setMinutes(eventDate, minutes);
 
-        const typeLabel = getEventTypeLabel(event.type, targetLang);
+        const typeLabel = getEventTypeLabel(event.type);
         const prefix = `[${typeLabel}]`;
 
         calendar.createEvent({
           start: eventDate,
           end: addHours(eventDate, 1),
           summary: `${prefix} ${event.title}`,
-          description: `${getTypeLabel(targetLang)}: ${typeLabel}\n${getStreamerLabel(targetLang)}: ${talentName}`,
+          description: `${getTypeLabel()}: ${typeLabel}\n${getStreamerLabel()}: ${talentName}`,
         });
       }
     }

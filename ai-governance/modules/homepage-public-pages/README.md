@@ -1,18 +1,17 @@
 # Homepage Public Pages AI Pack
 
-This pack defines how AI should assist Homepage public-page authoring. It is an injection aid for the Homepage module, not the module truth.
+This pack defines how AI should assist Public Presence homepage authoring. It is an injection aid for the Homepage/Public Presence module, not the module truth.
 
 ## Canonical References
 
 Read these before using the pack for implementation or product decisions:
 
-- `.context/modules/06-homepage-public-pages/technical_details.md`
-- `.context/modules/06-homepage-public-pages/current_issues.md`
-- `.context/modules/06-homepage-public-pages/current_progress.md`
-- `.context/standards/04-web-frontend.md`
-- `.context/standards/09-web-ui-foundations.md`
-- `.context/standards/10-web-runtime-dataflow.md`
-- `.context/standards/00-governance.md`
+- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/20-spec.md`
+- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/40-decisions.md`
+- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/50-implementation-plan.md`
+- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/70-verification.md`
+- `vault/knowledge/projects/TCRN-TMS/ui-ux/uiux-specification-granularity-standard.md`
+- `vault/knowledge/projects/TCRN-TMS/workflow/plan-materialization-granularity.md`
 
 ## Pack Files
 
@@ -25,4 +24,13 @@ Read these before using the pack for implementation or product decisions:
 
 ## Scope
 
-This first pack covers Homepage public pages only. Marshmallow may share public presence tokens and shared AI policy, but it should receive a separate module pack before AI edits Marshmallow-specific form behavior or public submissions.
+This pack covers Public Presence homepage pages, template settings patches, and template/component authoring assistance. Marshmallow may share public presence tokens and shared AI policy, but it should receive a separate module pack before AI edits Marshmallow-specific form behavior or public submissions.
+
+## D-022 Authoring Boundary
+
+AI has two allowed paths:
+
+- Runtime settings patch: suggest registry-bounded changes to released templates/components only.
+- Authoring assistance: propose code, manifest, fixture, or documentation changes inside the full-screen Template Center / Component Store Web IDE workflow for human review.
+
+AI must not inject executable template/component code into tenant content, mutate layout outside code-owned templates, move live pointers, publish, schedule, roll back, add providers, or bypass registry/safety validation.

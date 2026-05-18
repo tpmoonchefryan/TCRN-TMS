@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
+import { SUPPORTED_UI_LOCALES, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import {
     IsArray,
     IsBoolean,
@@ -13,6 +13,15 @@ import {
     MinLength,
 } from 'class-validator';
 
+const LOCALIZED_TEXT_EXAMPLE: LocalizedText = {
+  en: 'Welcome Email',
+  zh_HANS: '欢迎邮件',
+  zh_HANT: '歡迎郵件',
+  ja: 'ウェルカムメール',
+  ko: '환영 이메일',
+  fr: 'E-mail de bienvenue',
+};
+
 export class CreateEmailTemplateDto {
   @ApiProperty({ description: 'Unique template code', example: 'WELCOME_EMAIL', maxLength: 64 })
   @IsString()
@@ -20,115 +29,63 @@ export class CreateEmailTemplateDto {
   @MaxLength(64)
   code!: string;
 
-  @ApiProperty({ description: 'Template name in English', example: 'Welcome Email', maxLength: 128 })
-  @IsString()
-  @MaxLength(128)
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'Template name in Chinese', example: '欢迎邮件', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Template name in Japanese', example: 'ウェルカムメール', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Managed name translations by locale code',
+  @ApiProperty({
+    description: 'Localized template name keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
-    example: {
-      en: 'Welcome Email',
-      zh_HANS: '欢迎邮件',
-      zh_HANT: '歡迎郵件',
-      fr: 'E-mail de bienvenue',
-    },
+    example: LOCALIZED_TEXT_EXAMPLE,
   })
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name!: LocalizedText;
 
-  @ApiProperty({ description: 'Subject in English', example: 'Welcome to TCRN', maxLength: 255 })
-  @IsString()
-  @MaxLength(255)
-  subjectEn!: string;
-
-  @ApiPropertyOptional({ description: 'Subject in Chinese', example: '欢迎来到 TCRN', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subjectZh?: string;
-
-  @ApiPropertyOptional({ description: 'Subject in Japanese', example: 'TCRN へようこそ', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subjectJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Managed subject translations by locale code',
+  @ApiProperty({
+    description: 'Localized subject keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
     example: {
       en: 'Welcome to TCRN',
       zh_HANS: '欢迎来到 TCRN',
+      zh_HANT: '歡迎來到 TCRN',
+      ja: 'TCRN へようこそ',
       ko: 'TCRN에 오신 것을 환영합니다',
+      fr: 'Bienvenue sur TCRN',
+    },
+  })
+  @IsObject()
+  subject!: LocalizedText;
+
+  @ApiProperty({
+    description: 'Localized HTML body keyed by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      en: '<p>Hello {{name}}</p>',
+      zh_HANS: '<p>你好 {{name}}</p>',
+      zh_HANT: '<p>你好 {{name}}</p>',
+      ja: '<p>こんにちは {{name}}</p>',
+      ko: '<p>안녕하세요 {{name}}</p>',
+      fr: '<p>Bonjour {{name}}</p>',
+    },
+  })
+  @IsObject()
+  bodyHtml!: LocalizedText;
+
+  @ApiPropertyOptional({
+    description: 'Localized plain-text body keyed by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      en: 'Hello {{name}}',
+      zh_HANS: '你好 {{name}}',
+      zh_HANT: '你好 {{name}}',
+      ja: 'こんにちは {{name}}',
+      ko: '안녕하세요 {{name}}',
+      fr: 'Bonjour {{name}}',
     },
   })
   @IsOptional()
   @IsObject()
-  subjectTranslations?: Record<string, string>;
-
-  @ApiProperty({ description: 'HTML body in English', example: '<p>Hello {{name}}</p>' })
-  @IsString()
-  bodyHtmlEn!: string;
-
-  @ApiPropertyOptional({ description: 'HTML body in Chinese', example: '<p>你好 {{name}}</p>' })
-  @IsOptional()
-  @IsString()
-  bodyHtmlZh?: string;
-
-  @ApiPropertyOptional({ description: 'HTML body in Japanese', example: '<p>こんにちは {{name}}</p>' })
-  @IsOptional()
-  @IsString()
-  bodyHtmlJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Managed HTML body translations by locale code',
-    type: 'object',
-    additionalProperties: { type: 'string' },
-  })
-  @IsOptional()
-  @IsObject()
-  bodyHtmlTranslations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in English', example: 'Hello {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextEn?: string;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in Chinese', example: '你好 {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextZh?: string;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in Japanese', example: 'こんにちは {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Managed plain-text body translations by locale code',
-    type: 'object',
-    additionalProperties: { type: 'string' },
-  })
-  @IsOptional()
-  @IsObject()
-  bodyTextTranslations?: Record<string, string>;
+  bodyText?: LocalizedText;
 
   @ApiPropertyOptional({
     description: 'Template variables available for rendering',
@@ -146,107 +103,41 @@ export class CreateEmailTemplateDto {
 }
 
 export class UpdateEmailTemplateDto {
-  @ApiPropertyOptional({ description: 'Template name in English', example: 'Welcome Email', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Template name in Chinese', example: '欢迎邮件', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Template name in Japanese', example: 'ウェルカムメール', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Managed name translations by locale code',
+    description: 'Localized template name patch keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Subject in English', example: 'Welcome to TCRN', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subjectEn?: string;
-
-  @ApiPropertyOptional({ description: 'Subject in Chinese', example: '欢迎来到 TCRN', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subjectZh?: string;
-
-  @ApiPropertyOptional({ description: 'Subject in Japanese', example: 'TCRN へようこそ', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  subjectJa?: string;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Managed subject translations by locale code',
+    description: 'Localized subject patch keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
   })
   @IsOptional()
   @IsObject()
-  subjectTranslations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'HTML body in English', example: '<p>Hello {{name}}</p>' })
-  @IsOptional()
-  @IsString()
-  bodyHtmlEn?: string;
-
-  @ApiPropertyOptional({ description: 'HTML body in Chinese', example: '<p>你好 {{name}}</p>' })
-  @IsOptional()
-  @IsString()
-  bodyHtmlZh?: string;
-
-  @ApiPropertyOptional({ description: 'HTML body in Japanese', example: '<p>こんにちは {{name}}</p>' })
-  @IsOptional()
-  @IsString()
-  bodyHtmlJa?: string;
+  subject?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Managed HTML body translations by locale code',
+    description: 'Localized HTML body patch keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
   })
   @IsOptional()
   @IsObject()
-  bodyHtmlTranslations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in English', example: 'Hello {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextEn?: string;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in Chinese', example: '你好 {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextZh?: string;
-
-  @ApiPropertyOptional({ description: 'Plain-text body in Japanese', example: 'こんにちは {{name}}' })
-  @IsOptional()
-  @IsString()
-  bodyTextJa?: string;
+  bodyHtml?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Managed plain-text body translations by locale code',
+    description: 'Localized plain-text body patch keyed by supported UI locale',
     type: 'object',
     additionalProperties: { type: 'string' },
   })
   @IsOptional()
   @IsObject()
-  bodyTextTranslations?: Record<string, string>;
+  bodyText?: PartialLocalizedText;
 
   @ApiPropertyOptional({
     description: 'Template variables available for rendering',

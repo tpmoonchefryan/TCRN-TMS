@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -52,6 +52,11 @@ describe('PiiServiceConfigApplicationService', () => {
     mockPiiClientService,
   );
 
+  const defaultPiiName = createLocalizedText({ en: 'Default PII' });
+  const oldPiiName = createLocalizedText({ en: 'Old Name' });
+  const newPiiName = createLocalizedText({ en: 'New Name' });
+  const defaultDescription = createLocalizedText({ en: 'Default PII' });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockDatabaseService.calculatePaginationMeta).mockReturnValue({
@@ -69,9 +74,7 @@ describe('PiiServiceConfigApplicationService', () => {
       {
         id: 'config-1',
         code: 'DEFAULT_PII',
-        nameEn: 'Default PII',
-        nameZh: null,
-        nameJa: null,
+        name: defaultPiiName,
         apiUrl: 'https://pii.example.com',
         authType: 'mtls',
         isHealthy: true,
@@ -91,9 +94,7 @@ describe('PiiServiceConfigApplicationService', () => {
         {
           id: 'config-1',
           code: 'DEFAULT_PII',
-          name: 'Default PII',
-          nameZh: null,
-          nameJa: null,
+          name: defaultPiiName,
           apiUrl: 'https://pii.example.com',
           authType: 'mtls',
           isHealthy: true,
@@ -130,7 +131,7 @@ describe('PiiServiceConfigApplicationService', () => {
     vi.mocked(mockRepository.create).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      nameEn: 'Default PII',
+      name: defaultPiiName,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
 
@@ -138,7 +139,7 @@ describe('PiiServiceConfigApplicationService', () => {
       service.create(
         {
           code: 'DEFAULT_PII',
-          nameEn: 'Default PII',
+          name: defaultPiiName,
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
@@ -147,7 +148,7 @@ describe('PiiServiceConfigApplicationService', () => {
     ).resolves.toEqual({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      name: 'Default PII',
+      name: defaultPiiName,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
 
@@ -169,7 +170,7 @@ describe('PiiServiceConfigApplicationService', () => {
       service.create(
         {
           code: 'DEFAULT_PII',
-          nameEn: 'Default PII',
+          name: defaultPiiName,
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
@@ -182,7 +183,8 @@ describe('PiiServiceConfigApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      nameEn: 'Old Name',
+      name: oldPiiName,
+      description: defaultDescription,
       apiUrl: 'https://old.example.com',
       isActive: true,
       version: 1,
@@ -193,7 +195,7 @@ describe('PiiServiceConfigApplicationService', () => {
         'config-1',
         {
           version: 2,
-          nameEn: 'New Name',
+          name: { en: 'New Name' },
         },
         context,
       ),
@@ -204,7 +206,8 @@ describe('PiiServiceConfigApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      nameEn: 'Old Name',
+      name: oldPiiName,
+      description: defaultDescription,
       apiUrl: 'https://old.example.com',
       isActive: true,
       version: 1,
@@ -212,7 +215,8 @@ describe('PiiServiceConfigApplicationService', () => {
     vi.mocked(mockRepository.update).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      nameEn: 'New Name',
+      name: newPiiName,
+      description: defaultDescription,
       apiUrl: 'https://new.example.com',
       isActive: false,
       version: 2,
@@ -224,7 +228,7 @@ describe('PiiServiceConfigApplicationService', () => {
         'config-1',
         {
           version: 1,
-          nameEn: 'New Name',
+          name: { en: 'New Name' },
           apiUrl: 'https://new.example.com',
           isActive: false,
         },
@@ -241,12 +245,14 @@ describe('PiiServiceConfigApplicationService', () => {
       expect.objectContaining({
         objectType: 'pii_service_config',
         oldValue: {
-          nameEn: 'Old Name',
+          name: oldPiiName,
+          description: defaultDescription,
           apiUrl: 'https://old.example.com',
           isActive: true,
         },
         newValue: {
-          nameEn: 'New Name',
+          name: newPiiName,
+          description: defaultDescription,
           apiUrl: 'https://new.example.com',
           isActive: false,
         },

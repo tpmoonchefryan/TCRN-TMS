@@ -14,7 +14,7 @@ import {
   PublicPresenceHero,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
 function resolveBorderRadius(value: ThemeConfig['card']['borderRadius']) {
   switch (value) {
@@ -120,7 +120,7 @@ export function getHomepageCanvasStyle(theme: ThemeConfig): CSSProperties {
 
 function getHeroPrimaryAction(
   components: PublicHomepageComponentRecord[],
-  publicCopy: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'],
+  publicCopy: ReturnType<typeof useUiLocale>['copy']['publicHomepage'],
 ) {
   for (const component of components) {
     const props = component.props || {};
@@ -198,7 +198,7 @@ export function PublicHomepageRenderer({
     description: string | null;
   };
 }>) {
-  const { copy } = useRuntimeLocale();
+  const { copy } = useUiLocale();
   const theme = useMemo(() => normalizeTheme(rawTheme || DEFAULT_THEME), [rawTheme]);
   const components = useMemo(() => extractVisibleComponents(content), [content]);
   const publicCopy = copy.publicHomepage;

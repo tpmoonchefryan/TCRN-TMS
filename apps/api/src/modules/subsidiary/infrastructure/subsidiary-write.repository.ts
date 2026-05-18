@@ -1,8 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
+import { Prisma, prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
+import {
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import type { SubsidiaryData } from '../domain/subsidiary-read.policy';
 import type {
   SubsidiaryCreateInput,
@@ -11,13 +16,28 @@ import type {
 
 const SUBSIDIARY_SELECT_FIELDS = `
   id, parent_id as "parentId", code, path, depth,
-  name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+  name,
   extra_data as "extraData",
-  description_en as "descriptionEn", description_zh as "descriptionZh",
-  description_ja as "descriptionJa",
+  description,
   sort_order as "sortOrder", is_active as "isActive",
   created_at as "createdAt", updated_at as "updatedAt", version
 `;
+
+type SubsidiaryRawData = Omit<SubsidiaryData, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type SubsidiaryUpdatePersistenceInput = Omit<SubsidiaryUpdateInput, 'name' | 'description'> & {
+  name?: LocalizedText;
+  description?: LocalizedText;
+};
+
+const mapSubsidiaryData = (row: SubsidiaryRawData): SubsidiaryData => ({
+  ...row,
+  name: readLocalizedText(row.name, 'subsidiary.name'),
+  description: readLocalizedText(row.description, 'subsidiary.description'),
+});
 
 @Injectable()
 export class SubsidiaryWriteRepository {
@@ -30,13 +50,13 @@ export class SubsidiaryWriteRepository {
     },
     userId: string,
   ): Promise<SubsidiaryData> {
-    const results = await prisma.$queryRawUnsafe<SubsidiaryData[]>(`
+    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(`
       INSERT INTO "${tenantSchema}".subsidiary
-        (id, parent_id, code, path, depth, name_en, name_zh, name_ja, extra_data,
-         description_en, description_zh, description_ja,
+        (id, parent_id, code, path, depth, name, extra_data,
+         description,
          sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
       VALUES
-        (gen_random_uuid(), $1::uuid, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, true, now(), now(), $13::uuid, $13::uuid, 1)
+        (gen_random_uuid(), $1::uuid, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8, true, now(), now(), $9::uuid, $9::uuid, 1)
       RETURNING
         ${SUBSIDIARY_SELECT_FIELDS}
     `,
@@ -44,56 +64,36 @@ export class SubsidiaryWriteRepository {
     data.code,
     data.path,
     data.depth,
-    data.nameEn,
-    data.nameZh || null,
-    data.nameJa || null,
+    stringifyLocalizedText(data.name),
     data.extraData ? JSON.stringify(data.extraData) : null,
-    data.descriptionEn || null,
-    data.descriptionZh || null,
-    data.descriptionJa || null,
+    stringifyLocalizedText(data.description as LocalizedText),
     data.sortOrder || 0,
     userId);
 
-    return results[0];
+    return mapSubsidiaryData(results[0]);
   }
 
   async update(
     id: string,
     tenantSchema: string,
-    data: SubsidiaryUpdateInput,
+    data: SubsidiaryUpdatePersistenceInput,
     userId: string,
   ): Promise<SubsidiaryData> {
     const updates: string[] = [];
     const params: unknown[] = [id, userId];
     let paramIndex = 3;
 
-    if (data.nameEn !== undefined) {
-      updates.push(`name_en = $${paramIndex++}`);
-      params.push(data.nameEn);
-    }
-    if (data.nameZh !== undefined) {
-      updates.push(`name_zh = $${paramIndex++}`);
-      params.push(data.nameZh);
-    }
-    if (data.nameJa !== undefined) {
-      updates.push(`name_ja = $${paramIndex++}`);
-      params.push(data.nameJa);
+    if (data.name !== undefined) {
+      updates.push(`name = $${paramIndex++}::jsonb`);
+      params.push(stringifyLocalizedText(data.name));
     }
     if (data.extraData !== undefined) {
       updates.push(`extra_data = $${paramIndex++}::jsonb`);
       params.push(data.extraData ? JSON.stringify(data.extraData) : null);
     }
-    if (data.descriptionEn !== undefined) {
-      updates.push(`description_en = $${paramIndex++}`);
-      params.push(data.descriptionEn);
-    }
-    if (data.descriptionZh !== undefined) {
-      updates.push(`description_zh = $${paramIndex++}`);
-      params.push(data.descriptionZh);
-    }
-    if (data.descriptionJa !== undefined) {
-      updates.push(`description_ja = $${paramIndex++}`);
-      params.push(data.descriptionJa);
+    if (data.description !== undefined) {
+      updates.push(`description = $${paramIndex++}::jsonb`);
+      params.push(stringifyLocalizedText(data.description));
     }
     if (data.sortOrder !== undefined) {
       updates.push(`sort_order = $${paramIndex++}`);
@@ -104,7 +104,7 @@ export class SubsidiaryWriteRepository {
     updates.push('updated_by = $2::uuid');
     updates.push('version = version + 1');
 
-    const results = await prisma.$queryRawUnsafe<SubsidiaryData[]>(`
+    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(`
       UPDATE "${tenantSchema}".subsidiary
       SET ${updates.join(', ')}
       WHERE id = $1::uuid
@@ -112,7 +112,7 @@ export class SubsidiaryWriteRepository {
         ${SUBSIDIARY_SELECT_FIELDS}
     `, ...params);
 
-    return results[0];
+    return mapSubsidiaryData(results[0]);
   }
 
   async deactivateCascade(

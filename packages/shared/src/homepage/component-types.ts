@@ -121,9 +121,7 @@ export interface SpacerProps {
 
 export interface ComponentDefinition {
   type: ComponentType;
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
+  name: LocalizedText;
   icon: string;
   category: ComponentCategory;
   defaultProps: Record<string, unknown>;
@@ -132,9 +130,7 @@ export interface ComponentDefinition {
 export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> = {
   [COMPONENT_TYPE.PROFILE_CARD]: {
     type: COMPONENT_TYPE.PROFILE_CARD,
-    nameEn: 'Profile Card',
-    nameZh: '个人资料卡',
-    nameJa: 'プロフィールカード',
+    name: { en: 'Profile Card', zh_HANS: '个人资料卡', zh_HANT: '個人資料卡', ja: 'プロフィールカード', ko: 'Profile Card', fr: 'Profile Card' },
     icon: 'User',
     category: 'core',
     defaultProps: {
@@ -148,9 +144,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.SOCIAL_LINKS]: {
     type: COMPONENT_TYPE.SOCIAL_LINKS,
-    nameEn: 'Social Links',
-    nameZh: '社交媒体链接',
-    nameJa: 'ソーシャルリンク',
+    name: { en: 'Social Links', zh_HANS: '社交媒体链接', zh_HANT: '社交媒體連結', ja: 'ソーシャルリンク', ko: 'Social Links', fr: 'Social Links' },
     icon: 'Share2',
     category: 'core',
     defaultProps: {
@@ -162,9 +156,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.IMAGE_GALLERY]: {
     type: COMPONENT_TYPE.IMAGE_GALLERY,
-    nameEn: 'Image Gallery',
-    nameZh: '图片画廊',
-    nameJa: '画像ギャラリー',
+    name: { en: 'Image Gallery', zh_HANS: '图片画廊', zh_HANT: '圖片藝廊', ja: '画像ギャラリー', ko: 'Image Gallery', fr: 'Image Gallery' },
     icon: 'Images',
     category: 'media',
     defaultProps: {
@@ -177,9 +169,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.VIDEO_EMBED]: {
     type: COMPONENT_TYPE.VIDEO_EMBED,
-    nameEn: 'Video Embed',
-    nameZh: '视频嵌入',
-    nameJa: '動画埋め込み',
+    name: { en: 'Video Embed', zh_HANS: '视频嵌入', zh_HANT: '影片嵌入', ja: '動画埋め込み', ko: 'Video Embed', fr: 'Video Embed' },
     icon: 'Video',
     category: 'media',
     defaultProps: {
@@ -191,9 +181,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.RICH_TEXT]: {
     type: COMPONENT_TYPE.RICH_TEXT,
-    nameEn: 'Rich Text',
-    nameZh: '富文本',
-    nameJa: 'リッチテキスト',
+    name: { en: 'Rich Text', zh_HANS: '富文本', zh_HANT: '富文字', ja: 'リッチテキスト', ko: 'Rich Text', fr: 'Rich Text' },
     icon: 'FileText',
     category: 'content',
     defaultProps: {
@@ -203,9 +191,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.LINK_BUTTON]: {
     type: COMPONENT_TYPE.LINK_BUTTON,
-    nameEn: 'Link Button',
-    nameZh: '链接按钮',
-    nameJa: 'リンクボタン',
+    name: { en: 'Link Button', zh_HANS: '链接按钮', zh_HANT: '連結按鈕', ja: 'リンクボタン', ko: 'Link Button', fr: 'Link Button' },
     icon: 'ExternalLink',
     category: 'interactive',
     defaultProps: {
@@ -217,9 +203,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.MARSHMALLOW_WIDGET]: {
     type: COMPONENT_TYPE.MARSHMALLOW_WIDGET,
-    nameEn: 'Marshmallow Widget',
-    nameZh: '棉花糖入口',
-    nameJa: 'マシュマロウィジェット',
+    name: { en: 'Marshmallow Widget', zh_HANS: '棉花糖入口', zh_HANT: '棉花糖入口', ja: 'マシュマロウィジェット', ko: 'Marshmallow Widget', fr: 'Marshmallow Widget' },
     icon: 'MessageCircle',
     category: 'interactive',
     defaultProps: {
@@ -230,9 +214,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.SCHEDULE]: {
     type: COMPONENT_TYPE.SCHEDULE,
-    nameEn: 'Schedule',
-    nameZh: '日程表',
-    nameJa: 'スケジュール',
+    name: { en: 'Schedule', zh_HANS: '日程表', zh_HANT: '行程表', ja: 'スケジュール', ko: 'Schedule', fr: 'Schedule' },
     icon: 'Calendar',
     category: 'interactive',
     defaultProps: {
@@ -243,9 +225,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.MUSIC_PLAYER]: {
     type: COMPONENT_TYPE.MUSIC_PLAYER,
-    nameEn: 'Music Player',
-    nameZh: '音乐播放器',
-    nameJa: '音楽プレーヤー',
+    name: { en: 'Music Player', zh_HANS: '音乐播放器', zh_HANT: '音樂播放器', ja: '音楽プレーヤー', ko: 'Music Player', fr: 'Music Player' },
     icon: 'Music',
     category: 'media',
     defaultProps: {
@@ -257,9 +237,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.LIVE_STATUS]: {
     type: COMPONENT_TYPE.LIVE_STATUS,
-    nameEn: 'Live Status',
-    nameZh: '直播状态',
-    nameJa: '配信ステータス',
+    name: { en: 'Live Status', zh_HANS: '直播状态', zh_HANT: '直播狀態', ja: '配信ステータス', ko: 'Live Status', fr: 'Live Status' },
     icon: 'Radio',
     category: 'core',
     defaultProps: {
@@ -273,9 +251,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.DIVIDER]: {
     type: COMPONENT_TYPE.DIVIDER,
-    nameEn: 'Divider',
-    nameZh: '分隔线',
-    nameJa: '区切り線',
+    name: { en: 'Divider', zh_HANS: '分隔线', zh_HANT: '分隔線', ja: '区切り線', ko: 'Divider', fr: 'Divider' },
     icon: 'Minus',
     category: 'layout',
     defaultProps: {
@@ -285,9 +261,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.SPACER]: {
     type: COMPONENT_TYPE.SPACER,
-    nameEn: 'Spacer',
-    nameZh: '空白间距',
-    nameJa: 'スペーサー',
+    name: { en: 'Spacer', zh_HANS: '空白间距', zh_HANT: '空白間距', ja: 'スペーサー', ko: 'Spacer', fr: 'Spacer' },
     icon: 'Square',
     category: 'layout',
     defaultProps: {
@@ -296,9 +270,7 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
   },
   [COMPONENT_TYPE.BILIBILI_DYNAMIC]: {
     type: COMPONENT_TYPE.BILIBILI_DYNAMIC,
-    nameEn: 'Bilibili Dynamic',
-    nameZh: 'B站动态',
-    nameJa: 'Bilibili投稿',
+    name: { en: 'Bilibili Dynamic', zh_HANS: 'B站动态', zh_HANT: 'B站動態', ja: 'Bilibili投稿', ko: 'Bilibili Dynamic', fr: 'Bilibili Dynamic' },
     icon: 'Activity',
     category: 'interactive',
     defaultProps: {
@@ -319,3 +291,4 @@ export const COMPONENT_DEFINITIONS: Record<ComponentType, ComponentDefinition> =
 export function getComponentsByCategory(category: ComponentCategory): ComponentDefinition[] {
   return Object.values(COMPONENT_DEFINITIONS).filter((c) => c.category === category);
 }
+import type { LocalizedText } from '../constants/locale';

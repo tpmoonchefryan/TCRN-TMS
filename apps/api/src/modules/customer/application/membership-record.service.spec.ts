@@ -228,7 +228,14 @@ describe('MembershipRecordApplicationService', () => {
     vi.mocked(mockRepository.findActiveMembershipLevelByCode).mockResolvedValue({
       id: 'level-1',
       code: 'GOLD',
-      nameEn: 'Gold',
+      name: {
+        en: 'Gold',
+        zh_HANS: 'Gold',
+        zh_HANT: 'Gold',
+        ja: 'Gold',
+        ko: 'Gold',
+        fr: 'Gold',
+      },
       membershipTypeId: 'type-1',
       membershipClassId: 'class-1',
     });

@@ -163,7 +163,7 @@ export function TenantSettingsScreen({
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
-    selectedLocale,
+    locale,
     dictionaryExplorerCopy,
     localizedConfigEntityCatalog,
     scopedConfigCopy,
@@ -237,7 +237,7 @@ export function TenantSettingsScreen({
 
       try {
         const nextSettings = await readTenantSettings(request);
-        const dictionaryResult = await Promise.allSettled([listDictionaryTypes(request, selectedLocale)]);
+        const dictionaryResult = await Promise.allSettled([listDictionaryTypes(request, locale)]);
 
         if (cancelled) {
           return;
@@ -275,7 +275,7 @@ export function TenantSettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [request, selectedLocale, text]);
+  }, [request, locale, text]);
 
   if (loading) {
     return (
@@ -730,7 +730,7 @@ export function TenantSettingsScreen({
                   request={request}
                   requestEnvelope={requestEnvelope}
                   scopeType="tenant"
-                  locale={selectedLocale}
+                  locale={locale}
                   copy={scopedConfigCopy}
                   catalog={localizedConfigEntityCatalog}
                 />
@@ -862,7 +862,7 @@ export function TenantSettingsScreen({
                   request={request}
                   requestEnvelope={requestEnvelope}
                   types={dictionaryPanel.data}
-                  locale={selectedLocale}
+                  locale={locale}
                   copy={dictionaryExplorerCopy}
                   allowIncludeInactiveToggle
                     intro={(

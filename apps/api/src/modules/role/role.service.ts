@@ -6,18 +6,18 @@ import {
   ErrorCodes,
   getRbacResourceDefinition,
   isCanonicalPermissionAction,
+  type LocalizedText,
+  type PartialLocalizedText,
+  pickLocalizedText,
   type RolePermission,
 } from '@tcrn/shared';
 
-import { getTrilingualNameColumn } from '../../common/request-locale.util';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
 export interface RoleData {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   description: string | null;
   isSystem: boolean;
   isActive: boolean;
@@ -51,7 +51,7 @@ export class RoleService {
     let paramIndex = 1;
 
     if (options.search) {
-      whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR name_zh ILIKE $${paramIndex})`;
+      whereClause += ` AND (code ILIKE $${paramIndex} OR name::text ILIKE $${paramIndex})`;
       params.push(`%${options.search}%`);
       paramIndex++;
     }
@@ -70,7 +70,7 @@ export class RoleService {
       const field = isDesc ? options.sort.substring(1) : options.sort;
       const fieldMap: Record<string, string> = {
         code: 'code',
-        name: 'name_en',
+        name: "name->>'en'",
         createdAt: 'created_at',
       };
       const dbField = fieldMap[field] || 'code';
@@ -79,7 +79,7 @@ export class RoleService {
 
     const roles = await prisma.$queryRawUnsafe<RoleData[]>(`
       SELECT 
-        id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
@@ -116,7 +116,7 @@ export class RoleService {
   async findById(id: string, tenantSchema: string): Promise<RoleData | null> {
     const results = await prisma.$queryRawUnsafe<RoleData[]>(`
       SELECT 
-        id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
@@ -131,7 +131,7 @@ export class RoleService {
   async findByCode(code: string, tenantSchema: string): Promise<RoleData | null> {
     const results = await prisma.$queryRawUnsafe<RoleData[]>(`
       SELECT 
-        id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
@@ -144,8 +144,6 @@ export class RoleService {
    * Get role permissions
    */
   async getRolePermissions(roleId: string, tenantSchema: string, language: string = 'en'): Promise<RolePermission[]> {
-    const nameField = getTrilingualNameColumn(language);
-
     const permissions = await prisma.$queryRawUnsafe<Array<{
       id: string;
       resourceCode: string;
@@ -158,7 +156,7 @@ export class RoleService {
         r.code as "resourceCode",
         p.action,
         rp.effect as effect,
-        COALESCE(r.${nameField}, r.name_en) as name
+        r.name as name
       FROM "${tenantSchema}".role_policy rp
       JOIN "${tenantSchema}".policy p ON rp.policy_id = p.id
       JOIN "${tenantSchema}".resource r ON p.resource_id = r.id
@@ -180,6 +178,7 @@ export class RoleService {
         ...permission,
         resourceCode: resourceDefinition.code,
         action: permission.action,
+        name: pickLocalizedText(resourceDefinition.name, language),
       }];
     });
   }
@@ -191,9 +190,7 @@ export class RoleService {
     tenantSchema: string,
     data: {
       code: string;
-      nameEn: string;
-      nameZh?: string;
-      nameJa?: string;
+      name: LocalizedText;
       description?: string;
       permissionIds: string[];
     },
@@ -211,15 +208,15 @@ export class RoleService {
     // Create role
     const results = await prisma.$queryRawUnsafe<RoleData[]>(`
       INSERT INTO "${tenantSchema}".role 
-        (id, code, name_en, name_zh, name_ja, description, is_system, is_active, 
+        (id, code, name, description, is_system, is_active, 
          created_at, updated_at, created_by, updated_by, version)
       VALUES 
-        (gen_random_uuid(), $1, $2, $3, $4, $5, false, true, now(), now(), $6, $6, 1)
+        (gen_random_uuid(), $1, $2::jsonb, $3, false, true, now(), now(), $4, $4, 1)
       RETURNING 
-        id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
-    `, data.code, data.nameEn, data.nameZh || null, data.nameJa || null, data.description || null, userId);
+    `, data.code, JSON.stringify(data.name), data.description || null, userId);
 
     const role = results[0];
 
@@ -243,9 +240,7 @@ export class RoleService {
     id: string,
     tenantSchema: string,
     data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
+      name?: PartialLocalizedText;
       description?: string;
       version: number;
     },
@@ -270,17 +265,9 @@ export class RoleService {
     const params: unknown[] = [id, userId];
     let paramIndex = 3;
 
-    if (data.nameEn !== undefined) {
-      updates.push(`name_en = $${paramIndex++}`);
-      params.push(data.nameEn);
-    }
-    if (data.nameZh !== undefined) {
-      updates.push(`name_zh = $${paramIndex++}`);
-      params.push(data.nameZh);
-    }
-    if (data.nameJa !== undefined) {
-      updates.push(`name_ja = $${paramIndex++}`);
-      params.push(data.nameJa);
+    if (data.name !== undefined) {
+      updates.push(`name = name || $${paramIndex++}::jsonb`);
+      params.push(JSON.stringify(data.name));
     }
     if (data.description !== undefined) {
       updates.push(`description = $${paramIndex++}`);
@@ -296,7 +283,7 @@ export class RoleService {
       SET ${updates.join(', ')}
       WHERE id = $1
       RETURNING 
-        id, code, name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
+        id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
     `, ...params);

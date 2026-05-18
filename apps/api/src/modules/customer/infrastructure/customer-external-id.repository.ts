@@ -41,7 +41,7 @@ export class CustomerExternalIdRepository {
          cei.id,
          c.id as "consumerId",
          c.code as "consumerCode",
-         c.name_en as "consumerName",
+         c.name->>'en' as "consumerName",
          cei.external_id as "externalId",
          cei.created_at as "createdAt",
          cei.created_by as "createdBy"
@@ -56,13 +56,13 @@ export class CustomerExternalIdRepository {
   async findActiveConsumerByCode(
     tenantSchema: string,
     consumerCode: string,
-  ): Promise<{ id: string; code: string; nameEn: string } | null> {
+  ): Promise<{ id: string; code: string; name: string } | null> {
     const consumers = await prisma.$queryRawUnsafe<Array<{
       id: string;
       code: string;
-      nameEn: string;
+      name: string;
     }>>(
-      `SELECT id, code, name_en as "nameEn"
+      `SELECT id, code, name->>'en' as name
        FROM "${tenantSchema}".consumer
        WHERE code = $1
          AND is_active = true`,

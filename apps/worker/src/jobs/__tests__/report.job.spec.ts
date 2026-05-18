@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { Job } from 'bullmq';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ReportJobData, reportJobProcessor, type ReportJobResult } from '../report.job';
@@ -116,25 +117,15 @@ describe('reportJobProcessor', () => {
       {
         customer_nickname: 'Customer A',
         profile_type: 'individual',
-        platform_name_en: 'YouTube',
-        platform_name_zh: 'YouTube',
-        platform_name_ja: 'YouTube',
-        membership_class_name_en: 'Gold',
-        membership_class_name_zh: 'Gold',
-        membership_class_name_ja: 'Gold',
-        membership_type_name_en: 'Member',
-        membership_type_name_zh: 'Member',
-        membership_type_name_ja: 'Member',
-        membership_level_name_en: 'Level 1',
-        membership_level_name_zh: 'Level 1',
-        membership_level_name_ja: 'Level 1',
+        platform_name: createLocalizedText({ en: 'YouTube' }),
+        membership_class_name: createLocalizedText({ en: 'Gold' }),
+        membership_type_name: createLocalizedText({ en: 'Member' }),
+        membership_level_name: createLocalizedText({ en: 'Level 1' }),
         valid_from: new Date('2026-03-26T00:00:00.000Z'),
         valid_to: new Date('2026-03-27T00:00:00.000Z'),
         auto_renew: true,
         is_expired: false,
-        customer_status_name_en: 'Active',
-        customer_status_name_zh: 'Active',
-        customer_status_name_ja: 'Active',
+        customer_status_name: createLocalizedText({ en: 'Active' }),
         tags: ['vip'],
         source: 'manual',
         created_at: new Date('2026-03-26T00:00:00.000Z'),
@@ -202,10 +193,26 @@ describe('reportJobProcessor', () => {
     );
   });
 
-  it('normalizes full UI locale tags to trilingual report labels', async () => {
+  it('serves canonical Traditional Chinese report labels', async () => {
     mockJob.data.format = 'csv';
     mockJob.data.options = {
       language: 'zh_HANT',
+      includePii: false,
+    };
+
+    await reportJobProcessor(mockJob);
+
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('/mfr_report-job-1.csv'),
+      expect.stringContaining('暱稱,類型,平台'),
+      'utf8',
+    );
+  });
+
+  it('normalizes full Simplified Chinese UI locale tags to canonical report labels', async () => {
+    mockJob.data.format = 'csv';
+    mockJob.data.options = {
+      language: 'zh-CN' as unknown as NonNullable<ReportJobData['options']>['language'],
       includePii: false,
     };
 
@@ -218,7 +225,7 @@ describe('reportJobProcessor', () => {
     );
   });
 
-  it('falls non-trilingual UI locale tags back to English report labels', async () => {
+  it('serves supported French report labels without falling back to English', async () => {
     mockJob.data.format = 'csv';
     mockJob.data.options = {
       language: 'fr',
@@ -229,7 +236,7 @@ describe('reportJobProcessor', () => {
 
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
-      expect.stringContaining('Nickname,Type,Platform'),
+      expect.stringContaining('Pseudo,Type,Plateforme'),
       'utf8',
     );
   });

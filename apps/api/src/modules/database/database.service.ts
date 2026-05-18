@@ -2,7 +2,7 @@
 
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { checkDatabaseConnection, prisma, type PrismaClient } from '@tcrn/database';
-import { ErrorCodes, resolveTrilingualLocaleFamily } from '@tcrn/shared';
+import { ErrorCodes, pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 
 /**
  * Database Service
@@ -124,11 +124,13 @@ export class DatabaseService {
     fieldPrefix: string,
     language: string = 'en'
   ): string {
-    const localeFamily = resolveTrilingualLocaleFamily(language);
-    const fieldName = `${fieldPrefix}${localeFamily.charAt(0).toUpperCase()}${localeFamily.slice(1)}` as keyof T;
-    const fallbackField = `${fieldPrefix}En` as keyof T;
-    
-    return (entity[fieldName] as string) || (entity[fallbackField] as string) || '';
+    const value = entity[fieldPrefix];
+
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return '';
+    }
+
+    return pickLocalizedText(value as LocalizedText, language);
   }
 
   /**

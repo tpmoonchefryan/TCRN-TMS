@@ -15,15 +15,41 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
-import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
 import { CUSTOM_DOMAIN_OWNER_TYPES, CUSTOM_DOMAIN_SSL_MODES } from './domain/talent-custom-domain.policy';
 import { TalentService } from './talent.service';
+
+const TALENT_NAME_EXAMPLE: LocalizedText = {
+  en: 'Tokino Sora',
+  zh_HANS: '时乃空',
+  zh_HANT: '時乃空',
+  ja: 'ときのそら',
+  ko: '도키노 소라',
+  fr: 'Tokino Sora',
+};
+
+const TALENT_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Main homepage profile',
+  zh_HANS: '主页简介',
+  zh_HANT: '主頁簡介',
+  ja: 'ホームページ用プロフィール',
+  ko: '홈페이지 프로필',
+  fr: 'Profil public principal',
+};
+
+const PROFILE_STORE_NAME_EXAMPLE: LocalizedText = {
+  en: 'Default Profile Store',
+  zh_HANS: '默认客户档案库',
+  zh_HANT: '預設客戶檔案庫',
+  ja: 'デフォルトプロフィールストア',
+  ko: '기본 프로필 저장소',
+  fr: 'Magasin de profils par defaut',
+};
 
 // DTOs
 export class CreateTalentDto {
@@ -54,52 +80,27 @@ export class CreateTalentDto {
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
-  @ApiProperty({ description: 'Talent name in English', example: 'Tokino Sora', minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  nameEn: string;
-
-  @ApiPropertyOptional({ description: 'Talent name in Chinese', example: '时乃空' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Talent name in Japanese', example: 'ときのそら' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Managed locale map keyed by supported locale codes',
+  @ApiProperty({
+    description: 'Localized talent name keyed by SupportedUiLocale',
     additionalProperties: { type: 'string' },
-    example: {
-      zh_HANT: '時乃空',
-      ko: '도키노 소라',
-    },
+    example: TALENT_NAME_EXAMPLE,
   })
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name: LocalizedText;
 
   @ApiProperty({ description: 'Primary display name shown in UI', example: 'Sora' })
   @IsString()
   @MinLength(1)
   displayName: string;
 
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Main homepage profile' })
+  @ApiPropertyOptional({
+    description: 'Localized talent description keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: TALENT_DESCRIPTION_EXAMPLE,
+  })
   @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主页简介' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: 'ホームページ用プロフィール' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  @IsObject()
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://cdn.tcrn.app/avatar/sora.jpg' })
   @IsOptional()
@@ -132,52 +133,28 @@ export class CreateTalentDto {
 }
 
 export class UpdateTalentDto {
-  @ApiPropertyOptional({ description: 'Talent name in English', example: 'Tokino Sora' })
-  @IsOptional()
-  @IsString()
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Talent name in Chinese', example: '时乃空' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Talent name in Japanese', example: 'ときのそら' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Managed locale map keyed by supported locale codes',
+    description: 'Localized talent name patch keyed by SupportedUiLocale',
     additionalProperties: { type: 'string' },
-    example: {
-      zh_HANT: '時乃空',
-      ko: '도키노 소라',
-    },
+    example: { en: 'Tokino Sora' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Primary display name shown in UI', example: 'Sora' })
   @IsOptional()
   @IsString()
   displayName?: string;
 
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Main homepage profile' })
+  @ApiPropertyOptional({
+    description: 'Localized talent description patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Main homepage profile' },
+  })
   @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主页简介' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: 'ホームページ用プロフィール' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  @IsObject()
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://cdn.tcrn.app/avatar/sora.jpg' })
   @IsOptional()
@@ -469,6 +446,24 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
+const TALENT_NAME_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: TALENT_NAME_EXAMPLE,
+};
+
+const TALENT_DESCRIPTION_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: TALENT_DESCRIPTION_EXAMPLE,
+};
+
+const PROFILE_STORE_NAME_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: PROFILE_STORE_NAME_EXAMPLE,
+};
+
 const TALENT_LIST_ITEM_SCHEMA = {
   type: 'object',
   properties: {
@@ -476,10 +471,7 @@ const TALENT_LIST_ITEM_SCHEMA = {
     subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
     code: { type: 'string', example: 'SORA' },
     path: { type: 'string', example: '/TOKYO/SORA/' },
-    nameEn: { type: 'string', example: 'Tokino Sora' },
-    nameZh: { type: 'string', nullable: true, example: '时乃空' },
-    nameJa: { type: 'string', nullable: true, example: 'ときのそら' },
-    name: { type: 'string', example: 'Tokino Sora' },
+    name: TALENT_NAME_SCHEMA,
     displayName: { type: 'string', example: 'Sora' },
     avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
     homepagePath: { type: 'string', nullable: true, example: 'sora' },
@@ -497,7 +489,6 @@ const TALENT_LIST_ITEM_SCHEMA = {
     'subsidiaryId',
     'code',
     'path',
-    'nameEn',
     'name',
     'displayName',
     'avatarUrl',
@@ -546,10 +537,7 @@ const TALENT_PAGINATED_SCHEMA = {
         subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
         code: 'SORA',
         path: '/TOKYO/SORA/',
-        nameEn: 'Tokino Sora',
-        nameZh: '时乃空',
-        nameJa: 'ときのそら',
-        name: 'Tokino Sora',
+        name: TALENT_NAME_EXAMPLE,
         displayName: 'Sora',
         avatarUrl: 'https://cdn.tcrn.app/avatar/sora.jpg',
         homepagePath: 'sora',
@@ -588,24 +576,11 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
         properties: {
           id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440200' },
           code: { type: 'string', example: 'DEFAULT_STORE' },
-          nameEn: { type: 'string', example: 'Default Profile Store' },
-          nameZh: { type: 'string', nullable: true, example: '默认客户档案库' },
-          nameJa: { type: 'string', nullable: true, example: 'デフォルトプロフィールストア' },
-          translations: {
-            type: 'object',
-            additionalProperties: { type: 'string' },
-            example: {
-              en: 'Default Profile Store',
-              zh_HANS: '默认客户档案库',
-              zh_HANT: '預設客戶檔案庫',
-            },
-          },
+          name: PROFILE_STORE_NAME_SCHEMA,
           isDefault: { type: 'boolean', example: true },
         },
       },
-      descriptionEn: { type: 'string', nullable: true, example: 'Main homepage profile' },
-      descriptionZh: { type: 'string', nullable: true, example: '主页简介' },
-      descriptionJa: { type: 'string', nullable: true, example: 'ホームページ用プロフィール' },
+      description: TALENT_DESCRIPTION_SCHEMA,
       settings: { type: 'object', additionalProperties: true },
       stats: {
         type: 'object',
@@ -634,26 +609,14 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     profileStore: {
       id: '550e8400-e29b-41d4-a716-446655440200',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: '默认客户档案库',
-      nameJa: 'デフォルトプロフィールストア',
-      translations: {
-        en: 'Default Profile Store',
-        zh_HANS: '默认客户档案库',
-        zh_HANT: '預設客戶檔案庫',
-      },
+      name: PROFILE_STORE_NAME_EXAMPLE,
       isDefault: true,
     },
     code: 'SORA',
     path: '/TOKYO/SORA/',
-    nameEn: 'Tokino Sora',
-    nameZh: '时乃空',
-    nameJa: 'ときのそら',
-    name: 'Tokino Sora',
+    name: TALENT_NAME_EXAMPLE,
     displayName: 'Sora',
-    descriptionEn: 'Main homepage profile',
-    descriptionZh: '主页简介',
-    descriptionJa: 'ホームページ用プロフィール',
+    description: TALENT_DESCRIPTION_EXAMPLE,
     avatarUrl: 'https://cdn.tcrn.app/avatar/sora.jpg',
     homepagePath: 'sora',
     timezone: 'Asia/Tokyo',
@@ -678,8 +641,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
       code: { type: 'string', example: 'SORA' },
       path: { type: 'string', example: '/TOKYO/SORA/' },
-      nameEn: { type: 'string', example: 'Tokino Sora' },
-      name: { type: 'string', example: 'Tokino Sora' },
+      name: TALENT_NAME_SCHEMA,
       displayName: { type: 'string', example: 'Sora' },
       avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
       homepagePath: { type: 'string', nullable: true, example: 'sora' },
@@ -696,7 +658,6 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       'subsidiaryId',
       'code',
       'path',
-      'nameEn',
       'name',
       'displayName',
       'avatarUrl',
@@ -715,8 +676,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
     code: 'SORA',
     path: '/TOKYO/SORA/',
-    nameEn: 'Tokino Sora',
-    name: 'Tokino Sora',
+    name: TALENT_NAME_EXAMPLE,
     displayName: 'Sora',
     avatarUrl: 'https://cdn.tcrn.app/avatar/sora.jpg',
     homepagePath: 'sora',
@@ -735,10 +695,8 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-      nameEn: { type: 'string', example: 'Tokino Sora' },
-      nameZh: { type: 'string', nullable: true, example: '时乃空' },
-      nameJa: { type: 'string', nullable: true, example: 'ときのそら' },
-      name: { type: 'string', example: 'Tokino Sora' },
+      name: TALENT_NAME_SCHEMA,
+      description: TALENT_DESCRIPTION_SCHEMA,
       displayName: { type: 'string', example: 'Sora' },
       homepagePath: { type: 'string', nullable: true, example: 'sora' },
       lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'draft' },
@@ -748,14 +706,12 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:20:00.000Z' },
       version: { type: 'integer', example: 2 },
     },
-    required: ['id', 'nameEn', 'name', 'displayName', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'updatedAt', 'version'],
+    required: ['id', 'name', 'description', 'displayName', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'updatedAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
-    nameEn: 'Tokino Sora',
-    nameZh: '时乃空',
-    nameJa: 'ときのそら',
-    name: 'Tokino Sora',
+    name: TALENT_NAME_EXAMPLE,
+    description: TALENT_DESCRIPTION_EXAMPLE,
     displayName: 'Sora',
     homepagePath: 'sora',
     lifecycleStatus: 'draft',
@@ -1183,23 +1139,6 @@ const TALENT_DELETE_CONFLICT_SCHEMA = {
 };
 
 /**
- * Get localized name based on language
- */
-function getLocalizedName(
-  entity: { nameEn: string; nameZh: string | null; nameJa: string | null },
-  language: string = 'en'
-): string {
-  switch (language) {
-    case 'zh':
-      return entity.nameZh || entity.nameEn;
-    case 'ja':
-      return entity.nameJa || entity.nameEn;
-    default:
-      return entity.nameEn;
-  }
-}
-
-/**
  * Talent Controller
  * Manages artists/VTubers
  */
@@ -1242,19 +1181,12 @@ export class TalentController {
       }
     );
 
-    const enrichedData = data.map((talent) => {
-      const translations = buildManagedNameTranslations(talent);
-
-      return {
+    const enrichedData = data.map((talent) => ({
         id: talent.id,
         subsidiaryId: talent.subsidiaryId,
         code: talent.code,
         path: talent.path,
-        nameEn: talent.nameEn,
-        nameZh: talent.nameZh,
-        nameJa: talent.nameJa,
-        translations,
-        name: translations.en || getLocalizedName(talent),
+        name: talent.name,
         displayName: talent.displayName,
         avatarUrl: talent.avatarUrl,
         homepagePath: talent.homepagePath,
@@ -1266,8 +1198,7 @@ export class TalentController {
         createdAt: talent.createdAt.toISOString(),
         updatedAt: talent.updatedAt.toISOString(),
         version: talent.version,
-      };
-    });
+      }));
 
     return paginated(enrichedData, {
       page: query.page || 1,
@@ -1313,14 +1244,9 @@ export class TalentController {
         subsidiaryId: dto.subsidiaryId,
         profileStoreId: dto.profileStoreId,
         code: dto.code,
-        nameEn: dto.nameEn,
-        nameZh: dto.nameZh,
-        nameJa: dto.nameJa,
-        translations: dto.translations,
+        name: dto.name,
         displayName: dto.displayName,
-        descriptionEn: dto.descriptionEn,
-        descriptionZh: dto.descriptionZh,
-        descriptionJa: dto.descriptionJa,
+        description: dto.description,
         avatarUrl: dto.avatarUrl,
         homepagePath: dto.homepagePath,
         timezone: dto.timezone,
@@ -1329,18 +1255,12 @@ export class TalentController {
       user.id
     );
 
-    const translations = buildManagedNameTranslations(talent);
-
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
       code: talent.code,
       path: talent.path,
-      nameEn: talent.nameEn,
-      nameZh: talent.nameZh,
-      nameJa: talent.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(talent),
+      name: talent.name,
       displayName: talent.displayName,
       avatarUrl: talent.avatarUrl,
       homepagePath: talent.homepagePath,
@@ -1594,9 +1514,6 @@ export class TalentController {
         : null,
     ]);
 
-    const translations = buildManagedNameTranslations(talent);
-    const profileStoreTranslations = profileStore ? buildManagedNameTranslations(profileStore) : null;
-
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
@@ -1604,23 +1521,14 @@ export class TalentController {
       profileStore: profileStore ? {
         id: profileStore.id,
         code: profileStore.code,
-        nameEn: profileStore.nameEn,
-        nameZh: profileStore.nameZh,
-        nameJa: profileStore.nameJa,
-        translations: profileStoreTranslations ?? {},
+        name: profileStore.name,
         isDefault: profileStore.isDefault,
       } : null,
       code: talent.code,
       path: talent.path,
-      nameEn: talent.nameEn,
-      nameZh: talent.nameZh,
-      nameJa: talent.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(talent),
+      name: talent.name,
       displayName: talent.displayName,
-      descriptionEn: talent.descriptionEn,
-      descriptionZh: talent.descriptionZh,
-      descriptionJa: talent.descriptionJa,
+      description: talent.description,
       avatarUrl: talent.avatarUrl,
       homepagePath: talent.homepagePath,
       timezone: talent.timezone,
@@ -1681,15 +1589,10 @@ export class TalentController {
       user.id
     );
 
-    const translations = buildManagedNameTranslations(talent);
-
     return success({
       id: talent.id,
-      nameEn: talent.nameEn,
-      nameZh: talent.nameZh,
-      nameJa: talent.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(talent),
+      name: talent.name,
+      description: talent.description,
       displayName: talent.displayName,
       homepagePath: talent.homepagePath,
       lifecycleStatus: talent.lifecycleStatus,

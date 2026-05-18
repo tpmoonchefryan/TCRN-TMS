@@ -1,7 +1,9 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CustomerCreateScreen } from '@/domains/customer-management/screens/CustomerCreateScreen';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 const replace = vi.fn();
 const mockRequest = vi.fn();
@@ -12,8 +14,7 @@ const createCustomerMembership = vi.fn();
 const listCustomerMembershipTree = vi.fn();
 const listCustomerSocialPlatforms = vi.fn();
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: undefined as undefined | 'en' | 'zh_HANS' | 'zh_HANT' | 'ja' | 'ko' | 'fr',
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('next/navigation', () => ({
@@ -23,7 +24,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
@@ -43,8 +44,7 @@ vi.mock('@/domains/customer-management/api/customer.api', () => ({
 
 describe('CustomerCreateScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = undefined;
+    localeState.locale = 'en';
     replace.mockReset();
     mockRequest.mockReset();
     checkCustomerProfilePermission.mockReset();
@@ -74,10 +74,8 @@ describe('CustomerCreateScreen', () => {
       {
         id: 'platform-1',
         code: 'YOUTUBE',
-        name: 'YouTube',
-        nameEn: 'YouTube',
-        nameZh: 'YouTube',
-        nameJa: 'YouTube',
+        name: localizedFixture('YouTube'),
+        localizedName: 'YouTube',
         isActive: true,
       },
     ]);
@@ -85,19 +83,21 @@ describe('CustomerCreateScreen', () => {
       {
         id: 'class-1',
         code: 'FANCLUB',
-        name: 'Fanclub',
-        nameEn: 'Fanclub',
-        nameZh: '粉丝俱乐部',
-        nameJa: 'ファンクラブ',
+        name: localizedFixture('Fanclub', {
+          zh_HANS: '粉丝俱乐部',
+          ja: 'ファンクラブ',
+        }),
+        localizedName: 'Fanclub',
         isActive: true,
         types: [
           {
             id: 'type-1',
             code: 'PAID',
-            name: 'Paid',
-            nameEn: 'Paid',
-            nameZh: '付费',
-            nameJa: '有料',
+            name: localizedFixture('Paid', {
+              zh_HANS: '付费',
+              ja: '有料',
+            }),
+            localizedName: 'Paid',
             classId: 'class-1',
             externalControl: false,
             defaultRenewalDays: 30,
@@ -106,10 +106,11 @@ describe('CustomerCreateScreen', () => {
               {
                 id: 'level-1',
                 code: 'GOLD',
-                name: 'Gold',
-                nameEn: 'Gold',
-                nameZh: '黄金',
-                nameJa: 'ゴールド',
+                name: localizedFixture('Gold', {
+                  zh_HANS: '黄金',
+                  ja: 'ゴールド',
+                }),
+                localizedName: 'Gold',
                 typeId: 'type-1',
                 rank: 1,
                 color: '#f59e0b',
@@ -196,7 +197,7 @@ describe('CustomerCreateScreen', () => {
   });
 
   it('falls back to zh_HANS copy when the runtime locale family is zh and no selected locale is pinned', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
@@ -206,8 +207,8 @@ describe('CustomerCreateScreen', () => {
   });
 
   it('renders exact zh_HANT copy when a traditional-Chinese locale is selected', async () => {
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANT';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANT';
 
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
@@ -217,8 +218,8 @@ describe('CustomerCreateScreen', () => {
   });
 
   it('renders exact ko copy when Korean is selected', async () => {
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'ko';
+    localeState.locale = 'en';
+    localeState.locale = 'ko';
 
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 
@@ -228,7 +229,7 @@ describe('CustomerCreateScreen', () => {
   });
 
   it('shows zh_HANS customer-name validation in the DOM instead of relying on browser-native required UI', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     render(<CustomerCreateScreen tenantId="tenant-1" talentId="talent-1" />);
 

@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createLocalizedText } from '../../constants/locale';
 import {
   CreateBlocklistSchema,
   normalizeBlocklistScopeInput,
@@ -10,13 +11,15 @@ import {
 } from './index';
 
 describe('security blocklist structured scope schema', () => {
+  const localized = (en: string) => createLocalizedText({ en });
+
   it('keeps the legacy default marshmallow runtime scope', () => {
     expect(
       CreateBlocklistSchema.parse({
         ownerType: 'tenant',
         pattern: 'badword',
         patternType: 'keyword',
-        nameEn: 'Profanity filter',
+        name: localized('Profanity filter'),
       }).scope,
     ).toBeUndefined();
     expect(
@@ -32,7 +35,7 @@ describe('security blocklist structured scope schema', () => {
       ownerType: 'tenant',
       pattern: 'badword',
       patternType: 'keyword',
-      nameEn: 'Profanity filter',
+      name: localized('Profanity filter'),
       structuredScope: {
         entries: [{ category: 'tenant' }],
       },

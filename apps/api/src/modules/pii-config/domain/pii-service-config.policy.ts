@@ -1,5 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import {
+  mergeLocalizedText,
+  normalizeLocalizedText,
+  type LocalizedText,
+  type PartialLocalizedText,
+} from '@tcrn/shared';
+
 import type {
   CreatePiiServiceConfigDto,
   UpdatePiiServiceConfigDto,
@@ -8,9 +15,7 @@ import type {
 export interface PiiServiceConfigListRow {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   apiUrl: string;
   authType: string;
   isHealthy: boolean;
@@ -20,50 +25,41 @@ export interface PiiServiceConfigListRow {
   version: number;
 }
 
-export interface PiiServiceConfigDetailRow {
-  id: string;
-  code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
-  apiUrl: string;
-  authType: string;
+export interface PiiServiceConfigDetailRow extends PiiServiceConfigListRow {
+  description: LocalizedText;
   healthCheckUrl: string | null;
   healthCheckIntervalSec: number;
-  isHealthy: boolean;
-  lastHealthCheckAt: Date | null;
-  isActive: boolean;
-  createdAt: Date;
   updatedAt: Date;
-  version: number;
+}
+
+export interface PiiServiceConfigCreatePayload {
+  code: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  apiUrl: string;
+  authType: string;
+  healthCheckUrl: string;
+  healthCheckIntervalSec: number;
 }
 
 export interface PiiServiceConfigCreateRow {
   id: string;
   code: string;
-  nameEn: string;
+  name: LocalizedText;
   createdAt: Date;
 }
 
 export interface PiiServiceConfigUpdateLookupRow {
   id: string;
   code: string;
-  nameEn: string;
+  name: LocalizedText;
+  description: LocalizedText;
   apiUrl: string;
   isActive: boolean;
   version: number;
 }
 
-export interface PiiServiceConfigUpdateRow {
-  id: string;
-  code: string;
-  nameEn: string;
-  apiUrl: string;
-  isActive: boolean;
-  version: number;
+export interface PiiServiceConfigUpdateRow extends PiiServiceConfigUpdateLookupRow {
   updatedAt: Date;
 }
 
@@ -80,12 +76,8 @@ export interface PiiServiceHealthCheckResult {
 
 export interface PiiServiceConfigFieldChange {
   field:
-    | 'nameEn'
-    | 'nameZh'
-    | 'nameJa'
-    | 'descriptionEn'
-    | 'descriptionZh'
-    | 'descriptionJa'
+    | 'name'
+    | 'description'
     | 'apiUrl'
     | 'authType'
     | 'healthCheckUrl'
@@ -96,14 +88,10 @@ export interface PiiServiceConfigFieldChange {
 
 export const buildPiiServiceConfigCreatePayload = (
   dto: CreatePiiServiceConfigDto,
-) => ({
+): PiiServiceConfigCreatePayload => ({
   code: dto.code,
-  nameEn: dto.nameEn,
-  nameZh: dto.nameZh ?? null,
-  nameJa: dto.nameJa ?? null,
-  descriptionEn: dto.descriptionEn ?? null,
-  descriptionZh: dto.descriptionZh ?? null,
-  descriptionJa: dto.descriptionJa ?? null,
+  name: dto.name,
+  description: normalizeLocalizedText(dto.description, dto.name.en),
   apiUrl: dto.apiUrl,
   authType: dto.authType,
   healthCheckUrl: dto.healthCheckUrl ?? `${dto.apiUrl}/health`,
@@ -116,9 +104,7 @@ export const buildPiiServiceConfigListItem = (
 ) => ({
   id: row.id,
   code: row.code,
-  name: row.nameEn,
-  nameZh: row.nameZh,
-  nameJa: row.nameJa,
+  name: row.name,
   apiUrl: row.apiUrl,
   authType: row.authType,
   isHealthy: row.isHealthy,
@@ -135,12 +121,8 @@ export const buildPiiServiceConfigDetailResponse = (
 ) => ({
   id: row.id,
   code: row.code,
-  name: row.nameEn,
-  nameZh: row.nameZh,
-  nameJa: row.nameJa,
-  description: row.descriptionEn,
-  descriptionZh: row.descriptionZh,
-  descriptionJa: row.descriptionJa,
+  name: row.name,
+  description: row.description,
   apiUrl: row.apiUrl,
   authType: row.authType,
   healthCheckUrl: row.healthCheckUrl,
@@ -159,22 +141,37 @@ export const buildPiiServiceConfigCreateResponse = (
 ) => ({
   id: row.id,
   code: row.code,
-  name: row.nameEn,
+  name: row.name,
   createdAt: row.createdAt,
 });
 
 export const buildPiiServiceConfigUpdateChanges = (
   dto: UpdatePiiServiceConfigDto,
+  current: PiiServiceConfigUpdateLookupRow,
 ): PiiServiceConfigFieldChange[] => {
   const changes: PiiServiceConfigFieldChange[] = [];
 
-  const fields = [
-    'nameEn',
-    'nameZh',
-    'nameJa',
-    'descriptionEn',
-    'descriptionZh',
-    'descriptionJa',
+  if (dto.name !== undefined) {
+    changes.push({
+      field: 'name',
+      value: mergeLocalizedText(current.name, dto.name),
+    });
+  }
+
+  if (dto.description !== undefined) {
+    changes.push({
+      field: 'description',
+      value: normalizeLocalizedText(
+        {
+          ...current.description,
+          ...(dto.description as PartialLocalizedText),
+        },
+        current.description.en,
+      ),
+    });
+  }
+
+  const scalarFields = [
     'apiUrl',
     'authType',
     'healthCheckUrl',
@@ -182,7 +179,7 @@ export const buildPiiServiceConfigUpdateChanges = (
     'isActive',
   ] as const;
 
-  for (const field of fields) {
+  for (const field of scalarFields) {
     const value = dto[field];
     if (value !== undefined) {
       changes.push({ field, value });
@@ -197,12 +194,14 @@ export const buildPiiServiceConfigUpdateAudit = (
   updated: PiiServiceConfigUpdateRow,
 ) => ({
   oldValue: {
-    nameEn: previous.nameEn,
+    name: previous.name,
+    description: previous.description,
     apiUrl: previous.apiUrl,
     isActive: previous.isActive,
   },
   newValue: {
-    nameEn: updated.nameEn,
+    name: updated.name,
+    description: updated.description,
     apiUrl: updated.apiUrl,
     isActive: updated.isActive,
   },

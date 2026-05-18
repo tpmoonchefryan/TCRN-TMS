@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
+
 import { type OwnerType } from '../dto/integration.dto';
-import { buildNameTranslations } from './name-translation.policy';
 
 export interface IntegrationAdapterOwnerScope {
   ownerType: OwnerType;
@@ -17,9 +18,7 @@ export interface IntegrationAdapterListRow {
   platformDisplayName: string;
   platformIconUrl: string | null;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
@@ -39,9 +38,7 @@ export interface IntegrationAdapterDetailRow {
   platformCode: string;
   platformDisplayName: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   adapterType: string;
   inherit: boolean;
@@ -84,10 +81,7 @@ export const mapIntegrationAdapterListItem = (
     iconUrl: adapter.platformIconUrl,
   },
   code: adapter.code,
-  nameEn: adapter.nameEn,
-  nameZh: adapter.nameZh,
-  nameJa: adapter.nameJa,
-  translations: buildNameTranslations(adapter),
+  name: adapter.name,
   definitionKey: getDefinitionKey(adapter.extraData),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
@@ -112,10 +106,7 @@ export const mapIntegrationAdapterDetail = (
     displayName: adapter.platformDisplayName,
   },
   code: adapter.code,
-  nameEn: adapter.nameEn,
-  nameZh: adapter.nameZh,
-  nameJa: adapter.nameJa,
-  translations: buildNameTranslations(adapter),
+  name: adapter.name,
   definitionKey: getDefinitionKey(adapter.extraData),
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,

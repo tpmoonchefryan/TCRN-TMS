@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import { createLocalizedText } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
 import { mapCustomerProfileDetailItem } from '../domain/customer-profile-read.policy';
@@ -26,7 +27,7 @@ describe('mapCustomerProfileDetailItem', () => {
       updatedBy: null,
       version: 3,
       talent: { id: 'talent-1', code: 'AC', displayName: 'Aqua' },
-      profileStore: { id: 'store-1', code: 'DEFAULT', nameEn: 'Default' },
+      profileStore: { id: 'store-1', code: 'DEFAULT', name: createLocalizedText({ en: 'Default' }) },
       originTalent: { id: 'origin-1', code: 'AC', displayName: 'Aqua' },
       lastModifiedTalent: null,
       status: null,
@@ -41,7 +42,7 @@ describe('mapCustomerProfileDetailItem', () => {
         businessSegment: {
           id: 'segment-1',
           code: 'ENT',
-          nameEn: 'Entertainment',
+          name: createLocalizedText({ en: 'Entertainment' }),
         },
       },
       membershipRecords: [],

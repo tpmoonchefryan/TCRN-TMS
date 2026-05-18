@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestCustomerInTenant,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
@@ -219,7 +220,7 @@ describe('Import Runtime Smoke Integration', () => {
         INSERT INTO "${tenantFixture.schemaName}".social_platform (
           id,
           code,
-          name_en,
+          name,
           display_name,
           is_active,
           created_at,
@@ -238,7 +239,7 @@ describe('Import Runtime Smoke Integration', () => {
         RETURNING id
       `,
       code,
-      `${code} Platform`,
+      JSON.stringify(createLocalizedText({ en: `${code} Platform` })),
       `${code} Platform`,
     );
 
@@ -257,7 +258,7 @@ describe('Import Runtime Smoke Integration', () => {
           id,
           owner_type,
           code,
-          name_en,
+          name,
           is_active,
           created_at,
           updated_at,
@@ -266,7 +267,7 @@ describe('Import Runtime Smoke Integration', () => {
           gen_random_uuid(),
           'tenant',
           $1,
-          $2,
+          $2::jsonb,
           true,
           NOW(),
           NOW(),
@@ -275,7 +276,7 @@ describe('Import Runtime Smoke Integration', () => {
         RETURNING id
       `,
       classCode,
-      `${classCode} Name`,
+      JSON.stringify(createLocalizedText({ en: `${classCode} Name` })),
     );
     const membershipClassId = classRows[0]!.id;
 
@@ -285,7 +286,7 @@ describe('Import Runtime Smoke Integration', () => {
           id,
           membership_class_id,
           code,
-          name_en,
+          name,
           is_active,
           created_at,
           updated_at,
@@ -294,7 +295,7 @@ describe('Import Runtime Smoke Integration', () => {
           gen_random_uuid(),
           $1::uuid,
           $2,
-          $3,
+          $3::jsonb,
           true,
           NOW(),
           NOW(),
@@ -304,7 +305,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipClassId,
       typeCode,
-      `${typeCode} Name`,
+      JSON.stringify(createLocalizedText({ en: `${typeCode} Name` })),
     );
     const membershipTypeId = typeRows[0]!.id;
 
@@ -314,7 +315,7 @@ describe('Import Runtime Smoke Integration', () => {
           id,
           membership_type_id,
           code,
-          name_en,
+          name,
           rank,
           is_active,
           created_at,
@@ -324,7 +325,7 @@ describe('Import Runtime Smoke Integration', () => {
           gen_random_uuid(),
           $1::uuid,
           $2,
-          $3,
+          $3::jsonb,
           1,
           true,
           NOW(),
@@ -335,7 +336,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipTypeId,
       oldLevelCode,
-      `${oldLevelCode} Name`,
+      JSON.stringify(createLocalizedText({ en: `${oldLevelCode} Name` })),
     );
 
     const newLevelRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -344,7 +345,7 @@ describe('Import Runtime Smoke Integration', () => {
           id,
           membership_type_id,
           code,
-          name_en,
+          name,
           rank,
           is_active,
           created_at,
@@ -354,7 +355,7 @@ describe('Import Runtime Smoke Integration', () => {
           gen_random_uuid(),
           $1::uuid,
           $2,
-          $3,
+          $3::jsonb,
           2,
           true,
           NOW(),
@@ -365,7 +366,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipTypeId,
       newLevelCode,
-      `${newLevelCode} Name`,
+      JSON.stringify(createLocalizedText({ en: `${newLevelCode} Name` })),
     );
 
     return {
@@ -492,12 +493,12 @@ describe('Import Runtime Smoke Integration', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: uniqueCode('SUB_IMRT'),
-      nameEn: 'Import Runtime Smoke Subsidiary',
+      name: createLocalizedText({ en: 'Import Runtime Smoke Subsidiary' }),
       createdBy: testUser.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: uniqueCode('TAL_IMRT'),
-      nameEn: 'Import Runtime Smoke Talent',
+      name: createLocalizedText({ en: 'Import Runtime Smoke Talent' }),
       displayName: 'Import Runtime Smoke Talent',
       homepagePath: `import-runtime-${Date.now()}`,
       createdBy: testUser.id,

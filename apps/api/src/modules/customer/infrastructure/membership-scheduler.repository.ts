@@ -164,7 +164,7 @@ export class MembershipSchedulerRepository {
       `
         SELECT
           mr.customer_id as "customerId",
-          ml.name_en as "membershipLevelName",
+          ml.name->>'en' as "membershipLevelName",
           mr.valid_to as "expiresAt"
         FROM "${tenantSchema}".membership_record mr
         JOIN "${tenantSchema}".membership_level ml ON ml.id = mr.membership_level_id

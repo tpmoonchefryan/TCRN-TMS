@@ -7,7 +7,7 @@ import {
     Logger,
     NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, TechEventType } from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, TechEventType, type LocalizedText } from '@tcrn/shared';
 import { firstValueFrom } from 'rxjs';
 
 import { DatabaseService } from '../../database';
@@ -129,12 +129,8 @@ export class PublicMarshmallowService {
       allowedReactions: string[];
       theme: Record<string, unknown>;
       avatarUrl: string | null;
-      termsContentEn: string | null;
-      termsContentZh: string | null;
-      termsContentJa: string | null;
-      privacyContentEn: string | null;
-      privacyContentZh: string | null;
-      privacyContentJa: string | null;
+      termsContent: LocalizedText;
+      privacyContent: LocalizedText;
     }>>(`
       SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
              placeholder_text as "placeholderText", thank_you_text as "thankYouText",
@@ -146,8 +142,8 @@ export class PublicMarshmallowService {
              rate_limit_per_ip as "rateLimitPerIp", rate_limit_window_hours as "rateLimitWindowHours",
              reactions_enabled as "reactionsEnabled", allowed_reactions as "allowedReactions", theme,
              avatar_url as "avatarUrl",
-             terms_content_en as "termsContentEn", terms_content_zh as "termsContentZh", terms_content_ja as "termsContentJa",
-             privacy_content_en as "privacyContentEn", privacy_content_zh as "privacyContentZh", privacy_content_ja as "privacyContentJa"
+             terms_content as "termsContent",
+             privacy_content as "privacyContent"
       FROM "${schema}".marshmallow_config
       WHERE talent_id = $1::uuid
     `, talentId);
@@ -283,12 +279,8 @@ export class PublicMarshmallowService {
       reactionsEnabled: boolean;
       allowedReactions: string[];
       theme: Record<string, unknown>;
-      termsContentEn: string | null;
-      termsContentZh: string | null;
-      termsContentJa: string | null;
-      privacyContentEn: string | null;
-      privacyContentZh: string | null;
-      privacyContentJa: string | null;
+      termsContent: LocalizedText;
+      privacyContent: LocalizedText;
     },
   ) {
     return {
@@ -307,16 +299,8 @@ export class PublicMarshmallowService {
       reactionsEnabled: config.reactionsEnabled,
       allowedReactions: config.allowedReactions,
       theme: config.theme,
-      terms: {
-        en: config.termsContentEn,
-        zh: config.termsContentZh,
-        ja: config.termsContentJa,
-      },
-      privacy: {
-        en: config.privacyContentEn,
-        zh: config.privacyContentZh,
-        ja: config.privacyContentJa,
-      },
+      terms: config.termsContent,
+      privacy: config.privacyContent,
     };
   }
 

@@ -2,7 +2,7 @@
 
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { ReportCatalogApplicationService } from '../application/report-catalog.service';
@@ -37,7 +37,7 @@ const LOCALIZED_TEXT_SCHEMA = {
     ko: { type: 'string', example: '멤버 피드백 리포트' },
     fr: { type: 'string', example: 'Rapport de feedback des membres' },
   },
-  required: ['en'],
+  required: [...SUPPORTED_UI_LOCALES],
 };
 
 const REPORT_FILTER_FIELD_SCHEMA = {

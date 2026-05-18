@@ -13,7 +13,6 @@ import {
   type RequestFn,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   pickLocaleText,
@@ -40,7 +39,7 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
-function formatDateTime(locale: SupportedUiLocale | RuntimeLocale, value: string) {
+function formatDateTime(locale: SupportedUiLocale , value: string) {
   return formatLocaleDateTime(locale, value, value);
 }
 
@@ -64,9 +63,6 @@ export interface DictionaryExplorerPanelCopy {
   activeStatus: string;
   inactiveStatus: string;
   versionPrefix: string;
-  englishLabel: string;
-  chineseLabel: string;
-  japaneseLabel: string;
 }
 
 const DEFAULT_COPY: DictionaryExplorerPanelCopy = {
@@ -89,9 +85,6 @@ const DEFAULT_COPY: DictionaryExplorerPanelCopy = {
   activeStatus: 'Active',
   inactiveStatus: 'Inactive',
   versionPrefix: 'v',
-  englishLabel: 'EN',
-  chineseLabel: 'ZH',
-  japaneseLabel: 'JA',
 };
 
 function resolveDictionaryExplorerTypeCode(
@@ -175,7 +168,7 @@ export interface DictionaryExplorerPanelProps {
   types: DictionaryTypeSummary[];
   emptyTitle?: string;
   emptyDescription?: string;
-  locale?: SupportedUiLocale | RuntimeLocale;
+  locale?: SupportedUiLocale ;
   copy?: DictionaryExplorerPanelCopy;
   intro?: React.ReactNode;
   renderToolbar?: (selectedType: DictionaryTypeSummary | null) => React.ReactNode;
@@ -438,38 +431,14 @@ export function DictionaryExplorerPanel({
 
   const pageRange = getPaginationRange(itemsPanel.pagination, itemsPanel.data.length);
   const paginationCopy = {
-    page: pickLocaleText(locale, {
-      en: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`,
-      zh: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`,
-      ja: `${itemsPanel.pagination.totalPages} ページ中 ${itemsPanel.pagination.page} ページ`,
-    }),
+    page: pickLocaleText(locale, { en: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`, zh_HANS: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`, zh_HANT: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`, ja: `${itemsPanel.pagination.totalPages} ページ中 ${itemsPanel.pagination.page} ページ`, ko: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`, fr: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}` }),
     range:
       itemsPanel.pagination.totalCount === 0
-        ? pickLocaleText(locale, {
-            en: 'No dictionary items available.',
-            zh: '当前没有词典项。',
-            ja: '辞書項目はありません。',
-          })
-        : pickLocaleText(locale, {
-            en: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`,
-            zh: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`,
-            ja: `${itemsPanel.pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
-          }),
-    pageSize: pickLocaleText(locale, {
-      en: 'Rows per page',
-      zh: '每页条目',
-      ja: '表示件数',
-    }),
-    previous: pickLocaleText(locale, {
-      en: 'Previous',
-      zh: '上一页',
-      ja: '前へ',
-    }),
-    next: pickLocaleText(locale, {
-      en: 'Next',
-      zh: '下一页',
-      ja: '次へ',
-    }),
+        ? pickLocaleText(locale, { en: 'No dictionary items available.', zh_HANS: '当前没有词典项。', zh_HANT: '当前没有词典项。', ja: '辞書項目はありません。', ko: 'No dictionary items available.', fr: 'No dictionary items available.' })
+        : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`, ja: `${itemsPanel.pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}` }),
+    pageSize: pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条目', zh_HANT: '每页条目', ja: '表示件数', ko: 'Rows per page', fr: 'Rows per page' }),
+    previous: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
+    next: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
   };
 
   const columns = renderItemActions
@@ -586,16 +555,10 @@ export function DictionaryExplorerPanel({
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-950">{item.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {copy.englishLabel}: {item.nameEn}
-                          {item.nameZh ? ` / ${copy.chineseLabel}: ${item.nameZh}` : ''}
-                          {item.nameJa ? ` / ${copy.japaneseLabel}: ${item.nameJa}` : ''}
-                        </p>
-                        {item.descriptionEn || item.descriptionZh || item.descriptionJa ? (
-                          <p className="text-sm leading-6 text-slate-600">
-                            {item.descriptionEn || item.descriptionZh || item.descriptionJa}
-                          </p>
+                        <p className="text-sm font-semibold text-slate-950">{item.localizedName}</p>
+                        <p className="text-xs text-slate-500">{item.name.en}</p>
+                        {item.localizedDescription ? (
+                          <p className="text-sm leading-6 text-slate-600">{item.localizedDescription}</p>
                         ) : null}
                       </div>
                     </td>

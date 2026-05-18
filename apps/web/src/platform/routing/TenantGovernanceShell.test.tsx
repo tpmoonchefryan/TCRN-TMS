@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TenantGovernanceShell } from '@/platform/routing/TenantGovernanceShell';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 
 const baseSession: BrowserSession = {
@@ -49,7 +49,7 @@ describe('TenantGovernanceShell', () => {
     const onSignOut = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <TenantGovernanceShell
           tenantId="tenant-1"
           pathname="/tenant/tenant-1/organization-structure"
@@ -59,7 +59,7 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Tenant content</div>
         </TenantGovernanceShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
@@ -96,7 +96,7 @@ describe('TenantGovernanceShell', () => {
 
   it('does not highlight tenant sidebar navigation for account security routes', () => {
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <TenantGovernanceShell
           tenantId="tenant-1"
           pathname="/tenant/tenant-1/profile/security"
@@ -106,7 +106,7 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Tenant profile security</div>
         </TenantGovernanceShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
@@ -118,7 +118,7 @@ describe('TenantGovernanceShell', () => {
 
   it('highlights the split tenant integration surfaces independently', () => {
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <TenantGovernanceShell
           tenantId="tenant-1"
           pathname="/tenant/tenant-1/webhook-management"
@@ -128,7 +128,7 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Webhook content</div>
         </TenantGovernanceShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });

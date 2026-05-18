@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { readTalentDetail } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildTalentWorkspaceSectionPath } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { GlassSurface } from '@/platform/ui';
@@ -41,7 +41,7 @@ export function TalentWorkspaceOverviewScreen({
   tenantId,
   talentId,
 }: Readonly<TalentWorkspaceOverviewScreenProps>) {
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const { request, session } = useSession();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentCode, setTalentCode] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export function TalentWorkspaceOverviewScreen({
     };
   }, [request, talentId]);
 
-  const resolvedTalentName = talentName || pickLocaleText(selectedLocale, {
+  const resolvedTalentName = talentName || pickLocaleText(locale, {
     en: 'Talent workspace',
     zh_HANS: '艺人工作区',
     zh_HANT: '藝人工作區',
@@ -80,7 +80,7 @@ export function TalentWorkspaceOverviewScreen({
     ko: '탤런트 워크스페이스',
     fr: 'Espace de travail talent',
   });
-  const resolvedTenantName = session?.tenantName || pickLocaleText(selectedLocale, {
+  const resolvedTenantName = session?.tenantName || pickLocaleText(locale, {
     en: 'Current tenant',
     zh_HANS: '当前租户',
     zh_HANT: '目前租戶',
@@ -98,7 +98,7 @@ export function TalentWorkspaceOverviewScreen({
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
               <Sparkles className="h-3.5 w-3.5" />
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Overview',
                 zh_HANS: '概览',
                 zh_HANT: '概覽',
@@ -112,7 +112,7 @@ export function TalentWorkspaceOverviewScreen({
                 {resolvedTalentName}
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Choose the business area you want to open.',
                   zh_HANS: '选择要进入的业务模块。',
                   zh_HANT: '選擇要進入的業務模組。',
@@ -127,7 +127,7 @@ export function TalentWorkspaceOverviewScreen({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Tenant',
                   zh_HANS: '租户',
                   zh_HANT: '租戶',
@@ -140,7 +140,7 @@ export function TalentWorkspaceOverviewScreen({
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {pickLocaleText(selectedLocale, {
+                {pickLocaleText(locale, {
                   en: 'Talent',
                   zh_HANS: '艺人',
                   zh_HANT: '藝人',
@@ -172,7 +172,7 @@ export function TalentWorkspaceOverviewScreen({
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold text-slate-950">
                   {key === 'customers'
-                    ? pickLocaleText(selectedLocale, {
+                    ? pickLocaleText(locale, {
                         en: 'Customer Management',
                         zh_HANS: '客户管理',
                         zh_HANT: '客戶管理',
@@ -181,7 +181,7 @@ export function TalentWorkspaceOverviewScreen({
                         fr: 'Gestion des clients',
                       })
                     : key === 'homepage'
-                      ? pickLocaleText(selectedLocale, {
+                      ? pickLocaleText(locale, {
                           en: 'Homepage Management',
                           zh_HANS: '主页管理',
                           zh_HANT: '主頁管理',
@@ -190,7 +190,7 @@ export function TalentWorkspaceOverviewScreen({
                           fr: 'Gestion de la homepage',
                         })
                       : key === 'marshmallow'
-                        ? pickLocaleText(selectedLocale, {
+                        ? pickLocaleText(locale, {
                             en: 'Marshmallow Management',
                             zh_HANS: '棉花糖管理',
                             zh_HANT: '棉花糖管理',
@@ -198,7 +198,7 @@ export function TalentWorkspaceOverviewScreen({
                             ko: '마시멜로 관리',
                             fr: 'Gestion Marshmallow',
                           })
-                        : pickLocaleText(selectedLocale, {
+                        : pickLocaleText(locale, {
                             en: 'Reports',
                             zh_HANS: '报表',
                             zh_HANT: '報表',
@@ -209,7 +209,7 @@ export function TalentWorkspaceOverviewScreen({
                 </h2>
                 <p className="text-sm leading-6 text-slate-600">
                   {key === 'customers'
-                      ? pickLocaleText(selectedLocale, {
+                      ? pickLocaleText(locale, {
                           en: 'Customers, memberships, and lifecycle status.',
                           zh_HANS: '客户、会员与生命周期状态。',
                           zh_HANT: '客戶、會員與生命週期狀態。',
@@ -218,7 +218,7 @@ export function TalentWorkspaceOverviewScreen({
                           fr: 'Clients, adhésions et état du cycle de vie.',
                         })
                     : key === 'homepage'
-                      ? pickLocaleText(selectedLocale, {
+                      ? pickLocaleText(locale, {
                           en: 'Publishing status and public pages.',
                           zh_HANS: '发布状态与公开页面。',
                           zh_HANT: '發佈狀態與公開頁面。',
@@ -227,7 +227,7 @@ export function TalentWorkspaceOverviewScreen({
                           fr: 'Statut de publication et pages publiques.',
                         })
                       : key === 'marshmallow'
-                        ? pickLocaleText(selectedLocale, {
+                        ? pickLocaleText(locale, {
                             en: 'Inbox settings, moderation, and exports.',
                             zh_HANS: '收件设置、审核与导出。',
                             zh_HANT: '收件設定、審核與匯出。',
@@ -235,7 +235,7 @@ export function TalentWorkspaceOverviewScreen({
                             ko: '수신함 설정, 검수, 내보내기를 관리합니다.',
                             fr: 'Réglages de réception, modération et export.',
                           })
-                        : pickLocaleText(selectedLocale, {
+                        : pickLocaleText(locale, {
                             en: 'Create, monitor, and download reports.',
                             zh_HANS: '创建、跟踪并下载报表。',
                             zh_HANT: '建立、追蹤並下載報表。',
@@ -254,7 +254,7 @@ export function TalentWorkspaceOverviewScreen({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm font-semibold text-slate-950">
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Management access',
                 zh_HANS: '管理入口',
                 zh_HANT: '管理入口',
@@ -264,7 +264,7 @@ export function TalentWorkspaceOverviewScreen({
               })}
             </p>
             <p className="text-sm leading-6 text-slate-600">
-              {pickLocaleText(selectedLocale, {
+              {pickLocaleText(locale, {
                 en: 'Open organization structure to manage lifecycle and scope settings.',
                 zh_HANS: '如需管理生命周期和层级设置，请进入组织架构。',
                 zh_HANT: '如需管理生命週期與層級設定，請進入組織結構。',
@@ -280,7 +280,7 @@ export function TalentWorkspaceOverviewScreen({
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
           >
             <LayoutPanelTop className="h-4 w-4" />
-            {pickLocaleText(selectedLocale, {
+            {pickLocaleText(locale, {
               en: 'Open organization structure',
               zh_HANS: '打开组织架构',
               zh_HANT: '打開組織結構',

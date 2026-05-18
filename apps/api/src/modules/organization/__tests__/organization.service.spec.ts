@@ -2,6 +2,7 @@
 
 import { NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock prisma before importing service
@@ -22,6 +23,11 @@ const mockPrisma = prisma as unknown as {
 };
 
 describe('OrganizationService', () => {
+  const localized = (
+    en: string,
+    patch: PartialLocalizedText = {},
+  ) => createLocalizedText({ en, ...patch });
+
   let service: OrganizationService;
 
   const testTenantId = 'tenant-123';
@@ -40,9 +46,7 @@ describe('OrganizationService', () => {
       code: 'DIV_A',
       path: '/DIV_A/',
       depth: 1,
-      name_en: 'Division A',
-      name_zh: '部门A',
-      name_ja: '部署A',
+      name: localized('Division A', { zh_HANS: '部门A', ja: '部署A' }),
       is_active: true,
     },
     {
@@ -51,9 +55,7 @@ describe('OrganizationService', () => {
       code: 'DIV_A1',
       path: '/DIV_A/DIV_A1/',
       depth: 2,
-      name_en: 'Division A-1',
-      name_zh: null,
-      name_ja: null,
+      name: localized('Division A-1'),
       is_active: true,
     },
     {
@@ -62,9 +64,7 @@ describe('OrganizationService', () => {
       code: 'DIV_B',
       path: '/DIV_B/',
       depth: 1,
-      name_en: 'Division B',
-      name_zh: null,
-      name_ja: null,
+      name: localized('Division B'),
       is_active: false,
     },
   ];
@@ -74,9 +74,7 @@ describe('OrganizationService', () => {
       id: 'talent-1',
       subsidiary_id: 'sub-1',
       code: 'T001',
-      name_en: 'Talent One',
-      name_zh: null,
-      name_ja: null,
+      name: localized('Talent One'),
       display_name: 'Talent 1',
       avatar_url: 'https://example.com/avatar1.jpg',
       homepage_path: 't1',
@@ -87,9 +85,7 @@ describe('OrganizationService', () => {
       id: 'talent-2',
       subsidiary_id: null,
       code: 'T002',
-      name_en: 'Talent Two',
-      name_zh: null,
-      name_ja: null,
+      name: localized('Talent Two'),
       display_name: 'Talent 2',
       avatar_url: null,
       homepage_path: null,
@@ -224,7 +220,7 @@ describe('OrganizationService', () => {
 
     it('should support different languages', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { ...mockSubsidiaries[0], name_zh: '部门A' },
+        { ...mockSubsidiaries[0], name: localized('Division A', { zh_HANS: '部门A' }) },
       ]);
 
       const result = await service.getBreadcrumb(
@@ -360,7 +356,7 @@ describe('OrganizationService', () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
       mockPrisma.$queryRawUnsafe.mockReset();
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { ...mockSubsidiaries[0], name_zh: null },
+        { ...mockSubsidiaries[0], name: localized('Division A', { zh_HANS: '' }) },
       ]);
 
       const result = await service.getBreadcrumb(

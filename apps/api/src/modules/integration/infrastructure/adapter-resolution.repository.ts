@@ -3,6 +3,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import type {
   EffectiveAdapterConfigRow,
   EffectiveAdapterLookupRow,
@@ -92,7 +93,7 @@ export class AdapterResolutionRepository {
 
     conditions.push(`(${ownerClauses.join(' OR ')})`);
 
-    return this.databaseService.getPrisma().$queryRawUnsafe<EffectiveAdapterLookupRow[]>(
+    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<EffectiveAdapterLookupRow[]>(
       `
         SELECT
           ia.id,
@@ -102,9 +103,7 @@ export class AdapterResolutionRepository {
           sp.code as "platformCode",
           sp.display_name as "platformDisplayName",
           ia.code,
-          ia.name_en as "nameEn",
-          ia.name_zh as "nameZh",
-          ia.name_ja as "nameJa",
+          ia.name,
           ia.adapter_type as "adapterType",
           ia.inherit,
           ia.is_active as "isActive",
@@ -118,6 +117,11 @@ export class AdapterResolutionRepository {
       `,
       ...params,
     );
+
+    return rows.map((row) => ({
+      ...row,
+      name: readLocalizedText(row.name, 'integration_adapter.name'),
+    }));
   }
 
   async findConfigs(

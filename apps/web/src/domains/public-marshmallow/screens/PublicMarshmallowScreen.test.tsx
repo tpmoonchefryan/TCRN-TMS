@@ -3,8 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { PublicMarshmallowScreen } from '@/domains/public-marshmallow/screens/PublicMarshmallowScreen';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 
 const mockFetch = vi.fn();
 
@@ -24,7 +25,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function renderWithLocale(ui: ReactElement) {
-  return render(<RuntimeLocaleProvider>{ui}</RuntimeLocaleProvider>);
+  return render(<UiLocaleProvider>{ui}</UiLocaleProvider>);
 }
 
 describe('PublicMarshmallowScreen', () => {
@@ -68,16 +69,8 @@ describe('PublicMarshmallowScreen', () => {
             theme: {
               accentColor: '#ec4899',
             },
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -212,16 +205,8 @@ describe('PublicMarshmallowScreen', () => {
             reactionsEnabled: false,
             allowedReactions: [],
             theme: {},
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -278,16 +263,8 @@ describe('PublicMarshmallowScreen', () => {
             reactionsEnabled: false,
             allowedReactions: [],
             theme: {},
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -378,16 +355,8 @@ describe('PublicMarshmallowScreen', () => {
             reactionsEnabled: false,
             allowedReactions: [],
             theme: {},
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -484,16 +453,8 @@ describe('PublicMarshmallowScreen', () => {
             reactionsEnabled: false,
             allowedReactions: [],
             theme: {},
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -624,16 +585,8 @@ describe('PublicMarshmallowScreen', () => {
             theme: {
               accentColor: '#ec4899',
             },
-            terms: {
-              en: 'English terms fallback',
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: '日本語のプライバシー',
-            },
+            terms: localizedFixture('English terms fallback'),
+            privacy: localizedFixture('', { ja: '日本語のプライバシー' }),
           },
         });
       }
@@ -694,16 +647,8 @@ describe('PublicMarshmallowScreen', () => {
             theme: {
               accentColor: '#ec4899',
             },
-            terms: {
-              en: 'English terms fallback',
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture('English terms fallback'),
+            privacy: localizedFixture(''),
           },
         });
       }
@@ -777,16 +722,8 @@ describe('PublicMarshmallowScreen', () => {
             theme: {
               accentColor: '#ec4899',
             },
-            terms: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
-            privacy: {
-              en: null,
-              zh: null,
-              ja: null,
-            },
+            terms: localizedFixture(''),
+            privacy: localizedFixture(''),
           },
         });
       }

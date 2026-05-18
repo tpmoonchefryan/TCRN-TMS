@@ -3,6 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import { type WebhookRecord } from '../domain/webhook.policy';
 
@@ -16,11 +17,15 @@ function asRecord(
   return value as Record<string, unknown>;
 }
 
-function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData'> & { extraData: Prisma.JsonValue | Record<string, unknown> | null }>(
+function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData' | 'name'> & {
+  extraData: Prisma.JsonValue | Record<string, unknown> | null;
+  name: Prisma.JsonValue;
+}>(
   record: T,
 ): WebhookRecord {
   return {
     ...record,
+    name: readLocalizedText(record.name, 'webhook.name'),
     extraData: asRecord(record.extraData),
   };
 }
@@ -37,14 +42,15 @@ export class WebhookReadRepository {
 
   async findMany(tenantSchema: string | null): Promise<WebhookRecord[]> {
     if (tenantSchema) {
-      return this.prisma.$queryRawUnsafe<WebhookRecord[]>(
+      const rows = await this.prisma.$queryRawUnsafe<Array<Omit<WebhookRecord, 'extraData' | 'name'> & {
+        extraData: Prisma.JsonValue | null;
+        name: Prisma.JsonValue;
+      }>>(
         `
           SELECT
             id,
             code,
-            name_en as "nameEn",
-            name_zh as "nameZh",
-            name_ja as "nameJa",
+            name,
             extra_data as "extraData",
             url,
             secret,
@@ -65,6 +71,8 @@ export class WebhookReadRepository {
           ORDER BY created_at DESC
         `,
       );
+
+      return rows.map(mapWebhookRecord);
     }
 
     const records = await this.prisma.webhook.findMany({
@@ -79,14 +87,15 @@ export class WebhookReadRepository {
     tenantSchema: string | null,
   ): Promise<WebhookRecord | null> {
     if (tenantSchema) {
-      const rows = await this.prisma.$queryRawUnsafe<WebhookRecord[]>(
+      const rows = await this.prisma.$queryRawUnsafe<Array<Omit<WebhookRecord, 'extraData' | 'name'> & {
+        extraData: Prisma.JsonValue | null;
+        name: Prisma.JsonValue;
+      }>>(
         `
           SELECT
             id,
             code,
-            name_en as "nameEn",
-            name_zh as "nameZh",
-            name_ja as "nameJa",
+            name,
             extra_data as "extraData",
             url,
             secret,
@@ -110,7 +119,7 @@ export class WebhookReadRepository {
         id,
       );
 
-      return rows[0] ?? null;
+      return rows[0] ? mapWebhookRecord(rows[0]) : null;
     }
 
     const record = await this.prisma.webhook.findUnique({

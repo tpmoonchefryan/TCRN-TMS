@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '../constants/locale';
+
 export const RBAC_CANONICAL_ACTIONS = [
   'read',
   'write',
@@ -31,18 +33,18 @@ export const RBAC_ACTION_INPUTS = [
 ] as const satisfies readonly PermissionActionInput[];
 
 export const RBAC_MODULE_LABELS = {
-  platform: { en: 'Platform', zh: '平台', ja: 'プラットフォーム' },
-  organization: { en: 'Organization', zh: '组织管理', ja: '組織管理' },
-  user: { en: 'User Access', zh: '用户与角色', ja: 'ユーザーと権限' },
-  customer: { en: 'Customer', zh: '客户管理', ja: '顧客管理' },
-  config: { en: 'Configuration', zh: '配置管理', ja: '設定管理' },
-  external: { en: 'Content', zh: '内容管理', ja: 'コンテンツ管理' },
-  report: { en: 'Reports', zh: '报表管理', ja: 'レポート管理' },
-  integration: { en: 'Integration', zh: '集成管理', ja: '連携管理' },
-  security: { en: 'Security', zh: '安全管理', ja: 'セキュリティ管理' },
-  log: { en: 'Logs', zh: '日志审计', ja: 'ログ監査' },
-  compliance: { en: 'Compliance', zh: '合规', ja: 'コンプライアンス' },
-  email: { en: 'Email', zh: '邮件模板', ja: 'メールテンプレート' },
+  platform: { en: 'Platform', zh_HANS: '平台', zh_HANT: '平台', ja: 'プラットフォーム', ko: 'Platform', fr: 'Platform' },
+  organization: { en: 'Organization', zh_HANS: '组织管理', zh_HANT: '组织管理', ja: '組織管理', ko: 'Organization', fr: 'Organization' },
+  user: { en: 'User Access', zh_HANS: '用户与角色', zh_HANT: '用户与角色', ja: 'ユーザーと権限', ko: 'User Access', fr: 'User Access' },
+  customer: { en: 'Customer', zh_HANS: '客户管理', zh_HANT: '客户管理', ja: '顧客管理', ko: 'Customer', fr: 'Customer' },
+  config: { en: 'Configuration', zh_HANS: '配置管理', zh_HANT: '配置管理', ja: '設定管理', ko: 'Configuration', fr: 'Configuration' },
+  external: { en: 'Content', zh_HANS: '内容管理', zh_HANT: '内容管理', ja: 'コンテンツ管理', ko: 'Content', fr: 'Content' },
+  report: { en: 'Reports', zh_HANS: '报表管理', zh_HANT: '报表管理', ja: 'レポート管理', ko: 'Reports', fr: 'Reports' },
+  integration: { en: 'Integration', zh_HANS: '集成管理', zh_HANT: '集成管理', ja: '連携管理', ko: 'Integration', fr: 'Integration' },
+  security: { en: 'Security', zh_HANS: '安全管理', zh_HANT: '安全管理', ja: 'セキュリティ管理', ko: 'Security', fr: 'Security' },
+  log: { en: 'Logs', zh_HANS: '日志审计', zh_HANT: '日志审计', ja: 'ログ監査', ko: 'Logs', fr: 'Logs' },
+  compliance: { en: 'Compliance', zh_HANS: '合规', zh_HANT: '合规', ja: 'コンプライアンス', ko: 'Compliance', fr: 'Compliance' },
+  email: { en: 'Email', zh_HANS: '邮件模板', zh_HANT: '邮件模板', ja: 'メールテンプレート', ko: 'Email', fr: 'Email' },
 } as const;
 
 export type RbacModuleCode = keyof typeof RBAC_MODULE_LABELS;
@@ -56,9 +58,7 @@ export type RbacTenantTier = 'ac' | 'standard';
 export type RbacRoleScopeType = 'tenant' | 'subsidiary' | 'talent';
 
 interface LocalizedLabel {
-  nameEn: string;
-  nameZh: string;
-  nameJa: string;
+  name: LocalizedText;
 }
 
 export interface RbacResourceDefinition extends LocalizedLabel {
@@ -110,56 +110,56 @@ const resource = <
 });
 
 export const RBAC_RESOURCES = [
-  resource('tenant.manage', 'platform', { nameEn: 'Tenant Management', nameZh: '租户管理', nameJa: 'テナント管理' }, RBAC_CANONICAL_ACTIONS, 10),
+  resource('tenant.manage', 'platform', { name: { en: 'Tenant Management', zh_HANS: '租户管理', zh_HANT: '租户管理', ja: 'テナント管理', ko: 'Tenant Management', fr: 'Tenant Management' } }, RBAC_CANONICAL_ACTIONS, 10),
 
-  resource('subsidiary', 'organization', { nameEn: 'Subsidiary', nameZh: '分级目录', nameJa: '組織' }, ['read', 'write', 'delete', 'admin'], 20),
-  resource('talent', 'organization', { nameEn: 'Talent', nameZh: '艺人', nameJa: 'タレント' }, ['read', 'write', 'delete', 'admin'], 30),
+  resource('subsidiary', 'organization', { name: { en: 'Subsidiary', zh_HANS: '分级目录', zh_HANT: '分级目录', ja: '組織', ko: 'Subsidiary', fr: 'Subsidiary' } }, ['read', 'write', 'delete', 'admin'], 20),
+  resource('talent', 'organization', { name: { en: 'Talent', zh_HANS: '艺人', zh_HANT: '艺人', ja: 'タレント', ko: 'Talent', fr: 'Talent' } }, ['read', 'write', 'delete', 'admin'], 30),
 
-  resource('system_user', 'user', { nameEn: 'System User', nameZh: '系统用户', nameJa: 'システムユーザー' }, ['read', 'write', 'delete', 'admin'], 40),
-  resource('role', 'user', { nameEn: 'Role', nameZh: '角色', nameJa: 'ロール' }, ['read', 'write', 'delete', 'admin'], 50),
+  resource('system_user', 'user', { name: { en: 'System User', zh_HANS: '系统用户', zh_HANT: '系统用户', ja: 'システムユーザー', ko: 'System User', fr: 'System User' } }, ['read', 'write', 'delete', 'admin'], 40),
+  resource('role', 'user', { name: { en: 'Role', zh_HANS: '角色', zh_HANT: '角色', ja: 'ロール', ko: 'Role', fr: 'Role' } }, ['read', 'write', 'delete', 'admin'], 50),
 
-  resource('customer.profile', 'customer', { nameEn: 'Customer Profile', nameZh: '客户档案', nameJa: '顧客プロファイル' }, ['read', 'write', 'delete', 'admin'], 60),
-  resource('customer.pii', 'customer', { nameEn: 'Customer PII', nameZh: '客户敏感信息', nameJa: '顧客PII' }, ['read', 'write', 'admin'], 70),
-  resource('customer.membership', 'customer', { nameEn: 'Customer Membership', nameZh: '会员记录', nameJa: 'メンバーシップ' }, ['read', 'write', 'admin'], 80),
-  resource('customer.import', 'customer', { nameEn: 'Customer Import', nameZh: '客户导入', nameJa: '顧客インポート' }, ['read', 'write', 'delete', 'admin'], 90),
-  resource('customer.export', 'customer', { nameEn: 'Customer Export', nameZh: '客户导出', nameJa: '顧客エクスポート' }, ['read', 'write', 'delete', 'admin'], 100),
+  resource('customer.profile', 'customer', { name: { en: 'Customer Profile', zh_HANS: '客户档案', zh_HANT: '客户档案', ja: '顧客プロファイル', ko: 'Customer Profile', fr: 'Customer Profile' } }, ['read', 'write', 'delete', 'admin'], 60),
+  resource('customer.pii', 'customer', { name: { en: 'Customer PII', zh_HANS: '客户敏感信息', zh_HANT: '客户敏感信息', ja: '顧客PII', ko: 'Customer PII', fr: 'Customer PII' } }, ['read', 'write', 'admin'], 70),
+  resource('customer.membership', 'customer', { name: { en: 'Customer Membership', zh_HANS: '会员记录', zh_HANT: '会员记录', ja: 'メンバーシップ', ko: 'Customer Membership', fr: 'Customer Membership' } }, ['read', 'write', 'admin'], 80),
+  resource('customer.import', 'customer', { name: { en: 'Customer Import', zh_HANS: '客户导入', zh_HANT: '客户导入', ja: '顧客インポート', ko: 'Customer Import', fr: 'Customer Import' } }, ['read', 'write', 'delete', 'admin'], 90),
+  resource('customer.export', 'customer', { name: { en: 'Customer Export', zh_HANS: '客户导出', zh_HANT: '客户导出', ja: '顧客エクスポート', ko: 'Customer Export', fr: 'Customer Export' } }, ['read', 'write', 'delete', 'admin'], 100),
 
-  resource('config.pii_service', 'config', { nameEn: 'PII Service Config', nameZh: 'PII服务配置', nameJa: 'PIIサービス設定' }, ['read', 'write', 'admin'], 110),
-  resource('config.profile_store', 'config', { nameEn: 'Profile Store', nameZh: '档案存储', nameJa: 'プロファイルストア' }, ['read', 'write', 'admin'], 120),
-  resource('config.dictionary', 'config', { nameEn: 'Config Dictionary', nameZh: '配置字典', nameJa: '設定辞書' }, ['read', 'write', 'admin'], 130),
-  resource('config.customer_status', 'config', { nameEn: 'Customer Status Config', nameZh: '客户状态配置', nameJa: '顧客ステータス設定' }, ['read', 'write', 'admin'], 140),
-  resource('config.membership', 'config', { nameEn: 'Membership Config', nameZh: '会员配置', nameJa: 'メンバーシップ設定' }, ['read', 'write', 'admin'], 150),
-  resource('config.platform_registry', 'config', { nameEn: 'Platform Registry', nameZh: '平台注册表', nameJa: 'プラットフォームレジストリ' }, ['read', 'write', 'admin'], 160),
-  resource('config.platform_settings', 'config', { nameEn: 'Platform Settings', nameZh: '平台设置', nameJa: 'プラットフォーム設定' }, ['read', 'write', 'admin'], 170),
-  resource('settings', 'config', { nameEn: 'Settings', nameZh: '设置', nameJa: '設定' }, ['read', 'write', 'admin'], 175),
+  resource('config.pii_service', 'config', { name: { en: 'PII Service Config', zh_HANS: 'PII服务配置', zh_HANT: 'PII服务配置', ja: 'PIIサービス設定', ko: 'PII Service Config', fr: 'PII Service Config' } }, ['read', 'write', 'admin'], 110),
+  resource('config.profile_store', 'config', { name: { en: 'Profile Store', zh_HANS: '档案存储', zh_HANT: '档案存储', ja: 'プロファイルストア', ko: 'Profile Store', fr: 'Profile Store' } }, ['read', 'write', 'admin'], 120),
+  resource('config.dictionary', 'config', { name: { en: 'Config Dictionary', zh_HANS: '配置字典', zh_HANT: '配置字典', ja: '設定辞書', ko: 'Config Dictionary', fr: 'Config Dictionary' } }, ['read', 'write', 'admin'], 130),
+  resource('config.customer_status', 'config', { name: { en: 'Customer Status Config', zh_HANS: '客户状态配置', zh_HANT: '客户状态配置', ja: '顧客ステータス設定', ko: 'Customer Status Config', fr: 'Customer Status Config' } }, ['read', 'write', 'admin'], 140),
+  resource('config.membership', 'config', { name: { en: 'Membership Config', zh_HANS: '会员配置', zh_HANT: '会员配置', ja: 'メンバーシップ設定', ko: 'Membership Config', fr: 'Membership Config' } }, ['read', 'write', 'admin'], 150),
+  resource('config.platform_registry', 'config', { name: { en: 'Platform Registry', zh_HANS: '平台注册表', zh_HANT: '平台注册表', ja: 'プラットフォームレジストリ', ko: 'Platform Registry', fr: 'Platform Registry' } }, ['read', 'write', 'admin'], 160),
+  resource('config.platform_settings', 'config', { name: { en: 'Platform Settings', zh_HANS: '平台设置', zh_HANT: '平台设置', ja: 'プラットフォーム設定', ko: 'Platform Settings', fr: 'Platform Settings' } }, ['read', 'write', 'admin'], 170),
+  resource('settings', 'config', { name: { en: 'Settings', zh_HANS: '设置', zh_HANT: '设置', ja: '設定', ko: 'Settings', fr: 'Settings' } }, ['read', 'write', 'admin'], 175),
 
-  resource('talent.homepage', 'external', { nameEn: 'Homepage', nameZh: '个人主页', nameJa: 'ホームページ' }, ['read', 'write', 'admin'], 180),
-  resource('public_presence.document', 'external', { nameEn: 'Public Presence Document', nameZh: 'Public Presence 文档', nameJa: 'パブリックプレゼンス文書' }, ['read', 'write', 'admin'], 182),
-  resource('public_presence.review', 'external', { nameEn: 'Public Presence Review', nameZh: 'Public Presence 审核', nameJa: 'パブリックプレゼンスレビュー' }, ['read', 'write', 'execute', 'admin'], 184),
-  resource('public_presence.publish', 'external', { nameEn: 'Public Presence Publish', nameZh: 'Public Presence 发布', nameJa: 'パブリックプレゼンス公開' }, ['write', 'execute', 'admin'], 186),
-  resource('public_presence.rollback', 'external', { nameEn: 'Public Presence Rollback', nameZh: 'Public Presence 回滚', nameJa: 'パブリックプレゼンスロールバック' }, ['write', 'execute', 'admin'], 188),
-  resource('public_presence.validation', 'external', { nameEn: 'Public Presence Validation', nameZh: 'Public Presence 校验', nameJa: 'パブリックプレゼンス検証' }, ['read', 'write', 'execute', 'admin'], 190),
-  resource('public_presence.audit', 'external', { nameEn: 'Public Presence Audit', nameZh: 'Public Presence 审计', nameJa: 'パブリックプレゼンス監査' }, ['read', 'admin'], 192),
-  resource('public_presence.ai_patch', 'external', { nameEn: 'Public Presence AI Patch', nameZh: 'Public Presence AI 修补', nameJa: 'パブリックプレゼンスAIパッチ' }, ['execute', 'admin'], 194),
-  resource('talent.marshmallow', 'external', { nameEn: 'Marshmallow', nameZh: '棉花糖', nameJa: 'マシュマロ' }, ['read', 'write', 'execute', 'admin'], 196),
+  resource('talent.homepage', 'external', { name: { en: 'Homepage', zh_HANS: '个人主页', zh_HANT: '个人主页', ja: 'ホームページ', ko: 'Homepage', fr: 'Homepage' } }, ['read', 'write', 'admin'], 180),
+  resource('public_presence.document', 'external', { name: { en: 'Public Presence Document', zh_HANS: 'Public Presence 文档', zh_HANT: 'Public Presence 文档', ja: 'パブリックプレゼンス文書', ko: 'Public Presence Document', fr: 'Public Presence Document' } }, ['read', 'write', 'admin'], 182),
+  resource('public_presence.review', 'external', { name: { en: 'Public Presence Review', zh_HANS: 'Public Presence 审核', zh_HANT: 'Public Presence 审核', ja: 'パブリックプレゼンスレビュー', ko: 'Public Presence Review', fr: 'Public Presence Review' } }, ['read', 'write', 'execute', 'admin'], 184),
+  resource('public_presence.publish', 'external', { name: { en: 'Public Presence Publish', zh_HANS: 'Public Presence 发布', zh_HANT: 'Public Presence 发布', ja: 'パブリックプレゼンス公開', ko: 'Public Presence Publish', fr: 'Public Presence Publish' } }, ['write', 'execute', 'admin'], 186),
+  resource('public_presence.rollback', 'external', { name: { en: 'Public Presence Rollback', zh_HANS: 'Public Presence 回滚', zh_HANT: 'Public Presence 回滚', ja: 'パブリックプレゼンスロールバック', ko: 'Public Presence Rollback', fr: 'Public Presence Rollback' } }, ['write', 'execute', 'admin'], 188),
+  resource('public_presence.validation', 'external', { name: { en: 'Public Presence Validation', zh_HANS: 'Public Presence 校验', zh_HANT: 'Public Presence 校验', ja: 'パブリックプレゼンス検証', ko: 'Public Presence Validation', fr: 'Public Presence Validation' } }, ['read', 'write', 'execute', 'admin'], 190),
+  resource('public_presence.audit', 'external', { name: { en: 'Public Presence Audit', zh_HANS: 'Public Presence 审计', zh_HANT: 'Public Presence 审计', ja: 'パブリックプレゼンス監査', ko: 'Public Presence Audit', fr: 'Public Presence Audit' } }, ['read', 'admin'], 192),
+  resource('public_presence.ai_patch', 'external', { name: { en: 'Public Presence AI Patch', zh_HANS: 'Public Presence AI 修补', zh_HANT: 'Public Presence AI 修补', ja: 'パブリックプレゼンスAIパッチ', ko: 'Public Presence AI Patch', fr: 'Public Presence AI Patch' } }, ['execute', 'admin'], 194),
+  resource('talent.marshmallow', 'external', { name: { en: 'Marshmallow', zh_HANS: '棉花糖', zh_HANT: '棉花糖', ja: 'マシュマロ', ko: 'Marshmallow', fr: 'Marshmallow' } }, ['read', 'write', 'execute', 'admin'], 196),
 
-  resource('report.mfr', 'report', { nameEn: 'MFR Report', nameZh: 'MFR报表', nameJa: 'MFRレポート' }, ['read', 'execute', 'admin'], 200),
+  resource('report.mfr', 'report', { name: { en: 'MFR Report', zh_HANS: 'MFR报表', zh_HANT: 'MFR报表', ja: 'MFRレポート', ko: 'MFR Report', fr: 'MFR Report' } }, ['read', 'execute', 'admin'], 200),
 
-  resource('integration.adapter', 'integration', { nameEn: 'Integration Adapter', nameZh: '集成适配器', nameJa: '連携アダプター' }, ['read', 'write', 'delete', 'admin'], 210),
-  resource('integration.webhook', 'integration', { nameEn: 'Webhook', nameZh: 'Webhook', nameJa: 'Webhook' }, ['read', 'write', 'delete', 'admin'], 220),
-  resource('integration.consumer', 'integration', { nameEn: 'API Consumer', nameZh: 'API消费者', nameJa: 'APIコンシューマー' }, ['read', 'write', 'delete', 'admin'], 230),
+  resource('integration.adapter', 'integration', { name: { en: 'Integration Adapter', zh_HANS: '集成适配器', zh_HANT: '集成适配器', ja: '連携アダプター', ko: 'Integration Adapter', fr: 'Integration Adapter' } }, ['read', 'write', 'delete', 'admin'], 210),
+  resource('integration.webhook', 'integration', { name: { en: 'Webhook', zh_HANS: 'Webhook', zh_HANT: 'Webhook', ja: 'Webhook', ko: 'Webhook', fr: 'Webhook' } }, ['read', 'write', 'delete', 'admin'], 220),
+  resource('integration.consumer', 'integration', { name: { en: 'API Consumer', zh_HANS: 'API消费者', zh_HANT: 'API消费者', ja: 'APIコンシューマー', ko: 'API Consumer', fr: 'API Consumer' } }, ['read', 'write', 'delete', 'admin'], 230),
 
-  resource('security.blocklist', 'security', { nameEn: 'Blocklist', nameZh: '屏蔽词', nameJa: 'ブロックリスト' }, ['read', 'write', 'delete', 'admin'], 240),
-  resource('security.ip_rules', 'security', { nameEn: 'IP Rules', nameZh: 'IP规则', nameJa: 'IPルール' }, ['read', 'write', 'delete', 'admin'], 250),
-  resource('security.external_blocklist', 'security', { nameEn: 'External Blocklist', nameZh: '外部屏蔽名单', nameJa: '外部ブロックリスト' }, ['read', 'write', 'delete', 'admin'], 260),
+  resource('security.blocklist', 'security', { name: { en: 'Blocklist', zh_HANS: '屏蔽词', zh_HANT: '屏蔽词', ja: 'ブロックリスト', ko: 'Blocklist', fr: 'Blocklist' } }, ['read', 'write', 'delete', 'admin'], 240),
+  resource('security.ip_rules', 'security', { name: { en: 'IP Rules', zh_HANS: 'IP规则', zh_HANT: 'IP规则', ja: 'IPルール', ko: 'IP Rules', fr: 'IP Rules' } }, ['read', 'write', 'delete', 'admin'], 250),
+  resource('security.external_blocklist', 'security', { name: { en: 'External Blocklist', zh_HANS: '外部屏蔽名单', zh_HANT: '外部屏蔽名单', ja: '外部ブロックリスト', ko: 'External Blocklist', fr: 'External Blocklist' } }, ['read', 'write', 'delete', 'admin'], 260),
 
-  resource('log.change_log', 'log', { nameEn: 'Change Log', nameZh: '变更日志', nameJa: '変更ログ' }, ['read'], 270),
-  resource('log.integration_log', 'log', { nameEn: 'Integration Log', nameZh: '集成日志', nameJa: '連携ログ' }, ['read'], 280),
-  resource('log.search', 'log', { nameEn: 'Log Search', nameZh: '日志搜索', nameJa: 'ログ検索' }, ['read'], 290),
-  resource('log.tech_log', 'log', { nameEn: 'Tech Event Log', nameZh: '技术事件日志', nameJa: '技術イベントログ' }, ['read'], 300),
+  resource('log.change_log', 'log', { name: { en: 'Change Log', zh_HANS: '变更日志', zh_HANT: '变更日志', ja: '変更ログ', ko: 'Change Log', fr: 'Change Log' } }, ['read'], 270),
+  resource('log.integration_log', 'log', { name: { en: 'Integration Log', zh_HANS: '集成日志', zh_HANT: '集成日志', ja: '連携ログ', ko: 'Integration Log', fr: 'Integration Log' } }, ['read'], 280),
+  resource('log.search', 'log', { name: { en: 'Log Search', zh_HANS: '日志搜索', zh_HANT: '日志搜索', ja: 'ログ検索', ko: 'Log Search', fr: 'Log Search' } }, ['read'], 290),
+  resource('log.tech_log', 'log', { name: { en: 'Tech Event Log', zh_HANS: '技术事件日志', zh_HANT: '技术事件日志', ja: '技術イベントログ', ko: 'Tech Event Log', fr: 'Tech Event Log' } }, ['read'], 300),
 
-  resource('compliance.report', 'compliance', { nameEn: 'Compliance Report', nameZh: '合规报表', nameJa: 'コンプライアンスレポート' }, ['read'], 310),
-  resource('email.template', 'email', { nameEn: 'Email Template', nameZh: '邮件模板', nameJa: 'メールテンプレート' }, ['read', 'write', 'delete', 'admin'], 320),
+  resource('compliance.report', 'compliance', { name: { en: 'Compliance Report', zh_HANS: '合规报表', zh_HANT: '合规报表', ja: 'コンプライアンスレポート', ko: 'Compliance Report', fr: 'Compliance Report' } }, ['read'], 310),
+  resource('email.template', 'email', { name: { en: 'Email Template', zh_HANS: '邮件模板', zh_HANT: '邮件模板', ja: 'メールテンプレート', ko: 'Email Template', fr: 'Email Template' } }, ['read', 'write', 'delete', 'admin'], 320),
 ] as const satisfies readonly RbacResourceDefinition[];
 
 export type RbacResourceCode = (typeof RBAC_RESOURCES)[number]['code'];
@@ -263,27 +263,21 @@ const viewerReadableResources = RBAC_RESOURCES
 export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   {
     code: 'PLATFORM_ADMIN',
-    nameEn: 'Platform Administrator',
-    nameZh: '平台管理员',
-    nameJa: 'プラットフォーム管理者',
+    name: { en: 'Platform Administrator', zh_HANS: '平台管理员', zh_HANT: '平台管理员', ja: 'プラットフォーム管理者', ko: 'Platform Administrator', fr: 'Platform Administrator' },
     description: 'AC tenant administrator with platform-wide access',
     isSystem: true,
     permissions: allActionsFor(...RBAC_RESOURCES.map((definition) => definition.code)),
   },
   {
     code: 'ADMIN',
-    nameEn: 'Administrator',
-    nameZh: '管理员',
-    nameJa: '管理者',
+    name: { en: 'Administrator', zh_HANS: '管理员', zh_HANT: '管理员', ja: '管理者', ko: 'Administrator', fr: 'Administrator' },
     description: 'Full access within assigned scope (tenant/subsidiary/talent)',
     isSystem: true,
     permissions: adminPermissions,
   },
   {
     code: 'TENANT_ADMIN',
-    nameEn: 'Tenant Administrator',
-    nameZh: '租户管理员',
-    nameJa: 'テナント管理者',
+    name: { en: 'Tenant Administrator', zh_HANS: '租户管理员', zh_HANT: '租户管理员', ja: 'テナント管理者', ko: 'Tenant Administrator', fr: 'Tenant Administrator' },
     description: 'Compatibility alias for ADMIN during RBAC contract migration',
     isSystem: true,
     aliasOf: 'ADMIN',
@@ -291,9 +285,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   },
   {
     code: 'TALENT_MANAGER',
-    nameEn: 'Talent Manager',
-    nameZh: '艺人经理',
-    nameJa: 'タレントマネージャー',
+    name: { en: 'Talent Manager', zh_HANS: '艺人经理', zh_HANT: '艺人经理', ja: 'タレントマネージャー', ko: 'Talent Manager', fr: 'Talent Manager' },
     description: 'Manage talent operations, organization structure, and scoped user assignments',
     isSystem: false,
     permissions: [
@@ -310,9 +302,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   },
   {
     code: 'CONTENT_MANAGER',
-    nameEn: 'Content Manager',
-    nameZh: '内容管理员',
-    nameJa: 'コンテンツマネージャー',
+    name: { en: 'Content Manager', zh_HANS: '内容管理员', zh_HANT: '内容管理员', ja: 'コンテンツマネージャー', ko: 'Content Manager', fr: 'Content Manager' },
     description: 'Homepage, marshmallow, and moderation content management',
     isSystem: false,
     permissions: [
@@ -330,9 +320,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   },
   {
     code: 'CUSTOMER_MANAGER',
-    nameEn: 'Customer Manager',
-    nameZh: '客户经理',
-    nameJa: '顧客マネージャー',
+    name: { en: 'Customer Manager', zh_HANS: '客户经理', zh_HANT: '客户经理', ja: '顧客マネージャー', ko: 'Customer Manager', fr: 'Customer Manager' },
     description: 'Customer profile, membership, import, export, and PII management',
     isSystem: false,
     permissions: [
@@ -349,9 +337,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   },
   {
     code: 'VIEWER',
-    nameEn: 'Viewer',
-    nameZh: '只读访问者',
-    nameJa: '閲覧者',
+    name: { en: 'Viewer', zh_HANS: '只读访问者', zh_HANT: '只读访问者', ja: '閲覧者', ko: 'Viewer', fr: 'Viewer' },
     description: 'Read-only access to non-sensitive resources within assigned scope',
     isSystem: false,
     permissions: [
@@ -361,9 +347,7 @@ export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   },
   {
     code: 'INTEGRATION_MANAGER',
-    nameEn: 'Integration Manager',
-    nameZh: '集成管理员',
-    nameJa: '連携マネージャー',
+    name: { en: 'Integration Manager', zh_HANS: '集成管理员', zh_HANT: '集成管理员', ja: '連携マネージャー', ko: 'Integration Manager', fr: 'Integration Manager' },
     description: 'Integration adapter, webhook, and consumer management',
     isSystem: false,
     permissions: [

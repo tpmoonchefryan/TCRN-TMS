@@ -26,7 +26,7 @@ import {
   PublicPresenceBadge,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
 type VisibleHomepageComponent = PublicHomepageComponentRecord;
 
@@ -341,9 +341,9 @@ export function PublicHomepageComponentCard({
 }: Readonly<{
   component: VisibleHomepageComponent;
   theme: ThemeConfig;
-  copy?: ReturnType<typeof useRuntimeLocale>['copy']['publicHomepage'];
+  copy?: ReturnType<typeof useUiLocale>['copy']['publicHomepage'];
 }>) {
-  const { copy: runtimeCopy } = useRuntimeLocale();
+  const { copy: runtimeCopy } = useUiLocale();
   const copy = providedCopy ?? runtimeCopy.publicHomepage;
   const props = asRecord(component.props);
   const textStyles = getThemeTextStyles(theme);

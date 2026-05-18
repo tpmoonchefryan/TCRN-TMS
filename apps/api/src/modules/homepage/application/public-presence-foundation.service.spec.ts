@@ -54,7 +54,7 @@ describe('PublicPresenceFoundationService', () => {
     createDraftVersionAndAssign: vi.fn(),
     createPortal: vi.fn(),
     createValidationSnapshotForExistingDraft: vi.fn(),
-    findDraftVersion: vi.fn(),
+    findLatestVersionByTemplate: vi.fn(),
     findPortalByTalentId: vi.fn(),
   };
 
@@ -89,7 +89,7 @@ describe('PublicPresenceFoundationService', () => {
       updatedAt: new Date('2026-05-15T06:00:00.000Z'),
       version: 1,
     });
-    mockRepository.findDraftVersion.mockResolvedValue(null);
+    mockRepository.findLatestVersionByTemplate.mockResolvedValue(null);
     mockRepository.createDraftVersionAndAssign.mockResolvedValue({
       version: {
         id: 'version-1',
@@ -170,7 +170,7 @@ describe('PublicPresenceFoundationService', () => {
       updatedAt: new Date('2026-05-15T06:00:00.000Z'),
       version: 2,
     });
-    mockRepository.findDraftVersion.mockResolvedValue({
+    mockRepository.findLatestVersionByTemplate.mockResolvedValue({
       id: 'version-1',
       portalId: 'portal-1',
       versionNumber: 1,
@@ -212,7 +212,7 @@ describe('PublicPresenceFoundationService', () => {
       updatedAt: new Date('2026-05-15T06:00:00.000Z'),
       version: 2,
     });
-    mockRepository.findDraftVersion.mockResolvedValue({
+    mockRepository.findLatestVersionByTemplate.mockResolvedValue({
       id: 'version-1',
       portalId: 'portal-1',
       versionNumber: 1,

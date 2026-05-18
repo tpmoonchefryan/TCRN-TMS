@@ -38,7 +38,6 @@ import {
   formatUserManagementDateTime,
   getLocalizedLanguageLabel,
   getLocalizedScopeTypeLabel,
-  pickLocalizedName,
   useUserManagementCopy,
 } from './user-management.copy';
 import {
@@ -183,7 +182,7 @@ export function UserEditorScreen({
 }>) {
   const router = useRouter();
   const { request, session } = useSession();
-  const { copy, currentLocale } = useUserManagementCopy();
+  const { copy, locale } = useUserManagementCopy();
   const isAcWorkspace = workspaceKind === 'ac';
   const sharedCopy = copy.shared;
   const editorCopy = copy.editor;
@@ -511,16 +510,7 @@ export function UserEditorScreen({
       setAssignmentNotice({
         tone: 'success',
         message: editorCopy.assignmentCreated(
-          selectedRole
-            ? pickLocalizedName(
-                {
-                  nameEn: selectedRole.nameEn || selectedRole.code,
-                  nameZh: selectedRole.nameZh,
-                  nameJa: selectedRole.nameJa,
-                },
-                currentLocale,
-              )
-            : editorCopy.roleField,
+          selectedRole?.localizedName || selectedRole?.name.en || selectedRole?.code || editorCopy.roleField,
         ),
       });
     } catch (reason) {
@@ -648,7 +638,7 @@ export function UserEditorScreen({
                 value={detail.lastLoginAt ? sharedCopy.seen : sharedCopy.never}
                 hint={
                   detail.lastLoginAt
-                    ? formatUserManagementDateTime(detail.lastLoginAt, currentLocale, sharedCopy.unavailable)
+                    ? formatUserManagementDateTime(detail.lastLoginAt, locale, sharedCopy.unavailable)
                     : editorCopy.lastLoginNeverHint
                 }
               />
@@ -776,7 +766,7 @@ export function UserEditorScreen({
             >
               {SUPPORTED_UI_LOCALES.map((option) => (
                 <option key={option} value={option}>
-                  {getLocalizedLanguageLabel(option, currentLocale)}
+                  {getLocalizedLanguageLabel(option, locale)}
                 </option>
               ))}
             </select>
@@ -866,14 +856,7 @@ export function UserEditorScreen({
                         {availableRoles.length === 0 ? <option value="">{sharedCopy.noCompatibleRoles}</option> : null}
                         {availableRoles.map((role) => (
                           <option key={role.id} value={role.id}>
-                            {pickLocalizedName(
-                              {
-                                nameEn: role.nameEn || role.code,
-                                nameZh: role.nameZh,
-                                nameJa: role.nameJa,
-                              },
-                              currentLocale,
-                            )}
+                            {role.localizedName || role.name.en || role.code}
                           </option>
                         ))}
                       </select>
@@ -944,7 +927,7 @@ export function UserEditorScreen({
                       key={assignment.id}
                       assignment={assignment}
                       sharedCopy={sharedCopy}
-                      currentLocale={currentLocale}
+                      locale={locale}
                     >
                       <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">
                         <input
@@ -1006,7 +989,7 @@ export function UserEditorScreen({
                     </ScopeAssignmentCard>
                   ))}
                   <UserManagementPaginationFooter
-                    currentLocale={currentLocale}
+                    locale={locale}
                     pagination={assignmentPagination}
                     itemCount={paginatedRoleAssignments.length}
                     pageSize={assignmentPageSize}
@@ -1048,7 +1031,7 @@ export function UserEditorScreen({
                               {resolveScopedLabel(access.scopeType, access.scopeName, sharedCopy)}
                             </p>
                             <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                              {getLocalizedScopeTypeLabel(access.scopeType, currentLocale)}
+                              {getLocalizedScopeTypeLabel(access.scopeType, locale)}
                             </p>
                           </div>
                           {access.includeSubunits ? <ToneBadge tone="info" label={sharedCopy.includesSubunits} /> : null}
@@ -1056,13 +1039,13 @@ export function UserEditorScreen({
                         <p className="mt-2 text-xs text-slate-500">{access.scopePath || sharedCopy.tenantWideVisibility}</p>
                         <p className="mt-2 text-xs text-slate-500">
                           {sharedCopy.grantedLabel}{' '}
-                          {formatUserManagementDateTime(access.grantedAt, currentLocale, sharedCopy.unavailable)}
+                          {formatUserManagementDateTime(access.grantedAt, locale, sharedCopy.unavailable)}
                         </p>
                       </div>
                     ))}
                   </div>
                   <UserManagementPaginationFooter
-                    currentLocale={currentLocale}
+                    locale={locale}
                     pagination={scopeAccessPagination}
                     itemCount={paginatedScopeAccess.length}
                     pageSize={scopeAccessPageSize}

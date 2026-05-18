@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
@@ -36,9 +37,7 @@ describe('TalentLifecycleService', () => {
     profileStoreId: 'store-123',
     lifecycleStatus: 'draft' as const,
     avatarUrl: 'https://example.com/avatar.png',
-    descriptionEn: 'Hello',
-    descriptionZh: null,
-    descriptionJa: null,
+    description: createLocalizedText({ en: 'Hello' }),
     version: 1,
   };
 

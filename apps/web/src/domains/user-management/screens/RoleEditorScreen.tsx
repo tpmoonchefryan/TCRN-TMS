@@ -24,21 +24,20 @@ import {
   buildTenantRoleEditorPath,
   buildTenantUserManagementPath,
 } from '@/platform/routing/workspace-paths';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  buildLocalizedTextPayload,
+  extractLocalizedTextPayload,
+  extractSingleFieldTranslationPayload,
+  loadTranslationLanguageOptions,
+  pickLocaleText,
+  type TranslationLanguageOption,
+} from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import {
-  buildManagedTranslations,
-  extractManagedTranslations,
-  extractSingleFieldTranslationPayload,
-  loadTranslationLanguageOptions,
-  pickLegacyLocaleValue,
-  type TranslationLanguageOption,
-} from '@/platform/runtime/translations/managed-translations';
 import { AsyncSubmitButton, GlassSurface, StateView, TranslationDrawer } from '@/platform/ui';
 
 import {
@@ -64,8 +63,8 @@ type RolePermissionSelection = RbacRolePolicyEffect | 'unset';
 
 interface RoleEditorDraft {
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
+  nameBase: string;
+  nameLocaleValues: Record<string, string>;
   description: string;
   isActive: boolean;
   permissionStates: Record<string, RolePermissionSelection>;
@@ -96,8 +95,8 @@ const ROLE_RESOURCE_GROUPS = Object.entries(RBAC_MODULE_LABELS)
 function createEmptyRoleEditorDraft(): RoleEditorDraft {
   return {
     code: '',
-    nameEn: '',
-    nameTranslations: {},
+    nameBase: '',
+    nameLocaleValues: {},
     description: '',
     isActive: true,
     permissionStates: { ...EMPTY_ROLE_PERMISSION_STATES },
@@ -115,11 +114,8 @@ function buildRoleEditorDraft(
 
   return {
     code: detail?.code || '',
-    nameEn: detail?.nameEn || '',
-    nameTranslations: extractManagedTranslations(detail?.nameEn, detail?.translations, {
-      zh_HANS: detail?.nameZh,
-      ja: detail?.nameJa,
-    }),
+    nameBase: detail?.name.en || '',
+    nameLocaleValues: extractLocalizedTextPayload(detail?.name),
     description: detail?.description || '',
     isActive: detail?.isActive ?? true,
     permissionStates,
@@ -164,8 +160,8 @@ function validateRoleEditorDraft(
     }
   }
 
-  if (draft.nameEn.trim().length === 0) {
-    return roleEditorCopy.validation.nameEn;
+  if (draft.nameBase.trim().length === 0) {
+    return roleEditorCopy.validation.nameBase;
   }
 
   return null;
@@ -184,7 +180,7 @@ export function RoleEditorScreen({
 }>) {
   const router = useRouter();
   const { request, requestEnvelope } = useSession();
-  const { copy, currentLocale, selectedLocale } = useUserManagementCopy();
+  const { copy, locale } = useUserManagementCopy();
   const isAcWorkspace = workspaceKind === 'ac';
   const sharedCopy = copy.shared;
   const roleEditorCopy = copy.roleEditor;
@@ -270,7 +266,7 @@ export function RoleEditorScreen({
       const result = await loadTranslationLanguageOptions(
         request,
         requestEnvelope,
-        selectedLocale,
+        locale,
         roleEditorCopy.translationManagement.languageLoadError,
       );
 
@@ -294,7 +290,7 @@ export function RoleEditorScreen({
     request,
     requestEnvelope,
     roleEditorCopy.translationManagement.languageLoadError,
-    selectedLocale,
+    locale,
     translationDrawerOpen,
   ]);
 
@@ -343,24 +339,18 @@ export function RoleEditorScreen({
     setSubmitting(true);
     setNotice(null);
 
-    const translations = buildManagedTranslations(draft.nameEn, draft.nameTranslations);
     const displayName =
-      draft.nameEn.trim() ||
-      draft.nameTranslations.zh_HANS?.trim() ||
-      draft.nameTranslations.ja?.trim() ||
+      draft.nameBase.trim() ||
+      draft.nameLocaleValues.zh_HANS?.trim() ||
+      draft.nameLocaleValues.ja?.trim() ||
       draft.code.trim().toUpperCase();
     const permissions = buildRolePermissionPayload(draft.permissionStates);
-    const nameZh = pickLegacyLocaleValue(translations, 'zh_HANS');
-    const nameJa = pickLegacyLocaleValue(translations, 'ja');
 
     try {
       if (mode === 'create') {
         const created = await createSystemRole(request, {
           code: draft.code.trim().toUpperCase(),
-          nameEn: draft.nameEn.trim(),
-          nameZh,
-          nameJa,
-          translations,
+          name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
           description: normalizeOptionalString(draft.description),
           isActive: draft.isActive,
           permissions,
@@ -377,10 +367,7 @@ export function RoleEditorScreen({
       }
 
       await updateSystemRole(request, targetRoleId, {
-        nameEn: draft.nameEn.trim(),
-        nameZh,
-        nameJa,
-        translations,
+        name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
         description: normalizeOptionalString(draft.description),
         isActive: draft.isActive,
         permissions,
@@ -423,20 +410,11 @@ export function RoleEditorScreen({
   const title =
     mode === 'create'
       ? roleEditorCopy.createTitle
-      : (detail
-          ? pickLocalizedName(
-              {
-                nameEn: detail.nameEn || detail.code || roleEditorCopy.titleFallback,
-                nameZh: detail.nameZh,
-                nameJa: detail.nameJa,
-              },
-              selectedLocale,
-            )
-          : roleEditorCopy.titleFallback);
+      : (detail?.localizedName || detail?.name.en || detail?.code || roleEditorCopy.titleFallback);
   const explicitPermissionCount = buildRolePermissionPayload(draft.permissionStates).length;
-  const configuredTranslationCount = Object.values(draft.nameTranslations).filter((value) => value.trim().length > 0).length;
+  const configuredTranslationCount = Object.values(draft.nameLocaleValues).filter((value) => value.trim().length > 0).length;
   const translationDrawerLabels = {
-    addLanguageLabel: pickLocaleText(selectedLocale, {
+    addLanguageLabel: pickLocaleText(locale, {
       en: 'Add language',
       zh_HANS: '添加语言',
       zh_HANT: '新增語言',
@@ -444,7 +422,7 @@ export function RoleEditorScreen({
       ko: '언어 추가',
       fr: 'Ajouter une langue',
     }),
-    addOtherLanguageLabel: pickLocaleText(selectedLocale, {
+    addOtherLanguageLabel: pickLocaleText(locale, {
       en: 'Add other language...',
       zh_HANS: '添加其它语言…',
       zh_HANT: '新增其它語言…',
@@ -452,7 +430,7 @@ export function RoleEditorScreen({
       ko: '다른 언어 추가…',
       fr: 'Ajouter une autre langue…',
     }),
-    removeLanguageVisibleLabel: pickLocaleText(selectedLocale, {
+    removeLanguageVisibleLabel: pickLocaleText(locale, {
       en: 'Remove',
       zh_HANS: '移除',
       zh_HANT: '移除',
@@ -460,7 +438,7 @@ export function RoleEditorScreen({
       ko: '제거',
       fr: 'Retirer',
     }),
-    emptyTranslationsText: pickLocaleText(selectedLocale, {
+    emptyTranslationsText: pickLocaleText(locale, {
       en: 'No translations added yet.',
       zh_HANS: '当前还没有添加翻译。',
       zh_HANT: '目前尚未新增翻譯。',
@@ -468,7 +446,7 @@ export function RoleEditorScreen({
       ko: '아직 추가된 번역이 없습니다.',
       fr: 'Aucune traduction n’a encore été ajoutée.',
     }),
-    baseValueSuffix: pickLocaleText(selectedLocale, {
+    baseValueSuffix: pickLocaleText(locale, {
       en: '(Base / English)',
       zh_HANS: '（英文主值）',
       zh_HANT: '（英文主值）',
@@ -551,7 +529,7 @@ export function RoleEditorScreen({
                           {resolveScopedLabel(binding.scopeType, binding.scopeName, sharedCopy)}
                         </p>
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          {getLocalizedScopeTypeLabel(binding.scopeType, selectedLocale)}
+                          {getLocalizedScopeTypeLabel(binding.scopeType, locale)}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -570,7 +548,7 @@ export function RoleEditorScreen({
             {detail.scopeBindings.length > 0 ? (
               <div className="mt-4">
                 <UserManagementPaginationFooter
-                  currentLocale={selectedLocale}
+                  locale={locale}
                   pagination={scopeBindingsPagination}
                   itemCount={paginatedScopeBindings.length}
                   pageSize={scopeBindingsPageSize}
@@ -627,11 +605,11 @@ export function RoleEditorScreen({
                     <p className="mt-1 text-xs text-slate-500">{assignment.scopePath || sharedCopy.tenantWideAssignment}</p>
                     <p className="mt-2 text-xs text-slate-500">
                       {sharedCopy.grantedLabel}{' '}
-                      {formatUserManagementDateTime(assignment.grantedAt, selectedLocale, sharedCopy.unavailable)}
+                      {formatUserManagementDateTime(assignment.grantedAt, locale, sharedCopy.unavailable)}
                       {assignment.expiresAt
                         ? ` • ${sharedCopy.expiresLabel} ${formatUserManagementDateTime(
                             assignment.expiresAt,
-                            selectedLocale,
+                            locale,
                             sharedCopy.unavailable,
                           )}`
                         : ''}
@@ -643,7 +621,7 @@ export function RoleEditorScreen({
             {detail.assignedUsers.length > 0 ? (
               <div className="mt-4">
                 <UserManagementPaginationFooter
-                  currentLocale={selectedLocale}
+                  locale={locale}
                   pagination={assignedUsersPagination}
                   itemCount={paginatedAssignedUsers.length}
                   pageSize={assignedUsersPageSize}
@@ -685,14 +663,14 @@ export function RoleEditorScreen({
             <div className="space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-0 flex-1 space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{roleEditorCopy.fields.nameEn}</span>
+                  <span className="text-sm font-semibold text-slate-900">{roleEditorCopy.fields.nameBase}</span>
                   <input
-                    aria-label={roleEditorCopy.fields.nameEn}
-                    value={draft.nameEn}
+                    aria-label={roleEditorCopy.fields.nameBase}
+                    value={draft.nameBase}
                     onChange={(event) => {
                       setDraft((current) => ({
                         ...current,
-                        nameEn: event.target.value,
+                        nameBase: event.target.value,
                       }));
                     }}
                     className={inputClassName}
@@ -774,7 +752,7 @@ export function RoleEditorScreen({
               </div>
               <ToneBadge
                 tone="info"
-                label={getLocalizedExplicitPermissionCountLabel(explicitPermissionCount, selectedLocale)}
+                label={getLocalizedExplicitPermissionCountLabel(explicitPermissionCount, locale)}
               />
             </div>
 
@@ -782,21 +760,21 @@ export function RoleEditorScreen({
               {ROLE_RESOURCE_GROUPS.map((group) => (
                 <div key={group.moduleCode} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-sm font-semibold text-slate-900">{group.labels[currentLocale]}</p>
+                    <p className="text-sm font-semibold text-slate-900">{group.labels[locale]}</p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse">
                       <thead className="bg-white">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            {getLocalizedRoleResourceColumnLabel(selectedLocale)}
+                            {getLocalizedRoleResourceColumnLabel(locale)}
                           </th>
                           {RBAC_CANONICAL_ACTIONS.map((action) => (
                             <th
                               key={`${group.moduleCode}-${action}`}
                               className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
                             >
-                              {getLocalizedRbacActionLabel(action, selectedLocale)}
+                              {getLocalizedRbacActionLabel(action, locale)}
                             </th>
                           ))}
                         </tr>
@@ -807,7 +785,7 @@ export function RoleEditorScreen({
                             <th className="px-4 py-4 text-left">
                               <div className="space-y-1">
                                 <p className="text-sm font-semibold text-slate-900">
-                                  {pickLocalizedName(resource, selectedLocale)}
+                                  {pickLocalizedName(resource, locale)}
                                 </p>
                                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{resource.code}</p>
                               </div>
@@ -820,7 +798,7 @@ export function RoleEditorScreen({
                                 <td key={permissionKey} className="px-4 py-4">
                                   {isSupported ? (
                                     <select
-                                      aria-label={`${pickLocalizedName(resource, selectedLocale)} ${getLocalizedRbacActionLabel(action, selectedLocale)}`}
+                                      aria-label={`${pickLocalizedName(resource, locale)} ${getLocalizedRbacActionLabel(action, locale)}`}
                                       value={draft.permissionStates[permissionKey]}
                                       onChange={(event) => {
                                         const nextValue = event.target.value as RolePermissionSelection;
@@ -837,7 +815,7 @@ export function RoleEditorScreen({
                                     >
                                       {(['unset', 'grant', 'deny'] as const).map((option) => (
                                         <option key={option} value={option}>
-                                          {getLocalizedRolePermissionOptionLabel(option, selectedLocale)}
+                                          {getLocalizedRolePermissionOptionLabel(option, locale)}
                                         </option>
                                       ))}
                                     </select>
@@ -878,16 +856,16 @@ export function RoleEditorScreen({
         open={translationDrawerOpen}
         onOpenChange={setTranslationDrawerOpen}
         title={roleEditorCopy.translationManagement.title}
-        baseValue={draft.nameEn}
-        translations={draft.nameTranslations}
-        legacyFieldLabel={roleEditorCopy.fields.nameEn}
+        baseValue={draft.nameBase}
+        translations={draft.nameLocaleValues}
+        legacyFieldLabel={roleEditorCopy.fields.nameBase}
         availableLocales={translationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
 
           setDraft((current) => ({
             ...current,
-            nameTranslations: translations,
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={roleEditorCopy.translationManagement.save}

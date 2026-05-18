@@ -1,21 +1,28 @@
+import {
+  SUPPORTED_UI_LOCALES,
+  type PartialLocalizedText,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
+
 export interface TranslationField {
   id: string;
   label: string;
   type?: 'text' | 'textarea';
   baseValue: string;
-  translations: Record<string, string>;
+  translations: PartialLocalizedText;
   placeholder?: string;
 }
 
 export interface TranslationLocaleOption {
-  code: string;
+  code: SupportedUiLocale;
   label: string;
 }
 
-export type TranslationLocalData = Record<string, Record<string, string>>;
-export type TranslationSavePayload = Record<string, Record<string, string>> | Record<string, string>;
+export type TranslationLocalData = Partial<Record<SupportedUiLocale, Record<string, string>>>;
+export type TranslationFieldPayload = Partial<Record<SupportedUiLocale, string>>;
+export type TranslationSavePayload = Record<string, TranslationFieldPayload> | TranslationFieldPayload;
 
-const PRIORITY_LOCALES = ['en', 'zh_HANS', 'zh_HANT', 'ja', 'ko', 'fr'];
+const PRIORITY_LOCALES: ReadonlySet<SupportedUiLocale> = new Set(SUPPORTED_UI_LOCALES);
 
 export function resolveTranslationFields({
   fields,
@@ -26,7 +33,7 @@ export function resolveTranslationFields({
 }: {
   fields?: TranslationField[];
   baseValue?: string;
-  translations?: Record<string, string>;
+  translations?: PartialLocalizedText;
   fallbackLabel: string;
   legacyFieldLabel?: string;
 }): TranslationField[] {
@@ -50,13 +57,17 @@ export function resolveTranslationFields({
 
 export function createTranslationDraftState(fields: TranslationField[]) {
   const localData: TranslationLocalData = {};
-  const activeLocales = new Set<string>();
+  const activeLocales = new Set<SupportedUiLocale>();
 
   fields.forEach((field) => {
     Object.entries(field.translations ?? {}).forEach(([localeCode, value]) => {
-      activeLocales.add(localeCode);
-      localData[localeCode] = {
-        ...(localData[localeCode] ?? {}),
+      if (!SUPPORTED_UI_LOCALES.includes(localeCode as SupportedUiLocale)) {
+        return;
+      }
+      const supportedLocale = localeCode as SupportedUiLocale;
+      activeLocales.add(supportedLocale);
+      localData[supportedLocale] = {
+        ...(localData[supportedLocale] ?? {}),
         [field.id]: value,
       };
     });
@@ -66,7 +77,7 @@ export function createTranslationDraftState(fields: TranslationField[]) {
 }
 
 export function sortActiveLocaleCodes(
-  activeLocales: Set<string>,
+  activeLocales: Set<SupportedUiLocale>,
   availableLocales: TranslationLocaleOption[],
 ) {
   const availableOrder = new Map(
@@ -95,13 +106,13 @@ export function sortActiveLocaleCodes(
 
 export function splitUnselectedLocaleOptions(
   availableLocales: TranslationLocaleOption[],
-  activeLocales: Set<string>,
+  activeLocales: Set<SupportedUiLocale>,
 ) {
   const unselectedLocales = availableLocales.filter((locale) => !activeLocales.has(locale.code));
 
   return {
-    longTailUnselectedLocales: unselectedLocales.filter((locale) => !PRIORITY_LOCALES.includes(locale.code)),
-    priorityUnselectedLocales: unselectedLocales.filter((locale) => PRIORITY_LOCALES.includes(locale.code)),
+    longTailUnselectedLocales: unselectedLocales.filter((locale) => !PRIORITY_LOCALES.has(locale.code)),
+    priorityUnselectedLocales: unselectedLocales.filter((locale) => PRIORITY_LOCALES.has(locale.code)),
     unselectedLocales,
   };
 }
@@ -112,13 +123,13 @@ export function buildTranslationSavePayload({
   isLegacyMode,
   localData,
 }: {
-  activeLocaleList: string[];
+  activeLocaleList: SupportedUiLocale[];
   fields: TranslationField[];
   isLegacyMode: boolean;
   localData: TranslationLocalData;
 }): TranslationSavePayload {
   if (isLegacyMode) {
-    const payload: Record<string, string> = {};
+    const payload: TranslationFieldPayload = {};
 
     activeLocaleList.forEach((localeCode) => {
       const value = localData[localeCode]?.default;
@@ -130,7 +141,7 @@ export function buildTranslationSavePayload({
     return payload;
   }
 
-  const payload: Record<string, Record<string, string>> = {};
+  const payload: Record<string, TranslationFieldPayload> = {};
   fields.forEach((field) => {
     payload[field.id] = {};
   });

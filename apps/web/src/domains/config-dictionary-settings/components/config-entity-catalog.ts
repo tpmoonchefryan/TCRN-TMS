@@ -227,8 +227,8 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
         description: 'Controls whether this consent must be acknowledged before the related workflow continues.',
       },
       {
-        key: 'contentMarkdownEn',
-        label: 'Content (English)',
+        key: 'contentMarkdownBase',
+        label: 'Content base value',
         kind: 'textarea',
         required: true,
       },

@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestTalentInTenant,
   createTestTenantFixture,
   createTestUserInTenant,
@@ -35,7 +36,7 @@ describe('Talent Draft Delete Integration', () => {
   const createDraftTalent = async () =>
     createTestTalentInTenant(prisma, tenantFixture, null, {
       code: `TAL_DEL_${uniqueSuffix()}`,
-      nameEn: 'Talent Draft Delete Integration',
+      name: createLocalizedText({ en: 'Talent Draft Delete Integration' }),
       displayName: 'Talent Draft Delete Integration',
       homepagePath: `talent-draft-delete-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       createdBy: testUser.id,

@@ -15,9 +15,9 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, resolveTrilingualLocaleFamily } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES, pickLocalizedText, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min } from 'class-validator';
 import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
@@ -56,20 +56,21 @@ export class CreateRoleDto {
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
-  @ApiProperty({ description: 'Role name in English', example: 'Sales Manager', minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  nameEn: string;
-
-  @ApiPropertyOptional({ description: 'Role name in Chinese', example: '销售经理' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Role name in Japanese', example: '営業マネージャー' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
+  @ApiProperty({
+    description: 'Role name by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: {
+      en: 'Sales Manager',
+      zh_HANS: '销售经理',
+      zh_HANT: '銷售經理',
+      ja: '営業マネージャー',
+      ko: 'Sales Manager',
+      fr: 'Sales Manager',
+    },
+  })
+  @IsObject()
+  name: LocalizedText;
 
   @ApiPropertyOptional({ description: 'Role description', example: 'Manages sales team and customer relationships' })
   @IsOptional()
@@ -83,20 +84,14 @@ export class CreateRoleDto {
 }
 
 export class UpdateRoleDto {
-  @ApiPropertyOptional({ description: 'Role name in English', example: 'Senior Sales Manager' })
+  @ApiPropertyOptional({
+    description: 'Role name updates by supported UI locale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
   @IsOptional()
-  @IsString()
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Role name in Chinese', example: '高级销售经理' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Role name in Japanese', example: 'シニア営業マネージャー' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
+  @IsObject()
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Role description', example: 'Senior manager for sales operations' })
   @IsOptional()
@@ -198,9 +193,19 @@ const ROLE_DETAIL_SCHEMA = {
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
     code: { type: 'string', example: 'SALES_MANAGER' },
-    nameEn: { type: 'string', example: 'Sales Manager' },
-    nameZh: { type: 'string', nullable: true, example: '销售经理' },
-    nameJa: { type: 'string', nullable: true, example: '営業マネージャー' },
+    nameTranslations: {
+      type: 'object',
+      properties: Object.fromEntries(SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }])),
+      required: SUPPORTED_UI_LOCALES,
+      example: {
+        en: 'Sales Manager',
+        zh_HANS: '销售经理',
+        zh_HANT: '銷售經理',
+        ja: '営業マネージャー',
+        ko: 'Sales Manager',
+        fr: 'Sales Manager',
+      },
+    },
     name: { type: 'string', example: 'Sales Manager' },
     description: { type: 'string', nullable: true, example: 'Manages sales operations' },
     isSystem: { type: 'boolean', example: false },
@@ -210,7 +215,7 @@ const ROLE_DETAIL_SCHEMA = {
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
     version: { type: 'integer', example: 2 },
   },
-  required: ['id', 'code', 'nameEn', 'name', 'isSystem', 'isActive', 'permissions', 'createdAt', 'updatedAt', 'version'],
+  required: ['id', 'code', 'nameTranslations', 'name', 'isSystem', 'isActive', 'permissions', 'createdAt', 'updatedAt', 'version'],
 } as const;
 
 const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -234,9 +239,14 @@ const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
 const ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(ROLE_DETAIL_SCHEMA, {
   id: '550e8400-e29b-41d4-a716-446655440000',
   code: 'SALES_MANAGER',
-  nameEn: 'Sales Manager',
-  nameZh: '销售经理',
-  nameJa: '営業マネージャー',
+  nameTranslations: {
+    en: 'Sales Manager',
+    zh_HANS: '销售经理',
+    zh_HANT: '銷售經理',
+    ja: '営業マネージャー',
+    ko: 'Sales Manager',
+    fr: 'Sales Manager',
+  },
   name: 'Sales Manager',
   description: 'Manages sales operations',
   isSystem: false,
@@ -381,17 +391,10 @@ const ROLE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
  * Get localized name based on language
  */
 function getLocalizedName(
-  entity: { nameEn: string; nameZh: string | null; nameJa: string | null },
+  entity: { name: LocalizedText },
   language: string = 'en'
 ): string {
-  switch (resolveTrilingualLocaleFamily(language)) {
-    case 'zh':
-      return entity.nameZh || entity.nameEn;
-    case 'ja':
-      return entity.nameJa || entity.nameEn;
-    default:
-      return entity.nameEn;
-  }
+  return pickLocalizedText(entity.name, language);
 }
 
 /**
@@ -484,9 +487,7 @@ export class RoleController {
       user.tenantSchema,
       {
         code: dto.code,
-        nameEn: dto.nameEn,
-        nameZh: dto.nameZh,
-        nameJa: dto.nameJa,
+        name: dto.name,
         description: dto.description,
         permissionIds: dto.permissionIds,
       },
@@ -554,9 +555,7 @@ export class RoleController {
     return success({
       id: role.id,
       code: role.code,
-      nameEn: role.nameEn,
-      nameZh: role.nameZh,
-      nameJa: role.nameJa,
+      nameTranslations: role.name,
       name: getLocalizedName(role, language),
       description: role.description,
       isSystem: role.isSystem,

@@ -1,6 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { decorateManagedNameTranslations } from '../../../platform/persistence/managed-name-translations';
+import type { LocalizedText } from '@tcrn/shared';
+
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import type { ExternalBlocklistItem } from '../dto/external-blocklist.dto';
 import { OwnerType, PatternType } from '../dto/external-blocklist.dto';
 
@@ -18,9 +20,7 @@ export interface RawExternalBlocklistPatternRecord {
   ownerId: string | null;
   pattern: string;
   patternType: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
@@ -42,7 +42,7 @@ export interface ExternalBlocklistDisableCandidate {
   ownerType: string;
   ownerId: string | null;
   isForceUse: boolean;
-  nameEn: string;
+  name: LocalizedText;
 }
 
 export interface ExternalBlocklistItemWithMeta extends ExternalBlocklistItem {
@@ -83,10 +83,9 @@ export function isExternalBlocklistInherited(
 export function normalizeExternalBlocklistItem(
   item: RawExternalBlocklistPatternRecord,
 ): ExternalBlocklistItem {
-  const decoratedItem = decorateManagedNameTranslations(item);
-
   return {
-    ...decoratedItem,
+    ...item,
+    name: readLocalizedText(item.name, 'external_blocklist_pattern.name'),
     createdAt: new Date(item.createdAt).toISOString(),
     updatedAt: new Date(item.updatedAt).toISOString(),
     version: item.version,

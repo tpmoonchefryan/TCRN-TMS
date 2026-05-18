@@ -9,6 +9,9 @@ import {
   type RawTalent,
 } from '../domain/organization-read.policy';
 
+const organizationNameSearchExpression = (columnName: string, parameter: string) =>
+  `EXISTS (SELECT 1 FROM jsonb_each_text(${columnName}) AS localized_text(locale, value) WHERE localized_text.value ILIKE ${parameter})`;
+
 @Injectable()
 export class OrganizationReadRepository {
   findTenant(tenantId: string) {
@@ -20,12 +23,10 @@ export class OrganizationReadRepository {
       Array<{
         id: string;
         code: string;
-        name_en: string;
-        name_zh: string | null;
-        name_ja: string | null;
+        name: RawSubsidiary['name'];
       }>
     >(
-      `SELECT id, code, name_en, name_zh, name_ja
+      `SELECT id, code, name
        FROM "${tenantSchema}".subsidiary
        WHERE path = $1`,
       path,
@@ -61,10 +62,10 @@ export class OrganizationReadRepository {
     const params = parentId ? [parentId] : [];
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
-      `SELECT id, parent_id, code, path, depth, name_en, name_zh, name_ja, is_active
+      `SELECT id, parent_id, code, path, depth, name, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}
-       ORDER BY sort_order, name_en`,
+       ORDER BY sort_order, NULLIF(name->>'en', ''), code`,
       ...params,
     );
   }
@@ -123,7 +124,7 @@ export class OrganizationReadRepository {
     const params = parentId ? [parentId] : [];
 
     return prisma.$queryRawUnsafe<RawTalent[]>(
-      `SELECT id, subsidiary_id, code, name_en, name_zh, name_ja, display_name, avatar_url, homepage_path,
+      `SELECT id, subsidiary_id, code, name, display_name, avatar_url, homepage_path,
               lifecycle_status, published_at
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}

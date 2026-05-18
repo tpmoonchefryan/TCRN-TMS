@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { Prisma, PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestCustomerInTenant,
   type TenantFixture,
   type TestUser,
@@ -132,12 +133,12 @@ describe('RBAC Contract Integration', () => {
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_RBAC_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'RBAC Contract Subsidiary',
+      name: createLocalizedText({ en: 'RBAC Contract Subsidiary' }),
       createdBy: contentManager.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TAL_RBAC_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'RBAC Contract Talent',
+      name: createLocalizedText({ en: 'RBAC Contract Talent' }),
       displayName: 'RBAC Contract Talent',
       homepagePath: `rbac-${Date.now()}`,
       createdBy: contentManager.id,
@@ -258,7 +259,7 @@ describe('RBAC Contract Integration', () => {
     )
       .send({
         code: 'RBAC_TEST_CLASS',
-        nameEn: 'RBAC Test Class',
+        name: createLocalizedText({ en: 'RBAC Test Class' }),
       })
       .expect(403);
 

@@ -3,7 +3,7 @@
 import 'reflect-metadata';
 
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
@@ -48,9 +48,7 @@ describe('WebhookService', () => {
   const buildWebhookRecord = (overrides: Record<string, unknown> = {}) => ({
     id: 'webhook-1',
     code: 'TEST_WEBHOOK',
-    nameEn: 'Test Webhook',
-    nameZh: null,
-    nameJa: null,
+    name: createLocalizedText({ en: 'Test Webhook' }),
     extraData: null,
     url: 'https://example.com/webhook',
     secret: 'encrypted-secret',
@@ -154,12 +152,7 @@ describe('WebhookService', () => {
       {
         id: 'webhook-tenant-1',
         code: 'TENANT_WEBHOOK',
-        nameEn: 'Test Webhook',
-        nameZh: null,
-        nameJa: null,
-        translations: {
-          en: 'Test Webhook',
-        },
+        name: createLocalizedText({ en: 'Test Webhook' }),
         monitoredTalentIds: [
           '11111111-1111-4111-8111-111111111111',
           '22222222-2222-4222-8222-222222222222',
@@ -197,7 +190,7 @@ describe('WebhookService', () => {
 
     const dto = {
       code: 'TEST_WEBHOOK',
-      nameEn: 'Test Webhook',
+      name: createLocalizedText({ en: 'Test Webhook' }),
       url: 'https://example.com/webhook',
       events: [WebhookEventType.CUSTOMER_CREATED],
       retryPolicy: { maxRetries: 5 },
@@ -252,7 +245,7 @@ describe('WebhookService', () => {
       service.create({
         definitionKey: 'customer-lifecycle',
         code: 'CUSTOMER_LIFECYCLE_BAD',
-        nameEn: 'Bad lifecycle',
+        name: createLocalizedText({ en: 'Bad lifecycle' }),
         url: 'https://example.com/webhook',
         events: [WebhookEventType.REPORT_FAILED],
       } as CreateWebhookDto, mockContext),

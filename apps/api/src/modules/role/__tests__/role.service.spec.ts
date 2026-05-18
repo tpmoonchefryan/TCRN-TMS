@@ -29,9 +29,14 @@ describe('RoleService', () => {
   const mockRole: RoleData = {
     id: 'role-123',
     code: 'ADMIN',
-    nameEn: 'Administrator',
-    nameZh: '管理员',
-    nameJa: '管理者',
+    name: {
+      en: 'Administrator',
+      zh_HANS: '管理员',
+      zh_HANT: '管理員',
+      ja: '管理者',
+      ko: 'Administrator',
+      fr: 'Administrator',
+    },
     description: 'Full system access',
     isSystem: false,
     isActive: true,
@@ -45,6 +50,15 @@ describe('RoleService', () => {
     id: 'system-role-123',
     code: 'GLOBAL_ADMIN',
     isSystem: true,
+  };
+
+  const newRoleName = {
+    en: 'New Role',
+    zh_HANS: 'New Role',
+    zh_HANT: 'New Role',
+    ja: 'New Role',
+    ko: 'New Role',
+    fr: 'New Role',
   };
 
   beforeEach(() => {
@@ -119,7 +133,7 @@ describe('RoleService', () => {
       await service.list(testSchema, { sort: '-name' });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('name_en DESC'),
+        expect.stringContaining("name->>'en' DESC"),
       );
     });
   });
@@ -179,24 +193,24 @@ describe('RoleService', () => {
       );
     });
 
-    it('should support different languages', async () => {
+    it('should support different supported UI locale tags', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await service.getRolePermissions('role-123', testSchema, 'zh-Hant-TW');
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('name_zh'),
+        expect.stringContaining('r.name as name'),
         'role-123',
       );
     });
 
-    it('falls back non-trilingual UI locales to English legacy permission names', async () => {
+    it('uses the catalog LocalizedText source for non-English UI locales', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await service.getRolePermissions('role-123', testSchema, 'fr-FR');
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('name_en'),
+        expect.stringContaining('r.name as name'),
         'role-123',
       );
     });
@@ -212,7 +226,7 @@ describe('RoleService', () => {
         testSchema,
         {
           code: 'NEW_ROLE',
-          nameEn: 'New Role',
+          name: newRoleName,
           permissionIds: [],
         },
         'user-123',
@@ -226,7 +240,7 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]); // Code taken
 
       await expect(
-        service.create(testSchema, { code: 'ADMIN', nameEn: 'Test', permissionIds: [] }, 'user-123'),
+        service.create(testSchema, { code: 'ADMIN', name: newRoleName, permissionIds: [] }, 'user-123'),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -240,7 +254,7 @@ describe('RoleService', () => {
         testSchema,
         {
           code: 'NEW_ROLE',
-          nameEn: 'New Role',
+          name: newRoleName,
           permissionIds: ['perm-1', 'perm-2'],
         },
         'user-123',
@@ -258,14 +272,14 @@ describe('RoleService', () => {
         testSchema,
         {
           code: 'NEW_ROLE',
-          nameEn: 'New Role',
+          name: newRoleName,
           permissionIds: [],
         },
         'user-123',
       );
 
       const insertQuery = mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0];
-      expect(insertQuery).toContain('(gen_random_uuid(), $1, $2, $3, $4, $5, false, true, now(), now(), $6, $6, 1)');
+      expect(insertQuery).toContain('(gen_random_uuid(), $1, $2::jsonb, $3, false, true, now(), now(), $4, $4, 1)');
       expect(insertQuery).not.toContain('$1::uuid');
     });
   });
@@ -274,16 +288,16 @@ describe('RoleService', () => {
     it('should update role', async () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([mockRole]) // findById
-        .mockResolvedValueOnce([{ ...mockRole, nameEn: 'Updated' }]); // Update
+        .mockResolvedValueOnce([{ ...mockRole, name: { ...mockRole.name, en: 'Updated' } }]); // Update
 
       const result = await service.update(
         'role-123',
         testSchema,
-        { nameEn: 'Updated', version: 1 },
+        { name: { en: 'Updated' }, version: 1 },
         'user-123',
       );
 
-      expect(result.nameEn).toBe('Updated');
+      expect(result.name.en).toBe('Updated');
     });
 
     it('should throw NotFoundException for non-existent role', async () => {

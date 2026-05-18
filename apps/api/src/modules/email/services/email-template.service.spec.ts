@@ -20,34 +20,41 @@ describe('EmailTemplateService', () => {
 
   const baseTemplate = {
     code: 'WELCOME_EMAIL',
-    nameEn: 'Welcome Email',
-    nameZh: '欢迎邮件',
-    nameJa: 'ウェルカムメール',
-    subjectEn: 'Welcome {{name}}',
-    subjectZh: '欢迎 {{name}}',
-    subjectJa: null,
-    bodyHtmlEn: '<p>Hello {{name}}</p>',
-    bodyHtmlZh: '<p>你好 {{name}}</p>',
-    bodyHtmlJa: null,
-    bodyTextEn: 'Hello {{name}}',
-    bodyTextZh: null,
-    bodyTextJa: null,
+    name: {
+      en: 'Welcome Email',
+      zh_HANS: '欢迎邮件',
+      zh_HANT: '歡迎郵件',
+      ja: 'ウェルカムメール',
+      ko: '환영 이메일',
+      fr: 'E-mail de bienvenue',
+    },
+    subject: {
+      en: 'Welcome {{name}}',
+      zh_HANS: '欢迎 {{name}}',
+      zh_HANT: '歡迎 {{name}}',
+      ja: 'Welcome {{name}}',
+      ko: '환영합니다 {{name}}',
+      fr: 'Bienvenue {{name}}',
+    },
+    bodyHtml: {
+      en: '<p>Hello {{name}}</p>',
+      zh_HANS: '<p>你好 {{name}}</p>',
+      zh_HANT: '<p>您好 {{name}}</p>',
+      ja: '<p>Hello {{name}}</p>',
+      ko: '<p>안녕하세요 {{name}}</p>',
+      fr: '<p>Bonjour {{name}}</p>',
+    },
+    bodyText: {
+      en: 'Hello {{name}}',
+      zh_HANS: 'Hello {{name}}',
+      zh_HANT: 'Hello {{name}}',
+      ja: 'Hello {{name}}',
+      ko: '안녕하세요 {{name}}',
+      fr: 'Bonjour {{name}}',
+    },
     variables: ['name', 'supportEmail'],
     category: 'system',
     isActive: true,
-    extraData: {
-      subjectTranslations: {
-        zh_HANT: '歡迎 {{name}}',
-        fr: 'Bienvenue {{name}}',
-      },
-      bodyHtmlTranslations: {
-        zh_HANT: '<p>您好 {{name}}</p>',
-        fr: '<p>Bonjour {{name}}</p>',
-      },
-      bodyTextTranslations: {
-        fr: 'Bonjour {{name}}',
-      },
-    },
   };
 
   beforeEach(() => {
@@ -121,9 +128,9 @@ describe('EmailTemplateService', () => {
     await expect(
       service.create({
         code: 'WELCOME_EMAIL',
-        nameEn: 'Welcome Email',
-        subjectEn: 'Welcome',
-        bodyHtmlEn: '<p>Hello</p>',
+        name: baseTemplate.name,
+        subject: baseTemplate.subject,
+        bodyHtml: baseTemplate.bodyHtml,
         category: 'system',
       } as CreateEmailTemplateDto),
     ).rejects.toThrow(ConflictException);
@@ -134,7 +141,7 @@ describe('EmailTemplateService', () => {
 
     await expect(
       service.update('MISSING', {
-        nameEn: 'Updated',
+        name: { en: 'Updated' },
       } as UpdateEmailTemplateDto),
     ).rejects.toThrow(NotFoundException);
   });

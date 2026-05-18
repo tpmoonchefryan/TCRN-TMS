@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PiiServiceConfigApplicationService } from '../application/pii-service-config.service';
@@ -25,6 +25,16 @@ describe('PiiServiceConfigService', () => {
   } as unknown as PiiServiceConfigApplicationService;
 
   const service = new PiiServiceConfigService(mockApplicationService);
+  const defaultPiiName = createLocalizedText({
+    en: 'Default PII',
+    zh_HANS: '默认 PII',
+    ja: 'デフォルト PII',
+  });
+  const defaultPiiDescription = createLocalizedText({
+    en: 'Primary PII service',
+    zh_HANS: '主 PII 服务',
+    ja: 'メイン PII サービス',
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,12 +57,8 @@ describe('PiiServiceConfigService', () => {
     vi.mocked(mockApplicationService.findById).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      name: 'Default PII',
-      nameZh: '默认 PII',
-      nameJa: 'デフォルト PII',
-      description: 'Primary PII service',
-      descriptionZh: '主 PII 服务',
-      descriptionJa: 'メイン PII サービス',
+      name: defaultPiiName,
+      description: defaultPiiDescription,
       apiUrl: 'https://pii.example.com',
       authType: 'mtls',
       healthCheckUrl: 'https://pii.example.com/health',
@@ -68,7 +74,7 @@ describe('PiiServiceConfigService', () => {
     vi.mocked(mockApplicationService.create).mockResolvedValue({
       id: 'config-1',
       code: 'DEFAULT_PII',
-      name: 'Default PII',
+      name: defaultPiiName,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
     vi.mocked(mockApplicationService.update).mockResolvedValue({
@@ -86,7 +92,7 @@ describe('PiiServiceConfigService', () => {
       service.create(
         {
           code: 'DEFAULT_PII',
-          nameEn: 'Default PII',
+          name: defaultPiiName,
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
@@ -98,7 +104,7 @@ describe('PiiServiceConfigService', () => {
         'config-1',
         {
           version: 1,
-          nameEn: 'Updated',
+          name: { en: 'Updated' },
         },
         context,
       ),

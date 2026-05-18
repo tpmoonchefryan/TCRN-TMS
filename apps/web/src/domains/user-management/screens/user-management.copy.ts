@@ -1,19 +1,15 @@
-import {
-  type PermissionAction,
-  type RbacRolePolicyEffect,
-  resolveTrilingualLocaleFamily,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
+import type { PermissionAction, RbacRolePolicyEffect, SupportedUiLocale } from '@tcrn/shared';
 
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
+  pickLocaleText,
   resolveLocaleRecord,
 } from '@/platform/runtime/locale/locale-text';
 
-type UserManagementLocale = SupportedUiLocale | RuntimeLocale;
+type UserManagementLocale = SupportedUiLocale ;
 
-const ROLE_ACTION_LABELS: Record<RuntimeLocale, Record<PermissionAction, string>> = {
+const ROLE_ACTION_LABELS: Record<SupportedUiLocale, Record<PermissionAction, string>> = {
   en: {
     read: 'Read',
     write: 'Update',
@@ -21,7 +17,14 @@ const ROLE_ACTION_LABELS: Record<RuntimeLocale, Record<PermissionAction, string>
     execute: 'Execute',
     admin: 'Admin',
   },
-  zh: {
+  zh_HANS: {
+    read: '读取',
+    write: '更新',
+    delete: '删除',
+    execute: '执行',
+    admin: '管理',
+  },
+  zh_HANT: {
     read: '读取',
     write: '更新',
     delete: '删除',
@@ -35,10 +38,24 @@ const ROLE_ACTION_LABELS: Record<RuntimeLocale, Record<PermissionAction, string>
     execute: '実行',
     admin: '管理',
   },
+  ko: {
+    read: 'Read',
+    write: 'Update',
+    delete: 'Delete',
+    execute: 'Execute',
+    admin: 'Admin',
+  },
+  fr: {
+    read: 'Read',
+    write: 'Update',
+    delete: 'Delete',
+    execute: 'Execute',
+    admin: 'Admin',
+  },
 };
 
 const ROLE_PERMISSION_OPTION_LABELS: Record<
-  RuntimeLocale,
+  SupportedUiLocale,
   Record<RbacRolePolicyEffect | 'unset', string>
 > = {
   en: {
@@ -46,7 +63,12 @@ const ROLE_PERMISSION_OPTION_LABELS: Record<
     grant: 'Grant',
     deny: 'Deny',
   },
-  zh: {
+  zh_HANS: {
+    unset: '未设置',
+    grant: '允许',
+    deny: '拒绝',
+  },
+  zh_HANT: {
     unset: '未设置',
     grant: '允许',
     deny: '拒绝',
@@ -56,10 +78,20 @@ const ROLE_PERMISSION_OPTION_LABELS: Record<
     grant: '許可',
     deny: '拒否',
   },
+  ko: {
+    unset: 'Unset',
+    grant: 'Grant',
+    deny: 'Deny',
+  },
+  fr: {
+    unset: 'Unset',
+    grant: 'Grant',
+    deny: 'Deny',
+  },
 };
 
 const SCOPE_TYPE_LABELS: Record<
-  RuntimeLocale,
+  SupportedUiLocale,
   Record<'tenant' | 'subsidiary' | 'talent', string>
 > = {
   en: {
@@ -67,7 +99,12 @@ const SCOPE_TYPE_LABELS: Record<
     subsidiary: 'Subsidiary',
     talent: 'Talent',
   },
-  zh: {
+  zh_HANS: {
+    tenant: '租户',
+    subsidiary: '分目录',
+    talent: '艺人',
+  },
+  zh_HANT: {
     tenant: '租户',
     subsidiary: '分目录',
     talent: '艺人',
@@ -77,14 +114,28 @@ const SCOPE_TYPE_LABELS: Record<
     subsidiary: '配下スコープ',
     talent: 'タレント',
   },
+  ko: {
+    tenant: 'Tenant',
+    subsidiary: 'Subsidiary',
+    talent: 'Talent',
+  },
+  fr: {
+    tenant: 'Tenant',
+    subsidiary: 'Subsidiary',
+    talent: 'Talent',
+  },
 };
 
-const DELEGATE_TYPE_LABELS: Record<RuntimeLocale, Record<'user' | 'role', string>> = {
+const DELEGATE_TYPE_LABELS: Record<SupportedUiLocale, Record<'user' | 'role', string>> = {
   en: {
     user: 'User',
     role: 'Role',
   },
-  zh: {
+  zh_HANS: {
+    user: '用户',
+    role: '角色',
+  },
+  zh_HANT: {
     user: '用户',
     role: '角色',
   },
@@ -92,9 +143,17 @@ const DELEGATE_TYPE_LABELS: Record<RuntimeLocale, Record<'user' | 'role', string
     user: 'ユーザー',
     role: 'ロール',
   },
+  ko: {
+    user: 'User',
+    role: 'Role',
+  },
+  fr: {
+    user: 'User',
+    role: 'Role',
+  },
 };
 
-const LANGUAGE_LABELS: Record<RuntimeLocale, Record<SupportedUiLocale, string>> = {
+const LANGUAGE_LABELS: Record<SupportedUiLocale, Record<SupportedUiLocale, string>> = {
   en: {
     en: 'English',
     zh_HANS: 'Simplified Chinese',
@@ -103,7 +162,15 @@ const LANGUAGE_LABELS: Record<RuntimeLocale, Record<SupportedUiLocale, string>> 
     ko: 'Korean',
     fr: 'French',
   },
-  zh: {
+  zh_HANS: {
+    en: '英语',
+    zh_HANS: '简体中文',
+    zh_HANT: '繁體中文',
+    ja: '日语',
+    ko: '韩语',
+    fr: '法语',
+  },
+  zh_HANT: {
     en: '英语',
     zh_HANS: '简体中文',
     zh_HANT: '繁體中文',
@@ -119,18 +186,33 @@ const LANGUAGE_LABELS: Record<RuntimeLocale, Record<SupportedUiLocale, string>> 
     ko: '韓国語',
     fr: 'フランス語',
   },
+  ko: {
+    en: 'English',
+    zh_HANS: 'Simplified Chinese',
+    zh_HANT: 'Traditional Chinese',
+    ja: 'Japanese',
+    ko: 'Korean',
+    fr: 'French',
+  },
+  fr: {
+    en: 'English',
+    zh_HANS: 'Simplified Chinese',
+    zh_HANT: 'Traditional Chinese',
+    ja: 'Japanese',
+    ko: 'Korean',
+    fr: 'French',
+  },
 };
 
-const ROLE_RESOURCE_COLUMN_LABELS: Record<RuntimeLocale, string> = {
-  en: 'Resource',
-  zh: '资源',
-  ja: 'リソース',
-};
+const ROLE_RESOURCE_COLUMN_LABELS: Record<SupportedUiLocale, string> = { en: 'Resource', zh_HANS: '资源', zh_HANT: '资源', ja: 'リソース', ko: 'Resource', fr: 'Resource' };
 
-const EXPLICIT_PERMISSION_COUNT_LABELS: Record<RuntimeLocale, (count: number) => string> = {
+const EXPLICIT_PERMISSION_COUNT_LABELS: Record<SupportedUiLocale, (count: number) => string> = {
   en: (count) => `${count} explicit permission${count === 1 ? '' : 's'}`,
-  zh: (count) => `${count} 条显式权限`,
+  zh_HANS: (count) => `${count} 条显式权限`,
+  zh_HANT: (count) => `${count} 條顯式權限`,
   ja: (count) => `${count} 件の明示的権限`,
+  ko: (count) => `${count} explicit permission${count === 1 ? '' : 's'}`,
+  fr: (count) => `${count} autorisation${count === 1 ? '' : 's'} explicite${count === 1 ? '' : 's'}`,
 };
 
 const COPY = {
@@ -408,9 +490,7 @@ const COPY = {
       assignedUsersEmpty: 'No users are currently assigned to this role.',
       fields: {
         roleCode: 'Role code',
-        nameEn: 'English role name',
-        nameZh: 'Chinese role name',
-        nameJa: 'Japanese role name',
+        nameBase: 'Base role name',
         description: 'Description',
         isActive: 'Role is active',
       },
@@ -442,11 +522,11 @@ const COPY = {
       },
       validation: {
         code: 'Role code must be 3-32 characters using only A-Z, 0-9, and _.',
-        nameEn: 'English role name is required.',
+        nameBase: 'Base role name is required.',
       },
     },
   },
-  zh: {
+  zh_HANS: {
     shared: {
       cancel: '取消',
       confirm: '确认',
@@ -702,9 +782,7 @@ const COPY = {
       assignedUsersEmpty: '当前没有用户持有该角色。',
       fields: {
         roleCode: '角色编码',
-        nameEn: '英文角色名',
-        nameZh: '中文角色名',
-        nameJa: '日文角色名',
+        nameBase: '基准角色名',
         description: '描述',
         isActive: '角色处于激活状态',
       },
@@ -733,7 +811,296 @@ const COPY = {
       },
       validation: {
         code: '角色编码需为 3-32 位，仅允许 A-Z、0-9 和下划线。',
-        nameEn: '必须填写英文角色名。',
+        nameBase: '必须填写基准角色名。',
+      },
+    },
+  },
+  zh_HANT: {
+    shared: {
+      cancel: '取消',
+      confirm: '确认',
+      confirmAction: '确认操作',
+      never: '从未',
+      unavailable: '不可用',
+      seen: '已登录',
+      tenantWorkspace: '租户',
+      acWorkspace: '平台工作区',
+      tenantAccessLabel: '租户访问',
+      acAccessLabel: '平台访问',
+      tenantSessionLabel: '租户上下文',
+      acSessionLabel: '平台上下文',
+      tenantDirectoryLabel: '租户用户目录',
+      acDirectoryLabel: 'AC 身份目录',
+      tenantRoot: '租户根级',
+      unnamedScope: '未命名范围',
+      tenantWideAssignment: '租户级分配',
+      tenantWideBinding: '租户级绑定',
+      tenantWideVisibility: '租户级可见性',
+      grantedLabel: '授权时间',
+      expiresLabel: '到期时间',
+      includesSubunits: '包含下级',
+      inherit: '继承',
+      roleActive: '角色启用',
+      roleInactive: '角色停用',
+      userActive: '用户启用',
+      userInactive: '用户停用',
+      protectedRole: '受保护',
+      customRole: '自定义',
+      save: '保存',
+      remove: '移除',
+      noCompatibleRoles: '没有可分配角色',
+      assignLinks: (count: number) => `${count} 条生效链接`,
+      scopeCount: (count: number) => `${count} 个范围`,
+      userCount: (count: number) => `${count} 位用户`,
+      assignmentCount: (count: number) => `${count} 条分配`,
+      inheritedAssignments: (count: number) => `当前有 ${count} 条继承分配在传播权限。`,
+    },
+    management: {
+      pageUnavailableTitle: '用户管理不可用',
+      pageUnavailableDescription: (_workspaceAccessLabel: string) => '当前范围无法加载用户、角色或委派管理数据。',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      title: '身份、角色与委派管理',
+      description: '在同一处管理用户、角色与委派；创建或编辑时进入独立页面。',
+      summaryVisibleUsersLabel: '可见用户',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => '按当前会话上下文和筛选条件得到的用户结果。',
+      summaryActiveRolesLabel: '生效角色',
+      summaryActiveRolesHint: '这里只显示当前范围允许使用的激活角色。',
+      summaryDelegationsLabel: '委派记录',
+      summaryDelegationsHint: '委派记录继续以分目录或艺人为目标范围进行管理。',
+      tabs: {
+        users: '用户',
+        roles: '角色',
+        delegation: '委派',
+      },
+      users: {
+        title: '系统用户',
+        description: '列表页只负责搜索、状态筛选和账户操作；创建与编辑用户在独立页面进行。',
+        newUser: '新建用户',
+        searchLabel: '搜索',
+        searchPlaceholder: '搜索用户名、邮箱或显示名',
+        statusLabel: '状态',
+        statusAll: '全部用户',
+        statusActive: '仅激活',
+        statusInactive: '仅停用',
+        unavailableTitle: '系统用户不可用',
+        emptyTitle: '没有符合条件的系统用户',
+        emptyDescription: (workspaceDirectoryLabel: string) =>
+          `请调整搜索或状态筛选，查看 ${workspaceDirectoryLabel} 中的其他用户。`,
+        columns: ['用户', '状态', '安全', '最近登录', '创建时间', '操作'],
+        active: '激活',
+        inactive: '停用',
+        resetRequired: '需重置密码',
+        totpEnabled: '已启用 TOTP',
+        noTotp: '未启用 TOTP',
+        edit: '编辑',
+        requireTotp: '要求启用 TOTP',
+        requireTotpTitle: (name: string) => `为 ${name} 强制启用 TOTP？`,
+        requireTotpDescription: '该用户下次成功登录后，必须先完成 TOTP 绑定。',
+        requireTotpConfirm: '要求启用 TOTP',
+        requireTotpPending: '正在保存 TOTP 要求…',
+        requireTotpSuccess: (name: string) => `${name} 下次登录时必须配置 TOTP。`,
+        requireTotpError: '设置 TOTP 要求失败。',
+        deactivate: '停用',
+        deactivateTitle: (name: string) => `停用 ${name}？`,
+        deactivateDescription: (_workspaceAccessLabel: string) => '停用后，该用户将失去当前访问权限，直到重新激活。',
+        deactivateConfirm: '停用用户',
+        deactivatePending: '正在停用用户…',
+        deactivateSuccess: (name: string) => `${name} 已停用。`,
+        deactivateError: '停用系统用户失败。',
+        reactivate: '重新激活',
+        reactivateTitle: (name: string) => `重新激活 ${name}？`,
+        reactivateDescription: (_workspaceAccessLabel: string) => '重新激活后，该用户可恢复访问权限，不会重置其他账户资料。',
+        reactivateConfirm: '重新激活用户',
+        reactivatePending: '正在重新激活用户…',
+        reactivateSuccess: (name: string) => `${name} 已重新激活。`,
+        reactivateError: '重新激活系统用户失败。',
+      },
+      roles: {
+        title: '系统角色',
+        description: '在列表中审查角色覆盖面，需要深度编辑时进入独立角色页面。',
+        newRole: '新建角色',
+        unavailableTitle: '系统角色不可用',
+        emptyTitle: '没有可用的激活角色',
+        emptyDescription: (_workspaceAccessLabel: string) => '这里只显示当前范围允许使用的激活角色。',
+        columns: ['角色', '覆盖面', '用户数', '状态', '更新时间', '操作'],
+        permissions: (count: number) => `${count} 条权限`,
+        assignedUsers: (count: number) => `${count} 位分配用户`,
+        protected: '受保护',
+        custom: '自定义',
+        active: '激活',
+        inactive: '停用',
+        edit: '编辑',
+        delete: '删除',
+        deleteTitle: (name: string) => `删除 ${name}？`,
+        deleteDescription: '这里只允许删除自定义角色；受保护的系统角色在列表中仅可查看。',
+        deleteConfirm: '删除角色',
+        deletePending: '正在删除角色…',
+        deleteSuccess: (name: string) => `${name} 已删除。`,
+        deleteError: '删除系统角色失败。',
+      },
+      delegation: {
+        title: '委派管理',
+        description: '按范围将分目录或艺人管理权限委派给指定用户或角色，并在列表中追踪现有授权。',
+        grantTitle: '授予委派管理',
+        grantDescription: '选择一个可见范围，并将该范围委派给用户或角色。',
+        grantButton: '授予委派',
+        grantPending: '正在授予委派…',
+        loadingTitle: '正在加载可委派范围',
+        loadingDescription: '组织树加载完成后，表单即可直接提供可委派范围。',
+        noScopesTitle: '没有可委派的范围',
+        noScopesDescription: '当前没有可用于委派管理的分目录或艺人范围。',
+        scopeTypeLabel: '范围类型',
+        scopeTypeSubsidiary: '分目录',
+        scopeTypeTalent: '艺人',
+        scopeTargetLabel: '范围目标',
+        delegateTypeLabel: '委派对象类型',
+        delegateTypeUser: '用户',
+        delegateTypeRole: '角色',
+        delegateLabel: '委派对象',
+        sourceNote: '委派选项来自当前可见组织树以及已加载的用户、角色列表。',
+        selectScopeError: '请先选择一个范围。',
+        selectDelegateError: '请先选择一个委派对象。',
+        createError: '创建委派管理失败。',
+        createSuccess: (delegateName: string, scopeName: string) => `${delegateName} 已获得 ${scopeName} 的委派管理权限。`,
+        unavailableTitle: '委派管理不可用',
+        emptyTitle: '尚未配置委派管理',
+        emptyDescription: (isAcWorkspace: boolean) =>
+          `当前${isAcWorkspace ? ' AC 租户' : '租户'}还没有分目录或艺人范围的委派管理授权。`,
+        columns: ['范围', '委派对象', '授权人', '授权时间', '操作'],
+        systemGrantedBy: '系统',
+        remove: '移除',
+        removeTitle: (name: string) => `移除 ${name} 的委派管理？`,
+        removeDescription: '这会从所选范围中移除委派管理授权，并立即从列表中删除该记录。',
+        removeConfirm: '移除委派',
+        removePending: '正在移除委派…',
+        removeSuccess: (name: string) => `${name} 的委派管理已移除。`,
+        removeError: '移除委派管理失败。',
+      },
+    },
+    editor: {
+      loading: '正在加载用户编辑页…',
+      unavailableTitle: '用户编辑页不可用',
+      loadError: '加载系统用户详情失败。',
+      supportDataError: '加载角色和范围选项失败。',
+      missingTargetError: '缺少系统用户 ID。',
+      createError: '创建系统用户失败。',
+      updateError: '更新系统用户失败。',
+      assignmentSelectRoleError: '请先选择要分配的角色。',
+      assignmentCreateError: '分配角色失败。',
+      assignmentUpdateError: '更新角色分配失败。',
+      assignmentRemoveError: '移除角色分配失败。',
+      assignmentPermissionTitle: '当前范围不可分配角色',
+      assignmentPermissionDescription: '当前会话无权在所选范围分配角色，账户资料编辑仍可继续。',
+      validation: {
+        username: '用户名至少需要 3 个字符。',
+        email: '必须填写有效邮箱。',
+        initialPassword: '初始密码至少需要 12 个字符。',
+      },
+      backToInventory: '返回用户',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createTitle: '新建系统用户',
+      createDescription: '在独立页面中创建用户，让身份信息与范围分配保持聚焦。',
+      editDescription: '用户在独立页面中编辑，让身份信息、范围角色分配和安全操作保持聚焦。',
+      accountProfileTitle: '账户资料',
+      fields: {
+        username: '用户名',
+        email: '邮箱',
+        initialPassword: '初始密码',
+        forceReset: '首次登录时强制重置密码',
+        displayName: '显示名',
+        phone: '手机号',
+        preferredLanguage: '首选语言',
+      },
+      forceResetDescription: '让引导阶段密码仅短期有效，首次认证后必须立即重置。',
+      immutableIdentityDescription: '用户名和邮箱在此处不可修改。密码轮换保留给个人资料和安全流程，不再藏在拥挤的列表页里。',
+      submitCreate: '创建用户',
+      submitSave: '保存资料',
+      pendingCreate: '正在创建用户…',
+      pendingSave: '正在保存资料…',
+      summaryRoleAssignmentsLabel: '角色分配',
+      summaryRoleAssignmentsHint: '所选用户当前的角色分配数量。',
+      summaryScopeAccessLabel: '范围访问',
+      summaryScopeAccessHint: '直接挂在此用户上的可见性规则。',
+      summaryLastLoginLabel: '最近登录',
+      lastLoginSeen: '已登录',
+      lastLoginNeverHint: '该用户尚未登录过。',
+      updateSuccess: (name: string) => `${name} 已更新。`,
+      scopedAssignmentsTitle: '范围角色分配',
+      scopedAssignmentsDescription: '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
+      scopeField: '范围',
+      roleField: '角色',
+      expiresAtField: '到期时间',
+      assignmentInheritLabel: '在支持时继承到下级范围',
+      assignmentSubmit: '分配角色',
+      assignmentPending: '正在分配角色…',
+      noAssignmentsTitle: '尚未分配范围角色',
+      noAssignmentsDescription: '该用户当前还没有角色分配，请使用上方表单授予正确范围的角色。',
+      assignmentCreated: (roleName: string) => `${roleName} 已分配。`,
+      assignmentUpdated: '角色分配已更新。',
+      assignmentRemoved: '角色分配已移除。',
+      assignmentSavePending: '正在保存…',
+      directScopeAccessTitle: '直接范围访问',
+      directScopeAccessDescription: '这里展示直接范围访问记录；如需修改，请使用专门的访问入口。',
+      noDirectScopeAccessTitle: '没有直接范围访问规则',
+      noDirectScopeAccessDescription: '该用户当前没有直接访问规则。',
+    },
+    roleEditor: {
+      loading: '正在加载系统角色…',
+      unavailableTitle: '系统角色不可用',
+      loadError: '加载系统角色详情失败。',
+      createError: '创建系统角色失败。',
+      updateError: '更新系统角色失败。',
+      missingTargetError: '缺少系统角色目标。',
+      createTitle: '新建系统角色',
+      titleFallback: '系统角色',
+      backToInventory: '返回角色',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createDescription: '定义当前范围所需的角色信息与显式权限。',
+      editDescription: '无需回到列表页即可审查角色信息、显式权限和当前范围覆盖。',
+      summaryExplicitPermissionsLabel: '显式权限',
+      summaryExplicitPermissionsHint: '未设置的动作将继承更宽的目录默认值，或保持不可用。',
+      summaryAssignedUsersLabel: '已分配用户',
+      summaryAssignedUsersHint: '编辑元数据和权限时，现有分配仍在此可见。',
+      summaryBoundScopesLabel: '绑定范围',
+      summaryBoundScopesHint: '当前范围覆盖来自现有角色分配。',
+      scopeBindingsTitle: '分配派生的范围绑定',
+      scopeBindingsDescription: '当前绑定来自租户、分目录和艺人范围下的激活用户角色分配。',
+      scopeBindingsEmpty: '当前没有任何分配将该角色绑定到租户、分目录或艺人范围。',
+      assignedUsersTitle: '已分配用户',
+      assignedUsersDescription: '查看当前哪些用户持有该角色，以及分配落在哪个范围。',
+      assignedUsersEmpty: '当前没有用户持有该角色。',
+      fields: {
+        roleCode: '角色编码',
+        nameBase: '基准角色名',
+        description: '描述',
+        isActive: '角色处于激活状态',
+      },
+      isActiveDescription: '激活角色才可继续在当前范围中被分配。',
+      createHint: '角色编码在创建后会成为稳定标识。将动作保持未设置，可避免授予不需要的行为。',
+      editHint: '角色编码在创建后不可修改。受保护角色仍可在此编辑，但只有自定义角色可删除。',
+      permissionMatrixTitle: '权限矩阵',
+      permissionMatrixDescription: '显式效果可以设置为未设置、允许或拒绝。',
+      notAvailable: '不适用',
+      submitCreate: '创建角色',
+      submitSave: '保存角色',
+      pendingCreate: '正在创建角色…',
+      pendingSave: '正在保存角色…',
+      createSuccess: (name: string) => `${name} 已创建。`,
+      updateSuccess: (name: string) => `${name} 已更新。`,
+      translationManagement: {
+        trigger: '翻译管理',
+        title: '角色名称翻译',
+        baseValueLabel: '英文主名称',
+        save: '保存',
+        cancel: '取消',
+        closeButtonAriaLabel: '关闭角色名称翻译抽屉',
+        empty: '当前还没有额外语言翻译。',
+        summary: (count: number) => `已配置 ${count} 个额外语言值。`,
+        languageLoadError: '语言选项暂时不可用，请先加载系统词典中的 Language 条目后重试。',
+      },
+      validation: {
+        code: '角色编码需为 3-32 位，仅允许 A-Z、0-9 和下划线。',
+        nameBase: '必须填写基准角色名。',
       },
     },
   },
@@ -994,9 +1361,7 @@ const COPY = {
       assignedUsersEmpty: '現在このロールを持つユーザーはいません。',
       fields: {
         roleCode: 'ロールコード',
-        nameEn: '英語ロール名',
-        nameZh: '中国語ロール名',
-        nameJa: '日本語ロール名',
+        nameBase: '基準ロール名',
         description: '説明',
         isActive: 'ロールを有効にする',
       },
@@ -1026,33 +1391,640 @@ const COPY = {
       },
       validation: {
         code: 'ロールコードは 3〜32 文字で、A-Z、0-9、_ のみ使用できます。',
-        nameEn: '英語ロール名は必須です。',
+        nameBase: '基準ロール名は必須です。',
+      },
+    },
+  },
+  ko: {
+    shared: {
+      cancel: 'Cancel',
+      confirm: 'Confirm',
+      confirmAction: 'Confirm action',
+      never: 'Never',
+      unavailable: 'Unavailable',
+      seen: 'Seen',
+      tenantWorkspace: 'Tenant',
+      acWorkspace: 'Platform',
+      tenantAccessLabel: 'tenant access',
+      acAccessLabel: 'platform access',
+      tenantSessionLabel: 'tenant context',
+      acSessionLabel: 'platform context',
+      tenantDirectoryLabel: 'tenant user directory',
+      acDirectoryLabel: 'AC identity directory',
+      tenantRoot: 'Tenant root',
+      unnamedScope: 'Unnamed scope',
+      tenantWideAssignment: 'Tenant-wide assignment',
+      tenantWideBinding: 'Tenant-wide binding',
+      tenantWideVisibility: 'Tenant-wide visibility',
+      grantedLabel: 'Granted',
+      expiresLabel: 'Expires',
+      includesSubunits: 'Includes subunits',
+      inherit: 'Inherit',
+      roleActive: 'Role Active',
+      roleInactive: 'Role Inactive',
+      userActive: 'User Active',
+      userInactive: 'User Inactive',
+      protectedRole: 'Protected',
+      customRole: 'Custom',
+      save: 'Save',
+      remove: 'Remove',
+      noCompatibleRoles: 'No compatible roles',
+      assignLinks: (count: number) => `${count} active links`,
+      scopeCount: (count: number) => `${count} scope${count === 1 ? '' : 's'}`,
+      userCount: (count: number) => `${count} user${count === 1 ? '' : 's'}`,
+      assignmentCount: (count: number) => `${count} assignment${count === 1 ? '' : 's'}`,
+      inheritedAssignments: (count: number) =>
+        `${count} inherited assignment${count === 1 ? '' : 's'} currently propagate access.`,
+    },
+    management: {
+      pageUnavailableTitle: 'User management is unavailable',
+      pageUnavailableDescription: (workspaceAccessLabel: string) =>
+        `The ${workspaceAccessLabel} could not load users, roles, or delegated-admin resources.`,
+      badge: (workspaceLabel: string) => workspaceLabel,
+      title: 'Identity, role, and delegation control',
+      description:
+        'Manage users, role definitions, and delegation here. Use dedicated pages when you need to create or edit.',
+      summaryVisibleUsersLabel: 'Visible Users',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => 'Users matching the current filters.',
+      summaryActiveRolesLabel: 'Active Roles',
+      summaryActiveRolesHint: 'Only roles available for assignment on this page are shown here.',
+      summaryDelegationsLabel: 'Delegations',
+      summaryDelegationsHint: 'Delegated-admin records can target subsidiary or talent scope from this page.',
+      tabs: {
+        users: 'Users',
+        roles: 'Roles',
+        delegation: 'Delegation',
+      },
+      users: {
+        title: 'System users',
+        description:
+          'Keep the list focused on search, status, and account actions. Creating and editing users happens on dedicated pages.',
+        newUser: 'New user',
+        searchLabel: 'Search',
+        searchPlaceholder: 'Search username, email, or display name',
+        statusLabel: 'Status',
+        statusAll: 'All users',
+        statusActive: 'Active only',
+        statusInactive: 'Inactive only',
+        unavailableTitle: 'System users unavailable',
+        emptyTitle: 'No system users matched this filter',
+        emptyDescription: (workspaceDirectoryLabel: string) =>
+          `Adjust the search or status filter to view other users in the ${workspaceDirectoryLabel}.`,
+        columns: ['User', 'Status', 'Security', 'Last Login', 'Created', 'Actions'],
+        active: 'Active',
+        inactive: 'Inactive',
+        resetRequired: 'Reset Required',
+        totpEnabled: 'TOTP Enabled',
+        noTotp: 'No TOTP',
+        edit: 'Edit',
+        requireTotp: 'Require TOTP',
+        requireTotpTitle: (name: string) => `Require TOTP for ${name}?`,
+        requireTotpDescription:
+          'The next successful login will require this user to complete TOTP enrollment before access is restored.',
+        requireTotpConfirm: 'Require TOTP',
+        requireTotpPending: 'Saving TOTP requirement…',
+        requireTotpSuccess: (name: string) => `${name} must configure TOTP on next login.`,
+        requireTotpError: 'Failed to mark the user for TOTP enrollment.',
+        deactivate: 'Deactivate',
+        deactivateTitle: (name: string) => `Deactivate ${name}?`,
+        deactivateDescription: (workspaceAccessLabel: string) =>
+          `This user will lose active ${workspaceAccessLabel} until the account is reactivated.`,
+        deactivateConfirm: 'Deactivate user',
+        deactivatePending: 'Deactivating user…',
+        deactivateSuccess: (name: string) => `${name} was deactivated.`,
+        deactivateError: 'Failed to deactivate system user.',
+        reactivate: 'Reactivate',
+        reactivateTitle: (name: string) => `Reactivate ${name}?`,
+        reactivateDescription: (workspaceAccessLabel: string) =>
+          `Reactivating this user restores ${workspaceAccessLabel} without resetting the rest of the account profile.`,
+        reactivateConfirm: 'Reactivate user',
+        reactivatePending: 'Reactivating user…',
+        reactivateSuccess: (name: string) => `${name} was reactivated.`,
+        reactivateError: 'Failed to reactivate system user.',
+      },
+      roles: {
+        title: 'System roles',
+        description: 'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
+        newRole: 'New role',
+        unavailableTitle: 'System roles unavailable',
+        emptyTitle: 'No active roles available',
+        emptyDescription: (workspaceAccessLabel: string) =>
+          `No active roles are currently available for ${workspaceAccessLabel}.`,
+        columns: ['Role', 'Coverage', 'Users', 'State', 'Updated', 'Actions'],
+        permissions: (count: number) => `${count} permissions`,
+        assignedUsers: (count: number) => `${count} assigned users`,
+        protected: 'Protected',
+        custom: 'Custom',
+        active: 'Active',
+        inactive: 'Inactive',
+        edit: 'Edit',
+        delete: 'Delete',
+        deleteTitle: (name: string) => `Delete ${name}?`,
+        deleteDescription: 'Only custom roles can be deleted here. Protected system roles stay read-only.',
+        deleteConfirm: 'Delete role',
+        deletePending: 'Deleting role…',
+        deleteSuccess: (name: string) => `${name} was deleted.`,
+        deleteError: 'Failed to delete system role.',
+      },
+      delegation: {
+        title: 'Delegated administration',
+        description: 'Delegate subsidiary or talent administration with a clear scope and current grant list.',
+        grantTitle: 'Grant delegated admin',
+        grantDescription: 'Choose a visible scope and assign a user or role.',
+        grantButton: 'Grant delegation',
+        grantPending: 'Granting delegation…',
+        loadingTitle: 'Loading delegatable scopes',
+        loadingDescription: 'The organization tree is loading so the form can offer the right scopes.',
+        noScopesTitle: 'No delegatable scopes available',
+        noScopesDescription:
+          'No visible subsidiary or talent scopes are available for delegated administration.',
+        scopeTypeLabel: 'Scope type',
+        scopeTypeSubsidiary: 'Subsidiary',
+        scopeTypeTalent: 'Talent',
+        scopeTargetLabel: 'Scope target',
+        delegateTypeLabel: 'Delegate type',
+        delegateTypeUser: 'User',
+        delegateTypeRole: 'Role',
+        delegateLabel: 'Delegate',
+        sourceNote: 'Delegation options come from the visible organization tree plus the current users and roles.',
+        selectScopeError: 'Select a scope before granting delegated administration.',
+        selectDelegateError: 'Select a delegate before granting delegated administration.',
+        createError: 'Failed to create delegated admin assignment.',
+        createSuccess: (delegateName: string, scopeName: string) =>
+          `${delegateName} was granted delegated administration for ${scopeName}.`,
+        unavailableTitle: 'Delegated admins unavailable',
+        emptyTitle: 'No delegated admins configured',
+        emptyDescription: (isAcWorkspace: boolean) =>
+          `This ${isAcWorkspace ? 'AC tenant' : 'tenant'} currently has no subsidiary- or talent-scoped delegated-admin grants.`,
+        columns: ['Scope', 'Delegate', 'Granted By', 'Granted At', 'Actions'],
+        systemGrantedBy: 'System',
+        remove: 'Remove',
+        removeTitle: (name: string) => `Remove ${name}?`,
+        removeDescription:
+          'This removes the delegated-admin grant from the selected scope and immediately removes the assignment from the list.',
+        removeConfirm: 'Remove delegation',
+        removePending: 'Removing delegation…',
+        removeSuccess: (name: string) => `Delegated administration for ${name} was removed.`,
+        removeError: 'Failed to remove delegated admin.',
+      },
+    },
+    editor: {
+      loading: 'Loading user editor…',
+      unavailableTitle: 'User editor unavailable',
+      loadError: 'Failed to load system user detail.',
+      supportDataError: 'Failed to load role and scope options.',
+      missingTargetError: 'Missing system user id.',
+      createError: 'Failed to create system user.',
+      updateError: 'Failed to update system user.',
+      assignmentSelectRoleError: 'Select a role before assigning it.',
+      assignmentCreateError: 'Failed to assign role.',
+      assignmentUpdateError: 'Failed to update role assignment.',
+      assignmentRemoveError: 'Failed to remove role assignment.',
+      assignmentPermissionTitle: 'Role assignment unavailable for this scope',
+      assignmentPermissionDescription:
+        'Your current session cannot assign roles at the selected scope. Profile editing remains available.',
+      validation: {
+        username: 'Username must be at least 3 characters.',
+        email: 'Email address is required.',
+        initialPassword: 'Initial password must be at least 12 characters.',
+      },
+      backToInventory: 'Back to users',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createTitle: 'Create system user',
+      createDescription: 'Create a new user on a dedicated page so profile data and role access stay focused.',
+      editDescription: 'Use this page to update profile data, scoped role access, and security actions.',
+      accountProfileTitle: 'Account profile',
+      fields: {
+        username: 'Username',
+        email: 'Email',
+        initialPassword: 'Initial password',
+        forceReset: 'Force password reset on first login',
+        displayName: 'Display name',
+        phone: 'Phone',
+        preferredLanguage: 'Preferred language',
+      },
+      forceResetDescription:
+        'Keep the bootstrap password short-lived by forcing the user through a reset after the first authenticated session.',
+      immutableIdentityDescription:
+        'Username and email remain immutable here. Password rotation stays in profile and security workflows instead of being hidden inside a crowded list view.',
+      submitCreate: 'Create user',
+      submitSave: 'Save profile',
+      pendingCreate: 'Creating user…',
+      pendingSave: 'Saving profile…',
+      summaryRoleAssignmentsLabel: 'Role Assignments',
+      summaryRoleAssignmentsHint: 'Current role assignments for this user.',
+      summaryScopeAccessLabel: 'Scope Access',
+      summaryScopeAccessHint: 'Direct visibility rules currently attached to this user.',
+      summaryLastLoginLabel: 'Last Login',
+      lastLoginSeen: 'Seen',
+      lastLoginNeverHint: 'This user has not logged in yet.',
+      updateSuccess: (name: string) => `${name} was updated.`,
+      scopedAssignmentsTitle: 'Scoped role assignments',
+      scopedAssignmentsDescription: 'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      scopeField: 'Scope',
+      roleField: 'Role',
+      expiresAtField: 'Expires at',
+      assignmentInheritLabel: 'Inherit to child scopes when supported',
+      assignmentSubmit: 'Assign role',
+      assignmentPending: 'Assigning role…',
+      noAssignmentsTitle: 'No scoped roles assigned',
+      noAssignmentsDescription: 'This user has no role assignments yet. Use the form above to grant one at the right scope.',
+      assignmentCreated: (roleName: string) => `${roleName} was assigned.`,
+      assignmentUpdated: 'Role assignment was updated.',
+      assignmentRemoved: 'Role assignment was removed.',
+      assignmentSavePending: 'Saving…',
+      directScopeAccessTitle: 'Direct scope access',
+      directScopeAccessDescription: 'Review direct access rules here. Use the dedicated access flow to change them.',
+      noDirectScopeAccessTitle: 'No direct scope access rules',
+      noDirectScopeAccessDescription: 'This user has no direct access rules.',
+    },
+    roleEditor: {
+      loading: 'Loading system role…',
+      unavailableTitle: 'System role unavailable',
+      loadError: 'Failed to load system role detail.',
+      createError: 'Failed to create system role.',
+      updateError: 'Failed to update system role.',
+      missingTargetError: 'Missing system role target.',
+      createTitle: 'Create system role',
+      titleFallback: 'System role',
+      backToInventory: 'Back to roles',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createDescription: 'Define role details and the explicit permissions required for this scope.',
+      editDescription: 'Review role details, explicit permissions, and where this role is assigned.',
+      summaryExplicitPermissionsLabel: 'Explicit Permissions',
+      summaryExplicitPermissionsHint:
+        'Unset actions inherit the broader catalog defaults or remain unavailable.',
+      summaryAssignedUsersLabel: 'Assigned Users',
+      summaryAssignedUsersHint:
+        'Live assignments remain visible while metadata and permissions are edited.',
+      summaryBoundScopesLabel: 'Bound Scopes',
+      summaryBoundScopesHint: 'Shows where this role is currently assigned.',
+      scopeBindingsTitle: 'Assignment-derived scope bindings',
+      scopeBindingsDescription: 'This role is currently assigned at the tenant, subsidiary, or talent level.',
+      scopeBindingsEmpty:
+        'No current assignments bind this role to a tenant, subsidiary, or talent scope.',
+      assignedUsersTitle: 'Assigned users',
+      assignedUsersDescription:
+        'Review which users currently hold this role and where the assignment is scoped.',
+      assignedUsersEmpty: 'No users are currently assigned to this role.',
+      fields: {
+        roleCode: 'Role code',
+        nameBase: 'Base role name',
+        description: 'Description',
+        isActive: 'Role is active',
+      },
+      isActiveDescription: 'Active roles remain eligible for assignment in this scope.',
+      createHint:
+        'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
+      editHint: 'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+      permissionMatrixTitle: 'Permission matrix',
+      permissionMatrixDescription:
+        'Explicit effects can be left unset, granted, or denied.',
+      notAvailable: 'N/A',
+      submitCreate: 'Create role',
+      submitSave: 'Save role',
+      pendingCreate: 'Creating role…',
+      pendingSave: 'Saving role…',
+      createSuccess: (name: string) => `${name} was created.`,
+      updateSuccess: (name: string) => `${name} was updated.`,
+      translationManagement: {
+        trigger: 'Translation management',
+        title: 'Role name translations',
+        baseValueLabel: 'Base role name (English)',
+        save: 'Save',
+        cancel: 'Cancel',
+        closeButtonAriaLabel: 'Close role name translations drawer',
+        empty: 'No additional translations configured yet.',
+        summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+        languageLoadError:
+          'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
+      },
+      validation: {
+        code: 'Role code must be 3-32 characters using only A-Z, 0-9, and _.',
+        nameBase: 'Base role name is required.',
+      },
+    },
+  },
+  fr: {
+    shared: {
+      cancel: 'Cancel',
+      confirm: 'Confirm',
+      confirmAction: 'Confirm action',
+      never: 'Never',
+      unavailable: 'Unavailable',
+      seen: 'Seen',
+      tenantWorkspace: 'Tenant',
+      acWorkspace: 'Platform',
+      tenantAccessLabel: 'tenant access',
+      acAccessLabel: 'platform access',
+      tenantSessionLabel: 'tenant context',
+      acSessionLabel: 'platform context',
+      tenantDirectoryLabel: 'tenant user directory',
+      acDirectoryLabel: 'AC identity directory',
+      tenantRoot: 'Tenant root',
+      unnamedScope: 'Unnamed scope',
+      tenantWideAssignment: 'Tenant-wide assignment',
+      tenantWideBinding: 'Tenant-wide binding',
+      tenantWideVisibility: 'Tenant-wide visibility',
+      grantedLabel: 'Granted',
+      expiresLabel: 'Expires',
+      includesSubunits: 'Includes subunits',
+      inherit: 'Inherit',
+      roleActive: 'Role Active',
+      roleInactive: 'Role Inactive',
+      userActive: 'User Active',
+      userInactive: 'User Inactive',
+      protectedRole: 'Protected',
+      customRole: 'Custom',
+      save: 'Save',
+      remove: 'Remove',
+      noCompatibleRoles: 'No compatible roles',
+      assignLinks: (count: number) => `${count} active links`,
+      scopeCount: (count: number) => `${count} scope${count === 1 ? '' : 's'}`,
+      userCount: (count: number) => `${count} user${count === 1 ? '' : 's'}`,
+      assignmentCount: (count: number) => `${count} assignment${count === 1 ? '' : 's'}`,
+      inheritedAssignments: (count: number) =>
+        `${count} inherited assignment${count === 1 ? '' : 's'} currently propagate access.`,
+    },
+    management: {
+      pageUnavailableTitle: 'User management is unavailable',
+      pageUnavailableDescription: (workspaceAccessLabel: string) =>
+        `The ${workspaceAccessLabel} could not load users, roles, or delegated-admin resources.`,
+      badge: (workspaceLabel: string) => workspaceLabel,
+      title: 'Identity, role, and delegation control',
+      description:
+        'Manage users, role definitions, and delegation here. Use dedicated pages when you need to create or edit.',
+      summaryVisibleUsersLabel: 'Visible Users',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => 'Users matching the current filters.',
+      summaryActiveRolesLabel: 'Active Roles',
+      summaryActiveRolesHint: 'Only roles available for assignment on this page are shown here.',
+      summaryDelegationsLabel: 'Delegations',
+      summaryDelegationsHint: 'Delegated-admin records can target subsidiary or talent scope from this page.',
+      tabs: {
+        users: 'Users',
+        roles: 'Roles',
+        delegation: 'Delegation',
+      },
+      users: {
+        title: 'System users',
+        description:
+          'Keep the list focused on search, status, and account actions. Creating and editing users happens on dedicated pages.',
+        newUser: 'New user',
+        searchLabel: 'Search',
+        searchPlaceholder: 'Search username, email, or display name',
+        statusLabel: 'Status',
+        statusAll: 'All users',
+        statusActive: 'Active only',
+        statusInactive: 'Inactive only',
+        unavailableTitle: 'System users unavailable',
+        emptyTitle: 'No system users matched this filter',
+        emptyDescription: (workspaceDirectoryLabel: string) =>
+          `Adjust the search or status filter to view other users in the ${workspaceDirectoryLabel}.`,
+        columns: ['User', 'Status', 'Security', 'Last Login', 'Created', 'Actions'],
+        active: 'Active',
+        inactive: 'Inactive',
+        resetRequired: 'Reset Required',
+        totpEnabled: 'TOTP Enabled',
+        noTotp: 'No TOTP',
+        edit: 'Edit',
+        requireTotp: 'Require TOTP',
+        requireTotpTitle: (name: string) => `Require TOTP for ${name}?`,
+        requireTotpDescription:
+          'The next successful login will require this user to complete TOTP enrollment before access is restored.',
+        requireTotpConfirm: 'Require TOTP',
+        requireTotpPending: 'Saving TOTP requirement…',
+        requireTotpSuccess: (name: string) => `${name} must configure TOTP on next login.`,
+        requireTotpError: 'Failed to mark the user for TOTP enrollment.',
+        deactivate: 'Deactivate',
+        deactivateTitle: (name: string) => `Deactivate ${name}?`,
+        deactivateDescription: (workspaceAccessLabel: string) =>
+          `This user will lose active ${workspaceAccessLabel} until the account is reactivated.`,
+        deactivateConfirm: 'Deactivate user',
+        deactivatePending: 'Deactivating user…',
+        deactivateSuccess: (name: string) => `${name} was deactivated.`,
+        deactivateError: 'Failed to deactivate system user.',
+        reactivate: 'Reactivate',
+        reactivateTitle: (name: string) => `Reactivate ${name}?`,
+        reactivateDescription: (workspaceAccessLabel: string) =>
+          `Reactivating this user restores ${workspaceAccessLabel} without resetting the rest of the account profile.`,
+        reactivateConfirm: 'Reactivate user',
+        reactivatePending: 'Reactivating user…',
+        reactivateSuccess: (name: string) => `${name} was reactivated.`,
+        reactivateError: 'Failed to reactivate system user.',
+      },
+      roles: {
+        title: 'System roles',
+        description: 'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
+        newRole: 'New role',
+        unavailableTitle: 'System roles unavailable',
+        emptyTitle: 'No active roles available',
+        emptyDescription: (workspaceAccessLabel: string) =>
+          `No active roles are currently available for ${workspaceAccessLabel}.`,
+        columns: ['Role', 'Coverage', 'Users', 'State', 'Updated', 'Actions'],
+        permissions: (count: number) => `${count} permissions`,
+        assignedUsers: (count: number) => `${count} assigned users`,
+        protected: 'Protected',
+        custom: 'Custom',
+        active: 'Active',
+        inactive: 'Inactive',
+        edit: 'Edit',
+        delete: 'Delete',
+        deleteTitle: (name: string) => `Delete ${name}?`,
+        deleteDescription: 'Only custom roles can be deleted here. Protected system roles stay read-only.',
+        deleteConfirm: 'Delete role',
+        deletePending: 'Deleting role…',
+        deleteSuccess: (name: string) => `${name} was deleted.`,
+        deleteError: 'Failed to delete system role.',
+      },
+      delegation: {
+        title: 'Delegated administration',
+        description: 'Delegate subsidiary or talent administration with a clear scope and current grant list.',
+        grantTitle: 'Grant delegated admin',
+        grantDescription: 'Choose a visible scope and assign a user or role.',
+        grantButton: 'Grant delegation',
+        grantPending: 'Granting delegation…',
+        loadingTitle: 'Loading delegatable scopes',
+        loadingDescription: 'The organization tree is loading so the form can offer the right scopes.',
+        noScopesTitle: 'No delegatable scopes available',
+        noScopesDescription:
+          'No visible subsidiary or talent scopes are available for delegated administration.',
+        scopeTypeLabel: 'Scope type',
+        scopeTypeSubsidiary: 'Subsidiary',
+        scopeTypeTalent: 'Talent',
+        scopeTargetLabel: 'Scope target',
+        delegateTypeLabel: 'Delegate type',
+        delegateTypeUser: 'User',
+        delegateTypeRole: 'Role',
+        delegateLabel: 'Delegate',
+        sourceNote: 'Delegation options come from the visible organization tree plus the current users and roles.',
+        selectScopeError: 'Select a scope before granting delegated administration.',
+        selectDelegateError: 'Select a delegate before granting delegated administration.',
+        createError: 'Failed to create delegated admin assignment.',
+        createSuccess: (delegateName: string, scopeName: string) =>
+          `${delegateName} was granted delegated administration for ${scopeName}.`,
+        unavailableTitle: 'Delegated admins unavailable',
+        emptyTitle: 'No delegated admins configured',
+        emptyDescription: (isAcWorkspace: boolean) =>
+          `This ${isAcWorkspace ? 'AC tenant' : 'tenant'} currently has no subsidiary- or talent-scoped delegated-admin grants.`,
+        columns: ['Scope', 'Delegate', 'Granted By', 'Granted At', 'Actions'],
+        systemGrantedBy: 'System',
+        remove: 'Remove',
+        removeTitle: (name: string) => `Remove ${name}?`,
+        removeDescription:
+          'This removes the delegated-admin grant from the selected scope and immediately removes the assignment from the list.',
+        removeConfirm: 'Remove delegation',
+        removePending: 'Removing delegation…',
+        removeSuccess: (name: string) => `Delegated administration for ${name} was removed.`,
+        removeError: 'Failed to remove delegated admin.',
+      },
+    },
+    editor: {
+      loading: 'Loading user editor…',
+      unavailableTitle: 'User editor unavailable',
+      loadError: 'Failed to load system user detail.',
+      supportDataError: 'Failed to load role and scope options.',
+      missingTargetError: 'Missing system user id.',
+      createError: 'Failed to create system user.',
+      updateError: 'Failed to update system user.',
+      assignmentSelectRoleError: 'Select a role before assigning it.',
+      assignmentCreateError: 'Failed to assign role.',
+      assignmentUpdateError: 'Failed to update role assignment.',
+      assignmentRemoveError: 'Failed to remove role assignment.',
+      assignmentPermissionTitle: 'Role assignment unavailable for this scope',
+      assignmentPermissionDescription:
+        'Your current session cannot assign roles at the selected scope. Profile editing remains available.',
+      validation: {
+        username: 'Username must be at least 3 characters.',
+        email: 'Email address is required.',
+        initialPassword: 'Initial password must be at least 12 characters.',
+      },
+      backToInventory: 'Back to users',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createTitle: 'Create system user',
+      createDescription: 'Create a new user on a dedicated page so profile data and role access stay focused.',
+      editDescription: 'Use this page to update profile data, scoped role access, and security actions.',
+      accountProfileTitle: 'Account profile',
+      fields: {
+        username: 'Username',
+        email: 'Email',
+        initialPassword: 'Initial password',
+        forceReset: 'Force password reset on first login',
+        displayName: 'Display name',
+        phone: 'Phone',
+        preferredLanguage: 'Preferred language',
+      },
+      forceResetDescription:
+        'Keep the bootstrap password short-lived by forcing the user through a reset after the first authenticated session.',
+      immutableIdentityDescription:
+        'Username and email remain immutable here. Password rotation stays in profile and security workflows instead of being hidden inside a crowded list view.',
+      submitCreate: 'Create user',
+      submitSave: 'Save profile',
+      pendingCreate: 'Creating user…',
+      pendingSave: 'Saving profile…',
+      summaryRoleAssignmentsLabel: 'Role Assignments',
+      summaryRoleAssignmentsHint: 'Current role assignments for this user.',
+      summaryScopeAccessLabel: 'Scope Access',
+      summaryScopeAccessHint: 'Direct visibility rules currently attached to this user.',
+      summaryLastLoginLabel: 'Last Login',
+      lastLoginSeen: 'Seen',
+      lastLoginNeverHint: 'This user has not logged in yet.',
+      updateSuccess: (name: string) => `${name} was updated.`,
+      scopedAssignmentsTitle: 'Scoped role assignments',
+      scopedAssignmentsDescription: 'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      scopeField: 'Scope',
+      roleField: 'Role',
+      expiresAtField: 'Expires at',
+      assignmentInheritLabel: 'Inherit to child scopes when supported',
+      assignmentSubmit: 'Assign role',
+      assignmentPending: 'Assigning role…',
+      noAssignmentsTitle: 'No scoped roles assigned',
+      noAssignmentsDescription: 'This user has no role assignments yet. Use the form above to grant one at the right scope.',
+      assignmentCreated: (roleName: string) => `${roleName} was assigned.`,
+      assignmentUpdated: 'Role assignment was updated.',
+      assignmentRemoved: 'Role assignment was removed.',
+      assignmentSavePending: 'Saving…',
+      directScopeAccessTitle: 'Direct scope access',
+      directScopeAccessDescription: 'Review direct access rules here. Use the dedicated access flow to change them.',
+      noDirectScopeAccessTitle: 'No direct scope access rules',
+      noDirectScopeAccessDescription: 'This user has no direct access rules.',
+    },
+    roleEditor: {
+      loading: 'Loading system role…',
+      unavailableTitle: 'System role unavailable',
+      loadError: 'Failed to load system role detail.',
+      createError: 'Failed to create system role.',
+      updateError: 'Failed to update system role.',
+      missingTargetError: 'Missing system role target.',
+      createTitle: 'Create system role',
+      titleFallback: 'System role',
+      backToInventory: 'Back to roles',
+      badge: (workspaceLabel: string) => workspaceLabel,
+      createDescription: 'Define role details and the explicit permissions required for this scope.',
+      editDescription: 'Review role details, explicit permissions, and where this role is assigned.',
+      summaryExplicitPermissionsLabel: 'Explicit Permissions',
+      summaryExplicitPermissionsHint:
+        'Unset actions inherit the broader catalog defaults or remain unavailable.',
+      summaryAssignedUsersLabel: 'Assigned Users',
+      summaryAssignedUsersHint:
+        'Live assignments remain visible while metadata and permissions are edited.',
+      summaryBoundScopesLabel: 'Bound Scopes',
+      summaryBoundScopesHint: 'Shows where this role is currently assigned.',
+      scopeBindingsTitle: 'Assignment-derived scope bindings',
+      scopeBindingsDescription: 'This role is currently assigned at the tenant, subsidiary, or talent level.',
+      scopeBindingsEmpty:
+        'No current assignments bind this role to a tenant, subsidiary, or talent scope.',
+      assignedUsersTitle: 'Assigned users',
+      assignedUsersDescription:
+        'Review which users currently hold this role and where the assignment is scoped.',
+      assignedUsersEmpty: 'No users are currently assigned to this role.',
+      fields: {
+        roleCode: 'Role code',
+        nameBase: 'Base role name',
+        description: 'Description',
+        isActive: 'Role is active',
+      },
+      isActiveDescription: 'Active roles remain eligible for assignment in this scope.',
+      createHint:
+        'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
+      editHint: 'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+      permissionMatrixTitle: 'Permission matrix',
+      permissionMatrixDescription:
+        'Explicit effects can be left unset, granted, or denied.',
+      notAvailable: 'N/A',
+      submitCreate: 'Create role',
+      submitSave: 'Save role',
+      pendingCreate: 'Creating role…',
+      pendingSave: 'Saving role…',
+      createSuccess: (name: string) => `${name} was created.`,
+      updateSuccess: (name: string) => `${name} was updated.`,
+      translationManagement: {
+        trigger: 'Translation management',
+        title: 'Role name translations',
+        baseValueLabel: 'Base role name (English)',
+        save: 'Save',
+        cancel: 'Cancel',
+        closeButtonAriaLabel: 'Close role name translations drawer',
+        empty: 'No additional translations configured yet.',
+        summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+        languageLoadError:
+          'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
+      },
+      validation: {
+        code: 'Role code must be 3-32 characters using only A-Z, 0-9, and _.',
+        nameBase: 'Base role name is required.',
       },
     },
   },
 } as const;
 
-export type UserManagementCopy = (typeof COPY)[RuntimeLocale];
-const USER_MANAGEMENT_COPY_RECORD = COPY as unknown as Record<RuntimeLocale, UserManagementCopy>;
+export type UserManagementCopy = (typeof COPY)[SupportedUiLocale];
+const USER_MANAGEMENT_COPY_RECORD = COPY as unknown as Record<SupportedUiLocale, UserManagementCopy>;
 
-function resolveUserManagementLocaleFamily(locale: UserManagementLocale) {
-  return resolveTrilingualLocaleFamily(locale);
+function resolveUserManagementCopyByLocale(locale: UserManagementLocale) {
+  return resolveLocaleRecord(locale, USER_MANAGEMENT_COPY_RECORD) as UserManagementCopy;
 }
 
-function resolveUserManagementCopyByLocale(locale: UserManagementLocale, familyFallback?: RuntimeLocale) {
-  return resolveLocaleRecord(locale, USER_MANAGEMENT_COPY_RECORD, familyFallback) as UserManagementCopy;
-}
 
-function getEffectiveSelectedLocale(
-  currentLocale: RuntimeLocale,
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveUserManagementLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
-
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
-}
 
 export function formatUserManagementDateTime(
   value: string | null | undefined,
@@ -1063,70 +2035,66 @@ export function formatUserManagementDateTime(
 }
 
 export function getLocalizedRbacActionLabel(action: PermissionAction, locale: UserManagementLocale) {
-  return ROLE_ACTION_LABELS[resolveUserManagementLocaleFamily(locale)][action];
+  return ROLE_ACTION_LABELS[locale][action];
 }
 
 export function getLocalizedRolePermissionOptionLabel(
   value: RbacRolePolicyEffect | 'unset',
   locale: UserManagementLocale,
 ) {
-  return ROLE_PERMISSION_OPTION_LABELS[resolveUserManagementLocaleFamily(locale)][value];
+  return ROLE_PERMISSION_OPTION_LABELS[locale][value];
 }
 
 export function getLocalizedScopeTypeLabel(
   value: 'tenant' | 'subsidiary' | 'talent',
   locale: UserManagementLocale,
 ) {
-  return SCOPE_TYPE_LABELS[resolveUserManagementLocaleFamily(locale)][value];
+  return SCOPE_TYPE_LABELS[locale][value];
 }
 
 export function getLocalizedDelegateTypeLabel(value: 'user' | 'role', locale: UserManagementLocale) {
-  return DELEGATE_TYPE_LABELS[resolveUserManagementLocaleFamily(locale)][value];
+  return DELEGATE_TYPE_LABELS[locale][value];
 }
 
 export function getLocalizedLanguageLabel(value: SupportedUiLocale, locale: UserManagementLocale) {
-  return LANGUAGE_LABELS[resolveUserManagementLocaleFamily(locale)][value];
+  return LANGUAGE_LABELS[locale][value];
 }
 
 export function getLocalizedRoleResourceColumnLabel(locale: UserManagementLocale) {
-  return ROLE_RESOURCE_COLUMN_LABELS[resolveUserManagementLocaleFamily(locale)];
+  return ROLE_RESOURCE_COLUMN_LABELS[locale];
 }
 
 export function getLocalizedExplicitPermissionCountLabel(
   count: number,
   locale: UserManagementLocale,
 ) {
-  return EXPLICIT_PERMISSION_COUNT_LABELS[resolveUserManagementLocaleFamily(locale)](count);
+  return EXPLICIT_PERMISSION_COUNT_LABELS[locale](count);
 }
 
 export function pickLocalizedName(
   values: {
-    nameEn: string;
-    nameZh?: string | null;
-    nameJa?: string | null;
+    name?: Record<SupportedUiLocale, string> | null;
+    localizedName?: string | null;
+    code?: string | null;
   },
   locale: UserManagementLocale,
 ) {
-  const localeFamily = resolveUserManagementLocaleFamily(locale);
-
-  if (localeFamily === 'zh') {
-    return values.nameZh || values.nameEn || values.nameJa || '';
+  if (values.localizedName?.trim()) {
+    return values.localizedName;
   }
 
-  if (localeFamily === 'ja') {
-    return values.nameJa || values.nameEn || values.nameZh || '';
+  if (values.name) {
+    return pickLocaleText(locale, values.name);
   }
 
-  return values.nameEn || values.nameZh || values.nameJa || '';
+  return values.code || '';
 }
 
 export function useUserManagementCopy() {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
+  const { locale } = useUiLocale();
 
   return {
-    copy: resolveUserManagementCopyByLocale(effectiveSelectedLocale, currentLocale),
-    currentLocale,
-    selectedLocale: effectiveSelectedLocale,
+    copy: resolveUserManagementCopyByLocale(locale),
+    locale,
   };
 }

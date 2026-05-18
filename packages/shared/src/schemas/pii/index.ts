@@ -3,6 +3,8 @@
 
 import { z } from 'zod';
 
+import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -10,19 +12,13 @@ export const PiiAuthTypeSchema = z.enum(['mtls', 'api_key']);
 
 export type PiiServiceAuthType = z.infer<typeof PiiAuthTypeSchema>;
 
-const TranslationMapSchema = z.record(z.string(), z.string());
-
 // ============================================================================
 // PII Service Config Schemas
 // ============================================================================
 export const CreatePiiServiceConfigSchema = z.object({
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores'),
-  nameEn: z.string().max(255),
-  nameZh: z.string().max(255).optional(),
-  nameJa: z.string().max(255).optional(),
-  descriptionEn: z.string().optional(),
-  descriptionZh: z.string().optional(),
-  descriptionJa: z.string().optional(),
+  name: LocalizedTextSchema,
+  description: LocalizedTextSchema.optional(),
   apiUrl: z.string().url().max(512),
   authType: PiiAuthTypeSchema,
   mtlsClientCert: z.string().optional(),
@@ -34,12 +30,8 @@ export const CreatePiiServiceConfigSchema = z.object({
 });
 
 export const UpdatePiiServiceConfigSchema = z.object({
-  nameEn: z.string().max(255).optional(),
-  nameZh: z.string().max(255).optional(),
-  nameJa: z.string().max(255).optional(),
-  descriptionEn: z.string().optional(),
-  descriptionZh: z.string().optional(),
-  descriptionJa: z.string().optional(),
+  name: PartialLocalizedTextSchema.optional(),
+  description: PartialLocalizedTextSchema.optional(),
   apiUrl: z.string().url().max(512).optional(),
   authType: PiiAuthTypeSchema.optional(),
   mtlsClientCert: z.string().optional(),
@@ -60,26 +52,14 @@ export type UpdatePiiServiceConfigInput = z.infer<typeof UpdatePiiServiceConfigS
 // ============================================================================
 export const CreateProfileStoreSchema = z.object({
   code: z.string().regex(/^[A-Z0-9_]{3,32}$/),
-  nameEn: z.string().max(255),
-  nameZh: z.string().max(255).optional(),
-  nameJa: z.string().max(255).optional(),
-  translations: TranslationMapSchema.optional(),
-  descriptionEn: z.string().optional(),
-  descriptionZh: z.string().optional(),
-  descriptionJa: z.string().optional(),
-  descriptionTranslations: TranslationMapSchema.optional(),
+  name: LocalizedTextSchema,
+  description: LocalizedTextSchema.optional(),
   isDefault: z.boolean().optional(),
 });
 
 export const UpdateProfileStoreSchema = z.object({
-  nameEn: z.string().max(255).optional(),
-  nameZh: z.string().max(255).optional(),
-  nameJa: z.string().max(255).optional(),
-  translations: TranslationMapSchema.optional(),
-  descriptionEn: z.string().optional(),
-  descriptionZh: z.string().optional(),
-  descriptionJa: z.string().optional(),
-  descriptionTranslations: TranslationMapSchema.optional(),
+  name: PartialLocalizedTextSchema.optional(),
+  description: PartialLocalizedTextSchema.optional(),
   isDefault: z.boolean().optional(),
   isActive: z.boolean().optional(),
   version: z.number().int(),

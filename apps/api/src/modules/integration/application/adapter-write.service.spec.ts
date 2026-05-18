@@ -2,7 +2,7 @@
 
 import 'reflect-metadata';
 
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
+import { createLocalizedText, ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChangeLogService, TechEventLogService } from '../../log';
@@ -75,6 +75,7 @@ describe('AdapterWriteApplicationService', () => {
     mockChangeLogService,
     mockTechEventLog,
   );
+  const localized = (en: string) => createLocalizedText({ en });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -136,7 +137,7 @@ describe('AdapterWriteApplicationService', () => {
       expect.objectContaining({
         platformId: 'platform-ai-adapter',
         code: 'AI_ADAPTER',
-        nameEn: 'AI Adapter',
+        name: localized('AI Adapter'),
         adapterType: 'ai',
         extraData: expect.objectContaining({
           definitionKey: 'ai-adapter',
@@ -184,7 +185,7 @@ describe('AdapterWriteApplicationService', () => {
           platformId: '11111111-1111-4111-8111-111111111111',
           adapterType: AdapterType.API_KEY,
           code: 'FREE_FORM',
-          nameEn: 'Free form adapter',
+          name: localized('Free form adapter'),
           configs: [
             { configKey: 'provider', configValue: 'OPENAI' },
             { configKey: 'endpoint_path', configValue: '/v1/responses' },
@@ -271,7 +272,7 @@ describe('AdapterWriteApplicationService', () => {
         {
           platformId: 'platform-1',
           code: 'BILI_SYNC',
-          nameEn: 'Bili Sync',
+          name: localized('Bili Sync'),
           adapterType: AdapterType.OAUTH,
           configs: [
             {
@@ -319,9 +320,7 @@ describe('AdapterWriteApplicationService', () => {
       ownerId: null,
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       adapterType: 'oauth',
       inherit: true,
       isActive: true,
@@ -334,7 +333,7 @@ describe('AdapterWriteApplicationService', () => {
       service.update(
         'adapter-1',
         {
-          nameEn: 'Bili Sync Updated',
+          name: { en: 'Bili Sync Updated' },
           version: 2,
         },
         context,
@@ -356,9 +355,7 @@ describe('AdapterWriteApplicationService', () => {
       ownerId: null,
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       adapterType: 'oauth',
       inherit: true,
       isActive: true,
@@ -420,9 +417,7 @@ describe('AdapterWriteApplicationService', () => {
       ownerId: null,
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       adapterType: AdapterType.OAUTH,
       inherit: true,
       isActive: true,
@@ -498,9 +493,7 @@ describe('AdapterWriteApplicationService', () => {
       ownerId: null,
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       adapterType: AdapterType.OAUTH,
       inherit: true,
       isActive: true,
@@ -542,9 +535,7 @@ describe('AdapterWriteApplicationService', () => {
       ownerId: null,
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Bili Sync'),
       adapterType: AdapterType.OAUTH,
       inherit: true,
       isActive: true,

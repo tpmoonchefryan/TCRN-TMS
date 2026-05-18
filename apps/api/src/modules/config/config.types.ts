@@ -5,6 +5,8 @@
  * NOTE: All entity types use singular form (e.g., 'customer-status' not 'customer-statuses')
  */
 
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
+
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 
 export type ConfigEntityType = 
@@ -24,7 +26,6 @@ export type ConfigEntityType =
   | 'blocklist-entry'
   | 'profile-store';
 
-export type ConfigEntityTranslationMap = Record<string, string>;
 export type ConfigEntityExtraData = Record<string, unknown>;
 
 export interface BaseConfigEntity {
@@ -32,12 +33,8 @@ export interface BaseConfigEntity {
   ownerType: OwnerType;
   ownerId: string | null;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
+  name: LocalizedText;
+  description: LocalizedText | null;
   extraData: ConfigEntityExtraData | null;
   sortOrder: number;
   isActive: boolean;
@@ -53,15 +50,36 @@ export interface BaseConfigEntity {
 
 export interface ConfigEntityWithMeta extends BaseConfigEntity {
   // Computed fields
-  name: string;
-  description: string | null;
-  translations: ConfigEntityTranslationMap;
-  descriptionTranslations: ConfigEntityTranslationMap;
-  contentTranslations?: ConfigEntityTranslationMap;
+  localizedName: string;
+  localizedDescription: string | null;
   ownerName: string | null;
   isInherited: boolean;
   isDisabledHere: boolean;
   canDisable: boolean;
+}
+
+export interface ConfigEntityCreateInput {
+  code?: string;
+  name: LocalizedText;
+  description?: PartialLocalizedText | null;
+  contentMarkdown?: PartialLocalizedText | null;
+  extraData?: ConfigEntityExtraData;
+  sortOrder?: number;
+  isForceUse?: boolean;
+  ownerType?: OwnerType;
+  ownerId?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ConfigEntityUpdateInput {
+  name?: PartialLocalizedText;
+  description?: PartialLocalizedText | null;
+  contentMarkdown?: PartialLocalizedText | null;
+  extraData?: ConfigEntityExtraData;
+  sortOrder?: number;
+  isForceUse?: boolean;
+  version: number;
+  [key: string]: unknown;
 }
 
 // Entity-specific fields
@@ -102,9 +120,7 @@ export interface ConsentFields {
   consentVersion: string;
   effectiveFrom: Date | null;
   expiresAt: Date | null;
-  contentMarkdownEn: string | null;
-  contentMarkdownZh: string | null;
-  contentMarkdownJa: string | null;
+  contentMarkdown: LocalizedText | null;
   contentUrl: string | null;
   isRequired: boolean;
 }
@@ -164,7 +180,7 @@ export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'membership-class': [],
   'membership-type': ['membership_class_id', 'external_control', 'default_renewal_days'],
   'membership-level': ['membership_type_id', 'rank', 'color', 'badge_url'],
-  'consent': ['consent_version', 'effective_from', 'expires_at', 'content_markdown_en', 'content_markdown_zh', 'content_markdown_ja', 'content_url', 'is_required'],
+  'consent': ['consent_version', 'effective_from', 'expires_at', 'content_markdown', 'content_url', 'is_required'],
   'consumer': ['consumer_category', 'contact_name', 'contact_email', 'api_key_hash', 'api_key_prefix', 'allowed_ips', 'rate_limit', 'notes'],
   'blocklist-entry': ['pattern', 'pattern_type', 'action', 'replacement', 'scope', 'severity', 'category', 'match_count', 'last_matched_at'],
   'profile-store': ['pii_proxy_url', 'pii_service_config_id', 'is_default'],
@@ -186,8 +202,6 @@ export const CONFIG_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set([
   'blocklist-entry',
 ]);
 
-// Scoped settings entities that persist dynamic locale maps in extra_data.
-// Keep this set aligned with the tenant_template migration for config entity translation maps.
 export const CONFIG_HAS_EXTRA_DATA: Set<ConfigEntityType> = new Set([
   'channel-category',
   'business-segment',
@@ -203,8 +217,8 @@ export const CONFIG_HAS_EXTRA_DATA: Set<ConfigEntityType> = new Set([
   'consumer',
 ]);
 
-// Entities that have localized description fields (description_en, description_zh, description_ja)
-// NOTE: 'consent' does NOT have description fields - it uses content_markdown_* instead
+// Entities that have localized description JSONB fields.
+// NOTE: 'consent' does NOT have description fields - it uses contentMarkdown instead.
 export const CONFIG_HAS_DESCRIPTION: Set<ConfigEntityType> = new Set([
   'channel-category',
   'business-segment',

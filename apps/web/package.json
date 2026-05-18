@@ -14,8 +14,10 @@
     "test:cov": "vitest run --config ./vitest.config.ts --coverage"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@tcrn/shared": "workspace:*",
     "lucide-react": "0.542.0",
+    "monaco-editor": "^0.55.1",
     "next": "16.1.1",
     "react": "19.1.1",
     "react-dom": "19.1.1",

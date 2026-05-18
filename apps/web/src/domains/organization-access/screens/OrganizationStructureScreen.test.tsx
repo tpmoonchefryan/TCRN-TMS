@@ -1,4 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { OrganizationStructureScreen } from '@/domains/organization-access/screens/OrganizationStructureScreen';
 
@@ -7,7 +9,7 @@ const replace = vi.fn();
 let pathname = '/tenant/tenant-1/organization-structure';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 
@@ -31,7 +33,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 const profileStoresResponse = {
@@ -39,10 +41,7 @@ const profileStoresResponse = {
     {
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      name: 'Default Store',
-      nameEn: 'Default Store',
-      nameZh: null,
-      nameJa: null,
+      name: localizedFixture('Default Store'),
       talentCount: 0,
       customerCount: 0,
       isDefault: true,
@@ -69,7 +68,7 @@ function getTreeCallCount() {
 
 describe('OrganizationStructureScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     replace.mockReset();
     pathname = '/tenant/tenant-1/organization-structure';
@@ -77,7 +76,7 @@ describe('OrganizationStructureScreen', () => {
   });
 
   it('passes localized close labels to create drawers', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation((path: string) => {
       if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
@@ -434,8 +433,8 @@ describe('OrganizationStructureScreen', () => {
           subsidiaryId: null,
           code: 'MIO',
           path: '/MIO/',
-          nameEn: 'Ookami Mio',
-          name: 'Ookami Mio',
+          name: localizedFixture('Ookami Mio'),
+          localizedName: 'Ookami Mio',
           displayName: 'Mio',
           avatarUrl: null,
           homepagePath: 'mio',
@@ -481,10 +480,7 @@ describe('OrganizationStructureScreen', () => {
         profileStoreId: 'store-1',
         code: 'MIO',
         displayName: 'Mio',
-        nameEn: 'Ookami Mio',
-        translations: {
-          en: 'Ookami Mio',
-        },
+        name: localizedFixture('Ookami Mio'),
         timezone: 'Asia/Shanghai',
       });
     });
@@ -562,21 +558,15 @@ describe('OrganizationStructureScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: null,
-            nameJa: null,
+            name: localizedFixture('Default Store'),
             isDefault: true,
           },
           code: 'SORA',
           path: '/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: null,
-          nameJa: null,
-          name: 'Tokino Sora',
+          name: localizedFixture('Tokino Sora'),
+          localizedName: 'Tokino Sora',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -656,7 +646,7 @@ describe('OrganizationStructureScreen', () => {
   });
 
   it('switches structural controls and inventory copy to zh at runtime', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation((path: string) => {
       if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
@@ -699,7 +689,7 @@ describe('OrganizationStructureScreen', () => {
   });
 
   it('paginates the scoped talent inventory at 20 rows by default and allows advancing pages', async () => {
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
 
     mockRequest.mockImplementation((path: string) => {
       if (path === '/api/v1/profile-stores?page=1&pageSize=20') {

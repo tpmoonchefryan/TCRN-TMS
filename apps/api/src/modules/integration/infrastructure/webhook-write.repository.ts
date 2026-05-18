@@ -2,16 +2,19 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
-import { toNullableJsonInput } from '../../../platform/persistence/managed-name-translations';
+import {
+  readLocalizedText,
+  toLocalizedTextJsonInput,
+  toNullableJsonInput,
+} from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import { type WebhookRecord } from '../domain/webhook.policy';
 
 export interface WebhookCreatePersistenceInput {
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
@@ -22,9 +25,7 @@ export interface WebhookCreatePersistenceInput {
 }
 
 export interface WebhookUpdatePersistenceInput {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
@@ -51,11 +52,15 @@ function asRecord(
   return value as Record<string, unknown>;
 }
 
-function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData'> & { extraData: Prisma.JsonValue | Record<string, unknown> | null }>(
+function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData' | 'name'> & {
+  extraData: Prisma.JsonValue | Record<string, unknown> | null;
+  name: Prisma.JsonValue;
+}>(
   record: T,
 ): WebhookRecord {
   return {
     ...record,
+    name: readLocalizedText(record.name, 'webhook.name'),
     extraData: asRecord(record.extraData),
   };
 }
@@ -103,14 +108,15 @@ export class WebhookWriteRepository {
     tenantSchema: string | null,
   ): Promise<WebhookRecord | null> {
     if (tenantSchema) {
-      const rows = await prisma.$queryRawUnsafe<WebhookRecord[]>(
+      const rows = await prisma.$queryRawUnsafe<Array<Omit<WebhookRecord, 'extraData' | 'name'> & {
+        extraData: Prisma.JsonValue | null;
+        name: Prisma.JsonValue;
+      }>>(
         `
           SELECT
             id,
             code,
-            name_en as "nameEn",
-            name_zh as "nameZh",
-            name_ja as "nameJa",
+            name,
             extra_data as "extraData",
             url,
             secret,
@@ -134,7 +140,7 @@ export class WebhookWriteRepository {
         id,
       );
 
-      return rows[0] ?? null;
+      return rows[0] ? mapWebhookRecord(rows[0]) : null;
     }
 
     const record = await prisma.webhook.findUnique({
@@ -155,9 +161,7 @@ export class WebhookWriteRepository {
           INSERT INTO "${tenantSchema}".webhook (
             id,
             code,
-            name_en,
-            name_zh,
-            name_ja,
+            name,
             extra_data,
             url,
             secret,
@@ -173,28 +177,24 @@ export class WebhookWriteRepository {
           ) VALUES (
             gen_random_uuid(),
             $1,
-            $2,
-            $3,
+            $2::jsonb,
+            $3::jsonb,
             $4,
-            $5::jsonb,
-            $6,
-            $7,
-            $8::varchar[],
-            $9::jsonb,
-            $10::jsonb,
+            $5,
+            $6::varchar[],
+            $7::jsonb,
+            $8::jsonb,
             true,
             0,
             NOW(),
             NOW(),
-            $11::uuid,
-            $11::uuid
+            $9::uuid,
+            $9::uuid
           )
           RETURNING id
         `,
         input.code,
-        input.nameEn,
-        input.nameZh,
-        input.nameJa,
+        JSON.stringify(input.name),
         input.extraData ? JSON.stringify(input.extraData) : null,
         input.url,
         input.secret,
@@ -210,9 +210,7 @@ export class WebhookWriteRepository {
     const webhook = await prisma.webhook.create({
       data: {
         code: input.code,
-        nameEn: input.nameEn,
-        nameZh: input.nameZh,
-        nameJa: input.nameJa,
+        name: toLocalizedTextJsonInput(input.name),
         extraData: toNullableJsonInput(input.extraData),
         url: input.url,
         secret: input.secret,
@@ -240,24 +238,20 @@ export class WebhookWriteRepository {
         `
           UPDATE "${tenantSchema}".webhook
           SET
-            name_en = $2,
-            name_zh = $3,
-            name_ja = $4,
-            extra_data = $5::jsonb,
-            url = $6,
-            secret = $7,
-            events = $8::varchar[],
-            headers = $9::jsonb,
-            retry_policy = $10::jsonb,
-            updated_by = $11::uuid,
+            name = $2::jsonb,
+            extra_data = $3::jsonb,
+            url = $4,
+            secret = $5,
+            events = $6::varchar[],
+            headers = $7::jsonb,
+            retry_policy = $8::jsonb,
+            updated_by = $9::uuid,
             version = version + 1,
             updated_at = NOW()
           WHERE id = $1::uuid
         `,
         id,
-        input.nameEn,
-        input.nameZh,
-        input.nameJa,
+        JSON.stringify(input.name),
         input.extraData ? JSON.stringify(input.extraData) : null,
         input.url,
         input.secret,
@@ -273,9 +267,7 @@ export class WebhookWriteRepository {
     await prisma.webhook.update({
       where: { id },
       data: {
-        nameEn: input.nameEn,
-        nameZh: input.nameZh,
-        nameJa: input.nameJa,
+        name: toLocalizedTextJsonInput(input.name),
         extraData: toNullableJsonInput(input.extraData),
         url: input.url,
         secret: input.secret,

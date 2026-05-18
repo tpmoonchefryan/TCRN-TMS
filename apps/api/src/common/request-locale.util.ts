@@ -1,9 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { resolveTrilingualLocaleFamily, type TrilingualLocaleFamily } from '@tcrn/shared';
+import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
 import type { Request } from 'express';
-
-export type TrilingualNameColumn = 'name_en' | 'name_zh' | 'name_ja';
 
 export function getPrimaryAcceptLanguage(req: Request): string {
   const rawHeader = req.headers['accept-language'];
@@ -12,20 +10,20 @@ export function getPrimaryAcceptLanguage(req: Request): string {
   return header?.split(',')[0]?.trim() || 'en';
 }
 
-export function getRequestTrilingualLocaleFamily(req: Request): TrilingualLocaleFamily {
-  return resolveTrilingualLocaleFamily(getPrimaryAcceptLanguage(req));
+export function getRequestUiLocale(req: Request): SupportedUiLocale {
+  return normalizeSupportedUiLocale(getPrimaryAcceptLanguage(req)) ?? 'en';
 }
 
-export function getTrilingualNameColumn(locale?: string | null): TrilingualNameColumn {
-  const localeFamily = resolveTrilingualLocaleFamily(locale);
+export function getUiLocale(locale?: string | null): SupportedUiLocale {
+  return normalizeSupportedUiLocale(locale) ?? 'en';
+}
 
-  if (localeFamily === 'zh') {
-    return 'name_zh';
-  }
+export function buildLocalizedJsonTextSql(
+  jsonColumnSql: string,
+  locale?: string | null,
+  fallbackSql: string = `${jsonColumnSql}->>'en'`,
+): string {
+  const uiLocale = getUiLocale(locale);
 
-  if (localeFamily === 'ja') {
-    return 'name_ja';
-  }
-
-  return 'name_en';
+  return `COALESCE(NULLIF(${jsonColumnSql}->>'${uiLocale}', ''), NULLIF(${jsonColumnSql}->>'en', ''), ${fallbackSql})`;
 }

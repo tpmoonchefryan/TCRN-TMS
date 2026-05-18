@@ -134,18 +134,18 @@ describe('Multi-Tenant Isolation Tests', () => {
 
     subsidiaryA = await createTestSubsidiaryInTenant(prisma, tenantA, {
       code: `SUB_A_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Isolation Subsidiary A',
+      name: 'Isolation Subsidiary A',
       createdBy: userA.id,
     });
     subsidiaryB = await createTestSubsidiaryInTenant(prisma, tenantB, {
       code: `SUB_B_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Isolation Subsidiary B',
+      name: 'Isolation Subsidiary B',
       createdBy: userB.id,
     });
 
     talentA = await createTestTalentInTenant(prisma, tenantA, subsidiaryA.id, {
       code: `TAL_A_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Isolation Talent A',
+      name: 'Isolation Talent A',
       displayName: 'Isolation Talent A',
       homepagePath: `tenant-a-${Date.now()}`,
       createdBy: userA.id,
@@ -153,7 +153,7 @@ describe('Multi-Tenant Isolation Tests', () => {
     });
     talentB = await createTestTalentInTenant(prisma, tenantB, subsidiaryB.id, {
       code: `TAL_B_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Isolation Talent B',
+      name: 'Isolation Talent B',
       displayName: 'Isolation Talent B',
       homepagePath: `tenant-b-${Date.now()}`,
       createdBy: userB.id,

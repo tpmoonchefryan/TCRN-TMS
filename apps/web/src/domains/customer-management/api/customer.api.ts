@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@tcrn/shared';
+
 import {
   type ApiSuccessEnvelope,
   type PaginatedResult,
@@ -89,20 +91,16 @@ export interface CustomerCreateResponse {
 export interface CustomerSocialPlatformOption {
   id: string;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
+  localizedName: string;
   isActive: boolean;
 }
 
 export interface CustomerMembershipLevelOption {
   id: string;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
+  localizedName: string;
   typeId: string;
   rank: number;
   color: string | null;
@@ -113,10 +111,8 @@ export interface CustomerMembershipLevelOption {
 export interface CustomerMembershipTypeOption {
   id: string;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
+  localizedName: string;
   classId: string;
   externalControl: boolean;
   defaultRenewalDays: number;
@@ -127,10 +123,8 @@ export interface CustomerMembershipTypeOption {
 export interface CustomerMembershipClassOption {
   id: string;
   code: string;
-  name: string;
-  nameEn: string;
-  nameZh?: string | null;
-  nameJa?: string | null;
+  name: LocalizedText;
+  localizedName: string;
   isActive: boolean;
   types: CustomerMembershipTypeOption[];
 }

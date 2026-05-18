@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { ErrorCodes } from '@tcrn/shared';
+import { createLocalizedText, ErrorCodes } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
   type: 'object',
@@ -28,9 +28,14 @@ const BLOCKLIST_ENTRY_EXAMPLE = {
   ownerId: null,
   pattern: 'badword',
   patternType: 'keyword',
-  nameEn: 'Profanity Filter',
-  nameZh: '脏话过滤',
-  nameJa: '不適切語フィルター',
+  name: createLocalizedText({
+    en: 'Profanity Filter',
+    zh_HANS: '脏话过滤',
+    zh_HANT: '髒話過濾',
+    ja: '不適切語フィルター',
+    ko: '비속어 필터',
+    fr: 'Filtre de grossieretes',
+  }),
   description: 'Masks prohibited words in public messages',
   category: 'profanity',
   severity: 'medium',
@@ -70,9 +75,11 @@ const BLOCKLIST_ENTRY_SCHEMA = {
     ownerId: { type: 'string', format: 'uuid', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.ownerId },
     pattern: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.pattern },
     patternType: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.patternType },
-    nameEn: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.nameEn },
-    nameZh: { type: 'string', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.nameZh },
-    nameJa: { type: 'string', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.nameJa },
+    name: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      example: BLOCKLIST_ENTRY_EXAMPLE.name,
+    },
     description: { type: 'string', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.description },
     category: { type: 'string', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.category },
     severity: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.severity },
@@ -143,7 +150,7 @@ const BLOCKLIST_ENTRY_SCHEMA = {
     'ownerType',
     'pattern',
     'patternType',
-    'nameEn',
+    'name',
     'severity',
     'action',
     'replacement',

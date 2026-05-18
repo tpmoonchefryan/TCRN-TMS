@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
+
 import { OwnerType } from '../dto/integration.dto';
 
 export interface EffectiveAdapterResolutionTarget {
@@ -31,9 +33,7 @@ export interface EffectiveAdapterLookupRow {
   platformCode: string;
   platformDisplayName: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   adapterType: string;
   inherit: boolean;
   isActive: boolean;
@@ -74,9 +74,7 @@ export interface EffectiveAdapterResolutionResult {
     displayName: string;
   };
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   adapterType: string;
   inherit: boolean;
   isActive: boolean;
@@ -186,9 +184,7 @@ export const buildEffectiveAdapterResolutionResult = (
     displayName: adapter.platformDisplayName,
   },
   code: adapter.code,
-  nameEn: adapter.nameEn,
-  nameZh: adapter.nameZh,
-  nameJa: adapter.nameJa,
+  name: adapter.name,
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,

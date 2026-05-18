@@ -1,12 +1,14 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 import { UserEditorScreen } from '@/domains/user-management/screens/UserEditorScreen';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 const organizationTreeResponse = {
@@ -59,12 +61,12 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('UserEditorScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     mockReplace.mockReset();
     currentSession = {
@@ -179,9 +181,7 @@ describe('UserEditorScreen', () => {
           {
             id: 'role-1',
             code: 'ADMIN',
-            nameEn: 'Administrator',
-            nameZh: '管理员',
-            nameJa: null,
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             description: 'Full access',
             isSystem: true,
             isActive: true,
@@ -193,9 +193,7 @@ describe('UserEditorScreen', () => {
           {
             id: 'role-2',
             code: 'PLATFORM_ADMIN',
-            nameEn: 'Platform Administrator',
-            nameZh: '平台管理员',
-            nameJa: null,
+            name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             description: 'AC only',
             isSystem: true,
             isActive: true,
@@ -234,9 +232,7 @@ describe('UserEditorScreen', () => {
             id: 'assignment-1',
             roleId: 'role-1',
             roleCode: 'ADMIN',
-            roleNameEn: 'Administrator',
-            roleNameZh: '管理员',
-            roleNameJa: null,
+            roleName: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             roleIsActive: true,
             scopeType: 'tenant',
             scopeId: null,
@@ -345,9 +341,7 @@ describe('UserEditorScreen', () => {
           {
             id: 'role-1',
             code: 'PLATFORM_ADMIN',
-            nameEn: 'Platform Administrator',
-            nameZh: '平台管理员',
-            nameJa: null,
+            name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             description: 'AC only',
             isSystem: true,
             isActive: true,
@@ -359,9 +353,7 @@ describe('UserEditorScreen', () => {
           {
             id: 'role-2',
             code: 'TALENT_MANAGER',
-            nameEn: 'Talent Manager',
-            nameZh: '艺人经理',
-            nameJa: null,
+            name: localizedFixture('Talent Manager', { zh_HANS: '艺人经理' }),
             description: 'Tenant business role',
             isSystem: false,
             isActive: true,
@@ -400,9 +392,7 @@ describe('UserEditorScreen', () => {
             id: 'assignment-1',
             roleId: 'tenant-role-platform-admin',
             roleCode: 'PLATFORM_ADMIN',
-            roleNameEn: 'Platform Administrator',
-            roleNameZh: '平台管理员',
-            roleNameJa: null,
+            roleName: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             roleIsActive: true,
             scopeType: 'tenant',
             scopeId: null,
@@ -494,9 +484,7 @@ describe('UserEditorScreen', () => {
           {
             id: 'role-1',
             code: 'ADMIN',
-            nameEn: 'Administrator',
-            nameZh: '管理员',
-            nameJa: null,
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             description: 'Full access',
             isSystem: true,
             isActive: true,

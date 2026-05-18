@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicHomepageScreen } from '@/domains/public-homepage/screens/PublicHomepageScreen';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 
 const mockFetch = vi.fn();
 
@@ -24,7 +24,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function renderWithLocale(ui: ReactElement) {
-  return render(<RuntimeLocaleProvider>{ui}</RuntimeLocaleProvider>);
+  return render(<UiLocaleProvider>{ui}</UiLocaleProvider>);
 }
 
 describe('PublicHomepageScreen', () => {

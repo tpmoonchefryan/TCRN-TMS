@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@tcrn/shared';
+
 export type CaptchaMode = 'always' | 'never' | 'auto';
 export type MarshmallowMessageStatus = 'pending' | 'approved' | 'rejected' | 'spam';
 export type MarshmallowExportFormat = 'csv' | 'json' | 'xlsx';
@@ -42,12 +44,8 @@ export interface MarshmallowConfigResponse {
   allowedReactions: string[];
   theme: Record<string, unknown>;
   avatarUrl: string | null;
-  termsContentEn: string | null;
-  termsContentZh: string | null;
-  termsContentJa: string | null;
-  privacyContentEn: string | null;
-  privacyContentZh: string | null;
-  privacyContentJa: string | null;
+  termsContent: LocalizedText;
+  privacyContent: LocalizedText;
   stats: MarshmallowConfigStats;
   turnstile: TurnstileConfigStatus;
   marshmallowUrl: string;

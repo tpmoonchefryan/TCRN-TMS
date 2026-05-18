@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  resolveTrilingualLocaleFamily,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { ArrowLeft, Building2, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,7 +18,7 @@ import {
   listCustomerSocialPlatforms,
 } from '@/domains/customer-management/api/customer.api';
 import { ApiRequestError } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { AsyncSubmitButton, GlassSurface, StateView } from '@/platform/ui';
@@ -81,7 +78,7 @@ const DEFAULT_DRAFT: CustomerDraft = {
   companyShortName: '',
 };
 
-const CUSTOMER_LANGUAGE_OPTIONS: SupportedUiLocale[] = ['zh_HANS', 'zh_HANT', 'en', 'ja', 'ko', 'fr'];
+const CUSTOMER_LANGUAGE_OPTIONS = [...SUPPORTED_UI_LOCALES];
 
 function buildDefaultMembershipDraft(): MembershipDraft {
   return {
@@ -113,35 +110,17 @@ function pickText(locale: SupportedUiLocale, value: CustomerCreateLocaleText) {
   return pickLocaleText(locale, value);
 }
 
-function getEffectiveSelectedLocale(
-  currentLocale: 'en' | 'zh' | 'ja',
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveTrilingualLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
 
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
-}
 
 function pickLocalizedName(
   locale: SupportedUiLocale,
   record: {
     code: string;
-    name?: string | null;
-    nameEn?: string | null;
-    nameZh?: string | null;
-    nameJa?: string | null;
+    name: CustomerCreateLocaleText;
+    localizedName?: string | null;
   },
 ) {
-  return pickLocaleText(locale, {
-    en: record.nameEn || record.name || record.code,
-    zh_HANS: record.nameZh || record.name || record.nameEn || record.code,
-    zh_HANT: record.nameZh || record.name || record.nameEn || record.code,
-    ja: record.nameJa || record.name || record.nameEn || record.code,
-    ko: record.name || record.nameEn || record.code,
-    fr: record.name || record.nameEn || record.code,
-  });
+  return pickLocaleText(locale, record.name) || record.localizedName || record.code;
 }
 
 function getLocalizedLanguageOptionLabel(locale: SupportedUiLocale, value: SupportedUiLocale) {
@@ -209,8 +188,8 @@ export function CustomerCreateScreen({
   talentId,
 }: Readonly<CustomerCreateScreenProps>) {
   const router = useRouter();
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
+  const { locale } = useUiLocale();
+  const effectiveSelectedLocale = locale;
   const { request } = useSession();
   const backToCustomersHref = `/tenant/${tenantId}/talent/${talentId}/customers`;
   const [profileType, setProfileType] = useState<CustomerProfileType>('individual');

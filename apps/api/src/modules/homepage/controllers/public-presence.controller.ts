@@ -46,6 +46,7 @@ interface SavePublicPresenceDraftDto {
 
 interface PublicPresenceWorkflowHashDto {
   expectedCurrentContentHash?: string | null;
+  templateId?: string | null;
 }
 
 interface PublicPresenceChangesRequestDto extends PublicPresenceWorkflowHashDto {
@@ -100,10 +101,12 @@ export class PublicPresenceController {
   async getWorkspace(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Query('templateId') templateId?: string,
   ) {
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
+      templateId,
     );
   }
 
@@ -127,11 +130,13 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Query('phase') phase?: string,
+    @Query('templateId') templateId?: string,
   ) {
     return this.publicHomepageProjectionService.getDraftPreviewProjectionOrThrow(
       talentId,
       user.tenantSchema,
       this.parseRevealPhase(phase),
+      templateId,
     );
   }
 
@@ -206,6 +211,7 @@ export class PublicPresenceController {
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
+      dto.templateId,
     );
 
     return this.publicPresenceStudioService.getWorkspace(
@@ -246,6 +252,7 @@ export class PublicPresenceController {
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
+      dto.templateId,
     );
 
     return this.publicPresenceStudioService.getWorkspace(
@@ -255,7 +262,7 @@ export class PublicPresenceController {
   }
 
   @Post('publish')
-  @RequirePermissions({ resource: 'public_presence.publish', action: 'write' })
+  @RequirePermissions({ resource: 'public_presence.publish', action: 'execute' })
   async publishNow(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
@@ -266,6 +273,7 @@ export class PublicPresenceController {
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
+      dto.templateId,
     );
 
     return this.publicPresenceStudioService.getWorkspace(
@@ -275,7 +283,7 @@ export class PublicPresenceController {
   }
 
   @Post('publish/schedule')
-  @RequirePermissions({ resource: 'public_presence.publish', action: 'execute' })
+  @RequirePermissions({ resource: 'public_presence.publish', action: 'write' })
   async schedulePublish(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceSchedulePublishDto,
@@ -295,7 +303,7 @@ export class PublicPresenceController {
   }
 
   @Post('publish/cancel')
-  @RequirePermissions({ resource: 'public_presence.publish', action: 'execute' })
+  @RequirePermissions({ resource: 'public_presence.publish', action: 'write' })
   async cancelScheduledPublish(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
@@ -306,6 +314,7 @@ export class PublicPresenceController {
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
+      dto.templateId,
     );
 
     return this.publicPresenceStudioService.getWorkspace(

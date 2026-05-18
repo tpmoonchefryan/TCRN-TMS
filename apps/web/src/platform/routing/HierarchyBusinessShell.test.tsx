@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HierarchyBusinessShell } from '@/platform/routing/HierarchyBusinessShell';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 
 const mockRequest = vi.fn();
@@ -68,7 +68,7 @@ describe('HierarchyBusinessShell', () => {
       const onNavigate = vi.fn();
 
       render(
-        <RuntimeLocaleProvider>
+        <UiLocaleProvider>
           <HierarchyBusinessShell
             tenantId="tenant-1"
             scopeType={scopeType}
@@ -79,7 +79,7 @@ describe('HierarchyBusinessShell', () => {
           >
             <div>Hierarchy content</div>
           </HierarchyBusinessShell>
-        </RuntimeLocaleProvider>,
+        </UiLocaleProvider>,
       );
 
       if (scopeType === 'subsidiary') {

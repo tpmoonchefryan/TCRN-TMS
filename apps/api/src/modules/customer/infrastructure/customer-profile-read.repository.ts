@@ -2,6 +2,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
 import type {
   CustomerProfileActiveMembershipRecord,
@@ -62,7 +63,7 @@ export class CustomerProfileReadRepository {
          cp.updated_at as "updatedAt",
          cs.id as "statusId",
          cs.code as "statusCode",
-         cs.name_en as "statusName",
+         cs.name as "statusName",
          cs.color as "statusColor",
          cci.company_short_name as "companyShortName",
          ot.id as "originTalentId",
@@ -104,20 +105,13 @@ export class CustomerProfileReadRepository {
       return new Map();
     }
 
-    const memberships = await prisma.$queryRawUnsafe<Array<{
-      customerId: string;
-      platformCode: string;
-      platformName: string;
-      levelCode: string;
-      levelName: string;
-      color: string | null;
-    }>>(
+    const memberships = await prisma.$queryRawUnsafe<CustomerProfileActiveMembershipRecord[]>(
       `SELECT DISTINCT ON (mr.customer_id)
          mr.customer_id as "customerId",
          p.code as "platformCode",
-         p.display_name as "platformName",
+         p.name as "platformName",
          ml.code as "levelCode",
-         ml.name_en as "levelName",
+         ml.name as "levelName",
          ml.color as color
        FROM "${tenantSchema}".membership_record mr
        JOIN "${tenantSchema}".social_platform p ON p.id = mr.platform_id
@@ -234,13 +228,13 @@ export class CustomerProfileReadRepository {
   async findProfileStoreSummary(
     tenantSchema: string,
     profileStoreId: string,
-  ): Promise<{ id: string; code: string; nameEn: string } | null> {
+  ): Promise<{ id: string; code: string; name: LocalizedText } | null> {
     const stores = await prisma.$queryRawUnsafe<Array<{
       id: string;
       code: string;
-      nameEn: string;
+      name: LocalizedText;
     }>>(
-      `SELECT id, code, name_en as "nameEn"
+      `SELECT id, code, name
        FROM "${tenantSchema}".profile_store
        WHERE id = $1::uuid`,
       profileStoreId,
@@ -252,14 +246,14 @@ export class CustomerProfileReadRepository {
   async findStatusSummary(
     tenantSchema: string,
     statusId: string,
-  ): Promise<{ id: string; code: string; nameEn: string; color: string | null } | null> {
+  ): Promise<{ id: string; code: string; name: LocalizedText; color: string | null } | null> {
     const statuses = await prisma.$queryRawUnsafe<Array<{
       id: string;
       code: string;
-      nameEn: string;
+      name: LocalizedText;
       color: string | null;
     }>>(
-      `SELECT id, code, name_en as "nameEn", color
+      `SELECT id, code, name, color
        FROM "${tenantSchema}".customer_status
        WHERE id = $1::uuid`,
       statusId,
@@ -271,13 +265,13 @@ export class CustomerProfileReadRepository {
   async findInactivationReasonSummary(
     tenantSchema: string,
     reasonId: string,
-  ): Promise<{ id: string; code: string; nameEn: string } | null> {
+  ): Promise<{ id: string; code: string; name: LocalizedText } | null> {
     const reasons = await prisma.$queryRawUnsafe<Array<{
       id: string;
       code: string;
-      nameEn: string;
+      name: LocalizedText;
     }>>(
-      `SELECT id, code, name_en as "nameEn"
+      `SELECT id, code, name
        FROM "${tenantSchema}".inactivation_reason
        WHERE id = $1::uuid`,
       reasonId,
@@ -297,7 +291,7 @@ export class CustomerProfileReadRepository {
     establishmentDate: Date | null;
     website: string | null;
     businessSegmentId: string | null;
-    businessSegment: { id: string; code: string; nameEn: string } | null;
+    businessSegment: { id: string; code: string; name: LocalizedText } | null;
   } | null> {
     const rows = await prisma.$queryRawUnsafe<Array<{
       companyLegalName: string;
@@ -309,7 +303,7 @@ export class CustomerProfileReadRepository {
       businessSegmentId: string | null;
       businessSegmentRecordId: string | null;
       businessSegmentCode: string | null;
-      businessSegmentNameEn: string | null;
+      businessSegmentName: LocalizedText | null;
     }>>(
       `SELECT
          cci.company_legal_name as "companyLegalName",
@@ -321,7 +315,7 @@ export class CustomerProfileReadRepository {
          cci.business_segment_id as "businessSegmentId",
          bs.id as "businessSegmentRecordId",
          bs.code as "businessSegmentCode",
-         bs.name_en as "businessSegmentNameEn"
+         bs.name as "businessSegmentName"
        FROM "${tenantSchema}".customer_company_info cci
        LEFT JOIN "${tenantSchema}".business_segment bs ON bs.id = cci.business_segment_id
        WHERE cci.customer_id = $1::uuid`,
@@ -345,7 +339,14 @@ export class CustomerProfileReadRepository {
         ? {
             id: row.businessSegmentRecordId,
             code: row.businessSegmentCode ?? '',
-            nameEn: row.businessSegmentNameEn ?? '',
+            name: row.businessSegmentName ?? {
+              en: '',
+              zh_HANS: '',
+              zh_HANT: '',
+              ja: '',
+              ko: '',
+              fr: '',
+            },
           }
         : null,
     };
@@ -355,18 +356,12 @@ export class CustomerProfileReadRepository {
     tenantSchema: string,
     customerId: string,
   ): Promise<CustomerProfileActiveMembershipRecord | null> {
-    const memberships = await prisma.$queryRawUnsafe<Array<{
-      platformCode: string;
-      platformName: string;
-      levelCode: string;
-      levelName: string;
-      color: string | null;
-    }>>(
+    const memberships = await prisma.$queryRawUnsafe<CustomerProfileActiveMembershipRecord[]>(
       `SELECT
          sp.code as "platformCode",
-         sp.name_en as "platformName",
+         sp.name as "platformName",
          ml.code as "levelCode",
-         ml.name_en as "levelName",
+         ml.name as "levelName",
          ml.color as color
        FROM "${tenantSchema}".membership_record mr
        JOIN "${tenantSchema}".social_platform sp ON sp.id = mr.platform_id

@@ -24,7 +24,7 @@ import {
   type UserSessionRecord,
 } from '@/domains/profile/api/profile.api';
 import { ApiRequestError } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
@@ -236,11 +236,10 @@ export function ProfileScreen({
   const urlSessionsPage = parsePageParam(searchParams.get('sessionsPage'));
   const urlSessionsPageSize = parsePageSizeParam(searchParams.get('sessionsPageSize'));
   const { request, session, updateSessionUser } = useSession();
-  const { copy, currentLocale } = useProfileCopy();
-  const { selectedLocale } = useRuntimeLocale();
+  const { copy, locale } = useProfileCopy();
   const workspaceDisplayLabel =
     workspaceKind === 'ac'
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'Platform',
           zh_HANS: '平台',
           zh_HANT: '平台',
@@ -248,7 +247,7 @@ export function ProfileScreen({
           ko: '플랫폼',
           fr: 'Plateforme',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: 'Tenant',
           zh_HANS: '租户',
           zh_HANT: '租戶',
@@ -466,7 +465,7 @@ export function ProfileScreen({
 
   const sessionsPageRange = getPaginationRange(sessionsPagination, paginatedSessions.length);
   const sessionsPaginationCopy = {
-    page: pickLocaleText(selectedLocale, {
+    page: pickLocaleText(locale, {
       en: `Page ${sessionsPagination.page} of ${sessionsPagination.totalPages}`,
       zh_HANS: `第 ${sessionsPagination.page} / ${sessionsPagination.totalPages} 页`,
       zh_HANT: `第 ${sessionsPagination.page} / ${sessionsPagination.totalPages} 頁`,
@@ -476,7 +475,7 @@ export function ProfileScreen({
     }),
     range:
       sessionsPagination.totalCount === 0
-        ? pickLocaleText(selectedLocale, {
+        ? pickLocaleText(locale, {
             en: 'No sign-in sessions available.',
             zh_HANS: '当前没有登录会话。',
             zh_HANT: '目前沒有登入工作階段。',
@@ -484,7 +483,7 @@ export function ProfileScreen({
             ko: '로그인 세션이 없습니다.',
             fr: 'Aucune session de connexion disponible.',
           })
-        : pickLocaleText(selectedLocale, {
+        : pickLocaleText(locale, {
             en: `Showing ${sessionsPageRange.start}-${sessionsPageRange.end} of ${sessionsPagination.totalCount}`,
             zh_HANS: `显示第 ${sessionsPageRange.start}-${sessionsPageRange.end} 条，共 ${sessionsPagination.totalCount} 条`,
             zh_HANT: `顯示第 ${sessionsPageRange.start}-${sessionsPageRange.end} 筆，共 ${sessionsPagination.totalCount} 筆`,
@@ -492,7 +491,7 @@ export function ProfileScreen({
             ko: `${sessionsPagination.totalCount}개 중 ${sessionsPageRange.start}-${sessionsPageRange.end}개 표시`,
             fr: `Affichage de ${sessionsPageRange.start} à ${sessionsPageRange.end} sur ${sessionsPagination.totalCount}`,
           }),
-    pageSize: pickLocaleText(selectedLocale, {
+    pageSize: pickLocaleText(locale, {
       en: 'Rows per page',
       zh_HANS: '每页条数',
       zh_HANT: '每頁筆數',
@@ -500,7 +499,7 @@ export function ProfileScreen({
       ko: '페이지당 행 수',
       fr: 'Lignes par page',
     }),
-    previous: pickLocaleText(selectedLocale, {
+    previous: pickLocaleText(locale, {
       en: 'Previous',
       zh_HANS: '上一页',
       zh_HANT: '上一頁',
@@ -508,7 +507,7 @@ export function ProfileScreen({
       ko: '이전',
       fr: 'Précédent',
     }),
-    next: pickLocaleText(selectedLocale, {
+    next: pickLocaleText(locale, {
       en: 'Next',
       zh_HANS: '下一页',
       zh_HANT: '下一頁',
@@ -975,12 +974,12 @@ export function ProfileScreen({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <SummaryCard
                     label={copy.details.lastLoginLabel}
-                    value={formatProfileDateTime(profile.lastLoginAt, currentLocale, copy.details.never)}
+                    value={formatProfileDateTime(profile.lastLoginAt, locale, copy.details.never)}
                     hint={copy.details.lastLoginHint}
                   />
                   <SummaryCard
                     label={copy.details.passwordExpiresLabel}
-                    value={formatProfileDateTime(profile.passwordExpiresAt, currentLocale, copy.details.notScheduled)}
+                    value={formatProfileDateTime(profile.passwordExpiresAt, locale, copy.details.notScheduled)}
                     hint={copy.details.passwordExpiresHint}
                   />
                 </div>
@@ -1088,7 +1087,7 @@ export function ProfileScreen({
                 <SecurityActionCard
                   title={copy.password.title}
                   description={copy.password.description}
-                  meta={formatProfileDateTime(profile.passwordExpiresAt, currentLocale, copy.details.notScheduled)}
+                  meta={formatProfileDateTime(profile.passwordExpiresAt, locale, copy.details.notScheduled)}
                   actionLabel={copy.password.openAction}
                   onAction={() => setSecurityDrawer('password')}
                 />
@@ -1127,8 +1126,8 @@ export function ProfileScreen({
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-700">{entry.ipAddress || copy.sessions.unavailable}</td>
                     <td className="px-6 py-4 text-sm text-slate-700">{entry.isCurrent ? copy.sessions.currentSession : copy.sessions.revocable}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.createdAt, currentLocale, copy.sessions.unavailable)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.lastActiveAt, currentLocale, copy.sessions.unavailable)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.createdAt, locale, copy.sessions.unavailable)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.lastActiveAt, locale, copy.sessions.unavailable)}</td>
                     <td className="px-6 py-4">
                       <button
                         type="button"

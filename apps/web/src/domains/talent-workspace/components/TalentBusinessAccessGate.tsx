@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { readTalentDetail, type TalentDetailResponse } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ApiRequestError } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { StateView } from '@/platform/ui';
@@ -34,7 +34,7 @@ export function TalentBusinessAccessGate({
   children,
 }: Readonly<TalentBusinessAccessGateProps>) {
   const { request, recoverSession, session, status } = useSession();
-  const { selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
   const [state, setState] = useState<GateState>({
     detail: null,
@@ -112,7 +112,7 @@ export function TalentBusinessAccessGate({
           loading: false,
           error: getErrorMessage(
             reason,
-            pickLocaleText(selectedLocale, {
+            pickLocaleText(locale, {
               en: 'Failed to verify talent availability.',
               zh_HANS: '确认艺人状态失败。',
               zh_HANT: '確認藝人狀態失敗。',
@@ -130,13 +130,13 @@ export function TalentBusinessAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [hasAttemptedRecovery, request, selectedLocale, status, talentId]);
+  }, [hasAttemptedRecovery, request, locale, status, talentId]);
 
   if (state.loading) {
     return (
       <StateView
         status="unavailable"
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Checking talent availability',
           zh_HANS: '正在确认艺人状态',
           zh_HANT: '正在確認藝人狀態',
@@ -144,7 +144,7 @@ export function TalentBusinessAccessGate({
           ko: '탤런트 상태를 확인하고 있습니다',
           fr: 'Vérification de la disponibilité du talent',
         })}
-        description={pickLocaleText(selectedLocale, {
+        description={pickLocaleText(locale, {
           en: 'Confirming talent status before opening this page.',
           zh_HANS: '打开页面前先确认艺人当前状态。',
           zh_HANT: '開啟頁面前先確認藝人目前狀態。',
@@ -160,7 +160,7 @@ export function TalentBusinessAccessGate({
     return (
       <StateView
         status="error"
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Talent unavailable',
           zh_HANS: '艺人不可用',
           zh_HANT: '藝人不可用',
@@ -170,7 +170,7 @@ export function TalentBusinessAccessGate({
         })}
         description={
           state.error ||
-          pickLocaleText(selectedLocale, {
+          pickLocaleText(locale, {
             en: 'Talent lifecycle details could not be loaded.',
             zh_HANS: '无法加载艺人生命周期详情。',
             zh_HANT: '無法載入藝人生命週期詳情。',
@@ -192,7 +192,7 @@ export function TalentBusinessAccessGate({
 
   const title =
     state.detail.lifecycleStatus === 'draft'
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'Talent not published',
           zh_HANS: '艺人尚未发布',
           zh_HANT: '藝人尚未發佈',
@@ -200,7 +200,7 @@ export function TalentBusinessAccessGate({
           ko: '탤런트가 아직 게시되지 않았습니다',
           fr: 'Le talent n’est pas encore publié',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: 'Talent disabled',
           zh_HANS: '艺人已停用',
           zh_HANT: '藝人已停用',
@@ -210,7 +210,7 @@ export function TalentBusinessAccessGate({
         });
   const description =
     state.detail.lifecycleStatus === 'draft'
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'Draft talents stay in organization structure until they are published. Business pages remain unavailable.',
           zh_HANS: '草稿艺人会继续留在组织架构流程中，发布前无法进入业务页。',
           zh_HANT: '草稿藝人會繼續保留在組織結構流程中，發佈前無法進入業務頁。',
@@ -218,7 +218,7 @@ export function TalentBusinessAccessGate({
           ko: '초안 상태의 탤런트는 게시될 때까지 조직 구조에 남아 있으며 업무 화면을 열 수 없습니다.',
           fr: 'Les talents en brouillon restent dans la structure de l’organisation jusqu’à leur publication. Les pages métier restent indisponibles.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: 'Disabled talents stay out of business pages until someone re-enables them in organization structure.',
           zh_HANS: '已停用艺人在组织架构中重新启用前，无法进入业务页。',
           zh_HANT: '已停用藝人在組織結構中重新啟用前，無法進入業務頁。',
@@ -237,7 +237,7 @@ export function TalentBusinessAccessGate({
           href={`/tenant/${tenantId}/organization-structure`}
           className="inline-flex items-center rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
         >
-          {pickLocaleText(selectedLocale, {
+          {pickLocaleText(locale, {
             en: 'Open organization structure',
             zh_HANS: '打开组织架构',
             zh_HANT: '打開組織結構',

@@ -1,44 +1,73 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
-import { ErrorCodes, normalizeSupportedUiLocale, resolveTrilingualLocaleFamily } from '@tcrn/shared';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, prisma } from '@tcrn/database';
+import {
+  ErrorCodes,
+  mergeLocalizedText,
+  normalizeLocalizedText,
+  pickLocalizedText,
+  type LocalizedText,
+} from '@tcrn/shared';
 
 import {
-    BaseConfigEntity,
-    CONFIG_EXTRA_FIELDS,
-    CONFIG_HAS_AUDIT,
-    CONFIG_HAS_CODE,
-    CONFIG_HAS_DESCRIPTION,
-    CONFIG_HAS_EXTRA_DATA,
-    CONFIG_HAS_SORT_ORDER,
-    CONFIG_HAS_SYSTEM_CONTROL,
-    CONFIG_SCOPED_ENTITIES,
-    CONFIG_TABLE_NAMES,
-    ConfigEntityType,
-    ConfigEntityWithMeta,
-    OwnerType,
+  localizedTextOrderExpression,
+  localizedTextSearchExpression,
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../platform/persistence/localized-text.persistence';
+import {
+  BaseConfigEntity,
+  CONFIG_EXTRA_FIELDS,
+  CONFIG_HAS_AUDIT,
+  CONFIG_HAS_CODE,
+  CONFIG_HAS_DESCRIPTION,
+  CONFIG_HAS_EXTRA_DATA,
+  CONFIG_HAS_SORT_ORDER,
+  CONFIG_HAS_SYSTEM_CONTROL,
+  CONFIG_SCOPED_ENTITIES,
+  CONFIG_TABLE_NAMES,
+  ConfigEntityCreateInput,
+  ConfigEntityType,
+  ConfigEntityUpdateInput,
+  ConfigEntityWithMeta,
+  OwnerType,
 } from './config.types';
 
-type TranslationMap = Record<string, string>;
-
-interface ConfigTranslationPayload {
-  descriptionTranslations: TranslationMap;
+type RawConfigEntity = {
+  code: string;
+  createdAt: Date;
+  createdBy: string | null;
+  description: Prisma.JsonValue | null;
   extraData: Record<string, unknown> | null;
-  legacyFields: Record<string, string | null | undefined>;
-  contentTranslations: TranslationMap;
-  translations: TranslationMap;
-}
+  id: string;
+  isActive: boolean;
+  isForceUse: boolean;
+  isSystem: boolean;
+  name: Prisma.JsonValue;
+  ownerId: string | null;
+  ownerType: OwnerType;
+  sortOrder: number;
+  updatedAt: Date;
+  updatedBy: string | null;
+  version: number;
+};
+
+type ConfigScopeRef = { type: OwnerType; id: string | null };
 
 /**
- * Config Service
- * Generic CRUD operations for configuration entities
+ * Generic CRUD service for configuration entities.
+ *
+ * Localized content is stored and exposed only as LocalizedText JSONB. Derived
+ * display labels are returned as localizedName/localizedDescription.
  */
 @Injectable()
 export class ConfigService {
-  /**
-   * List config entities with inheritance
-   */
   async list(
     entityType: ConfigEntityType,
     tenantSchema: string,
@@ -55,451 +84,218 @@ export class ConfigService {
       pageSize?: number;
       sort?: string;
       language?: string;
-    } = {}
+    } = {},
   ): Promise<{ data: ConfigEntityWithMeta[]; total: number }> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-    const extraFields = CONFIG_EXTRA_FIELDS[entityType];
-    const { 
-      scopeType = 'tenant', 
-      scopeId = null, 
-      includeInherited = true, 
+    const {
+      scopeType = 'tenant',
+      scopeId = null,
+      includeInherited = true,
       includeDisabled = false,
       includeInactive = false,
       ownerOnly = false,
       search,
       parentId,
-      page = 1, 
+      page = 1,
       pageSize = 50,
       sort,
       language = 'en',
     } = options;
 
     const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
-    const scopeOwnerFields = isScoped 
-      ? 'owner_type as "ownerType", owner_id as "ownerId",' 
-      : 'NULL as "ownerType", NULL as "ownerId",';
-
-    // Build scope chain for inheritance
-    // Only irrelevant if not scoped, but we keep the variable for structure
     const scopeChain = await this.getScopeChain(tenantSchema, scopeType, scopeId);
-    
-    // Build WHERE clause
-    let whereClause = '1=1';
-    const params: unknown[] = [];
-    let paramIndex = 1;
+    const { params, whereClause } = this.buildWhereClause({
+      entityType,
+      includeInherited,
+      includeInactive,
+      isScoped,
+      ownerOnly,
+      parentId,
+      scopeChain,
+      scopeId,
+      scopeType,
+      search,
+    });
+    const orderBy = this.buildOrderBy(entityType, sort);
 
-    if (isScoped) {
-      if (ownerOnly) {
-        // Only items from current scope
-        if (scopeId) {
-          whereClause += ` AND owner_type = $${paramIndex++} AND owner_id = $${paramIndex++}::uuid`;
-          params.push(scopeType, scopeId);
-        } else {
-          whereClause += ` AND owner_type = 'tenant' AND owner_id IS NULL`;
-        }
-      } else if (includeInherited) {
-        // Items from all scopes in the chain
-        const scopeConditions = scopeChain.map((scope) => {
-          if (scope.id === null) {
-            return `(owner_type = '${scope.type}' AND owner_id IS NULL)`;
-          }
-          return `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`;
-        });
-        whereClause += ` AND (${scopeConditions.join(' OR ')})`;
-      }
-    }
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+        SELECT COUNT(*) as count
+        FROM "${tenantSchema}".${tableName}
+        WHERE ${whereClause}
+      `,
+      ...params,
+    );
+    const total = Number(countResult[0]?.count ?? 0);
 
-    if (!includeInactive) {
-      whereClause += ' AND is_active = true';
-    }
-
-    const hasCode = CONFIG_HAS_CODE.has(entityType);
-    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    if (search) {
-      const localizedNameSearchClauses = [
-        `name_en ILIKE $${paramIndex}`,
-        `name_zh ILIKE $${paramIndex}`,
-        `name_ja ILIKE $${paramIndex}`,
-      ];
-
-      if (hasExtraData) {
-        localizedNameSearchClauses.push(
-          `EXISTS (SELECT 1 FROM jsonb_each_text(COALESCE(extra_data -> 'translations', '{}'::jsonb)) AS translation(locale, value) WHERE translation.value ILIKE $${paramIndex})`,
-        );
-      }
-
-      if (hasCode) {
-        whereClause += ` AND (code ILIKE $${paramIndex} OR ${localizedNameSearchClauses.join(' OR ')})`;
-      } else {
-        // For entities without code field (e.g., blocklist-entries), search by localized name only
-        whereClause += ` AND (${localizedNameSearchClauses.join(' OR ')})`;
-      }
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    // Handle parent_id for hierarchical entities
-    if (parentId !== undefined) {
-      const parentField = this.getParentField(entityType);
-      if (parentField) {
-        // Cast to UUID for parent field comparisons
-        whereClause += ` AND ${parentField} = $${paramIndex++}::uuid`;
-        params.push(parentId);
-      }
-    }
-
-    // Build ORDER BY
-    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
-    let orderBy = hasSortOrder 
-      ? (hasCode ? 'sort_order ASC, code ASC' : 'sort_order ASC, name_en ASC')
-      : (hasCode ? 'code ASC' : 'name_en ASC');
-    if (sort) {
-      const isDesc = sort.startsWith('-');
-      const field = isDesc ? sort.substring(1) : sort;
-      const fieldMap: Record<string, string> = {
-        code: hasCode ? 'code' : 'name_en',
-        name: 'name_en',
-        sortOrder: hasSortOrder ? 'sort_order' : 'name_en',
-        createdAt: 'created_at',
-      };
-      const dbField = fieldMap[field] || (hasSortOrder ? 'sort_order' : 'name_en');
-      orderBy = `${dbField} ${isDesc ? 'DESC' : 'ASC'}`;
-    }
-
-    const extraFieldsSelect = extraFields.length > 0 
-      ? ', ' + extraFields.map(f => `${f} as "${this.snakeToCamel(f)}"`).join(', ')
-      : '';
-
-    const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
-    const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
-    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
-    
-    const codeField = hasCode ? 'code,' : 'NULL as code,';
-    const sortOrderField = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
-    const extraDataField = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
-    
-    const descFields = hasDesc 
-      ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
-      : `NULL as "descriptionEn", NULL as "descriptionZh", NULL as "descriptionJa",`;
-      
-    const sysFields = hasSys
-      ? `is_force_use as "isForceUse", is_system as "isSystem",`
-      : `false as "isForceUse", false as "isSystem",`; 
-      
-    const auditFields = hasAudit
-      ? `created_by as "createdBy", updated_by as "updatedBy",`
-      : `NULL as "createdBy", NULL as "updatedBy",`;
-
-    // Get total count
-    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
-      SELECT COUNT(*) as count FROM "${tenantSchema}".${tableName} WHERE ${whereClause}
-    `, ...params);
-    const total = Number(countResult[0]?.count || 0);
-
-    // Get data
     const offset = (page - 1) * pageSize;
-    const data = await prisma.$queryRawUnsafe<Array<BaseConfigEntity & Record<string, unknown>>>(`
-      SELECT 
-        id, ${scopeOwnerFields} ${codeField}
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        ${descFields}
-        ${extraDataField}
-        ${sortOrderField} is_active as "isActive", ${sysFields}
-        created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
-        ${extraFieldsSelect}
-      FROM "${tenantSchema}".${tableName}
-      WHERE ${whereClause}
-      ORDER BY ${orderBy}
-      LIMIT ${pageSize} OFFSET ${offset}
-    `, ...params);
+    const data = await prisma.$queryRawUnsafe<RawConfigEntity[]>(
+      `
+        SELECT ${this.buildBaseSelect(entityType)}
+        FROM "${tenantSchema}".${tableName}
+        WHERE ${whereClause}
+        ORDER BY ${orderBy}
+        LIMIT ${pageSize} OFFSET ${offset}
+      `,
+      ...params,
+    );
 
-    // Get overrides for current scope
-    const overrides = includeDisabled 
+    const disabledIds = includeDisabled
       ? new Set<string>()
       : await this.getDisabledIds(tenantSchema, entityType, scopeType, scopeId);
 
-    // Enrich with metadata
-    const enrichedData: ConfigEntityWithMeta[] = data
-      .filter(item => includeDisabled || !overrides.has(item.id))
-      .map(item => ({
-        ...this.decorateEntity(entityType, item, language),
-        ownerName: null, // Would need a join to get this
-        isInherited: item.ownerType !== scopeType || item.ownerId !== scopeId,
-        isDisabledHere: overrides.has(item.id),
-        canDisable: !item.isForceUse && (item.ownerType !== scopeType || item.ownerId !== scopeId),
-      } as ConfigEntityWithMeta));
-
-    return { data: enrichedData, total };
+    return {
+      data: data
+        .filter((item) => includeDisabled || !disabledIds.has(item.id))
+        .map((item) => ({
+          ...this.decorateEntity(entityType, item, language),
+          ownerName: null,
+          isInherited: item.ownerType !== scopeType || item.ownerId !== scopeId,
+          isDisabledHere: disabledIds.has(item.id),
+          canDisable: !item.isForceUse && (item.ownerType !== scopeType || item.ownerId !== scopeId),
+        })),
+      total,
+    };
   }
 
-  /**
-   * Get single config entity
-   */
   async findById(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
-    language: string = 'en'
+    language = 'en',
   ): Promise<ConfigEntityWithMeta | null> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-    const extraFields = CONFIG_EXTRA_FIELDS[entityType];
-    
-    const extraFieldsSelect = extraFields.length > 0 
-      ? ', ' + extraFields.map(f => `${f} as "${this.snakeToCamel(f)}"`).join(', ')
-      : '';
+    const results = await prisma.$queryRawUnsafe<RawConfigEntity[]>(
+      `
+        SELECT ${this.buildBaseSelect(entityType)}
+        FROM "${tenantSchema}".${tableName}
+        WHERE id = $1::uuid
+        LIMIT 1
+      `,
+      id,
+    );
 
-    const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
-    const scopeOwnerFields = isScoped 
-      ? 'owner_type as "ownerType", owner_id as "ownerId",' 
-      : 'NULL as "ownerType", NULL as "ownerId",';
-
-    const hasCode = CONFIG_HAS_CODE.has(entityType);
-    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
-    const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
-    const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
-    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
-    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    
-    const codeField = hasCode ? 'code,' : 'NULL as code,';
-    const sortOrderField = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
-    const extraDataField = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
-    
-    const descFields = hasDesc 
-      ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
-      : `NULL as "descriptionEn", NULL as "descriptionZh", NULL as "descriptionJa",`;
-      
-    const sysFields = hasSys
-      ? `is_force_use as "isForceUse", is_system as "isSystem",`
-      : `false as "isForceUse", false as "isSystem",`; 
-      
-    const auditFields = hasAudit
-      ? `created_by as "createdBy", updated_by as "updatedBy",`
-      : `NULL as "createdBy", NULL as "updatedBy",`;
-
-    const results = await prisma.$queryRawUnsafe<Array<BaseConfigEntity & Record<string, unknown>>>(`
-      SELECT 
-        id, ${scopeOwnerFields} ${codeField}
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        ${descFields}
-        ${extraDataField}
-        ${sortOrderField} is_active as "isActive", ${sysFields}
-        created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
-        ${extraFieldsSelect}
-      FROM "${tenantSchema}".${tableName}
-      WHERE id = $1::uuid
-    `, id);
-
-    if (results.length === 0) {
+    const item = results[0];
+    if (!item) {
       return null;
     }
 
-    const item = results[0];
     return {
       ...this.decorateEntity(entityType, item, language),
       ownerName: null,
       isInherited: false,
       isDisabledHere: false,
       canDisable: false,
-    } as ConfigEntityWithMeta;
+    };
   }
 
-  /**
-   * Create config entity
-   */
   async create(
     entityType: ConfigEntityType,
     tenantSchema: string,
-    data: {
-      code?: string;
-      nameEn: string;
-      nameZh?: string;
-      nameJa?: string;
-      translations?: Record<string, string>;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      descriptionTranslations?: Record<string, string>;
-      contentTranslations?: Record<string, string>;
-      extraData?: Record<string, unknown>;
-      sortOrder?: number;
-      isForceUse?: boolean;
-      ownerType?: OwnerType;
-      ownerId?: string | null;
-      [key: string]: unknown;
-    },
-    userId: string
+    data: ConfigEntityCreateInput,
+    userId: string,
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-    const extraFields = CONFIG_EXTRA_FIELDS[entityType];
-
     const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
     const hasCode = CONFIG_HAS_CODE.has(entityType);
     const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
+    const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    const translationPayload = this.prepareTranslationPayload(entityType, data);
-    const normalizedData = {
-      ...data,
-      ...translationPayload.legacyFields,
-    };
+    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const normalizedName = normalizeLocalizedText(data.name, data.name?.en);
 
-    // Check code uniqueness globally within tenant schema (regardless of scope)
-    if (hasCode && normalizedData.code) {
-      const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
-        SELECT id FROM "${tenantSchema}".${tableName}
-        WHERE code = $1
-      `, normalizedData.code);
+    if (!normalizedName.en.trim()) {
+      throw new BadRequestException('name.en is required');
+    }
+
+    if (hasCode && data.code) {
+      const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
+          SELECT id
+          FROM "${tenantSchema}".${tableName}
+          WHERE code = $1
+          LIMIT 1
+        `,
+        data.code,
+      );
 
       if (existing.length > 0) {
         throw new BadRequestException({
           code: ErrorCodes.CODE_ALREADY_EXISTS,
-          message: `Code '${normalizedData.code}' already exists`,
+          message: `Code '${data.code}' already exists`,
         });
       }
     }
 
-    // Build INSERT - start with minimal fields
-    const baseFields = ['id', 'name_en', 'name_zh', 'name_ja', 'is_active', 'created_at', 'updated_at', 'version'];
-    const baseValues = ['gen_random_uuid()', '$1', '$2', '$3', 'true', 'now()', 'now()', '1'];
-    const baseParams: unknown[] = [
-      normalizedData.nameEn,
-      normalizedData.nameZh ?? null,
-      normalizedData.nameJa ?? null,
-    ];
+    const fields = ['id', 'name', 'is_active', 'created_at', 'updated_at', 'version'];
+    const values = ['gen_random_uuid()', '$1::jsonb', 'true', 'now()', 'now()', '1'];
+    const params: unknown[] = [stringifyLocalizedText(normalizedName)];
 
-    // Add code field if entity supports it
-    if (hasCode && normalizedData.code) {
-      baseFields.push('code');
-      baseValues.push(`$${baseParams.length + 1}`);
-      baseParams.push(normalizedData.code);
+    if (hasCode && data.code) {
+      fields.push('code');
+      values.push(`$${params.length + 1}`);
+      params.push(data.code);
     }
 
-    // Add sort_order field if entity supports it
     if (hasSortOrder) {
-      baseFields.push('sort_order');
-      baseValues.push(`$${baseParams.length + 1}`);
-      baseParams.push(normalizedData.sortOrder || 0);
+      fields.push('sort_order');
+      values.push(`$${params.length + 1}`);
+      params.push(data.sortOrder ?? 0);
     }
 
-    const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
-    const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
-    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
-
-    if (hasDesc) {
-      baseFields.push('description_en', 'description_zh', 'description_ja');
-      baseValues.push(`$${baseParams.length + 1}`, `$${baseParams.length + 2}`, `$${baseParams.length + 3}`);
-      baseParams.push(
-        normalizedData.descriptionEn ?? null,
-        normalizedData.descriptionZh ?? null,
-        normalizedData.descriptionJa ?? null,
-      );
+    if (hasDescription) {
+      fields.push('description');
+      values.push(`$${params.length + 1}::jsonb`);
+      params.push(stringifyLocalizedText(normalizeLocalizedText(data.description, normalizedName.en)));
     }
 
     if (hasExtraData) {
-      baseFields.push('extra_data');
-      baseValues.push(`$${baseParams.length + 1}::jsonb`);
-      baseParams.push(translationPayload.extraData ? JSON.stringify(translationPayload.extraData) : null);
+      fields.push('extra_data');
+      values.push(`$${params.length + 1}::jsonb`);
+      params.push(this.stringifyJson(data.extraData ?? null));
     }
 
-    if (hasSys) {
-      baseFields.push('is_force_use', 'is_system');
-      baseValues.push(`$${baseParams.length + 1}`, 'false');
-      baseParams.push(normalizedData.isForceUse || false);
+    if (hasSystemControl) {
+      fields.push('is_force_use', 'is_system');
+      values.push(`$${params.length + 1}`, 'false');
+      params.push(data.isForceUse ?? false);
     }
 
     if (hasAudit) {
-      baseFields.push('created_by', 'updated_by');
-      baseValues.push(`$${baseParams.length + 1}::uuid`, `$${baseParams.length + 1}::uuid`);
-      baseParams.push(userId);
+      fields.push('created_by', 'updated_by');
+      values.push(`$${params.length + 1}::uuid`, `$${params.length + 1}::uuid`);
+      params.push(userId);
     }
 
     if (isScoped) {
-      baseFields.push('owner_type');
-      baseFields.push('owner_id');
-      baseValues.push(`$${baseParams.length + 1}`);
-      baseValues.push(`$${baseParams.length + 2}::uuid`);
-      baseParams.push(normalizedData.ownerType || 'tenant');
-      baseParams.push(normalizedData.ownerId || null);
+      fields.push('owner_type', 'owner_id');
+      values.push(`$${params.length + 1}`, `$${params.length + 2}::uuid`);
+      params.push(data.ownerType ?? 'tenant', data.ownerId ?? null);
     }
 
-    // Add extra fields
-    let paramIndex = baseParams.length + 1;
-    for (const field of extraFields) {
-      const camelField = this.snakeToCamel(field);
-      if (normalizedData[camelField] !== undefined) {
-        baseFields.push(field);
-        baseValues.push(`$${paramIndex++}`);
-        baseParams.push(normalizedData[camelField]);
-      }
-    }
+    this.appendExtraFieldParams(entityType, data, fields, values, params, normalizedName);
 
-    const extraFieldsReturn = extraFields.length > 0 
-      ? ', ' + extraFields.map(f => `${f} as "${this.snakeToCamel(f)}"`).join(', ')
-      : '';
-    
-    const scopeOwnerFields = isScoped 
-      ? 'owner_type as "ownerType", owner_id as "ownerId",' 
-      : 'NULL as "ownerType", NULL as "ownerId",';
-    
-    const codeFieldReturn = hasCode ? 'code,' : 'NULL as code,';
-    const sortOrderFieldReturn = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
-    const extraDataFieldReturn = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
-      
-    const descFields = hasDesc 
-      ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
-      : `NULL as "descriptionEn", NULL as "descriptionZh", NULL as "descriptionJa",`;
-      
-    const sysFields = hasSys
-      ? `is_force_use as "isForceUse", is_system as "isSystem",`
-      : `false as "isForceUse", false as "isSystem",`; 
-      
-    const auditFields = hasAudit
-      ? `created_by as "createdBy", updated_by as "updatedBy",`
-      : `NULL as "createdBy", NULL as "updatedBy",`;
+    const results = await prisma.$queryRawUnsafe<RawConfigEntity[]>(
+      `
+        INSERT INTO "${tenantSchema}".${tableName} (${fields.join(', ')})
+        VALUES (${values.join(', ')})
+        RETURNING ${this.buildBaseSelect(entityType)}
+      `,
+      ...params,
+    );
 
-    const results = await prisma.$queryRawUnsafe<BaseConfigEntity[]>(`
-      INSERT INTO "${tenantSchema}".${tableName} (${baseFields.join(', ')})
-      VALUES (${baseValues.join(', ')})
-      RETURNING 
-        id, ${scopeOwnerFields} ${codeFieldReturn}
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        ${descFields}
-        ${extraDataFieldReturn}
-        ${sortOrderFieldReturn} is_active as "isActive", ${sysFields}
-        created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
-        ${extraFieldsReturn}
-      `, ...baseParams);
-
-    return results[0];
+    return this.decorateEntity(entityType, results[0], 'en');
   }
 
-  /**
-   * Update config entity
-   */
   async update(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
-    data: {
-      nameEn?: string;
-      nameZh?: string;
-      nameJa?: string;
-      translations?: Record<string, string>;
-      descriptionEn?: string;
-      descriptionZh?: string;
-      descriptionJa?: string;
-      descriptionTranslations?: Record<string, string>;
-      contentTranslations?: Record<string, string>;
-      extraData?: Record<string, unknown>;
-      sortOrder?: number;
-      isForceUse?: boolean;
-      version: number;
-      [key: string]: unknown;
-    },
-    userId: string
+    data: ConfigEntityUpdateInput,
+    userId: string,
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-    const extraFields = CONFIG_EXTRA_FIELDS[entityType];
-
     const current = await this.findById(entityType, id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -515,133 +311,83 @@ export class ConfigService {
       });
     }
 
-    const hasCode = CONFIG_HAS_CODE.has(entityType);
-    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
-    const hasDesc = CONFIG_HAS_DESCRIPTION.has(entityType);
-    const hasSys = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
-    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    const translationPayload = this.prepareTranslationPayload(entityType, data, current);
-    const normalizedData = {
-      ...data,
-      ...translationPayload.legacyFields,
-    };
-
-    // Build UPDATE
+    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
+    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
     const updates: string[] = [];
     const params: unknown[] = [id];
     let paramIndex = 2;
-    
-    // If hasAudit, we need to include userId for updated_by
+
     if (hasAudit) {
       params.push(userId);
       paramIndex = 3;
     }
 
-    // Build field mappings based on table structure
-    const fieldMappings: Record<string, string> = {
-      nameEn: 'name_en',
-      nameZh: 'name_zh',
-      nameJa: 'name_ja',
-    };
-    
-    // Only add sortOrder mapping if entity supports it
-    if (hasSortOrder) {
-      fieldMappings['sortOrder'] = 'sort_order';
-    }
-    
-    if (hasDesc) {
-      fieldMappings['descriptionEn'] = 'description_en';
-      fieldMappings['descriptionZh'] = 'description_zh';
-      fieldMappings['descriptionJa'] = 'description_ja';
-    }
-    
-    if (hasSys) {
-      fieldMappings['isForceUse'] = 'is_force_use';
+    let nextName = current.name;
+    if (data.name !== undefined) {
+      nextName = mergeLocalizedText(current.name, data.name);
+      updates.push(`name = $${paramIndex++}::jsonb`);
+      params.push(stringifyLocalizedText(nextName));
     }
 
-    for (const [key, dbField] of Object.entries(fieldMappings)) {
-      if (normalizedData[key] !== undefined) {
-        updates.push(`${dbField} = $${paramIndex++}`);
-        params.push(normalizedData[key]);
-      }
+    if (hasDescription && data.description !== undefined) {
+      updates.push(`description = $${paramIndex++}::jsonb`);
+      params.push(stringifyLocalizedText(normalizeLocalizedText(
+        { ...(current.description ?? normalizeLocalizedText(null, nextName.en)), ...data.description },
+        nextName.en,
+      )));
     }
 
-    if (hasExtraData) {
+    if (hasSortOrder && data.sortOrder !== undefined) {
+      updates.push(`sort_order = $${paramIndex++}`);
+      params.push(data.sortOrder);
+    }
+
+    if (hasSystemControl && data.isForceUse !== undefined) {
+      updates.push(`is_force_use = $${paramIndex++}`);
+      params.push(data.isForceUse);
+    }
+
+    if (hasExtraData && data.extraData !== undefined) {
       updates.push(`extra_data = $${paramIndex++}::jsonb`);
-      params.push(translationPayload.extraData ? JSON.stringify(translationPayload.extraData) : null);
+      params.push(this.stringifyJson(data.extraData));
     }
 
-    // Handle extra fields
-    for (const field of extraFields) {
-      const camelField = this.snakeToCamel(field);
-      if (normalizedData[camelField] !== undefined) {
-        updates.push(`${field} = $${paramIndex++}`);
-        params.push(normalizedData[camelField]);
-      }
+    this.appendExtraFieldUpdates(entityType, data, current, updates, params, paramIndex, nextName);
+
+    if (updates.length === 0) {
+      return current;
     }
 
     updates.push('updated_at = now()');
     if (hasAudit) {
-      // userId is at index 2 ($2) if hasAudit is true
       updates.push('updated_by = $2::uuid');
     }
     updates.push('version = version + 1');
 
-    const extraFieldsReturn = extraFields.length > 0 
-      ? ', ' + extraFields.map(f => `${f} as "${this.snakeToCamel(f)}"`).join(', ')
-      : '';
+    const results = await prisma.$queryRawUnsafe<RawConfigEntity[]>(
+      `
+        UPDATE "${tenantSchema}".${tableName}
+        SET ${updates.join(', ')}
+        WHERE id = $1::uuid
+        RETURNING ${this.buildBaseSelect(entityType)}
+      `,
+      ...params,
+    );
 
-    const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
-    const scopeOwnerFields = isScoped 
-      ? 'owner_type as "ownerType", owner_id as "ownerId",' 
-      : 'NULL as "ownerType", NULL as "ownerId",';
-    
-    const codeFieldReturn = hasCode ? 'code,' : 'NULL as code,';
-    const sortOrderFieldReturn = hasSortOrder ? 'sort_order as "sortOrder",' : '0 as "sortOrder",';
-    const extraDataFieldReturn = hasExtraData ? 'extra_data as "extraData",' : 'NULL::jsonb as "extraData",';
-      
-    const descFields = hasDesc 
-      ? `description_en as "descriptionEn", description_zh as "descriptionZh", description_ja as "descriptionJa",`
-      : `NULL as "descriptionEn", NULL as "descriptionZh", NULL as "descriptionJa",`;
-      
-    const sysFields = hasSys
-      ? `is_force_use as "isForceUse", is_system as "isSystem",`
-      : `false as "isForceUse", false as "isSystem",`; 
-      
-    const auditFields = hasAudit
-      ? `created_by as "createdBy", updated_by as "updatedBy",`
-      : `NULL as "createdBy", NULL as "updatedBy",`;
-
-    const results = await prisma.$queryRawUnsafe<BaseConfigEntity[]>(`
-      UPDATE "${tenantSchema}".${tableName}
-      SET ${updates.join(', ')}
-      WHERE id = $1::uuid
-      RETURNING 
-        id, ${scopeOwnerFields} ${codeFieldReturn}
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        ${descFields}
-        ${extraDataFieldReturn}
-        ${sortOrderFieldReturn} is_active as "isActive", ${sysFields}
-        created_at as "createdAt", updated_at as "updatedAt", ${auditFields} version
-        ${extraFieldsReturn}
-    `, ...params);
-
-    return results[0];
+    return this.decorateEntity(entityType, results[0], 'en');
   }
 
-  /**
-   * Deactivate config entity
-   */
   async deactivate(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string
+    userId: string,
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-
     const current = await this.findById(entityType, id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -664,11 +410,15 @@ export class ConfigService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
-      UPDATE "${tenantSchema}".${tableName}
-      SET is_active = false, updated_at = now(), updated_by = $2::uuid, version = version + 1
-      WHERE id = $1::uuid
-    `, id, userId);
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantSchema}".${tableName}
+        SET is_active = false, updated_at = now(), updated_by = $2::uuid, version = version + 1
+        WHERE id = $1::uuid
+      `,
+      id,
+      userId,
+    );
 
     const deactivated = await this.findById(entityType, id, tenantSchema);
     if (!deactivated) {
@@ -680,18 +430,14 @@ export class ConfigService {
     return deactivated;
   }
 
-  /**
-   * Reactivate config entity
-   */
   async reactivate(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string
+    userId: string,
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-
     const current = await this.findById(entityType, id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -707,11 +453,15 @@ export class ConfigService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
-      UPDATE "${tenantSchema}".${tableName}
-      SET is_active = true, updated_at = now(), updated_by = $2::uuid, version = version + 1
-      WHERE id = $1::uuid
-    `, id, userId);
+    await prisma.$executeRawUnsafe(
+      `
+        UPDATE "${tenantSchema}".${tableName}
+        SET is_active = true, updated_at = now(), updated_by = $2::uuid, version = version + 1
+        WHERE id = $1::uuid
+      `,
+      id,
+      userId,
+    );
 
     const reactivated = await this.findById(entityType, id, tenantSchema);
     if (!reactivated) {
@@ -723,21 +473,17 @@ export class ConfigService {
     return reactivated;
   }
 
-  /**
-   * Disable inherited config in current scope
-   */
   async disableInScope(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
     scopeType: OwnerType,
     scopeId: string,
-    userId: string
+    userId: string,
   ): Promise<void> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
 
-    const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
-    if (!isScoped) {
+    if (!CONFIG_SCOPED_ENTITIES.has(entityType)) {
       throw new BadRequestException({
         code: 'CONFIG_NOT_SCOPED',
         message: 'This config entity does not support inheritance scoping',
@@ -752,7 +498,6 @@ export class ConfigService {
       });
     }
 
-    // Check if it's inherited (not from current scope)
     if (current.ownerType === scopeType && current.ownerId === scopeId) {
       throw new BadRequestException({
         code: 'CONFIG_NOT_INHERITED',
@@ -760,7 +505,6 @@ export class ConfigService {
       });
     }
 
-    // Check if force use
     if (current.isForceUse) {
       throw new BadRequestException({
         code: 'CONFIG_FORCE_USE',
@@ -768,47 +512,51 @@ export class ConfigService {
       });
     }
 
-    // Create or update override
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO "${tenantSchema}".config_override 
-        (id, entity_type, entity_id, owner_type, owner_id, is_disabled, created_at, created_by)
-      VALUES 
-        (gen_random_uuid(), $1::uuid, $2, $3, $4, true, now(), $5)
-      ON CONFLICT (entity_type, entity_id, owner_type, COALESCE(owner_id, '00000000-0000-0000-0000-000000000000'::uuid))
-      DO UPDATE SET is_disabled = true
-    `, tableName, id, scopeType, scopeId, userId);
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "${tenantSchema}".config_override
+          (id, entity_type, entity_id, owner_type, owner_id, is_disabled, created_at, created_by)
+        VALUES
+          (gen_random_uuid(), $1, $2::uuid, $3, $4::uuid, true, now(), $5::uuid)
+        ON CONFLICT (entity_type, entity_id, owner_type, owner_id)
+        DO UPDATE SET is_disabled = true, updated_at = now(), updated_by = $5::uuid
+      `,
+      tableName,
+      id,
+      scopeType,
+      scopeId,
+      userId,
+    );
   }
 
-  /**
-   * Enable previously disabled inherited config
-   */
   async enableInScope(
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string
+    scopeId: string,
   ): Promise<void> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
 
-    const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
-    if (!isScoped) {
-      // Nothing to do if not scoped, or throw error. 
-      // Silently return is safer for now.
+    if (!CONFIG_SCOPED_ENTITIES.has(entityType)) {
       return;
     }
 
-    await prisma.$executeRawUnsafe(`
-      DELETE FROM "${tenantSchema}".config_override
-      WHERE entity_type = $1 AND entity_id = $2::uuid AND owner_type = $3 
-        AND COALESCE(owner_id, '00000000-0000-0000-0000-000000000000') = COALESCE($4::uuid, '00000000-0000-0000-0000-000000000000')
-    `, tableName, id, scopeType, scopeId);
+    await prisma.$executeRawUnsafe(
+      `
+        DELETE FROM "${tenantSchema}".config_override
+        WHERE entity_type = $1
+          AND entity_id = $2::uuid
+          AND owner_type = $3
+          AND owner_id = $4::uuid
+      `,
+      tableName,
+      id,
+      scopeType,
+      scopeId,
+    );
   }
 
-  /**
-   * Get complete membership tree structure
-   * Returns: Class -> Type -> Level hierarchy
-   */
   async getMembershipTree(
     tenantSchema: string,
     options: {
@@ -816,23 +564,19 @@ export class ConfigService {
       scopeId?: string | null;
       includeInactive?: boolean;
       language?: string;
-    } = {}
+    } = {},
   ): Promise<Array<{
     id: string;
     code: string;
-    name: string;
-    nameEn: string;
-    nameZh: string | null;
-    nameJa: string | null;
+    name: LocalizedText;
+    localizedName: string;
     sortOrder: number;
     isActive: boolean;
     types: Array<{
       id: string;
       code: string;
-      name: string;
-      nameEn: string;
-      nameZh: string | null;
-      nameJa: string | null;
+      name: LocalizedText;
+      localizedName: string;
       classId: string;
       externalControl: boolean;
       defaultRenewalDays: number;
@@ -841,10 +585,8 @@ export class ConfigService {
       levels: Array<{
         id: string;
         code: string;
-        name: string;
-        nameEn: string;
-        nameZh: string | null;
-        nameJa: string | null;
+        name: LocalizedText;
+        localizedName: string;
         typeId: string;
         rank: number;
         color: string | null;
@@ -854,208 +596,448 @@ export class ConfigService {
       }>;
     }>;
   }>> {
-    const { 
-      scopeType = 'tenant', 
-      scopeId = null, 
+    const {
+      scopeType = 'tenant',
+      scopeId = null,
       includeInactive = false,
       language = 'en',
     } = options;
-
-    // Build scope chain for inheritance
     const scopeChain = await this.getScopeChain(tenantSchema, scopeType, scopeId);
-    
-    // Build scope conditions for membership_class (only scoped entity)
-    const scopeConditions = scopeChain.map((scope) => {
-      if (scope.id === null) {
-        return `(owner_type = '${scope.type}' AND owner_id IS NULL)`;
-      }
-      return `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`;
-    });
-
+    const scopeConditions = scopeChain.map((scope) => (
+      scope.id === null
+        ? `(owner_type = '${scope.type}' AND owner_id IS NULL)`
+        : `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`
+    ));
     const activeClause = includeInactive ? '' : 'AND is_active = true';
 
-    // Get all membership classes in scope
     const classes = await prisma.$queryRawUnsafe<Array<{
-      id: string;
       code: string;
-      nameEn: string;
-      nameZh: string | null;
-      nameJa: string | null;
-      sortOrder: number;
+      id: string;
       isActive: boolean;
-    }>>(`
-      SELECT 
-        id, code, 
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        sort_order as "sortOrder", is_active as "isActive"
-      FROM "${tenantSchema}".membership_class
-      WHERE (${scopeConditions.join(' OR ')}) ${activeClause}
-      ORDER BY sort_order ASC, code ASC
-    `);
+      name: Prisma.JsonValue;
+      sortOrder: number;
+    }>>(
+      `
+        SELECT id, code, name, sort_order as "sortOrder", is_active as "isActive"
+        FROM "${tenantSchema}".membership_class
+        WHERE (${scopeConditions.join(' OR ')}) ${activeClause}
+        ORDER BY sort_order ASC, code ASC
+      `,
+    );
 
     if (classes.length === 0) {
       return [];
     }
 
-    const classIds = classes.map(c => c.id);
-
-    // Get all membership types for these classes
+    const classIds = classes.map((item) => item.id);
     const types = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      membershipClassId: string;
       code: string;
-      nameEn: string;
-      nameZh: string | null;
-      nameJa: string | null;
-      externalControl: boolean;
       defaultRenewalDays: number;
-      sortOrder: number;
+      externalControl: boolean;
+      id: string;
       isActive: boolean;
-    }>>(`
-      SELECT 
-        id, membership_class_id as "membershipClassId", code,
-        name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-        external_control as "externalControl", default_renewal_days as "defaultRenewalDays",
-        sort_order as "sortOrder", is_active as "isActive"
-      FROM "${tenantSchema}".membership_type
-      WHERE membership_class_id = ANY($1::uuid[]) ${activeClause}
-      ORDER BY sort_order ASC, code ASC
-    `, classIds);
+      membershipClassId: string;
+      name: Prisma.JsonValue;
+      sortOrder: number;
+    }>>(
+      `
+        SELECT
+          id,
+          membership_class_id as "membershipClassId",
+          code,
+          name,
+          external_control as "externalControl",
+          default_renewal_days as "defaultRenewalDays",
+          sort_order as "sortOrder",
+          is_active as "isActive"
+        FROM "${tenantSchema}".membership_type
+        WHERE membership_class_id = ANY($1::uuid[]) ${activeClause}
+        ORDER BY sort_order ASC, code ASC
+      `,
+      classIds,
+    );
 
-    const typeIds = types.map(t => t.id);
-
-    // Get all membership levels for these types
-    const levels = typeIds.length > 0 
+    const typeIds = types.map((item) => item.id);
+    const levels = typeIds.length > 0
       ? await prisma.$queryRawUnsafe<Array<{
-          id: string;
-          membershipTypeId: string;
-          code: string;
-          nameEn: string;
-          nameZh: string | null;
-          nameJa: string | null;
-          rank: number;
-          color: string | null;
           badgeUrl: string | null;
-          sortOrder: number;
+          code: string;
+          color: string | null;
+          id: string;
           isActive: boolean;
-        }>>(`
-          SELECT 
-            id, membership_type_id as "membershipTypeId", code,
-            name_en as "nameEn", name_zh as "nameZh", name_ja as "nameJa",
-            rank, color, badge_url as "badgeUrl",
-            sort_order as "sortOrder", is_active as "isActive"
-          FROM "${tenantSchema}".membership_level
-          WHERE membership_type_id = ANY($1::uuid[]) ${activeClause}
-          ORDER BY rank ASC, sort_order ASC, code ASC
-        `, typeIds)
+          membershipTypeId: string;
+          name: Prisma.JsonValue;
+          rank: number;
+          sortOrder: number;
+        }>>(
+          `
+            SELECT
+              id,
+              membership_type_id as "membershipTypeId",
+              code,
+              name,
+              rank,
+              color,
+              badge_url as "badgeUrl",
+              sort_order as "sortOrder",
+              is_active as "isActive"
+            FROM "${tenantSchema}".membership_level
+            WHERE membership_type_id = ANY($1::uuid[]) ${activeClause}
+            ORDER BY rank ASC, sort_order ASC, code ASC
+          `,
+          typeIds,
+        )
       : [];
 
-    // Group levels by type
     const levelsByType = new Map<string, typeof levels>();
     for (const level of levels) {
-      if (!levelsByType.has(level.membershipTypeId)) {
-        levelsByType.set(level.membershipTypeId, []);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      levelsByType.get(level.membershipTypeId)!.push(level);
+      const currentLevels = levelsByType.get(level.membershipTypeId) ?? [];
+      currentLevels.push(level);
+      levelsByType.set(level.membershipTypeId, currentLevels);
     }
 
-    // Group types by class
     const typesByClass = new Map<string, typeof types>();
     for (const type of types) {
-      if (!typesByClass.has(type.membershipClassId)) {
-        typesByClass.set(type.membershipClassId, []);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      typesByClass.get(type.membershipClassId)!.push(type);
+      const currentTypes = typesByClass.get(type.membershipClassId) ?? [];
+      currentTypes.push(type);
+      typesByClass.set(type.membershipClassId, currentTypes);
     }
 
-    // Build the tree
-    return classes.map(cls => ({
-      id: cls.id,
-      code: cls.code,
-      name: this.getLocalizedField(cls, 'name', language) || cls.nameEn,
-      nameEn: cls.nameEn,
-      nameZh: cls.nameZh,
-      nameJa: cls.nameJa,
-      sortOrder: cls.sortOrder,
-      isActive: cls.isActive,
-      types: (typesByClass.get(cls.id) || []).map(type => ({
-        id: type.id,
-        code: type.code,
-        name: this.getLocalizedField(type, 'name', language) || type.nameEn,
-        nameEn: type.nameEn,
-        nameZh: type.nameZh,
-        nameJa: type.nameJa,
-        classId: type.membershipClassId,
-        externalControl: type.externalControl,
-        defaultRenewalDays: type.defaultRenewalDays,
-        sortOrder: type.sortOrder,
-        isActive: type.isActive,
-        levels: (levelsByType.get(type.id) || []).map(level => ({
-          id: level.id,
-          code: level.code,
-          name: this.getLocalizedField(level, 'name', language) || level.nameEn,
-          nameEn: level.nameEn,
-          nameZh: level.nameZh,
-          nameJa: level.nameJa,
-          typeId: level.membershipTypeId,
-          rank: level.rank,
-          color: level.color,
-          badgeUrl: level.badgeUrl,
-          sortOrder: level.sortOrder,
-          isActive: level.isActive,
-        })),
-      })),
-    }));
+    return classes.map((cls) => {
+      const className = readLocalizedText(cls.name, 'membership_class.name');
+      return {
+        id: cls.id,
+        code: cls.code,
+        name: className,
+        localizedName: pickLocalizedText(className, language),
+        sortOrder: cls.sortOrder,
+        isActive: cls.isActive,
+        types: (typesByClass.get(cls.id) ?? []).map((type) => {
+          const typeName = readLocalizedText(type.name, 'membership_type.name');
+          return {
+            id: type.id,
+            code: type.code,
+            name: typeName,
+            localizedName: pickLocalizedText(typeName, language),
+            classId: type.membershipClassId,
+            externalControl: type.externalControl,
+            defaultRenewalDays: type.defaultRenewalDays,
+            sortOrder: type.sortOrder,
+            isActive: type.isActive,
+            levels: (levelsByType.get(type.id) ?? []).map((level) => {
+              const levelName = readLocalizedText(level.name, 'membership_level.name');
+              return {
+                id: level.id,
+                code: level.code,
+                name: levelName,
+                localizedName: pickLocalizedText(levelName, language),
+                typeId: level.membershipTypeId,
+                rank: level.rank,
+                color: level.color,
+                badgeUrl: level.badgeUrl,
+                sortOrder: level.sortOrder,
+                isActive: level.isActive,
+              };
+            }),
+          };
+        }),
+      };
+    });
   }
 
-  // Helper methods
+  private buildWhereClause(args: {
+    entityType: ConfigEntityType;
+    includeInherited: boolean;
+    includeInactive: boolean;
+    isScoped: boolean;
+    ownerOnly: boolean;
+    parentId?: string;
+    scopeChain: ConfigScopeRef[];
+    scopeId: string | null;
+    scopeType: OwnerType;
+    search?: string;
+  }): { params: unknown[]; whereClause: string } {
+    let whereClause = '1=1';
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    if (args.isScoped) {
+      if (args.ownerOnly) {
+        if (args.scopeId) {
+          whereClause += ` AND owner_type = $${paramIndex++} AND owner_id = $${paramIndex++}::uuid`;
+          params.push(args.scopeType, args.scopeId);
+        } else {
+          whereClause += ` AND owner_type = 'tenant' AND owner_id IS NULL`;
+        }
+      } else if (args.includeInherited) {
+        const scopeConditions = args.scopeChain.map((scope) => (
+          scope.id === null
+            ? `(owner_type = '${scope.type}' AND owner_id IS NULL)`
+            : `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`
+        ));
+        whereClause += ` AND (${scopeConditions.join(' OR ')})`;
+      }
+    }
+
+    if (!args.includeInactive) {
+      whereClause += ' AND is_active = true';
+    }
+
+    if (args.search) {
+      const hasCode = CONFIG_HAS_CODE.has(args.entityType);
+      if (hasCode) {
+        whereClause += ` AND (code ILIKE $${paramIndex} OR ${localizedTextSearchExpression('name', `$${paramIndex}`)})`;
+      } else {
+        whereClause += ` AND ${localizedTextSearchExpression('name', `$${paramIndex}`)}`;
+      }
+      params.push(`%${args.search}%`);
+      paramIndex += 1;
+    }
+
+    if (args.parentId !== undefined) {
+      const parentField = this.getParentField(args.entityType);
+      if (parentField) {
+        whereClause += ` AND ${parentField} = $${paramIndex++}::uuid`;
+        params.push(args.parentId);
+      }
+    }
+
+    return { params, whereClause };
+  }
+
+  private buildOrderBy(entityType: ConfigEntityType, sort?: string): string {
+    const hasCode = CONFIG_HAS_CODE.has(entityType);
+    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
+    const localizedNameOrder = localizedTextOrderExpression('name');
+
+    if (!sort) {
+      return hasSortOrder
+        ? (hasCode ? 'sort_order ASC, code ASC' : `sort_order ASC, ${localizedNameOrder} ASC`)
+        : (hasCode ? 'code ASC' : `${localizedNameOrder} ASC`);
+    }
+
+    const isDesc = sort.startsWith('-');
+    const field = isDesc ? sort.slice(1) : sort;
+    const fieldMap: Record<string, string> = {
+      code: hasCode ? 'code' : localizedNameOrder,
+      name: localizedNameOrder,
+      sortOrder: hasSortOrder ? 'sort_order' : localizedNameOrder,
+      createdAt: 'created_at',
+    };
+
+    return `${fieldMap[field] ?? (hasSortOrder ? 'sort_order' : localizedNameOrder)} ${isDesc ? 'DESC' : 'ASC'}`;
+  }
+
+  private buildBaseSelect(entityType: ConfigEntityType): string {
+    const extraFields = CONFIG_EXTRA_FIELDS[entityType];
+    const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
+    const hasCode = CONFIG_HAS_CODE.has(entityType);
+    const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
+    const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
+    const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
+    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
+    const extraFieldsSelect = extraFields.length > 0
+      ? `, ${extraFields.map((field) => `${field} as "${this.snakeToCamel(field)}"`).join(', ')}`
+      : '';
+
+    return [
+      'id',
+      isScoped ? 'owner_type as "ownerType", owner_id as "ownerId"' : 'NULL as "ownerType", NULL as "ownerId"',
+      hasCode ? 'code' : 'NULL as code',
+      'name',
+      hasDescription ? 'description' : 'NULL::jsonb as description',
+      hasExtraData ? 'extra_data as "extraData"' : 'NULL::jsonb as "extraData"',
+      hasSortOrder ? 'sort_order as "sortOrder"' : '0 as "sortOrder"',
+      'is_active as "isActive"',
+      hasSystemControl ? 'is_force_use as "isForceUse", is_system as "isSystem"' : 'false as "isForceUse", false as "isSystem"',
+      'created_at as "createdAt"',
+      'updated_at as "updatedAt"',
+      hasAudit ? 'created_by as "createdBy", updated_by as "updatedBy"' : 'NULL as "createdBy", NULL as "updatedBy"',
+      `version${extraFieldsSelect}`,
+    ].join(', ');
+  }
+
+  private decorateEntity(
+    entityType: ConfigEntityType,
+    entity: RawConfigEntity & Record<string, unknown>,
+    language: string,
+  ): BaseConfigEntity & {
+    localizedDescription: string | null;
+    localizedName: string;
+  } {
+    const name = readLocalizedText(entity.name, `${entityType}.name`);
+    const description = entity.description
+      ? readLocalizedText(entity.description, `${entityType}.description`)
+      : null;
+
+    return {
+      ...entity,
+      name,
+      description,
+      ...(entityType === 'consent' && entity.contentMarkdown
+        ? {
+            contentMarkdown: readLocalizedText(
+              entity.contentMarkdown as Prisma.JsonValue,
+              'consent.contentMarkdown',
+            ),
+          }
+        : {}),
+      localizedName: pickLocalizedText(name, language),
+      localizedDescription: description ? pickLocalizedText(description, language) : null,
+    };
+  }
+
+  private appendExtraFieldParams(
+    entityType: ConfigEntityType,
+    data: ConfigEntityCreateInput,
+    fields: string[],
+    values: string[],
+    params: unknown[],
+    name: LocalizedText,
+  ): void {
+    for (const field of CONFIG_EXTRA_FIELDS[entityType]) {
+      const camelField = this.snakeToCamel(field);
+      let value = data[camelField];
+
+      if (field === 'content_markdown') {
+        value = stringifyLocalizedText(normalizeLocalizedText(data.contentMarkdown, name.en));
+      }
+
+      if (value === undefined) {
+        continue;
+      }
+
+      fields.push(field);
+      values.push(`$${params.length + 1}${this.getColumnCast(field)}`);
+      params.push(this.prepareExtraFieldValue(field, value));
+    }
+  }
+
+  private appendExtraFieldUpdates(
+    entityType: ConfigEntityType,
+    data: ConfigEntityUpdateInput,
+    current: BaseConfigEntity & Record<string, unknown>,
+    updates: string[],
+    params: unknown[],
+    paramIndex: number,
+    name: LocalizedText,
+  ): void {
+    let nextParamIndex = paramIndex;
+
+    for (const field of CONFIG_EXTRA_FIELDS[entityType]) {
+      const camelField = this.snakeToCamel(field);
+      let value = data[camelField];
+
+      if (field === 'content_markdown' && data.contentMarkdown !== undefined) {
+        const currentContent = current.contentMarkdown
+          ? readLocalizedText(current.contentMarkdown as Prisma.JsonValue, 'consent.contentMarkdown')
+          : normalizeLocalizedText(null, name.en);
+        value = stringifyLocalizedText(mergeLocalizedText(currentContent, data.contentMarkdown));
+      }
+
+      if (value === undefined) {
+        continue;
+      }
+
+      updates.push(`${field} = $${nextParamIndex++}${this.getColumnCast(field)}`);
+      params.push(this.prepareExtraFieldValue(field, value));
+    }
+  }
+
+  private getColumnCast(field: string): string {
+    if (field === 'content_markdown') {
+      return '::jsonb';
+    }
+
+    if (field === 'owner_id' || field.endsWith('_id')) {
+      return '::uuid';
+    }
+
+    if (field === 'allowed_ips' || field === 'scope') {
+      return '::text[]';
+    }
+
+    return '';
+  }
+
+  private prepareExtraFieldValue(field: string, value: unknown): unknown {
+    if (field === 'content_markdown') {
+      return value;
+    }
+
+    return value;
+  }
+
+  private stringifyJson(input: Record<string, unknown> | null | undefined): string | null {
+    return input ? JSON.stringify(input) : null;
+  }
+
   private async getScopeChain(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null
-  ): Promise<Array<{ type: OwnerType; id: string | null }>> {
-    const chain: Array<{ type: OwnerType; id: string | null }> = [];
-    chain.push({ type: 'tenant', id: null });
+    scopeId: string | null,
+  ): Promise<ConfigScopeRef[]> {
+    const chain: ConfigScopeRef[] = [{ type: 'tenant', id: null }];
 
     if (scopeType === 'tenant') {
       return chain;
     }
 
     if (scopeType === 'subsidiary' && scopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(`
-        SELECT id, path FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
-      `, scopeId);
-      
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(
+        `
+          SELECT id, path
+          FROM "${tenantSchema}".subsidiary
+          WHERE id = $1::uuid
+        `,
+        scopeId,
+      );
+
       if (subsidiaries.length > 0) {
-        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
-          SELECT id FROM "${tenantSchema}".subsidiary 
-          WHERE $1 LIKE path || '%' AND path != $1
-          ORDER BY length(path)
-        `, subsidiaries[0].path);
-        
-        for (const anc of ancestors) {
-          chain.push({ type: 'subsidiary', id: anc.id });
+        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `
+            SELECT id
+            FROM "${tenantSchema}".subsidiary
+            WHERE $1 LIKE path || '%' AND path != $1
+            ORDER BY length(path)
+          `,
+          subsidiaries[0].path,
+        );
+
+        for (const ancestor of ancestors) {
+          chain.push({ type: 'subsidiary', id: ancestor.id });
         }
         chain.push({ type: 'subsidiary', id: scopeId });
       }
     }
 
     if (scopeType === 'talent' && scopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{ subsidiaryId: string | null; path: string }>>(`
-        SELECT subsidiary_id as "subsidiaryId", path FROM "${tenantSchema}".talent WHERE id = $1::uuid
-      `, scopeId);
-      
+      const talents = await prisma.$queryRawUnsafe<Array<{
+        path: string;
+        subsidiaryId: string | null;
+      }>>(
+        `
+          SELECT subsidiary_id as "subsidiaryId", path
+          FROM "${tenantSchema}".talent
+          WHERE id = $1::uuid
+        `,
+        scopeId,
+      );
+
       if (talents.length > 0 && talents[0].subsidiaryId) {
-        const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
-          SELECT id FROM "${tenantSchema}".subsidiary 
-          WHERE $1 LIKE path || '%'
-          ORDER BY length(path)
-        `, talents[0].path);
-        
-        for (const sub of subsidiaries) {
-          chain.push({ type: 'subsidiary', id: sub.id });
+        const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `
+            SELECT id
+            FROM "${tenantSchema}".subsidiary
+            WHERE $1 LIKE path || '%'
+            ORDER BY length(path)
+          `,
+          talents[0].path,
+        );
+
+        for (const subsidiary of subsidiaries) {
+          chain.push({ type: 'subsidiary', id: subsidiary.id });
         }
       }
       chain.push({ type: 'talent', id: scopeId });
@@ -1068,365 +1050,25 @@ export class ConfigService {
     tenantSchema: string,
     entityType: ConfigEntityType,
     scopeType: OwnerType,
-    scopeId: string | null
+    scopeId: string | null,
   ): Promise<Set<string>> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
-    
-    const overrides = await prisma.$queryRawUnsafe<Array<{ entityId: string }>>(`
-      SELECT entity_id as "entityId" FROM "${tenantSchema}".config_override
-      WHERE entity_type = $1 AND owner_type = $2 
-        AND COALESCE(owner_id, '00000000-0000-0000-0000-000000000000') = COALESCE($3::uuid, '00000000-0000-0000-0000-000000000000')
-        AND is_disabled = true
-    `, tableName, scopeType, scopeId);
-
-    return new Set(overrides.map(o => o.entityId));
-  }
-
-  private decorateEntity(
-    entityType: ConfigEntityType,
-    entity: BaseConfigEntity & Record<string, unknown>,
-    language: string,
-  ): BaseConfigEntity & {
-    contentTranslations?: TranslationMap;
-    description: string | null;
-    descriptionTranslations: TranslationMap;
-    name: string;
-    translations: TranslationMap;
-  } {
-    const translations = this.buildTranslations(entity, entity.extraData);
-    const descriptionTranslations = this.buildDescriptionTranslations(entity, entity.extraData);
-    const contentTranslations = entityType === 'consent'
-      ? this.buildContentTranslations(entity, entity.extraData)
-      : undefined;
-
-    return {
-      ...entity,
-      translations,
-      descriptionTranslations,
-      ...(contentTranslations ? { contentTranslations } : {}),
-      name: this.getLocalizedValue(translations, language, entity.nameEn) ?? entity.nameEn,
-      description: this.getLocalizedValue(descriptionTranslations, language, entity.descriptionEn),
-    };
-  }
-
-  private prepareTranslationPayload(
-    entityType: ConfigEntityType,
-    data: Record<string, unknown>,
-    current?: ConfigEntityWithMeta | null,
-  ): ConfigTranslationPayload {
-    const translations = data.translations !== undefined
-      ? this.normalizeTranslationInput(data.translations)
-      : { ...(current?.translations ?? {}) };
-
-    this.applyLegacyTranslation(translations, 'en', data.nameEn);
-    this.applyLegacyTranslation(translations, 'zh_HANS', data.nameZh);
-    this.applyLegacyTranslation(translations, 'ja', data.nameJa);
-
-    const descriptionTranslations = data.descriptionTranslations !== undefined
-      ? this.normalizeTranslationInput(data.descriptionTranslations)
-      : { ...(current?.descriptionTranslations ?? {}) };
-
-    this.applyLegacyTranslation(descriptionTranslations, 'en', data.descriptionEn);
-    this.applyLegacyTranslation(descriptionTranslations, 'zh_HANS', data.descriptionZh);
-    this.applyLegacyTranslation(descriptionTranslations, 'ja', data.descriptionJa);
-
-    const contentTranslations = data.contentTranslations !== undefined
-      ? this.normalizeTranslationInput(data.contentTranslations)
-      : { ...(current?.contentTranslations ?? {}) };
-
-    if (entityType === 'consent') {
-      this.applyLegacyTranslation(contentTranslations, 'en', data.contentMarkdownEn);
-      this.applyLegacyTranslation(contentTranslations, 'zh_HANS', data.contentMarkdownZh);
-      this.applyLegacyTranslation(contentTranslations, 'ja', data.contentMarkdownJa);
-    }
-
-    const requestedExtraData = this.asRecord(data.extraData);
-    const baseExtraData = requestedExtraData !== null
-      ? requestedExtraData
-      : current?.extraData ?? null;
-
-    return {
-      translations,
-      descriptionTranslations,
-      contentTranslations,
-      extraData: this.mergeExtraData(
-        baseExtraData,
-        translations,
-        descriptionTranslations,
-        contentTranslations,
-        entityType,
-      ),
-      legacyFields: {
-        nameEn: this.pickLegacyValue(data.nameEn, translations.en, current?.nameEn),
-        nameZh: this.pickLegacyValue(data.nameZh, translations.zh_HANS, current?.nameZh),
-        nameJa: this.pickLegacyValue(data.nameJa, translations.ja, current?.nameJa),
-        descriptionEn: this.pickLegacyValue(data.descriptionEn, descriptionTranslations.en, current?.descriptionEn),
-        descriptionZh: this.pickLegacyValue(data.descriptionZh, descriptionTranslations.zh_HANS, current?.descriptionZh),
-        descriptionJa: this.pickLegacyValue(data.descriptionJa, descriptionTranslations.ja, current?.descriptionJa),
-        contentMarkdownEn: entityType === 'consent'
-          ? this.pickLegacyValue(data.contentMarkdownEn, contentTranslations.en, current?.contentMarkdownEn as string | null | undefined)
-          : undefined,
-        contentMarkdownZh: entityType === 'consent'
-          ? this.pickLegacyValue(data.contentMarkdownZh, contentTranslations.zh_HANS, current?.contentMarkdownZh as string | null | undefined)
-          : undefined,
-        contentMarkdownJa: entityType === 'consent'
-          ? this.pickLegacyValue(data.contentMarkdownJa, contentTranslations.ja, current?.contentMarkdownJa as string | null | undefined)
-          : undefined,
-      },
-    };
-  }
-
-  private buildTranslations(
-    entity: { nameEn: string; nameZh?: string | null; nameJa?: string | null },
-    extraData: Record<string, unknown> | null,
-  ): TranslationMap {
-    const extraTranslations = this.readExtraTranslationMap(extraData, 'translations');
-
-    return this.withLegacyTranslations(extraTranslations, {
-      en: entity.nameEn,
-      zh_HANS: entity.nameZh,
-      ja: entity.nameJa,
-    });
-  }
-
-  private buildDescriptionTranslations(
-    entity: { descriptionEn?: string | null; descriptionZh?: string | null; descriptionJa?: string | null },
-    extraData: Record<string, unknown> | null,
-  ): TranslationMap {
-    const extraTranslations = this.readExtraTranslationMap(extraData, 'descriptionTranslations');
-
-    return this.withLegacyTranslations(extraTranslations, {
-      en: entity.descriptionEn,
-      zh_HANS: entity.descriptionZh,
-      ja: entity.descriptionJa,
-    });
-  }
-
-  private buildContentTranslations(
-    entity: Record<string, unknown>,
-    extraData: Record<string, unknown> | null,
-  ): TranslationMap {
-    const extraTranslations = this.readExtraTranslationMap(extraData, 'contentTranslations');
-
-    return this.withLegacyTranslations(extraTranslations, {
-      en: entity.contentMarkdownEn as string | null | undefined,
-      zh_HANS: entity.contentMarkdownZh as string | null | undefined,
-      ja: entity.contentMarkdownJa as string | null | undefined,
-    });
-  }
-
-  private withLegacyTranslations(
-    translations: TranslationMap,
-    legacy: Record<string, string | null | undefined>,
-  ): TranslationMap {
-    const result: TranslationMap = { ...translations };
-
-    Object.entries(legacy).forEach(([locale, value]) => {
-      if (typeof value === 'string' && value.trim().length > 0) {
-        result[locale] = value.trim();
-      }
-    });
-
-    return result;
-  }
-
-  private readExtraTranslationMap(
-    extraData: Record<string, unknown> | null,
-    key: 'translations' | 'descriptionTranslations' | 'contentTranslations',
-  ): TranslationMap {
-    const candidate = extraData?.[key];
-
-    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-      return {};
-    }
-
-    return this.normalizeTranslationInput(candidate);
-  }
-
-  private normalizeTranslationInput(input: unknown): TranslationMap {
-    if (!input || typeof input !== 'object' || Array.isArray(input)) {
-      return {};
-    }
-
-    const result: TranslationMap = {};
-
-    Object.entries(input).forEach(([locale, value]) => {
-      if (typeof value !== 'string') {
-        return;
-      }
-
-      const normalizedLocale = this.normalizeTranslationKey(locale);
-      const trimmedValue = value.trim();
-
-      if (!normalizedLocale || trimmedValue.length === 0) {
-        return;
-      }
-
-      result[normalizedLocale] = trimmedValue;
-    });
-
-    return result;
-  }
-
-  private mergeExtraData(
-    baseExtraData: Record<string, unknown> | null,
-    translations: TranslationMap,
-    descriptionTranslations: TranslationMap,
-    contentTranslations: TranslationMap,
-    entityType: ConfigEntityType,
-  ): Record<string, unknown> | null {
-    const nextExtraData: Record<string, unknown> = {
-      ...(baseExtraData ?? {}),
-    };
-
-    delete nextExtraData.translations;
-    delete nextExtraData.descriptionTranslations;
-    delete nextExtraData.contentTranslations;
-
-    this.assignExtraTranslationMap(nextExtraData, 'translations', translations);
-    this.assignExtraTranslationMap(nextExtraData, 'descriptionTranslations', descriptionTranslations);
-
-    if (entityType === 'consent') {
-      this.assignExtraTranslationMap(nextExtraData, 'contentTranslations', contentTranslations);
-    }
-
-    return Object.keys(nextExtraData).length > 0 ? nextExtraData : null;
-  }
-
-  private assignExtraTranslationMap(
-    extraData: Record<string, unknown>,
-    key: 'translations' | 'descriptionTranslations' | 'contentTranslations',
-    translations: TranslationMap,
-  ): void {
-    const extraTranslations = Object.fromEntries(
-      Object.entries(translations).filter(([locale]) => !['en', 'zh_HANS', 'ja'].includes(locale)),
+    const overrides = await prisma.$queryRawUnsafe<Array<{ entityId: string }>>(
+      `
+        SELECT entity_id as "entityId"
+        FROM "${tenantSchema}".config_override
+        WHERE entity_type = $1
+          AND owner_type = $2
+          AND COALESCE(owner_id, '00000000-0000-0000-0000-000000000000'::uuid)
+            = COALESCE($3::uuid, '00000000-0000-0000-0000-000000000000'::uuid)
+          AND is_disabled = true
+      `,
+      tableName,
+      scopeType,
+      scopeId,
     );
 
-    if (Object.keys(extraTranslations).length > 0) {
-      extraData[key] = extraTranslations;
-    }
-  }
-
-  private normalizeTranslationKey(input?: string | null): string | null {
-    if (!input) {
-      return null;
-    }
-
-    const normalizedSupportedLocale = normalizeSupportedUiLocale(input);
-    if (normalizedSupportedLocale) {
-      return normalizedSupportedLocale;
-    }
-
-    const normalized = input.trim().replace(/-/g, '_');
-    if (!normalized) {
-      return null;
-    }
-
-    const [language, ...rest] = normalized.split('_').filter(Boolean);
-    if (!language) {
-      return null;
-    }
-
-    if (rest.length === 0) {
-      return language.toLowerCase();
-    }
-
-    return `${language.toLowerCase()}_${rest.join('_').toUpperCase()}`;
-  }
-
-  private getLocalizedValue(
-    translations: TranslationMap,
-    language: string,
-    fallback: string | null | undefined,
-  ): string | null {
-    const normalizedLocale = this.normalizeTranslationKey(language);
-
-    if (normalizedLocale && translations[normalizedLocale]) {
-      return translations[normalizedLocale];
-    }
-
-    if (normalizedLocale) {
-      const [baseLanguage] = normalizedLocale.split('_');
-      if (baseLanguage && translations[baseLanguage]) {
-        return translations[baseLanguage];
-      }
-    }
-
-    const localeFamily = resolveTrilingualLocaleFamily(language);
-    if (localeFamily === 'zh') {
-      return translations.zh_HANS || translations.zh_HANT || fallback || null;
-    }
-
-    if (localeFamily === 'ja') {
-      return translations.ja || fallback || null;
-    }
-
-    return translations.en || fallback || null;
-  }
-
-  private applyLegacyTranslation(
-    translations: TranslationMap,
-    locale: string,
-    value: unknown,
-  ): void {
-    if (typeof value !== 'string') {
-      return;
-    }
-
-    const normalizedLocale = this.normalizeTranslationKey(locale);
-    const trimmedValue = value.trim();
-
-    if (!normalizedLocale || trimmedValue.length === 0) {
-      return;
-    }
-
-    translations[normalizedLocale] = trimmedValue;
-  }
-
-  private pickLegacyValue(
-    explicitValue: unknown,
-    translationValue: string | undefined,
-    currentValue: string | null | undefined,
-  ): string | null | undefined {
-    if (typeof explicitValue === 'string') {
-      return explicitValue.trim().length > 0 ? explicitValue.trim() : null;
-    }
-
-    if (typeof translationValue === 'string' && translationValue.trim().length > 0) {
-      return translationValue.trim();
-    }
-
-    return currentValue;
-  }
-
-  private asRecord(value: unknown): Record<string, unknown> | null {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return null;
-    }
-
-    return value as Record<string, unknown>;
-  }
-
-  private getLocalizedField(
-    entity: Record<string, unknown>,
-    field: 'name' | 'description',
-    language: string
-  ): string | null {
-    const enField = `${field}En`;
-    const zhField = `${field}Zh`;
-    const jaField = `${field}Ja`;
-
-    const localeFamily = resolveTrilingualLocaleFamily(language);
-
-    if (localeFamily === 'zh') {
-      return (entity[zhField] as string | null) || (entity[enField] as string | null);
-    }
-
-    if (localeFamily === 'ja') {
-      return (entity[jaField] as string | null) || (entity[enField] as string | null);
-    }
-
-    return entity[enField] as string | null;
+    return new Set(overrides.map((override) => override.entityId));
   }
 
   private getParentField(entityType: ConfigEntityType): string | null {
@@ -1436,10 +1078,11 @@ export class ConfigService {
       'membership-type': 'membership_class_id',
       'membership-level': 'membership_type_id',
     };
-    return parentFields[entityType] || null;
+
+    return parentFields[entityType] ?? null;
   }
 
-  private snakeToCamel(str: string): string {
-    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  private snakeToCamel(input: string): string {
+    return input.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
 }

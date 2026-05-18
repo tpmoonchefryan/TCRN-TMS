@@ -1,4 +1,8 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
+import type {
+  LocalizedText,
+  PartialLocalizedText,
+  SupportedUiLocale,
+} from '@tcrn/shared';
 
 import {
   type ApiSuccessEnvelope,
@@ -30,15 +34,10 @@ export interface DictionaryItemRecord {
   id: string;
   dictionaryCode: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
-  name: string;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
-  descriptionTranslations: Record<string, string>;
+  name: LocalizedText;
+  localizedName: string;
+  description: LocalizedText;
+  localizedDescription: string | null;
   sortOrder: number;
   isActive: boolean;
   extraData: Record<string, unknown> | null;
@@ -49,28 +48,16 @@ export interface DictionaryItemRecord {
 
 export interface CreateDictionaryTypeInput {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  translations?: Record<string, string>;
-  descriptionTranslations?: Record<string, string>;
+  name: LocalizedText;
+  description?: PartialLocalizedText;
   extraData?: Record<string, unknown>;
   sortOrder?: number;
 }
 
 export interface CreateDictionaryItemInput {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
-  translations?: Record<string, string>;
-  descriptionTranslations?: Record<string, string>;
+  name: LocalizedText;
+  description?: PartialLocalizedText;
   sortOrder?: number;
   extraData?: Record<string, unknown>;
 }
@@ -162,24 +149,7 @@ export async function listDictionaryItems(
 }
 
 export function createDictionaryType(request: RequestFn, input: CreateDictionaryTypeInput) {
-  return request<{
-    id: string;
-    code: string;
-    nameEn: string;
-    nameZh: string | null;
-    nameJa: string | null;
-    translations: Record<string, string>;
-    descriptionEn: string | null;
-    descriptionZh: string | null;
-    descriptionJa: string | null;
-    descriptionTranslations: Record<string, string>;
-    extraData: Record<string, unknown> | null;
-    sortOrder: number;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-    version: number;
-  }>('/api/v1/system-dictionary', buildJsonRequestInit('POST', input));
+  return request<DictionaryItemRecord>('/api/v1/system-dictionary', buildJsonRequestInit('POST', input));
 }
 
 export function createDictionaryItem(

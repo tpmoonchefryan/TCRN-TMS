@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
 import { WebhookEventType } from '../dto/integration.dto';
-import { buildNameTranslations } from './name-translation.policy';
 
 export const DEFAULT_WEBHOOK_RETRY_POLICY = {
   maxRetries: 3,
@@ -18,9 +18,7 @@ export interface WebhookRetryPolicy {
 export interface WebhookRecord {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   url: string;
   secret: string | null;
@@ -42,10 +40,7 @@ export interface WebhookRecord {
 export interface WebhookListItem {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   definitionKey?: string;
   monitoredTalentIds: string[];
   url: string;
@@ -174,10 +169,7 @@ export function mapWebhookListItem(webhook: WebhookRecord): WebhookListItem {
   return {
     id: webhook.id,
     code: webhook.code,
-    nameEn: webhook.nameEn,
-    nameZh: webhook.nameZh,
-    nameJa: webhook.nameJa,
-    translations: buildNameTranslations(webhook),
+    name: webhook.name,
     definitionKey: getDefinitionKey(webhook.extraData),
     monitoredTalentIds: normalizeMonitoredTalentIds(webhook.extraData),
     url: webhook.url,

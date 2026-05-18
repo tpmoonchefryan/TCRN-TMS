@@ -1,13 +1,25 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPublicHomepageProjectionMediaPreloadCache } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicPresenceStudioScreen } from '@/domains/public-presence-studio/screens/PublicPresenceStudioScreen';
 
 const mockRequest = vi.fn();
+const replace = vi.fn();
+let pathname = '/studio/public-presence/tenant-1/talent-1';
+let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en',
+  locale: 'en' as SupportedUiLocale,
 };
+const STUDIO_RENDER_TIMEOUT = 15_000;
+const STUDIO_TEST_TIMEOUT = 20_000;
+const ORDINARY_COPY_BOUNDARY_PATTERN =
+  /\bcanvas\b|admin chrome|topbar compact|first work surface|first surface/i;
+
+vi.setConfig({
+  testTimeout: STUDIO_TEST_TIMEOUT,
+});
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -19,22 +31,116 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
-vi.mock('@/domains/homepage-management/screens/HomepageManagementScreen', () => ({
-  HomepageManagementScreen: ({ talentId }: { talentId: string }) => (
-    <div>Legacy homepage ops for {talentId}</div>
-  ),
+vi.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({
+    replace,
+  }),
+  useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 vi.mock('@/domains/public-homepage/components/PublicHomepageProjectionRenderer', () => ({
   PublicHomepageProjectionRenderer: ({
     projection,
+    responsiveMode,
   }: {
     projection: { metadata: { title: string | null } };
-  }) => <div>Preview projection {projection.metadata.title}</div>,
+    responsiveMode?: string;
+  }) => (
+    <div data-responsive-mode={responsiveMode ?? 'auto'} data-testid="mock-public-preview">
+      Preview projection {projection.metadata.title}
+    </div>
+  ),
 }));
+
+function buildPreview() {
+  return {
+    projectionSchemaVersion: '1.0',
+    projectionId: 'preview-1',
+    projectionVersion: 1,
+    portalId: 'portal-1',
+    documentVersionId: 'draft-version-1',
+    contentHash: 'hash-preview-1',
+    validationSnapshotId: 'snapshot-1',
+    registryVersion: '1.0.0',
+    safetyPolicyVersion: '1.0.0',
+    projectionHash: 'projection-hash-1',
+    resolvedRevealPhase: 'always',
+    route: {
+      canonicalPath: '/tenant-1/aki/homepage',
+      legacyPath: null,
+      tenantCode: 'tenant-1',
+      talentCode: 'aki',
+      domainHostname: null,
+      cacheKeys: [],
+    },
+    metadata: {
+      title: 'Aki Rosenthal',
+      description: 'Official fan hub',
+      canonicalPath: '/tenant-1/aki/homepage',
+      ogImage: null,
+      ogImageAlt: null,
+      locale: null,
+    },
+    appearance: {
+      theme: {
+        preset: 'soft',
+        visualStyle: 'flat',
+        colors: {
+          accent: '#E0A0C0',
+          background: '#FAFBFC',
+          primary: '#7B9EE0',
+          text: '#333333',
+          textSecondary: '#888888',
+        },
+        background: {
+          type: 'gradient',
+          value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
+        },
+        card: {
+          background: '#FFFFFF',
+          borderRadius: 'large',
+          shadow: 'small',
+        },
+        typography: {
+          fontFamily: 'noto-sans',
+          headingWeight: 'medium',
+        },
+        animation: {
+          enableEntrance: true,
+          enableHover: true,
+          intensity: 'low',
+        },
+        decorations: {
+          type: 'none',
+        },
+      },
+    },
+    sections: [
+      {
+        id: 'hero',
+        kind: 'firstEncounter',
+        sectionType: 'hero',
+        visibility: 'visible',
+        fallbackBehavior: 'safePlaceholder',
+        validationIssueIds: ['issue-warning-cta'],
+        title: 'Aki Rosenthal',
+        description: 'Official fan hub',
+        timezone: null,
+        avatar: null,
+        primaryAction: null,
+      },
+    ],
+    actions: [],
+    media: [],
+    fallbackDecisions: [],
+    createdAt: '2026-05-15T12:05:00.000Z',
+    rebuiltAt: '2026-05-15T12:05:00.000Z',
+  };
+}
 
 function buildWorkspace(overrides?: Record<string, unknown>) {
   return {
@@ -45,6 +151,7 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       document: {
         metadata: {
           title: 'Aki Rosenthal',
+          canonicalPath: '/tenant-1/aki/homepage',
         },
         personaKit: {
           accentTone: 'rose',
@@ -190,24 +297,6 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
             state: 'validLocked',
             templateId: 'activeTalentHub',
           },
-          {
-            acknowledgementRequired: false,
-            blocksAiPatch: true,
-            blocksPublish: false,
-            blocksVisualEdit: false,
-            code: 'field.warning',
-            fallbackBehavior: 'safePlaceholder',
-            fieldKey: 'primaryCtaUrl',
-            id: 'issue-warning-cta',
-            messageKey: 'warning',
-            path: ['sections', '0', 'fields', 'primaryCtaUrl'],
-            policyVersion: '1.0.0',
-            registryVersion: '1.0.0',
-            sectionId: 'first-encounter-1',
-            severity: 'warning',
-            state: 'invalidRecoverable',
-            templateId: 'activeTalentHub',
-          },
         ],
         projectionHash: null,
         safetyPolicyVersion: '1.0.0',
@@ -232,6 +321,14 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       updatedAt: '2026-05-15T12:05:00.000Z',
       version: 1,
     },
+    publicRoute: {
+      canonicalPath: '/tenant-1/aki/homepage',
+      domainHostname: null,
+      legacyPath: null,
+      talentCode: 'aki',
+      tenantCode: 'tenant-1',
+    },
+    selectedTemplateId: 'activeTalentHub',
     stageSections: [
       {
         allowedComponents: [],
@@ -274,16 +371,6 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
         kind: 'firstEncounter',
         phaseVisibility: ['always'],
         purpose: 'Own the first viewport contract.',
-        sourcePolicy: 'registryOwned',
-      },
-      {
-        allowedComponents: ['LinkButton', 'LiveStatus'],
-        editabilityState: 'validEditable',
-        fallbackBehavior: 'safePlaceholder',
-        fieldDefinitions: [],
-        kind: 'currentLaunchAction',
-        phaseVisibility: ['always'],
-        purpose: 'Highlight the current official CTA.',
         sourcePolicy: 'registryOwned',
       },
       {
@@ -340,7 +427,6 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       {
         defaultSectionOrder: [
           'firstEncounter',
-          'currentLaunchAction',
           'officialChannels',
           'stageSchedule',
           'fanActions',
@@ -351,7 +437,6 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
         recommendedSections: ['fanActions'],
         requiredSections: [
           'firstEncounter',
-          'currentLaunchAction',
           'officialChannels',
           'stageSchedule',
         ],
@@ -364,243 +449,143 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
   };
 }
 
+function isWorkspaceRequest(path: string) {
+  return path === '/api/v1/talents/talent-1/public-presence'
+    || path.startsWith('/api/v1/talents/talent-1/public-presence?templateId=');
+}
+
+function isPreviewRequest(path: string) {
+  return path === '/api/v1/talents/talent-1/public-presence/preview'
+    || path.startsWith('/api/v1/talents/talent-1/public-presence/preview?');
+}
+
 describe('PublicPresenceStudioScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    replace.mockReset();
+    localeState.locale = 'en';
+    localeState.locale = 'en';
+    pathname = '/studio/public-presence/tenant-1/talent-1';
+    currentSearch = '';
+    resetPublicHomepageProjectionMediaPreloadCache();
+    replace.mockImplementation((href: string) => {
+      const resolved = new URL(href, 'https://tcrn.local');
+      pathname = resolved.pathname;
+      currentSearch = resolved.search.startsWith('?') ? resolved.search.slice(1) : resolved.search;
+    });
   });
 
-  it('keeps migration tools out of first-class navigation and tucks them into Advanced', async () => {
-    mockRequest.mockResolvedValue(buildWorkspace());
-
-    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
-
-    expect(await screen.findByRole('tab', { name: 'Overview' })).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: /Legacy Ops/i })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Advanced' }));
-
-    expect(await screen.findByRole('button', { name: 'Open migration tools' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Open migration tools' }));
-    expect(await screen.findByText('Legacy homepage ops for talent-1')).toBeInTheDocument();
-  });
-
-  it('writes fan action updates to url instead of href and keeps one editor panel open', async () => {
-    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/talents/talent-1/public-presence' && !init) {
+  it('mounts the canvas immediately and keeps legacy ops out of first-class UI', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
         return buildWorkspace();
       }
 
-      if (path === '/api/v1/talents/talent-1/public-presence/draft') {
-        const payload = JSON.parse(String(init?.body));
-        expect(payload.document.sections.find((section: { kind: string }) => section.kind === 'fanActions').fields.actions.value[0]).toEqual({
-          label: 'Join stream',
-          slot: 'stream',
-          url: 'https://example.com/stream',
-        });
-        expect(JSON.stringify(payload.document)).not.toContain('href');
-
-        return buildWorkspace({
-          draftVersion: {
-            ...buildWorkspace().draftVersion,
-            contentHash: 'hash-2',
-            document: payload.document,
-            updatedAt: '2026-05-15T12:10:00.000Z',
-            versionNumber: 2,
-          },
-        });
+      if (isPreviewRequest(path)) {
+        return buildPreview();
       }
 
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Stage Sections' }));
-    fireEvent.click(screen.getByRole('button', { name: /Edit Fan Actions/i }));
-
-    expect(screen.getAllByRole('heading', { name: /Section editor/i })).toHaveLength(1);
-
-    const editor = screen.getByTestId('stage-section-panel');
-    const slotInput = within(editor).getByLabelText('Fan actions 1 Slot');
-    const labelInput = within(editor).getByLabelText('Fan actions 1 Label');
-    const urlInput = within(editor).getByDisplayValue('https://example.com/follow');
-
-    fireEvent.change(slotInput, { target: { value: 'stream' } });
-    fireEvent.change(labelInput, { target: { value: 'Join stream' } });
-    fireEvent.change(urlInput, { target: { value: 'https://example.com/stream' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save sections' }));
-
-    await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/draft',
-        expect.objectContaining({ method: 'PATCH' }),
-      );
-    });
-  });
-
-  it('shows locked sections in inspect/configure flow instead of editable flat fields', async () => {
-    mockRequest.mockResolvedValue(buildWorkspace());
-
-    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Stage Sections' }));
-    fireEvent.click(screen.getByRole('button', { name: /Inspect Official Updates Feed/i }));
-
-    const panel = await screen.findByTestId('stage-section-panel');
-    expect(within(panel).getByText('Locked by source')).toBeInTheDocument();
-    expect(within(panel).getByText('Advanced only')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: /content html/i })).not.toBeInTheDocument();
-  });
-
-  it('disables source-only component fields inside visual editors', async () => {
-    mockRequest.mockResolvedValue(
-      buildWorkspace({
-        draftVersion: {
-          ...buildWorkspace().draftVersion,
-          document: {
-            ...buildWorkspace().draftVersion.document,
-            sections: [
-              ...buildWorkspace().draftVersion.document.sections,
-              {
-                components: [
-                  {
-                    id: 'marshmallow-1',
-                    props: {
-                      displayMode: 'compact',
-                      showRecentCount: 3,
-                      showSubmitButton: true,
-                    },
-                    type: 'MarshmallowWidget',
-                    visible: true,
-                  },
-                ],
-                id: 'fan-interaction-1',
-                kind: 'fanInteraction',
-                title: 'Fan Interaction',
-              },
-            ],
-          },
-        },
-        stageSections: [
-          ...buildWorkspace().stageSections,
-          {
-            allowedComponents: ['MarshmallowWidget'],
-            editabilityState: 'validEditable',
-            fallbackBehavior: 'safePlaceholder',
-            fieldDefinitions: [],
-            kind: 'fanInteraction',
-            phaseVisibility: ['always'],
-            purpose: 'Offer bounded fan interaction such as Marshmallow.',
-            sourcePolicy: 'registryOwned',
-          },
-        ],
-        templates: [
-          {
-            ...buildWorkspace().templates[0],
-            defaultSectionOrder: [
-              ...buildWorkspace().templates[0].defaultSectionOrder,
-              'fanInteraction',
-            ],
-            recommendedSections: [
-              ...buildWorkspace().templates[0].recommendedSections,
-              'fanInteraction',
-            ],
-          },
-        ],
-      }),
+    const { container } = render(
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
     );
 
-    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Stage Sections' }));
-    fireEvent.click(screen.getByRole('button', { name: /Edit Fan Interaction/i }));
-
-    const panel = await screen.findByTestId('stage-section-panel');
-    expect(within(panel).getByLabelText('Display mode')).toBeDisabled();
-    expect(within(panel).getByLabelText('Recent message count')).toBeDisabled();
-    expect(within(panel).getByLabelText('Show submit button')).toBeDisabled();
+    expect(
+      await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Legacy Ops/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Move up/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Move down/i })).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(
+      /projection|content hash|runtime|policy version|workflow event id|registry/i,
+    );
+    expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
   });
 
-  it('renders fan preview with viewport modes and saved state language instead of hash jargon', async () => {
+  it('restores deep-linked workbench state and safely falls back from invalid query values', async () => {
+    currentSearch = 'viewport=mobile&previewFocus=1&phase=always&sheet=preview-tools';
+
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/talents/talent-1/public-presence') {
+      if (isWorkspaceRequest(path)) {
         return buildWorkspace();
       }
 
-      if (path === '/api/v1/talents/talent-1/public-presence/preview') {
-        return {
-          projectionSchemaVersion: '1.0',
-          resolvedRevealPhase: 'always',
-          route: {
-            canonicalPath: '/tenant-1/aki/homepage',
-            legacyPath: 'aki-home',
-            tenantCode: 'tenant-1',
-            talentCode: 'aki',
-            domainHostname: null,
-          },
-          metadata: {
-            title: 'Aki Rosenthal',
-            description: 'Official fan hub',
-            canonicalPath: '/tenant-1/aki/homepage',
-            ogImage: null,
-            ogImageAlt: null,
-            locale: null,
-          },
-          appearance: {
-            theme: {
-              preset: 'soft',
-              visualStyle: 'flat',
-              colors: {
-                accent: '#E0A0C0',
-                background: '#FAFBFC',
-                primary: '#7B9EE0',
-                text: '#333333',
-                textSecondary: '#888888',
-              },
-              background: {
-                type: 'gradient',
-                value: 'linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%)',
-              },
-              card: {
-                background: '#FFFFFF',
-                borderRadius: 'large',
-                shadow: 'small',
-              },
-              typography: {
-                fontFamily: 'noto-sans',
-                headingWeight: 'medium',
-              },
-              animation: {
-                enableEntrance: true,
-                enableHover: true,
-                intensity: 'low',
-              },
-              decorations: {
-                type: 'none',
-              },
-            },
-          },
-          sections: [
-            {
-              id: 'hero',
-              kind: 'firstEncounter',
-              sectionType: 'hero',
-              visibility: 'visible',
-              fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: ['issue-warning-cta'],
-              title: 'Aki Rosenthal',
-              description: 'Official fan hub',
-              timezone: null,
-              avatar: null,
-              primaryAction: null,
-            },
-          ],
-          actions: [],
-          media: [],
-          fallbackDecisions: [],
-        };
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    const { unmount } = render(
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
+
+    unmount();
+    currentSearch = 'viewport=cinema&previewFocus=banana&phase=broken&leftPanel=unknown&stagePanel=oops';
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    expect(screen.getAllByRole('button', { name: 'Desktop' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute('aria-pressed', 'false');
+    await waitFor(() => {
+      expect(currentSearch).toBe('');
+    });
+  });
+
+  it('exposes desktop drawer semantics and initial focus for workbench panels', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1440,
+      writable: true,
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+
+    const personaButton = screen.getByRole('button', { name: 'Persona Kit' });
+    fireEvent.click(personaButton);
+
+    const leftDrawer = screen.getByTestId('studio-left-drawer-desktop');
+    expect(leftDrawer).toHaveAttribute('role', 'region');
+    expect(personaButton).toHaveAttribute('aria-expanded', 'true');
+    expect(personaButton).toHaveAttribute('aria-controls', leftDrawer.id);
+
+    const leftDrawerClose = within(leftDrawer).getByRole('button', { name: 'Close panel' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(leftDrawerClose);
+    });
+    expect(leftDrawerClose).toHaveAccessibleName('Close panel');
+  });
+
+  it('keeps mobile preview context in a dedicated tools sheet', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
       }
 
       throw new Error(`Unhandled request: ${path}`);
@@ -608,32 +593,66 @@ describe('PublicPresenceStudioScreen', () => {
 
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Fan Preview' }));
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    const previewToolsButton = screen.getByRole('button', { name: 'Preview tools' });
+    fireEvent.click(previewToolsButton);
 
-    expect(await screen.findByText('Preview projection Aki Rosenthal')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mobile' })).toBeInTheDocument();
-    expect(screen.getByText('Preview is showing the saved draft.')).toBeInTheDocument();
-    expect(screen.queryByText(/Published proof/i)).not.toBeInTheDocument();
+    const previewToolsSheet = screen.getByTestId('studio-mobile-preview-tools-sheet');
+    expect(previewToolsSheet).toHaveAttribute('role', 'dialog');
+    expect(previewToolsButton).toHaveAttribute('aria-expanded', 'true');
+    expect(previewToolsButton).toHaveAttribute('aria-controls', previewToolsSheet.id);
+    const previewToolsClose = within(previewToolsSheet).getByRole('button', { name: 'Close' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(previewToolsClose);
+    });
+    expect(screen.getAllByText('Active Talent Hub')[0]).toBeInTheDocument();
   });
 
-  it('prioritizes readiness queue and keeps release actions gated by unsaved changes', async () => {
-    mockRequest.mockResolvedValue(buildWorkspace());
+  it('keeps ordinary mobile manage sheets free from design-rationale copy', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
 
-    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Review & Publish' }));
-
-    expect(await screen.findByRole('heading', { name: 'Readiness queue' })).toBeInTheDocument();
-    expect(screen.getByText('Resolve critical and blocking issues first. Warnings stay visible for reviewer judgment.')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Persona Kit' }));
-    fireEvent.change(await screen.findByDisplayValue('Official fan hub'), {
-      target: { value: 'Unsaved edit' },
+      throw new Error(`Unhandled request: ${path}`);
     });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Review & Publish' }));
-    expect(await screen.findByText('Save the current draft before running release actions.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Submit for review' })).toBeDisabled();
+    const { container } = render(
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    fireEvent.click(screen.getByTestId('studio-mobile-manage-button'));
+
+    expect(screen.getByTestId('studio-mobile-manage-sheet')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
+  });
+
+  it('keeps ordinary mobile preview tool sheets free from design-rationale copy', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    const { container } = render(
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview tools' }));
+    expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
   });
 });

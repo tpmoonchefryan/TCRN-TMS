@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -40,9 +40,7 @@ const buildRawRecord = (overrides: Record<string, unknown> = {}) => ({
   ownerId: null,
   pattern: 'spam.com',
   patternType: PatternType.DOMAIN,
-  nameEn: 'Spam Domain',
-  nameZh: null,
-  nameJa: null,
+  name: createLocalizedText({ en: 'Spam Domain' }),
   extraData: null,
   description: null,
   category: 'spam',
@@ -130,7 +128,7 @@ describe('ExternalBlocklistService', () => {
       ownerId: 'talent-123',
       pattern: '[unterminated',
       patternType: PatternType.URL_REGEX,
-      nameEn: 'Broken Regex',
+      name: createLocalizedText({ en: 'Broken Regex' }),
     };
 
     await expect(
@@ -141,35 +139,33 @@ describe('ExternalBlocklistService', () => {
     expect(mockRedisService.del).not.toHaveBeenCalled();
   });
 
-  it('returns managed translations when create includes additional locale values', async () => {
+  it('returns localized name when create includes all supported locale values', async () => {
     const dto: CreateExternalBlocklistDto = {
       ownerType: OwnerType.TENANT,
       pattern: 'spam.com',
       patternType: PatternType.DOMAIN,
-      nameEn: 'Spam Domain',
-      translations: {
+      name: createLocalizedText({
+        en: 'Spam Domain',
         zh_HANT: '垃圾網域',
         ko: '스팸 도메인',
-      },
+      }),
     };
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
       buildRawRecord({
-        extraData: {
-          translations: {
-            zh_HANT: '垃圾網域',
-            ko: '스팸 도메인',
-          },
-        },
+        name: dto.name,
       }),
     ]);
 
     const result = await service.create('tenant_test', dto, mockContext);
 
-    expect(result.translations).toEqual({
+    expect(result.name).toEqual({
       en: 'Spam Domain',
+      zh_HANS: 'Spam Domain',
       zh_HANT: '垃圾網域',
+      ja: 'Spam Domain',
       ko: '스팸 도메인',
+      fr: 'Spam Domain',
     });
   });
 
@@ -197,7 +193,7 @@ describe('ExternalBlocklistService', () => {
     const existing = buildRawRecord({ version: 2 });
     const dto: UpdateExternalBlocklistDto = {
       version: 1,
-      nameEn: 'Updated Name',
+      name: { en: 'Updated Name' },
     };
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([existing]);
@@ -215,7 +211,7 @@ describe('ExternalBlocklistService', () => {
       ownerType: OwnerType.TALENT,
       ownerId: 'talent-123',
       isForceUse: false,
-      nameEn: 'Talent Pattern',
+      name: createLocalizedText({ en: 'Talent Pattern' }),
     }]);
 
     await expect(
@@ -239,7 +235,7 @@ describe('ExternalBlocklistService', () => {
       ownerType: OwnerType.TENANT,
       ownerId: null,
       isForceUse: true,
-      nameEn: 'Tenant Pattern',
+      name: createLocalizedText({ en: 'Tenant Pattern' }),
     }]);
 
     await expect(
@@ -263,7 +259,7 @@ describe('ExternalBlocklistService', () => {
       ownerId: 'talent-123',
       pattern: 'spam.com',
       patternType: PatternType.DOMAIN,
-      nameEn: 'Spam Domain',
+      name: createLocalizedText({ en: 'Spam Domain' }),
     };
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
@@ -284,7 +280,7 @@ describe('ExternalBlocklistService', () => {
       ownerType: OwnerType.TENANT,
       pattern: 'blocked.example',
       patternType: PatternType.DOMAIN,
-      nameEn: 'Tenant Blocklist',
+      name: createLocalizedText({ en: 'Tenant Blocklist' }),
     };
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([

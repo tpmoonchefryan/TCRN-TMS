@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -133,36 +134,21 @@ export class CreateExternalBlocklistDto {
   @IsEnum(PatternType)
   patternType!: PatternType;
 
-  @ApiProperty({ description: 'Pattern name in English', example: 'Discord Invite Filter', maxLength: 128 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(128)
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'Pattern name in Chinese', example: 'Discord 邀请过滤', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Pattern name in Japanese', example: 'Discord 招待フィルター', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Additional locale values keyed by locale code',
+  @ApiProperty({
+    description: 'Localized pattern name keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
     example: {
+      en: 'Discord Invite Filter',
+      zh_HANS: 'Discord 邀请过滤',
       zh_HANT: 'Discord 邀請過濾',
+      ja: 'Discord 招待フィルター',
       ko: 'Discord 초대 차단',
+      fr: 'Filtre invitations Discord',
     },
   })
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name!: LocalizedText;
 
   @ApiPropertyOptional({ description: 'Pattern description', example: 'Reject external Discord invite links', maxLength: 1000 })
   @IsOptional()
@@ -223,36 +209,18 @@ export class UpdateExternalBlocklistDto {
   @IsEnum(PatternType)
   patternType?: PatternType;
 
-  @ApiPropertyOptional({ description: 'Pattern name in English', example: 'Discord Invite Filter', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Pattern name in Chinese', example: 'Discord 邀请过滤', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Pattern name in Japanese', example: 'Discord 招待フィルター', maxLength: 128 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Additional locale values keyed by locale code',
+    description: 'Localized pattern name patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
     example: {
-      zh_HANT: 'Discord 邀請過濾',
-      ko: 'Discord 초대 차단',
+      en: 'Discord Invite Filter',
+      zh_HANS: 'Discord 邀请过滤',
     },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Pattern description', example: 'Reject external Discord invite links', maxLength: 1000 })
   @IsOptional()
@@ -329,10 +297,7 @@ export interface ExternalBlocklistItem {
   ownerId: string | null;
   pattern: string;
   patternType: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   description: string | null;
   category: string | null;
   severity: string;

@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
@@ -12,12 +13,11 @@ const mockRouterReplace = vi.fn();
 let currentPathname = '/tenant/tenant-1/settings';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: undefined,
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -34,16 +34,10 @@ function buildConfigEntityRecord(overrides: Partial<ConfigEntityRecord> = {}): C
     ownerType: 'tenant',
     ownerId: null,
     code: 'MUSIC',
-    name: 'Music',
-    nameEn: 'Music',
-    nameZh: null,
-    nameJa: null,
-    translations: { en: 'Music' },
-    description: 'Music activities',
-    descriptionEn: 'Music activities',
-    descriptionZh: null,
-    descriptionJa: null,
-    descriptionTranslations: { en: 'Music activities' },
+    name: localizedFixture('Music'),
+    localizedName: 'Music',
+    description: localizedFixture('Music activities'),
+    localizedDescription: 'Music activities',
     sortOrder: 1,
     isActive: true,
     isForceUse: false,
@@ -96,7 +90,7 @@ describe('ScopedConfigEntityWorkspace', () => {
       ) {
         return {
           success: true,
-          data: [buildConfigEntityRecord({ code: 'MUSIC_VIP', name: 'VIP Music' })],
+          data: [buildConfigEntityRecord({ code: 'MUSIC_VIP', name: localizedFixture('VIP Music'), localizedName: 'VIP Music' })],
           meta: {
             pagination: {
               page: 2,
@@ -266,16 +260,10 @@ describe('ScopedConfigEntityWorkspace', () => {
             ownerType: 'tenant',
             ownerId: null,
             code: 'FANCLUB',
-            name: 'Fanclub',
-            nameEn: 'Fanclub',
-            nameZh: null,
-            nameJa: null,
-            translations: { en: 'Fanclub' },
-            description: 'Tenant-wide membership category.',
-            descriptionEn: 'Tenant-wide membership category.',
-            descriptionZh: null,
-            descriptionJa: null,
-            descriptionTranslations: { en: 'Tenant-wide membership category.' },
+            name: localizedFixture('Fanclub'),
+            localizedName: 'Fanclub',
+            description: localizedFixture('Tenant-wide membership category.'),
+            localizedDescription: 'Tenant-wide membership category.',
             sortOrder: 1,
             isActive: true,
             isForceUse: false,
@@ -334,12 +322,10 @@ describe('ScopedConfigEntityWorkspace', () => {
             ownerType: 'tenant',
             ownerId: null,
             code: 'DEFAULT_STORE',
-            name: 'Default Store',
-            nameEn: 'Default Store',
-            description: 'Tenant-wide customer archive.',
-            descriptionEn: 'Tenant-wide customer archive.',
-            translations: { en: 'Default Store' },
-            descriptionTranslations: { en: 'Tenant-wide customer archive.' },
+            name: localizedFixture('Default Store'),
+            localizedName: 'Default Store',
+            description: localizedFixture('Tenant-wide customer archive.'),
+            localizedDescription: 'Tenant-wide customer archive.',
             isInherited: true,
             canDisable: true,
           }),

@@ -2,7 +2,6 @@
 
 import {
   buildSharedHomepagePath,
-  resolveTrilingualLocaleFamily,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import {
@@ -40,8 +39,13 @@ import {
   buildTalentWorkspacePath,
   buildTenantBusinessPath,
 } from '@/platform/routing/workspace-paths';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  buildLocalizedTextPayload,
+  extractSingleFieldTranslationPayload,
+  loadTranslationLanguageOptions,
+  pickLocaleText,
+  type TranslationLanguageOption,
+} from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -51,13 +55,6 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import {
-  buildManagedTranslations,
-  extractSingleFieldTranslationPayload,
-  loadTranslationLanguageOptions,
-  pickLegacyLocaleValue,
-  type TranslationLanguageOption,
-} from '@/platform/runtime/translations/managed-translations';
 import {
   ActionDrawer,
   AsyncSubmitButton,
@@ -99,17 +96,17 @@ interface NoticeState {
 interface CreateTalentDraft {
   code: string;
   displayName: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
+  nameBase: string;
+  nameLocaleValues: Record<string, string>;
   profileStoreId: string;
   timezone: string;
 }
 
 interface CreateSubsidiaryDraft {
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  descriptionEn: string;
+  nameBase: string;
+  nameLocaleValues: Record<string, string>;
+  descriptionBase: string;
 }
 
 interface LifecycleDialogState {
@@ -144,17 +141,17 @@ type OrganizationValidationKey =
 const EMPTY_CREATE_TALENT_DRAFT: CreateTalentDraft = {
   code: '',
   displayName: '',
-  nameEn: '',
-  nameTranslations: {},
+  nameBase: '',
+  nameLocaleValues: {},
   profileStoreId: '',
   timezone: 'Asia/Shanghai',
 };
 
 const EMPTY_CREATE_SUBSIDIARY_DRAFT: CreateSubsidiaryDraft = {
   code: '',
-  nameEn: '',
-  nameTranslations: {},
-  descriptionEn: '',
+  nameBase: '',
+  nameLocaleValues: {},
+  descriptionBase: '',
 };
 
 const TALENT_CODE_PATTERN = /^[A-Z0-9_]{3,32}$/;
@@ -247,16 +244,16 @@ function getErrorMessage(reason: unknown, fallback: string) {
 }
 
 function getInventoryPaginationCopy(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   page: number,
   totalPages: number,
   start: number,
   end: number,
   totalCount: number,
 ) {
-  const localeFamily = resolveTrilingualLocaleFamily(locale);
+  const localeCode = locale;
 
-  if (localeFamily === 'zh') {
+  if ((localeCode === 'zh_HANS' || localeCode === 'zh_HANT')) {
     return {
       page: `第 ${page} / ${totalPages} 页`,
       range:
@@ -269,7 +266,7 @@ function getInventoryPaginationCopy(
     };
   }
 
-  if (localeFamily === 'ja') {
+  if (localeCode === 'ja') {
     return {
       page: `${totalPages} ページ中 ${page} ページ`,
       range:
@@ -308,7 +305,7 @@ function buildCreateDraft(profileStores: ProfileStoreListResponse | null): Creat
 function validateCreateTalentDraft(draft: CreateTalentDraft): OrganizationValidationKey | null {
   const code = draft.code.trim().toUpperCase();
   const displayName = draft.displayName.trim();
-  const nameEn = draft.nameEn.trim();
+  const nameBase = draft.nameBase.trim();
 
   if (!TALENT_CODE_PATTERN.test(code)) {
     return 'code';
@@ -318,7 +315,7 @@ function validateCreateTalentDraft(draft: CreateTalentDraft): OrganizationValida
     return 'displayName';
   }
 
-  if (nameEn.length === 0) {
+  if (nameBase.length === 0) {
     return 'legalName';
   }
 
@@ -331,13 +328,13 @@ function validateCreateTalentDraft(draft: CreateTalentDraft): OrganizationValida
 
 function validateCreateSubsidiaryDraft(draft: CreateSubsidiaryDraft): OrganizationValidationKey | null {
   const code = draft.code.trim().toUpperCase();
-  const nameEn = draft.nameEn.trim();
+  const nameBase = draft.nameBase.trim();
 
   if (!SUBSIDIARY_CODE_PATTERN.test(code)) {
     return 'subsidiaryCode';
   }
 
-  if (nameEn.length === 0) {
+  if (nameBase.length === 0) {
     return 'subsidiaryName';
   }
 
@@ -424,7 +421,7 @@ function ScopeTreeRow({
 }
 
 function TalentListRow({
-  currentLocale,
+  locale,
   editTalentSettingsLabel,
   openWorkspaceLabel,
   tenantId,
@@ -432,7 +429,7 @@ function TalentListRow({
   isLifecyclePending,
   onLifecycleAction,
 }: Readonly<{
-  currentLocale: SupportedUiLocale | RuntimeLocale;
+  locale: SupportedUiLocale ;
   editTalentSettingsLabel: string;
   openWorkspaceLabel: string;
   tenantId: string;
@@ -447,8 +444,8 @@ function TalentListRow({
     talent.lifecycleStatus === 'disabled'
       ? 'border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50'
       : 'border-rose-200 text-rose-700 hover:border-rose-300 hover:bg-rose-50';
-  const lifecycleLabel = getOrganizationLifecycleLabel(talent.lifecycleStatus, currentLocale);
-  const scopeLabel = getOrganizationTalentScopeLabel(talent, currentLocale);
+  const lifecycleLabel = getOrganizationLifecycleLabel(talent.lifecycleStatus, locale);
+  const scopeLabel = getOrganizationTalentScopeLabel(talent, locale);
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 shadow-sm">
@@ -510,7 +507,7 @@ export function OrganizationStructureScreen({
   const urlShowInactive = searchParams.get('inactive') === 'true';
   const urlInventoryPage = parsePageParam(searchParams.get('page'));
   const urlInventoryPageSize = parsePageSizeParam(searchParams.get('pageSize'));
-  const { currentLocale, selectedLocale, copy } = useOrganizationStructureCopy();
+  const { locale, copy } = useOrganizationStructureCopy();
   const { request, requestEnvelope, session } = useSession();
   const [data, setData] = useState<OrganizationTreeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -641,7 +638,7 @@ export function OrganizationStructureScreen({
       const result = await loadTranslationLanguageOptions(
         request,
         requestEnvelope,
-        selectedLocale,
+        locale,
         copy.translationManagement.languageLoadError,
       );
 
@@ -665,7 +662,7 @@ export function OrganizationStructureScreen({
     copy.translationManagement.languageLoadError,
     request,
     requestEnvelope,
-    selectedLocale,
+    locale,
     translationDrawerTarget,
   ]);
 
@@ -821,19 +818,12 @@ export function OrganizationStructureScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(
-        createDraft.nameEn.trim(),
-        createDraft.nameTranslations,
-      );
       const created = await createOrganizationTalent(request, {
         subsidiaryId: selectedSubsidiaryId,
         profileStoreId: createDraft.profileStoreId,
         code: createDraft.code.trim().toUpperCase(),
         displayName: createDraft.displayName.trim(),
-        nameEn: createDraft.nameEn.trim(),
-        nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-        nameJa: pickLegacyLocaleValue(translations, 'ja'),
-        translations,
+        name: buildLocalizedTextPayload(createDraft.nameBase, createDraft.nameLocaleValues),
         timezone: createDraft.timezone.trim() || undefined,
       });
 
@@ -843,8 +833,8 @@ export function OrganizationStructureScreen({
       setNotice({
         tone: 'success',
         message: selectedNode
-          ? `${created.name} ${copy.notices.createdInScopePrefix} ${selectedNode.displayName}.`
-          : `${created.name} ${copy.notices.createdInTenantRoot}`,
+          ? `${created.localizedName} ${copy.notices.createdInScopePrefix} ${selectedNode.displayName}.`
+          : `${created.localizedName} ${copy.notices.createdInTenantRoot}`,
       });
     } catch (reason) {
       setNotice({
@@ -872,18 +862,11 @@ export function OrganizationStructureScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(
-        createSubsidiaryDraft.nameEn.trim(),
-        createSubsidiaryDraft.nameTranslations,
-      );
       const created = await createOrganizationSubsidiary(request, {
         parentId: selectedSubsidiaryId,
         code: createSubsidiaryDraft.code.trim().toUpperCase(),
-        nameEn: createSubsidiaryDraft.nameEn.trim(),
-        nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-        nameJa: pickLegacyLocaleValue(translations, 'ja'),
-        translations,
-        descriptionEn: createSubsidiaryDraft.descriptionEn.trim() || undefined,
+        name: buildLocalizedTextPayload(createSubsidiaryDraft.nameBase, createSubsidiaryDraft.nameLocaleValues),
+        description: buildLocalizedTextPayload(createSubsidiaryDraft.descriptionBase, {}),
       });
 
       setReloadVersion((current) => current + 1);
@@ -892,8 +875,8 @@ export function OrganizationStructureScreen({
       setNotice({
         tone: 'success',
         message: selectedNode
-          ? `${created.name} ${copy.notices.subsidiaryCreatedInScopePrefix} ${selectedNode.displayName}.`
-          : `${created.name} ${copy.notices.subsidiaryCreatedInTenantRoot}`,
+          ? `${created.localizedName} ${copy.notices.subsidiaryCreatedInScopePrefix} ${selectedNode.displayName}.`
+          : `${created.localizedName} ${copy.notices.subsidiaryCreatedInTenantRoot}`,
       });
     } catch (reason) {
       setNotice({
@@ -1002,7 +985,7 @@ export function OrganizationStructureScreen({
   );
   const inventoryPageRange = getPaginationRange(inventoryPagination, paginatedScopedTalents.length);
   const inventoryPaginationCopy = getInventoryPaginationCopy(
-    selectedLocale,
+    locale,
     inventoryPagination.page,
     inventoryPagination.totalPages,
     inventoryPageRange.start,
@@ -1084,17 +1067,17 @@ export function OrganizationStructureScreen({
       ? buildSharedHomepagePath(session.tenantCode, createDraft.code.trim())
       : null;
   const structureSummary = selectedNode
-    ? `${formatOrganizationDirectSubsidiaryCount(currentLocale, selectedNode.children.length)} · ${formatOrganizationTalentCount(currentLocale, scopedTalents.length)}`
-    : `${formatOrganizationSubsidiaryCount(currentLocale, flattenedNodes.length)} · ${formatOrganizationTalentCount(currentLocale, scopedTalents.length)}`;
+    ? `${formatOrganizationDirectSubsidiaryCount(locale, selectedNode.children.length)} · ${formatOrganizationTalentCount(locale, scopedTalents.length)}`
+    : `${formatOrganizationSubsidiaryCount(locale, flattenedNodes.length)} · ${formatOrganizationTalentCount(locale, scopedTalents.length)}`;
   const inventoryDescription = selectedNode ? copy.inventory.scopedDescription : copy.inventory.tenantDescription;
-  const configuredTalentTranslationCount = Object.values(createDraft.nameTranslations).filter(
+  const configuredTalentTranslationCount = Object.values(createDraft.nameLocaleValues).filter(
     (value) => value.trim().length > 0,
   ).length;
-  const configuredSubsidiaryTranslationCount = Object.values(createSubsidiaryDraft.nameTranslations).filter(
+  const configuredSubsidiaryTranslationCount = Object.values(createSubsidiaryDraft.nameLocaleValues).filter(
     (value) => value.trim().length > 0,
   ).length;
   const translationDrawerLabels = {
-    addLanguageLabel: pickLocaleText(selectedLocale, {
+    addLanguageLabel: pickLocaleText(locale, {
       en: 'Add language',
       zh_HANS: '添加语言',
       zh_HANT: '新增語言',
@@ -1102,7 +1085,7 @@ export function OrganizationStructureScreen({
       ko: '언어 추가',
       fr: 'Ajouter une langue',
     }),
-    addOtherLanguageLabel: pickLocaleText(selectedLocale, {
+    addOtherLanguageLabel: pickLocaleText(locale, {
       en: 'Add other language...',
       zh_HANS: '添加其它语言…',
       zh_HANT: '新增其它語言…',
@@ -1110,7 +1093,7 @@ export function OrganizationStructureScreen({
       ko: '다른 언어 추가…',
       fr: 'Ajouter une autre langue…',
     }),
-    removeLanguageVisibleLabel: pickLocaleText(selectedLocale, {
+    removeLanguageVisibleLabel: pickLocaleText(locale, {
       en: 'Remove',
       zh_HANS: '移除',
       zh_HANT: '移除',
@@ -1118,7 +1101,7 @@ export function OrganizationStructureScreen({
       ko: '제거',
       fr: 'Retirer',
     }),
-    emptyTranslationsText: pickLocaleText(selectedLocale, {
+    emptyTranslationsText: pickLocaleText(locale, {
       en: 'No translations added yet.',
       zh_HANS: '当前还没有添加翻译。',
       zh_HANT: '目前尚未新增翻譯。',
@@ -1126,7 +1109,7 @@ export function OrganizationStructureScreen({
       ko: '아직 추가된 번역이 없습니다.',
       fr: 'Aucune traduction n’a encore été ajoutée.',
     }),
-    baseValueSuffix: pickLocaleText(selectedLocale, {
+    baseValueSuffix: pickLocaleText(locale, {
       en: '(Base / English)',
       zh_HANS: '（英文主值）',
       zh_HANT: '（英文主值）',
@@ -1139,8 +1122,8 @@ export function OrganizationStructureScreen({
     translationDrawerTarget === 'talent-name'
       ? {
           title: copy.translationManagement.talentNameTitle,
-          baseValue: createDraft.nameEn,
-          translations: createDraft.nameTranslations,
+          baseValue: createDraft.nameBase,
+          translations: createDraft.nameLocaleValues,
           fieldLabel: copy.form.legalNameLabel,
           onSave: async (
             payload: Record<string, Record<string, string>> | Record<string, string>,
@@ -1149,15 +1132,15 @@ export function OrganizationStructureScreen({
 
             setCreateDraft((current) => ({
               ...current,
-              nameTranslations: translations,
+              nameLocaleValues: translations,
             }));
           },
         }
       : translationDrawerTarget === 'subsidiary-name'
         ? {
             title: copy.translationManagement.subsidiaryNameTitle,
-            baseValue: createSubsidiaryDraft.nameEn,
-            translations: createSubsidiaryDraft.nameTranslations,
+            baseValue: createSubsidiaryDraft.nameBase,
+            translations: createSubsidiaryDraft.nameLocaleValues,
             fieldLabel: copy.form.subsidiaryNameLabel,
             onSave: async (
               payload: Record<string, Record<string, string>> | Record<string, string>,
@@ -1166,7 +1149,7 @@ export function OrganizationStructureScreen({
 
               setCreateSubsidiaryDraft((current) => ({
                 ...current,
-                nameTranslations: translations,
+                nameLocaleValues: translations,
               }));
             },
           }
@@ -1205,7 +1188,7 @@ export function OrganizationStructureScreen({
               <ScopeTreeRow
                 label={session?.tenantName || copy.tree.tenantRootLabel}
                 hint={`${session?.tenantCode || copy.tree.tenantRootLabel} · ${formatOrganizationTalentCount(
-                  currentLocale,
+                  locale,
                   allTenantTalents.length,
                 )}`}
                 depth={0}
@@ -1223,7 +1206,7 @@ export function OrganizationStructureScreen({
                 <ScopeTreeRow
                   key={entry.node.id}
                   label={entry.node.displayName}
-                  hint={`${entry.node.code} · ${formatOrganizationTalentCount(currentLocale, collectTalents([entry.node]).length)}`}
+                  hint={`${entry.node.code} · ${formatOrganizationTalentCount(locale, collectTalents([entry.node]).length)}`}
                   depth={entry.depth + 1}
                   isActive={selectedSubsidiaryId === entry.node.id}
                   onSelect={() => {
@@ -1338,7 +1321,7 @@ export function OrganizationStructureScreen({
                 <p className="text-sm leading-6 text-slate-600">{inventoryDescription}</p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                {formatOrganizationTalentCount(currentLocale, scopedTalents.length)}
+                {formatOrganizationTalentCount(locale, scopedTalents.length)}
               </span>
             </div>
 
@@ -1348,7 +1331,7 @@ export function OrganizationStructureScreen({
                   {paginatedScopedTalents.map((talent) => (
                     <TalentListRow
                       key={talent.id}
-                      currentLocale={selectedLocale}
+                      locale={locale}
                       editTalentSettingsLabel={copy.actions.editTalentSettings}
                       openWorkspaceLabel={copy.actions.openWorkspace}
                       tenantId={tenantId}
@@ -1461,11 +1444,11 @@ export function OrganizationStructureScreen({
                     <span className="text-sm font-medium text-slate-700">{copy.form.subsidiaryNameLabel}</span>
                     <input
                       aria-label={copy.form.subsidiaryNameLabel}
-                      value={createSubsidiaryDraft.nameEn}
+                      value={createSubsidiaryDraft.nameBase}
                       onChange={(event) =>
                         setCreateSubsidiaryDraft((current) => ({
                           ...current,
-                          nameEn: event.target.value,
+                          nameBase: event.target.value,
                         }))
                       }
                       placeholder={copy.form.subsidiaryNamePlaceholder}
@@ -1500,11 +1483,11 @@ export function OrganizationStructureScreen({
                 <span className="text-sm font-medium text-slate-700">{copy.form.subsidiaryDescriptionLabel}</span>
                 <textarea
                   aria-label={copy.form.subsidiaryDescriptionLabel}
-                  value={createSubsidiaryDraft.descriptionEn}
+                  value={createSubsidiaryDraft.descriptionBase}
                   onChange={(event) =>
                     setCreateSubsidiaryDraft((current) => ({
                       ...current,
-                      descriptionEn: event.target.value,
+                      descriptionBase: event.target.value,
                     }))
                   }
                   placeholder={copy.form.subsidiaryDescriptionPlaceholder}
@@ -1598,11 +1581,11 @@ export function OrganizationStructureScreen({
                 <span className="text-sm font-medium text-slate-700">{copy.form.legalNameLabel}</span>
                 <input
                   aria-label={copy.form.legalNameLabel}
-                  value={createDraft.nameEn}
+                  value={createDraft.nameBase}
                   onChange={(event) =>
                     setCreateDraft((current) => ({
                       ...current,
-                      nameEn: event.target.value,
+                      nameBase: event.target.value,
                     }))
                   }
                   placeholder={copy.form.legalNamePlaceholder}
@@ -1637,7 +1620,7 @@ export function OrganizationStructureScreen({
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">
-                  {pickLocaleText(selectedLocale, {
+                  {pickLocaleText(locale, {
                     en: 'Default shared-domain route',
                     zh_HANS: '默认共享域路径',
                     zh_HANT: '預設共享網域路徑',
@@ -1648,7 +1631,7 @@ export function OrganizationStructureScreen({
                 </span>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   {createTalentSharedRoute ||
-                    (pickLocaleText(selectedLocale, {
+                    (pickLocaleText(locale, {
                       en: 'Generated automatically after you enter the talent code.',
                       zh_HANS: '填写艺人代码后会自动生成。',
                       zh_HANT: '填寫藝人代碼後會自動產生。',
@@ -1658,7 +1641,7 @@ export function OrganizationStructureScreen({
                     }))}
                 </div>
                 <p className="text-xs leading-6 text-slate-500">
-                  {pickLocaleText(selectedLocale, {
+                  {pickLocaleText(locale, {
                     en: 'The shared-domain homepage route is fixed to {tenantCode}/{talentCode}/homepage. Use a custom domain later if you need a custom path.',
                     zh_HANS: '共享域名下的公开主页路径固定为 {tenantCode}/{talentCode}/homepage；如需自定义，请后续配置自定义域名。',
                     zh_HANT: '共享網域下的公開主頁路徑固定為 {tenantCode}/{talentCode}/homepage；如需自訂，請後續設定自訂網域。',
@@ -1683,7 +1666,7 @@ export function OrganizationStructureScreen({
                 >
                   {profileStoresPanel.data?.items.map((profileStore) => (
                     <option key={profileStore.id} value={profileStore.id}>
-                  {pickLocalizedProfileStoreName(profileStore, selectedLocale)}
+                  {pickLocalizedProfileStoreName(profileStore, locale)}
                     </option>
                   ))}
                 </select>

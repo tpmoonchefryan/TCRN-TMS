@@ -4,6 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '@tcrn/database';
 import {
+  createLocalizedText,
   createTestCustomerInTenant,
   createTestSubsidiaryInTenant,
   createTestTalentInTenant,
@@ -47,12 +48,12 @@ describe('CustomerProfileService', () => {
     );
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_CP_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Customer Profile Test Subsidiary',
+      name: createLocalizedText({ en: 'Customer Profile Test Subsidiary' }),
       createdBy: testUser.id,
     });
     const talent = await createTestTalentInTenant(prisma, tenantFixture, subsidiary.id, {
       code: `TAL_CP_${Date.now().toString(36).toUpperCase()}`,
-      nameEn: 'Customer Profile Test Talent',
+      name: createLocalizedText({ en: 'Customer Profile Test Talent' }),
       displayName: 'Customer Profile Test Talent',
       homepagePath: `customer-profile-${Date.now()}`,
       createdBy: testUser.id,

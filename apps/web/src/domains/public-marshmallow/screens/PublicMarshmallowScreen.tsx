@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  resolveTrilingualLocaleFamily,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Send, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -27,7 +24,7 @@ import {
   PublicPresenceSurface,
 } from '@/domains/public-presence';
 import { ApiRequestError } from '@/platform/http/api';
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleNumber,
   pickLocaleText,
@@ -38,7 +35,7 @@ interface NoticeState {
   message: string;
 }
 
-type MarshmallowLocale = SupportedUiLocale | RuntimeLocale;
+type MarshmallowLocale = SupportedUiLocale ;
 
 function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
@@ -93,17 +90,7 @@ function pickLocalizedLegalCopy(
   source: PublicMarshmallowConfigResponse['terms'] | PublicMarshmallowConfigResponse['privacy'],
   locale: MarshmallowLocale,
 ) {
-  const localeFamily = resolveTrilingualLocaleFamily(locale);
-
-  if (localeFamily === 'zh') {
-    return asFilledString(source.zh) || asFilledString(source.en) || asFilledString(source.ja) || null;
-  }
-
-  if (localeFamily === 'ja') {
-    return asFilledString(source.ja) || asFilledString(source.en) || asFilledString(source.zh) || null;
-  }
-
-  return asFilledString(source.en) || asFilledString(source.zh) || asFilledString(source.ja) || null;
+  return asFilledString(source[locale]) || asFilledString(source.en) || null;
 }
 
 function formatLoadedCount(count: number, locale: MarshmallowLocale, label: string) {
@@ -148,7 +135,7 @@ function formatCharacterCount(current: number, maximum: number, locale: Marshmal
 
 function formatCaptchaMode(
   mode: PublicMarshmallowConfigResponse['captchaMode'],
-  copy: ReturnType<typeof useRuntimeLocale>['copy']['publicMarshmallow'],
+  copy: ReturnType<typeof useUiLocale>['copy']['publicMarshmallow'],
 ) {
   switch (mode) {
     case 'always':
@@ -167,7 +154,7 @@ export function PublicMarshmallowScreen({
   path: string;
   turnstileSiteKey: string;
 }>) {
-  const { copy, selectedLocale } = useRuntimeLocale();
+  const { copy, locale } = useUiLocale();
   const [config, setConfig] = useState<PublicMarshmallowConfigResponse | null>(null);
   const [messages, setMessages] = useState<PublicMarshmallowMessageRecord[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -257,12 +244,12 @@ export function PublicMarshmallowScreen({
 
   const theme = useMemo(() => derivePublicMarshmallowThemeSurface(config?.theme || {}), [config?.theme]);
   const localizedTerms = useMemo(
-    () => (config ? pickLocalizedLegalCopy(config.terms, selectedLocale) : null),
-    [config, selectedLocale],
+    () => (config ? pickLocalizedLegalCopy(config.terms, locale) : null),
+    [config, locale],
   );
   const localizedPrivacy = useMemo(
-    () => (config ? pickLocalizedLegalCopy(config.privacy, selectedLocale) : null),
-    [config, selectedLocale],
+    () => (config ? pickLocalizedLegalCopy(config.privacy, locale) : null),
+    [config, locale],
   );
   const captchaRuntimeBypass = config?.turnstile?.runtimeBypass === true;
   const requiresCaptchaWidget = config?.captchaMode !== 'never' && !captchaRuntimeBypass;
@@ -469,7 +456,7 @@ export function PublicMarshmallowScreen({
                   {copy.publicMarshmallow.captchaModeLabel}: {formatCaptchaMode(config.captchaMode, copy.publicMarshmallow)}
                 </PublicPresenceBadge>
                 <PublicPresenceBadge tone="amber" variant="outline">
-                  {formatLoadedCount(messages.length, selectedLocale, copy.publicMarshmallow.loadedCountLabel)}
+                  {formatLoadedCount(messages.length, locale, copy.publicMarshmallow.loadedCountLabel)}
                 </PublicPresenceBadge>
               </>
             )}
@@ -519,7 +506,7 @@ export function PublicMarshmallowScreen({
                     required
                   />
                   <p className="text-xs text-slate-500">
-                    {formatCharacterCount(content.length, config.maxMessageLength, selectedLocale)}
+                    {formatCharacterCount(content.length, config.maxMessageLength, locale)}
                   </p>
                 </div>
 
@@ -594,7 +581,7 @@ export function PublicMarshmallowScreen({
                   <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.feedEyebrow}</p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">{copy.publicMarshmallow.feedTitle}</h2>
                 </div>
-                <div className="text-right text-sm text-slate-500">{formatVisibleCount(messages.length, selectedLocale)}</div>
+                <div className="text-right text-sm text-slate-500">{formatVisibleCount(messages.length, locale)}</div>
               </div>
             </PublicPresenceSurface>
 
@@ -610,7 +597,7 @@ export function PublicMarshmallowScreen({
                   key={message.id}
                   message={message}
                   accentColor={theme.accentColor}
-                  locale={selectedLocale}
+                  locale={locale}
                   copy={copy.publicMarshmallow}
                   reactionsEnabled={config.reactionsEnabled}
                   allowedReactions={config.allowedReactions}

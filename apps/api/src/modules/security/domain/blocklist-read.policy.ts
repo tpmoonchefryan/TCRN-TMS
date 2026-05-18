@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { summarizeBlocklistScopes } from '@tcrn/shared';
+import { summarizeBlocklistScopes, type LocalizedText } from '@tcrn/shared';
 
-import { decorateManagedNameTranslations } from '../../../platform/persistence/managed-name-translations';
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import type { BlocklistListQueryDto } from '../dto/security.dto';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
@@ -31,9 +31,7 @@ export interface BlocklistListRow {
   ownerId: string | null;
   pattern: string;
   patternType: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
@@ -60,9 +58,7 @@ export interface BlocklistDetailRow {
   ownerId: string | null;
   pattern: string;
   patternType: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   description: string | null;
   category: string | null;
@@ -90,10 +86,7 @@ export interface BlocklistEntryWithMeta {
   ownerId: string | null;
   pattern: string;
   patternType: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
   description: string | null;
   category: string | null;
   severity: string;
@@ -138,10 +131,10 @@ export const buildBlocklistListItem = (
 ): BlocklistEntryWithMeta => {
   const isInherited =
     row.ownerType !== options.scopeType || row.ownerId !== options.scopeId;
-  const decoratedRow = decorateManagedNameTranslations(row);
 
   return {
-    ...decoratedRow,
+    ...row,
+    name: readLocalizedText(row.name, 'blocklist_entry.name'),
     scopeSummary: summarizeBlocklistScopes(row.scope),
     lastMatchedAt: row.lastMatchedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -152,10 +145,9 @@ export const buildBlocklistListItem = (
 };
 
 export const buildBlocklistDetailResponse = (row: BlocklistDetailRow) => {
-  const decoratedRow = decorateManagedNameTranslations(row);
-
   return {
-    ...decoratedRow,
+    ...row,
+    name: readLocalizedText(row.name, 'blocklist_entry.name'),
     scopeSummary: summarizeBlocklistScopes(row.scope),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

@@ -24,7 +24,7 @@ import {
   PublicPresenceSurface,
 } from '@/domains/public-presence';
 import { ApiRequestError } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
 function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
@@ -43,7 +43,7 @@ export function PublicHomepageScreen({
 }: Readonly<{
   path: string;
 }>) {
-  const { copy } = useRuntimeLocale();
+  const { copy } = useUiLocale();
   const [data, setData] = useState<PublicHomepageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

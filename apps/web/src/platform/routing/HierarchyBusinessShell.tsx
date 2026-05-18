@@ -12,7 +12,7 @@ import {
   buildTenantProfilePath,
   buildTenantProfileSecurityPath,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { type BrowserSession, useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -69,7 +69,7 @@ export function HierarchyBusinessShell({
   onSignOut,
   isSignOutPending = false,
 }: Readonly<HierarchyBusinessShellProps>) {
-  const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
+  const { copy, locale, localeOptions, setLocale } = useUiLocale();
   const { request } = useSession();
   const [scopeName, setScopeName] = useState<string | null>(scopeType === 'tenant' ? session.tenantName : null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -92,7 +92,7 @@ export function HierarchyBusinessShell({
         const detail = await readSubsidiaryDetail(request, subsidiaryId);
 
         if (!cancelled) {
-          setScopeName(detail.name);
+          setScopeName(detail.localizedName);
         }
       } catch (error) {
         if (!cancelled && !(error instanceof ApiRequestError)) {
@@ -111,7 +111,7 @@ export function HierarchyBusinessShell({
   const navItems = [
     {
       key: 'overview',
-      label: pickLocaleText(selectedLocale, {
+      label: pickLocaleText(locale, {
         en: 'Business overview',
         zh_HANS: '业务总览',
         zh_HANT: '業務總覽',
@@ -128,12 +128,12 @@ export function HierarchyBusinessShell({
   ];
   const organizationHref = `/tenant/${tenantId}/organization-structure`;
   const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
-  const scopeLabel = getScopeLabel(selectedLocale, scopeType);
+  const scopeLabel = getScopeLabel(locale, scopeType);
   const resolvedScopeName =
     scopeName
     || session.tenantName
     || copy.common.currentTenant;
-  const pageTitle = pickLocaleText(selectedLocale, {
+  const pageTitle = pickLocaleText(locale, {
     en: 'Business workspace',
     zh_HANS: '业务工作区',
     zh_HANT: '業務工作區',
@@ -142,7 +142,7 @@ export function HierarchyBusinessShell({
     fr: 'Espace métier',
   });
   const shellA11y = {
-    breadcrumb: pickLocaleText(selectedLocale, {
+    breadcrumb: pickLocaleText(locale, {
       en: 'Workspace breadcrumb',
       zh_HANS: '工作区面包屑',
       zh_HANT: '工作區麵包屑',
@@ -150,7 +150,7 @@ export function HierarchyBusinessShell({
       ko: '워크스페이스 이동 경로',
       fr: 'Fil d’Ariane de l’espace de travail',
     }),
-    openNavigation: pickLocaleText(selectedLocale, {
+    openNavigation: pickLocaleText(locale, {
       en: 'Open workspace navigation',
       zh_HANS: '打开工作区导航',
       zh_HANT: '開啟工作區導覽',
@@ -158,7 +158,7 @@ export function HierarchyBusinessShell({
       ko: '워크스페이스 탐색 열기',
       fr: 'Ouvrir la navigation de l’espace de travail',
     }),
-    closeNavigation: pickLocaleText(selectedLocale, {
+    closeNavigation: pickLocaleText(locale, {
       en: 'Close workspace navigation',
       zh_HANS: '关闭工作区导航',
       zh_HANT: '關閉工作區導覽',
@@ -237,11 +237,11 @@ export function HierarchyBusinessShell({
           rightArea={
             <div className="flex items-center gap-3">
               <LocaleSwitcher
-                currentLocale={selectedLocale}
+                locale={locale}
                 options={localeOptions}
                 onChange={setLocale}
                 ariaLabel={`${copy.common.languageSwitcherLabel}: ${
-                  localeOptions.find((o) => o.code === selectedLocale)?.label || selectedLocale
+                  localeOptions.find((o) => o.code === locale)?.label || locale
                 }`}
               />
               <AccountDropdownMenu

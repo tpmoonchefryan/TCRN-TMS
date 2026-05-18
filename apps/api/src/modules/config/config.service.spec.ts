@@ -1,12 +1,11 @@
 import { prisma } from '@tcrn/database';
+import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigService } from './config.service';
 import {
   type BaseConfigEntity,
-  CONFIG_HAS_EXTRA_DATA,
   type ConfigEntityType,
-  type ConfigEntityWithMeta,
 } from './config.types';
 
 vi.mock('@tcrn/database', () => ({
@@ -19,46 +18,42 @@ const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
 };
 
-interface TranslationPayload {
-  contentTranslations: Record<string, string>;
-  descriptionTranslations: Record<string, string>;
-  extraData: Record<string, unknown> | null;
-  legacyFields: Record<string, string | null | undefined>;
-  translations: Record<string, string>;
-}
-
 interface DecoratedConfigEntity extends BaseConfigEntity {
-  contentTranslations?: Record<string, string>;
-  description: string | null;
-  descriptionTranslations: Record<string, string>;
-  name: string;
-  translations: Record<string, string>;
+  localizedDescription: string | null;
+  localizedName: string;
 }
 
 interface TestableConfigService {
   decorateEntity(
     entityType: ConfigEntityType,
-    entity: BaseConfigEntity & Record<string, unknown>,
+    entity: Omit<BaseConfigEntity, 'name' | 'description'> & {
+      description: unknown;
+      name: unknown;
+    },
     language: string,
   ): DecoratedConfigEntity;
-  prepareTranslationPayload(
-    entityType: ConfigEntityType,
-    data: Record<string, unknown>,
-    current?: ConfigEntityWithMeta | null,
-  ): TranslationPayload;
 }
 
-const createBaseEntity = (overrides: Partial<BaseConfigEntity> = {}): BaseConfigEntity => ({
+const localized = (en: string, patch: PartialLocalizedText = {}) =>
+  createLocalizedText({ en, ...patch });
+
+const createBaseEntity = (
+  overrides: Partial<BaseConfigEntity> = {},
+): BaseConfigEntity => ({
   id: 'config-1',
   ownerType: 'tenant',
   ownerId: null,
   code: 'CUSTOMER_STATUS',
-  nameEn: 'Active',
-  nameZh: '活跃',
-  nameJa: 'アクティブ',
-  descriptionEn: 'Can transact',
-  descriptionZh: '可以交易',
-  descriptionJa: '取引可能',
+  name: localized('Active', {
+    fr: 'Actif',
+    ja: 'アクティブ',
+    zh_HANS: '活跃',
+    zh_HANT: '活躍',
+  }),
+  description: localized('Can transact', {
+    ko: '거래 가능',
+    zh_HANT: '可以交易',
+  }),
   extraData: null,
   sortOrder: 0,
   isActive: true,
@@ -72,7 +67,7 @@ const createBaseEntity = (overrides: Partial<BaseConfigEntity> = {}): BaseConfig
   ...overrides,
 });
 
-describe('ConfigService translation contract', () => {
+describe('ConfigService LocalizedText contract', () => {
   const service = new ConfigService();
   const testableService = service as unknown as TestableConfigService;
 
@@ -80,7 +75,7 @@ describe('ConfigService translation contract', () => {
     mockPrisma.$queryRawUnsafe.mockReset();
   });
 
-  it('searches dynamic translation maps for membership configuration entities', async () => {
+  it('searches the single LocalizedText name JSONB field', async () => {
     mockPrisma.$queryRawUnsafe
       .mockResolvedValueOnce([{ count: 0n }])
       .mockResolvedValueOnce([]);
@@ -92,99 +87,57 @@ describe('ConfigService translation contract', () => {
 
     const countSql = String(mockPrisma.$queryRawUnsafe.mock.calls[0][0]);
 
-    expect(CONFIG_HAS_EXTRA_DATA.has('membership-type')).toBe(true);
-    expect(CONFIG_HAS_EXTRA_DATA.has('membership-level')).toBe(true);
-    expect(countSql).toContain('name_ja ILIKE');
-    expect(countSql).toContain("jsonb_each_text(COALESCE(extra_data -> 'translations', '{}'::jsonb))");
+    expect(countSql).toContain('jsonb_each_text(name)');
+    expect(countSql).toContain('localized_text.value ILIKE');
     expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe('%Membre%');
   });
 
-  it('stores non-legacy locale maps in extraData while keeping legacy fallback fields aligned', () => {
-    const payload = testableService.prepareTranslationPayload('consent', {
-      nameEn: 'Terms consent',
-      translations: {
-        en: 'Terms consent',
-        zh_HANS: '条款同意',
-        zh_HANT: '條款同意',
-        ja: '規約同意',
-        ko: '약관 동의',
-        fr: 'Consentement aux conditions',
-      },
-      descriptionTranslations: {
-        en: 'Consent required before access',
-        fr: 'Consentement requis avant accès',
-      },
-      contentTranslations: {
-        en: 'I agree to the terms.',
-        zh_HANS: '我同意条款。',
-        zh_HANT: '我同意條款。',
-        ja: '規約に同意します。',
-        fr: "J'accepte les conditions.",
-      },
-      extraData: {
-        auditTag: 'owner-managed',
-        translations: {
-          stale: 'should be replaced',
-        },
-      },
-    });
+  it('creates consent content as single LocalizedText JSONB columns', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        createBaseEntity({
+          contentMarkdown: localized('I agree to the terms.'),
+        } as Partial<BaseConfigEntity>),
+      ]);
 
-    expect(payload.legacyFields).toMatchObject({
-      nameEn: 'Terms consent',
-      nameZh: '条款同意',
-      nameJa: '規約同意',
-      descriptionEn: 'Consent required before access',
-      contentMarkdownEn: 'I agree to the terms.',
-      contentMarkdownZh: '我同意条款。',
-      contentMarkdownJa: '規約に同意します。',
-    });
-    expect(payload.extraData).toEqual({
-      auditTag: 'owner-managed',
-      translations: {
-        zh_HANT: '條款同意',
-        ko: '약관 동의',
-        fr: 'Consentement aux conditions',
+    await service.create(
+      'consent',
+      'tenant_test',
+      {
+        code: 'TERMS',
+        consentVersion: '1.0',
+        contentMarkdown: localized('I agree to the terms.', {
+          fr: "J'accepte les conditions.",
+        }),
+        effectiveFrom: new Date('2026-05-18'),
+        isRequired: true,
+        name: localized('Terms consent', {
+          fr: 'Consentement aux conditions',
+        }),
       },
-      descriptionTranslations: {
-        fr: 'Consentement requis avant accès',
-      },
-      contentTranslations: {
-        zh_HANT: '我同意條款。',
-        fr: "J'accepte les conditions.",
-      },
-    });
+      '00000000-0000-0000-0000-000000000001',
+    );
+
+    const insertSql = String(mockPrisma.$queryRawUnsafe.mock.calls[1][0]);
+    const insertParams = mockPrisma.$queryRawUnsafe.mock.calls[1].slice(1);
+
+    expect(insertSql).toContain('name');
+    expect(insertSql).toContain('content_markdown');
+    expect(insertParams.some((value) => String(value).includes('"fr":"Consentement aux conditions"'))).toBe(true);
+    expect(insertParams.some((value) => String(value).includes('"fr":"J\'accepte les conditions."'))).toBe(true);
   });
 
-  it('resolves full Accept-Language locale tokens from translation maps before legacy fields', () => {
+  it('returns LocalizedText plus request-locale display derivatives', () => {
     const decorated = testableService.decorateEntity(
       'customer-status',
-      createBaseEntity({
-        extraData: {
-          translations: {
-            zh_HANT: '活躍客戶',
-            fr: 'Client actif',
-          },
-          descriptionTranslations: {
-            zh_HANT: '可以交易的客戶',
-            ko: '거래 가능한 고객',
-          },
-        },
-      }),
+      createBaseEntity(),
       'zh-Hant',
     );
 
-    expect(decorated.name).toBe('活躍客戶');
-    expect(decorated.description).toBe('可以交易的客戶');
-    expect(decorated.translations).toMatchObject({
-      en: 'Active',
-      zh_HANS: '活跃',
-      zh_HANT: '活躍客戶',
-      ja: 'アクティブ',
-      fr: 'Client actif',
-    });
-  });
-
-  it('marks consumer as an extra_data-backed entity for managed locale maps', () => {
-    expect(CONFIG_HAS_EXTRA_DATA.has('consumer')).toBe(true);
+    expect(decorated.name.zh_HANT).toBe('活躍');
+    expect(decorated.description?.ko).toBe('거래 가능');
+    expect(decorated.localizedName).toBe('活躍');
+    expect(decorated.localizedDescription).toBe('可以交易');
   });
 });

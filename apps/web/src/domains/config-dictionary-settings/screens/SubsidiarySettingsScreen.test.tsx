@@ -4,15 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { SubsidiarySettingsScreen } from '@/domains/config-dictionary-settings/screens/SubsidiarySettingsScreen';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 const mockRequest = vi.fn();
 const mockRouterReplace = vi.fn();
 let currentPathname = '/tenant/tenant-1/subsidiary/sub-1/settings';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: undefined as SupportedUiLocale | undefined,
+  locale: 'en' as SupportedUiLocale,
 };
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -35,7 +34,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -51,13 +50,10 @@ const dictionaryItemsResponse = [
     id: 'dictionary-item-1',
     dictionaryCode: 'CUSTOMER_STATUS',
     code: 'ACTIVE',
-    nameEn: 'Active customer',
-    nameZh: '活跃客户',
-    nameJa: null,
-    name: 'Active customer',
-    descriptionEn: 'Currently active',
-    descriptionZh: null,
-    descriptionJa: null,
+    name: localizedFixture('Active customer', { zh_HANS: '活跃客户' }),
+    localizedName: 'Active customer',
+    description: localizedFixture('Currently active'),
+    localizedDescription: 'Currently active',
     sortOrder: 0,
     isActive: true,
     extraData: null,
@@ -73,12 +69,11 @@ describe('SubsidiarySettingsScreen', () => {
     mockRouterReplace.mockReset();
     currentSearch = '';
     currentPathname = '/tenant/tenant-1/subsidiary/sub-1/settings';
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = undefined;
+    localeState.locale = 'en';
   });
 
   it('passes a localized settings section navigation label to the shared settings layout', async () => {
-    localeState.currentLocale = 'ja';
+    localeState.locale = 'ja';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/subsidiaries/sub-1') {
@@ -88,13 +83,10 @@ describe('SubsidiarySettingsScreen', () => {
           code: 'TOKYO',
           path: '/TOKYO/',
           depth: 1,
-          nameEn: 'Tokyo',
-          nameZh: '东京分部',
-          nameJa: '東京拠点',
-          name: '東京拠点',
-          descriptionEn: 'Tokyo branch',
-          descriptionZh: '东京分部说明',
-          descriptionJa: null,
+          name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
+          localizedName: '東京拠点',
+          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+          localizedDescription: 'Tokyo branch',
           sortOrder: 10,
           isActive: true,
           childrenCount: 2,
@@ -144,20 +136,10 @@ describe('SubsidiarySettingsScreen', () => {
         ownerType: 'tenant',
         ownerId: null,
         code: 'TENANT_SEGMENT',
-        name: 'Tenant Segment',
-        nameEn: 'Tenant Segment',
-        nameZh: null,
-        nameJa: null,
-        translations: {
-          en: 'Tenant Segment',
-        },
-        description: 'Inherited from tenant',
-        descriptionEn: 'Inherited from tenant',
-        descriptionZh: null,
-        descriptionJa: null,
-        descriptionTranslations: {
-          en: 'Inherited from tenant',
-        },
+        name: localizedFixture('Tenant Segment'),
+        localizedName: 'Tenant Segment',
+        description: localizedFixture('Inherited from tenant'),
+        localizedDescription: 'Inherited from tenant',
         sortOrder: 0,
         isActive: true,
         isForceUse: false,
@@ -180,13 +162,10 @@ describe('SubsidiarySettingsScreen', () => {
           code: 'TOKYO',
           path: '/TOKYO/',
           depth: 1,
-          nameEn: 'Tokyo',
-          nameZh: '东京分部',
-          nameJa: '東京拠点',
-          name: '东京分部',
-          descriptionEn: 'Tokyo branch',
-          descriptionZh: '东京分部说明',
-          descriptionJa: null,
+          name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
+          localizedName: '',
+          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+          localizedDescription: 'Tokyo branch',
           sortOrder: 10,
           isActive: true,
           childrenCount: 2,
@@ -267,7 +246,7 @@ describe('SubsidiarySettingsScreen', () => {
       if (path === '/api/v1/configuration-entity/business-segment' && init?.method === 'POST') {
         const payload = JSON.parse(String(init.body)) as {
           code: string;
-          nameEn: string;
+          name: ReturnType<typeof localizedFixture>;
           ownerType: string;
           ownerId: string;
           sortOrder: number;
@@ -278,18 +257,10 @@ describe('SubsidiarySettingsScreen', () => {
           ownerType: 'subsidiary',
           ownerId: 'sub-1',
           code: payload.code,
-          name: payload.nameEn,
-          nameEn: payload.nameEn,
-          nameZh: null,
-          nameJa: null,
-          translations: {
-            en: payload.nameEn,
-          },
-          description: null,
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
-          descriptionTranslations: {},
+          name: payload.name,
+          localizedName: payload.name.en,
+          description: localizedFixture(''),
+          localizedDescription: null,
           sortOrder: payload.sortOrder,
           isActive: true,
           isForceUse: false,
@@ -380,11 +351,8 @@ describe('SubsidiarySettingsScreen', () => {
           method: 'POST',
           body: JSON.stringify({
             code: 'LOCAL_SEGMENT',
-            nameEn: 'Local Segment',
-            translations: {
-              en: 'Local Segment',
-            },
-            descriptionTranslations: {},
+            name: localizedFixture('Local Segment'),
+            description: localizedFixture(''),
             sortOrder: 0,
             ownerType: 'subsidiary',
             ownerId: 'sub-1',
@@ -457,7 +425,7 @@ describe('SubsidiarySettingsScreen', () => {
   });
 
   it('renders zh copy when runtime locale is zh', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/subsidiaries/sub-1' && !init) {
@@ -467,13 +435,10 @@ describe('SubsidiarySettingsScreen', () => {
           code: 'TOKYO',
           path: '/TOKYO/',
           depth: 1,
-          nameEn: 'Tokyo',
-          nameZh: '东京分部',
-          nameJa: '東京拠点',
-          name: '东京分部',
-          descriptionEn: 'Tokyo branch',
-          descriptionZh: '东京分部说明',
-          descriptionJa: null,
+          name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
+          localizedName: '',
+          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+          localizedDescription: 'Tokyo branch',
           sortOrder: 10,
           isActive: true,
           childrenCount: 2,
@@ -549,13 +514,10 @@ describe('SubsidiarySettingsScreen', () => {
             code: 'TOKYO',
             path: '/TOKYO/',
             depth: 1,
-            nameEn: 'Tokyo',
-            nameZh: '东京分部',
-            nameJa: '東京拠点',
-            name: 'Tokyo',
-            descriptionEn: 'Tokyo branch',
-            descriptionZh: '东京分部说明',
-            descriptionJa: null,
+            name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
+          localizedName: '',
+          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+          localizedDescription: 'Tokyo branch',
             sortOrder: 10,
             isActive: true,
             childrenCount: 2,
@@ -613,8 +575,8 @@ describe('SubsidiarySettingsScreen', () => {
       });
     };
 
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANT';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANT';
     installSuccessMocks();
 
     const { rerender } = render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
@@ -622,8 +584,8 @@ describe('SubsidiarySettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tokyo 分目錄設定' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '設定分區' })).toBeInTheDocument();
 
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'ko';
+    localeState.locale = 'en';
+    localeState.locale = 'ko';
     installSuccessMocks();
     rerender(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
@@ -640,13 +602,10 @@ describe('SubsidiarySettingsScreen', () => {
           code: 'TOKYO',
           path: '/TOKYO/',
           depth: 1,
-          nameEn: 'Tokyo',
-          nameZh: '东京分部',
-          nameJa: '東京拠点',
-          name: 'Tokyo',
-          descriptionEn: 'Tokyo branch',
-          descriptionZh: '东京分部说明',
-          descriptionJa: null,
+          name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
+          localizedName: '',
+          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+          localizedDescription: 'Tokyo branch',
           sortOrder: 10,
           isActive: true,
           childrenCount: 2,

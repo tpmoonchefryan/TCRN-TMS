@@ -90,9 +90,19 @@ export interface PublicPresenceStudioWorkflowEventSummary {
   versionId: string | null;
 }
 
+export interface PublicPresenceStudioPageVersionSummary {
+  latestVersion: PublicPresenceStudioVersionSummary | null;
+  liveVersion: PublicPresenceStudioVersionSummary | null;
+  revealAutoSwitchAt: string | null;
+  scheduledVersion: PublicPresenceStudioVersionSummary | null;
+  templateId: PublicPresenceTemplateId;
+}
+
 export interface PublicPresenceStudioWorkspace {
   draftVersion: PublicPresenceStudioVersionSummary | null;
   liveVersion: PublicPresenceStudioVersionSummary | null;
+  liveTemplateId: PublicPresenceTemplateId | null;
+  pageVersions: PublicPresenceStudioPageVersionSummary[];
   portal: {
     createdAt: string;
     draftVersionId: string | null;
@@ -112,6 +122,7 @@ export interface PublicPresenceStudioWorkspace {
     talentCode: string;
     tenantCode: string;
   } | null;
+  selectedTemplateId: PublicPresenceTemplateId;
   stageSections: PublicPresenceStudioStageSectionSummary[];
   templates: PublicPresenceStudioTemplateSummary[];
   workflowEvents: PublicPresenceStudioWorkflowEventSummary[];
@@ -355,6 +366,60 @@ function serializeWorkflowEvent(
   };
 }
 
+function resolveSelectedTemplateId(
+  templateIdInput: string | null | undefined,
+  latestVersions: PublicPresenceDocumentVersionRecord[],
+  liveVersion: PublicPresenceDocumentVersionRecord | null,
+): PublicPresenceTemplateId {
+  const requestedTemplateId = PublicPresenceTemplateIdSchema.safeParse(
+    templateIdInput ?? null,
+  );
+
+  if (requestedTemplateId.success) {
+    return requestedTemplateId.data;
+  }
+
+  const liveTemplateId = PublicPresenceTemplateIdSchema.safeParse(
+    liveVersion?.templateId ?? null,
+  );
+
+  if (liveTemplateId.success) {
+    return liveTemplateId.data;
+  }
+
+  const latestTemplateId = PublicPresenceTemplateIdSchema.safeParse(
+    latestVersions[0]?.templateId ?? null,
+  );
+
+  if (latestTemplateId.success) {
+    return latestTemplateId.data;
+  }
+
+  return 'activeTalentHub';
+}
+
+function extractRevealAutoSwitchAt(
+  version: PublicPresenceDocumentVersionRecord | null,
+): string | null {
+  if (!version || version.templateId !== 'debutReveal') {
+    return null;
+  }
+
+  const document = parseDocument(version);
+  const countdownSection = document.sections.find(
+    (section) => section.kind === 'countdownReveal',
+  );
+  const fieldValue = countdownSection?.fields?.revealAtUtc;
+
+  if (!fieldValue || typeof fieldValue !== 'object' || !('value' in fieldValue)) {
+    return null;
+  }
+
+  return typeof fieldValue.value === 'string' && fieldValue.value.trim().length > 0
+    ? fieldValue.value.trim()
+    : null;
+}
+
 function normalizePublicRouteSegment(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? '';
 }
@@ -370,6 +435,7 @@ export class PublicPresenceStudioService {
   async getWorkspace(
     talentId: string,
     tenantSchema: string,
+    templateIdInput?: string | null,
   ): Promise<PublicPresenceStudioWorkspace> {
     const talent = await this.homepageAdminRepository.findTalentById(
       tenantSchema,
@@ -402,9 +468,23 @@ export class PublicPresenceStudioService {
     ).map(serializeStageSectionDefinition);
 
     if (!portal) {
+      const selectedTemplateId = resolveSelectedTemplateId(
+        templateIdInput,
+        [],
+        null,
+      );
+
       return {
         draftVersion: null,
         liveVersion: null,
+        liveTemplateId: null,
+        pageVersions: Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) => ({
+          latestVersion: null,
+          liveVersion: null,
+          revealAutoSwitchAt: null,
+          scheduledVersion: null,
+          templateId: template.templateId,
+        })),
         portal: null,
         publicRoute: {
           canonicalPath: `/${normalizedTenantCode}/${normalizedTalentCode}/homepage`,
@@ -413,14 +493,15 @@ export class PublicPresenceStudioService {
           talentCode: normalizedTalentCode,
           tenantCode: normalizedTenantCode,
         },
+        selectedTemplateId,
         stageSections,
         templates,
         workflowEvents: [],
       };
     }
 
-    const [draftRecord, liveRecord, workflowEvents] = await Promise.all([
-      this.publicPresenceFoundationRepository.findDraftVersion(
+    const [latestRecords, liveRecord, workflowEvents, scheduledRecords] = await Promise.all([
+      this.publicPresenceFoundationRepository.findLatestVersionsByPortal(
         tenantSchema,
         portal.id,
       ),
@@ -434,30 +515,102 @@ export class PublicPresenceStudioService {
         tenantSchema,
         portal.id,
       ),
+      Promise.all(
+        Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) =>
+          this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+            tenantSchema,
+            portal.id,
+            template.templateId,
+            ['scheduled'],
+          ),
+        ),
+      ),
     ]);
 
-    const [draftSnapshot, liveSnapshot] = await Promise.all([
-      draftRecord?.lastValidationSnapshotId
-        ? this.publicPresenceFoundationRepository.findValidationSnapshotById(
-            tenantSchema,
-            draftRecord.lastValidationSnapshotId,
-          )
-        : Promise.resolve(null),
-      liveRecord?.lastValidationSnapshotId
-        ? this.publicPresenceFoundationRepository.findValidationSnapshotById(
-            tenantSchema,
-            liveRecord.lastValidationSnapshotId,
-          )
-        : Promise.resolve(null),
-    ]);
+    const selectedTemplateId = resolveSelectedTemplateId(
+      templateIdInput,
+      latestRecords,
+      liveRecord,
+    );
+    const latestRecordByTemplate = new Map(
+      latestRecords.map((record) => [
+        record.templateId as PublicPresenceTemplateId,
+        record,
+      ]),
+    );
+    const scheduledRecordByTemplate = new Map(
+      scheduledRecords
+        .filter((record): record is PublicPresenceDocumentVersionRecord => Boolean(record))
+        .map((record) => [record.templateId as PublicPresenceTemplateId, record]),
+    );
+    const versionRecords = [
+      ...latestRecords,
+      ...scheduledRecords.filter((record): record is PublicPresenceDocumentVersionRecord => Boolean(record)),
+      ...(liveRecord ? [liveRecord] : []),
+    ];
+    const uniqueVersionRecords = Array.from(
+      new Map(versionRecords.map((record) => [record.id, record])).values(),
+    );
+    const snapshotEntries = await Promise.all(
+      uniqueVersionRecords.map(async (record) => {
+        const snapshot = record.lastValidationSnapshotId
+          ? await this.publicPresenceFoundationRepository.findValidationSnapshotById(
+              tenantSchema,
+              record.lastValidationSnapshotId,
+            )
+          : null;
+
+        return [record.id, parseValidationSnapshot(snapshot)] as const;
+      }),
+    );
+    const snapshotByVersionId = new Map(snapshotEntries);
+    const liveTemplateId = PublicPresenceTemplateIdSchema.safeParse(
+      liveRecord?.templateId ?? null,
+    ).success
+      ? (liveRecord?.templateId as PublicPresenceTemplateId)
+      : null;
+    const pageVersions = Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) => {
+      const latestRecord =
+        latestRecordByTemplate.get(template.templateId) ?? null;
+      const scheduledRecord =
+        scheduledRecordByTemplate.get(template.templateId) ?? null;
+      const liveTemplateVersion =
+        liveRecord?.templateId === template.templateId ? liveRecord : null;
+
+      return {
+        latestVersion: latestRecord
+          ? serializeVersion(
+              latestRecord,
+              snapshotByVersionId.get(latestRecord.id) ?? null,
+            )
+          : null,
+        liveVersion: liveTemplateVersion
+          ? serializeVersion(
+              liveTemplateVersion,
+              snapshotByVersionId.get(liveTemplateVersion.id) ?? null,
+            )
+          : null,
+        revealAutoSwitchAt: extractRevealAutoSwitchAt(latestRecord),
+        scheduledVersion: scheduledRecord
+          ? serializeVersion(
+              scheduledRecord,
+              snapshotByVersionId.get(scheduledRecord.id) ?? null,
+            )
+          : null,
+        templateId: template.templateId,
+      } satisfies PublicPresenceStudioPageVersionSummary;
+    });
+    const selectedPageVersion =
+      pageVersions.find((pageVersion) => pageVersion.templateId === selectedTemplateId)
+      ?? null;
 
     return {
-      draftVersion: draftRecord
-        ? serializeVersion(draftRecord, parseValidationSnapshot(draftSnapshot))
-        : null,
+      draftVersion: selectedPageVersion?.latestVersion ?? null,
       liveVersion: liveRecord
-        ? serializeVersion(liveRecord, parseValidationSnapshot(liveSnapshot))
+        ? serializeVersion(liveRecord, snapshotByVersionId.get(liveRecord.id) ?? null)
         : null,
+      liveTemplateId,
+      pageVersions,
       portal: serializePortal(portal),
       publicRoute: {
         canonicalPath: `/${normalizedTenantCode}/${normalizedTalentCode}/homepage`,
@@ -466,6 +619,7 @@ export class PublicPresenceStudioService {
         talentCode: normalizedTalentCode,
         tenantCode: normalizedTenantCode,
       },
+      selectedTemplateId,
       stageSections,
       templates,
       workflowEvents: workflowEvents.map(serializeWorkflowEvent),
@@ -488,9 +642,16 @@ export class PublicPresenceStudioService {
       });
     }
 
-    const existingWorkspace = await this.getWorkspace(talentId, tenantSchema);
+    const existingWorkspace = await this.getWorkspace(
+      talentId,
+      tenantSchema,
+      templateIdResult.data,
+    );
 
-    if (existingWorkspace.draftVersion) {
+    if (existingWorkspace.pageVersions.some((pageVersion) => (
+      pageVersion.templateId === templateIdResult.data
+      && pageVersion.latestVersion !== null
+    ))) {
       return existingWorkspace;
     }
 
@@ -519,7 +680,7 @@ export class PublicPresenceStudioService {
       },
     );
 
-    return this.getWorkspace(talentId, tenantSchema);
+    return this.getWorkspace(talentId, tenantSchema, templateIdResult.data);
   }
 
   async saveDraft(
@@ -546,6 +707,10 @@ export class PublicPresenceStudioService {
       },
     );
 
-    return this.getWorkspace(talentId, context.tenantSchema ?? '');
+    return this.getWorkspace(
+      talentId,
+      context.tenantSchema ?? '',
+      documentResult.data.templateId,
+    );
   }
 }

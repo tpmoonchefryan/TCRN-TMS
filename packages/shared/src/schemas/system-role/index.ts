@@ -8,6 +8,7 @@ import {
   RBAC_RESOURCE_CODES,
   RBAC_ROLE_POLICY_EFFECTS,
 } from '../../rbac/catalog';
+import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
 
 // ============================================================================
 // Schemas
@@ -18,24 +19,16 @@ export const RolePermissionSchema = z.object({
   effect: z.enum(RBAC_ROLE_POLICY_EFFECTS).optional(),
 });
 
-export const RoleTranslationsSchema = z.record(z.string(), z.string().max(128));
-
 export const CreateSystemRoleSchema = z.object({
   code: z.string().min(1).max(32),
-  nameEn: z.string().min(1).max(128),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: RoleTranslationsSchema.optional(),
+  name: LocalizedTextSchema,
   description: z.string().optional(),
   isActive: z.boolean().optional(),
   permissions: z.array(RolePermissionSchema).optional(),
 });
 
 export const UpdateSystemRoleSchema = z.object({
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: RoleTranslationsSchema.optional(),
+  name: PartialLocalizedTextSchema.optional(),
   description: z.string().optional(),
   isActive: z.boolean().optional(),
   permissions: z.array(RolePermissionSchema).optional(),

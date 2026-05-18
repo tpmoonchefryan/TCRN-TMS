@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
+
 export type CustomerProfileType = 'individual' | 'company';
 
 export interface CustomerProfileListRecord {
@@ -13,7 +15,7 @@ export interface CustomerProfileListRecord {
   updatedAt: Date;
   statusId: string | null;
   statusCode: string | null;
-  statusName: string | null;
+  statusName: LocalizedText | null;
   statusColor: string | null;
   companyShortName: string | null;
   originTalentId: string | null;
@@ -24,9 +26,9 @@ export interface CustomerProfileListRecord {
 export interface CustomerProfileActiveMembershipRecord {
   customerId?: string;
   platformCode: string;
-  platformName: string;
+  platformName: LocalizedText;
   levelCode: string;
-  levelName: string;
+  levelName: LocalizedText;
   color: string | null;
 }
 
@@ -50,11 +52,11 @@ export interface CustomerProfileDetailAggregate {
   updatedBy: string | null;
   version: number;
   talent: { id: string; code: string; displayName: string };
-  profileStore: { id: string; code: string; nameEn: string };
+  profileStore: { id: string; code: string; name: LocalizedText };
   originTalent: { id: string; code: string; displayName: string };
   lastModifiedTalent: { id: string; code: string; displayName: string } | null;
-  status: { id: string; code: string; nameEn: string; color: string | null } | null;
-  inactivationReason: { id: string; code: string; nameEn: string } | null;
+  status: { id: string; code: string; name: LocalizedText; color: string | null } | null;
+  inactivationReason: { id: string; code: string; name: LocalizedText } | null;
   companyInfo: {
     companyLegalName: string;
     companyShortName: string | null;
@@ -62,11 +64,11 @@ export interface CustomerProfileDetailAggregate {
     vatId: string | null;
     establishmentDate: Date | null;
     website: string | null;
-    businessSegment: { id: string; code: string; nameEn: string } | null;
+    businessSegment: { id: string; code: string; name: LocalizedText } | null;
   } | null;
   membershipRecords: Array<{
-    platform: { code: string; displayName: string };
-    membershipLevel: { code: string; nameEn: string; color: string | null };
+    platform: { code: string; displayName: LocalizedText };
+    membershipLevel: { code: string; name: LocalizedText; color: string | null };
   }>;
   _count: { platformIdentities: number; membershipRecords: number };
   accessLogs: Array<{
@@ -132,7 +134,7 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
       ? {
           id: item.status.id,
           code: item.status.code,
-          name: item.status.nameEn,
+          name: item.status.name.en,
           color: item.status.color,
         }
       : null,
@@ -140,7 +142,7 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
       ? {
           id: item.inactivationReason.id,
           code: item.inactivationReason.code,
-          name: item.inactivationReason.nameEn,
+          name: item.inactivationReason.name.en,
         }
       : null,
     tags: item.tags,
@@ -151,7 +153,7 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
     profileStore: {
       id: item.profileStore.id,
       code: item.profileStore.code,
-      name: item.profileStore.nameEn,
+      name: item.profileStore.name.en,
     },
     originTalent: {
       id: item.originTalent.id,
@@ -169,9 +171,9 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
       ? {
           highestLevel: {
             platformCode: highestMembership.platform.code,
-            platformName: highestMembership.platform.displayName,
+            platformName: highestMembership.platform.displayName.en,
             levelCode: highestMembership.membershipLevel.code,
-            levelName: highestMembership.membershipLevel.nameEn,
+            levelName: highestMembership.membershipLevel.name.en,
             color: highestMembership.membershipLevel.color,
           },
           activeCount: item.membershipRecords.length,
@@ -215,7 +217,7 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
           ? {
               id: item.companyInfo.businessSegment.id,
               code: item.companyInfo.businessSegment.code,
-              name: item.companyInfo.businessSegment.nameEn,
+              name: item.companyInfo.businessSegment.name.en,
             }
           : null,
       },

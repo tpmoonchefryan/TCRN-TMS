@@ -1,25 +1,22 @@
 'use client';
 
 import {
-  resolveTrilingualLocaleFamily,
+  normalizeSupportedUiLocale,
+  type PartialLocalizedText,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import { Languages } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
-  type RequestEnvelopeFn,
-  type RequestFn,
-} from '@/domains/config-dictionary-settings/api/system-dictionary.api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  buildManagedTranslations,
-  countManagedLocaleValues,
-  extractManagedTranslations,
-  loadTranslationLanguageOptions,
-  pickLegacyLocaleValue,
+  buildLocalizedTextPayload,
+  countLocaleValues,
+  extractLocalizedTextPayload,
+  getTranslationLanguageOptions,
+  pickLocaleValue,
   type TranslationLanguageOption,
-} from '@/platform/runtime/translations/managed-translations';
+} from '@/platform/runtime/locale/locale-text';
 import { TranslationDrawer } from '@/platform/ui';
 
 export interface TranslationFieldSection {
@@ -28,7 +25,7 @@ export interface TranslationFieldSection {
   label: string;
   kind?: 'text' | 'textarea';
   placeholder?: string;
-  values: Record<string, string>;
+  values: PartialLocalizedText;
 }
 
 interface TranslationDrawerCopy {
@@ -52,10 +49,8 @@ interface TranslationManagementDrawerProps {
   closeButtonAriaLabel: string;
   description: string;
   open: boolean;
-  onChange: (sectionId: string, localeCode: string, value: string) => void;
+  onChange: (sectionId: string, localeCode: SupportedUiLocale, value: string) => void;
   onOpenChange: (open: boolean) => void;
-  request: RequestFn;
-  requestEnvelope: RequestEnvelopeFn;
   sections: TranslationFieldSection[];
   title: string;
 }
@@ -63,12 +58,6 @@ interface TranslationManagementDrawerProps {
 interface TranslationManagementTriggerProps {
   count?: number;
   onClick: () => void;
-}
-
-interface AsyncLanguagesState {
-  data: TranslationLanguageOption[];
-  error: string | null;
-  loading: boolean;
 }
 
 const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
@@ -174,21 +163,12 @@ function getCurrentCopy(locale: SupportedUiLocale) {
   return COPY[locale];
 }
 
-function getEffectiveSelectedLocale(
-  currentLocale: 'en' | 'zh' | 'ja',
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveTrilingualLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
 
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
-}
 export {
-  buildManagedTranslations,
-  countManagedLocaleValues,
-  extractManagedTranslations,
-  pickLegacyLocaleValue,
+  buildLocalizedTextPayload,
+  countLocaleValues,
+  extractLocalizedTextPayload,
+  pickLocaleValue,
 };
 export type { TranslationLanguageOption };
 
@@ -196,8 +176,8 @@ export function TranslationManagementTrigger({
   count,
   onClick,
 }: Readonly<TranslationManagementTriggerProps>) {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
+  const { locale } = useUiLocale();
+  const effectiveSelectedLocale = locale;
   const copy = getCurrentCopy(effectiveSelectedLocale);
 
   return (
@@ -223,58 +203,16 @@ export function TranslationManagementDrawer({
   open,
   onChange,
   onOpenChange,
-  request,
-  requestEnvelope,
   sections,
   title,
 }: Readonly<TranslationManagementDrawerProps>) {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
+  const { locale } = useUiLocale();
+  const effectiveSelectedLocale = locale;
   const copy = getCurrentCopy(effectiveSelectedLocale);
-  const [languagesState, setLanguagesState] = useState<AsyncLanguagesState>({
-    data: [],
-    error: null,
-    loading: true,
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function hydrateLanguages() {
-      setLanguagesState({
-        data: [],
-        error: null,
-        loading: true,
-      });
-
-      const result = await loadTranslationLanguageOptions(
-        request,
-        requestEnvelope,
-        effectiveSelectedLocale,
-        copy.noLanguages,
-      );
-
-      if (cancelled) {
-        return;
-      }
-
-      setLanguagesState({
-        data: result.options,
-        error: result.error,
-        loading: false,
-      });
-    }
-
-    void hydrateLanguages();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [copy.noLanguages, effectiveSelectedLocale, request, requestEnvelope]);
 
   const languageOptions = useMemo(
-    () => languagesState.data.filter((option) => option.code.toLowerCase() !== 'en'),
-    [languagesState.data],
+    () => getTranslationLanguageOptions(effectiveSelectedLocale),
+    [effectiveSelectedLocale],
   );
 
   const translationFields = useMemo(
@@ -294,23 +232,20 @@ export function TranslationManagementDrawer({
     [sections],
   );
 
-  const emptyTranslationsText = languagesState.loading
-    ? copy.loadingLanguages
-    : languagesState.error
-      ? languagesState.error
-      : languageOptions.length === 0
-        ? copy.noLanguages
-        : copy.emptyTranslationsText;
+  const emptyTranslationsText = languageOptions.length === 0
+    ? copy.noLanguages
+    : copy.emptyTranslationsText;
 
-  const handleSave = async (payload: Record<string, Record<string, string>> | Record<string, string>) => {
-    const nestedPayload = payload as Record<string, Record<string, string>>;
+  const handleSave = async (payload: Record<string, PartialLocalizedText> | PartialLocalizedText) => {
+    const nestedPayload = payload as Record<string, PartialLocalizedText>;
 
     sections.forEach((section) => {
       const nextValues = nestedPayload[section.id] ?? {};
       const localeCodes = new Set([
         ...Object.keys(section.values),
         ...Object.keys(nextValues),
-      ]);
+      ].map((localeCode) => normalizeSupportedUiLocale(localeCode))
+        .filter((localeCode): localeCode is SupportedUiLocale => Boolean(localeCode)));
 
       localeCodes.forEach((localeCode) => {
         onChange(section.id, localeCode, nextValues[localeCode] ?? '');

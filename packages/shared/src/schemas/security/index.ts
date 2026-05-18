@@ -3,6 +3,8 @@
 
 import { z } from 'zod';
 
+import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -175,10 +177,7 @@ export const CreateBlocklistSchema = z.object({
   ownerId: z.string().uuid().optional(),
   pattern: z.string().max(512),
   patternType: SecurityPatternTypeSchema,
-  nameEn: z.string().max(128),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: z.record(z.string(), z.string().max(128)).optional(),
+  name: LocalizedTextSchema,
   description: z.string().max(500).optional(),
   category: z.string().max(64).optional(),
   severity: SecuritySeveritySchema.optional().default('medium'),
@@ -194,10 +193,7 @@ export const CreateBlocklistSchema = z.object({
 export const UpdateBlocklistSchema = z.object({
   pattern: z.string().max(512).optional(),
   patternType: SecurityPatternTypeSchema.optional(),
-  nameEn: z.string().max(128).optional(),
-  nameZh: z.string().max(128).optional(),
-  nameJa: z.string().max(128).optional(),
-  translations: z.record(z.string(), z.string().max(128)).optional(),
+  name: PartialLocalizedTextSchema.optional(),
   description: z.string().max(500).optional(),
   category: z.string().max(64).optional(),
   severity: SecuritySeveritySchema.optional(),

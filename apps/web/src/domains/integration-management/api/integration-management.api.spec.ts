@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
+
 import {
   createConsumer,
   createEmailTemplate,
@@ -22,8 +24,8 @@ function buildSocialPlatform(id: string): SocialPlatformRecord {
   return {
     id,
     code: id,
-    name: id,
-    nameEn: id,
+    name: localizedFixture(id),
+    localizedName: id,
     sortOrder: 0,
     isActive: true,
     version: 1,
@@ -34,8 +36,8 @@ function buildConsumer(id: string): IntegrationConsumerRecord {
   return {
     id,
     code: id,
-    name: id,
-    nameEn: id,
+    name: localizedFixture(id),
+    localizedName: id,
     sortOrder: 0,
     isActive: true,
     version: 1,
@@ -130,18 +132,17 @@ describe('integration-management.api pagination helpers', () => {
     expect(result.at(-1)?.schemaName).toBe('tenant_101');
   });
 
-  it('sends managed translation payloads when creating consumers', async () => {
+  it('sends localized text payloads when creating consumers', async () => {
     const request = vi.fn(async () => buildConsumer('consumer-created'));
+
+    const name = localizedFixture('CRM Sync', {
+      zh_HANS: '客户同步',
+      fr: 'Synchronisation CRM',
+    });
 
     await createConsumer(request as never, {
       code: 'CRM_SYNC',
-      nameEn: 'CRM Sync',
-      nameZh: '客户同步',
-      translations: {
-        en: 'CRM Sync',
-        zh_HANS: '客户同步',
-        fr: 'Synchronisation CRM',
-      },
+      name,
       consumerCategory: 'external',
     });
 
@@ -151,31 +152,24 @@ describe('integration-management.api pagination helpers', () => {
         method: 'POST',
         body: JSON.stringify({
           code: 'CRM_SYNC',
-          nameEn: 'CRM Sync',
-          nameZh: '客户同步',
-          translations: {
-            en: 'CRM Sync',
-            zh_HANS: '客户同步',
-            fr: 'Synchronisation CRM',
-          },
+          name,
           consumerCategory: 'external',
         }),
       }),
     );
   });
 
-  it('preserves managed translation payloads when updating consumers', async () => {
+  it('preserves localized text payloads when updating consumers', async () => {
     const request = vi.fn(async () => buildConsumer('consumer-1'));
+
+    const name = localizedFixture('CRM Sync', {
+      zh_HANS: '客户同步',
+      ko: 'CRM 동기화',
+    });
 
     await updateConsumer(request as never, 'consumer-1', {
       version: 3,
-      nameEn: 'CRM Sync',
-      nameZh: '客户同步',
-      translations: {
-        en: 'CRM Sync',
-        zh_HANS: '客户同步',
-        ko: 'CRM 동기화',
-      },
+      name,
       consumerCategory: 'external',
     });
 
@@ -185,27 +179,25 @@ describe('integration-management.api pagination helpers', () => {
         method: 'PATCH',
         body: JSON.stringify({
           version: 3,
-          nameEn: 'CRM Sync',
-          nameZh: '客户同步',
-          translations: {
-            en: 'CRM Sync',
-            zh_HANS: '客户同步',
-            ko: 'CRM 동기화',
-          },
+          name,
           consumerCategory: 'external',
         }),
       }),
     );
   });
 
-  it('sends managed translation payloads when creating adapters', async () => {
+  it('sends localized text payloads when creating adapters', async () => {
+    const name = localizedFixture('Bili Sync', {
+      zh_HANS: '哔哩同步',
+      ko: '빌리 동기화',
+    });
     const request = vi.fn(async () => ({
       id: 'adapter-1',
       ownerType: 'tenant',
       ownerId: null,
       platform: { id: 'platform-1', code: 'BILIBILI', displayName: 'Bilibili' },
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
+      name,
       adapterType: 'api_key',
       inherit: true,
       isActive: true,
@@ -220,13 +212,7 @@ describe('integration-management.api pagination helpers', () => {
     await createTenantAdapter(request as never, {
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
-      nameZh: '哔哩同步',
-      translations: {
-        en: 'Bili Sync',
-        zh_HANS: '哔哩同步',
-        ko: '빌리 동기화',
-      },
+      name,
       adapterType: 'api_key',
     });
 
@@ -237,13 +223,7 @@ describe('integration-management.api pagination helpers', () => {
         body: JSON.stringify({
           platformId: 'platform-1',
           code: 'BILI_SYNC',
-          nameEn: 'Bili Sync',
-          nameZh: '哔哩同步',
-          translations: {
-            en: 'Bili Sync',
-            zh_HANS: '哔哩同步',
-            ko: '빌리 동기화',
-          },
+          name,
           adapterType: 'api_key',
         }),
       }),
@@ -258,7 +238,7 @@ describe('integration-management.api pagination helpers', () => {
       definitionKey: 'ai-adapter',
       platform: { id: 'platform-ai-adapter', code: 'AI_ADAPTER', displayName: 'AI Adapter' },
       code: 'AI_ADAPTER',
-      nameEn: 'AI Adapter',
+      name: localizedFixture('AI Adapter'),
       adapterType: 'ai',
       inherit: true,
       isActive: true,
@@ -297,14 +277,18 @@ describe('integration-management.api pagination helpers', () => {
     );
   });
 
-  it('sends managed translation payloads when updating adapters', async () => {
+  it('sends localized text payloads when updating adapters', async () => {
+    const name = localizedFixture('Bili Sync', {
+      zh_HANS: '哔哩同步',
+      fr: 'Synchronisation Bilibili',
+    });
     const request = vi.fn(async () => ({
       id: 'adapter-1',
       ownerType: 'tenant',
       ownerId: null,
       platform: { id: 'platform-1', code: 'BILIBILI', displayName: 'Bilibili' },
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
+      name,
       adapterType: 'api_key',
       inherit: true,
       isActive: true,
@@ -318,13 +302,7 @@ describe('integration-management.api pagination helpers', () => {
 
     await updateTenantAdapter(request as never, 'adapter-1', {
       version: 2,
-      nameEn: 'Bili Sync',
-      nameZh: '哔哩同步',
-      translations: {
-        en: 'Bili Sync',
-        zh_HANS: '哔哩同步',
-        fr: 'Synchronisation Bilibili',
-      },
+      name,
     });
 
     expect(request).toHaveBeenCalledWith(
@@ -333,23 +311,21 @@ describe('integration-management.api pagination helpers', () => {
         method: 'PATCH',
         body: JSON.stringify({
           version: 2,
-          nameEn: 'Bili Sync',
-          nameZh: '哔哩同步',
-          translations: {
-            en: 'Bili Sync',
-            zh_HANS: '哔哩同步',
-            fr: 'Synchronisation Bilibili',
-          },
+          name,
         }),
       }),
     );
   });
 
-  it('sends managed translation payloads when creating webhooks', async () => {
+  it('sends localized text payloads when creating webhooks', async () => {
+    const name = localizedFixture('Customer Delta', {
+      zh_HANS: '客户变更',
+      fr: 'Delta client',
+    });
     const request = vi.fn(async () => ({
       id: 'webhook-1',
       code: 'CUSTOMER_DELTA',
-      nameEn: 'Customer Delta',
+      name,
       url: 'https://example.com',
       events: ['customer.created'],
       isActive: true,
@@ -361,13 +337,7 @@ describe('integration-management.api pagination helpers', () => {
 
     await createWebhook(request as never, {
       code: 'CUSTOMER_DELTA',
-      nameEn: 'Customer Delta',
-      nameZh: '客户变更',
-      translations: {
-        en: 'Customer Delta',
-        zh_HANS: '客户变更',
-        fr: 'Delta client',
-      },
+      name,
       url: 'https://example.com/webhook',
       events: ['customer.created'],
       monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
@@ -379,13 +349,7 @@ describe('integration-management.api pagination helpers', () => {
         method: 'POST',
         body: JSON.stringify({
           code: 'CUSTOMER_DELTA',
-          nameEn: 'Customer Delta',
-          nameZh: '客户变更',
-          translations: {
-            en: 'Customer Delta',
-            zh_HANS: '客户变更',
-            fr: 'Delta client',
-          },
+          name,
           url: 'https://example.com/webhook',
           events: ['customer.created'],
           monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
@@ -399,7 +363,7 @@ describe('integration-management.api pagination helpers', () => {
       id: 'webhook-1',
       code: 'CUSTOMER_LIFECYCLE',
       definitionKey: 'customer-lifecycle',
-      nameEn: 'Customer lifecycle',
+      name: localizedFixture('Customer lifecycle'),
       url: 'https://example.com',
       events: ['customer.created'],
       isActive: true,
@@ -428,11 +392,15 @@ describe('integration-management.api pagination helpers', () => {
     );
   });
 
-  it('sends managed translation payloads when updating webhooks', async () => {
+  it('sends localized text payloads when updating webhooks', async () => {
+    const name = localizedFixture('Customer Delta', {
+      zh_HANS: '客户变更',
+      ko: '고객 변경',
+    });
     const request = vi.fn(async () => ({
       id: 'webhook-1',
       code: 'CUSTOMER_DELTA',
-      nameEn: 'Customer Delta',
+      name,
       url: 'https://example.com',
       events: ['customer.created'],
       isActive: true,
@@ -444,13 +412,7 @@ describe('integration-management.api pagination helpers', () => {
 
     await updateWebhook(request as never, 'webhook-1', {
       version: 4,
-      nameEn: 'Customer Delta',
-      nameZh: '客户变更',
-      translations: {
-        en: 'Customer Delta',
-        zh_HANS: '客户变更',
-        ko: '고객 변경',
-      },
+      name,
       url: 'https://example.com/webhook',
       events: ['customer.created'],
       monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
@@ -462,13 +424,7 @@ describe('integration-management.api pagination helpers', () => {
         method: 'PATCH',
         body: JSON.stringify({
           version: 4,
-          nameEn: 'Customer Delta',
-          nameZh: '客户变更',
-          translations: {
-            en: 'Customer Delta',
-            zh_HANS: '客户变更',
-            ko: '고객 변경',
-          },
+          name,
           url: 'https://example.com/webhook',
           events: ['customer.created'],
           monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
@@ -477,13 +433,28 @@ describe('integration-management.api pagination helpers', () => {
     );
   });
 
-  it('sends managed translation payloads when creating email templates', async () => {
+  it('sends localized text payloads when creating email templates', async () => {
+    const name = localizedFixture('Welcome Email', {
+      zh_HANS: '欢迎邮件',
+      zh_HANT: '歡迎郵件',
+    });
+    const subject = localizedFixture('Welcome', {
+      zh_HANS: '欢迎',
+      fr: 'Bienvenue',
+    });
+    const bodyHtml = localizedFixture('<p>Hello</p>', {
+      zh_HANS: '<p>你好</p>',
+      ko: '<p>안녕하세요</p>',
+    });
+    const bodyText = localizedFixture('Hello', {
+      fr: 'Bonjour',
+    });
     const request = vi.fn(async () => ({
       code: 'WELCOME_EMAIL',
-      nameEn: 'Welcome Email',
-      subjectEn: 'Welcome',
-      bodyHtmlEn: '<p>Hello</p>',
-      bodyTextEn: 'Hello',
+      name,
+      subject,
+      bodyHtml,
+      bodyText,
       variables: [],
       category: 'system',
       isActive: true,
@@ -491,32 +462,10 @@ describe('integration-management.api pagination helpers', () => {
 
     await createEmailTemplate(request as never, {
       code: 'WELCOME_EMAIL',
-      nameEn: 'Welcome Email',
-      nameZh: '欢迎邮件',
-      translations: {
-        en: 'Welcome Email',
-        zh_HANS: '欢迎邮件',
-        zh_HANT: '歡迎郵件',
-      },
-      subjectEn: 'Welcome',
-      subjectZh: '欢迎',
-      subjectTranslations: {
-        en: 'Welcome',
-        zh_HANS: '欢迎',
-        fr: 'Bienvenue',
-      },
-      bodyHtmlEn: '<p>Hello</p>',
-      bodyHtmlZh: '<p>你好</p>',
-      bodyHtmlTranslations: {
-        en: '<p>Hello</p>',
-        zh_HANS: '<p>你好</p>',
-        ko: '<p>안녕하세요</p>',
-      },
-      bodyTextEn: 'Hello',
-      bodyTextTranslations: {
-        en: 'Hello',
-        fr: 'Bonjour',
-      },
+      name,
+      subject,
+      bodyHtml,
+      bodyText,
       category: 'system',
     });
 
@@ -526,71 +475,45 @@ describe('integration-management.api pagination helpers', () => {
         method: 'POST',
         body: JSON.stringify({
           code: 'WELCOME_EMAIL',
-          nameEn: 'Welcome Email',
-          nameZh: '欢迎邮件',
-          translations: {
-            en: 'Welcome Email',
-            zh_HANS: '欢迎邮件',
-            zh_HANT: '歡迎郵件',
-          },
-          subjectEn: 'Welcome',
-          subjectZh: '欢迎',
-          subjectTranslations: {
-            en: 'Welcome',
-            zh_HANS: '欢迎',
-            fr: 'Bienvenue',
-          },
-          bodyHtmlEn: '<p>Hello</p>',
-          bodyHtmlZh: '<p>你好</p>',
-          bodyHtmlTranslations: {
-            en: '<p>Hello</p>',
-            zh_HANS: '<p>你好</p>',
-            ko: '<p>안녕하세요</p>',
-          },
-          bodyTextEn: 'Hello',
-          bodyTextTranslations: {
-            en: 'Hello',
-            fr: 'Bonjour',
-          },
+          name,
+          subject,
+          bodyHtml,
+          bodyText,
           category: 'system',
         }),
       }),
     );
   });
 
-  it('sends managed translation payloads when updating email templates', async () => {
+  it('sends localized text payloads when updating email templates', async () => {
+    const name = localizedFixture('Welcome Email', {
+      fr: 'E-mail de bienvenue',
+    });
+    const subject = localizedFixture('Welcome', {
+      ko: '환영합니다',
+    });
+    const bodyHtml = localizedFixture('<p>Hello</p>', {
+      zh_HANT: '<p>您好</p>',
+    });
+    const bodyText = localizedFixture('Hello', {
+      fr: 'Bonjour',
+    });
     const request = vi.fn(async () => ({
       code: 'WELCOME_EMAIL',
-      nameEn: 'Welcome Email',
-      subjectEn: 'Welcome',
-      bodyHtmlEn: '<p>Hello</p>',
-      bodyTextEn: 'Hello',
+      name,
+      subject,
+      bodyHtml,
+      bodyText,
       variables: [],
       category: 'system',
       isActive: true,
     }));
 
     await updateEmailTemplate(request as never, 'WELCOME_EMAIL', {
-      nameEn: 'Welcome Email',
-      translations: {
-        en: 'Welcome Email',
-        fr: 'E-mail de bienvenue',
-      },
-      subjectEn: 'Welcome',
-      subjectTranslations: {
-        en: 'Welcome',
-        ko: '환영합니다',
-      },
-      bodyHtmlEn: '<p>Hello</p>',
-      bodyHtmlTranslations: {
-        en: '<p>Hello</p>',
-        zh_HANT: '<p>您好</p>',
-      },
-      bodyTextEn: 'Hello',
-      bodyTextTranslations: {
-        en: 'Hello',
-        fr: 'Bonjour',
-      },
+      name,
+      subject,
+      bodyHtml,
+      bodyText,
       category: 'system',
     });
 
@@ -599,26 +522,10 @@ describe('integration-management.api pagination helpers', () => {
       expect.objectContaining({
         method: 'PATCH',
         body: JSON.stringify({
-          nameEn: 'Welcome Email',
-          translations: {
-            en: 'Welcome Email',
-            fr: 'E-mail de bienvenue',
-          },
-          subjectEn: 'Welcome',
-          subjectTranslations: {
-            en: 'Welcome',
-            ko: '환영합니다',
-          },
-          bodyHtmlEn: '<p>Hello</p>',
-          bodyHtmlTranslations: {
-            en: '<p>Hello</p>',
-            zh_HANT: '<p>您好</p>',
-          },
-          bodyTextEn: 'Hello',
-          bodyTextTranslations: {
-            en: 'Hello',
-            fr: 'Bonjour',
-          },
+          name,
+          subject,
+          bodyHtml,
+          bodyText,
           category: 'system',
         }),
       }),

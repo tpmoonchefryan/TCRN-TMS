@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PrivateShell } from '@/platform/routing/PrivateShell';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 
 const push = vi.fn();
@@ -96,11 +96,11 @@ describe('PrivateShell', () => {
     mockSession = acSession;
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <PrivateShell tenantId="tenant-ac">
           <div>Private content</div>
         </PrivateShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     await waitFor(() => {
@@ -112,11 +112,11 @@ describe('PrivateShell', () => {
     logoutCurrentSession.mockRejectedValueOnce(new Error('logout failed'));
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <PrivateShell tenantId="tenant-1">
           <div>Private content</div>
         </PrivateShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
@@ -133,11 +133,11 @@ describe('PrivateShell', () => {
     recoverSession.mockResolvedValueOnce(true);
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <PrivateShell tenantId="tenant-1">
           <div>Private content</div>
         </PrivateShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     await waitFor(() => {

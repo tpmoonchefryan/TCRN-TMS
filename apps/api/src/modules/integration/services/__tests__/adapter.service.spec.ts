@@ -2,7 +2,7 @@
 
 import 'reflect-metadata';
 
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdapterReadApplicationService } from '../../application/adapter-read.service';
@@ -96,11 +96,11 @@ describe('AdapterService', () => {
     const createDto = {
       platformId: 'platform-1',
       code: 'BILI_SYNC',
-      nameEn: 'Bili Sync',
+      name: createLocalizedText({ en: 'Bili Sync' }),
       adapterType: 'oauth',
     };
     const updateDto = {
-      nameEn: 'Bili Sync Updated',
+      name: { en: 'Bili Sync Updated' },
       version: 3,
     };
     const updateConfigsDto = {

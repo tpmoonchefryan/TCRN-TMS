@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TalentWorkspaceOverviewScreen } from '@/domains/talent-workspace/screens/TalentWorkspaceOverviewScreen';
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => ({
-    currentLocale: 'en',
+  useUiLocale: () => ({
+    locale: 'en',
   }),
 }));
 

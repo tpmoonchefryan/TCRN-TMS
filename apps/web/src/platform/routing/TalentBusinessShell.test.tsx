@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TalentBusinessShell } from '@/platform/routing/TalentBusinessShell';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 import type { BrowserSession } from '@/platform/runtime/session/session-provider';
 
 const mockRequest = vi.fn();
@@ -62,7 +62,7 @@ describe('TalentBusinessShell', () => {
     const onSignOut = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <TalentBusinessShell
           tenantId="tenant-1"
           talentId="talent-9"
@@ -73,7 +73,7 @@ describe('TalentBusinessShell', () => {
         >
           <div>Talent content</div>
         </TalentBusinessShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     expect(screen.getAllByText('Customer Management')).toHaveLength(2);
@@ -109,7 +109,7 @@ describe('TalentBusinessShell', () => {
     ['reports'],
   ] as const)('keeps the organization footer entry mounted in the %s section', async (section) => {
     render(
-      <RuntimeLocaleProvider>
+      <UiLocaleProvider>
         <TalentBusinessShell
           tenantId="tenant-1"
           talentId="talent-9"
@@ -120,7 +120,7 @@ describe('TalentBusinessShell', () => {
         >
           <div>Talent content</div>
         </TalentBusinessShell>
-      </RuntimeLocaleProvider>,
+      </UiLocaleProvider>,
     );
 
     expect(await screen.findAllByText('Tokino Sora')).toHaveLength(1);

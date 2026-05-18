@@ -9,17 +9,16 @@ import type {
   TalentPublishReadinessResponse,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import { TalentSettingsScreen } from '@/domains/config-dictionary-settings/screens/TalentSettingsScreen';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import type { HomepageResponse } from '@/domains/homepage-management/api/homepage.api';
 import { ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 
 const mockRequest = vi.fn();
 const replace = vi.fn();
 let pathname = '/tenant/tenant-1/talent/talent-1/settings';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: undefined as SupportedUiLocale | undefined,
+  locale: 'en' as SupportedUiLocale,
 };
 
 const dictionaryItemsResponse = [
@@ -27,13 +26,10 @@ const dictionaryItemsResponse = [
     id: 'dictionary-item-1',
     dictionaryCode: 'CUSTOMER_STATUS',
     code: 'ACTIVE',
-    nameEn: 'Active customer',
-    nameZh: '活跃客户',
-    nameJa: null,
-    name: 'Active customer',
-    descriptionEn: 'Currently active',
-    descriptionZh: null,
-    descriptionJa: null,
+    name: localizedFixture('Active customer', { zh_HANS: '活跃客户' }),
+    localizedName: 'Active customer',
+    description: localizedFixture('Currently active'),
+    localizedDescription: 'Currently active',
     sortOrder: 0,
     isActive: true,
     extraData: null,
@@ -63,7 +59,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -78,8 +74,7 @@ describe('TalentSettingsScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     replace.mockReset();
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = undefined;
+    localeState.locale = 'en';
     pathname = '/tenant/tenant-1/talent/talent-1/settings';
     currentSearch = '';
     replace.mockImplementation((href: string) => {
@@ -90,7 +85,7 @@ describe('TalentSettingsScreen', () => {
   });
 
   it('passes a localized settings section navigation label to the shared settings layout', async () => {
-    localeState.currentLocale = 'ja';
+    localeState.locale = 'ja';
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/talents/talent-1' && !init) {
@@ -101,26 +96,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: '既定プロフィールストア',
-            translations: {
-              en: 'Default Store',
-              zh_HANS: '默认档案库',
-              ja: '既定プロフィールストア',
-            },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库', ja: '既定プロフィールストア' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: 'Sora',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -252,26 +237,16 @@ describe('TalentSettingsScreen', () => {
             profileStore: {
               id: 'store-1',
               code: 'DEFAULT_STORE',
-              nameEn: 'Default Store',
-              nameZh: '默认档案库',
-              nameJa: '既定プロフィールストア',
-              translations: {
-                en: 'Default Store',
-                zh_HANS: '默认档案库',
-                ja: '既定プロフィールストア',
-              },
+              name: localizedFixture('Default Store', { zh_HANS: '默认档案库', ja: '既定プロフィールストア' }),
               isDefault: true,
             },
             code: 'SORA',
             path: '/TOKYO/SORA/',
-            nameEn: 'Tokino Sora',
-            nameZh: '时乃空',
-            nameJa: 'ときのそら',
-            name: 'Sora',
-            displayName: 'Sora',
-            descriptionEn: null,
-            descriptionZh: null,
-            descriptionJa: null,
+            name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
+          displayName: 'Sora',
+          description: localizedFixture(''),
+          localizedDescription: null,
             avatarUrl: null,
             homepagePath: 'sora',
             timezone: 'Asia/Tokyo',
@@ -387,8 +362,8 @@ describe('TalentSettingsScreen', () => {
       });
     };
 
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANT';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANT';
     installSuccessMocks();
 
     const { rerender } = render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
@@ -396,8 +371,8 @@ describe('TalentSettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Sora 藝人設定' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '設定分區' })).toBeInTheDocument();
 
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'ko';
+    localeState.locale = 'en';
+    localeState.locale = 'ko';
     installSuccessMocks();
     rerender(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
@@ -412,20 +387,10 @@ describe('TalentSettingsScreen', () => {
         ownerType: 'subsidiary',
         ownerId: 'subsidiary-1',
         code: 'TENANT_SEGMENT',
-        name: 'Tenant Segment',
-        nameEn: 'Tenant Segment',
-        nameZh: null,
-        nameJa: null,
-        translations: {
-          en: 'Tenant Segment',
-        },
-        description: 'Inherited from the parent scope',
-        descriptionEn: 'Inherited from the parent scope',
-        descriptionZh: null,
-        descriptionJa: null,
-        descriptionTranslations: {
-          en: 'Inherited from the parent scope',
-        },
+        name: localizedFixture('Tenant Segment'),
+        localizedName: 'Tenant Segment',
+        description: localizedFixture('Inherited from the parent scope'),
+        localizedDescription: 'Inherited from the parent scope',
         sortOrder: 0,
         isActive: true,
         isForceUse: false,
@@ -449,25 +414,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: null,
-            translations: {
-              en: 'Default Store',
-              zh_HANS: '默认档案库',
-            },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: '时乃空',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -595,12 +551,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,
@@ -718,7 +670,7 @@ describe('TalentSettingsScreen', () => {
     expect(screen.getAllByText('Default Store').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
-    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+    expect((await screen.findAllByText('Active customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
     expect(screen.getAllByText('Business Segment').length).toBeGreaterThan(0);
@@ -841,25 +793,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: null,
-            translations: {
-              en: 'Default Store',
-              zh_HANS: '默认档案库',
-            },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: '时乃空',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -975,12 +918,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,
@@ -1018,12 +957,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,
@@ -1201,22 +1136,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: null,
-            translations: { en: 'Default Store', zh_HANS: '默认档案库' },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: 'Tokino Sora',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -1389,22 +1318,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: null,
-            translations: { en: 'Default Store', zh_HANS: '默认档案库' },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: 'Tokino Sora',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -1557,25 +1480,16 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            nameEn: 'Default Store',
-            nameZh: '默认档案库',
-            nameJa: null,
-            translations: {
-              en: 'Default Store',
-              zh_HANS: '默认档案库',
-            },
+            name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
             isDefault: true,
           },
           code: 'SORA',
           path: '/TOKYO/SORA/',
-          nameEn: 'Tokino Sora',
-          nameZh: '时乃空',
-          nameJa: 'ときのそら',
-          name: '时乃空',
+          name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
           displayName: 'Sora',
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
+          description: localizedFixture(''),
+          localizedDescription: null,
           avatarUrl: null,
           homepagePath: 'sora',
           timezone: 'Asia/Tokyo',
@@ -1680,12 +1594,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,
@@ -1741,25 +1651,16 @@ describe('TalentSettingsScreen', () => {
       profileStore: {
         id: 'store-1',
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Store',
-        nameZh: '默认档案库',
-        nameJa: null,
-        translations: {
-          en: 'Default Store',
-          zh_HANS: '默认档案库',
-        },
+        name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
         isDefault: true,
       },
       code: 'SORA',
       path: '/TOKYO/SORA/',
-      nameEn: 'Tokino Sora',
-      nameZh: '时乃空',
-      nameJa: 'ときのそら',
-      name: '时乃空',
-      displayName: 'Sora',
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
+          displayName: 'Sora',
+          description: localizedFixture(''),
+          localizedDescription: null,
       avatarUrl: null,
       homepagePath: 'sora',
       timezone: 'Asia/Tokyo',
@@ -1884,12 +1785,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,
@@ -1983,25 +1880,16 @@ describe('TalentSettingsScreen', () => {
       profileStore: {
         id: 'store-1',
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Store',
-        nameZh: '默认档案库',
-        nameJa: null,
-        translations: {
-          en: 'Default Store',
-          zh_HANS: '默认档案库',
-        },
+        name: localizedFixture('Default Store', { zh_HANS: '默认档案库' }),
         isDefault: true,
       },
       code: 'SORA',
       path: '/TOKYO/SORA/',
-      nameEn: 'Tokino Sora',
-      nameZh: '时乃空',
-      nameJa: 'ときのそら',
-      name: '时乃空',
-      displayName: 'Sora',
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
+          localizedName: '',
+          displayName: 'Sora',
+          description: localizedFixture(''),
+          localizedDescription: null,
       avatarUrl: null,
       homepagePath: 'sora',
       timezone: 'Asia/Tokyo',
@@ -2121,12 +2009,8 @@ describe('TalentSettingsScreen', () => {
           allowedReactions: ['heart', 'star'],
           theme: {},
           avatarUrl: null,
-          termsContentEn: null,
-          termsContentZh: null,
-          termsContentJa: null,
-          privacyContentEn: null,
-          privacyContentZh: null,
-          privacyContentJa: null,
+          termsContent: localizedFixture(''),
+          privacyContent: localizedFixture(''),
           stats: {
             totalMessages: 9,
             pendingCount: 2,

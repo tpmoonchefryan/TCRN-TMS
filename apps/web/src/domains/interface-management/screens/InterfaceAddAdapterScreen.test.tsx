@@ -1,20 +1,19 @@
-import type { IntegrationAdapterDefinition } from '@tcrn/shared';
+import { SUPPORTED_UI_LOCALES, type IntegrationAdapterDefinition } from '@tcrn/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InterfaceAddAdapterScreen } from '@/domains/interface-management/screens/InterfaceAddAdapterScreen';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = 'ownerType=subsidiary&ownerId=sub-1';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: 'en' as string,
+  locale: 'en' as SupportedUiLocale,
   copy: null,
   setLocale: vi.fn(),
-  availableLocales: ['en', 'zh', 'ja'] as RuntimeLocale[],
+  availableLocales: [...SUPPORTED_UI_LOCALES],
 };
 
 const localizedText = {
@@ -42,7 +41,7 @@ const aiAdapterDefinition: IntegrationAdapterDefinition = {
   platform: {
     code: 'AI_ADAPTER',
     displayName: 'AI Adapter',
-    nameEn: 'AI Adapter',
+    name: localizedText,
   },
   configFields: [
     {
@@ -206,7 +205,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('InterfaceAddAdapterScreen', () => {

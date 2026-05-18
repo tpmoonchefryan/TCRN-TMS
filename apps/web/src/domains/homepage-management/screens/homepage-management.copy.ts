@@ -1,7 +1,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 
 import type { HomepageVersionStatus } from '@/domains/homepage-management/api/homepage.api';
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   formatLocaleNumber,
@@ -117,7 +117,7 @@ interface HomepageManagementCopy {
   };
 }
 
-const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
+const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
   en: {
     state: {
       loading: 'Loading homepage management…',
@@ -233,7 +233,122 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       unknown: 'Unknown',
     },
   },
-  zh: {
+  zh_HANS: {
+    state: {
+      loading: '正在加载主页管理…',
+      unavailableTitle: '主页管理不可用',
+      loadWorkspaceError: '加载主页详情失败。',
+      loadLedgerError: '加载主页版本历史失败。',
+    },
+    header: {
+      eyebrow: '艺人业务 / 主页',
+      title: '主页管理',
+      description: '查看该艺人主页的发布状态、版本历史与公开访问信息。',
+    },
+    actions: {
+      workspaceSettings: '公开访问设置',
+      openRoutingInSettings: '管理公开地址',
+      publishDraft: '发布草稿',
+      unpublish: '取消发布',
+      restore: '恢复',
+    },
+    dialogs: {
+      publishTitle: '发布当前草稿？',
+      publishDescription: '发布后，当前草稿将成为线上主页版本。',
+      publishConfirm: '发布主页',
+      publishPending: '发布中…',
+      publishSuccess: '主页草稿已发布。',
+      publishError: '发布主页草稿失败。',
+      unpublishTitle: '取消发布主页？',
+      unpublishDescription: '取消发布会下线当前线上主页，但保留完整版本历史。',
+      unpublishConfirm: '取消发布主页',
+      unpublishPending: '取消发布中…',
+      unpublishSuccess: '主页已取消发布。',
+      unpublishError: '取消发布主页失败。',
+      restoreTitlePrefix: '恢复',
+      restoreDescription: '恢复后会从所选版本生成一份新的草稿，便于继续修改或再次发布。',
+      restoreConfirm: '恢复为草稿',
+      restorePending: '恢复中…',
+      restoreSuccessPrefix: '版本已恢复为新草稿：',
+      restoreError: '恢复主页版本失败。',
+    },
+    summary: {
+      tenantLabel: '租户',
+      tenantFallback: '当前租户',
+      tenantHint: '当前主页所属的租户上下文。',
+      publicStateLabel: '公开状态',
+      publicPublishedValue: '已发布',
+      publicDraftOnlyValue: '仅草稿',
+      publicPublishedHint: '当前已发布版本正在对外生效。',
+      publicDraftOnlyHint: '当前没有线上主页版本。',
+      draftVersionLabel: '草稿版本',
+      noDraftVersion: '无',
+      draftVersionHint: '只有存在草稿版本时才能执行发布。',
+      versionLedgerLabel: '版本历史',
+      versionLedgerHint: '当前筛选条件下可查看或恢复的版本记录。',
+    },
+    facts: {
+      title: '公开访问',
+      description: '将公开地址、域名与已发布版本和发布控制放在同一处查看。',
+      copyValue: '复制值',
+      copiedValue: '已复制值',
+      homepageUrlLabel: '主页链接',
+      homepageUrlHint: '当前主页的公开访问地址。',
+      customDomainLabel: '自定义域名',
+      customDomainUnconfigured: '未配置',
+      customDomainVerifiedHint: '当前自定义域名已验证。',
+      customDomainPendingHint: '当前自定义域名已填写，但尚未完成验证。',
+      customDomainPathOnlyHint: '当前主页仍使用路径路由。',
+      homepagePathLabel: '共享域路径',
+      homepagePathUnconfigured: '未配置',
+      homepagePathHint: '该路径由租户代码和艺人代码自动生成。',
+      publishedVersionLabel: '已发布版本',
+      noPublishedVersion: '无',
+      updatedAtPrefix: '最近更新',
+      updatedAtUnknown: '未知',
+    },
+    ledger: {
+      title: '版本历史',
+      description: '查看历史版本，并在需要时恢复为新的草稿。',
+      errorTitle: '主页版本历史不可用',
+      columns: {
+        version: '版本',
+        status: '状态',
+        preview: '内容预览',
+        created: '创建时间',
+        published: '发布时间',
+        actions: '操作',
+      },
+      emptyTitle: '当前筛选下没有主页版本',
+      emptyDescription: '当前筛选条件没有返回任何主页历史记录。',
+      noPreview: '暂无预览摘要。',
+      componentsSuffixSingular: '个组件',
+      componentsSuffixPlural: '个组件',
+      createdByPrefix: '创建者',
+      createdBySystem: '系统',
+      publishedByUnpublished: '未发布',
+      currentDraft: '当前草稿',
+    },
+    filters: {
+      all: '全部',
+      draft: '草稿',
+      published: '已发布',
+      archived: '已归档',
+    },
+    statuses: {
+      draft: '草稿',
+      published: '已发布',
+      archived: '已归档',
+      inactive: '未启用',
+    },
+    common: {
+      cancel: '取消',
+      never: '从未',
+      none: '无',
+      unknown: '未知',
+    },
+  },
+  zh_HANT: {
     state: {
       loading: '正在加载主页管理…',
       unavailableTitle: '主页管理不可用',
@@ -463,39 +578,268 @@ const COPY: Record<RuntimeLocale, HomepageManagementCopy> = {
       unknown: '不明',
     },
   },
+  ko: {
+    state: {
+      loading: 'Loading homepage management…',
+      unavailableTitle: 'Homepage management unavailable',
+      loadWorkspaceError: 'Failed to load homepage details.',
+      loadLedgerError: 'Failed to load homepage version history.',
+    },
+    header: {
+      eyebrow: 'Talent business / Homepage',
+      title: 'Homepage management',
+      description: 'Review publication status, version history, and public access for this talent homepage.',
+    },
+    actions: {
+      workspaceSettings: 'Public access settings',
+      openRoutingInSettings: 'Manage public address',
+      publishDraft: 'Publish draft',
+      unpublish: 'Unpublish',
+      restore: 'Restore',
+    },
+    dialogs: {
+      publishTitle: 'Publish current draft?',
+      publishDescription: 'Publishing promotes the current draft into the live homepage slot.',
+      publishConfirm: 'Publish homepage',
+      publishPending: 'Publishing…',
+      publishSuccess: 'Homepage draft published.',
+      publishError: 'Failed to publish homepage draft.',
+      unpublishTitle: 'Unpublish homepage?',
+      unpublishDescription: 'Unpublishing removes the current live homepage while keeping the version history intact.',
+      unpublishConfirm: 'Unpublish homepage',
+      unpublishPending: 'Unpublishing…',
+      unpublishSuccess: 'Homepage unpublished.',
+      unpublishError: 'Failed to unpublish homepage.',
+      restoreTitlePrefix: 'Restore',
+      restoreDescription: 'Restoring creates a new draft from the selected version so it can be revised or published again.',
+      restoreConfirm: 'Restore to draft',
+      restorePending: 'Restoring…',
+      restoreSuccessPrefix: 'Version restored to a new draft:',
+      restoreError: 'Failed to restore homepage version.',
+    },
+    summary: {
+      tenantLabel: 'Tenant',
+      tenantFallback: 'Current tenant',
+      tenantHint: 'Current tenant context for this homepage.',
+      publicStateLabel: 'Public state',
+      publicPublishedValue: 'Published',
+      publicDraftOnlyValue: 'Draft only',
+      publicPublishedHint: 'The published version is currently live.',
+      publicDraftOnlyHint: 'No live homepage is currently published.',
+      draftVersionLabel: 'Draft version',
+      noDraftVersion: 'None',
+      draftVersionHint: 'Publishing is only available when a draft version exists.',
+      versionLedgerLabel: 'Version history',
+      versionLedgerHint: 'Version records available for review or restore.',
+    },
+    facts: {
+      title: 'Public access',
+      description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      copyValue: 'Copy value',
+      copiedValue: 'Copied value',
+      homepageUrlLabel: 'Homepage URL',
+      homepageUrlHint: 'Current public address for this homepage.',
+      customDomainLabel: 'Custom domain',
+      customDomainUnconfigured: 'Unconfigured',
+      customDomainVerifiedHint: 'The current custom domain is verified.',
+      customDomainPendingHint: 'The current custom domain exists but is not verified yet.',
+      customDomainPathOnlyHint: 'The homepage currently uses path-based routing only.',
+      homepagePathLabel: 'Shared-domain route',
+      homepagePathUnconfigured: 'Unconfigured',
+      homepagePathHint: 'This route is generated from tenant code and talent code.',
+      publishedVersionLabel: 'Published version',
+      noPublishedVersion: 'None',
+      updatedAtPrefix: 'Last updated',
+      updatedAtUnknown: 'Unknown',
+    },
+    ledger: {
+      title: 'Version history',
+      description: 'Review earlier versions and restore a new draft when needed.',
+      errorTitle: 'Homepage version history unavailable',
+      columns: {
+        version: 'Version',
+        status: 'Status',
+        preview: 'Content preview',
+        created: 'Created',
+        published: 'Published',
+        actions: 'Actions',
+      },
+      emptyTitle: 'No homepage versions match this filter',
+      emptyDescription: 'This filter currently does not return any homepage history rows.',
+      noPreview: 'No preview summary available.',
+      componentsSuffixSingular: 'component',
+      componentsSuffixPlural: 'components',
+      createdByPrefix: 'by',
+      createdBySystem: 'system',
+      publishedByUnpublished: 'Not published',
+      currentDraft: 'Current draft',
+    },
+    filters: {
+      all: 'All',
+      draft: 'Draft',
+      published: 'Published',
+      archived: 'Archived',
+    },
+    statuses: {
+      draft: 'Draft',
+      published: 'Published',
+      archived: 'Archived',
+      inactive: 'Inactive',
+    },
+    common: {
+      cancel: 'Cancel',
+      never: 'Never',
+      none: 'None',
+      unknown: 'Unknown',
+    },
+  },
+  fr: {
+    state: {
+      loading: 'Loading homepage management…',
+      unavailableTitle: 'Homepage management unavailable',
+      loadWorkspaceError: 'Failed to load homepage details.',
+      loadLedgerError: 'Failed to load homepage version history.',
+    },
+    header: {
+      eyebrow: 'Talent business / Homepage',
+      title: 'Homepage management',
+      description: 'Review publication status, version history, and public access for this talent homepage.',
+    },
+    actions: {
+      workspaceSettings: 'Public access settings',
+      openRoutingInSettings: 'Manage public address',
+      publishDraft: 'Publish draft',
+      unpublish: 'Unpublish',
+      restore: 'Restore',
+    },
+    dialogs: {
+      publishTitle: 'Publish current draft?',
+      publishDescription: 'Publishing promotes the current draft into the live homepage slot.',
+      publishConfirm: 'Publish homepage',
+      publishPending: 'Publishing…',
+      publishSuccess: 'Homepage draft published.',
+      publishError: 'Failed to publish homepage draft.',
+      unpublishTitle: 'Unpublish homepage?',
+      unpublishDescription: 'Unpublishing removes the current live homepage while keeping the version history intact.',
+      unpublishConfirm: 'Unpublish homepage',
+      unpublishPending: 'Unpublishing…',
+      unpublishSuccess: 'Homepage unpublished.',
+      unpublishError: 'Failed to unpublish homepage.',
+      restoreTitlePrefix: 'Restore',
+      restoreDescription: 'Restoring creates a new draft from the selected version so it can be revised or published again.',
+      restoreConfirm: 'Restore to draft',
+      restorePending: 'Restoring…',
+      restoreSuccessPrefix: 'Version restored to a new draft:',
+      restoreError: 'Failed to restore homepage version.',
+    },
+    summary: {
+      tenantLabel: 'Tenant',
+      tenantFallback: 'Current tenant',
+      tenantHint: 'Current tenant context for this homepage.',
+      publicStateLabel: 'Public state',
+      publicPublishedValue: 'Published',
+      publicDraftOnlyValue: 'Draft only',
+      publicPublishedHint: 'The published version is currently live.',
+      publicDraftOnlyHint: 'No live homepage is currently published.',
+      draftVersionLabel: 'Draft version',
+      noDraftVersion: 'None',
+      draftVersionHint: 'Publishing is only available when a draft version exists.',
+      versionLedgerLabel: 'Version history',
+      versionLedgerHint: 'Version records available for review or restore.',
+    },
+    facts: {
+      title: 'Public access',
+      description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      copyValue: 'Copy value',
+      copiedValue: 'Copied value',
+      homepageUrlLabel: 'Homepage URL',
+      homepageUrlHint: 'Current public address for this homepage.',
+      customDomainLabel: 'Custom domain',
+      customDomainUnconfigured: 'Unconfigured',
+      customDomainVerifiedHint: 'The current custom domain is verified.',
+      customDomainPendingHint: 'The current custom domain exists but is not verified yet.',
+      customDomainPathOnlyHint: 'The homepage currently uses path-based routing only.',
+      homepagePathLabel: 'Shared-domain route',
+      homepagePathUnconfigured: 'Unconfigured',
+      homepagePathHint: 'This route is generated from tenant code and talent code.',
+      publishedVersionLabel: 'Published version',
+      noPublishedVersion: 'None',
+      updatedAtPrefix: 'Last updated',
+      updatedAtUnknown: 'Unknown',
+    },
+    ledger: {
+      title: 'Version history',
+      description: 'Review earlier versions and restore a new draft when needed.',
+      errorTitle: 'Homepage version history unavailable',
+      columns: {
+        version: 'Version',
+        status: 'Status',
+        preview: 'Content preview',
+        created: 'Created',
+        published: 'Published',
+        actions: 'Actions',
+      },
+      emptyTitle: 'No homepage versions match this filter',
+      emptyDescription: 'This filter currently does not return any homepage history rows.',
+      noPreview: 'No preview summary available.',
+      componentsSuffixSingular: 'component',
+      componentsSuffixPlural: 'components',
+      createdByPrefix: 'by',
+      createdBySystem: 'system',
+      publishedByUnpublished: 'Not published',
+      currentDraft: 'Current draft',
+    },
+    filters: {
+      all: 'All',
+      draft: 'Draft',
+      published: 'Published',
+      archived: 'Archived',
+    },
+    statuses: {
+      draft: 'Draft',
+      published: 'Published',
+      archived: 'Archived',
+      inactive: 'Inactive',
+    },
+    common: {
+      cancel: 'Cancel',
+      never: 'Never',
+      none: 'None',
+      unknown: 'Unknown',
+    },
+  },
 };
 
 export function useHomepageManagementCopy() {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
+  const { locale } = useUiLocale();
 
   return {
-    currentLocale,
-    selectedLocale,
-    copy: resolveLocaleRecord(selectedLocale, COPY as Record<RuntimeLocale, HomepageManagementCopy>, currentLocale) as HomepageManagementCopy,
+    locale,
+    copy: resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy,
   };
 }
 
 export function formatHomepageManagementDateTime(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   value: string | null,
   fallback: string,
 ) {
   return formatLocaleDateTime(locale, value, fallback);
 }
 
-export function getHomepageVersionFilterLabel(locale: SupportedUiLocale | RuntimeLocale, filter: VersionFilter) {
-  return (resolveLocaleRecord(locale, COPY as Record<RuntimeLocale, HomepageManagementCopy>) as HomepageManagementCopy).filters[filter];
+export function getHomepageVersionFilterLabel(locale: SupportedUiLocale , filter: VersionFilter) {
+  return (resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy).filters[filter];
 }
 
 export function getHomepageVersionStatusLabel(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   status: HomepageVersionStatus | 'inactive',
 ) {
-  return (resolveLocaleRecord(locale, COPY as Record<RuntimeLocale, HomepageManagementCopy>) as HomepageManagementCopy).statuses[status];
+  return (resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy).statuses[status];
 }
 
-export function formatHomepageComponentCount(locale: SupportedUiLocale | RuntimeLocale, count: number) {
-  const copy = resolveLocaleRecord(locale, COPY as Record<RuntimeLocale, HomepageManagementCopy>) as HomepageManagementCopy;
+export function formatHomepageComponentCount(locale: SupportedUiLocale , count: number) {
+  const copy = resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy;
   const formattedCount = formatLocaleNumber(locale, count);
 
   return pickLocaleText(locale, {

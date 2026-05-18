@@ -1,6 +1,6 @@
 'use client';
 
-import { resolveTrilingualLocaleFamily, type SupportedUiLocale } from '@tcrn/shared';
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Plus, Search, UserMinus, UserRoundCheck, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -19,7 +19,7 @@ import {
   ApiRequestError,
   buildFallbackPagination,
 } from '@/platform/http/api';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   formatLocaleNumber,
@@ -160,16 +160,7 @@ function formatActionSuccess(action: 'deactivate' | 'reactivate', customerName: 
   });
 }
 
-function getEffectiveSelectedLocale(
-  currentLocale: 'en' | 'zh' | 'ja',
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveTrilingualLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
 
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
-}
 
 function parseActivityFilter(value: string | null): ActivityFilter {
   return value === 'active' || value === 'inactive' ? value : 'all';
@@ -307,8 +298,7 @@ export function CustomerManagementScreen({
   tenantId: string;
   talentId: string;
 }>) {
-  const { copy, currentLocale: runtimeLocale, selectedLocale } = useRuntimeLocale();
-  const currentLocale = getEffectiveSelectedLocale(runtimeLocale, selectedLocale);
+  const { copy, locale } = useUiLocale();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -353,7 +343,7 @@ export function CustomerManagementScreen({
 
     setNotice({
       tone: 'success',
-      message: pickLocaleText(currentLocale, {
+      message: pickLocaleText(locale, {
         en: `${createdCustomerName} was created.`,
         zh_HANS: `${createdCustomerName} 已创建。`,
         zh_HANT: `${createdCustomerName} 已建立。`,
@@ -371,7 +361,7 @@ export function CustomerManagementScreen({
     startTransition(() => {
       router.replace(nextHref);
     });
-  }, [createdCustomerName, currentLocale, pathname, router, searchParams]);
+  }, [createdCustomerName, locale, pathname, router, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -555,11 +545,11 @@ export function CustomerManagementScreen({
         customerId: customer.id,
         customerName: detail.nickname,
         version: detail.version,
-        title: formatActionTitle('deactivate', detail.nickname, currentLocale),
+        title: formatActionTitle('deactivate', detail.nickname, locale),
         description: customerCopy.deactivateDescription,
         confirmText: customerCopy.deactivateConfirm,
         pendingText: customerCopy.deactivatePending,
-        successMessage: formatActionSuccess('deactivate', detail.nickname, currentLocale),
+        successMessage: formatActionSuccess('deactivate', detail.nickname, locale),
         errorFallback: customerCopy.deactivateRequestFallback,
         intent: 'danger',
       });
@@ -610,7 +600,7 @@ export function CustomerManagementScreen({
   const membershipCount = panel.data.filter((item) => item.membershipSummary !== null).length;
   const companyCount = panel.data.filter((item) => item.profileType === 'company').length;
   const pageRange = getPaginationRange(panel.pagination, panel.data.length);
-  const paginationLabel = pickLocaleText(currentLocale, {
+  const paginationLabel = pickLocaleText(locale, {
     en: `Page ${panel.pagination.page} of ${panel.pagination.totalPages}`,
     zh_HANS: `第 ${panel.pagination.page} / ${panel.pagination.totalPages} 页`,
     zh_HANT: `第 ${panel.pagination.page} / ${panel.pagination.totalPages} 頁`,
@@ -620,7 +610,7 @@ export function CustomerManagementScreen({
   });
   const paginationRangeLabel =
     panel.pagination.totalCount === 0
-      ? pickLocaleText(currentLocale, {
+      ? pickLocaleText(locale, {
           en: 'No customers are currently visible.',
           zh_HANS: '当前没有客户记录。',
           zh_HANT: '目前沒有可見的客戶記錄。',
@@ -628,7 +618,7 @@ export function CustomerManagementScreen({
           ko: '현재 표시할 고객이 없습니다.',
           fr: 'Aucun client n’est actuellement visible.',
         })
-      : pickLocaleText(currentLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${pageRange.start}-${pageRange.end} of ${panel.pagination.totalCount}`,
           zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${panel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${pageRange.start}-${pageRange.end} 筆，共 ${panel.pagination.totalCount} 筆`,
@@ -636,7 +626,7 @@ export function CustomerManagementScreen({
           ko: `${panel.pagination.totalCount}개 중 ${pageRange.start}-${pageRange.end}개 표시`,
           fr: `Affichage de ${pageRange.start} à ${pageRange.end} sur ${panel.pagination.totalCount}`,
         });
-  const pageSizeLabel = pickLocaleText(currentLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页条数',
     zh_HANT: '每頁筆數',
@@ -644,7 +634,7 @@ export function CustomerManagementScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(currentLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -652,7 +642,7 @@ export function CustomerManagementScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(currentLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -697,7 +687,7 @@ export function CustomerManagementScreen({
                 className="inline-flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
               >
                 <Plus className="h-4 w-4" />
-                {pickLocaleText(currentLocale, {
+                {pickLocaleText(locale, {
                   en: 'Add customer',
                   zh_HANS: '添加客户',
                   zh_HANT: '新增客戶',
@@ -719,18 +709,18 @@ export function CustomerManagementScreen({
         />
         <SummaryCard
           label={customerCopy.visibleCustomersLabel}
-          value={formatCount(panel.data.length, currentLocale)}
+          value={formatCount(panel.data.length, locale)}
           hint={customerCopy.visibleCustomersHint}
         />
         <SummaryCard
           label={customerCopy.activeProfilesLabel}
-          value={formatCount(activeCount, currentLocale)}
+          value={formatCount(activeCount, locale)}
           hint={customerCopy.activeProfilesHint}
         />
         <SummaryCard
           label={customerCopy.membershipRecordsLabel}
-          value={formatCount(membershipCount, currentLocale)}
-          hint={formatCompanyCustomerHint(companyCount, currentLocale)}
+          value={formatCount(membershipCount, locale)}
+          hint={formatCompanyCustomerHint(companyCount, locale)}
         />
       </div>
 
@@ -890,7 +880,7 @@ export function CustomerManagementScreen({
                             {formatMembershipSummary(
                               customer.membershipSummary.activeCount,
                               customer.membershipSummary.totalCount,
-                              currentLocale,
+                              locale,
                             )}
                           </p>
                         </div>
@@ -900,8 +890,8 @@ export function CustomerManagementScreen({
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       <div className="space-y-1">
-                        <p>{formatLocaleDateTime(currentLocale, customer.updatedAt, getDateTimeFallback(currentLocale))}</p>
-                        <p className="text-xs text-slate-500">{formatCreatedAt(customer.createdAt, currentLocale)}</p>
+                        <p>{formatLocaleDateTime(locale, customer.updatedAt, getDateTimeFallback(locale))}</p>
+                        <p className="text-xs text-slate-500">{formatCreatedAt(customer.createdAt, locale)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -922,11 +912,11 @@ export function CustomerManagementScreen({
                               kind: 'reactivate',
                               customerId: customer.id,
                               customerName: customer.nickname,
-                              title: formatActionTitle('reactivate', customer.nickname, currentLocale),
+                              title: formatActionTitle('reactivate', customer.nickname, locale),
                               description: customerCopy.reactivateDescription,
                               confirmText: customerCopy.reactivateConfirm,
                               pendingText: customerCopy.reactivatePending,
-                              successMessage: formatActionSuccess('reactivate', customer.nickname, currentLocale),
+                              successMessage: formatActionSuccess('reactivate', customer.nickname, locale),
                               errorFallback: customerCopy.reactivateRequestFallback,
                               intent: 'primary',
                             })
@@ -976,7 +966,7 @@ export function CustomerManagementScreen({
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText ?? customerCopy.deactivateConfirm}
-        cancelText={pickLocaleText(currentLocale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        cancelText={pickLocaleText(locale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
         pendingText={dialogState?.pendingText}
         intent={dialogState?.intent}
         isPending={dialogPending}

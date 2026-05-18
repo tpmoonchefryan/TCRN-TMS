@@ -11,7 +11,7 @@ import {
   buildTenantWorkspacePath,
   isAcTenantTier,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -81,13 +81,13 @@ export function AcShell({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
+  const { copy, locale, localeOptions, setLocale } = useUiLocale();
   const { status, session, recoverSession, logoutCurrentSession } = useSession();
   const [isSignOutPending, setIsSignOutPending] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isRecoverySuppressed, setIsRecoverySuppressed] = useState(false);
   const integrationLabels = {
-    apiClientManagement: pickLocaleText(selectedLocale, {
+    apiClientManagement: pickLocaleText(locale, {
       en: 'API Client Management',
       zh_HANS: 'API 客户端管理',
       zh_HANT: 'API 用戶端管理',
@@ -95,7 +95,7 @@ export function AcShell({
       ko: 'API 클라이언트 관리',
       fr: 'Gestion des clients API',
     }),
-    interfaceManagement: pickLocaleText(selectedLocale, {
+    interfaceManagement: pickLocaleText(locale, {
       en: 'Interface Management',
       zh_HANS: '接口管理',
       zh_HANT: '介面管理',
@@ -103,7 +103,7 @@ export function AcShell({
       ko: '인터페이스 관리',
       fr: 'Gestion des interfaces',
     }),
-    webhookManagement: pickLocaleText(selectedLocale, {
+    webhookManagement: pickLocaleText(locale, {
       en: 'Webhook Management',
       zh_HANS: 'Webhook 管理',
       zh_HANT: 'Webhook 管理',
@@ -113,7 +113,7 @@ export function AcShell({
     }),
   };
   const loadingCopy = {
-    title: pickLocaleText(selectedLocale, {
+    title: pickLocaleText(locale, {
       en: 'Checking platform account',
       zh_HANS: '正在确认平台账户',
       zh_HANT: '正在確認平台帳戶',
@@ -121,7 +121,7 @@ export function AcShell({
       ko: '플랫폼 계정을 확인하고 있습니다',
       fr: 'Vérification du compte plateforme en cours',
     }),
-    description: pickLocaleText(selectedLocale, {
+    description: pickLocaleText(locale, {
       en: 'Verifying your current session.',
       zh_HANS: '正在验证当前会话。',
       zh_HANT: '正在驗證目前工作階段。',
@@ -129,7 +129,7 @@ export function AcShell({
       ko: '현재 세션을 확인하고 있습니다.',
       fr: 'Vérification de votre session en cours.',
     }),
-    unavailableTitle: pickLocaleText(selectedLocale, {
+    unavailableTitle: pickLocaleText(locale, {
       en: 'Platform account unavailable',
       zh_HANS: '平台账户不可用',
       zh_HANT: '平台帳戶不可用',
@@ -137,7 +137,7 @@ export function AcShell({
       ko: '플랫폼 계정을 사용할 수 없습니다',
       fr: 'Compte plateforme indisponible',
     }),
-    unavailableDescription: pickLocaleText(selectedLocale, {
+    unavailableDescription: pickLocaleText(locale, {
       en: 'This page is available to AC administrators only.',
       zh_HANS: '该页面仅对 AC 管理员开放。',
       zh_HANT: '此頁面僅對 AC 管理員開放。',
@@ -299,7 +299,7 @@ export function AcShell({
     webhookManagement: integrationLabels.webhookManagement,
   });
   const shellA11y = {
-    breadcrumb: pickLocaleText(selectedLocale, {
+    breadcrumb: pickLocaleText(locale, {
       en: 'Workspace breadcrumb',
       zh_HANS: '工作区面包屑',
       zh_HANT: '工作區麵包屑',
@@ -307,7 +307,7 @@ export function AcShell({
       ko: '워크스페이스 이동 경로',
       fr: 'Fil d’Ariane de l’espace de travail',
     }),
-    openNavigation: pickLocaleText(selectedLocale, {
+    openNavigation: pickLocaleText(locale, {
       en: 'Open workspace navigation',
       zh_HANS: '打开工作区导航',
       zh_HANT: '開啟工作區導覽',
@@ -315,7 +315,7 @@ export function AcShell({
       ko: '워크스페이스 탐색 열기',
       fr: 'Ouvrir la navigation de l’espace de travail',
     }),
-    closeNavigation: pickLocaleText(selectedLocale, {
+    closeNavigation: pickLocaleText(locale, {
       en: 'Close workspace navigation',
       zh_HANS: '关闭工作区导航',
       zh_HANT: '關閉工作區導覽',
@@ -376,11 +376,11 @@ export function AcShell({
           rightArea={
             <div className="flex items-center gap-3">
               <LocaleSwitcher
-                currentLocale={selectedLocale}
+                locale={locale}
                 options={localeOptions}
                 onChange={setLocale}
                 ariaLabel={`${copy.common.languageSwitcherLabel}: ${
-                  localeOptions.find((o) => o.code === selectedLocale)?.label || selectedLocale
+                  localeOptions.find((o) => o.code === locale)?.label || locale
                 }`}
               />
               <AccountDropdownMenu

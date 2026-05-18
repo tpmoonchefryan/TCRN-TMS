@@ -5,6 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../../database/database.service';
 import { SystemRoleService } from '../system-role.service';
 
+const roleName = {
+  en: 'Export Manager',
+  zh_HANS: '导出管理',
+  zh_HANT: '匯出管理',
+  ja: 'エクスポート管理者',
+  ko: '내보내기 관리자',
+  fr: "Responsable d'export",
+};
+
 describe('SystemRoleService', () => {
   const mockTx = {
     role: {
@@ -47,14 +56,7 @@ describe('SystemRoleService', () => {
     mockPrisma.role.findUnique.mockResolvedValue({
       id: 'role-1',
       code: 'EXPORT_MANAGER',
-      nameEn: 'Export Manager',
-      nameZh: '导出管理',
-      nameJa: null,
-      extraData: {
-        translations: {
-          fr: "Responsable d’export",
-        },
-      },
+      name: roleName,
       rolePolicies: [
         {
           effect: 'deny',
@@ -101,11 +103,7 @@ describe('SystemRoleService', () => {
     expect(result?.permissions).toEqual([
       { resource: 'customer.export', action: 'delete', effect: 'deny' },
     ]);
-    expect(result?.translations).toEqual({
-      en: 'Export Manager',
-      zh_HANS: '导出管理',
-      fr: "Responsable d’export",
-    });
+    expect(result?.name).toEqual(roleName);
     expect(result?.scopeBindings).toEqual([
       expect.objectContaining({
         scopeType: 'talent',
@@ -137,9 +135,12 @@ describe('SystemRoleService', () => {
           isSystem: true,
           OR: [
             { code: { contains: 'export', mode: 'insensitive' } },
-            { nameEn: { contains: 'export', mode: 'insensitive' } },
-            { nameZh: { contains: 'export', mode: 'insensitive' } },
-            { nameJa: { contains: 'export', mode: 'insensitive' } },
+            { name: { path: ['en'], string_contains: 'export' } },
+            { name: { path: ['zh_HANS'], string_contains: 'export' } },
+            { name: { path: ['zh_HANT'], string_contains: 'export' } },
+            { name: { path: ['ja'], string_contains: 'export' } },
+            { name: { path: ['ko'], string_contains: 'export' } },
+            { name: { path: ['fr'], string_contains: 'export' } },
           ],
         },
       }),
@@ -214,7 +215,7 @@ describe('SystemRoleService', () => {
 
     await service.create({
       code: 'EXPORT_MANAGER',
-      nameEn: 'Export Manager',
+      name: roleName,
       permissions: [
         { resource: 'customer.export', action: 'delete', effect: 'deny' },
         { resource: 'customer.export', action: 'read' },
@@ -229,46 +230,24 @@ describe('SystemRoleService', () => {
     });
   });
 
-  it('stores non-legacy role name translations in extraData while keeping legacy columns aligned', async () => {
+  it('stores role names as the canonical localized text JSON field', async () => {
     mockPrisma.role.findUnique.mockResolvedValue(null);
     mockTx.role.create.mockResolvedValue({
       id: 'role-1',
       code: 'EXPORT_MANAGER',
-      nameEn: 'Export Manager',
-      nameZh: '导出经理',
-      nameJa: 'エクスポート管理者',
-      extraData: {
-        translations: {
-          zh_HANT: '匯出經理',
-          fr: "Responsable d’export",
-        },
-      },
+      name: roleName,
     });
     mockTx.policy.findMany.mockResolvedValue([]);
 
     await service.create({
       code: 'EXPORT_MANAGER',
-      nameEn: 'Export Manager',
-      translations: {
-        zh_HANS: '导出经理',
-        zh_HANT: '匯出經理',
-        ja: 'エクスポート管理者',
-        fr: "Responsable d’export",
-      },
+      name: roleName,
     });
 
     expect(mockTx.role.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         code: 'EXPORT_MANAGER',
-        nameEn: 'Export Manager',
-        nameZh: '导出经理',
-        nameJa: 'エクスポート管理者',
-        extraData: {
-          translations: {
-            zh_HANT: '匯出經理',
-            fr: "Responsable d’export",
-          },
-        },
+        name: roleName,
         isSystem: true,
       }),
     });
@@ -283,7 +262,7 @@ describe('SystemRoleService', () => {
 
     await expect(service.create({
       code: 'EXPORT_MANAGER',
-      nameEn: 'Export Manager',
+      name: roleName,
       permissions: [
         { resource: 'customer.export', action: 'read' },
         { resource: 'customer.export', action: 'delete' },

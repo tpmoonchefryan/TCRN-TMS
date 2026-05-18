@@ -39,7 +39,7 @@ describe('Generic UI Hardening', () => {
     const user = userEvent.setup();
     render(
       <LocaleSwitcher 
-        currentLocale="en"
+        locale="en"
         options={[{ code: 'en', label: 'English' }]}
         onChange={vi.fn()}
         ariaLabel="Change language: English"

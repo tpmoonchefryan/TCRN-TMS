@@ -1,3 +1,4 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +9,7 @@ const replace = vi.fn();
 let pathname = '/tenant/tenant-1/talent/talent-1/homepage';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -28,7 +29,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -43,7 +44,7 @@ describe('HomepageManagementScreen', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     replace.mockReset();
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     pathname = '/tenant/tenant-1/talent/talent-1/homepage';
     currentSearch = '';
     replace.mockImplementation((href: string) => {
@@ -358,7 +359,7 @@ describe('HomepageManagementScreen', () => {
   });
 
   it('renders localized homepage management copy for zh locale', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/talents/talent-1/homepage') {

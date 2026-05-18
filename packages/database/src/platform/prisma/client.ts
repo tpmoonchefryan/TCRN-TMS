@@ -6,12 +6,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+function shouldLogPrismaQueries() {
+  const flag = process.env.PRISMA_QUERY_LOG?.trim().toLowerCase();
+  return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on';
+}
+
 const createPrismaClient = () =>
   new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['query', 'error', 'warn']
-        : ['error'],
+    log: shouldLogPrismaQueries()
+      ? ['query', 'error', 'warn']
+      : ['error', 'warn'],
   });
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();

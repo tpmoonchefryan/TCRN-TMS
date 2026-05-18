@@ -2,6 +2,7 @@
 
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChangeLogService } from '../../log';
@@ -65,12 +66,8 @@ describe('MarshmallowConfigApplicationService', () => {
     allowedReactions: [],
     theme: {},
     avatarUrl: null,
-    termsContentEn: null,
-    termsContentZh: null,
-    termsContentJa: null,
-    privacyContentEn: null,
-    privacyContentZh: null,
-    privacyContentJa: null,
+    termsContent: createLocalizedText({ en: '' }),
+    privacyContent: createLocalizedText({ en: '' }),
     createdAt: new Date('2026-04-13T09:00:00.000Z'),
     updatedAt: new Date('2026-04-13T09:00:00.000Z'),
     version: 1,

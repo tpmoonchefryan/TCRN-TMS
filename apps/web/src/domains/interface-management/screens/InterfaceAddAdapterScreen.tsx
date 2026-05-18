@@ -88,11 +88,11 @@ function buildListHref(
 }
 
 function pickDefinitionText(
-  selectedLocale: string,
+  locale: string,
   value: IntegrationAdapterDefinition['name'] | IntegrationAdapterDefinition['description'],
   fallback = '',
 ) {
-  return pickLocaleText(selectedLocale, value) || fallback;
+  return pickLocaleText(locale, value) || fallback;
 }
 
 function findProviderDefinition(
@@ -189,7 +189,7 @@ export function InterfaceAddAdapterScreen({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { request } = useSession();
-  const { selectedLocale, text } = useIntegrationManagementCopy();
+  const { locale, text } = useIntegrationManagementCopy();
   const [definitionsPanel, setDefinitionsPanel] = useState<PanelState<IntegrationAdapterDefinition[]>>(
     createPanelState<IntegrationAdapterDefinition[]>([]),
   );
@@ -211,7 +211,7 @@ export function InterfaceAddAdapterScreen({
   const providerDefinition = findProviderDefinition(selectedDefinition, provider);
   const providerOptions = selectedDefinition?.aiProviders?.map((item) => ({
     value: item.provider,
-    label: pickDefinitionText(selectedLocale, item.label, item.provider),
+    label: pickDefinitionText(locale, item.label, item.provider),
   })) ?? [];
   const adapterDefinitionLoadError = text({
     en: 'Failed to load adapter definitions.',
@@ -523,7 +523,7 @@ export function InterfaceAddAdapterScreen({
                   onChange={handleDefinitionChange}
                   options={definitionsPanel.data.map((definition) => ({
                     value: definition.key,
-                    label: pickDefinitionText(selectedLocale, definition.name, definition.code),
+                    label: pickDefinitionText(locale, definition.name, definition.code),
                   }))}
                 />
                 <label className="flex items-center gap-3 self-end rounded-2xl border border-slate-200 bg-white/75 px-4 py-3 text-sm font-medium text-slate-800">

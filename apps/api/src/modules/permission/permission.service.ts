@@ -3,17 +3,39 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import {
+  type LocalizedText,
   getRbacResourceDefinition,
   isCanonicalPermissionAction,
   type LocalizedPermissionData,
+  pickLocalizedText,
   type PermissionAction as RbacPermissionAction,
   RBAC_MODULE_LABELS,
+  RBAC_RESOURCES,
   type RbacResourceCode,
-  resolveTrilingualLocaleFamily,
   type ResourceDefinition,
 } from '@tcrn/shared';
 
 export type PermissionAction = RbacPermissionAction;
+
+const RBAC_RESOURCE_NAME_BY_CODE = new Map<string, LocalizedText>(
+  RBAC_RESOURCES.map((definition) => [definition.code, definition.name]),
+);
+
+function toLocalizedPermissionData(
+  row: Omit<LocalizedPermissionData, 'name'> & { resourceCode: string },
+): LocalizedPermissionData | null {
+  const name = RBAC_RESOURCE_NAME_BY_CODE.get(row.resourceCode);
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    ...row,
+    resourceCode: row.resourceCode as RbacResourceCode,
+    name,
+  };
+}
 
 /**
  * Permission Service
@@ -49,14 +71,11 @@ export class PermissionService {
       params.push(options.isActive);
     }
 
-    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
+    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        r.name_en as "nameEn", 
-        r.name_zh as "nameZh", 
-        r.name_ja as "nameJa",
         p.description, 
         p.is_active as "isActive",
         p.created_at as "createdAt", 
@@ -67,21 +86,21 @@ export class PermissionService {
       ORDER BY r.code, p.action
     `, ...params);
 
-    return results;
+    return results.flatMap((row) => {
+      const data = toLocalizedPermissionData(row);
+      return data ? [data] : [];
+    });
   }
 
   /**
    * Get permission by ID
    */
   async findById(id: string, tenantSchema: string): Promise<LocalizedPermissionData | null> {
-    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
+    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        r.name_en as "nameEn", 
-        r.name_zh as "nameZh", 
-        r.name_ja as "nameJa",
         p.description, 
         p.is_active as "isActive",
         p.created_at as "createdAt", 
@@ -90,7 +109,7 @@ export class PermissionService {
       JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
       WHERE p.id = $1::uuid
     `, id);
-    return results[0] || null;
+    return toLocalizedPermissionData(results[0]);
   }
 
   /**
@@ -100,14 +119,11 @@ export class PermissionService {
     if (ids.length === 0) return [];
 
     const placeholders = ids.map((_, i) => `$${i + 1}::uuid`).join(',');
-    const results = await prisma.$queryRawUnsafe<LocalizedPermissionData[]>(`
+    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
       SELECT 
         p.id, 
         r.code as "resourceCode", 
         p.action, 
-        r.name_en as "nameEn", 
-        r.name_zh as "nameZh", 
-        r.name_ja as "nameJa",
         p.description, 
         p.is_active as "isActive",
         p.created_at as "createdAt", 
@@ -117,7 +133,10 @@ export class PermissionService {
       WHERE p.id IN (${placeholders})
     `, ...ids);
 
-    return results;
+    return results.flatMap((row) => {
+      const data = toLocalizedPermissionData(row);
+      return data ? [data] : [];
+    });
   }
 
   /**
@@ -125,28 +144,20 @@ export class PermissionService {
    * Note: Resources and policies are defined in tenant_template schema (global definitions)
    */
   async getResourceDefinitions(_tenantSchema: string, language: string = 'en'): Promise<ResourceDefinition[]> {
-    const localeFamily = resolveTrilingualLocaleFamily(language);
-
     // Get all resources with their associated policy actions from tenant_template (global definitions)
     const resources = await prisma.$queryRawUnsafe<Array<{
       code: string;
       module: string;
-      nameEn: string;
-      nameZh: string | null;
-      nameJa: string | null;
       actions: string;
     }>>(`
       SELECT 
         r.code,
         r.module,
-        r.name_en as "nameEn", 
-        r.name_zh as "nameZh", 
-        r.name_ja as "nameJa",
         COALESCE(string_agg(DISTINCT p.action, ','), '') as actions
       FROM "tenant_template".resource r
       LEFT JOIN "tenant_template".policy p ON p.resource_id = r.id AND p.is_active = true
       WHERE r.is_active = true
-      GROUP BY r.id, r.code, r.module, r.name_en, r.name_zh, r.name_ja, r.sort_order
+      GROUP BY r.id, r.code, r.module, r.sort_order
       ORDER BY r.module, r.sort_order, r.code
     `);
 
@@ -167,10 +178,6 @@ export class PermissionService {
         moduleMap.set(definition.module, []);
       }
       
-      const name = localeFamily === 'zh' ? (res.nameZh || res.nameEn)
-                 : localeFamily === 'ja' ? (res.nameJa || res.nameEn)
-                 : res.nameEn;
-      
       const actions = res.actions
         ? res.actions.split(',').filter(isCanonicalPermissionAction)
         : [];
@@ -179,7 +186,7 @@ export class PermissionService {
       if (moduleResources) {
         moduleResources.push({
           code: definition.code as RbacResourceCode,
-          name,
+          name: pickLocalizedText(definition.name, language),
           actions,
         });
       }
@@ -188,9 +195,7 @@ export class PermissionService {
     const result: ResourceDefinition[] = [];
     for (const [module, resourceList] of moduleMap) {
       const moduleLabels = RBAC_MODULE_LABELS[module as keyof typeof RBAC_MODULE_LABELS];
-      const moduleName = moduleLabels
-        ? (localeFamily === 'zh' ? moduleLabels.zh : localeFamily === 'ja' ? moduleLabels.ja : moduleLabels.en)
-        : module;
+      const moduleName = moduleLabels ? pickLocalizedText(moduleLabels, language) : module;
 
       result.push({
         module,

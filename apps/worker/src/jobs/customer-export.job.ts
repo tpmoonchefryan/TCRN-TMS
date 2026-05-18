@@ -318,7 +318,7 @@ async function fetchCustomerExportRows(
        cp.created_at as "createdAt",
        cp.updated_at as "updatedAt",
        cs.code as "statusCode",
-       cs.name_en as "statusName",
+       cs.name->>'en' as "statusName",
        cci.company_short_name as "companyShortName",
        ot.display_name as "originTalentDisplayName",
        hm.platform_code as "membershipPlatformCode",
@@ -337,9 +337,9 @@ async function fetchCustomerExportRows(
          p.code as platform_code,
          p.display_name as platform_name,
          mclass.code as class_code,
-         mclass.name_en as class_name,
+         mclass.name->>'en' as class_name,
          ml.code as level_code,
-         ml.name_en as level_name
+         ml.name->>'en' as level_name
        FROM "${tenantSchema}".membership_record mr
        JOIN "${tenantSchema}".social_platform p ON p.id = mr.platform_id
        JOIN "${tenantSchema}".membership_class mclass ON mclass.id = mr.membership_class_id

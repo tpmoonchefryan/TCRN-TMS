@@ -1,4 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
+import type {
+  LocalizedText,
+  SupportedUiLocale,
+} from '@tcrn/shared';
 
 import {
   type ApiSuccessEnvelope,
@@ -31,9 +34,7 @@ export interface SystemUserRoleAssignment {
   id: string;
   roleId: string;
   roleCode: string;
-  roleNameEn: string;
-  roleNameZh: string | null;
-  roleNameJa: string | null;
+  roleName: LocalizedText;
   roleIsActive: boolean;
   scopeType: 'tenant' | 'subsidiary' | 'talent';
   scopeId: string | null;
@@ -57,10 +58,8 @@ export interface SystemUserScopeAccessDetail {
 export interface SystemRoleListItem {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
-  translations: Record<string, string>;
+  name: LocalizedText;
+  localizedName: string;
   description: string | null;
   isSystem: boolean;
   isActive: boolean;
@@ -183,20 +182,14 @@ export interface CreateDelegatedAdminInput {
 
 export interface CreateSystemRoleInput {
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   description?: string;
   isActive?: boolean;
   permissions?: SystemRolePermissionRecord[];
 }
 
 export interface UpdateSystemRoleInput {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: LocalizedText;
   description?: string;
   isActive?: boolean;
   permissions?: SystemRolePermissionRecord[];

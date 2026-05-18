@@ -8,6 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  createLocalizedText,
+  type LocalizedText,
   type TenantFixture,
   type TestUser,
   createTestTenantFixture,
@@ -30,7 +32,7 @@ import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 interface LegacyPruneTargetFixture {
   legacyCode: string;
   module: string;
-  nameEn: string;
+  name: LocalizedText;
   sortOrder: number;
   legacyActions: string[];
   expectedCanonicalPermissions: string[];
@@ -40,7 +42,7 @@ const CONTENT_LOG_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'homepage',
     module: 'external',
-    nameEn: 'Homepage',
+    name: createLocalizedText({ en: 'Homepage' }),
     sortOrder: 180,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: [
@@ -52,7 +54,7 @@ const CONTENT_LOG_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'marshmallow',
     module: 'external',
-    nameEn: 'Marshmallow',
+    name: createLocalizedText({ en: 'Marshmallow' }),
     sortOrder: 190,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: [
@@ -65,7 +67,7 @@ const CONTENT_LOG_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'log.change',
     module: 'log',
-    nameEn: 'Change Log',
+    name: createLocalizedText({ en: 'Change Log' }),
     sortOrder: 270,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: ['log.change_log:read'],
@@ -73,7 +75,7 @@ const CONTENT_LOG_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'log.integration',
     module: 'log',
-    nameEn: 'Integration Log',
+    name: createLocalizedText({ en: 'Integration Log' }),
     sortOrder: 280,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: ['log.integration_log:read'],
@@ -84,7 +86,7 @@ const CONFIG_SECURITY_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'config.platform',
     module: 'config',
-    nameEn: 'Platform Config',
+    name: createLocalizedText({ en: 'Platform Config' }),
     sortOrder: 170,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: [
@@ -99,7 +101,7 @@ const CONFIG_SECURITY_TARGETS: readonly LegacyPruneTargetFixture[] = [
   {
     legacyCode: 'log.security',
     module: 'log',
-    nameEn: 'Security Log',
+    name: createLocalizedText({ en: 'Security Log' }),
     sortOrder: 300,
     legacyActions: ['read', 'write', 'delete', 'admin'],
     expectedCanonicalPermissions: ['log.search:read', 'log.tech_log:read'],
@@ -171,19 +173,19 @@ describe('Permission Post-Prune Integration', () => {
     await prisma.$executeRawUnsafe(
       `
         INSERT INTO "${schemaName}".resource (
-          id, code, module, name_en, name_zh, name_ja, sort_order, is_active, created_at, updated_at
+          id, code, module, name, sort_order, is_active, created_at, updated_at
         )
-        VALUES (gen_random_uuid(), $1, $2, $3, NULL, NULL, $4, true, NOW(), NOW())
+        VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, NOW(), NOW())
         ON CONFLICT (code) DO UPDATE
         SET module = EXCLUDED.module,
-            name_en = EXCLUDED.name_en,
+            name = EXCLUDED.name,
             is_active = true,
             sort_order = EXCLUDED.sort_order,
             updated_at = NOW()
       `,
       target.legacyCode,
       target.module,
-      target.nameEn,
+      JSON.stringify(target.name),
       target.sortOrder,
     );
 

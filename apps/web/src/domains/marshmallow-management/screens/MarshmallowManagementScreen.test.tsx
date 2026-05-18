@@ -1,7 +1,9 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MarshmallowManagementScreen } from '@/domains/marshmallow-management/screens/MarshmallowManagementScreen';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
 const mockRequest = vi.fn();
 const openSpy = vi.fn();
@@ -9,8 +11,7 @@ const replace = vi.fn();
 let pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en',
+  locale: 'en' as SupportedUiLocale,
 };
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -30,7 +31,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -64,12 +65,8 @@ function buildConfig(version = 3) {
     allowedReactions: ['heart', 'star'],
     theme: {},
     avatarUrl: null,
-    termsContentEn: null,
-    termsContentZh: null,
-    termsContentJa: null,
-    privacyContentEn: null,
-    privacyContentZh: null,
-    privacyContentJa: null,
+    termsContent: localizedFixture(''),
+    privacyContent: localizedFixture(''),
     stats: {
       totalMessages: 12,
       pendingCount: 3,
@@ -94,8 +91,8 @@ describe('MarshmallowManagementScreen', () => {
     mockRequest.mockReset();
     openSpy.mockReset();
     replace.mockReset();
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     pathname = '/tenant/tenant-1/talent/talent-1/marshmallow';
     currentSearch = '';
     replace.mockImplementation((href: string) => {

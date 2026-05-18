@@ -127,7 +127,7 @@ export class PiiServiceConfigApplicationService {
         objectName: dto.code,
         newValue: {
           code: dto.code,
-          nameEn: dto.nameEn,
+          name: dto.name,
           apiUrl: dto.apiUrl,
           authType: dto.authType,
         },
@@ -166,7 +166,7 @@ export class PiiServiceConfigApplicationService {
     const updated = await this.piiServiceConfigRepository.update(
       schema,
       id,
-      buildPiiServiceConfigUpdateChanges(dto),
+      buildPiiServiceConfigUpdateChanges(dto, existing),
       context.userId ?? '',
     );
 

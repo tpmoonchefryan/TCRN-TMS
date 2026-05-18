@@ -1,10 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
+import {
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import type {
   PiiServiceConfigConnectionLookupRow,
+  PiiServiceConfigCreatePayload,
   PiiServiceConfigCreateRow,
   PiiServiceConfigDetailRow,
   PiiServiceConfigFieldChange,
@@ -12,6 +19,65 @@ import type {
   PiiServiceConfigUpdateLookupRow,
   PiiServiceConfigUpdateRow,
 } from '../domain/pii-service-config.policy';
+
+type PiiServiceConfigListRawRow = Omit<PiiServiceConfigListRow, 'name'> & {
+  name: Prisma.JsonValue;
+};
+
+type PiiServiceConfigDetailRawRow = Omit<PiiServiceConfigDetailRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type PiiServiceConfigCreateRawRow = Omit<PiiServiceConfigCreateRow, 'name'> & {
+  name: Prisma.JsonValue;
+};
+
+type PiiServiceConfigUpdateLookupRawRow = Omit<PiiServiceConfigUpdateLookupRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type PiiServiceConfigUpdateRawRow = Omit<PiiServiceConfigUpdateRow, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+const mapListRow = (row: PiiServiceConfigListRawRow): PiiServiceConfigListRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'pii_service_config.name'),
+});
+
+const mapDetailRow = (
+  row: PiiServiceConfigDetailRawRow,
+): PiiServiceConfigDetailRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'pii_service_config.name'),
+  description: readLocalizedText(row.description, 'pii_service_config.description'),
+});
+
+const mapCreateRow = (
+  row: PiiServiceConfigCreateRawRow,
+): PiiServiceConfigCreateRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'pii_service_config.name'),
+});
+
+const mapUpdateLookupRow = (
+  row: PiiServiceConfigUpdateLookupRawRow,
+): PiiServiceConfigUpdateLookupRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'pii_service_config.name'),
+  description: readLocalizedText(row.description, 'pii_service_config.description'),
+});
+
+const mapUpdateRow = (
+  row: PiiServiceConfigUpdateRawRow,
+): PiiServiceConfigUpdateRow => ({
+  ...row,
+  name: readLocalizedText(row.name, 'pii_service_config.name'),
+  description: readLocalizedText(row.description, 'pii_service_config.description'),
+});
 
 @Injectable()
 export class PiiServiceConfigRepository {
@@ -26,13 +92,11 @@ export class PiiServiceConfigRepository {
     const prisma = this.databaseService.getPrisma();
     const whereClause = includeInactive ? '1=1' : 'psc.is_active = true';
 
-    return prisma.$queryRawUnsafe<PiiServiceConfigListRow[]>(
+    const rows = await prisma.$queryRawUnsafe<PiiServiceConfigListRawRow[]>(
       `
         SELECT
           psc.id, psc.code,
-          psc.name_en as "nameEn",
-          psc.name_zh as "nameZh",
-          psc.name_ja as "nameJa",
+          psc.name,
           psc.api_url as "apiUrl",
           psc.auth_type as "authType",
           psc.is_healthy as "isHealthy",
@@ -48,6 +112,8 @@ export class PiiServiceConfigRepository {
       pageSize,
       offset,
     );
+
+    return rows.map(mapListRow);
   }
 
   async countMany(schema: string, includeInactive: boolean): Promise<number> {
@@ -86,16 +152,12 @@ export class PiiServiceConfigRepository {
     id: string,
   ): Promise<PiiServiceConfigDetailRow | null> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<PiiServiceConfigDetailRow[]>(
+    const result = await prisma.$queryRawUnsafe<PiiServiceConfigDetailRawRow[]>(
       `
         SELECT
           id, code,
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
-          description_en as "descriptionEn",
-          description_zh as "descriptionZh",
-          description_ja as "descriptionJa",
+          name,
+          description,
           api_url as "apiUrl",
           auth_type as "authType",
           health_check_url as "healthCheckUrl",
@@ -112,7 +174,7 @@ export class PiiServiceConfigRepository {
       id,
     );
 
-    return result[0] ?? null;
+    return result[0] ? mapDetailRow(result[0]) : null;
   }
 
   async findForUpdate(
@@ -120,10 +182,10 @@ export class PiiServiceConfigRepository {
     id: string,
   ): Promise<PiiServiceConfigUpdateLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<PiiServiceConfigUpdateLookupRow[]>(
+    const result = await prisma.$queryRawUnsafe<PiiServiceConfigUpdateLookupRawRow[]>(
       `
         SELECT
-          id, code, name_en as "nameEn", api_url as "apiUrl",
+          id, code, name, description, api_url as "apiUrl",
           is_active as "isActive", version
         FROM "${schema}".pii_service_config
         WHERE id = $1::uuid
@@ -131,7 +193,7 @@ export class PiiServiceConfigRepository {
       id,
     );
 
-    return result[0] ?? null;
+    return result[0] ? mapUpdateLookupRow(result[0]) : null;
   }
 
   async findByCode(
@@ -173,42 +235,25 @@ export class PiiServiceConfigRepository {
 
   async create(
     schema: string,
-    payload: {
-      code: string;
-      nameEn: string;
-      nameZh: string | null;
-      nameJa: string | null;
-      descriptionEn: string | null;
-      descriptionZh: string | null;
-      descriptionJa: string | null;
-      apiUrl: string;
-      authType: string;
-      healthCheckUrl: string;
-      healthCheckIntervalSec: number;
-    },
+    payload: PiiServiceConfigCreatePayload,
     userId: string,
   ): Promise<PiiServiceConfigCreateRow> {
     const prisma = this.databaseService.getPrisma();
-    const result = await prisma.$queryRawUnsafe<PiiServiceConfigCreateRow[]>(
+    const result = await prisma.$queryRawUnsafe<PiiServiceConfigCreateRawRow[]>(
       `
         INSERT INTO "${schema}".pii_service_config (
-          id, code, name_en, name_zh, name_ja,
-          description_en, description_zh, description_ja,
+          id, code, name, description,
           api_url, auth_type, health_check_url, health_check_interval_sec,
           is_healthy, is_active, created_at, updated_at, created_by, updated_by, version
         ) VALUES (
-          gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-          false, true, now(), now(), $12::uuid, $12::uuid, 1
+          gen_random_uuid(), $1, $2::jsonb, $3::jsonb, $4, $5, $6, $7,
+          false, true, now(), now(), $8::uuid, $8::uuid, 1
         )
-        RETURNING id, code, name_en as "nameEn", created_at as "createdAt"
+        RETURNING id, code, name, created_at as "createdAt"
       `,
       payload.code,
-      payload.nameEn,
-      payload.nameZh,
-      payload.nameJa,
-      payload.descriptionEn,
-      payload.descriptionZh,
-      payload.descriptionJa,
+      stringifyLocalizedText(payload.name),
+      stringifyLocalizedText(payload.description),
       payload.apiUrl,
       payload.authType,
       payload.healthCheckUrl,
@@ -216,7 +261,7 @@ export class PiiServiceConfigRepository {
       userId,
     );
 
-    return result[0];
+    return mapCreateRow(result[0]);
   }
 
   async update(
@@ -236,22 +281,23 @@ export class PiiServiceConfigRepository {
 
     for (const change of changes) {
       const column = this.toSnakeCase(change.field);
-      updates.push(`${column} = $${paramIndex}`);
-      params.push(change.value);
+      const cast = change.field === 'name' || change.field === 'description' ? '::jsonb' : '';
+      updates.push(`${column} = $${paramIndex}${cast}`);
+      params.push(cast ? stringifyLocalizedText(change.value as LocalizedText) : change.value);
       paramIndex++;
     }
 
-    const result = await prisma.$queryRawUnsafe<PiiServiceConfigUpdateRow[]>(
+    const result = await prisma.$queryRawUnsafe<PiiServiceConfigUpdateRawRow[]>(
       `
         UPDATE "${schema}".pii_service_config
         SET ${updates.join(', ')}
         WHERE id = $1::uuid
-        RETURNING id, code, name_en as "nameEn", api_url as "apiUrl", is_active as "isActive", version, updated_at as "updatedAt"
+        RETURNING id, code, name, description, api_url as "apiUrl", is_active as "isActive", version, updated_at as "updatedAt"
       `,
       ...params,
     );
 
-    return result[0];
+    return mapUpdateRow(result[0]);
   }
 
   async updateHealthStatus(

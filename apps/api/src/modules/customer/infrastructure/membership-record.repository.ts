@@ -2,6 +2,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
 import type {
   MembershipRecordAccessRecord,
@@ -62,11 +63,11 @@ export class MembershipRecordRepository {
          sp.code as "platformCode",
          sp.display_name as "platformName",
          mc.code as "classCode",
-         mc.name_en as "className",
+         mc.name->>'en' as "className",
          mt.code as "typeCode",
-         mt.name_en as "typeName",
+         mt.name->>'en' as "typeName",
          ml.code as "levelCode",
-         ml.name_en as "levelName",
+         ml.name->>'en' as "levelName",
          ml.rank as "levelRank",
          ml.color as "levelColor",
          ml.badge_url as "levelBadgeUrl",
@@ -172,21 +173,21 @@ export class MembershipRecordRepository {
   ): Promise<{
     id: string;
     code: string;
-    nameEn: string;
+    name: LocalizedText;
     membershipTypeId: string;
     membershipClassId: string;
   } | null> {
     const levels = await prisma.$queryRawUnsafe<Array<{
       id: string;
       code: string;
-      nameEn: string;
+      name: LocalizedText;
       membershipTypeId: string;
       membershipClassId: string;
     }>>(
       `SELECT
          ml.id,
          ml.code,
-         ml.name_en as "nameEn",
+         ml.name,
          ml.membership_type_id as "membershipTypeId",
          mt.membership_class_id as "membershipClassId"
        FROM "${tenantSchema}".membership_level ml
@@ -337,7 +338,7 @@ export class MembershipRecordRepository {
          sp.code as "platformCode",
          sp.display_name as "platformName",
          ml.code as "levelCode",
-         ml.name_en as "levelName",
+         ml.name->>'en' as "levelName",
          ml.color
        FROM "${tenantSchema}".membership_record mr
        JOIN "${tenantSchema}".social_platform sp ON sp.id = mr.platform_id

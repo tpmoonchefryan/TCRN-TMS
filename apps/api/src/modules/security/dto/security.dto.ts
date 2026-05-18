@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsArray,
@@ -192,33 +193,21 @@ export class CreateBlocklistDto {
   @IsEnum(BlocklistPatternType)
   patternType!: BlocklistPatternType;
 
-  @ApiProperty({ description: 'Name in English', example: 'Profanity Filter', maxLength: 128 })
-  @IsString()
-  @MaxLength(128)
-  nameEn!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Additional locale values keyed by locale code',
+  @ApiProperty({
+    description: 'Localized blocklist name keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
     example: {
-      zh_HANT: '敏感詞過濾',
-      fr: 'Filtre de grossièretés',
+      en: 'Profanity Filter',
+      zh_HANS: '脏话过滤',
+      zh_HANT: '髒話過濾',
+      ja: '不適切語フィルター',
+      ko: '비속어 필터',
+      fr: 'Filtre de grossieretes',
     },
   })
-  @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name!: LocalizedText;
 
   @IsOptional()
   @IsString()
@@ -282,33 +271,18 @@ export class UpdateBlocklistDto {
   @IsEnum(BlocklistPatternType)
   patternType?: BlocklistPatternType;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameEn?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameZh?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Additional locale values keyed by locale code',
+    description: 'Localized blocklist name patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
     example: {
-      zh_HANT: '敏感詞過濾',
-      fr: 'Filtre de grossièretés',
+      en: 'Profanity Filter',
+      zh_HANS: '脏话过滤',
     },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @IsOptional()
   @IsString()

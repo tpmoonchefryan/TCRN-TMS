@@ -9,6 +9,15 @@ import { TenantService } from '../tenant/tenant.service';
 import { CreateSystemRoleZodDto, UpdateSystemRoleZodDto } from './dto/system-role-zod.dto';
 import { SystemRoleService } from './system-role.service';
 
+const SYSTEM_ROLE_NAME_EXAMPLE = {
+  en: 'Export Deny',
+  zh_HANS: '导出拒绝',
+  zh_HANT: '匯出拒絕',
+  ja: 'エクスポート拒否',
+  ko: '내보내기 거부',
+  fr: "Refus d'exportation",
+};
+
 const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
   type: 'object',
   properties: {
@@ -50,26 +59,19 @@ const SYSTEM_ROLE_SCHEMA = {
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
     code: { type: 'string', example: 'EXPORT_DENY' },
-    nameEn: { type: 'string', example: 'Export Deny' },
-    nameZh: { type: 'string', nullable: true, example: '导出拒绝' },
-    nameJa: { type: 'string', nullable: true, example: 'エクスポート拒否' },
-    translations: {
+    name: {
       type: 'object',
       additionalProperties: { type: 'string' },
-      example: {
-        en: 'Export Deny',
-        zh_HANS: '导出拒绝',
-        ja: 'エクスポート拒否',
-        fr: "Refus d'exportation",
-      },
+      example: SYSTEM_ROLE_NAME_EXAMPLE,
     },
+    displayName: { type: 'string', example: 'Export Deny' },
     description: { type: 'string', nullable: true, example: 'Denies export operations' },
     isSystem: { type: 'boolean', example: true },
     isActive: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
   },
-  required: ['id', 'code', 'nameEn', 'translations', 'isSystem', 'isActive', 'createdAt', 'updatedAt'],
+  required: ['id', 'code', 'name', 'isSystem', 'isActive', 'createdAt', 'updatedAt'],
 } as const;
 
 const SYSTEM_ROLE_DETAIL_SCHEMA = {
@@ -143,15 +145,8 @@ const SYSTEM_ROLE_DETAIL_SCHEMA = {
 const SYSTEM_ROLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_SCHEMA, {
   id: '550e8400-e29b-41d4-a716-446655440000',
   code: 'EXPORT_DENY',
-  nameEn: 'Export Deny',
-  nameZh: '导出拒绝',
-  nameJa: 'エクスポート拒否',
-  translations: {
-    en: 'Export Deny',
-    zh_HANS: '导出拒绝',
-    ja: 'エクスポート拒否',
-    fr: "Refus d'exportation",
-  },
+  name: SYSTEM_ROLE_NAME_EXAMPLE,
+  displayName: 'Export Deny',
   description: 'Denies export operations',
   isSystem: true,
   isActive: true,
@@ -175,14 +170,8 @@ const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     {
       id: '550e8400-e29b-41d4-a716-446655440000',
       code: 'EXPORT_DENY',
-      nameEn: 'Export Deny',
-      nameZh: '导出拒绝',
-      nameJa: 'エクスポート拒否',
-      translations: {
-        en: 'Export Deny',
-        zh_HANS: '导出拒绝',
-        ja: 'エクスポート拒否',
-      },
+      name: SYSTEM_ROLE_NAME_EXAMPLE,
+      displayName: 'Export Deny',
       description: 'Denies export operations',
       isSystem: true,
       isActive: true,
@@ -197,14 +186,8 @@ const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
 const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_DETAIL_SCHEMA, {
   id: '550e8400-e29b-41d4-a716-446655440000',
   code: 'EXPORT_DENY',
-  nameEn: 'Export Deny',
-  nameZh: '导出拒绝',
-  nameJa: 'エクスポート拒否',
-  translations: {
-    en: 'Export Deny',
-    zh_HANS: '导出拒绝',
-    ja: 'エクスポート拒否',
-  },
+  name: SYSTEM_ROLE_NAME_EXAMPLE,
+  displayName: 'Export Deny',
   description: 'Denies export operations',
   isSystem: true,
   isActive: true,

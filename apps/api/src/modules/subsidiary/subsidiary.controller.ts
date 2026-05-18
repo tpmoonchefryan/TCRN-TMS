@@ -14,14 +14,31 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
-import { buildManagedNameTranslations } from '../../platform/persistence/managed-name-translations';
 import { SubsidiaryService } from './subsidiary.service';
+
+const LOCALIZED_TEXT_EXAMPLE: LocalizedText = {
+  en: 'Tokyo Branch',
+  zh_HANS: '东京分部',
+  zh_HANT: '東京分部',
+  ja: '東京支社',
+  ko: '도쿄 지사',
+  fr: 'Succursale de Tokyo',
+};
+
+const LOCALIZED_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Main branch for JP operations',
+  zh_HANS: '日本业务主分部',
+  zh_HANT: '日本業務主分部',
+  ja: '日本事業の主要拠点',
+  ko: '일본 운영의 주요 지사',
+  fr: 'Branche principale pour les operations JP',
+};
 
 // DTOs
 export class CreateSubsidiaryDto {
@@ -44,47 +61,23 @@ export class CreateSubsidiaryDto {
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
 
-  @ApiProperty({ description: 'Subsidiary name in English', example: 'Tokyo Branch', minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  nameEn: string;
-
-  @ApiPropertyOptional({ description: 'Subsidiary name in Chinese', example: '东京分部' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Subsidiary name in Japanese', example: '東京支社' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
+  @ApiProperty({
+    description: 'Localized subsidiary name keyed by SupportedUiLocale',
+    required: true,
+    additionalProperties: { type: 'string' },
+    example: LOCALIZED_TEXT_EXAMPLE,
+  })
+  @IsObject()
+  name: LocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Managed locale map keyed by supported locale codes',
+    description: 'Localized subsidiary description keyed by SupportedUiLocale',
     additionalProperties: { type: 'string' },
-    example: {
-      zh_HANT: '東京分部',
-      ko: '도쿄 지사',
-    },
+    example: LOCALIZED_DESCRIPTION_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Main branch for JP operations' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '日本业务主分部' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '日本事業の主要拠点' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Sort order', example: 0, minimum: 0 })
   @IsOptional()
@@ -94,47 +87,23 @@ export class CreateSubsidiaryDto {
 }
 
 export class UpdateSubsidiaryDto {
-  @ApiPropertyOptional({ description: 'Subsidiary name in English', example: 'Tokyo Branch' })
-  @IsOptional()
-  @IsString()
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Subsidiary name in Chinese', example: '东京分部' })
-  @IsOptional()
-  @IsString()
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Subsidiary name in Japanese', example: '東京支社' })
-  @IsOptional()
-  @IsString()
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Managed locale map keyed by supported locale codes',
+    description: 'Localized subsidiary name patch keyed by SupportedUiLocale',
     additionalProperties: { type: 'string' },
-    example: {
-      zh_HANT: '東京分部',
-      ko: '도쿄 지사',
-    },
+    example: { en: 'Tokyo Branch' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Main branch for JP operations' })
+  @ApiPropertyOptional({
+    description: 'Localized subsidiary description patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Main branch for JP operations' },
+  })
   @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '日本业务主分部' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '日本事業の主要拠点' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  @IsObject()
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Sort order', example: 10, minimum: 0 })
   @IsOptional()
@@ -262,6 +231,18 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
+const LOCALIZED_TEXT_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: LOCALIZED_TEXT_EXAMPLE,
+};
+
+const LOCALIZED_DESCRIPTION_SCHEMA = {
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  example: LOCALIZED_DESCRIPTION_EXAMPLE,
+};
+
 const SUBSIDIARY_BASE_SCHEMA = {
   type: 'object',
   properties: {
@@ -270,13 +251,8 @@ const SUBSIDIARY_BASE_SCHEMA = {
     code: { type: 'string', example: 'TOKYO' },
     path: { type: 'string', example: '/TOKYO/' },
     depth: { type: 'integer', example: 1 },
-    nameEn: { type: 'string', example: 'Tokyo Branch' },
-    nameZh: { type: 'string', nullable: true, example: '东京分部' },
-    nameJa: { type: 'string', nullable: true, example: '東京支社' },
-    name: { type: 'string', example: 'Tokyo Branch' },
-    descriptionEn: { type: 'string', nullable: true, example: 'Main branch for JP operations' },
-    descriptionZh: { type: 'string', nullable: true, example: '日本业务主分部' },
-    descriptionJa: { type: 'string', nullable: true, example: '日本事業の主要拠点' },
+    name: LOCALIZED_TEXT_SCHEMA,
+    description: LOCALIZED_DESCRIPTION_SCHEMA,
     sortOrder: { type: 'integer', example: 0 },
     isActive: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
@@ -289,8 +265,8 @@ const SUBSIDIARY_BASE_SCHEMA = {
     'code',
     'path',
     'depth',
-    'nameEn',
     'name',
+    'description',
     'sortOrder',
     'isActive',
     'createdAt',
@@ -346,13 +322,8 @@ const SUBSIDIARY_PAGINATED_SCHEMA = {
         code: 'TOKYO',
         path: '/TOKYO/',
         depth: 1,
-        nameEn: 'Tokyo Branch',
-        nameZh: '东京分部',
-        nameJa: '東京支社',
-        name: 'Tokyo Branch',
-        descriptionEn: 'Main branch for JP operations',
-        descriptionZh: '日本业务主分部',
-        descriptionJa: '日本事業の主要拠点',
+        name: LOCALIZED_TEXT_EXAMPLE,
+        description: LOCALIZED_DESCRIPTION_EXAMPLE,
         sortOrder: 0,
         isActive: true,
         childrenCount: 2,
@@ -383,13 +354,8 @@ const SUBSIDIARY_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     code: 'TOKYO',
     path: '/TOKYO/',
     depth: 1,
-    nameEn: 'Tokyo Branch',
-    nameZh: '东京分部',
-    nameJa: '東京支社',
-    name: 'Tokyo Branch',
-    descriptionEn: 'Main branch for JP operations',
-    descriptionZh: '日本业务主分部',
-    descriptionJa: '日本事業の主要拠点',
+    name: LOCALIZED_TEXT_EXAMPLE,
+    description: LOCALIZED_DESCRIPTION_EXAMPLE,
     sortOrder: 0,
     isActive: true,
     childrenCount: 2,
@@ -409,10 +375,8 @@ const SUBSIDIARY_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       code: { type: 'string', example: 'TOKYO' },
       path: { type: 'string', example: '/TOKYO/' },
       depth: { type: 'integer', example: 1 },
-      nameEn: { type: 'string', example: 'Tokyo Branch' },
-      nameZh: { type: 'string', nullable: true, example: '东京分部' },
-      nameJa: { type: 'string', nullable: true, example: '東京支社' },
-      name: { type: 'string', example: 'Tokyo Branch' },
+      name: LOCALIZED_TEXT_SCHEMA,
+      description: LOCALIZED_DESCRIPTION_SCHEMA,
       sortOrder: { type: 'integer', example: 0 },
       isActive: { type: 'boolean', example: true },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
@@ -424,8 +388,8 @@ const SUBSIDIARY_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       'code',
       'path',
       'depth',
-      'nameEn',
       'name',
+      'description',
       'sortOrder',
       'isActive',
       'createdAt',
@@ -438,10 +402,8 @@ const SUBSIDIARY_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     code: 'TOKYO',
     path: '/TOKYO/',
     depth: 1,
-    nameEn: 'Tokyo Branch',
-    nameZh: '东京分部',
-    nameJa: '東京支社',
-    name: 'Tokyo Branch',
+    name: LOCALIZED_TEXT_EXAMPLE,
+    description: LOCALIZED_DESCRIPTION_EXAMPLE,
     sortOrder: 0,
     isActive: true,
     createdAt: '2026-04-13T08:00:00.000Z',
@@ -454,22 +416,18 @@ const SUBSIDIARY_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' },
-      nameEn: { type: 'string', example: 'Tokyo Branch' },
-      nameZh: { type: 'string', nullable: true, example: '东京分部' },
-      nameJa: { type: 'string', nullable: true, example: '東京支社' },
-      name: { type: 'string', example: 'Tokyo Branch' },
+      name: LOCALIZED_TEXT_SCHEMA,
+      description: LOCALIZED_DESCRIPTION_SCHEMA,
       sortOrder: { type: 'integer', example: 10 },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:15:00.000Z' },
       version: { type: 'integer', example: 2 },
     },
-    required: ['id', 'nameEn', 'name', 'sortOrder', 'updatedAt', 'version'],
+    required: ['id', 'name', 'description', 'sortOrder', 'updatedAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440100',
-    nameEn: 'Tokyo Branch',
-    nameZh: '东京分部',
-    nameJa: '東京支社',
-    name: 'Tokyo Branch',
+    name: LOCALIZED_TEXT_EXAMPLE,
+    description: LOCALIZED_DESCRIPTION_EXAMPLE,
     sortOrder: 10,
     updatedAt: '2026-04-13T09:15:00.000Z',
     version: 2,
@@ -541,23 +499,6 @@ const SUBSIDIARY_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 );
 
 /**
- * Get localized name based on language
- */
-function getLocalizedName(
-  entity: { nameEn: string; nameZh: string | null; nameJa: string | null },
-  language: string = 'en'
-): string {
-  switch (language) {
-    case 'zh':
-      return entity.nameZh || entity.nameEn;
-    case 'ja':
-      return entity.nameJa || entity.nameEn;
-    default:
-      return entity.nameEn;
-  }
-}
-
-/**
  * Subsidiary Controller
  * Manages hierarchical organization units
  */
@@ -606,7 +547,6 @@ export class SubsidiaryController {
           this.subsidiaryService.getChildrenCount(sub.id, user.tenantSchema),
           this.subsidiaryService.getTalentCount(sub.id, user.tenantSchema),
         ]);
-        const translations = buildManagedNameTranslations(sub);
 
         return {
           id: sub.id,
@@ -614,14 +554,8 @@ export class SubsidiaryController {
           code: sub.code,
           path: sub.path,
           depth: sub.depth,
-          nameEn: sub.nameEn,
-          nameZh: sub.nameZh,
-          nameJa: sub.nameJa,
-          translations,
-          name: translations.en || getLocalizedName(sub),
-          descriptionEn: sub.descriptionEn,
-          descriptionZh: sub.descriptionZh,
-          descriptionJa: sub.descriptionJa,
+          name: sub.name,
+          description: sub.description,
           sortOrder: sub.sortOrder,
           isActive: sub.isActive,
           childrenCount,
@@ -675,19 +609,12 @@ export class SubsidiaryController {
       {
         parentId: dto.parentId,
         code: dto.code,
-        nameEn: dto.nameEn,
-        nameZh: dto.nameZh,
-        nameJa: dto.nameJa,
-        translations: dto.translations,
-        descriptionEn: dto.descriptionEn,
-        descriptionZh: dto.descriptionZh,
-        descriptionJa: dto.descriptionJa,
+        name: dto.name,
+        description: dto.description,
         sortOrder: dto.sortOrder,
       },
       user.id
     );
-
-    const translations = buildManagedNameTranslations(subsidiary);
 
     return success({
       id: subsidiary.id,
@@ -695,11 +622,8 @@ export class SubsidiaryController {
       code: subsidiary.code,
       path: subsidiary.path,
       depth: subsidiary.depth,
-      nameEn: subsidiary.nameEn,
-      nameZh: subsidiary.nameZh,
-      nameJa: subsidiary.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(subsidiary),
+      name: subsidiary.name,
+      description: subsidiary.description,
       sortOrder: subsidiary.sortOrder,
       isActive: subsidiary.isActive,
       createdAt: subsidiary.createdAt.toISOString(),
@@ -750,22 +674,14 @@ export class SubsidiaryController {
       this.subsidiaryService.getTalentCount(subsidiaryId, user.tenantSchema),
     ]);
 
-    const translations = buildManagedNameTranslations(subsidiary);
-
     return success({
       id: subsidiary.id,
       parentId: subsidiary.parentId,
       code: subsidiary.code,
       path: subsidiary.path,
       depth: subsidiary.depth,
-      nameEn: subsidiary.nameEn,
-      nameZh: subsidiary.nameZh,
-      nameJa: subsidiary.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(subsidiary),
-      descriptionEn: subsidiary.descriptionEn,
-      descriptionZh: subsidiary.descriptionZh,
-      descriptionJa: subsidiary.descriptionJa,
+      name: subsidiary.name,
+      description: subsidiary.description,
       sortOrder: subsidiary.sortOrder,
       isActive: subsidiary.isActive,
       childrenCount,
@@ -819,15 +735,10 @@ export class SubsidiaryController {
       user.id
     );
 
-    const translations = buildManagedNameTranslations(subsidiary);
-
     return success({
       id: subsidiary.id,
-      nameEn: subsidiary.nameEn,
-      nameZh: subsidiary.nameZh,
-      nameJa: subsidiary.nameJa,
-      translations,
-      name: translations.en || getLocalizedName(subsidiary),
+      name: subsidiary.name,
+      description: subsidiary.description,
       sortOrder: subsidiary.sortOrder,
       updatedAt: subsidiary.updatedAt.toISOString(),
       version: subsidiary.version,

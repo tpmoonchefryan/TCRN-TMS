@@ -72,9 +72,10 @@ export class PublicPresenceFoundationService {
       artifact.snapshot,
     );
     const currentDraft =
-      await this.publicPresenceFoundationRepository.findDraftVersion(
+      await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
         tenantSchema,
         portal.id,
+        document.templateId,
       );
 
     if (options.expectedCurrentContentHash !== undefined) {

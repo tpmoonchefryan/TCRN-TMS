@@ -80,7 +80,7 @@ let pathname = '/tenant/tenant-1/talent/talent-1/customers';
 let currentSearch = '';
 
 const localeState = {
-  currentLocale: 'en',
+  locale: 'en',
   copy: {
     common: {
       currentTenant: 'Current Tenant',
@@ -107,7 +107,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -120,7 +120,7 @@ vi.mock('next/navigation', () => ({
 
 describe('CustomerManagementScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
+    localeState.locale = 'en';
     localeState.copy.common.currentTenant = 'Current Tenant';
     localeState.copy.customerManagement = buildCustomerCopy();
     mockRequest.mockReset();
@@ -142,7 +142,7 @@ describe('CustomerManagementScreen', () => {
   });
 
   it('renders localized copy and locale-aware timestamps', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
     localeState.copy.common.currentTenant = '当前租户';
     localeState.copy.customerManagement = buildCustomerCopy({
       activeProfilesLabel: '活跃档案',

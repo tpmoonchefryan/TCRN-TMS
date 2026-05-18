@@ -1,91 +1,289 @@
 import {
+  SUPPORTED_UI_LOCALES,
+  normalizeLocalizedText,
   normalizeSupportedUiLocale,
-  resolveTrilingualLocaleFamily,
+  pickLocalizedText,
+  type LocalizedRecord,
+  type LocalizedText,
+  type PartialLocalizedText,
   type SupportedUiLocale,
   toIntlLocale,
 } from '@tcrn/shared';
 
-import type { RuntimeLocale } from './locale-provider';
+import {
+  listDictionaryItems,
+  listDictionaryTypes,
+  type RequestEnvelopeFn,
+  type RequestFn,
+} from '@/domains/config-dictionary-settings/api/system-dictionary.api';
+import { ApiRequestError } from '@/platform/http/api';
 
-type LocaleRecordKey = SupportedUiLocale | RuntimeLocale;
+export interface TranslationLanguageOption {
+  code: SupportedUiLocale;
+  label: string;
+}
 
-type LocaleRecord<T> = Partial<Record<LocaleRecordKey, T>> & {
-  en: T;
+interface TranslationLanguageLoadResult {
+  options: TranslationLanguageOption[];
+  error: string | null;
+}
+
+type TranslationDrawerPayload =
+  | Record<string, string>
+  | Record<string, Record<string, string>>;
+
+interface TranslationSectionLike {
+  values: Record<string, string>;
+}
+
+const LOCALE_LABELS: LocalizedRecord<string> = {
+  en: 'English',
+  zh_HANS: '简体中文',
+  zh_HANT: '繁體中文',
+  ja: '日本語',
+  ko: '한국어',
+  fr: 'Français',
 };
 
-interface LocaleTextValue {
-  en: string;
-  zh_HANS?: string;
-  zh_HANT?: string;
-  ja?: string;
-  ko?: string;
-  fr?: string;
-  zh?: string;
+function getErrorMessage(reason: unknown, fallback: string) {
+  return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
 export function resolveLocaleRecord<T>(
-  locale: SupportedUiLocale | RuntimeLocale | string,
-  record: LocaleRecord<T>,
-  familyFallback?: RuntimeLocale,
+  locale: string,
+  record: LocalizedRecord<T>,
 ) {
   const normalizedLocale = normalizeSupportedUiLocale(locale);
 
-  if (normalizedLocale && record[normalizedLocale]) {
+  if (normalizedLocale) {
     return record[normalizedLocale];
-  }
-
-  if (locale === 'zh' && record.zh) {
-    return record.zh;
-  }
-
-  if (normalizedLocale === 'zh_HANS' && record.zh) {
-    return record.zh;
-  }
-
-  if (normalizedLocale === 'zh_HANT') {
-    if (record.zh_HANT) {
-      return record.zh_HANT;
-    }
-
-    if (record.zh) {
-      return record.zh;
-    }
-
-    if (record.zh_HANS) {
-      return record.zh_HANS;
-    }
-  }
-
-  if (locale === 'ja' && record.ja) {
-    return record.ja;
-  }
-
-  if (locale === 'en' && record.en) {
-    return record.en;
-  }
-
-  const localeFamily = familyFallback ?? resolveTrilingualLocaleFamily(locale);
-
-  if (localeFamily === 'zh' && record.zh) {
-    return record.zh;
-  }
-
-  if (record[localeFamily]) {
-    return record[localeFamily];
   }
 
   return record.en;
 }
 
 export function pickLocaleText(
-  locale: SupportedUiLocale | RuntimeLocale | string,
-  value: LocaleTextValue,
+  locale: string,
+  value: LocalizedText,
 ) {
   return resolveLocaleRecord(locale, value);
 }
 
+export function resolveLocalizedLabel(
+  translations: PartialLocalizedText | null | undefined,
+  localeCode: string,
+  fallback: string,
+) {
+  const normalized = normalizeSupportedUiLocale(localeCode) ?? 'en';
+  const localizedValue = translations?.[normalized]?.trim();
+
+  if (localizedValue) {
+    return localizedValue;
+  }
+
+  if (translations && typeof translations.en === 'string' && translations.en.trim()) {
+    return translations.en;
+  }
+
+  return fallback;
+}
+
+export function getTranslationLanguageOptions(locale: SupportedUiLocale): TranslationLanguageOption[] {
+  return SUPPORTED_UI_LOCALES
+    .filter((code) => code !== 'en')
+    .map((code) => ({
+      code,
+      label: pickLocalizedText(
+        {
+          en: LOCALE_LABELS[code],
+          zh_HANS: LOCALE_LABELS[code],
+          zh_HANT: LOCALE_LABELS[code],
+          ja: LOCALE_LABELS[code],
+          ko: LOCALE_LABELS[code],
+          fr: LOCALE_LABELS[code],
+        },
+        locale,
+      ),
+    }));
+}
+
+async function listAllTranslationLanguageItems(
+  requestEnvelope: RequestEnvelopeFn,
+  dictionaryType: string,
+  locale: SupportedUiLocale,
+) {
+  const items = [];
+  let page = 1;
+  let hasNext = true;
+
+  while (hasNext) {
+    const response = await listDictionaryItems(
+      requestEnvelope,
+      dictionaryType,
+      {
+        includeInactive: false,
+        page,
+        pageSize: 250,
+      },
+      locale,
+    );
+
+    items.push(...response.items);
+    hasNext = response.pagination.hasNext;
+    page += 1;
+  }
+
+  return items;
+}
+
+function mergeTranslationLanguageOptions(
+  items: Awaited<ReturnType<typeof listAllTranslationLanguageItems>>,
+  locale: SupportedUiLocale,
+): TranslationLanguageOption[] {
+  const merged = new Map<SupportedUiLocale, TranslationLanguageOption>();
+
+  items.forEach((item) => {
+    const normalizedCode = normalizeSupportedUiLocale(item.code);
+    if (!normalizedCode || normalizedCode === 'en') {
+      return;
+    }
+
+    merged.set(normalizedCode, {
+      code: normalizedCode,
+      label: resolveLocalizedLabel(item.name, locale, item.code),
+    });
+  });
+
+  const fallbackOptions = getTranslationLanguageOptions(locale);
+  fallbackOptions.forEach((option) => {
+    if (!merged.has(option.code)) {
+      merged.set(option.code, option);
+    }
+  });
+
+  return SUPPORTED_UI_LOCALES
+    .filter((code) => code !== 'en')
+    .flatMap((code) => {
+      const option = merged.get(code);
+      return option ? [option] : [];
+    });
+}
+
+export async function loadTranslationLanguageOptions(
+  request: RequestFn,
+  requestEnvelope: RequestEnvelopeFn,
+  locale: SupportedUiLocale,
+  fallbackError: string,
+): Promise<TranslationLanguageLoadResult> {
+  try {
+    const types = await listDictionaryTypes(request, locale);
+    const languageType = types.find((entry) => ['language', 'languages'].includes(entry.type.toLowerCase()));
+
+    if (!languageType) {
+      return {
+        options: getTranslationLanguageOptions(locale),
+        error: null,
+      };
+    }
+
+    const items = await listAllTranslationLanguageItems(
+      requestEnvelope,
+      languageType.type,
+      locale,
+    );
+
+    return {
+      options: mergeTranslationLanguageOptions(items, locale),
+      error: null,
+    };
+  } catch (reason) {
+    return {
+      options: getTranslationLanguageOptions(locale),
+      error: getErrorMessage(reason, fallbackError),
+    };
+  }
+}
+
+export function buildLocalizedTextPayload(
+  baseValue: string | null | undefined,
+  localeValues: PartialLocalizedText | null | undefined,
+): LocalizedText {
+  const next: PartialLocalizedText = {};
+  const english = baseValue?.trim();
+
+  if (english) {
+    next.en = english;
+  }
+
+  for (const locale of SUPPORTED_UI_LOCALES) {
+    if (locale === 'en') {
+      continue;
+    }
+
+    const value = localeValues?.[locale]?.trim();
+    if (value) {
+      next[locale] = value;
+    }
+  }
+
+  return normalizeLocalizedText(next, english ?? '');
+}
+
+export function extractLocalizedTextPayload(
+  value: PartialLocalizedText | null | undefined,
+) {
+  const next: PartialLocalizedText = {};
+
+  for (const locale of SUPPORTED_UI_LOCALES) {
+    if (locale === 'en') {
+      continue;
+    }
+
+    const localizedValue = value?.[locale]?.trim();
+    if (localizedValue) {
+      next[locale] = localizedValue;
+    }
+  }
+
+  return next;
+}
+
+export function pickLocaleValue(
+  value: PartialLocalizedText,
+  localeCode: SupportedUiLocale,
+) {
+  const localizedValue = value[localeCode]?.trim();
+  return localizedValue || undefined;
+}
+
+export function extractSingleFieldTranslationPayload(
+  payload: TranslationDrawerPayload,
+) {
+  const firstValue = Object.values(payload)[0];
+
+  if (typeof firstValue === 'string' || firstValue === undefined) {
+    return payload as PartialLocalizedText;
+  }
+
+  return ((payload as Record<string, PartialLocalizedText>).default ?? {}) as PartialLocalizedText;
+}
+
+export function countLocaleValues(sections: TranslationSectionLike[]) {
+  const filledLocales = new Set<string>();
+
+  sections.forEach((section) => {
+    Object.entries(section.values).forEach(([localeCode, value]) => {
+      if (value.trim()) {
+        filledLocales.add(localeCode);
+      }
+    });
+  });
+
+  return filledLocales.size;
+}
+
 export function formatLocaleDateTime(
-  locale: SupportedUiLocale | RuntimeLocale | string,
+  locale: string,
   value: string | null,
   fallback: string,
 ) {
@@ -106,7 +304,7 @@ export function formatLocaleDateTime(
 }
 
 export function formatLocaleNumber(
-  locale: SupportedUiLocale | RuntimeLocale | string,
+  locale: string,
   value: number,
 ) {
   return new Intl.NumberFormat(toIntlLocale(locale)).format(value);

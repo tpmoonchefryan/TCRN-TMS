@@ -1,3 +1,4 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TenantEditorScreen } from '@/domains/platform-tenant-management/screens/TenantEditorScreen';
@@ -5,8 +6,7 @@ import { TenantEditorScreen } from '@/domains/platform-tenant-management/screens
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en' as 'en' | 'zh_HANS' | 'ja',
+  locale: 'en' as SupportedUiLocale,
 };
 
 vi.mock('next/navigation', () => ({
@@ -31,13 +31,13 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('TenantEditorScreen', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     mockReplace.mockReset();
   });
@@ -251,8 +251,8 @@ describe('TenantEditorScreen', () => {
   });
 
   it('renders localized sending-domain copy in Chinese locale', async () => {
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
 
     type SendingDomainsResponse = {
       tenantId: string;

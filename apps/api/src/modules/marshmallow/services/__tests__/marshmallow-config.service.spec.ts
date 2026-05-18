@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TalentCustomDomainService } from '../../../talent';
@@ -34,12 +35,8 @@ describe('MarshmallowConfigService', () => {
     allowedReactions: [],
     theme: {},
     avatarUrl: null,
-    termsContentEn: null,
-    termsContentZh: null,
-    termsContentJa: null,
-    privacyContentEn: null,
-    privacyContentZh: null,
-    privacyContentJa: null,
+    termsContent: createLocalizedText({ en: '' }),
+    privacyContent: createLocalizedText({ en: '' }),
     stats: {
       totalMessages: 0,
       pendingCount: 0,

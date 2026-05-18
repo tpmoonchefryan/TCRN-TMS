@@ -66,8 +66,7 @@ function buildLoginCopy(overrides: Partial<Record<string, string>> = {}) {
 }
 
 const localeState = {
-  currentLocale: 'en',
-  selectedLocale: 'en',
+  locale: 'en',
   copy: {
     common: {
       languageSwitcherLabel: 'Change language',
@@ -98,7 +97,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('@/domains/auth-identity/api/auth.api', () => ({
@@ -176,8 +175,8 @@ function fillCredentials() {
 
 describe('LoginForm', () => {
   beforeEach(() => {
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     localeState.copy.common.languageSwitcherLabel = 'Change language';
     localeState.copy.auth.login = buildLoginCopy();
     localeState.setLocale.mockReset();
@@ -192,8 +191,8 @@ describe('LoginForm', () => {
   });
 
   it('renders localized login copy from the runtime locale contract', () => {
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
     localeState.copy.auth.login = buildLoginCopy({
       appName: 'TCRN TMS',
       credentialsDescription: '输入登录信息。',

@@ -1,7 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  normalizeLocalizedText,
+} from '@tcrn/shared';
 
 import {
   decorateEmailTemplate,
@@ -9,7 +12,6 @@ import {
   fillPreviewVariables,
   renderEmailTemplate,
 } from '../domain/email-template.policy';
-import { buildEmailTemplateTranslationPayload } from '../domain/email-template-translation.policy';
 import type {
   CreateEmailTemplateDto,
   EmailTemplateQueryDto,
@@ -48,24 +50,14 @@ export class EmailTemplateApplicationService {
       });
     }
 
-    const translationPayload = buildEmailTemplateTranslationPayload(dto);
     const created = await this.emailTemplateRepository.create({
       code: dto.code,
-      nameEn: translationPayload.nameEn ?? dto.nameEn,
-      nameZh: translationPayload.nameZh,
-      nameJa: translationPayload.nameJa,
-      subjectEn: translationPayload.subjectEn ?? dto.subjectEn,
-      subjectZh: translationPayload.subjectZh,
-      subjectJa: translationPayload.subjectJa,
-      bodyHtmlEn: translationPayload.bodyHtmlEn ?? dto.bodyHtmlEn,
-      bodyHtmlZh: translationPayload.bodyHtmlZh,
-      bodyHtmlJa: translationPayload.bodyHtmlJa,
-      bodyTextEn: translationPayload.bodyTextEn,
-      bodyTextZh: translationPayload.bodyTextZh,
-      bodyTextJa: translationPayload.bodyTextJa,
+      name: normalizeLocalizedText(dto.name),
+      subject: normalizeLocalizedText(dto.subject),
+      bodyHtml: normalizeLocalizedText(dto.bodyHtml),
+      bodyText: normalizeLocalizedText(dto.bodyText),
       variables: dto.variables || [],
       category: dto.category,
-      extraData: translationPayload.extraData,
     });
 
     return decorateEmailTemplate(created);
@@ -73,24 +65,14 @@ export class EmailTemplateApplicationService {
 
   async update(code: string, dto: UpdateEmailTemplateDto) {
     const current = await this.getTemplateOrThrow(code);
-    const translationPayload = buildEmailTemplateTranslationPayload(dto, current);
     const updated = await this.emailTemplateRepository.update(code, {
-      nameEn: translationPayload.nameEn ?? current.nameEn,
-      nameZh: translationPayload.nameZh,
-      nameJa: translationPayload.nameJa,
-      subjectEn: translationPayload.subjectEn ?? current.subjectEn,
-      subjectZh: translationPayload.subjectZh,
-      subjectJa: translationPayload.subjectJa,
-      bodyHtmlEn: translationPayload.bodyHtmlEn ?? current.bodyHtmlEn,
-      bodyHtmlZh: translationPayload.bodyHtmlZh,
-      bodyHtmlJa: translationPayload.bodyHtmlJa,
-      bodyTextEn: translationPayload.bodyTextEn,
-      bodyTextZh: translationPayload.bodyTextZh,
-      bodyTextJa: translationPayload.bodyTextJa,
+      name: dto.name ? normalizeLocalizedText({ ...current.name, ...dto.name }, current.name.en) : undefined,
+      subject: dto.subject ? normalizeLocalizedText({ ...current.subject, ...dto.subject }, current.subject.en) : undefined,
+      bodyHtml: dto.bodyHtml ? normalizeLocalizedText({ ...current.bodyHtml, ...dto.bodyHtml }, current.bodyHtml.en) : undefined,
+      bodyText: dto.bodyText ? normalizeLocalizedText({ ...current.bodyText, ...dto.bodyText }, current.bodyText.en) : undefined,
       variables: dto.variables,
       category: dto.category,
       isActive: dto.isActive,
-      extraData: translationPayload.extraData,
     });
 
     return decorateEmailTemplate(updated);

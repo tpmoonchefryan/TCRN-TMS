@@ -1,3 +1,4 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { REPORT_CATALOG } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,8 +11,7 @@ const replace = vi.fn();
 let pathname = '/tenant/tenant-1/talent/talent-1/reports';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as 'en' | 'zh' | 'ja',
-  selectedLocale: 'en' as 'en' | 'zh_HANS' | 'zh_HANT' | 'ja' | 'ko' | 'fr',
+  locale: 'en' as SupportedUiLocale,
 };
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -31,7 +31,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -106,8 +106,8 @@ describe('ReportsManagementScreen', () => {
     mockRequest.mockReset();
     openSpy.mockReset();
     replace.mockReset();
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
     pathname = '/tenant/tenant-1/talent/talent-1/reports';
     currentSearch = '';
     replace.mockImplementation((href: string) => {
@@ -119,7 +119,7 @@ describe('ReportsManagementScreen', () => {
   });
 
   it('passes a localized close label to the report drawer', async () => {
-    localeState.currentLocale = 'zh';
+    localeState.locale = 'zh_HANS';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/reports/catalog') {

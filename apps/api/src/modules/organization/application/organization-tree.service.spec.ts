@@ -1,12 +1,18 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
+import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OrganizationTreeRepository } from '../infrastructure/organization-tree.repository';
 import { OrganizationTreeService } from './organization-tree.service';
 
 describe('OrganizationTreeService', () => {
+  const localized = (
+    en: string,
+    patch: PartialLocalizedText = {},
+  ) => createLocalizedText({ en, ...patch });
+
   const mockRepository = {
     findTenant: vi.fn(),
     findAllSubsidiaries: vi.fn(),
@@ -51,9 +57,7 @@ describe('OrganizationTreeService', () => {
       code: 'TOKYO',
       path: '/TOKYO/',
       depth: 1,
-      name_en: 'Tokyo',
-      name_zh: '东京',
-      name_ja: '東京',
+      name: localized('Tokyo', { zh_HANS: '东京', ja: '東京' }),
       is_active: true,
     },
     {
@@ -62,9 +66,7 @@ describe('OrganizationTreeService', () => {
       code: 'GAMING',
       path: '/TOKYO/GAMING/',
       depth: 2,
-      name_en: 'Gaming',
-      name_zh: '游戏',
-      name_ja: 'ゲーム',
+      name: localized('Gaming', { zh_HANS: '游戏', ja: 'ゲーム' }),
       is_active: true,
     },
     {
@@ -73,9 +75,7 @@ describe('OrganizationTreeService', () => {
       code: 'OSAKA',
       path: '/OSAKA/',
       depth: 1,
-      name_en: 'Osaka',
-      name_zh: '大阪',
-      name_ja: '大阪',
+      name: localized('Osaka', { zh_HANS: '大阪', ja: '大阪' }),
       is_active: true,
     },
   ];
@@ -85,9 +85,7 @@ describe('OrganizationTreeService', () => {
       id: 'talent-1',
       subsidiary_id: 'sub-2',
       code: 'SORA',
-      name_en: 'Sora',
-      name_zh: '空',
-      name_ja: 'そら',
+      name: localized('Sora', { zh_HANS: '空', ja: 'そら' }),
       display_name: 'Sora',
       avatar_url: 'https://example.com/avatar.png',
       homepage_path: 'sora',
@@ -98,9 +96,7 @@ describe('OrganizationTreeService', () => {
       id: 'talent-2',
       subsidiary_id: null,
       code: 'DIRECT',
-      name_en: 'Direct Talent',
-      name_zh: '直属艺人',
-      name_ja: '直属タレント',
+      name: localized('Direct Talent', { zh_HANS: '直属艺人', ja: '直属タレント' }),
       display_name: 'Direct Talent',
       avatar_url: null,
       homepage_path: null,
@@ -111,9 +107,7 @@ describe('OrganizationTreeService', () => {
       id: 'talent-3',
       subsidiary_id: 'sub-3',
       code: 'MIO',
-      name_en: 'Mio',
-      name_zh: '澪',
-      name_ja: 'ミオ',
+      name: localized('Mio', { zh_HANS: '澪', ja: 'ミオ' }),
       display_name: 'Mio',
       avatar_url: null,
       homepage_path: 'mio',
@@ -160,16 +154,12 @@ describe('OrganizationTreeService', () => {
     });
   });
 
-  it('falls back to managed extra_data translations when the requested locale is not stored in legacy columns', async () => {
+  it('uses the canonical localized text payload for every supported locale', async () => {
     vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
     vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue([
       {
         ...subsidiaries[0],
-        extra_data: {
-          translations: {
-            zh_HANT: '東京分部',
-          },
-        },
+        name: localized('Tokyo', { zh_HANT: '東京分部' }),
       },
     ]);
     vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
@@ -179,11 +169,7 @@ describe('OrganizationTreeService', () => {
       {
         ...talents[0],
         subsidiary_id: 'sub-1',
-        extra_data: {
-          translations: {
-            ko: '소라',
-          },
-        },
+        name: localized('Sora', { zh_HANS: '空', ko: '소라' }),
       },
     ]);
 

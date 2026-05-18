@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 
-import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
+import { SUPPORTED_UI_LOCALES, type LocalizedText } from '../../constants/locale';
 
 // ============================================================================
 // Enums
@@ -25,11 +25,11 @@ export type ReportArtifactKind = z.infer<typeof ReportArtifactKindSchema>;
 // ============================================================================
 export const ReportLocalizedTextSchema = z.object({
   en: z.string().min(1),
-  zh_HANS: z.string().min(1).optional(),
-  zh_HANT: z.string().min(1).optional(),
-  ja: z.string().min(1).optional(),
-  ko: z.string().min(1).optional(),
-  fr: z.string().min(1).optional(),
+  zh_HANS: z.string().min(1),
+  zh_HANT: z.string().min(1),
+  ja: z.string().min(1),
+  ko: z.string().min(1),
+  fr: z.string().min(1),
 });
 
 export const ReportPermissionRequirementSchema = z.object({
@@ -149,7 +149,7 @@ export const ReportCatalogItemSchema = z.object({
 
 export const ReportCatalogSchema = z.array(ReportCatalogItemSchema);
 
-export type ReportLocalizedText = z.infer<typeof ReportLocalizedTextSchema>;
+export type ReportLocalizedText = LocalizedText;
 export type ReportPermissionRequirement = z.infer<typeof ReportPermissionRequirementSchema>;
 export type ReportCatalogAvailability = z.infer<typeof ReportCatalogAvailabilitySchema>;
 export type ReportFilterOptionSource = z.infer<typeof ReportFilterOptionSourceSchema>;

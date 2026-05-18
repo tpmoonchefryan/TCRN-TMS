@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  isSupportedUiLocale,
+  type PartialLocalizedText,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 
 import { tokens } from '../foundations/tokens';
 import { ActionDrawer } from './ActionDrawer';
@@ -19,10 +24,10 @@ export interface TranslationDrawerProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   baseValue?: string;
-  translations?: Record<string, string>;
+  translations?: PartialLocalizedText;
   fields?: TranslationField[];
-  availableLocales: Array<{ code: string; label: string }>;
-  onSave: (payload: Record<string, Record<string, string>> | Record<string, string>) => Promise<void>;
+  availableLocales: Array<{ code: SupportedUiLocale; label: string }>;
+  onSave: (payload: Record<string, Partial<Record<SupportedUiLocale, string>>> | Partial<Record<SupportedUiLocale, string>>) => Promise<void>;
   saveButtonLabel: string;
   cancelButtonLabel: string;
   closeButtonAriaLabel: string;
@@ -68,10 +73,10 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
 
   const isLegacyMode = !fields && baseValue !== undefined && translations !== undefined;
   const [localData, setLocalData] = useState<TranslationLocalData>({});
-  const [activeLocales, setActiveLocales] = useState<Set<string>>(new Set());
+  const [activeLocales, setActiveLocales] = useState<Set<SupportedUiLocale>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   
-  const [lastAddedLocale, setLastAddedLocale] = useState<string | null>(null);
+  const [lastAddedLocale, setLastAddedLocale] = useState<SupportedUiLocale | null>(null);
   const newlyAddedFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -112,7 +117,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
     [activeLocales, availableLocales],
   );
 
-  const handleChange = (localeCode: string, fieldId: string, value: string) => {
+  const handleChange = (localeCode: SupportedUiLocale, fieldId: string, value: string) => {
     setLocalData((current) => ({
       ...current,
       [localeCode]: {
@@ -124,6 +129,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
 
   const handleAddLanguage = (localeCode: string) => {
     if (!localeCode) return;
+    if (!isSupportedUiLocale(localeCode)) return;
     setActiveLocales((current) => {
       const next = new Set(current);
       next.add(localeCode);
@@ -132,7 +138,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
     setLastAddedLocale(localeCode);
   };
 
-  const handleRemoveLanguage = (localeCode: string) => {
+  const handleRemoveLanguage = (localeCode: SupportedUiLocale) => {
     setActiveLocales((current) => {
       const next = new Set(current);
       next.delete(localeCode);

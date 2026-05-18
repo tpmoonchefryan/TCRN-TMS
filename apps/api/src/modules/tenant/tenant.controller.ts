@@ -479,17 +479,15 @@ export class TenantController {
   private async seedEssentialDataIfMissing(schemaName: string): Promise<void> {
     for (const resource of RBAC_RESOURCES) {
       await prisma.$executeRawUnsafe(`
-        INSERT INTO "${schemaName}".resource (id, code, module, name_en, name_zh, name_ja, sort_order, is_active, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, now(), now())
+        INSERT INTO "${schemaName}".resource (id, code, module, name, sort_order, is_active, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, now(), now())
         ON CONFLICT (code) DO UPDATE
         SET module = EXCLUDED.module,
-            name_en = EXCLUDED.name_en,
-            name_zh = EXCLUDED.name_zh,
-            name_ja = EXCLUDED.name_ja,
+            name = EXCLUDED.name,
             sort_order = EXCLUDED.sort_order,
             is_active = true,
             updated_at = now()
-      `, resource.code, resource.module, resource.nameEn, resource.nameZh, resource.nameJa, resource.sortOrder);
+      `, resource.code, resource.module, JSON.stringify(resource.name), resource.sortOrder);
     }
 
     for (const policy of RBAC_POLICY_DEFINITIONS) {
@@ -508,17 +506,15 @@ export class TenantController {
 
     for (const role of RBAC_ROLE_TEMPLATES) {
       await prisma.$executeRawUnsafe(`
-        INSERT INTO "${schemaName}".role (id, code, name_en, name_zh, name_ja, description, is_system, is_active, created_at, updated_at, version)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, true, now(), now(), 1)
+        INSERT INTO "${schemaName}".role (id, code, name, description, is_system, is_active, created_at, updated_at, version)
+        VALUES (gen_random_uuid(), $1, $2::jsonb, $3, $4, true, now(), now(), 1)
         ON CONFLICT (code) DO UPDATE
-        SET name_en = EXCLUDED.name_en,
-            name_zh = EXCLUDED.name_zh,
-            name_ja = EXCLUDED.name_ja,
+        SET name = EXCLUDED.name,
             description = EXCLUDED.description,
             is_system = EXCLUDED.is_system,
             is_active = true,
             updated_at = now()
-      `, role.code, role.nameEn, role.nameZh, role.nameJa, role.description, role.isSystem);
+      `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
     }
 
     for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {

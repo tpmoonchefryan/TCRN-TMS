@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import type { RbacRolePolicyEffect } from '../rbac/catalog';
+import type { LocalizedText } from '../constants/locale';
 import {
   ActionType,
   AdapterType,
@@ -49,12 +50,8 @@ export interface SoftDeletableEntity extends AuditableEntity {
 }
 
 export interface LocalizableEntity {
-  name_en: string;
-  name_zh?: string;
-  name_ja?: string;
-  description_en?: string;
-  description_zh?: string;
-  description_ja?: string;
+  name: LocalizedText;
+  description?: LocalizedText;
 }
 
 // ------------------------------------------------------------------
@@ -131,7 +128,6 @@ export interface RecoveryCode extends BaseEntity {
 
 export interface Role extends SoftDeletableEntity, LocalizableEntity {
   code: string;
-  description?: string; // Markdown
   is_system: boolean;
 }
 
@@ -362,9 +358,7 @@ export interface Consent extends SoftDeletableEntity, LocalizableEntity {
   owner_id?: string | null;
   code: string;
   consent_version: string;
-  content_markdown_en?: string;
-  content_markdown_zh?: string;
-  content_markdown_ja?: string;
+  content_markdown?: LocalizedText;
   content_url?: string;
   effective_from: string;
   expires_at?: string;
@@ -382,11 +376,8 @@ export interface Consumer extends SoftDeletableEntity, LocalizableEntity {
   notes?: string;
 }
 
-export interface SocialPlatform extends AuditableEntity {
+export interface SocialPlatform extends AuditableEntity, LocalizableEntity {
   code: string;
-  name_en: string;
-  name_zh?: string;
-  name_ja?: string;
   display_name: string;
   icon_url?: string;
   base_url?: string;

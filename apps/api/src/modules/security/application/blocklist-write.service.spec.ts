@@ -5,7 +5,11 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import type { BlocklistScopeSummary, RequestContext } from '@tcrn/shared';
+import {
+  createLocalizedText,
+  type BlocklistScopeSummary,
+  type RequestContext,
+} from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -100,13 +104,8 @@ describe('BlocklistWriteService', () => {
     ownerId: null,
     pattern: 'badword',
     patternType: 'keyword',
-    nameEn: 'Profanity Filter',
-    nameZh: null,
-    nameJa: null,
+    name: createLocalizedText({ en: 'Profanity Filter' }),
     extraData: null,
-    translations: {
-      en: 'Profanity Filter',
-    },
     description: null,
     category: 'profanity',
     severity: 'medium',
@@ -138,7 +137,7 @@ describe('BlocklistWriteService', () => {
           ownerType: 'tenant',
           pattern: 'badword',
           patternType: BlocklistPatternType.KEYWORD,
-          nameEn: 'Profanity Filter',
+          name: createLocalizedText({ en: 'Profanity Filter' }),
         },
         context,
       ),
@@ -165,7 +164,7 @@ describe('BlocklistWriteService', () => {
           ownerType: 'tenant',
           pattern: '[',
           patternType: BlocklistPatternType.REGEX,
-          nameEn: 'Regex Filter',
+          name: createLocalizedText({ en: 'Regex Filter' }),
         },
         context,
       ),
@@ -176,9 +175,7 @@ describe('BlocklistWriteService', () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
       extraData: null,
-      nameEn: 'Profanity Filter',
-      nameJa: null,
-      nameZh: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       version: 1,
     });
 
@@ -187,7 +184,7 @@ describe('BlocklistWriteService', () => {
         'entry-1',
         {
           version: 2,
-          nameEn: 'Updated Filter',
+          name: { en: 'Updated Filter' },
         },
         context,
       ),
@@ -198,9 +195,7 @@ describe('BlocklistWriteService', () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
       extraData: null,
-      nameEn: 'Profanity Filter',
-      nameJa: null,
-      nameZh: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       version: 1,
     });
     vi.mocked(mockReadService.findById).mockResolvedValue(detailResponse);
@@ -210,7 +205,7 @@ describe('BlocklistWriteService', () => {
         'entry-1',
         {
           version: 1,
-          nameEn: 'Updated Filter',
+          name: { en: 'Updated Filter' },
         },
         context,
       ),
@@ -237,7 +232,7 @@ describe('BlocklistWriteService', () => {
         ownerType: 'tenant',
         pattern: 'badword',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Structured Rule',
+        name: createLocalizedText({ en: 'Structured Rule' }),
         structuredScope: {
           entries: [
             { category: BlocklistScopeCategory.TENANT },
@@ -267,7 +262,7 @@ describe('BlocklistWriteService', () => {
           ownerType: 'tenant',
           pattern: 'badword',
           patternType: BlocklistPatternType.KEYWORD,
-          nameEn: 'Structured Rule',
+          name: createLocalizedText({ en: 'Structured Rule' }),
           structuredScope: {
             entries: [{ category: BlocklistScopeCategory.PROFILE_STORE }],
           },
@@ -286,7 +281,7 @@ describe('BlocklistWriteService', () => {
         ownerType: 'tenant',
         pattern: 'badword',
         patternType: BlocklistPatternType.KEYWORD,
-        nameEn: 'Legacy Rule',
+        name: createLocalizedText({ en: 'Default Rule' }),
       },
       context,
     );
@@ -314,9 +309,7 @@ describe('BlocklistWriteService', () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue({
       id: 'entry-1',
       extraData: null,
-      nameEn: 'Profanity Filter',
-      nameJa: null,
-      nameZh: null,
+      name: createLocalizedText({ en: 'Profanity Filter' }),
       version: 1,
     });
 
@@ -359,7 +352,7 @@ describe('BlocklistWriteService', () => {
       ownerType: 'tenant',
       ownerId: null,
       isForceUse: false,
-      nameEn: 'Profanity Filter',
+      name: createLocalizedText({ en: 'Profanity Filter' }),
     });
 
     await expect(
@@ -378,7 +371,7 @@ describe('BlocklistWriteService', () => {
       ownerType: 'tenant',
       ownerId: null,
       isForceUse: true,
-      nameEn: 'Profanity Filter',
+      name: createLocalizedText({ en: 'Profanity Filter' }),
     });
 
     await expect(
@@ -400,7 +393,7 @@ describe('BlocklistWriteService', () => {
       ownerType: 'tenant',
       ownerId: null,
       isForceUse: false,
-      nameEn: 'Profanity Filter',
+      name: createLocalizedText({ en: 'Profanity Filter' }),
     });
 
     await expect(

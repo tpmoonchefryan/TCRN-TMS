@@ -15,7 +15,12 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import {
+  ErrorCodes,
+  SUPPORTED_UI_LOCALES,
+  type LocalizedText,
+  type PartialLocalizedText,
+} from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { Request } from 'express';
@@ -27,6 +32,42 @@ import { DictionaryService } from './dictionary.service';
 // =====================================================
 // DTOs
 // =====================================================
+
+const DICTIONARY_NAME_EXAMPLE: LocalizedText = {
+  en: 'Customer Status',
+  zh_HANS: '客户状态',
+  zh_HANT: '客戶狀態',
+  ja: '顧客ステータス',
+  ko: '고객 상태',
+  fr: 'Statut client',
+};
+
+const DICTIONARY_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Customer status codes',
+  zh_HANS: '客户状态代码',
+  zh_HANT: '客戶狀態代碼',
+  ja: '顧客ステータスコード',
+  ko: '고객 상태 코드',
+  fr: 'Codes de statut client',
+};
+
+const DICTIONARY_ITEM_NAME_EXAMPLE: LocalizedText = {
+  en: 'Active',
+  zh_HANS: '活跃',
+  zh_HANT: '活躍',
+  ja: 'アクティブ',
+  ko: '활성',
+  fr: 'Actif',
+};
+
+const DICTIONARY_ITEM_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Customer is active',
+  zh_HANS: '客户处于活跃状态',
+  zh_HANT: '客戶處於活躍狀態',
+  ja: '顧客が有効な状態です',
+  ko: '고객이 활성 상태입니다',
+  fr: 'Le client est actif',
+};
 
 export class GetDictionaryQueryDto {
   @ApiPropertyOptional({ description: 'Search keyword', example: 'status' })
@@ -62,58 +103,24 @@ export class CreateDictionaryTypeDto {
   @MaxLength(64)
   code!: string;
 
-  @ApiProperty({ description: 'Name in English', example: 'Customer Status', maxLength: 255 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '客户状态', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: '顧客ステータス', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Customer status codes' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '客户状态代码' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '顧客ステータスコード' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Localized names keyed by locale code',
+  @ApiProperty({
+    description: 'Localized dictionary type name keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
-    example: { en: 'Customer Status', zh_HANS: '客户状态', fr: 'Statut client' },
+    example: DICTIONARY_NAME_EXAMPLE,
+  })
+  @IsObject()
+  name!: LocalizedText;
+
+  @ApiPropertyOptional({
+    description: 'Localized dictionary type description keyed by SupportedUiLocale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: DICTIONARY_DESCRIPTION_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({
-    description: 'Localized descriptions keyed by locale code',
-    type: 'object',
-    additionalProperties: { type: 'string' },
-    example: { en: 'Customer status codes', zh_HANS: '客户状态代码', fr: 'Codes de statut client' },
-  })
-  @IsOptional()
-  @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
   @IsOptional()
@@ -128,57 +135,25 @@ export class CreateDictionaryTypeDto {
 }
 
 export class UpdateDictionaryTypeDto {
-  @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Localized names keyed by locale code',
+    description: 'Localized dictionary type name patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { fr: 'Statut client' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Localized descriptions keyed by locale code',
+    description: 'Localized dictionary type description patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { fr: 'Codes de statut client' },
   })
   @IsOptional()
   @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
   @IsOptional()
@@ -203,58 +178,24 @@ export class CreateDictionaryItemDto {
   @MaxLength(64)
   code!: string;
 
-  @ApiProperty({ description: 'Name in English', example: 'Active', maxLength: 255 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '活跃', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'アクティブ', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Localized names keyed by locale code',
+  @ApiProperty({
+    description: 'Localized item name keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
-    example: { en: 'Active', zh_HANS: '活跃', zh_HANT: '活躍', fr: 'Actif' },
+    example: DICTIONARY_ITEM_NAME_EXAMPLE,
+  })
+  @IsObject()
+  name!: LocalizedText;
+
+  @ApiPropertyOptional({
+    description: 'Localized item description keyed by SupportedUiLocale',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({
-    description: 'Localized descriptions keyed by locale code',
-    type: 'object',
-    additionalProperties: { type: 'string' },
-    example: { en: 'Customer is active', zh_HANS: '客户处于活跃状态', fr: 'Le client est actif' },
-  })
-  @IsOptional()
-  @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
@@ -269,57 +210,25 @@ export class CreateDictionaryItemDto {
 }
 
 export class UpdateDictionaryItemDto {
-  @ApiPropertyOptional({ description: 'Name in English', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', maxLength: 255 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Localized names keyed by locale code',
+    description: 'Localized item name patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { fr: 'Actif' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Localized descriptions keyed by locale code',
+    description: 'Localized item description patch keyed by SupportedUiLocale',
     type: 'object',
     additionalProperties: { type: 'string' },
+    example: { fr: 'Le client est actif' },
   })
   @IsOptional()
   @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Sort order', minimum: 0 })
   @IsOptional()
@@ -387,15 +296,13 @@ const DICTIONARY_TYPE_SCHEMA = {
   required: ['type', 'name', 'description', 'count'],
 };
 
-const TRANSLATION_MAP_SCHEMA = {
+const LOCALIZED_TEXT_SCHEMA = {
   type: 'object',
   additionalProperties: { type: 'string' },
-  example: {
-    en: 'Active',
-    zh_HANS: '活跃',
-    zh_HANT: '活躍',
-    fr: 'Actif',
-  },
+  properties: Object.fromEntries(
+    SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }]),
+  ),
+  required: [...SUPPORTED_UI_LOCALES],
 };
 
 const DICTIONARY_ITEM_SCHEMA = {
@@ -404,15 +311,10 @@ const DICTIONARY_ITEM_SCHEMA = {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440500' },
     dictionaryCode: { type: 'string', example: 'CUSTOMER_STATUS' },
     code: { type: 'string', example: 'ACTIVE' },
-    nameEn: { type: 'string', example: 'Active' },
-    nameZh: { type: 'string', nullable: true, example: '活跃' },
-    nameJa: { type: 'string', nullable: true, example: 'アクティブ' },
-    translations: TRANSLATION_MAP_SCHEMA,
-    name: { type: 'string', example: 'Active' },
-    descriptionEn: { type: 'string', nullable: true, example: 'Customer is active' },
-    descriptionZh: { type: 'string', nullable: true, example: '客户处于活跃状态' },
-    descriptionJa: { type: 'string', nullable: true, example: '顧客が有効な状態です' },
-    descriptionTranslations: TRANSLATION_MAP_SCHEMA,
+    name: { ...LOCALIZED_TEXT_SCHEMA, example: DICTIONARY_ITEM_NAME_EXAMPLE },
+    localizedName: { type: 'string', example: 'Active' },
+    description: { ...LOCALIZED_TEXT_SCHEMA, example: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE },
+    localizedDescription: { type: 'string', example: 'Customer is active' },
     sortOrder: { type: 'integer', example: 0 },
     isActive: { type: 'boolean', example: true },
     extraData: { type: 'object', nullable: true, additionalProperties: true, example: { color: '#00FF00' } },
@@ -420,7 +322,7 @@ const DICTIONARY_ITEM_SCHEMA = {
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'dictionaryCode', 'code', 'nameEn', 'translations', 'name', 'descriptionTranslations', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
+  required: ['id', 'dictionaryCode', 'code', 'name', 'localizedName', 'description', 'localizedDescription', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
 };
 
 const DICTIONARY_TYPES_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -470,15 +372,10 @@ const DICTIONARY_ITEMS_SUCCESS_SCHEMA = {
         id: '550e8400-e29b-41d4-a716-446655440500',
         dictionaryCode: 'CUSTOMER_STATUS',
         code: 'ACTIVE',
-        nameEn: 'Active',
-        nameZh: '活跃',
-        nameJa: 'アクティブ',
-        translations: { en: 'Active', zh_HANS: '活跃', zh_HANT: '活躍', fr: 'Actif' },
-        name: 'Active',
-        descriptionEn: 'Customer is active',
-        descriptionZh: '客户处于活跃状态',
-        descriptionJa: '顧客が有効な状態です',
-        descriptionTranslations: { en: 'Customer is active', zh_HANS: '客户处于活跃状态', fr: 'Le client est actif' },
+        name: DICTIONARY_ITEM_NAME_EXAMPLE,
+        localizedName: 'Active',
+        description: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE,
+        localizedDescription: 'Customer is active',
         sortOrder: 0,
         isActive: true,
         extraData: { color: '#00FF00' },
@@ -506,13 +403,10 @@ const DICTIONARY_ITEM_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     id: '550e8400-e29b-41d4-a716-446655440500',
     dictionaryCode: 'CUSTOMER_STATUS',
     code: 'ACTIVE',
-    nameEn: 'Active',
-    nameZh: '活跃',
-    nameJa: 'アクティブ',
-    name: 'Active',
-    descriptionEn: 'Customer is active',
-    descriptionZh: '客户处于活跃状态',
-    descriptionJa: '顧客が有効な状態です',
+    name: DICTIONARY_ITEM_NAME_EXAMPLE,
+    localizedName: 'Active',
+    description: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE,
+    localizedDescription: 'Customer is active',
     sortOrder: 0,
     isActive: true,
     extraData: { color: '#00FF00' },
@@ -528,35 +422,27 @@ const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440510' },
       code: { type: 'string', example: 'CUSTOMER_STATUS' },
-      nameEn: { type: 'string', example: 'Customer Status' },
-      nameZh: { type: 'string', nullable: true, example: '客户状态' },
-      nameJa: { type: 'string', nullable: true, example: '顧客ステータス' },
-      translations: TRANSLATION_MAP_SCHEMA,
-      descriptionEn: { type: 'string', nullable: true, example: 'Customer status codes' },
-      descriptionZh: { type: 'string', nullable: true, example: '客户状态代码' },
-      descriptionJa: { type: 'string', nullable: true, example: '顧客ステータスコード' },
-      descriptionTranslations: TRANSLATION_MAP_SCHEMA,
-      extraData: { type: 'object', nullable: true, additionalProperties: true, example: { translations: { fr: 'Statut client' } } },
+      name: { ...LOCALIZED_TEXT_SCHEMA, example: DICTIONARY_NAME_EXAMPLE },
+      localizedName: { type: 'string', example: 'Customer Status' },
+      description: { ...LOCALIZED_TEXT_SCHEMA, example: DICTIONARY_DESCRIPTION_EXAMPLE },
+      localizedDescription: { type: 'string', example: 'Customer status codes' },
+      extraData: { type: 'object', nullable: true, additionalProperties: true, example: { family: 'customer' } },
       sortOrder: { type: 'integer', example: 0 },
       isActive: { type: 'boolean', example: true },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
       version: { type: 'integer', example: 1 },
     },
-    required: ['id', 'code', 'nameEn', 'translations', 'descriptionTranslations', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
+    required: ['id', 'code', 'name', 'localizedName', 'description', 'localizedDescription', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440510',
     code: 'CUSTOMER_STATUS',
-    nameEn: 'Customer Status',
-    nameZh: '客户状态',
-    nameJa: '顧客ステータス',
-    translations: { en: 'Customer Status', zh_HANS: '客户状态', fr: 'Statut client' },
-    descriptionEn: 'Customer status codes',
-    descriptionZh: '客户状态代码',
-    descriptionJa: '顧客ステータスコード',
-    descriptionTranslations: { en: 'Customer status codes', zh_HANS: '客户状态代码', fr: 'Codes de statut client' },
-    extraData: { translations: { fr: 'Statut client' } },
+    name: DICTIONARY_NAME_EXAMPLE,
+    localizedName: 'Customer Status',
+    description: DICTIONARY_DESCRIPTION_EXAMPLE,
+    localizedDescription: 'Customer status codes',
+    extraData: { family: 'customer' },
     sortOrder: 0,
     isActive: true,
     createdAt: '2026-04-13T08:00:00.000Z',

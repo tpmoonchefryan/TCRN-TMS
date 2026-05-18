@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
@@ -45,9 +46,12 @@ describe('PermissionController', () => {
           id: 'perm-1',
           resourceCode: 'customer.profile',
           action: 'read',
-          nameEn: 'Customer Profile',
-          nameZh: '客户档案',
-          nameJa: '顧客プロファイル',
+          name: createLocalizedText({
+            en: 'Customer Profile',
+            zh_HANS: '客户档案',
+            zh_HANT: '客戶檔案',
+            ja: '顧客プロファイル',
+          }),
           description: null,
           isSystem: true,
           isActive: true,

@@ -352,7 +352,7 @@ export function UserManagementScreen({
   workspaceKind?: 'tenant' | 'ac';
 }> = {}) {
   const { request, requestEnvelope, session } = useSession();
-  const { copy, currentLocale } = useUserManagementCopy();
+  const { copy, locale } = useUserManagementCopy();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -955,10 +955,10 @@ export function UserManagementScreen({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(user.lastLoginAt, currentLocale, sharedCopy.never)}
+                      {formatUserManagementDateTime(user.lastLoginAt, locale, sharedCopy.never)}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(user.createdAt, currentLocale, sharedCopy.unavailable)}
+                      {formatUserManagementDateTime(user.createdAt, locale, sharedCopy.unavailable)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -1041,7 +1041,7 @@ export function UserManagementScreen({
               </TableShell>
               <div className="px-2 pt-4">
                 <UserManagementPaginationFooter
-                  currentLocale={currentLocale}
+                  locale={locale}
                   pagination={usersPanel.pagination}
                   itemCount={usersPanel.data.length}
                   pageSize={usersPageSize}
@@ -1111,14 +1111,7 @@ export function UserManagementScreen({
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-slate-900">
-                          {pickLocalizedName(
-                            {
-                              nameEn: role.nameEn || role.code,
-                              nameZh: role.nameZh,
-                              nameJa: role.nameJa,
-                            },
-                            currentLocale,
-                          )}
+                          {role.localizedName || role.name.en || role.code}
                         </p>
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{role.code}</p>
                         {role.description ? <p className="text-sm text-slate-500">{role.description}</p> : null}
@@ -1139,7 +1132,7 @@ export function UserManagementScreen({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(role.updatedAt, currentLocale, sharedCopy.unavailable)}
+                      {formatUserManagementDateTime(role.updatedAt, locale, sharedCopy.unavailable)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -1161,27 +1154,13 @@ export function UserManagementScreen({
                                 scope: 'roles',
                                 id: role.id,
                                 title: managementCopy.roles.deleteTitle(
-                                  pickLocalizedName(
-                                    {
-                                      nameEn: role.nameEn || role.code,
-                                      nameZh: role.nameZh,
-                                      nameJa: role.nameJa,
-                                    },
-                                    currentLocale,
-                                  ),
+                                  role.localizedName || role.name.en || role.code,
                                 ),
                                 description: managementCopy.roles.deleteDescription,
                                 confirmText: managementCopy.roles.deleteConfirm,
                                 pendingText: managementCopy.roles.deletePending,
                                 successMessage: managementCopy.roles.deleteSuccess(
-                                  pickLocalizedName(
-                                    {
-                                      nameEn: role.nameEn || role.code,
-                                      nameZh: role.nameZh,
-                                      nameJa: role.nameJa,
-                                    },
-                                    currentLocale,
-                                  ),
+                                  role.localizedName || role.name.en || role.code,
                                 ),
                                 errorFallback: managementCopy.roles.deleteError,
                                 intent: 'danger',
@@ -1199,7 +1178,7 @@ export function UserManagementScreen({
               </TableShell>
               <div className="px-2 pt-4">
                 <UserManagementPaginationFooter
-                  currentLocale={currentLocale}
+                  locale={locale}
                   pagination={rolesPagination}
                   itemCount={paginatedRoles.length}
                   pageSize={rolesPageSize}
@@ -1355,14 +1334,7 @@ export function UserManagementScreen({
                           <option key={option.id} value={option.id}>
                             {'email' in option
                               ? `${option.displayName || option.username} (${option.email})`
-                              : `${pickLocalizedName(
-                                  {
-                                    nameEn: option.nameEn || option.code,
-                                    nameZh: option.nameZh,
-                                    nameJa: option.nameJa,
-                                  },
-                                  currentLocale,
-                                )} (${option.code})`}
+                              : `${option.localizedName || option.name.en || option.code} (${option.code})`}
                           </option>
                         ))}
                       </select>
@@ -1399,7 +1371,7 @@ export function UserManagementScreen({
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-slate-900">{delegation.scopeName}</p>
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          {getLocalizedScopeTypeLabel(delegation.scopeType, currentLocale)}
+                          {getLocalizedScopeTypeLabel(delegation.scopeType, locale)}
                         </p>
                       </div>
                     </td>
@@ -1407,7 +1379,7 @@ export function UserManagementScreen({
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-slate-900">{delegation.delegateName}</p>
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          {getLocalizedDelegateTypeLabel(delegation.delegateType, currentLocale)}
+                          {getLocalizedDelegateTypeLabel(delegation.delegateType, locale)}
                         </p>
                       </div>
                     </td>
@@ -1415,7 +1387,7 @@ export function UserManagementScreen({
                       {delegation.grantedBy ? delegation.grantedBy.username : managementCopy.delegation.systemGrantedBy}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(delegation.grantedAt, currentLocale, sharedCopy.unavailable)}
+                      {formatUserManagementDateTime(delegation.grantedAt, locale, sharedCopy.unavailable)}
                     </td>
                     <td className="px-6 py-4">
                       <InlineActionButton
@@ -1444,7 +1416,7 @@ export function UserManagementScreen({
               </TableShell>
               <div className="px-2 pt-4">
                 <UserManagementPaginationFooter
-                  currentLocale={currentLocale}
+                  locale={locale}
                   pagination={delegationsPagination}
                   itemCount={paginatedDelegations.length}
                   pageSize={delegationsPageSize}

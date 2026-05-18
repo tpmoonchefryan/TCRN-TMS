@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConflictException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import { createLocalizedText, ErrorCodes } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SubsidiaryWriteRepository } from '../infrastructure/subsidiary-write.repository';
@@ -51,7 +51,7 @@ describe('SubsidiaryWriteApplicationService', () => {
         {
           parentId: 'parent-1',
           code: 'TOKYO',
-          nameEn: 'Tokyo Branch',
+          name: createLocalizedText({ en: 'Tokyo Branch' }),
         },
         'user-1',
       ),
@@ -83,7 +83,7 @@ describe('SubsidiaryWriteApplicationService', () => {
         'subsidiary-1',
         'tenant_test',
         {
-          nameEn: 'Tokyo Branch',
+          name: { en: 'Tokyo Branch' },
           version: 2,
         },
         'user-1',

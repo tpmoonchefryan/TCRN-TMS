@@ -1,33 +1,23 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import type { SubsidiaryData } from './subsidiary-read.policy';
 
 export interface SubsidiaryCreateInput {
   parentId?: string | null;
   code: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name: LocalizedText;
   extraData?: Record<string, unknown> | null;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
+  description?: PartialLocalizedText | null;
   sortOrder?: number;
 }
 
 export interface SubsidiaryUpdateInput {
-  nameEn?: string;
-  nameZh?: string;
-  nameJa?: string;
-  translations?: Record<string, string>;
+  name?: PartialLocalizedText;
   extraData?: Record<string, unknown> | null;
-  descriptionEn?: string;
-  descriptionZh?: string;
-  descriptionJa?: string;
+  description?: PartialLocalizedText | null;
   sortOrder?: number;
   version: number;
 }

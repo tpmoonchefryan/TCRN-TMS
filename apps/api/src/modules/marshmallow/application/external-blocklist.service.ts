@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
-import { buildManagedNameTranslationPayload } from '../../../platform/persistence/managed-name-translations';
+import {
+  mergeLocalizedTextPatch,
+} from '../../../platform/persistence/localized-text.persistence';
 import {
   assertValidExternalBlocklistPattern,
   type ExternalBlocklistItemWithMeta,
@@ -130,16 +132,12 @@ export class ExternalBlocklistApplicationService {
     context: RequestContext,
   ): Promise<ExternalBlocklistItem> {
     this.ensureValidPattern(dto.patternType, dto.pattern);
-    const translationPayload = buildManagedNameTranslationPayload(dto);
 
     const item = await this.externalBlocklistRepository.create(
       tenantSchema,
       {
         ...dto,
-        extraData: translationPayload.extraData,
-        nameEn: translationPayload.nameEn,
-        nameJa: translationPayload.nameJa,
-        nameZh: translationPayload.nameZh,
+        extraData: null,
       },
       context.userId ?? null,
     );
@@ -179,18 +177,18 @@ export class ExternalBlocklistApplicationService {
         dto.pattern ?? existing.pattern,
       );
     }
-    const translationPayload = buildManagedNameTranslationPayload(dto, existing);
+    const updateDto: UpdateExternalBlocklistDto & {
+      extraData?: Record<string, unknown> | null;
+    } = { ...dto };
+
+    if (dto.name) {
+      updateDto.name = mergeLocalizedTextPatch(existing.name, dto.name);
+    }
 
     const item = await this.externalBlocklistRepository.update(
       tenantSchema,
       id,
-      {
-        ...dto,
-        extraData: translationPayload.extraData,
-        nameEn: translationPayload.nameEn,
-        nameJa: translationPayload.nameJa,
-        nameZh: translationPayload.nameZh,
-      },
+      updateDto,
       context.userId ?? null,
     );
 

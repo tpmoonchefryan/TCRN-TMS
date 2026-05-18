@@ -79,6 +79,7 @@ export const PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES = [
   'scheduled',
   'scheduleCancelled',
   'published',
+  'revealAutoSwitched',
   'unpublished',
   'rollbackDraftCreated',
   'validationSnapshotted',

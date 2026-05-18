@@ -1,5 +1,6 @@
 'use client';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Activity } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -59,7 +60,7 @@ type PagedPanelState<T> = {
   error: string | null;
 };
 
-type ObservabilityLocale = 'en' | 'zh' | 'ja' | 'zh_HANS' | 'zh_HANT' | 'ko' | 'fr';
+type ObservabilityLocale = SupportedUiLocale;
 
 type SearchPanelState = {
   data: LogSearchEntry[];
@@ -412,14 +413,14 @@ export function ObservabilityScreen({
   workspaceKind?: 'tenant' | 'ac';
 }>) {
   const { request, session } = useSession();
-  const { selectedLocale, copy, changeActionOptions, severityOptions, directionOptions } =
+  const { locale, copy, changeActionOptions, severityOptions, directionOptions } =
     useObservabilityCopy();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAcWorkspace = workspaceKind === 'ac';
   const workspaceLabel = isAcWorkspace
-    ? pickLocaleText(selectedLocale, {
+    ? pickLocaleText(locale, {
         en: 'Platform',
         zh_HANS: '平台',
         zh_HANT: '平台',
@@ -427,7 +428,7 @@ export function ObservabilityScreen({
         ko: '플랫폼',
         fr: 'Plateforme',
       })
-    : pickLocaleText(selectedLocale, {
+    : pickLocaleText(locale, {
         en: 'Tenant',
         zh_HANS: '租户',
         zh_HANT: '租戶',
@@ -752,7 +753,7 @@ export function ObservabilityScreen({
     techPanel.pagination.totalCount,
   ]);
 
-  const pageSizeLabel = pickLocaleText(selectedLocale, {
+  const pageSizeLabel = pickLocaleText(locale, {
     en: 'Rows per page',
     zh_HANS: '每页条数',
     zh_HANT: '每頁筆數',
@@ -760,7 +761,7 @@ export function ObservabilityScreen({
     ko: '페이지당 행 수',
     fr: 'Lignes par page',
   });
-  const previousPageLabel = pickLocaleText(selectedLocale, {
+  const previousPageLabel = pickLocaleText(locale, {
     en: 'Previous',
     zh_HANS: '上一页',
     zh_HANT: '上一頁',
@@ -768,7 +769,7 @@ export function ObservabilityScreen({
     ko: '이전',
     fr: 'Précédent',
   });
-  const nextPageLabel = pickLocaleText(selectedLocale, {
+  const nextPageLabel = pickLocaleText(locale, {
     en: 'Next',
     zh_HANS: '下一页',
     zh_HANT: '下一頁',
@@ -776,7 +777,7 @@ export function ObservabilityScreen({
     ko: '다음',
     fr: 'Suivant',
   });
-  const viewDetailsLabel = pickLocaleText(selectedLocale, {
+  const viewDetailsLabel = pickLocaleText(locale, {
     en: 'View details',
     zh_HANS: '查看详情',
     zh_HANT: '查看詳情',
@@ -784,7 +785,7 @@ export function ObservabilityScreen({
     ko: '상세 보기',
     fr: 'Voir les détails',
   });
-  const closeDetailsLabel = pickLocaleText(selectedLocale, {
+  const closeDetailsLabel = pickLocaleText(locale, {
     en: 'Close details drawer',
     zh_HANS: '关闭详情抽屉',
     zh_HANT: '關閉詳情抽屜',
@@ -792,7 +793,7 @@ export function ObservabilityScreen({
     ko: '상세 서랍 닫기',
     fr: 'Fermer le panneau de détails',
   });
-  const detailsLabel = pickLocaleText(selectedLocale, {
+  const detailsLabel = pickLocaleText(locale, {
     en: 'Details',
     zh_HANS: '详情',
     zh_HANT: '詳情',
@@ -800,7 +801,7 @@ export function ObservabilityScreen({
     ko: '상세',
     fr: 'Détails',
   });
-  const actorLabel = pickLocaleText(selectedLocale, {
+  const actorLabel = pickLocaleText(locale, {
     en: 'Actor',
     zh_HANS: '操作人',
     zh_HANT: '操作者',
@@ -808,7 +809,7 @@ export function ObservabilityScreen({
     ko: '행위자',
     fr: 'Acteur',
   });
-  const requestLabel = pickLocaleText(selectedLocale, {
+  const requestLabel = pickLocaleText(locale, {
     en: 'Request',
     zh_HANS: '请求',
     zh_HANT: '請求',
@@ -816,7 +817,7 @@ export function ObservabilityScreen({
     ko: '요청',
     fr: 'Requête',
   });
-  const networkLabel = pickLocaleText(selectedLocale, {
+  const networkLabel = pickLocaleText(locale, {
     en: 'Network',
     zh_HANS: '网络',
     zh_HANT: '網路',
@@ -824,7 +825,7 @@ export function ObservabilityScreen({
     ko: '네트워크',
     fr: 'Réseau',
   });
-  const ipLabel = pickLocaleText(selectedLocale, {
+  const ipLabel = pickLocaleText(locale, {
     en: 'IP',
     zh_HANS: 'IP',
     zh_HANT: 'IP',
@@ -832,7 +833,7 @@ export function ObservabilityScreen({
     ko: 'IP',
     fr: 'IP',
   });
-  const sessionLabel = pickLocaleText(selectedLocale, {
+  const sessionLabel = pickLocaleText(locale, {
     en: 'Session',
     zh_HANS: '会话',
     zh_HANT: '工作階段',
@@ -840,7 +841,7 @@ export function ObservabilityScreen({
     ko: '세션',
     fr: 'Session',
   });
-  const fingerprintLabel = pickLocaleText(selectedLocale, {
+  const fingerprintLabel = pickLocaleText(locale, {
     en: 'Fingerprint',
     zh_HANS: '指纹',
     zh_HANT: '指紋',
@@ -848,7 +849,7 @@ export function ObservabilityScreen({
     ko: '핑거프린트',
     fr: 'Empreinte',
   });
-  const traceLabel = pickLocaleText(selectedLocale, {
+  const traceLabel = pickLocaleText(locale, {
     en: 'Trace',
     zh_HANS: '追踪',
     zh_HANT: '追蹤',
@@ -856,7 +857,7 @@ export function ObservabilityScreen({
     ko: '추적',
     fr: 'Trace',
   });
-  const spanLabel = pickLocaleText(selectedLocale, {
+  const spanLabel = pickLocaleText(locale, {
     en: 'Span',
     zh_HANS: 'Span',
     zh_HANT: 'Span',
@@ -864,7 +865,7 @@ export function ObservabilityScreen({
     ko: 'Span',
     fr: 'Span',
   });
-  const sourceLabel = pickLocaleText(selectedLocale, {
+  const sourceLabel = pickLocaleText(locale, {
     en: 'Source',
     zh_HANS: '来源',
     zh_HANT: '來源',
@@ -872,7 +873,7 @@ export function ObservabilityScreen({
     ko: '소스',
     fr: 'Source',
   });
-  const errorLabel = pickLocaleText(selectedLocale, {
+  const errorLabel = pickLocaleText(locale, {
     en: 'Error',
     zh_HANS: '错误',
     zh_HANT: '錯誤',
@@ -880,7 +881,7 @@ export function ObservabilityScreen({
     ko: '오류',
     fr: 'Erreur',
   });
-  const payloadLabel = pickLocaleText(selectedLocale, {
+  const payloadLabel = pickLocaleText(locale, {
     en: 'Payload',
     zh_HANS: 'Payload',
     zh_HANT: 'Payload',
@@ -889,7 +890,7 @@ export function ObservabilityScreen({
     fr: 'Payload',
   });
   const changePageRange = getPaginationRange(changePanel.pagination, changePanel.data.length);
-  const changePaginationLabel = pickLocaleText(selectedLocale, {
+  const changePaginationLabel = pickLocaleText(locale, {
     en: `Page ${changePanel.pagination.page} of ${changePanel.pagination.totalPages}`,
     zh_HANS: `第 ${changePanel.pagination.page} / ${changePanel.pagination.totalPages} 页`,
     zh_HANT: `第 ${changePanel.pagination.page} / ${changePanel.pagination.totalPages} 頁`,
@@ -899,7 +900,7 @@ export function ObservabilityScreen({
   });
   const changePaginationRangeLabel =
     changePanel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No change logs are currently visible.',
           zh_HANS: '当前没有变更日志。',
           zh_HANT: '目前沒有變更日誌。',
@@ -907,7 +908,7 @@ export function ObservabilityScreen({
           ko: '현재 표시할 변경 로그가 없습니다.',
           fr: 'Aucun journal des modifications visible actuellement.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${changePageRange.start}-${changePageRange.end} of ${changePanel.pagination.totalCount}`,
           zh_HANS: `显示第 ${changePageRange.start}-${changePageRange.end} 条，共 ${changePanel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${changePageRange.start}-${changePageRange.end} 筆，共 ${changePanel.pagination.totalCount} 筆`,
@@ -916,7 +917,7 @@ export function ObservabilityScreen({
           fr: `Affichage de ${changePageRange.start} à ${changePageRange.end} sur ${changePanel.pagination.totalCount}`,
         });
   const techPageRange = getPaginationRange(techPanel.pagination, techPanel.data.length);
-  const techPaginationLabel = pickLocaleText(selectedLocale, {
+  const techPaginationLabel = pickLocaleText(locale, {
     en: `Page ${techPanel.pagination.page} of ${techPanel.pagination.totalPages}`,
     zh_HANS: `第 ${techPanel.pagination.page} / ${techPanel.pagination.totalPages} 页`,
     zh_HANT: `第 ${techPanel.pagination.page} / ${techPanel.pagination.totalPages} 頁`,
@@ -926,7 +927,7 @@ export function ObservabilityScreen({
   });
   const techPaginationRangeLabel =
     techPanel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No technical events are currently visible.',
           zh_HANS: '当前没有技术事件。',
           zh_HANT: '目前沒有技術事件。',
@@ -934,7 +935,7 @@ export function ObservabilityScreen({
           ko: '현재 표시할 기술 이벤트가 없습니다.',
           fr: 'Aucun événement technique visible actuellement.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${techPageRange.start}-${techPageRange.end} of ${techPanel.pagination.totalCount}`,
           zh_HANS: `显示第 ${techPageRange.start}-${techPageRange.end} 条，共 ${techPanel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${techPageRange.start}-${techPageRange.end} 筆，共 ${techPanel.pagination.totalCount} 筆`,
@@ -946,7 +947,7 @@ export function ObservabilityScreen({
     integrationPanel.pagination,
     integrationPanel.data.length
   );
-  const integrationPaginationLabel = pickLocaleText(selectedLocale, {
+  const integrationPaginationLabel = pickLocaleText(locale, {
     en: `Page ${integrationPanel.pagination.page} of ${integrationPanel.pagination.totalPages}`,
     zh_HANS: `第 ${integrationPanel.pagination.page} / ${integrationPanel.pagination.totalPages} 页`,
     zh_HANT: `第 ${integrationPanel.pagination.page} / ${integrationPanel.pagination.totalPages} 頁`,
@@ -956,7 +957,7 @@ export function ObservabilityScreen({
   });
   const integrationPaginationRangeLabel =
     integrationPanel.pagination.totalCount === 0
-      ? pickLocaleText(selectedLocale, {
+      ? pickLocaleText(locale, {
           en: 'No integration logs are currently visible.',
           zh_HANS: '当前没有集成日志。',
           zh_HANT: '目前沒有整合日誌。',
@@ -964,7 +965,7 @@ export function ObservabilityScreen({
           ko: '현재 표시할 통합 로그가 없습니다.',
           fr: 'Aucun journal d’intégration visible actuellement.',
         })
-      : pickLocaleText(selectedLocale, {
+      : pickLocaleText(locale, {
           en: `Showing ${integrationPageRange.start}-${integrationPageRange.end} of ${integrationPanel.pagination.totalCount}`,
           zh_HANS: `显示第 ${integrationPageRange.start}-${integrationPageRange.end} 条，共 ${integrationPanel.pagination.totalCount} 条`,
           zh_HANT: `顯示第 ${integrationPageRange.start}-${integrationPageRange.end} 筆，共 ${integrationPanel.pagination.totalCount} 筆`,
@@ -993,7 +994,7 @@ export function ObservabilityScreen({
           <dl className="flex flex-wrap gap-2 text-xs">
             {[
               [copy.summary.tenantLabel, workspaceName],
-              [copy.summary.activeTabLabel, getObservabilityTabLabel(selectedLocale, activeTab)],
+              [copy.summary.activeTabLabel, getObservabilityTabLabel(locale, activeTab)],
               [copy.summary.visibleRowsLabel, String(activeCount)],
               [copy.summary.scopeLabel, workspaceLabel],
             ].map(([label, value]) => (
@@ -1112,7 +1113,7 @@ export function ObservabilityScreen({
                   emptyDescription={copy.changeTable.emptyDescription}
                 >
                   {changePanel.data.map((entry) => {
-                    const diffSummary = summarizeDiff(entry.diff, selectedLocale);
+                    const diffSummary = summarizeDiff(entry.diff, locale);
 
                     return (
                       <tr key={entry.id} className="align-top">
@@ -1127,7 +1128,7 @@ export function ObservabilityScreen({
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {getObservabilityActionLabel(selectedLocale, entry.action)}
+                          {getObservabilityActionLabel(locale, entry.action)}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
                           {entry.operatorName || copy.common.system}
@@ -1151,7 +1152,7 @@ export function ObservabilityScreen({
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
                           {formatObservabilityDateTime(
-                            selectedLocale,
+                            locale,
                             entry.occurredAt,
                             copy.common.timeNever
                           )}
@@ -1301,7 +1302,7 @@ export function ObservabilityScreen({
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {getObservabilitySeverityLabel(selectedLocale, entry.severity)}
+                          {getObservabilitySeverityLabel(locale, entry.severity)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="space-y-1 text-sm text-slate-700">
@@ -1336,7 +1337,7 @@ export function ObservabilityScreen({
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
                           {formatObservabilityDateTime(
-                            selectedLocale,
+                            locale,
                             entry.occurredAt,
                             copy.common.timeNever
                           )}
@@ -1487,7 +1488,7 @@ export function ObservabilityScreen({
                         {entry.consumerCode || copy.common.unattributed}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
-                        {getObservabilityDirectionLabel(selectedLocale, entry.direction)}
+                        {getObservabilityDirectionLabel(locale, entry.direction)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
@@ -1508,7 +1509,7 @@ export function ObservabilityScreen({
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
                         {formatObservabilityDateTime(
-                          selectedLocale,
+                          locale,
                           entry.occurredAt,
                           copy.common.timeNever
                         )}
@@ -1666,7 +1667,7 @@ export function ObservabilityScreen({
                     <tr key={`${entry.timestamp}-${index}`} className="align-top">
                       <td className="px-6 py-4 text-sm text-slate-700">
                         {formatObservabilityDateTime(
-                          selectedLocale,
+                          locale,
                           entry.timestamp,
                           copy.common.timeNever
                         )}
@@ -1676,7 +1677,7 @@ export function ObservabilityScreen({
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
                         {entry.labels.severity
-                          ? getObservabilitySeverityLabel(selectedLocale, entry.labels.severity)
+                          ? getObservabilitySeverityLabel(locale, entry.labels.severity)
                           : copy.common.noRequest}
                       </td>
                       <td className="px-6 py-4">
@@ -1710,7 +1711,7 @@ export function ObservabilityScreen({
             setSelectedChangeLog(null);
           }
         }}
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Change Log Detail',
           zh_HANS: '变更日志详情',
           zh_HANT: '變更日誌詳情',
@@ -1718,7 +1719,7 @@ export function ObservabilityScreen({
           ko: '변경 로그 상세',
           fr: 'Détail du journal des modifications',
         })}
-        description={pickLocaleText(selectedLocale, {
+        description={pickLocaleText(locale, {
           en: 'Review the changed object, actor, request, and complete diff.',
           zh_HANS: '查看变更对象、操作人、请求与完整差异。',
           zh_HANT: '檢視變更物件、操作者、請求與完整差異。',
@@ -1739,7 +1740,7 @@ export function ObservabilityScreen({
                 ],
                 [
                   copy.changeTable.columns[1],
-                  getObservabilityActionLabel(selectedLocale, selectedChangeLog.action),
+                  getObservabilityActionLabel(locale, selectedChangeLog.action),
                 ],
                 [copy.changeTable.columns[2], selectedChangeLog.operatorName || copy.common.system],
                 [requestLabel, selectedChangeLog.requestId || copy.common.noRequest],
@@ -1747,7 +1748,7 @@ export function ObservabilityScreen({
                 [
                   copy.changeTable.columns[5],
                   formatObservabilityDateTime(
-                    selectedLocale,
+                    locale,
                     selectedChangeLog.occurredAt,
                     copy.common.timeNever
                   ),
@@ -1764,7 +1765,7 @@ export function ObservabilityScreen({
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-slate-950">{detailsLabel}</h3>
               <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs leading-5 text-slate-50">
-                {formatDiffDetails(selectedChangeLog.diff, selectedLocale) ||
+                {formatDiffDetails(selectedChangeLog.diff, locale) ||
                   formatJsonBlock(selectedChangeLog.diff) ||
                   copy.common.noMessage}
               </pre>
@@ -1780,7 +1781,7 @@ export function ObservabilityScreen({
             setSelectedTechEvent(null);
           }
         }}
-        title={pickLocaleText(selectedLocale, {
+        title={pickLocaleText(locale, {
           en: 'Technical Event Detail',
           zh_HANS: '技术事件详情',
           zh_HANT: '技術事件詳情',
@@ -1788,7 +1789,7 @@ export function ObservabilityScreen({
           ko: '기술 이벤트 상세',
           fr: 'Détail de l’événement technique',
         })}
-        description={pickLocaleText(selectedLocale, {
+        description={pickLocaleText(locale, {
           en: 'Review actor, tenant, request, network, trace, and raw payload context.',
           zh_HANS: '查看操作人、租户、请求、网络、追踪与原始 payload 上下文。',
           zh_HANT: '檢視操作者、租戶、請求、網路、追蹤與原始 payload 脈絡。',
@@ -1807,7 +1808,7 @@ export function ObservabilityScreen({
                 [copy.techTable.columns[0], selectedTechEvent.eventType],
                 [
                   copy.techTable.columns[1],
-                  getObservabilitySeverityLabel(selectedLocale, selectedTechEvent.severity),
+                  getObservabilitySeverityLabel(locale, selectedTechEvent.severity),
                 ],
                 [actorLabel, context.actor || copy.common.unattributed],
                 [copy.summary.tenantLabel, context.tenant || workspaceName],
@@ -1821,7 +1822,7 @@ export function ObservabilityScreen({
                 [
                   copy.techTable.columns[5],
                   formatObservabilityDateTime(
-                    selectedLocale,
+                    locale,
                     selectedTechEvent.occurredAt,
                     copy.common.timeNever
                   ),

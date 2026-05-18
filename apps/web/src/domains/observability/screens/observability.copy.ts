@@ -1,7 +1,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { type ObservabilityTab } from '@/domains/observability/api/observability.api';
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   resolveLocaleRecord,
@@ -163,7 +163,161 @@ const COPY = {
       latencyUnknown: 'n/a',
     },
   },
-  zh: {
+  zh_HANS: {
+    state: {
+      loadChangeLogsError: '加载变更日志失败。',
+      loadTechEventsError: '加载技术事件失败。',
+      loadIntegrationLogsError: '加载集成日志失败。',
+      loadLogSearchError: '日志搜索失败。',
+    },
+    header: {
+      eyebrowPrefix: '运维',
+      title: '可观测性',
+      description: '在同一页查看近期变更、系统事件、集成流量与日志。',
+    },
+    summary: {
+      tenantLabel: '租户',
+      tenantHint: '当前可观测性租户。',
+      activeTabLabel: '当前页签',
+      activeTabHint: '当前日志视图。',
+      visibleRowsLabel: '可见行数',
+      visibleRowsHint: '当前通道返回的行数。',
+      scopeLabel: '范围',
+      platformScopeHint: '平台级可观测范围。',
+      tenantScopeHint: '租户级可观测范围。',
+    },
+    tabs: {
+      changeLogs: '变更日志',
+      techEvents: '技术事件',
+      integrationLogs: '集成日志',
+      logSearch: '日志搜索',
+    },
+    changeFilters: {
+      title: '变更日志筛选',
+      description: '按对象类型、动作或请求 ID 筛选变更历史，再进一步查看差异摘要。',
+      refresh: '刷新变更日志',
+      pending: '加载中…',
+      objectType: '对象类型',
+      objectTypePlaceholder: 'talent',
+      action: '动作',
+      requestId: '请求 ID',
+      requestIdPlaceholder: 'req_123',
+    },
+    changeTable: {
+      title: '变更日志',
+      description: '在同一张表中查看对象、动作、请求与差异摘要。',
+      unavailableTitle: '变更日志不可用',
+      emptyTitle: '没有返回变更日志',
+      emptyDescription: '当前租户在这些筛选条件下没有返回变更历史。',
+      columns: ['对象', '动作', '操作人', '差异', '请求', '发生时间'],
+    },
+    techFilters: {
+      title: '技术事件筛选',
+      description: '按严重级别、范围、事件类型或追踪 ID 筛选技术事件。',
+      refresh: '刷新技术事件',
+      pending: '加载中…',
+      severity: '严重级别',
+      eventType: '事件类型',
+      eventTypePlaceholder: 'LOGIN_SUCCESS',
+      scope: '范围',
+      scopePlaceholder: 'security',
+      traceId: '追踪 ID',
+      traceIdPlaceholder: 'trace-123',
+    },
+    techTable: {
+      title: '技术事件',
+      description: '在一张表中查看严重级别、范围、消息与追踪上下文。',
+      unavailableTitle: '技术事件不可用',
+      emptyTitle: '没有返回技术事件',
+      emptyDescription: '当前筛选条件没有返回任何技术事件。',
+      columns: ['事件', '严重级别', '范围', '消息', '追踪', '发生时间'],
+    },
+    integrationFilters: {
+      title: '集成日志筛选',
+      description: '按消费者、方向、状态或追踪筛选入站与出站流量，也可切换为仅失败模式。',
+      refresh: '刷新集成日志',
+      pending: '加载中…',
+      consumerCode: '消费者代码',
+      consumerCodePlaceholder: 'PUBLIC_API',
+      direction: '方向',
+      responseStatus: '响应状态',
+      responseStatusPlaceholder: '500',
+      traceId: '追踪 ID',
+      traceIdPlaceholder: 'trace-123',
+      failedOnly: '仅显示失败请求',
+    },
+    integrationTable: {
+      title: '集成日志',
+      description: '集成可观测性会在一张表中保留方向、端点、延迟与追踪上下文。',
+      unavailableTitle: '集成日志不可用',
+      emptyTitle: '没有返回集成日志',
+      emptyDescription: '当前筛选条件没有返回任何集成流量。',
+      columns: ['消费者', '方向', '端点', '状态', '延迟', '追踪', '发生时间'],
+    },
+    searchFilters: {
+      title: '日志搜索',
+      description: '按关键词、流、严重级别和相对时间范围搜索日志。',
+      search: '搜索日志',
+      pending: '搜索中…',
+      keyword: '关键词',
+      keywordPlaceholder: 'webhook',
+      keywordAriaLabel: '日志关键词',
+      stream: '流',
+      streamPlaceholder: 'integration_log',
+      severity: '严重级别',
+      timeRange: '时间范围',
+    },
+    searchTable: {
+      title: '搜索结果',
+      description: '可直接在此搜索日志。',
+      unavailableTitle: '日志搜索不可用',
+      emptyTitle: '没有搜索结果',
+      emptyDescription: '当前日志查询没有返回任何匹配记录。',
+      columns: ['时间戳', '流', '严重级别', '消息'],
+    },
+    cards: {
+      changeTitle: '变更历史',
+      changeDescription: '查看是谁做了变更、何时变更，以及由哪个请求提交了这次更新。',
+      integrationTitle: '集成流量',
+      integrationDescription: '统一查看入站和出站请求的状态、耗时与追踪上下文。',
+      searchTitle: '日志搜索',
+      searchDescription: '在这里搜索日志；如果搜索不可用，应明确显示不可用状态，而不是空表。',
+    },
+    options: {
+      actions: {
+        all: '全部动作',
+        create: '创建',
+        update: '更新',
+        delete: '删除',
+        enable: '启用',
+        disable: '停用',
+        publish: '发布',
+        unpublish: '下线',
+      },
+      severity: {
+        all: '全部级别',
+        info: '信息',
+        warn: '警告',
+        error: '错误',
+      },
+      direction: {
+        all: '入站 + 出站',
+        inbound: '入站',
+        outbound: '出站',
+      },
+    },
+    common: {
+      noMessage: '无消息',
+      noRequest: '无',
+      structuredLogEntry: '结构化日志记录',
+      system: '系统',
+      unattributed: '未归属',
+      unknown: '未知',
+      timeNever: '不可用',
+      latencyUnknown: '无',
+    },
+  },
+  zh_HANT: {
     state: {
       loadChangeLogsError: '加载变更日志失败。',
       loadTechEventsError: '加载技术事件失败。',
@@ -471,18 +625,327 @@ const COPY = {
       latencyUnknown: 'なし',
     },
   },
+  ko: {
+    state: {
+      loadChangeLogsError: 'Failed to load change logs.',
+      loadTechEventsError: 'Failed to load technical events.',
+      loadIntegrationLogsError: 'Failed to load integration logs.',
+      loadLogSearchError: 'Failed to search logs.',
+    },
+    header: {
+      eyebrowPrefix: 'Operations',
+      title: 'Observability',
+      description: 'Review recent changes, system events, integration traffic, and logs.',
+    },
+    summary: {
+      tenantLabel: 'Tenant',
+      tenantHint: 'Current observability tenant.',
+      activeTabLabel: 'Active Tab',
+      activeTabHint: 'Current log view.',
+      visibleRowsLabel: 'Visible Rows',
+      visibleRowsHint: 'Rows returned by the current lane.',
+      scopeLabel: 'Scope',
+      platformScopeHint: 'Platform observability scope.',
+      tenantScopeHint: 'Tenant observability scope.',
+    },
+    tabs: {
+      changeLogs: 'Change Logs',
+      techEvents: 'Tech Events',
+      integrationLogs: 'Integration Logs',
+      logSearch: 'Log Search',
+    },
+    changeFilters: {
+      title: 'Change Log Filters',
+      description: 'Filter change history by object family, action, or request ID before drilling into diff summaries.',
+      refresh: 'Refresh change logs',
+      pending: 'Loading…',
+      objectType: 'Object type',
+      objectTypePlaceholder: 'talent',
+      action: 'Action',
+      requestId: 'Request ID',
+      requestIdPlaceholder: 'req_123',
+    },
+    changeTable: {
+      title: 'Change Logs',
+      description: 'Review changed objects, actions, requests, and summaries in one table.',
+      unavailableTitle: 'Change logs unavailable',
+      emptyTitle: 'No change logs returned',
+      emptyDescription: 'The current tenant did not return any change history for these filters.',
+      columns: ['Object', 'Action', 'Operator', 'Diff', 'Request', 'Occurred'],
+    },
+    techFilters: {
+      title: 'Tech Event Filters',
+      description: 'Filter technical events by severity, scope, event type, or trace ID.',
+      refresh: 'Refresh tech events',
+      pending: 'Loading…',
+      severity: 'Severity',
+      eventType: 'Event type',
+      eventTypePlaceholder: 'LOGIN_SUCCESS',
+      scope: 'Scope',
+      scopePlaceholder: 'security',
+      traceId: 'Trace ID',
+      traceIdPlaceholder: 'trace-123',
+    },
+    techTable: {
+      title: 'Tech Events',
+      description: 'Review severity, scope, message, and trace context in one table.',
+      unavailableTitle: 'Tech events unavailable',
+      emptyTitle: 'No technical events returned',
+      emptyDescription: 'The current filters did not return any technical events.',
+      columns: ['Event', 'Severity', 'Scope', 'Message', 'Trace', 'Occurred'],
+    },
+    integrationFilters: {
+      title: 'Integration Log Filters',
+      description:
+        'Filter inbound and outbound traffic by consumer, direction, status, or trace, and toggle into failed-only mode.',
+      refresh: 'Refresh integration logs',
+      pending: 'Loading…',
+      consumerCode: 'Consumer code',
+      consumerCodePlaceholder: 'PUBLIC_API',
+      direction: 'Direction',
+      responseStatus: 'Response status',
+      responseStatusPlaceholder: '500',
+      traceId: 'Trace ID',
+      traceIdPlaceholder: 'trace-123',
+      failedOnly: 'Show failed requests only',
+    },
+    integrationTable: {
+      title: 'Integration Logs',
+      description: 'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
+      unavailableTitle: 'Integration logs unavailable',
+      emptyTitle: 'No integration logs returned',
+      emptyDescription: 'The current filters did not return any integration traffic.',
+      columns: ['Consumer', 'Direction', 'Endpoint', 'Status', 'Latency', 'Trace', 'Occurred'],
+    },
+    searchFilters: {
+      title: 'Log Search',
+      description: 'Search logs by keyword, stream, severity, and relative time range.',
+      search: 'Search logs',
+      pending: 'Searching…',
+      keyword: 'Keyword',
+      keywordPlaceholder: 'webhook',
+      keywordAriaLabel: 'Log keyword',
+      stream: 'Stream',
+      streamPlaceholder: 'integration_log',
+      severity: 'Severity',
+      timeRange: 'Time range',
+    },
+    searchTable: {
+      title: 'Search Results',
+      description: 'Search logs directly from this page.',
+      unavailableTitle: 'Log search unavailable',
+      emptyTitle: 'No search results',
+      emptyDescription: 'The current log query did not return any matching entries.',
+      columns: ['Timestamp', 'Stream', 'Severity', 'Message'],
+    },
+    cards: {
+      changeTitle: 'Change History',
+      changeDescription: 'Review who changed what, when it changed, and which request carried the update.',
+      integrationTitle: 'Integration Traffic',
+      integrationDescription: 'Track inbound and outbound requests together with status, latency, and trace context.',
+      searchTitle: 'Log Search',
+      searchDescription: 'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
+    },
+    options: {
+      actions: {
+        all: 'All actions',
+        create: 'Create',
+        update: 'Update',
+        delete: 'Delete',
+        enable: 'Enable',
+        disable: 'Disable',
+        publish: 'Publish',
+        unpublish: 'Unpublish',
+      },
+      severity: {
+        all: 'All severities',
+        info: 'Info',
+        warn: 'Warn',
+        error: 'Error',
+      },
+      direction: {
+        all: 'Inbound + outbound',
+        inbound: 'Inbound',
+        outbound: 'Outbound',
+      },
+    },
+    common: {
+      noMessage: 'No message',
+      noRequest: 'n/a',
+      structuredLogEntry: 'Structured log entry',
+      system: 'System',
+      unattributed: 'Unattributed',
+      unknown: 'unknown',
+      timeNever: 'Unavailable',
+      latencyUnknown: 'n/a',
+    },
+  },
+  fr: {
+    state: {
+      loadChangeLogsError: 'Failed to load change logs.',
+      loadTechEventsError: 'Failed to load technical events.',
+      loadIntegrationLogsError: 'Failed to load integration logs.',
+      loadLogSearchError: 'Failed to search logs.',
+    },
+    header: {
+      eyebrowPrefix: 'Operations',
+      title: 'Observability',
+      description: 'Review recent changes, system events, integration traffic, and logs.',
+    },
+    summary: {
+      tenantLabel: 'Tenant',
+      tenantHint: 'Current observability tenant.',
+      activeTabLabel: 'Active Tab',
+      activeTabHint: 'Current log view.',
+      visibleRowsLabel: 'Visible Rows',
+      visibleRowsHint: 'Rows returned by the current lane.',
+      scopeLabel: 'Scope',
+      platformScopeHint: 'Platform observability scope.',
+      tenantScopeHint: 'Tenant observability scope.',
+    },
+    tabs: {
+      changeLogs: 'Change Logs',
+      techEvents: 'Tech Events',
+      integrationLogs: 'Integration Logs',
+      logSearch: 'Log Search',
+    },
+    changeFilters: {
+      title: 'Change Log Filters',
+      description: 'Filter change history by object family, action, or request ID before drilling into diff summaries.',
+      refresh: 'Refresh change logs',
+      pending: 'Loading…',
+      objectType: 'Object type',
+      objectTypePlaceholder: 'talent',
+      action: 'Action',
+      requestId: 'Request ID',
+      requestIdPlaceholder: 'req_123',
+    },
+    changeTable: {
+      title: 'Change Logs',
+      description: 'Review changed objects, actions, requests, and summaries in one table.',
+      unavailableTitle: 'Change logs unavailable',
+      emptyTitle: 'No change logs returned',
+      emptyDescription: 'The current tenant did not return any change history for these filters.',
+      columns: ['Object', 'Action', 'Operator', 'Diff', 'Request', 'Occurred'],
+    },
+    techFilters: {
+      title: 'Tech Event Filters',
+      description: 'Filter technical events by severity, scope, event type, or trace ID.',
+      refresh: 'Refresh tech events',
+      pending: 'Loading…',
+      severity: 'Severity',
+      eventType: 'Event type',
+      eventTypePlaceholder: 'LOGIN_SUCCESS',
+      scope: 'Scope',
+      scopePlaceholder: 'security',
+      traceId: 'Trace ID',
+      traceIdPlaceholder: 'trace-123',
+    },
+    techTable: {
+      title: 'Tech Events',
+      description: 'Review severity, scope, message, and trace context in one table.',
+      unavailableTitle: 'Tech events unavailable',
+      emptyTitle: 'No technical events returned',
+      emptyDescription: 'The current filters did not return any technical events.',
+      columns: ['Event', 'Severity', 'Scope', 'Message', 'Trace', 'Occurred'],
+    },
+    integrationFilters: {
+      title: 'Integration Log Filters',
+      description:
+        'Filter inbound and outbound traffic by consumer, direction, status, or trace, and toggle into failed-only mode.',
+      refresh: 'Refresh integration logs',
+      pending: 'Loading…',
+      consumerCode: 'Consumer code',
+      consumerCodePlaceholder: 'PUBLIC_API',
+      direction: 'Direction',
+      responseStatus: 'Response status',
+      responseStatusPlaceholder: '500',
+      traceId: 'Trace ID',
+      traceIdPlaceholder: 'trace-123',
+      failedOnly: 'Show failed requests only',
+    },
+    integrationTable: {
+      title: 'Integration Logs',
+      description: 'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
+      unavailableTitle: 'Integration logs unavailable',
+      emptyTitle: 'No integration logs returned',
+      emptyDescription: 'The current filters did not return any integration traffic.',
+      columns: ['Consumer', 'Direction', 'Endpoint', 'Status', 'Latency', 'Trace', 'Occurred'],
+    },
+    searchFilters: {
+      title: 'Log Search',
+      description: 'Search logs by keyword, stream, severity, and relative time range.',
+      search: 'Search logs',
+      pending: 'Searching…',
+      keyword: 'Keyword',
+      keywordPlaceholder: 'webhook',
+      keywordAriaLabel: 'Log keyword',
+      stream: 'Stream',
+      streamPlaceholder: 'integration_log',
+      severity: 'Severity',
+      timeRange: 'Time range',
+    },
+    searchTable: {
+      title: 'Search Results',
+      description: 'Search logs directly from this page.',
+      unavailableTitle: 'Log search unavailable',
+      emptyTitle: 'No search results',
+      emptyDescription: 'The current log query did not return any matching entries.',
+      columns: ['Timestamp', 'Stream', 'Severity', 'Message'],
+    },
+    cards: {
+      changeTitle: 'Change History',
+      changeDescription: 'Review who changed what, when it changed, and which request carried the update.',
+      integrationTitle: 'Integration Traffic',
+      integrationDescription: 'Track inbound and outbound requests together with status, latency, and trace context.',
+      searchTitle: 'Log Search',
+      searchDescription: 'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
+    },
+    options: {
+      actions: {
+        all: 'All actions',
+        create: 'Create',
+        update: 'Update',
+        delete: 'Delete',
+        enable: 'Enable',
+        disable: 'Disable',
+        publish: 'Publish',
+        unpublish: 'Unpublish',
+      },
+      severity: {
+        all: 'All severities',
+        info: 'Info',
+        warn: 'Warn',
+        error: 'Error',
+      },
+      direction: {
+        all: 'Inbound + outbound',
+        inbound: 'Inbound',
+        outbound: 'Outbound',
+      },
+    },
+    common: {
+      noMessage: 'No message',
+      noRequest: 'n/a',
+      structuredLogEntry: 'Structured log entry',
+      system: 'System',
+      unattributed: 'Unattributed',
+      unknown: 'unknown',
+      timeNever: 'Unavailable',
+      latencyUnknown: 'n/a',
+    },
+  },
 } as const;
 
 export type ObservabilityCopy = (typeof COPY)['en'];
-const OBSERVABILITY_COPY_RECORD = COPY as unknown as Record<RuntimeLocale, ObservabilityCopy>;
+const OBSERVABILITY_COPY_RECORD = COPY as unknown as Record<SupportedUiLocale, ObservabilityCopy>;
 
 export function useObservabilityCopy() {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const copy = resolveLocaleRecord(selectedLocale, OBSERVABILITY_COPY_RECORD, currentLocale) as ObservabilityCopy;
+  const { locale } = useUiLocale();
+  const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   return {
-    currentLocale,
-    selectedLocale,
+    locale,
     copy,
     changeActionOptions: [
       { value: '', label: copy.options.actions.all },
@@ -509,18 +972,18 @@ export function useObservabilityCopy() {
 }
 
 export function formatObservabilityDateTime(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   value: string | null | undefined,
   fallback: string,
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
 
-export function getObservabilityTabLabel(locale: SupportedUiLocale | RuntimeLocale, tab: ObservabilityTab) {
+export function getObservabilityTabLabel(locale: SupportedUiLocale , tab: ObservabilityTab) {
   return (resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy).tabs[camelCaseTabKey(tab)];
 }
 
-export function getObservabilityActionLabel(locale: SupportedUiLocale | RuntimeLocale, action: string) {
+export function getObservabilityActionLabel(locale: SupportedUiLocale , action: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (action in copy.options.actions) {
@@ -530,7 +993,7 @@ export function getObservabilityActionLabel(locale: SupportedUiLocale | RuntimeL
   return action;
 }
 
-export function getObservabilitySeverityLabel(locale: SupportedUiLocale | RuntimeLocale, severity: string) {
+export function getObservabilitySeverityLabel(locale: SupportedUiLocale , severity: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (severity in copy.options.severity) {
@@ -540,7 +1003,7 @@ export function getObservabilitySeverityLabel(locale: SupportedUiLocale | Runtim
   return severity;
 }
 
-export function getObservabilityDirectionLabel(locale: SupportedUiLocale | RuntimeLocale, direction: string) {
+export function getObservabilityDirectionLabel(locale: SupportedUiLocale , direction: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (direction in copy.options.direction) {

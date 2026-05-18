@@ -1,8 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
+import { Prisma, prisma } from '@tcrn/database';
+import type { LocalizedText } from '@tcrn/shared';
 
+import {
+  readLocalizedText,
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import type { TalentLifecycleStatus } from '../domain/talent-read.policy';
 import { TALENT_SELECT_FIELDS, type TalentData } from '../domain/talent-read.policy';
 import {
@@ -14,6 +19,22 @@ import {
   type TalentDeleteProtectedDependencyCounts,
   type TalentUpdateInput,
 } from '../domain/talent-write.policy';
+
+type TalentRawData = Omit<TalentData, 'name' | 'description'> & {
+  name: Prisma.JsonValue;
+  description: Prisma.JsonValue;
+};
+
+type TalentUpdatePersistenceInput = Omit<TalentUpdateInput, 'name' | 'description'> & {
+  name?: LocalizedText;
+  description?: LocalizedText;
+};
+
+const mapTalentData = (row: TalentRawData): TalentData => ({
+  ...row,
+  name: readLocalizedText(row.name, 'talent.name'),
+  description: readLocalizedText(row.description, 'talent.description'),
+});
 
 @Injectable()
 export class TalentWriteRepository {
@@ -54,29 +75,25 @@ export class TalentWriteRepository {
     },
     userId: string,
   ): Promise<TalentData> {
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `INSERT INTO "${tenantSchema}".talent
-        (id, subsidiary_id, profile_store_id, code, path, name_en, name_zh, name_ja, extra_data, display_name,
-         description_en, description_zh, description_ja, avatar_url, homepage_path, timezone,
+        (id, subsidiary_id, profile_store_id, code, path, name, extra_data, display_name,
+         description, avatar_url, homepage_path, timezone,
          is_active, lifecycle_status, published_at, published_by, settings,
          created_at, updated_at, created_by, updated_by, version)
        VALUES
-        (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15,
-         false, 'draft', NULL, NULL, $16::jsonb, now(), now(), $17::uuid, $17::uuid, 1)
+        (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8::jsonb, $9, $10, $11,
+         false, 'draft', NULL, NULL, $12::jsonb, now(), now(), $13::uuid, $13::uuid, 1)
        RETURNING
          ${TALENT_SELECT_FIELDS}`,
       data.subsidiaryId || null,
       data.profileStoreId,
       data.code,
       data.path,
-      data.nameEn,
-      data.nameZh || null,
-      data.nameJa || null,
+      stringifyLocalizedText(data.name),
       data.extraData ? JSON.stringify(data.extraData) : null,
       data.displayName,
-      data.descriptionEn || null,
-      data.descriptionZh || null,
-      data.descriptionJa || null,
+      stringifyLocalizedText(data.description as LocalizedText),
       data.avatarUrl || null,
       data.homepagePath || null,
       data.timezone || 'UTC',
@@ -84,17 +101,17 @@ export class TalentWriteRepository {
       userId,
     );
 
-    return results[0];
+    return mapTalentData(results[0]);
   }
 
   async update(
     id: string,
     tenantSchema: string,
-    data: TalentUpdateInput,
+    data: TalentUpdatePersistenceInput,
     userId: string,
   ): Promise<TalentData> {
     const mutation = buildTalentUpdateMutation(data, userId);
-    const results = await prisma.$queryRawUnsafe<TalentData[]>(
+    const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `UPDATE "${tenantSchema}".talent
        SET ${mutation.updates.join(', ')}
        WHERE id = $1::uuid
@@ -104,7 +121,7 @@ export class TalentWriteRepository {
       ...mutation.params,
     );
 
-    return results[0];
+    return mapTalentData(results[0]);
   }
 
   async deleteDraftTalent(

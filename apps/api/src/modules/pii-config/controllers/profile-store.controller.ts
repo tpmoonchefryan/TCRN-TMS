@@ -12,7 +12,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
@@ -56,23 +56,31 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
+const PROFILE_STORE_NAME_EXAMPLE = createLocalizedText({
+  en: 'Default Profile Store',
+  zh_HANS: '默认档案库',
+  zh_HANT: '預設檔案庫',
+  ja: 'デフォルトプロフィールストア',
+  fr: 'Magasin de profils par defaut',
+});
+
+const PROFILE_STORE_DESCRIPTION_EXAMPLE = createLocalizedText({
+  en: 'Primary customer profile store',
+  zh_HANS: '主要客户档案库',
+  zh_HANT: '主要客戶檔案庫',
+  ja: '主要な顧客プロフィールストア',
+  fr: 'Magasin principal des profils clients',
+});
+
 const PROFILE_STORE_ITEM_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440600' },
     code: { type: 'string', example: 'DEFAULT_STORE' },
-    name: { type: 'string', example: 'Default Profile Store' },
-    nameZh: { type: 'string', nullable: true, example: '默认档案库' },
-    nameJa: { type: 'string', nullable: true, example: 'デフォルトプロフィールストア' },
-    translations: {
+    name: {
       type: 'object',
       additionalProperties: { type: 'string' },
-      example: {
-        en: 'Default Profile Store',
-        zh_HANS: '默认档案库',
-        zh_HANT: '預設檔案庫',
-        fr: 'Magasin de profils par défaut',
-      },
+      example: PROFILE_STORE_NAME_EXAMPLE,
     },
     talentCount: { type: 'integer', example: 3 },
     customerCount: { type: 'integer', example: 1200 },
@@ -81,7 +89,7 @@ const PROFILE_STORE_ITEM_SCHEMA = {
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'code', 'name', 'translations', 'talentCount', 'customerCount', 'isDefault', 'isActive', 'createdAt', 'version'],
+  required: ['id', 'code', 'name', 'talentCount', 'customerCount', 'isDefault', 'isActive', 'createdAt', 'version'],
 };
 
 const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
@@ -115,15 +123,7 @@ const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
       {
         id: '550e8400-e29b-41d4-a716-446655440600',
         code: 'DEFAULT_STORE',
-        name: 'Default Profile Store',
-        nameZh: '默认档案库',
-        nameJa: 'デフォルトプロフィールストア',
-        translations: {
-          en: 'Default Profile Store',
-          zh_HANS: '默认档案库',
-          zh_HANT: '預設檔案庫',
-          fr: 'Magasin de profils par défaut',
-        },
+        name: PROFILE_STORE_NAME_EXAMPLE,
         talentCount: 3,
         customerCount: 1200,
         isDefault: true,
@@ -150,44 +150,20 @@ const PROFILE_STORE_DETAIL_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       ...PROFILE_STORE_ITEM_SCHEMA.properties,
-      description: { type: 'string', nullable: true, example: 'Primary customer profile store' },
-      descriptionZh: { type: 'string', nullable: true, example: '主要客户档案库' },
-      descriptionJa: { type: 'string', nullable: true, example: '主要な顧客プロフィールストア' },
-      descriptionTranslations: {
+      description: {
         type: 'object',
         additionalProperties: { type: 'string' },
-        example: {
-          en: 'Primary customer profile store',
-          zh_HANS: '主要客户档案库',
-          zh_HANT: '主要客戶檔案庫',
-          fr: 'Magasin principal des profils clients',
-        },
+        example: PROFILE_STORE_DESCRIPTION_EXAMPLE,
       },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     },
-    required: [...(PROFILE_STORE_ITEM_SCHEMA.required as string[]), 'description', 'descriptionTranslations', 'updatedAt'],
+    required: [...(PROFILE_STORE_ITEM_SCHEMA.required as string[]), 'description', 'updatedAt'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440600',
     code: 'DEFAULT_STORE',
-    name: 'Default Profile Store',
-    nameZh: '默认档案库',
-    nameJa: 'デフォルトプロフィールストア',
-    translations: {
-      en: 'Default Profile Store',
-      zh_HANS: '默认档案库',
-      zh_HANT: '預設檔案庫',
-      fr: 'Magasin de profils par défaut',
-    },
-    description: 'Primary customer profile store',
-    descriptionZh: '主要客户档案库',
-    descriptionJa: '主要な顧客プロフィールストア',
-    descriptionTranslations: {
-      en: 'Primary customer profile store',
-      zh_HANS: '主要客户档案库',
-      zh_HANT: '主要客戶檔案庫',
-      fr: 'Magasin principal des profils clients',
-    },
+    name: PROFILE_STORE_NAME_EXAMPLE,
+    description: PROFILE_STORE_DESCRIPTION_EXAMPLE,
     talentCount: 3,
     customerCount: 1200,
     isDefault: true,
@@ -204,7 +180,11 @@ const PROFILE_STORE_CREATE_SCHEMA = createSuccessEnvelopeSchema(
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440600' },
       code: { type: 'string', example: 'DEFAULT_STORE' },
-      name: { type: 'string', example: 'Default Profile Store' },
+      name: {
+        type: 'object',
+        additionalProperties: { type: 'string' },
+        example: PROFILE_STORE_NAME_EXAMPLE,
+      },
       isDefault: { type: 'boolean', example: true },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     },
@@ -213,7 +193,7 @@ const PROFILE_STORE_CREATE_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440600',
     code: 'DEFAULT_STORE',
-    name: 'Default Profile Store',
+    name: PROFILE_STORE_NAME_EXAMPLE,
     isDefault: true,
     createdAt: '2026-04-13T08:00:00.000Z',
   },

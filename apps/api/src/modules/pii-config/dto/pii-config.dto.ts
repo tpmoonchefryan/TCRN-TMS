@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -21,6 +22,42 @@ export enum AuthType {
   API_KEY = 'api_key',
 }
 
+const PII_SERVICE_NAME_EXAMPLE: LocalizedText = {
+  en: 'Default PII Service',
+  zh_HANS: '默认 PII 服务',
+  zh_HANT: '預設 PII 服務',
+  ja: 'デフォルト PII サービス',
+  ko: '기본 PII 서비스',
+  fr: 'Service PII par defaut',
+};
+
+const PII_SERVICE_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Primary PII relay service',
+  zh_HANS: '主 PII 转发服务',
+  zh_HANT: '主 PII 轉發服務',
+  ja: '主要な PII リレーサービス',
+  ko: '주요 PII 릴레이 서비스',
+  fr: 'Service relais PII principal',
+};
+
+const PROFILE_STORE_NAME_EXAMPLE: LocalizedText = {
+  en: 'Default Profile Store',
+  zh_HANS: '默认档案库',
+  zh_HANT: '預設檔案庫',
+  ja: 'デフォルトプロフィールストア',
+  ko: '기본 프로필 저장소',
+  fr: 'Magasin de profils par defaut',
+};
+
+const PROFILE_STORE_DESCRIPTION_EXAMPLE: LocalizedText = {
+  en: 'Primary customer profile store',
+  zh_HANS: '主要客户档案库',
+  zh_HANT: '主要客戶檔案庫',
+  ja: '主要な顧客プロフィールストア',
+  ko: '주요 고객 프로필 저장소',
+  fr: 'Magasin principal des profils clients',
+};
+
 // ============================================================================
 // PII Service Config DTOs
 // ============================================================================
@@ -34,37 +71,22 @@ export class CreatePiiServiceConfigDto {
   })
   code!: string;
 
-  @ApiProperty({ description: 'Name in English', example: 'Default PII Service' })
-  @IsString()
-  @MaxLength(255)
-  nameEn!: string;
+  @ApiProperty({
+    description: 'Localized PII service name keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: PII_SERVICE_NAME_EXAMPLE,
+  })
+  @IsObject()
+  name!: LocalizedText;
 
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '默认 PII 服务' })
+  @ApiPropertyOptional({
+    description: 'Localized PII service description keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: PII_SERVICE_DESCRIPTION_EXAMPLE,
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'デフォルト PII サービス' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Primary PII relay service' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主 PII 转发服务' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '主要な PII リレーサービス' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  @IsObject()
+  description?: PartialLocalizedText;
 
   @ApiProperty({ description: 'Base API URL for the PII service', example: 'https://pii.internal.tcrn.app' })
   @IsUrl()
@@ -113,38 +135,23 @@ export class CreatePiiServiceConfigDto {
 }
 
 export class UpdatePiiServiceConfigDto {
-  @ApiPropertyOptional({ description: 'Name in English', example: 'Default PII Service' })
+  @ApiPropertyOptional({
+    description: 'Localized PII service name patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Default PII Service' },
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameEn?: string;
+  @IsObject()
+  name?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '默认 PII 服务' })
+  @ApiPropertyOptional({
+    description: 'Localized PII service description patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Primary PII relay service' },
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'デフォルト PII サービス' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Primary PII relay service' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主 PII 转发服务' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '主要な PII リレーサービス' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  @IsObject()
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Base API URL for the PII service', example: 'https://pii.internal.tcrn.app' })
   @IsOptional()
@@ -214,59 +221,22 @@ export class CreateProfileStoreDto {
   })
   code!: string;
 
-  @ApiProperty({ description: 'Name in English', example: 'Default Profile Store' })
-  @IsString()
-  @MaxLength(255)
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '默认档案库' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'デフォルトプロフィールストア' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
+  @ApiProperty({
+    description: 'Localized profile-store name keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: PROFILE_STORE_NAME_EXAMPLE,
+  })
+  @IsObject()
+  name!: LocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Locale-keyed managed name translations',
-    example: {
-      zh_HANT: '預設檔案庫',
-      fr: 'Magasin de profils par défaut',
-    },
+    description: 'Localized profile-store description keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: PROFILE_STORE_DESCRIPTION_EXAMPLE,
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Primary customer profile store' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主要客户档案库' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '主要な顧客プロフィールストア' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
-
-  @ApiPropertyOptional({
-    description: 'Locale-keyed managed description translations',
-    example: {
-      zh_HANT: '主要客戶檔案庫',
-      fr: 'Magasin principal des profils clients',
-    },
-  })
-  @IsOptional()
-  @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Whether this store becomes the default store', example: true })
   @IsOptional()
@@ -275,60 +245,23 @@ export class CreateProfileStoreDto {
 }
 
 export class UpdateProfileStoreDto {
-  @ApiPropertyOptional({ description: 'Name in English', example: 'Default Profile Store' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameEn?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Chinese', example: '默认档案库' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameZh?: string;
-
-  @ApiPropertyOptional({ description: 'Name in Japanese', example: 'デフォルトプロフィールストア' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  nameJa?: string;
-
   @ApiPropertyOptional({
-    description: 'Locale-keyed managed name translations',
-    example: {
-      zh_HANT: '預設檔案庫',
-      fr: 'Magasin de profils par défaut',
-    },
+    description: 'Localized profile-store name patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Default Profile Store' },
   })
   @IsOptional()
   @IsObject()
-  translations?: Record<string, string>;
-
-  @ApiPropertyOptional({ description: 'Description in English', example: 'Primary customer profile store' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Chinese', example: '主要客户档案库' })
-  @IsOptional()
-  @IsString()
-  descriptionZh?: string;
-
-  @ApiPropertyOptional({ description: 'Description in Japanese', example: '主要な顧客プロフィールストア' })
-  @IsOptional()
-  @IsString()
-  descriptionJa?: string;
+  name?: PartialLocalizedText;
 
   @ApiPropertyOptional({
-    description: 'Locale-keyed managed description translations',
-    example: {
-      zh_HANT: '主要客戶檔案庫',
-      fr: 'Magasin principal des profils clients',
-    },
+    description: 'Localized profile-store description patch keyed by SupportedUiLocale',
+    additionalProperties: { type: 'string' },
+    example: { en: 'Primary customer profile store' },
   })
   @IsOptional()
   @IsObject()
-  descriptionTranslations?: Record<string, string>;
+  description?: PartialLocalizedText;
 
   @ApiPropertyOptional({ description: 'Whether this store should be the default store', example: true })
   @IsOptional()

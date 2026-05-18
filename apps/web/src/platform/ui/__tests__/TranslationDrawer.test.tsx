@@ -1,16 +1,17 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TranslationDrawer } from '../patterns/TranslationDrawer';
 
 describe('TranslationDrawer', () => {
-  const availableLocales = [
-    { code: 'en', label: 'English' }, // priority
-    { code: 'zh_HANS', label: 'Simplified Chinese' }, // priority
-    { code: 'ko', label: 'Korean' }, // priority
-    { code: 'fr', label: 'French' }, // priority
-    { code: 'de', label: 'German' }, // long-tail
-    { code: 'it', label: 'Italian' }, // long-tail
+  const availableLocales: Array<{ code: SupportedUiLocale; label: string }> = [
+    { code: 'en', label: 'English' },
+    { code: 'zh_HANS', label: 'Simplified Chinese' },
+    { code: 'zh_HANT', label: 'Traditional Chinese' },
+    { code: 'ja', label: 'Japanese' },
+    { code: 'ko', label: 'Korean' },
+    { code: 'fr', label: 'French' },
   ];
 
   const fields = [
@@ -90,18 +91,11 @@ describe('TranslationDrawer', () => {
     expect(nameInputs[1]).toHaveFocus();
   });
 
-  it('supports adding long-tail languages via combobox', async () => {
+  it('does not expose a separate long-tail language picker', () => {
     render(<TranslationDrawer {...defaultProps} />);
-    
-    // 'German' is long-tail, so it should be in the combobox
-    const select = screen.getByRole('combobox', { name: 'Choose another language' });
-    
-    await act(async () => {
-      fireEvent.change(select, { target: { value: 'de' } });
-    });
-    
-    // German block should now be rendered
-    expect(screen.getByText('German', { selector: 'h3' })).toBeInTheDocument();
+
+    expect(screen.queryByRole('combobox', { name: 'Choose another language' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'French' })).toBeInTheDocument();
   });
 
   it('can remove an active language block', async () => {

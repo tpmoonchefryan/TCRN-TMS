@@ -3,6 +3,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
+import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import type {
   IntegrationAdapterConfigRow,
   IntegrationAdapterDetailRow,
@@ -63,7 +64,7 @@ export class AdapterReadRepository {
         ? `WHERE ${conditions.map((condition) => condition.trim()).join(' AND ')}`
         : '';
 
-    return this.databaseService.getPrisma().$queryRawUnsafe<IntegrationAdapterListRow[]>(
+    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<IntegrationAdapterListRow[]>(
       `
         SELECT
           ia.id,
@@ -74,9 +75,7 @@ export class AdapterReadRepository {
           sp.display_name as "platformDisplayName",
           sp.icon_url as "platformIconUrl",
           ia.code,
-          ia.name_en as "nameEn",
-          ia.name_zh as "nameZh",
-          ia.name_ja as "nameJa",
+          ia.name,
           ia.extra_data as "extraData",
           ia.adapter_type as "adapterType",
           ia.inherit,
@@ -97,6 +96,11 @@ export class AdapterReadRepository {
       `,
       ...params,
     );
+
+    return rows.map((row) => ({
+      ...row,
+      name: readLocalizedText(row.name, 'integration_adapter.name'),
+    }));
   }
 
   async findById(
@@ -116,9 +120,7 @@ export class AdapterReadRepository {
           sp.code as "platformCode",
           sp.display_name as "platformDisplayName",
           ia.code,
-          ia.name_en as "nameEn",
-          ia.name_zh as "nameZh",
-          ia.name_ja as "nameJa",
+          ia.name,
           ia.extra_data as "extraData",
           ia.adapter_type as "adapterType",
           ia.inherit,
@@ -136,7 +138,13 @@ export class AdapterReadRepository {
       adapterId,
     );
 
-    return rows[0] ?? null;
+    const row = rows[0];
+    return row
+      ? {
+          ...row,
+          name: readLocalizedText(row.name, 'integration_adapter.name'),
+        }
+      : null;
   }
 
   findConfigs(

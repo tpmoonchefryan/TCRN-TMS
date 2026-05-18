@@ -45,7 +45,8 @@ export async function buildPublicHomepageMetadata(path: string): Promise<Metadat
   const locale = data.metadata.locale || 'en';
   const title = data.metadata.title?.trim() || pickLocaleText(locale, {
     en: 'TCRN TMS',
-    zh: 'TCRN TMS',
+    zh_HANS: 'TCRN TMS',
+    zh_HANT: 'TCRN TMS',
     ja: 'TCRN TMS',
     ko: 'TCRN TMS',
     fr: 'TCRN TMS',
@@ -54,7 +55,8 @@ export async function buildPublicHomepageMetadata(path: string): Promise<Metadat
     data.metadata.description?.trim()
     || pickLocaleText(locale, {
       en: 'Official fan page',
-      zh: '官方粉丝页',
+      zh_HANS: '官方粉丝页',
+      zh_HANT: '官方粉絲頁',
       ja: '公式ファンページ',
       ko: '공식 팬 페이지',
       fr: 'Page fan officielle',

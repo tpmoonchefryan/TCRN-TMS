@@ -1,18 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '../../constants/locale';
+
 // --- Enums ---
 export type AdapterType = 'oauth' | 'api_key' | 'webhook' | 'ai';
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 export type AiProvider = 'OPENAI' | 'ANTHROPIC' | 'GEMINI';
 
-export interface IntegrationLocalizedText {
-  en: string;
-  zh_HANS: string;
-  zh_HANT: string;
-  ja: string;
-  ko: string;
-  fr: string;
-}
+export type IntegrationLocalizedText = LocalizedText;
 
 export type IntegrationAdapterConfigFieldInput =
   | 'text'
@@ -42,9 +37,7 @@ export interface IntegrationAdapterConfigFieldDefinition {
 export interface IntegrationAdapterPlatformBindingDefinition {
   code: string;
   displayName: string;
-  nameEn: string;
-  nameZh?: string;
-  nameJa?: string;
+  name: IntegrationLocalizedText;
   baseUrl?: string | null;
   iconUrl?: string | null;
   color?: string | null;
@@ -385,7 +378,14 @@ const aiAdapterCreateDefinition: IntegrationAdapterDefinition = {
   platform: {
     code: 'AI_ADAPTER',
     displayName: 'AI Adapter',
-    nameEn: 'AI Adapter',
+    name: {
+      en: 'AI Adapter',
+      zh_HANS: 'AI 适配器',
+      zh_HANT: 'AI 適配器',
+      ja: 'AI アダプター',
+      ko: 'AI 어댑터',
+      fr: 'Adaptateur IA',
+    },
     baseUrl: null,
     iconUrl: null,
     color: '#6366F1',
@@ -430,9 +430,14 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
     platform: {
       code: 'BILIBILI',
       displayName: 'Bilibili',
-      nameEn: 'Bilibili',
-      nameZh: '哔哩哔哩',
-      nameJa: 'ビリビリ',
+      name: {
+        en: 'Bilibili',
+        zh_HANS: '哔哩哔哩',
+        zh_HANT: '嗶哩嗶哩',
+        ja: 'ビリビリ',
+        ko: 'Bilibili',
+        fr: 'Bilibili',
+      },
       baseUrl: 'https://www.bilibili.com',
       iconUrl: '/icons/platforms/bilibili.svg',
       color: '#00A1D6',
@@ -499,9 +504,14 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
     platform: {
       code: 'YOUTUBE',
       displayName: 'YouTube',
-      nameEn: 'YouTube',
-      nameZh: 'YouTube',
-      nameJa: 'YouTube',
+      name: {
+        en: 'YouTube',
+        zh_HANS: 'YouTube',
+        zh_HANT: 'YouTube',
+        ja: 'YouTube',
+        ko: 'YouTube',
+        fr: 'YouTube',
+      },
       baseUrl: 'https://www.youtube.com',
       iconUrl: '/icons/platforms/youtube.svg',
       color: '#FF0000',
@@ -596,7 +606,14 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
     platform: {
       code: 'OPENAI',
       displayName: 'OpenAI',
-      nameEn: 'OpenAI',
+      name: {
+        en: 'OpenAI',
+        zh_HANS: 'OpenAI',
+        zh_HANT: 'OpenAI',
+        ja: 'OpenAI',
+        ko: 'OpenAI',
+        fr: 'OpenAI',
+      },
       baseUrl: 'https://api.openai.com',
       iconUrl: null,
       color: '#10A37F',
@@ -638,7 +655,14 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
     platform: {
       code: 'ANTHROPIC',
       displayName: 'Anthropic',
-      nameEn: 'Anthropic',
+      name: {
+        en: 'Anthropic',
+        zh_HANS: 'Anthropic',
+        zh_HANT: 'Anthropic',
+        ja: 'Anthropic',
+        ko: 'Anthropic',
+        fr: 'Anthropic',
+      },
       baseUrl: 'https://api.anthropic.com',
       iconUrl: null,
       color: '#D97757',
@@ -680,7 +704,14 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
     platform: {
       code: 'GEMINI',
       displayName: 'Gemini',
-      nameEn: 'Gemini',
+      name: {
+        en: 'Gemini',
+        zh_HANS: 'Gemini',
+        zh_HANT: 'Gemini',
+        ja: 'Gemini',
+        ko: 'Gemini',
+        fr: 'Gemini',
+      },
       baseUrl: 'https://generativelanguage.googleapis.com',
       iconUrl: null,
       color: '#4285F4',

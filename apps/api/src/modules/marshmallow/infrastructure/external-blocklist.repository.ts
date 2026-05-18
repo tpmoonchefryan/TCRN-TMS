@@ -2,6 +2,9 @@
 
 import { Injectable } from '@nestjs/common';
 
+import {
+  stringifyLocalizedText,
+} from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import type {
   ExternalBlocklistDisableCandidate,
@@ -157,9 +160,7 @@ export class ExternalBlocklistRepository {
           owner_id as "ownerId",
           pattern,
           pattern_type as "patternType",
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           description,
           category,
@@ -198,9 +199,7 @@ export class ExternalBlocklistRepository {
           owner_id as "ownerId",
           pattern,
           pattern_type as "patternType",
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           description,
           category,
@@ -236,9 +235,7 @@ export class ExternalBlocklistRepository {
           owner_id as "ownerId",
           pattern,
           pattern_type as "patternType",
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           description,
           category,
@@ -278,9 +275,7 @@ export class ExternalBlocklistRepository {
           owner_id,
           pattern,
           pattern_type,
-          name_en,
-          name_zh,
-          name_ja,
+          name,
           extra_data,
           description,
           category,
@@ -303,10 +298,10 @@ export class ExternalBlocklistRepository {
           $3::uuid,
           $4,
           $5,
-          $6,
+          $6::jsonb,
           $7,
           $8,
-          $9::jsonb,
+          $9,
           $10,
           $11,
           $12,
@@ -329,9 +324,7 @@ export class ExternalBlocklistRepository {
           owner_id as "ownerId",
           pattern,
           pattern_type as "patternType",
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           description,
           category,
@@ -352,9 +345,7 @@ export class ExternalBlocklistRepository {
       dto.ownerId ?? null,
       dto.pattern,
       dto.patternType,
-      dto.nameEn,
-      dto.nameZh ?? null,
-      dto.nameJa ?? null,
+      stringifyLocalizedText(dto.name),
       dto.extraData ? JSON.stringify(dto.extraData) : null,
       dto.description ?? null,
       dto.category ?? null,
@@ -386,13 +377,11 @@ export class ExternalBlocklistRepository {
     const params: Array<string | number | boolean | null> = [id, now, userId];
     let paramIndex = 4;
 
-    const fields: Array<{ key: keyof (UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null }); column: string }> = [
+    const fields: Array<{ key: keyof (UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null }); column: string; cast?: string }> = [
       { key: 'pattern', column: 'pattern' },
       { key: 'patternType', column: 'pattern_type' },
-      { key: 'nameEn', column: 'name_en' },
-      { key: 'nameZh', column: 'name_zh' },
-      { key: 'nameJa', column: 'name_ja' },
-      { key: 'extraData', column: 'extra_data' },
+      { key: 'name', column: 'name', cast: '::jsonb' },
+      { key: 'extraData', column: 'extra_data', cast: '::jsonb' },
       { key: 'description', column: 'description' },
       { key: 'category', column: 'category' },
       { key: 'severity', column: 'severity' },
@@ -404,14 +393,14 @@ export class ExternalBlocklistRepository {
       { key: 'isForceUse', column: 'is_force_use' },
     ];
 
-    for (const { key, column } of fields) {
+    for (const { key, column, cast } of fields) {
       if (dto[key] !== undefined) {
         const value = dto[key];
         const nextParamIndex = paramIndex++;
 
-        setClauses.push(`${column} = $${nextParamIndex}${key === 'extraData' ? '::jsonb' : ''}`);
+        setClauses.push(`${column} = $${nextParamIndex}${cast ?? ''}`);
         params.push(
-          key === 'extraData' && value && typeof value === 'object'
+          (key === 'extraData' || key === 'name') && value && typeof value === 'object'
             ? JSON.stringify(value)
             : (value as string | number | boolean | null),
         );
@@ -431,9 +420,7 @@ export class ExternalBlocklistRepository {
           owner_id as "ownerId",
           pattern,
           pattern_type as "patternType",
-          name_en as "nameEn",
-          name_zh as "nameZh",
-          name_ja as "nameJa",
+          name,
           extra_data as "extraData",
           description,
           category,
@@ -499,7 +486,7 @@ export class ExternalBlocklistRepository {
           owner_type as "ownerType",
           owner_id as "ownerId",
           is_force_use as "isForceUse",
-          name_en as "nameEn"
+          name
         FROM "${tenantSchema}".external_blocklist_pattern
         WHERE id = $1::uuid
       `,

@@ -32,6 +32,7 @@ import { ApiRequestError } from '@/platform/http/api';
 import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { ActionDrawer, ActionDrawerFooter, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
 
 interface AsyncPanelState<T> {
@@ -61,7 +62,7 @@ function parseSubsidiarySettingsSection(section: string | null): SubsidiarySetti
 }
 
 function resolveDescription(detail: SubsidiaryDetailResponse, fallback: string) {
-  return detail.descriptionZh || detail.descriptionEn || detail.descriptionJa || fallback;
+  return detail.localizedDescription || detail.description.en || fallback;
 }
 
 function FieldRow({
@@ -146,7 +147,7 @@ export function SubsidiarySettingsScreen({
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
-    selectedLocale,
+    locale,
     dictionaryExplorerCopy,
     formatDateTime,
     localizedConfigEntityCatalog,
@@ -204,7 +205,7 @@ export function SubsidiarySettingsScreen({
         const [detailResult, settingsResult, dictionaryResult] = await Promise.allSettled([
           readSubsidiaryDetail(request, subsidiaryId),
           readSubsidiarySettings(request, subsidiaryId),
-          listDictionaryTypes(request, selectedLocale),
+          listDictionaryTypes(request, locale),
         ]);
 
         if (cancelled) {
@@ -279,7 +280,7 @@ export function SubsidiarySettingsScreen({
     return () => {
       cancelled = true;
     };
-  }, [request, selectedLocale, subsidiaryId]);
+  }, [request, locale, subsidiaryId]);
 
   if (loading) {
     return (
@@ -431,7 +432,7 @@ export function SubsidiarySettingsScreen({
   return (
     <>
     <SettingsLayout
-      title={`${detail.name} ${text({
+      title={`${detail.localizedName} ${text({
         en: 'Subsidiary Settings',
         zh_HANS: '分目录设置',
         zh_HANT: '分目錄設定',
@@ -481,7 +482,7 @@ export function SubsidiarySettingsScreen({
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <FieldRow label={text({ en: 'Tenant', zh_HANS: '租户', zh_HANT: '租戶', ja: 'テナント', ko: '테넌트', fr: 'Locataire' })} value={session?.tenantName || common.currentTenant} />
-                <FieldRow label={text({ en: 'Subsidiary', zh_HANS: '分目录', zh_HANT: '分目錄', ja: '配下スコープ', ko: '하위 조직', fr: 'Perimetre' })} value={detail.name} />
+                <FieldRow label={text({ en: 'Subsidiary', zh_HANS: '分目录', zh_HANT: '分目錄', ja: '配下スコープ', ko: '하위 조직', fr: 'Perimetre' })} value={detail.localizedName} />
                 <FieldRow label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Perimetres enfants' })} value={String(detail.childrenCount)} />
                 <FieldRow label={text({ en: 'Attached Talents', zh_HANS: '关联艺人', zh_HANT: '關聯藝人', ja: '所属タレント', ko: '연결된 아티스트', fr: 'Talents rattaches' })} value={String(detail.talentCount)} />
               </div>
@@ -503,7 +504,7 @@ export function SubsidiarySettingsScreen({
               <div className="grid gap-4 xl:grid-cols-2">
                 <FieldRow label={text({ en: 'Subsidiary Code', zh_HANS: '分目录代码', zh_HANT: '分目錄代碼', ja: '配下スコープコード', ko: '하위 조직 코드', fr: 'Code du perimetre' })} value={detail.code} />
                 <FieldRow label={text({ en: 'Path', zh_HANS: '路径', zh_HANT: '路徑', ja: 'パス', ko: '경로', fr: 'Chemin' })} value={detail.path} />
-                <FieldRow label={text({ en: 'Legal Name', zh_HANS: '正式名称', zh_HANT: '正式名稱', ja: '正式名称', ko: '법인명', fr: 'Raison sociale' })} value={detail.nameEn} />
+                <FieldRow label={text({ en: 'Legal Name', zh_HANS: '正式名称', zh_HANT: '正式名稱', ja: '正式名称', ko: '법인명', fr: 'Raison sociale' })} value={pickLocaleText(locale, detail.name)} />
                 <FieldRow
                   label={text({ en: 'Parent scope', zh_HANS: '上级范围', zh_HANT: '上級範圍', ja: '親スコープ', ko: '상위 범위', fr: 'Perimetre parent' })}
                   value={
@@ -629,7 +630,7 @@ export function SubsidiarySettingsScreen({
               requestEnvelope={requestEnvelope}
               scopeType="subsidiary"
               scopeId={subsidiaryId}
-              locale={selectedLocale}
+              locale={locale}
               copy={scopedConfigCopy}
               catalog={localizedConfigEntityCatalog}
             />
@@ -722,7 +723,7 @@ export function SubsidiarySettingsScreen({
                   request={request}
                   requestEnvelope={requestEnvelope}
                   types={dictionaryPanel.data}
-                  locale={selectedLocale}
+                  locale={locale}
                   copy={dictionaryExplorerCopy}
                   allowIncludeInactiveToggle
                   intro={(

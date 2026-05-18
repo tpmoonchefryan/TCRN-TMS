@@ -15,9 +15,9 @@ import {
   RBAC_ACTION_INPUTS,
   RBAC_CANONICAL_ACTIONS,
   RBAC_RESOURCE_CODES,
+  pickLocalizedText,
   type RbacResourceCode,
   resolveRbacPermission,
-  resolveTrilingualLocaleFamily,
 } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
@@ -99,23 +99,6 @@ class CheckPermissionsDto {
 // }
 
 /**
- * Get localized name based on language
- */
-function getLocalizedName(
-  entity: { nameEn: string; nameZh: string | null; nameJa: string | null },
-  language: string = 'en'
-): string {
-  switch (resolveTrilingualLocaleFamily(language)) {
-    case 'zh':
-      return entity.nameZh || entity.nameEn;
-    case 'ja':
-      return entity.nameJa || entity.nameEn;
-    default:
-      return entity.nameEn;
-  }
-}
-
-/**
  * Permission Controller
  * Manages permission entries and checks
  */
@@ -151,7 +134,7 @@ export class PermissionController {
       id: perm.id,
       resourceCode: perm.resourceCode,
       action: perm.action,
-      name: getLocalizedName(perm, language),
+      name: pickLocalizedText(perm.name, language),
       description: perm.description,
       isSystem: perm.isSystem,
       isActive: perm.isActive,

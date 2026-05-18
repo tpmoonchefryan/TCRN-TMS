@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 
 import type { TenantDetail } from '@/domains/platform-tenant-management/api/tenant-management.api';
 import { ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import { formatLocaleDateTime } from '@/platform/runtime/locale/locale-text';
 
 export type TierFilter = 'all' | 'ac' | 'standard';
@@ -42,7 +41,7 @@ export function getErrorMessage(reason: unknown, fallback: string) {
 
 export function formatDateTime(
   value: string | null | undefined,
-  locale: RuntimeLocale | SupportedUiLocale,
+  locale: SupportedUiLocale ,
   fallback: string,
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);

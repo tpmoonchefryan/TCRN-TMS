@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '../../constants/locale';
+
 // Component Types
 export const HOMEPAGE_COMPONENT_TYPES = [
   'ProfileCard',
@@ -132,9 +134,7 @@ export interface ThemeConfig {
 // Component Registry Definition
 export interface ComponentDefinition {
   type: ComponentType;
-  name_en: string;
-  name_zh: string;
-  name_ja: string;
+  name: LocalizedText;
   icon: string; // Lucide icon name
   category: 'core' | 'media' | 'content' | 'layout' | 'interactive';
   defaultProps: Record<string, unknown>;

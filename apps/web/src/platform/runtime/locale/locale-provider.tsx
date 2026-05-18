@@ -1,17 +1,15 @@
 'use client';
 
 import {
+  SUPPORTED_UI_LOCALES,
   normalizeSupportedUiLocale,
-  resolveTrilingualLocaleFamily,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import { createContext, startTransition, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useSession } from '@/platform/runtime/session/session-provider';
 
-export type RuntimeLocale = 'en' | 'zh' | 'ja';
-
-export interface RuntimeLocaleCopy {
+export interface UiLocaleCopy {
   common: {
     accountMenuLabel: string;
     authenticatedUser: string;
@@ -264,27 +262,28 @@ export interface RuntimeLocaleCopy {
   };
 }
 
-interface RuntimeLocaleContextValue {
-  copy: RuntimeLocaleCopy;
-  currentLocale: RuntimeLocale;
-  selectedLocale: SupportedUiLocale;
+interface UiLocaleContextValue {
+  copy: UiLocaleCopy;
+  locale: SupportedUiLocale;
   localeOptions: Array<{ code: SupportedUiLocale; label: string }>;
   setLocale: (localeCode: string) => void;
 }
 
-const LOCALE_OPTIONS: Array<{ code: SupportedUiLocale; label: string }> = [
-  { code: 'en', label: 'English' },
-  { code: 'zh_HANS', label: '简体中文' },
-  { code: 'zh_HANT', label: '繁體中文' },
-  { code: 'ja', label: '日本語' },
-  { code: 'ko', label: '한국어' },
-  { code: 'fr', label: 'Français' },
-];
+const LOCALE_LABELS: Record<SupportedUiLocale, string> = {
+  en: 'English',
+  zh_HANS: '简体中文',
+  zh_HANT: '繁體中文',
+  ja: '日本語',
+  ko: '한국어',
+  fr: 'Français',
+};
+
+const LOCALE_OPTIONS: Array<{ code: SupportedUiLocale; label: string }> =
+  SUPPORTED_UI_LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] }));
 
 const LOCALE_OVERRIDE_STORAGE_KEY = 'tcrn.web.locale.override';
 
-const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
-  en: {
+const enUiLocaleCopy: UiLocaleCopy = {
     common: {
       accountMenuLabel: 'Account menu',
       authenticatedUser: 'Authenticated user',
@@ -543,8 +542,9 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       visibleCustomersLabel: 'Visible Customers',
       workspaceSettingsLink: 'Settings',
     },
-  },
-  zh: {
+  };
+
+const zhHansUiLocaleCopy: UiLocaleCopy = {
     common: {
       accountMenuLabel: '账户菜单',
       authenticatedUser: '当前用户',
@@ -797,8 +797,9 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       visibleCustomersLabel: '当前可见客户',
       workspaceSettingsLink: '设置',
     },
-  },
-  ja: {
+  };
+
+const jaUiLocaleCopy: UiLocaleCopy = {
     common: {
       accountMenuLabel: 'アカウントメニュー',
       authenticatedUser: '認証済みユーザー',
@@ -1057,35 +1058,34 @@ const FAMILY_LOCALE_COPY: Record<RuntimeLocale, RuntimeLocaleCopy> = {
       visibleCustomersLabel: '表示中の顧客',
       workspaceSettingsLink: '設定',
     },
-  },
-};
+  };
 
-interface RuntimeLocaleCopyOverrides {
-  common?: Partial<RuntimeLocaleCopy['common']>;
+interface UiLocaleCopyOverrides {
+  common?: Partial<UiLocaleCopy['common']>;
   auth?: {
-    login?: Partial<RuntimeLocaleCopy['auth']['login']>;
+    login?: Partial<UiLocaleCopy['auth']['login']>;
   };
-  ac?: Partial<Omit<RuntimeLocaleCopy['ac'], 'nav' | 'titles'>> & {
-    nav?: Partial<RuntimeLocaleCopy['ac']['nav']>;
-    titles?: Partial<RuntimeLocaleCopy['ac']['titles']>;
+  ac?: Partial<Omit<UiLocaleCopy['ac'], 'nav' | 'titles'>> & {
+    nav?: Partial<UiLocaleCopy['ac']['nav']>;
+    titles?: Partial<UiLocaleCopy['ac']['titles']>;
   };
-  talentBusiness?: Partial<Omit<RuntimeLocaleCopy['talentBusiness'], 'nav' | 'titles'>> & {
-    nav?: Partial<RuntimeLocaleCopy['talentBusiness']['nav']>;
-    titles?: Partial<RuntimeLocaleCopy['talentBusiness']['titles']>;
+  talentBusiness?: Partial<Omit<UiLocaleCopy['talentBusiness'], 'nav' | 'titles'>> & {
+    nav?: Partial<UiLocaleCopy['talentBusiness']['nav']>;
+    titles?: Partial<UiLocaleCopy['talentBusiness']['titles']>;
   };
-  tenantGovernance?: Partial<Omit<RuntimeLocaleCopy['tenantGovernance'], 'nav' | 'titles'>> & {
-    nav?: Partial<RuntimeLocaleCopy['tenantGovernance']['nav']>;
-    titles?: Partial<RuntimeLocaleCopy['tenantGovernance']['titles']>;
+  tenantGovernance?: Partial<Omit<UiLocaleCopy['tenantGovernance'], 'nav' | 'titles'>> & {
+    nav?: Partial<UiLocaleCopy['tenantGovernance']['nav']>;
+    titles?: Partial<UiLocaleCopy['tenantGovernance']['titles']>;
   };
-  publicHomepage?: Partial<RuntimeLocaleCopy['publicHomepage']>;
-  publicMarshmallow?: Partial<RuntimeLocaleCopy['publicMarshmallow']>;
-  customerManagement?: Partial<RuntimeLocaleCopy['customerManagement']>;
+  publicHomepage?: Partial<UiLocaleCopy['publicHomepage']>;
+  publicMarshmallow?: Partial<UiLocaleCopy['publicMarshmallow']>;
+  customerManagement?: Partial<UiLocaleCopy['customerManagement']>;
 }
 
-function extendRuntimeCopy(
-  base: RuntimeLocaleCopy,
-  overrides: RuntimeLocaleCopyOverrides,
-): RuntimeLocaleCopy {
+function extendUiLocaleCopy(
+  base: UiLocaleCopy,
+  overrides: UiLocaleCopyOverrides,
+): UiLocaleCopy {
   return {
     common: {
       ...base.common,
@@ -1148,10 +1148,10 @@ function extendRuntimeCopy(
   };
 }
 
-const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
-  en: FAMILY_LOCALE_COPY.en,
-  zh_HANS: FAMILY_LOCALE_COPY.zh,
-  zh_HANT: extendRuntimeCopy(FAMILY_LOCALE_COPY.zh, {
+const LOCALE_COPY: Record<SupportedUiLocale, UiLocaleCopy> = {
+  en: enUiLocaleCopy,
+  zh_HANS: zhHansUiLocaleCopy,
+  zh_HANT: extendUiLocaleCopy(zhHansUiLocaleCopy, {
     common: {
       accountMenuLabel: '帳戶選單',
       authenticatedUser: '目前使用者',
@@ -1336,8 +1336,8 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
       unavailableTitle: '公開棉花糖不可用',
     },
   }),
-  ja: FAMILY_LOCALE_COPY.ja,
-  ko: extendRuntimeCopy(FAMILY_LOCALE_COPY.en, {
+  ja: jaUiLocaleCopy,
+  ko: extendUiLocaleCopy(enUiLocaleCopy, {
     common: {
       accountMenuLabel: '계정 메뉴',
       authenticatedUser: '인증 사용자',
@@ -1516,7 +1516,7 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
       unavailableTitle: '공개 마시멜로를 사용할 수 없습니다',
     },
   }),
-  fr: extendRuntimeCopy(FAMILY_LOCALE_COPY.en, {
+  fr: extendUiLocaleCopy(enUiLocaleCopy, {
     common: {
       accountMenuLabel: 'Menu du compte',
       authenticatedUser: 'Utilisateur authentifié',
@@ -1697,11 +1697,7 @@ const LOCALE_COPY: Record<SupportedUiLocale, RuntimeLocaleCopy> = {
   }),
 };
 
-const runtimeLocaleContext = createContext<RuntimeLocaleContextValue | null>(null);
-
-export function normalizeRuntimeLocale(input?: string | null): RuntimeLocale | null {
-  return resolveTrilingualLocaleFamily(input);
-}
+const uiLocaleContext = createContext<UiLocaleContextValue | null>(null);
 
 function normalizeUiLocale(input?: string | null): SupportedUiLocale | null {
   return normalizeSupportedUiLocale(input);
@@ -1736,7 +1732,7 @@ function storeLocaleOverride(locale: SupportedUiLocale | null) {
   window.localStorage.setItem(LOCALE_OVERRIDE_STORAGE_KEY, locale);
 }
 
-export function RuntimeLocaleProvider({
+export function UiLocaleProvider({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -1773,31 +1769,29 @@ export function RuntimeLocaleProvider({
     });
   }
 
-  const selectedLocale =
+  const locale =
     overrideLocale
     ?? normalizeUiLocale(session?.user.preferredLanguage)
     ?? browserLocale;
-  const currentLocale = normalizeRuntimeLocale(selectedLocale) ?? 'en';
 
-  const value = useMemo<RuntimeLocaleContextValue>(
+  const value = useMemo<UiLocaleContextValue>(
     () => ({
-      copy: LOCALE_COPY[selectedLocale] ?? LOCALE_COPY.en,
-      currentLocale,
-      selectedLocale,
+      copy: LOCALE_COPY[locale] ?? LOCALE_COPY.en,
+      locale,
       localeOptions: LOCALE_OPTIONS,
       setLocale,
     }),
-    [currentLocale, selectedLocale],
+    [locale],
   );
 
-  return <runtimeLocaleContext.Provider value={value}>{children}</runtimeLocaleContext.Provider>;
+  return <uiLocaleContext.Provider value={value}>{children}</uiLocaleContext.Provider>;
 }
 
-export function useRuntimeLocale() {
-  const value = useContext(runtimeLocaleContext);
+export function useUiLocale() {
+  const value = useContext(uiLocaleContext);
 
   if (!value) {
-    throw new Error('useRuntimeLocale must be used inside RuntimeLocaleProvider');
+    throw new Error('useUiLocale must be used inside UiLocaleProvider');
   }
 
   return value;

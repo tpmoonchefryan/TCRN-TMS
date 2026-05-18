@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
+import { ErrorCodes, emptyLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import {
   mapCustomerProfileDetailItem,
@@ -210,9 +210,9 @@ export class CustomerProfileReadService {
         ? {
             id: profileStoreData.id,
             code: profileStoreData.code,
-            nameEn: profileStoreData.nameEn,
+            name: profileStoreData.name,
           }
-        : { id: customer.profileStoreId, code: '', nameEn: '' },
+        : { id: customer.profileStoreId, code: '', name: emptyLocalizedText() },
       originTalent: originTalentData
         ? {
             id: originTalentData.id,
@@ -231,7 +231,7 @@ export class CustomerProfileReadService {
         ? {
             id: statusData.id,
             code: statusData.code,
-            nameEn: statusData.nameEn,
+            name: statusData.name,
             color: statusData.color,
           }
         : null,
@@ -239,7 +239,7 @@ export class CustomerProfileReadService {
         ? {
             id: inactivationReasonData.id,
             code: inactivationReasonData.code,
-            nameEn: inactivationReasonData.nameEn,
+            name: inactivationReasonData.name,
           }
         : null,
       companyInfo: companyInfoData
@@ -262,7 +262,7 @@ export class CustomerProfileReadService {
               },
               membershipLevel: {
                 code: highestMembership.levelCode,
-                nameEn: highestMembership.levelName,
+                name: highestMembership.levelName,
                 color: highestMembership.color,
               },
             },

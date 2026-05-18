@@ -1,5 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
+
 export interface MembershipRecordAccessRecord {
   id: string;
   profileStoreId: string;
@@ -99,7 +101,7 @@ export const buildMembershipRecordCreateResult = (
   },
   membershipLevel: {
     code: string;
-    nameEn: string;
+    name: LocalizedText;
   },
 ) => ({
   id: record.id,
@@ -109,7 +111,7 @@ export const buildMembershipRecordCreateResult = (
   },
   membershipLevel: {
     code: membershipLevel.code,
-    name: membershipLevel.nameEn,
+    name: membershipLevel.name.en,
   },
   validFrom: record.validFrom,
   validTo: record.validTo,

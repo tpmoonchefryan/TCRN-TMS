@@ -99,7 +99,7 @@ export class CustomerExternalIdApplicationService {
       id: created.id,
       consumerId: consumer.id,
       consumerCode: consumer.code,
-      consumerName: consumer.nameEn,
+      consumerName: consumer.name,
       externalId: created.externalId,
       createdAt: created.createdAt,
       createdBy: context.userId,

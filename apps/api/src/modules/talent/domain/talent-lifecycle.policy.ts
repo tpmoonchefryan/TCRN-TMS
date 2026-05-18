@@ -46,11 +46,7 @@ export const buildTalentPublishReadiness = (params: {
     });
   }
 
-  if (
-    !params.talent.descriptionEn &&
-    !params.talent.descriptionZh &&
-    !params.talent.descriptionJa
-  ) {
+  if (!Object.values(params.talent.description).some((value) => value.trim())) {
     warnings.push({
       code: 'DESCRIPTION_MISSING',
       message: 'Talent description is still empty.',

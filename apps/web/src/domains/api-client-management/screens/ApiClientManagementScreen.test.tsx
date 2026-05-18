@@ -2,18 +2,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClientManagementScreen } from '@/domains/api-client-management/screens/ApiClientManagementScreen';
-import { type RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = '';
 let pathname = '/ac/tenant-ac/api-clients';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: 'en' as string,
+  locale: 'en' as SupportedUiLocale,
   copy: null,
   setLocale: vi.fn(),
-  availableLocales: ['en', 'zh', 'ja'] as RuntimeLocale[],
+  availableLocales: [...SUPPORTED_UI_LOCALES],
 };
 
 vi.mock('next/navigation', () => ({
@@ -42,7 +41,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 describe('ApiClientManagementScreen', () => {

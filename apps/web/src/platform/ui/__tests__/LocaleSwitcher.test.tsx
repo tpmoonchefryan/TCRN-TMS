@@ -5,7 +5,7 @@ import { LocaleSwitcher } from '../patterns/LocaleSwitcher';
 
 describe('LocaleSwitcher', () => {
   const defaultProps = {
-    currentLocale: 'en',
+    locale: 'en',
     options: [
       { code: 'en', label: 'English' },
       { code: 'zh', label: '中文' },

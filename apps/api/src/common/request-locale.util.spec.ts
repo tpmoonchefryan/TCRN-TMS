@@ -4,9 +4,10 @@ import type { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildLocalizedJsonTextSql,
   getPrimaryAcceptLanguage,
-  getRequestTrilingualLocaleFamily,
-  getTrilingualNameColumn,
+  getRequestUiLocale,
+  getUiLocale,
 } from './request-locale.util';
 
 function requestWithAcceptLanguage(value?: string | string[]): Request {
@@ -20,19 +21,25 @@ describe('request locale helpers', () => {
     const req = requestWithAcceptLanguage('zh-Hant-TW,zh;q=0.9,en;q=0.8');
 
     expect(getPrimaryAcceptLanguage(req)).toBe('zh-Hant-TW');
-    expect(getRequestTrilingualLocaleFamily(req)).toBe('zh');
-    expect(getTrilingualNameColumn(getPrimaryAcceptLanguage(req))).toBe('name_zh');
+    expect(getRequestUiLocale(req)).toBe('zh_HANT');
+    expect(getUiLocale(getPrimaryAcceptLanguage(req))).toBe('zh_HANT');
   });
 
-  it('falls back non-trilingual UI locales to the English legacy name column', () => {
-    expect(getTrilingualNameColumn('fr-FR')).toBe('name_en');
-    expect(getTrilingualNameColumn('ko-KR')).toBe('name_en');
+  it('normalizes every supported UI locale through the same source list', () => {
+    expect(getUiLocale('fr-FR')).toBe('fr');
+    expect(getUiLocale('ko-KR')).toBe('ko');
   });
 
   it('uses English when Accept-Language is absent', () => {
     const req = requestWithAcceptLanguage();
 
     expect(getPrimaryAcceptLanguage(req)).toBe('en');
-    expect(getRequestTrilingualLocaleFamily(req)).toBe('en');
+    expect(getRequestUiLocale(req)).toBe('en');
+  });
+
+  it('builds JSONB localized text SQL from the normalized UI locale', () => {
+    expect(buildLocalizedJsonTextSql('name', 'fr-FR')).toBe(
+      "COALESCE(NULLIF(name->>'fr', ''), NULLIF(name->>'en', ''), name->>'en')",
+    );
   });
 });

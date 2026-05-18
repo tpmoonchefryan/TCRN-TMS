@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ApiSuccessEnvelope } from '@/platform/http/api';
 
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { type ConfigEntityRecord, listAllConfigEntities, listProfileStores, type RequestEnvelopeFn } from './settings.api';
 
 function buildConfigEntity(id: string): ConfigEntityRecord {
@@ -10,18 +11,10 @@ function buildConfigEntity(id: string): ConfigEntityRecord {
     ownerType: 'talent',
     ownerId: 'talent-1',
     code: id.toUpperCase(),
-    name: id,
-    nameEn: id,
-    nameZh: null,
-    nameJa: null,
-    translations: {
-      en: id,
-    },
+    name: localizedFixture(id),
+    localizedName: id,
     description: null,
-    descriptionEn: null,
-    descriptionZh: null,
-    descriptionJa: null,
-    descriptionTranslations: {},
+    localizedDescription: null,
     sortOrder: 0,
     isActive: true,
     isForceUse: false,
@@ -101,10 +94,7 @@ describe('settings.api listProfileStores', () => {
         {
           id: 'store-1',
           code: 'DEFAULT_STORE',
-          name: 'Default Store',
-          nameZh: null,
-          nameJa: null,
-          translations: { en: 'Default Store' },
+          name: localizedFixture('Default Store'),
           talentCount: 2,
           customerCount: 18,
           isDefault: true,

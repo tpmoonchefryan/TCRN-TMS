@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OwnerType } from '../dto/integration.dto';
@@ -37,6 +37,7 @@ describe('AdapterResolutionApplicationService', () => {
     mockRepository,
     mockCryptoService,
   );
+  const localized = (en: string) => createLocalizedText({ en });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,9 +59,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TENANT_PII',
-        nameEn: 'Tenant PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Tenant PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -76,9 +75,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'SUBSIDIARY_PII',
-        nameEn: 'Subsidiary PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Subsidiary PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -94,9 +91,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TALENT_PII',
-        nameEn: 'Talent PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Talent PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -135,9 +130,7 @@ describe('AdapterResolutionApplicationService', () => {
         displayName: 'TCRN PII Platform',
       },
       code: 'TALENT_PII',
-      nameEn: 'Talent PII',
-      nameZh: null,
-      nameJa: null,
+      name: localized('Talent PII'),
       adapterType: 'api_key',
       inherit: true,
       isActive: true,
@@ -174,9 +167,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TENANT_PII',
-        nameEn: 'Tenant PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Tenant PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -192,9 +183,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'SUBSIDIARY_PII',
-        nameEn: 'Subsidiary PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Subsidiary PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -236,9 +225,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TENANT_PII',
-        nameEn: 'Tenant PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Tenant PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -254,9 +241,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'SUBSIDIARY_PII',
-        nameEn: 'Subsidiary PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Subsidiary PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: false,
@@ -292,9 +277,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TENANT_PII',
-        nameEn: 'Tenant PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Tenant PII'),
         adapterType: 'api_key',
         inherit: true,
         isActive: true,
@@ -334,9 +317,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         platformDisplayName: 'TCRN PII Platform',
         code: 'TENANT_PII',
-        nameEn: 'Tenant PII',
-        nameZh: null,
-        nameJa: null,
+        name: localized('Tenant PII'),
         adapterType: 'api_key',
         inherit: false,
         isActive: true,

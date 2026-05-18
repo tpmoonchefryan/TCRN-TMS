@@ -4,6 +4,8 @@ import {
   ADAPTER_CONFIG_KEYS,
   type IntegrationAdapterDefinition,
   type IntegrationWebhookDefinition,
+  type LocalizedText,
+  type PartialLocalizedText,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import {
@@ -84,7 +86,6 @@ import {
 } from '@/domains/integration-management/api/integration-management.api';
 import {
   formatIntegrationManagementDateTime,
-  pickIntegrationLocalizedName,
   useIntegrationManagementCopy,
 } from '@/domains/integration-management/screens/integration-management.copy';
 import {
@@ -94,7 +95,14 @@ import {
   readOrganizationTree,
 } from '@/domains/organization-access/api/organization.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  buildLocalizedTextPayload,
+  extractLocalizedTextPayload,
+  extractSingleFieldTranslationPayload,
+  loadTranslationLanguageOptions,
+  pickLocaleText,
+  type TranslationLanguageOption,
+} from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
@@ -105,15 +113,6 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import {
-  buildManagedTranslations,
-  extractManagedTranslations,
-  extractSingleFieldTranslationPayload,
-  loadTranslationLanguageOptions,
-  pickLegacyLocaleValue,
-  resolveLocalizedLabel,
-  type TranslationLanguageOption,
-} from '@/platform/runtime/translations/managed-translations';
 import {
   ActionDrawer,
   AsyncSubmitButton,
@@ -171,10 +170,8 @@ interface AdapterDraft {
   definitionKey: string;
   platformId: string;
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
   adapterType: 'oauth' | 'api_key' | 'webhook' | 'ai';
   inherit: boolean;
 }
@@ -194,10 +191,8 @@ interface AdapterConfigDraftRow {
 interface WebhookDraft {
   definitionKey: string;
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
   url: string;
   secret: string;
   selectedEvents: string[];
@@ -209,10 +204,8 @@ interface WebhookDraft {
 
 interface ConsumerDraft {
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
   consumerCategory: 'internal' | 'external' | 'partner';
   contactName: string;
   contactEmail: string;
@@ -254,22 +247,14 @@ interface TranslationOptionsState {
 
 interface EmailTemplateDraft {
   code: string;
-  nameEn: string;
-  nameTranslations: Record<string, string>;
-  nameZh: string;
-  nameJa: string;
-  subjectEn: string;
-  subjectTranslations: Record<string, string>;
-  subjectZh: string;
-  subjectJa: string;
-  bodyHtmlEn: string;
-  bodyHtmlTranslations: Record<string, string>;
-  bodyHtmlZh: string;
-  bodyHtmlJa: string;
-  bodyTextEn: string;
-  bodyTextTranslations: Record<string, string>;
-  bodyTextZh: string;
-  bodyTextJa: string;
+  nameBase: string;
+  nameLocaleValues: PartialLocalizedText;
+  subjectBase: string;
+  subjectLocaleValues: PartialLocalizedText;
+  bodyHtmlBase: string;
+  bodyHtmlLocaleValues: PartialLocalizedText;
+  bodyTextBase: string;
+  bodyTextLocaleValues: PartialLocalizedText;
   variablesText: string;
   category: EmailTemplateCategory;
 }
@@ -413,29 +398,18 @@ function splitCommaList(value: string) {
   return items.length > 0 ? items : undefined;
 }
 
-function definitionLocalizedTextToTranslations(
-  value?: IntegrationAdapterDefinition['name'] | IntegrationWebhookDefinition['name'] | null,
-): Record<string, string> {
-  return value ? { ...value } : {};
-}
-
 function buildAdapterDraft(
   record?: IntegrationAdapterDetailRecord,
   definition?: IntegrationAdapterDefinition | null,
 ): AdapterDraft {
+  const sourceName = record?.name ?? definition?.name;
+
   return {
     definitionKey: record?.definitionKey || definition?.key || '',
     platformId: record?.platform.id || '',
     code: record?.code || definition?.code || '',
-    nameEn: record?.nameEn || definition?.name.en || '',
-    nameTranslations: record
-      ? extractManagedTranslations(record.nameEn, record.translations, {
-          zh_HANS: record.nameZh,
-          ja: record.nameJa,
-        })
-      : definitionLocalizedTextToTranslations(definition?.name),
-    nameZh: record?.nameZh || definition?.name.zh_HANS || '',
-    nameJa: record?.nameJa || definition?.name.ja || '',
+    nameBase: sourceName?.en || '',
+    nameLocaleValues: extractLocalizedTextPayload(sourceName),
     adapterType: record?.adapterType || definition?.adapterType || 'api_key',
     inherit: record?.inherit ?? true,
   };
@@ -505,18 +479,13 @@ function buildWebhookDraft(
   record?: IntegrationWebhookDetailRecord,
   definition?: IntegrationWebhookDefinition | null,
 ): WebhookDraft {
+  const sourceName = record?.name ?? definition?.name;
+
   return {
     definitionKey: record?.definitionKey || definition?.key || '',
     code: record?.code || definition?.code || '',
-    nameEn: record?.nameEn || definition?.name.en || '',
-    nameTranslations: record
-      ? extractManagedTranslations(record.nameEn, record.translations, {
-          zh_HANS: record.nameZh,
-          ja: record.nameJa,
-        })
-      : definitionLocalizedTextToTranslations(definition?.name),
-    nameZh: record?.nameZh || definition?.name.zh_HANS || '',
-    nameJa: record?.nameJa || definition?.name.ja || '',
+    nameBase: sourceName?.en || '',
+    nameLocaleValues: extractLocalizedTextPayload(sourceName),
     url: record?.url || '',
     secret: '',
     selectedEvents: record?.events || definition?.events || [],
@@ -566,13 +535,8 @@ function collectMonitoredTalentOptions(
 function buildConsumerDraft(record?: IntegrationConsumerRecord): ConsumerDraft {
   return {
     code: record?.code || '',
-    nameEn: record?.nameEn || '',
-    nameTranslations: extractManagedTranslations(record?.nameEn, record?.translations, {
-      zh_HANS: record?.nameZh,
-      ja: record?.nameJa,
-    }),
-    nameZh: record?.nameZh || '',
-    nameJa: record?.nameJa || '',
+    nameBase: record?.name.en || '',
+    nameLocaleValues: extractLocalizedTextPayload(record?.name),
     consumerCategory: record?.consumerCategory || 'external',
     contactName: record?.contactName || '',
     contactEmail: record?.contactEmail || '',
@@ -617,34 +581,14 @@ function buildEmailConfigDraft(record?: EmailConfigResponse): EmailConfigDraft {
 function buildEmailTemplateDraft(record?: EmailTemplateRecord): EmailTemplateDraft {
   return {
     code: record?.code || '',
-    nameEn: record?.nameEn || '',
-    nameTranslations: extractManagedTranslations(record?.nameEn, record?.translations, {
-      zh_HANS: record?.nameZh,
-      ja: record?.nameJa,
-    }),
-    nameZh: record?.nameZh || '',
-    nameJa: record?.nameJa || '',
-    subjectEn: record?.subjectEn || '',
-    subjectTranslations: extractManagedTranslations(record?.subjectEn, record?.subjectTranslations, {
-      zh_HANS: record?.subjectZh,
-      ja: record?.subjectJa,
-    }),
-    subjectZh: record?.subjectZh || '',
-    subjectJa: record?.subjectJa || '',
-    bodyHtmlEn: record?.bodyHtmlEn || '',
-    bodyHtmlTranslations: extractManagedTranslations(record?.bodyHtmlEn, record?.bodyHtmlTranslations, {
-      zh_HANS: record?.bodyHtmlZh,
-      ja: record?.bodyHtmlJa,
-    }),
-    bodyHtmlZh: record?.bodyHtmlZh || '',
-    bodyHtmlJa: record?.bodyHtmlJa || '',
-    bodyTextEn: record?.bodyTextEn || '',
-    bodyTextTranslations: extractManagedTranslations(record?.bodyTextEn, record?.bodyTextTranslations, {
-      zh_HANS: record?.bodyTextZh,
-      ja: record?.bodyTextJa,
-    }),
-    bodyTextZh: record?.bodyTextZh || '',
-    bodyTextJa: record?.bodyTextJa || '',
+    nameBase: record?.name.en || '',
+    nameLocaleValues: extractLocalizedTextPayload(record?.name),
+    subjectBase: record?.subject.en || '',
+    subjectLocaleValues: extractLocalizedTextPayload(record?.subject),
+    bodyHtmlBase: record?.bodyHtml.en || '',
+    bodyHtmlLocaleValues: extractLocalizedTextPayload(record?.bodyHtml),
+    bodyTextBase: record?.bodyText.en || '',
+    bodyTextLocaleValues: extractLocalizedTextPayload(record?.bodyText),
     variablesText: record?.variables.join(', ') || '',
     category: record?.category || 'system',
   };
@@ -950,7 +894,7 @@ function buildIntegrationPaginationQueryState(
 }
 
 function buildPaginationFooterLabels(
-  locale: SupportedUiLocale | 'en' | 'zh' | 'ja',
+  locale: SupportedUiLocale,
   pagination: ApiPaginationMeta,
   itemCount: number,
 ): PaginationFooterLabels {
@@ -1139,7 +1083,7 @@ export function IntegrationManagementScreen({
 }>) {
   const { request, requestEnvelope, session } = useSession();
   const {
-    selectedLocale,
+    locale,
     text,
     tabLabel,
     adapterTypeLabel,
@@ -1656,7 +1600,7 @@ export function IntegrationManagementScreen({
       const result = await loadTranslationLanguageOptions(
         request,
         requestEnvelope,
-        selectedLocale,
+        locale,
         translationLanguageLoadError,
       );
 
@@ -1676,7 +1620,7 @@ export function IntegrationManagementScreen({
     return () => {
       cancelled = true;
     };
-  }, [isAnyTranslationDrawerOpen, request, requestEnvelope, selectedLocale, translationLanguageLoadError]);
+  }, [isAnyTranslationDrawerOpen, request, requestEnvelope, locale, translationLanguageLoadError]);
 
   useEffect(() => {
     if (isAcWorkspace) {
@@ -2707,43 +2651,25 @@ export function IntegrationManagementScreen({
     };
   }, [hasDirtyEditor]);
   const formatDateTime = (value: string | null | undefined, fallback = text('Never', '从未', 'なし')) =>
-    formatIntegrationManagementDateTime(selectedLocale, value, fallback);
-  const pickLocalizedName = (
-    english: string | null | undefined,
-    chinese: string | null | undefined,
-    japanese: string | null | undefined,
+    formatIntegrationManagementDateTime(locale, value, fallback);
+  const pickLocalizedLabel = (
+    value: LocalizedText | null | undefined,
     fallback: string,
-  ) => pickIntegrationLocalizedName(selectedLocale, english, chinese, japanese, fallback);
-  const pickManagedLocalizedLabel = (
-    translations: Record<string, string> | null | undefined,
-    english: string | null | undefined,
-    chinese: string | null | undefined,
-    japanese: string | null | undefined,
-    fallback: string,
-    ) =>
-    resolveLocalizedLabel(
-      translations ?? {},
-      selectedLocale,
-      pickLocalizedName(english, chinese, japanese, fallback),
-    );
+  ) => (value ? pickLocaleText(locale, value) : fallback);
   const pickConsumerDisplayName = (consumer: IntegrationConsumerRecord) =>
-    pickManagedLocalizedLabel(consumer.translations, consumer.nameEn, consumer.nameZh, consumer.nameJa, consumer.code);
+    consumer.localizedName || pickLocalizedLabel(consumer.name, consumer.code);
   const pickTemplateName = (template: EmailTemplateRecord) =>
-    pickManagedLocalizedLabel(template.translations, template.nameEn, template.nameZh, template.nameJa, template.code);
+    pickLocalizedLabel(template.name, template.code);
   const pickTemplateSubject = (template: EmailTemplateRecord) =>
-    resolveLocalizedLabel(
-      template.subjectTranslations ?? {},
-      selectedLocale,
-      pickLocalizedName(template.subjectEn, template.subjectZh, template.subjectJa, template.subjectEn),
-    );
+    pickLocalizedLabel(template.subject, template.subject.en);
   const pickAdapterDefinitionText = (
     value: IntegrationAdapterDefinition['name'] | IntegrationAdapterDefinition['description'] | undefined,
     fallback = '',
-  ) => (value ? pickLocaleText(selectedLocale, value) : fallback);
+  ) => (value ? pickLocaleText(locale, value) : fallback);
   const pickWebhookDefinitionText = (
     value: IntegrationWebhookDefinition['name'] | IntegrationWebhookDefinition['description'] | undefined,
     fallback = '',
-  ) => (value ? pickLocaleText(selectedLocale, value) : fallback);
+  ) => (value ? pickLocaleText(locale, value) : fallback);
   const getInvalidHeaderMessage = (line: string) =>
     text(
       `Invalid header entry "${line}". Use "Header-Name: value".`,
@@ -2903,7 +2829,6 @@ export function IntegrationManagementScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(adapterDraft.nameEn, adapterDraft.nameTranslations);
       if (adapterCreateMode) {
         const payload = {
           definitionKey: selectedAdapterDefinition?.key,
@@ -2936,10 +2861,7 @@ export function IntegrationManagementScreen({
         });
       } else if (selectedAdapterId && adapterDetailPanel.data) {
         const updated = await updateTenantAdapter(request, selectedAdapterId, {
-          nameEn: trimToUndefined(adapterDraft.nameEn),
-          nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-          nameJa: pickLegacyLocaleValue(translations, 'ja'),
-          translations,
+          name: buildLocalizedTextPayload(adapterDraft.nameBase, adapterDraft.nameLocaleValues),
           inherit: adapterDraft.inherit,
           version: adapterDetailPanel.data.version,
         });
@@ -3117,7 +3039,6 @@ export function IntegrationManagementScreen({
 
     try {
       const headers = parseHeaderLines(webhookDraft.headersText, getInvalidHeaderMessage);
-      const translations = buildManagedTranslations(webhookDraft.nameEn, webhookDraft.nameTranslations);
       const payload = webhookCreateMode && selectedWebhookDefinition
         ? {
             definitionKey: selectedWebhookDefinition.key,
@@ -3132,10 +3053,7 @@ export function IntegrationManagementScreen({
           }
         : {
             code: webhookDraft.code.trim().toUpperCase(),
-            nameEn: webhookDraft.nameEn.trim(),
-            nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-            nameJa: pickLegacyLocaleValue(translations, 'ja'),
-            translations,
+            name: buildLocalizedTextPayload(webhookDraft.nameBase, webhookDraft.nameLocaleValues),
             url: webhookDraft.url.trim(),
             secret: trimToUndefined(webhookDraft.secret),
             events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
@@ -3163,10 +3081,7 @@ export function IntegrationManagementScreen({
         });
       } else if (selectedWebhookId && webhookDetailPanel.data) {
         const updated = await updateWebhook(request, selectedWebhookId, {
-          nameEn: payload.nameEn,
-          nameZh: payload.nameZh,
-          nameJa: payload.nameJa,
-          translations: payload.translations,
+          name: payload.name,
           url: payload.url,
           secret: payload.secret,
           events: payload.events,
@@ -3208,15 +3123,9 @@ export function IntegrationManagementScreen({
     setNotice(null);
 
     try {
-      const translations = buildManagedTranslations(consumerDraft.nameEn, consumerDraft.nameTranslations);
-      const nameZh = pickLegacyLocaleValue(translations, 'zh_HANS');
-      const nameJa = pickLegacyLocaleValue(translations, 'ja');
       const payload = {
         code: consumerDraft.code.trim().toUpperCase(),
-        nameEn: consumerDraft.nameEn.trim(),
-        nameZh,
-        nameJa,
-        translations,
+        name: buildLocalizedTextPayload(consumerDraft.nameBase, consumerDraft.nameLocaleValues),
         consumerCategory: consumerDraft.consumerCategory,
         contactName: trimToUndefined(consumerDraft.contactName),
         contactEmail: trimToUndefined(consumerDraft.contactEmail),
@@ -3399,28 +3308,12 @@ export function IntegrationManagementScreen({
     setNotice(null);
 
     try {
-      const nameTranslations = buildManagedTranslations(templateDraft.nameEn, templateDraft.nameTranslations);
-      const subjectTranslations = buildManagedTranslations(templateDraft.subjectEn, templateDraft.subjectTranslations);
-      const bodyHtmlTranslations = buildManagedTranslations(templateDraft.bodyHtmlEn, templateDraft.bodyHtmlTranslations);
-      const bodyTextTranslations = buildManagedTranslations(templateDraft.bodyTextEn, templateDraft.bodyTextTranslations);
       const payload = {
         code: templateDraft.code.trim().toUpperCase(),
-        nameEn: templateDraft.nameEn.trim(),
-        nameZh: pickLegacyLocaleValue(nameTranslations, 'zh_HANS'),
-        nameJa: pickLegacyLocaleValue(nameTranslations, 'ja'),
-        translations: nameTranslations,
-        subjectEn: templateDraft.subjectEn.trim(),
-        subjectZh: pickLegacyLocaleValue(subjectTranslations, 'zh_HANS'),
-        subjectJa: pickLegacyLocaleValue(subjectTranslations, 'ja'),
-        subjectTranslations,
-        bodyHtmlEn: templateDraft.bodyHtmlEn,
-        bodyHtmlZh: pickLegacyLocaleValue(bodyHtmlTranslations, 'zh_HANS'),
-        bodyHtmlJa: pickLegacyLocaleValue(bodyHtmlTranslations, 'ja'),
-        bodyHtmlTranslations,
-        bodyTextEn: trimToUndefined(templateDraft.bodyTextEn),
-        bodyTextZh: pickLegacyLocaleValue(bodyTextTranslations, 'zh_HANS'),
-        bodyTextJa: pickLegacyLocaleValue(bodyTextTranslations, 'ja'),
-        bodyTextTranslations,
+        name: buildLocalizedTextPayload(templateDraft.nameBase, templateDraft.nameLocaleValues),
+        subject: buildLocalizedTextPayload(templateDraft.subjectBase, templateDraft.subjectLocaleValues),
+        bodyHtml: buildLocalizedTextPayload(templateDraft.bodyHtmlBase, templateDraft.bodyHtmlLocaleValues),
+        bodyText: buildLocalizedTextPayload(templateDraft.bodyTextBase, templateDraft.bodyTextLocaleValues),
         variables: splitCommaList(templateDraft.variablesText),
         category: templateDraft.category,
       };
@@ -3441,22 +3334,10 @@ export function IntegrationManagementScreen({
         });
       } else if (selectedTemplateCode) {
         const updated = await updateEmailTemplate(request, selectedTemplateCode, {
-          nameEn: payload.nameEn,
-          nameZh: payload.nameZh,
-          nameJa: payload.nameJa,
-          translations: payload.translations,
-          subjectEn: payload.subjectEn,
-          subjectZh: payload.subjectZh,
-          subjectJa: payload.subjectJa,
-          subjectTranslations: payload.subjectTranslations,
-          bodyHtmlEn: payload.bodyHtmlEn,
-          bodyHtmlZh: payload.bodyHtmlZh,
-          bodyHtmlJa: payload.bodyHtmlJa,
-          bodyHtmlTranslations: payload.bodyHtmlTranslations,
-          bodyTextEn: payload.bodyTextEn,
-          bodyTextZh: payload.bodyTextZh,
-          bodyTextJa: payload.bodyTextJa,
-          bodyTextTranslations: payload.bodyTextTranslations,
+          name: payload.name,
+          subject: payload.subject,
+          bodyHtml: payload.bodyHtml,
+          bodyText: payload.bodyText,
           variables: payload.variables,
           category: payload.category,
         });
@@ -3499,7 +3380,7 @@ export function IntegrationManagementScreen({
 
     try {
       const variables = parseVariableLines(templatePreviewVariables, getInvalidVariableMessage);
-      const preview = await previewEmailTemplate(request, selectedTemplateCode, selectedLocale as EmailLocale, variables);
+      const preview = await previewEmailTemplate(request, selectedTemplateCode, locale as EmailLocale, variables);
       setTemplatePreview(preview);
       setNotice({
         tone: 'success',
@@ -3522,41 +3403,41 @@ export function IntegrationManagementScreen({
   const adapterCount = adaptersPanel.data.length;
   const webhookCount = webhooksPanel.data.length;
   const consumerCount = consumersPanel.data.length;
-  const configuredAdapterTranslationCount = countConfiguredTranslations(adapterDraft.nameTranslations);
-  const configuredWebhookTranslationCount = countConfiguredTranslations(webhookDraft.nameTranslations);
-  const configuredConsumerTranslationCount = countConfiguredTranslations(consumerDraft.nameTranslations);
-  const configuredTemplateNameTranslationCount = countConfiguredTranslations(templateDraft.nameTranslations);
-  const configuredTemplateSubjectTranslationCount = countConfiguredTranslations(templateDraft.subjectTranslations);
-  const configuredTemplateBodyHtmlTranslationCount = countConfiguredTranslations(templateDraft.bodyHtmlTranslations);
-  const configuredTemplateBodyTextTranslationCount = countConfiguredTranslations(templateDraft.bodyTextTranslations);
+  const configuredAdapterTranslationCount = countConfiguredTranslations(adapterDraft.nameLocaleValues);
+  const configuredWebhookTranslationCount = countConfiguredTranslations(webhookDraft.nameLocaleValues);
+  const configuredConsumerTranslationCount = countConfiguredTranslations(consumerDraft.nameLocaleValues);
+  const configuredTemplateNameTranslationCount = countConfiguredTranslations(templateDraft.nameLocaleValues);
+  const configuredTemplateSubjectTranslationCount = countConfiguredTranslations(templateDraft.subjectLocaleValues);
+  const configuredTemplateBodyHtmlTranslationCount = countConfiguredTranslations(templateDraft.bodyHtmlLocaleValues);
+  const configuredTemplateBodyTextTranslationCount = countConfiguredTranslations(templateDraft.bodyTextLocaleValues);
   const emailTemplateCount = emailTemplatesPanel.data.length;
   const templateTranslationDrawerConfig = templateTranslationSection
     ? templateTranslationSection === 'name'
       ? {
           title: text('Template name translations', '模板名称翻译', 'テンプレート名翻訳'),
-          baseValue: templateDraft.nameEn,
-          translations: templateDraft.nameTranslations,
-          fieldLabel: text('Name (EN)', '名称（英文）', '名称（英語）'),
+          baseValue: templateDraft.nameBase,
+          translations: templateDraft.nameLocaleValues,
+          fieldLabel: text('Base name', '基准名称', '基準名'),
         }
       : templateTranslationSection === 'subject'
         ? {
             title: text('Template subject translations', '模板主题翻译', 'テンプレート件名翻訳'),
-            baseValue: templateDraft.subjectEn,
-            translations: templateDraft.subjectTranslations,
-            fieldLabel: text('Subject (EN)', '主题（英文）', '件名（英語）'),
+            baseValue: templateDraft.subjectBase,
+            translations: templateDraft.subjectLocaleValues,
+            fieldLabel: text('Base subject', '基准主题', '基準件名'),
           }
         : templateTranslationSection === 'bodyHtml'
           ? {
               title: text('HTML body translations', 'HTML 正文翻译', 'HTML 本文翻訳'),
-              baseValue: templateDraft.bodyHtmlEn,
-              translations: templateDraft.bodyHtmlTranslations,
-              fieldLabel: text('HTML body (EN)', 'HTML 内容（英文）', 'HTML 本文（英語）'),
+              baseValue: templateDraft.bodyHtmlBase,
+              translations: templateDraft.bodyHtmlLocaleValues,
+              fieldLabel: text('Base HTML body', '基准 HTML 内容', '基準 HTML 本文'),
             }
           : {
               title: text('Text body translations', '纯文本正文翻译', 'テキスト本文翻訳'),
-              baseValue: templateDraft.bodyTextEn,
-              translations: templateDraft.bodyTextTranslations,
-              fieldLabel: text('Text body (EN)', '纯文本内容（英文）', 'テキスト本文（英語）'),
+              baseValue: templateDraft.bodyTextBase,
+              translations: templateDraft.bodyTextLocaleValues,
+              fieldLabel: text('Base text body', '基准纯文本内容', '基準テキスト本文'),
             }
     : null;
   const isTenantRootScope = selectedIntegrationScope?.ownerType === 'tenant';
@@ -3588,11 +3469,11 @@ export function IntegrationManagementScreen({
           fr: monitoredTalentIds.length === 1 ? '1 talent' : `${monitoredTalentIds.length} talents`,
         });
   const noScopeWorkspaceDescription =
-    selectedLocale === 'zh_HANT'
+    locale === 'zh_HANT'
       ? '請先從左側選擇範圍，再開啟對應的整合工作區。'
-      : selectedLocale === 'ko'
+      : locale === 'ko'
         ? '왼쪽 메뉴에서 범위를 선택하여 연동 워크스페이스를 여세요.'
-        : selectedLocale === 'fr'
+        : locale === 'fr'
           ? "Sélectionnez une portée dans le menu de gauche pour ouvrir l'espace d’intégration."
           : text(
               'Select a scope from the left to open its integration workspace.',
@@ -3600,11 +3481,11 @@ export function IntegrationManagementScreen({
               '左側からスコープを選択して統合ワークスペースを開いてください。',
             );
   const noScopeTreeHint =
-    selectedLocale === 'zh_HANT'
+    locale === 'zh_HANT'
       ? '請先從左側樹中選擇租戶根、分目錄或藝人。'
-      : selectedLocale === 'ko'
+      : locale === 'ko'
         ? '먼저 왼쪽 트리에서 테넌트 루트, 하위 범위 또는 탤런트를 선택하세요.'
-        : selectedLocale === 'fr'
+        : locale === 'fr'
           ? "Choisissez d’abord une racine de tenant, un périmètre ou un talent dans l’arborescence de gauche."
           : text(
               'Choose tenant root, a subsidiary, or a talent from the left tree first.',
@@ -3612,11 +3493,11 @@ export function IntegrationManagementScreen({
               '先に左側ツリーからテナントルート、配下スコープ、またはタレントを選択してください。',
             );
   const noScopeTreeDescription =
-    selectedLocale === 'zh_HANT'
+    locale === 'zh_HANT'
       ? '請先從左側樹中選擇租戶、分目錄或藝人。'
-      : selectedLocale === 'ko'
+      : locale === 'ko'
         ? '왼쪽 트리에서 테넌트, 하위 범위 또는 탤런트를 선택하세요.'
-        : selectedLocale === 'fr'
+        : locale === 'fr'
           ? 'Choisissez un tenant, un périmètre ou un talent dans l’arborescence de gauche.'
           : text(
               'Choose a tenant, subsidiary, or talent from the left tree.',
@@ -4295,7 +4176,7 @@ export function IntegrationManagementScreen({
                       pagination={paginatedAdapters.pagination}
                       itemCount={paginatedAdapters.items.length}
                       labels={buildPaginationFooterLabels(
-                        selectedLocale,
+                        locale,
                         paginatedAdapters.pagination,
                         paginatedAdapters.items.length,
                       )}
@@ -4482,9 +4363,9 @@ export function IntegrationManagementScreen({
                           placeholder={text('BILIBILI_EXPORT', 'BILIBILI_EXPORT', 'BILIBILI_EXPORT')}
                         />
                         <TextField
-                          label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                          value={adapterDraft.nameEn}
-                          onChange={(value) => setAdapterDraft((current) => ({ ...current, nameEn: value }))}
+                          label={text('Base name', '基准名称', '基準名')}
+                          value={adapterDraft.nameBase}
+                          onChange={(value) => setAdapterDraft((current) => ({ ...current, nameBase: value }))}
                         />
                         <div className="space-y-2">
                           <span className="text-sm font-medium text-slate-700">
@@ -5042,7 +4923,7 @@ export function IntegrationManagementScreen({
                       pagination={paginatedWebhooks.pagination}
                       itemCount={paginatedWebhooks.items.length}
                       labels={buildPaginationFooterLabels(
-                        selectedLocale,
+                        locale,
                         paginatedWebhooks.pagination,
                         paginatedWebhooks.items.length,
                       )}
@@ -5231,9 +5112,9 @@ export function IntegrationManagementScreen({
                     {!webhookCreateMode ? (
                       <>
                         <TextField
-                          label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                          value={webhookDraft.nameEn}
-                          onChange={(value) => setWebhookDraft((current) => ({ ...current, nameEn: value }))}
+                          label={text('Base name', '基准名称', '基準名')}
+                          value={webhookDraft.nameBase}
+                          onChange={(value) => setWebhookDraft((current) => ({ ...current, nameBase: value }))}
                         />
                         <div className="space-y-2">
                           <span className="text-sm font-medium text-slate-700">
@@ -5594,7 +5475,7 @@ export function IntegrationManagementScreen({
                       pagination={paginatedConsumers.pagination}
                       itemCount={paginatedConsumers.items.length}
                       labels={buildPaginationFooterLabels(
-                        selectedLocale,
+                        locale,
                         paginatedConsumers.pagination,
                         paginatedConsumers.items.length,
                       )}
@@ -5700,9 +5581,9 @@ export function IntegrationManagementScreen({
                       ]}
                     />
                     <TextField
-                      label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                      value={consumerDraft.nameEn}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, nameEn: value }))}
+                      label={text('Base name', '基准名称', '基準名')}
+                      value={consumerDraft.nameBase}
+                      onChange={(value) => setConsumerDraft((current) => ({ ...current, nameBase: value }))}
                     />
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-slate-700">
@@ -6338,7 +6219,7 @@ export function IntegrationManagementScreen({
                       pagination={paginatedEmailTemplates.pagination}
                       itemCount={paginatedEmailTemplates.items.length}
                       labels={buildPaginationFooterLabels(
-                        selectedLocale,
+                        locale,
                         paginatedEmailTemplates.pagination,
                         paginatedEmailTemplates.items.length,
                       )}
@@ -6452,9 +6333,9 @@ export function IntegrationManagementScreen({
                       ]}
                     />
                     <TextField
-                      label={text('Name (EN)', '名称（英文）', '名称（英語）')}
-                      value={templateDraft.nameEn}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, nameEn: value }))}
+                      label={text('Base name', '基准名称', '基準名')}
+                      value={templateDraft.nameBase}
+                      onChange={(value) => setTemplateDraft((current) => ({ ...current, nameBase: value }))}
                     />
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-slate-700">
@@ -6476,9 +6357,9 @@ export function IntegrationManagementScreen({
                       </button>
                     </div>
                     <TextField
-                      label={text('Subject (EN)', '主题（英文）', '件名（英語）')}
-                      value={templateDraft.subjectEn}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, subjectEn: value }))}
+                      label={text('Base subject', '基准主题', '基準件名')}
+                      value={templateDraft.subjectBase}
+                      onChange={(value) => setTemplateDraft((current) => ({ ...current, subjectBase: value }))}
                     />
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-slate-700">
@@ -6503,9 +6384,9 @@ export function IntegrationManagementScreen({
 
                   <div className="grid gap-4 lg:grid-cols-2">
                     <TextAreaField
-                      label={text('HTML body (EN)', 'HTML 内容（英文）', 'HTML 本文（英語）')}
-                      value={templateDraft.bodyHtmlEn}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyHtmlEn: value }))}
+                      label={text('Base HTML body', '基准 HTML 内容', '基準 HTML 本文')}
+                      value={templateDraft.bodyHtmlBase}
+                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyHtmlBase: value }))}
                       rows={8}
                     />
                     <div className="space-y-2">
@@ -6531,9 +6412,9 @@ export function IntegrationManagementScreen({
 
                   <div className="grid gap-4 lg:grid-cols-2">
                     <TextAreaField
-                      label={text('Text body (EN)', '纯文本内容（英文）', 'テキスト本文（英語）')}
-                      value={templateDraft.bodyTextEn}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyTextEn: value }))}
+                      label={text('Base text body', '基准纯文本内容', '基準テキスト本文')}
+                      value={templateDraft.bodyTextBase}
+                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyTextBase: value }))}
                       rows={5}
                     />
                     <div className="space-y-2">
@@ -6711,18 +6592,16 @@ export function IntegrationManagementScreen({
         open={consumerTranslationDrawerOpen}
         onOpenChange={setConsumerTranslationDrawerOpen}
         title={text('API client translations', 'API 客户端翻译', 'API クライアント翻訳')}
-        baseValue={consumerDraft.nameEn}
-        translations={consumerDraft.nameTranslations}
-        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
+        baseValue={consumerDraft.nameBase}
+        translations={consumerDraft.nameLocaleValues}
+        legacyFieldLabel={text('Base name', '基准名称', '基準名')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
 
           setConsumerDraft((current) => ({
             ...current,
-            nameTranslations: translations,
-            nameZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-            nameJa: pickLegacyLocaleValue(translations, 'ja') || '',
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
@@ -6748,18 +6627,16 @@ export function IntegrationManagementScreen({
         open={adapterTranslationDrawerOpen}
         onOpenChange={setAdapterTranslationDrawerOpen}
         title={text('Adapter translations', '适配器翻译', 'アダプター翻訳')}
-        baseValue={adapterDraft.nameEn}
-        translations={adapterDraft.nameTranslations}
-        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
+        baseValue={adapterDraft.nameBase}
+        translations={adapterDraft.nameLocaleValues}
+        legacyFieldLabel={text('Base name', '基准名称', '基準名')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
 
           setAdapterDraft((current) => ({
             ...current,
-            nameTranslations: translations,
-            nameZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-            nameJa: pickLegacyLocaleValue(translations, 'ja') || '',
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
@@ -6785,18 +6662,16 @@ export function IntegrationManagementScreen({
         open={webhookTranslationDrawerOpen}
         onOpenChange={setWebhookTranslationDrawerOpen}
         title={text('Webhook translations', 'Webhook 翻译', 'Webhook 翻訳')}
-        baseValue={webhookDraft.nameEn}
-        translations={webhookDraft.nameTranslations}
-        legacyFieldLabel={text('Name (EN)', '名称（英文）', '名称（英語）')}
+        baseValue={webhookDraft.nameBase}
+        translations={webhookDraft.nameLocaleValues}
+        legacyFieldLabel={text('Base name', '基准名称', '基準名')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
 
           setWebhookDraft((current) => ({
             ...current,
-            nameTranslations: translations,
-            nameZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-            nameJa: pickLegacyLocaleValue(translations, 'ja') || '',
+            nameLocaleValues: translations,
           }));
         }}
         saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
@@ -6835,7 +6710,7 @@ export function IntegrationManagementScreen({
         })}
         baseValue={templateTranslationDrawerConfig?.baseValue ?? ''}
         translations={templateTranslationDrawerConfig?.translations ?? {}}
-        legacyFieldLabel={templateTranslationDrawerConfig?.fieldLabel ?? text('Name (EN)', '名称（英文）', '名称（英語）')}
+        legacyFieldLabel={templateTranslationDrawerConfig?.fieldLabel ?? text('Base name', '基准名称', '基準名')}
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -6844,35 +6719,27 @@ export function IntegrationManagementScreen({
             if (templateTranslationSection === 'name') {
               return {
                 ...current,
-                nameTranslations: translations,
-                nameZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-                nameJa: pickLegacyLocaleValue(translations, 'ja') || '',
+                nameLocaleValues: translations,
               };
             }
 
             if (templateTranslationSection === 'subject') {
               return {
                 ...current,
-                subjectTranslations: translations,
-                subjectZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-                subjectJa: pickLegacyLocaleValue(translations, 'ja') || '',
+                subjectLocaleValues: translations,
               };
             }
 
             if (templateTranslationSection === 'bodyHtml') {
               return {
                 ...current,
-                bodyHtmlTranslations: translations,
-                bodyHtmlZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-                bodyHtmlJa: pickLegacyLocaleValue(translations, 'ja') || '',
+                bodyHtmlLocaleValues: translations,
               };
             }
 
             return {
               ...current,
-              bodyTextTranslations: translations,
-              bodyTextZh: pickLegacyLocaleValue(translations, 'zh_HANS') || '',
-              bodyTextJa: pickLegacyLocaleValue(translations, 'ja') || '',
+              bodyTextLocaleValues: translations,
             };
           });
           setTemplateTranslationSection(null);

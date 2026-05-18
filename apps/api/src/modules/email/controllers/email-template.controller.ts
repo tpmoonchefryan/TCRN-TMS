@@ -12,7 +12,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, SUPPORTED_UI_LOCALES, type LocalizedText } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards';
@@ -45,22 +45,62 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
   },
 });
 
+const localizedTextSchema = (example: LocalizedText) => ({
+  type: 'object',
+  additionalProperties: { type: 'string' },
+  properties: Object.fromEntries(
+    SUPPORTED_UI_LOCALES.map((locale) => [
+      locale,
+      { type: 'string', example: example[locale] },
+    ]),
+  ),
+  required: [...SUPPORTED_UI_LOCALES],
+});
+
+const NAME_EXAMPLE: LocalizedText = {
+  en: 'Welcome Email',
+  zh_HANS: '欢迎邮件',
+  zh_HANT: '歡迎郵件',
+  ja: 'ウェルカムメール',
+  ko: '환영 이메일',
+  fr: 'E-mail de bienvenue',
+};
+
+const SUBJECT_EXAMPLE: LocalizedText = {
+  en: 'Welcome to TCRN',
+  zh_HANS: '欢迎来到 TCRN',
+  zh_HANT: '歡迎來到 TCRN',
+  ja: 'TCRN へようこそ',
+  ko: 'TCRN에 오신 것을 환영합니다',
+  fr: 'Bienvenue sur TCRN',
+};
+
+const BODY_HTML_EXAMPLE: LocalizedText = {
+  en: '<p>Hello {{name}}</p>',
+  zh_HANS: '<p>你好 {{name}}</p>',
+  zh_HANT: '<p>你好 {{name}}</p>',
+  ja: '<p>こんにちは {{name}}</p>',
+  ko: '<p>안녕하세요 {{name}}</p>',
+  fr: '<p>Bonjour {{name}}</p>',
+};
+
+const BODY_TEXT_EXAMPLE: LocalizedText = {
+  en: 'Hello {{name}}',
+  zh_HANS: '你好 {{name}}',
+  zh_HANT: '你好 {{name}}',
+  ja: 'こんにちは {{name}}',
+  ko: '안녕하세요 {{name}}',
+  fr: 'Bonjour {{name}}',
+};
+
 const EMAIL_TEMPLATE_ITEM_SCHEMA = {
   type: 'object',
   properties: {
     code: { type: 'string', example: 'WELCOME_EMAIL' },
-    nameEn: { type: 'string', example: 'Welcome Email' },
-    nameZh: { type: 'string', nullable: true, example: '欢迎邮件' },
-    nameJa: { type: 'string', nullable: true, example: 'ウェルカムメール' },
-    subjectEn: { type: 'string', example: 'Welcome to TCRN' },
-    subjectZh: { type: 'string', nullable: true, example: '欢迎来到 TCRN' },
-    subjectJa: { type: 'string', nullable: true, example: 'TCRN へようこそ' },
-    bodyHtmlEn: { type: 'string', example: '<p>Hello {{name}}</p>' },
-    bodyHtmlZh: { type: 'string', nullable: true, example: '<p>你好 {{name}}</p>' },
-    bodyHtmlJa: { type: 'string', nullable: true, example: '<p>こんにちは {{name}}</p>' },
-    bodyTextEn: { type: 'string', nullable: true, example: 'Hello {{name}}' },
-    bodyTextZh: { type: 'string', nullable: true, example: '你好 {{name}}' },
-    bodyTextJa: { type: 'string', nullable: true, example: 'こんにちは {{name}}' },
+    name: localizedTextSchema(NAME_EXAMPLE),
+    subject: localizedTextSchema(SUBJECT_EXAMPLE),
+    bodyHtml: localizedTextSchema(BODY_HTML_EXAMPLE),
+    bodyText: localizedTextSchema(BODY_TEXT_EXAMPLE),
     variables: {
       type: 'array',
       items: { type: 'string' },
@@ -71,9 +111,10 @@ const EMAIL_TEMPLATE_ITEM_SCHEMA = {
   },
   required: [
     'code',
-    'nameEn',
-    'subjectEn',
-    'bodyHtmlEn',
+    'name',
+    'subject',
+    'bodyHtml',
+    'bodyText',
     'variables',
     'category',
     'isActive',
@@ -131,18 +172,10 @@ export class EmailTemplateController {
     example: [
       {
         code: 'WELCOME_EMAIL',
-        nameEn: 'Welcome Email',
-        nameZh: '欢迎邮件',
-        nameJa: 'ウェルカムメール',
-        subjectEn: 'Welcome to TCRN',
-        subjectZh: '欢迎来到 TCRN',
-        subjectJa: 'TCRN へようこそ',
-        bodyHtmlEn: '<p>Hello {{name}}</p>',
-        bodyHtmlZh: '<p>你好 {{name}}</p>',
-        bodyHtmlJa: '<p>こんにちは {{name}}</p>',
-        bodyTextEn: 'Hello {{name}}',
-        bodyTextZh: '你好 {{name}}',
-        bodyTextJa: 'こんにちは {{name}}',
+        name: NAME_EXAMPLE,
+        subject: SUBJECT_EXAMPLE,
+        bodyHtml: BODY_HTML_EXAMPLE,
+        bodyText: BODY_TEXT_EXAMPLE,
         variables: ['name', 'supportEmail'],
         category: 'system',
         isActive: true,

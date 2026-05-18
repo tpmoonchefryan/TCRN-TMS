@@ -3,9 +3,10 @@
 
 import { PrismaClient } from '@tcrn/database';
 import {
-  resolveTrilingualLocaleFamily,
+  pickLocalizedText,
+  normalizeSupportedUiLocale,
+  type LocalizedText,
   type SupportedUiLocale,
-  type TrilingualLocaleFamily,
 } from '@tcrn/shared';
 import type { Job, Processor } from 'bullmq';
 import ExcelJS from 'exceljs';
@@ -39,7 +40,6 @@ const TEMP_REPORTS_BUCKET = 'temp-reports';
  * Report format options
  */
 export type ReportFormat = 'xlsx' | 'csv';
-type ReportLanguage = SupportedUiLocale | TrilingualLocaleFamily;
 
 /**
  * Report job data interface (PRD §20)
@@ -68,7 +68,7 @@ export interface ReportJobData {
   };
   options?: {
     includePii?: boolean; // Requires additional permission check
-    language?: ReportLanguage;
+    language?: SupportedUiLocale;
   };
 }
 
@@ -113,34 +113,18 @@ interface ReportHeader {
 interface RawMfrRecord {
   customer_nickname: string;
   profile_type: string;
-  platform_name_en: string;
-  platform_name_zh: string | null;
-  platform_name_ja: string | null;
-  membership_class_name_en: string;
-  membership_class_name_zh: string | null;
-  membership_class_name_ja: string | null;
-  membership_type_name_en: string;
-  membership_type_name_zh: string | null;
-  membership_type_name_ja: string | null;
-  membership_level_name_en: string;
-  membership_level_name_zh: string | null;
-  membership_level_name_ja: string | null;
+  platform_name: LocalizedText;
+  membership_class_name: LocalizedText;
+  membership_type_name: LocalizedText;
+  membership_level_name: LocalizedText;
   valid_from: Date;
   valid_to: Date | null;
   auto_renew: boolean;
   is_expired: boolean;
-  customer_status_name_en: string | null;
-  customer_status_name_zh: string | null;
-  customer_status_name_ja: string | null;
+  customer_status_name: LocalizedText | null;
   tags: string[] | null;
   source: string | null;
   created_at: Date;
-}
-
-interface LocalizedEntityRecord {
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
 }
 
 interface MembershipWhereQuery {
@@ -163,14 +147,6 @@ function escapeCsvField(field: string): string {
 
 function buildCsvRow(headers: ReportHeader[], row: MfrRow): string {
   return headers.map((header) => escapeCsvField(String(row[header.key] ?? ''))).join(',');
-}
-
-function toLocalizedEntity(
-  nameEn: string,
-  nameZh: string | null,
-  nameJa: string | null,
-): LocalizedEntityRecord {
-  return { nameEn, nameZh, nameJa };
 }
 
 function buildMembershipWhereQuery(
@@ -285,25 +261,15 @@ async function fetchMembershipRows(
     SELECT
       cp.nickname AS customer_nickname,
       cp.profile_type,
-      sp.name_en AS platform_name_en,
-      sp.name_zh AS platform_name_zh,
-      sp.name_ja AS platform_name_ja,
-      mc.name_en AS membership_class_name_en,
-      mc.name_zh AS membership_class_name_zh,
-      mc.name_ja AS membership_class_name_ja,
-      mt.name_en AS membership_type_name_en,
-      mt.name_zh AS membership_type_name_zh,
-      mt.name_ja AS membership_type_name_ja,
-      ml.name_en AS membership_level_name_en,
-      ml.name_zh AS membership_level_name_zh,
-      ml.name_ja AS membership_level_name_ja,
+      sp.name AS platform_name,
+      mc.name AS membership_class_name,
+      mt.name AS membership_type_name,
+      ml.name AS membership_level_name,
       mr.valid_from,
       mr.valid_to,
       mr.auto_renew,
       mr.is_expired,
-      cs.name_en AS customer_status_name_en,
-      cs.name_zh AS customer_status_name_zh,
-      cs.name_ja AS customer_status_name_ja,
+      cs.name AS customer_status_name,
       cp.tags,
       cp.source,
       mr.created_at
@@ -371,7 +337,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
     logger.info(`Total records to process: ${totalCount}`);
 
-    const language = resolveTrilingualLocaleFamily(options?.language);
+    const language = normalizeSupportedUiLocale(options?.language) ?? 'en';
     const headers = getHeaders(language);
     tempFilePath = path.join(os.tmpdir(), `mfr_${jobId}.${format}`);
     let workbook: ExcelJS.stream.xlsx.WorkbookWriter | null = null;
@@ -426,52 +392,17 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
         const row: MfrRow = {
           customerNickname: record.customer_nickname,
           profileType: record.profile_type,
-          platformName: getLocalizedName(
-            toLocalizedEntity(
-              record.platform_name_en,
-              record.platform_name_zh,
-              record.platform_name_ja,
-            ),
-            language,
-          ),
+          platformName: getLocalizedName(record.platform_name, language),
           platformUid: '', // Would need to fetch from platform_identity
-          membershipClass: getLocalizedName(
-            toLocalizedEntity(
-              record.membership_class_name_en,
-              record.membership_class_name_zh,
-              record.membership_class_name_ja,
-            ),
-            language,
-          ),
-          membershipType: getLocalizedName(
-            toLocalizedEntity(
-              record.membership_type_name_en,
-              record.membership_type_name_zh,
-              record.membership_type_name_ja,
-            ),
-            language,
-          ),
-          membershipLevel: getLocalizedName(
-            toLocalizedEntity(
-              record.membership_level_name_en,
-              record.membership_level_name_zh,
-              record.membership_level_name_ja,
-            ),
-            language,
-          ),
+          membershipClass: getLocalizedName(record.membership_class_name, language),
+          membershipType: getLocalizedName(record.membership_type_name, language),
+          membershipLevel: getLocalizedName(record.membership_level_name, language),
           validFrom: record.valid_from.toISOString().split('T')[0],
           validTo: record.valid_to?.toISOString().split('T')[0] || '',
           autoRenew: record.auto_renew,
           isExpired: record.is_expired,
-          customerStatus: record.customer_status_name_en
-            ? getLocalizedName(
-                toLocalizedEntity(
-                  record.customer_status_name_en,
-                  record.customer_status_name_zh,
-                  record.customer_status_name_ja,
-                ),
-                language,
-              )
+          customerStatus: record.customer_status_name
+            ? getLocalizedName(record.customer_status_name, language)
             : '',
           tags: (record.tags ?? []).join(', '),
           source: record.source || '',
@@ -573,56 +504,42 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
  * Get localized name
  */
 function getLocalizedName(
-  entity: { nameEn: string; nameZh?: string | null; nameJa?: string | null },
-  language: string
+  entity: LocalizedText,
+  language: SupportedUiLocale,
 ): string {
-  switch (language) {
-    case 'zh':
-      return entity.nameZh || entity.nameEn;
-    case 'ja':
-      return entity.nameJa || entity.nameEn;
-    default:
-      return entity.nameEn;
-  }
+  return pickLocalizedText(entity, language);
 }
 
 /**
  * Format address into a single string
  */
 function getHeaderLabel(
-  language: string,
-  labels: { en: string; zh: string; ja: string },
+  language: SupportedUiLocale,
+  labels: LocalizedText,
 ): string {
-  switch (language) {
-    case 'zh':
-      return labels.zh;
-    case 'ja':
-      return labels.ja;
-    default:
-      return labels.en;
-  }
+  return pickLocalizedText(labels, language);
 }
 
 /**
  * Get headers based on language
  */
-function getHeaders(language: string): ReportHeader[] {
+function getHeaders(language: SupportedUiLocale): ReportHeader[] {
   return [
-    { key: 'customerNickname', width: 20, label: getHeaderLabel(language, { en: 'Nickname', zh: '昵称', ja: 'ニックネーム' }) },
-    { key: 'profileType', width: 12, label: getHeaderLabel(language, { en: 'Type', zh: '类型', ja: 'タイプ' }) },
-    { key: 'platformName', width: 15, label: getHeaderLabel(language, { en: 'Platform', zh: '平台', ja: 'プラットフォーム' }) },
-    { key: 'platformUid', width: 20, label: getHeaderLabel(language, { en: 'Platform UID', zh: '平台UID', ja: 'プラットフォームUID' }) },
-    { key: 'membershipClass', width: 15, label: getHeaderLabel(language, { en: 'Class', zh: '类别', ja: 'クラス' }) },
-    { key: 'membershipType', width: 15, label: getHeaderLabel(language, { en: 'Type', zh: '类型', ja: 'タイプ' }) },
-    { key: 'membershipLevel', width: 15, label: getHeaderLabel(language, { en: 'Level', zh: '等级', ja: 'レベル' }) },
-    { key: 'validFrom', width: 12, label: getHeaderLabel(language, { en: 'Valid From', zh: '生效日期', ja: '開始日' }) },
-    { key: 'validTo', width: 12, label: getHeaderLabel(language, { en: 'Valid To', zh: '到期日期', ja: '終了日' }) },
-    { key: 'autoRenew', width: 10, label: getHeaderLabel(language, { en: 'Auto Renew', zh: '自动续费', ja: '自動更新' }) },
-    { key: 'isExpired', width: 10, label: getHeaderLabel(language, { en: 'Expired', zh: '已过期', ja: '期限切れ' }) },
-    { key: 'customerStatus', width: 12, label: getHeaderLabel(language, { en: 'Status', zh: '状态', ja: 'ステータス' }) },
-    { key: 'tags', width: 25, label: getHeaderLabel(language, { en: 'Tags', zh: '标签', ja: 'タグ' }) },
-    { key: 'source', width: 15, label: getHeaderLabel(language, { en: 'Source', zh: '来源', ja: '取得元' }) },
-    { key: 'createdAt', width: 12, label: getHeaderLabel(language, { en: 'Created', zh: '创建时间', ja: '作成日' }) },
+    { key: 'customerNickname', width: 20, label: getHeaderLabel(language, { en: 'Nickname', zh_HANS: '昵称', zh_HANT: '暱稱', ja: 'ニックネーム', ko: '닉네임', fr: 'Pseudo' }) },
+    { key: 'profileType', width: 12, label: getHeaderLabel(language, { en: 'Type', zh_HANS: '类型', zh_HANT: '類型', ja: 'タイプ', ko: '유형', fr: 'Type' }) },
+    { key: 'platformName', width: 15, label: getHeaderLabel(language, { en: 'Platform', zh_HANS: '平台', zh_HANT: '平台', ja: 'プラットフォーム', ko: '플랫폼', fr: 'Plateforme' }) },
+    { key: 'platformUid', width: 20, label: getHeaderLabel(language, { en: 'Platform UID', zh_HANS: '平台UID', zh_HANT: '平台UID', ja: 'プラットフォームUID', ko: '플랫폼 UID', fr: 'UID plateforme' }) },
+    { key: 'membershipClass', width: 15, label: getHeaderLabel(language, { en: 'Class', zh_HANS: '类别', zh_HANT: '類別', ja: 'クラス', ko: '클래스', fr: 'Classe' }) },
+    { key: 'membershipType', width: 15, label: getHeaderLabel(language, { en: 'Type', zh_HANS: '类型', zh_HANT: '類型', ja: 'タイプ', ko: '유형', fr: 'Type' }) },
+    { key: 'membershipLevel', width: 15, label: getHeaderLabel(language, { en: 'Level', zh_HANS: '等级', zh_HANT: '等級', ja: 'レベル', ko: '레벨', fr: 'Niveau' }) },
+    { key: 'validFrom', width: 12, label: getHeaderLabel(language, { en: 'Valid From', zh_HANS: '生效日期', zh_HANT: '生效日期', ja: '開始日', ko: '유효 시작', fr: 'Valide depuis' }) },
+    { key: 'validTo', width: 12, label: getHeaderLabel(language, { en: 'Valid To', zh_HANS: '到期日期', zh_HANT: '到期日期', ja: '終了日', ko: '유효 종료', fr: "Valide jusqu'a" }) },
+    { key: 'autoRenew', width: 10, label: getHeaderLabel(language, { en: 'Auto Renew', zh_HANS: '自动续费', zh_HANT: '自動續費', ja: '自動更新', ko: '자동 갱신', fr: 'Renouvellement auto' }) },
+    { key: 'isExpired', width: 10, label: getHeaderLabel(language, { en: 'Expired', zh_HANS: '已过期', zh_HANT: '已過期', ja: '期限切れ', ko: '만료됨', fr: 'Expire' }) },
+    { key: 'customerStatus', width: 12, label: getHeaderLabel(language, { en: 'Status', zh_HANS: '状态', zh_HANT: '狀態', ja: 'ステータス', ko: '상태', fr: 'Statut' }) },
+    { key: 'tags', width: 25, label: getHeaderLabel(language, { en: 'Tags', zh_HANS: '标签', zh_HANT: '標籤', ja: 'タグ', ko: '태그', fr: 'Etiquettes' }) },
+    { key: 'source', width: 15, label: getHeaderLabel(language, { en: 'Source', zh_HANS: '来源', zh_HANT: '來源', ja: '取得元', ko: '소스', fr: 'Source' }) },
+    { key: 'createdAt', width: 12, label: getHeaderLabel(language, { en: 'Created', zh_HANS: '创建时间', zh_HANT: '建立時間', ja: '作成日', ko: '생성일', fr: 'Cree le' }) },
   ];
 }
 

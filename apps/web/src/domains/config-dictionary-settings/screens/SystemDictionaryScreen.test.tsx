@@ -6,18 +6,18 @@ import type {
   DictionaryTypeSummary,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { SystemDictionaryScreen } from '@/domains/config-dictionary-settings/screens/SystemDictionaryScreen';
-import { type RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRouterReplace = vi.fn();
 let currentPathname = '/ac/ac-tenant/system-dictionary';
 let currentSearch = '';
 const localeState = {
-  currentLocale: 'en' as RuntimeLocale,
-  selectedLocale: 'en',
+  locale: 'en' as SupportedUiLocale,
   copy: null,
   setLocale: vi.fn(),
-  availableLocales: ['en', 'zh', 'ja'] as RuntimeLocale[],
+  availableLocales: [...SUPPORTED_UI_LOCALES],
   localeOptions: [
     { code: 'en', label: 'English' },
     { code: 'zh_HANS', label: '简体中文' },
@@ -48,7 +48,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
-  useRuntimeLocale: () => localeState,
+  useUiLocale: () => localeState,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -83,13 +83,13 @@ describe('SystemDictionaryScreen', () => {
     mockRouterReplace.mockReset();
     currentSearch = '';
     currentPathname = '/ac/ac-tenant/system-dictionary';
-    localeState.currentLocale = 'en';
-    localeState.selectedLocale = 'en';
+    localeState.locale = 'en';
+    localeState.locale = 'en';
   });
 
   it('passes localized close labels to dictionary drawers', async () => {
-    localeState.currentLocale = 'ja';
-    localeState.selectedLocale = 'ja';
+    localeState.locale = 'ja';
+    localeState.locale = 'ja';
 
     mockRequest.mockImplementation(async (path: string) => {
       const url = new URL(path, 'https://tcrn.local');
@@ -113,13 +113,10 @@ describe('SystemDictionaryScreen', () => {
               id: 'item-1',
               dictionaryCode: 'CUSTOMER_STATUS',
               code: 'ACTIVE',
-              nameEn: 'Active customer',
-              nameZh: '活跃客户',
-              nameJa: '有効顧客',
-              name: '有効顧客',
-              descriptionEn: 'Currently active',
-              descriptionZh: null,
-              descriptionJa: null,
+              name: localizedFixture('Active customer', { zh_HANS: '活跃客户', ja: '有効顧客' }),
+              localizedName: '有効顧客',
+              description: localizedFixture('Currently active'),
+              localizedDescription: 'Currently active',
               sortOrder: 0,
               isActive: true,
               extraData: null,
@@ -205,17 +202,10 @@ describe('SystemDictionaryScreen', () => {
               id: 'item-1',
               dictionaryCode: 'CUSTOMER_STATUS',
               code: 'ACTIVE',
-              nameEn: 'Active customer',
-              nameZh: null,
-              nameJa: null,
-              translations: {
-                en: 'Active customer',
-              },
-              name: 'Active customer',
-              descriptionEn: null,
-              descriptionZh: null,
-              descriptionJa: null,
-              descriptionTranslations: {},
+              name: localizedFixture('Active customer'),
+              localizedName: 'Active customer',
+              description: localizedFixture(''),
+              localizedDescription: null,
               sortOrder: 0,
               isActive: true,
               extraData: null,
@@ -292,20 +282,10 @@ describe('SystemDictionaryScreen', () => {
         id: 'item-1',
         dictionaryCode: 'CUSTOMER_STATUS',
         code: 'ACTIVE',
-        nameEn: 'Active customer',
-        nameZh: '活跃客户',
-        nameJa: null,
-        translations: {
-          en: 'Active customer',
-          zh_HANS: '活跃客户',
-        },
-        name: 'Active customer',
-        descriptionEn: 'Currently active',
-        descriptionZh: null,
-        descriptionJa: null,
-        descriptionTranslations: {
-          en: 'Currently active',
-        },
+        name: localizedFixture('Active customer', { zh_HANS: '活跃客户' }),
+        localizedName: 'Active customer',
+        description: localizedFixture('Currently active'),
+        localizedDescription: 'Currently active',
         sortOrder: 0,
         isActive: true,
         extraData: null,
@@ -325,15 +305,15 @@ describe('SystemDictionaryScreen', () => {
       if (url.pathname === '/api/v1/system-dictionary' && init?.method === 'POST') {
         const body = JSON.parse(String(init.body)) as {
           code: string;
-          nameEn: string;
-          descriptionEn?: string;
+          name: ReturnType<typeof localizedFixture>;
+          description?: ReturnType<typeof localizedFixture>;
           sortOrder?: number;
         };
 
         const createdType = {
           type: body.code,
-          name: body.nameEn,
-          description: body.descriptionEn ?? null,
+          name: body.name.en,
+          description: body.description?.en ?? null,
           count: 0,
         };
 
@@ -342,12 +322,10 @@ describe('SystemDictionaryScreen', () => {
         return {
           id: 'type-2',
           code: body.code,
-          nameEn: body.nameEn,
-          nameZh: null,
-          nameJa: null,
-          descriptionEn: body.descriptionEn ?? null,
-          descriptionZh: null,
-          descriptionJa: null,
+          name: body.name,
+          localizedName: body.name.en,
+          description: body.description ?? localizedFixture(''),
+          localizedDescription: body.description?.en ?? null,
           sortOrder: body.sortOrder ?? 0,
           isActive: true,
           createdAt: '2026-04-17T00:20:00.000Z',
@@ -396,7 +374,8 @@ describe('SystemDictionaryScreen', () => {
       if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items' && init?.method === 'POST') {
         const body = JSON.parse(String(init.body)) as {
           code: string;
-          nameEn: string;
+          name: ReturnType<typeof localizedFixture>;
+          description?: ReturnType<typeof localizedFixture>;
           sortOrder?: number;
         };
 
@@ -404,17 +383,10 @@ describe('SystemDictionaryScreen', () => {
           id: 'item-2',
           dictionaryCode: 'CUSTOMER_STATUS',
           code: body.code,
-          nameEn: body.nameEn,
-          nameZh: null,
-          nameJa: null,
-          translations: {
-            en: body.nameEn,
-          },
-          name: body.nameEn,
-          descriptionEn: null,
-          descriptionZh: null,
-          descriptionJa: null,
-          descriptionTranslations: {},
+          name: body.name,
+          localizedName: body.name.en,
+          description: body.description ?? localizedFixture(''),
+          localizedDescription: body.description?.en ?? null,
           sortOrder: body.sortOrder ?? 0,
           isActive: true,
           extraData: null,
@@ -438,7 +410,8 @@ describe('SystemDictionaryScreen', () => {
 
       if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1' && init?.method === 'PATCH') {
         const body = JSON.parse(String(init.body)) as {
-          nameEn: string;
+          name: ReturnType<typeof localizedFixture>;
+          description?: ReturnType<typeof localizedFixture>;
           sortOrder?: number;
           version: number;
         };
@@ -447,8 +420,10 @@ describe('SystemDictionaryScreen', () => {
           item.id === 'item-1'
             ? {
                 ...item,
-                nameEn: body.nameEn,
-                name: body.nameEn,
+                name: body.name,
+                localizedName: body.name.en,
+                description: body.description ?? item.description,
+                localizedDescription: body.description?.en ?? item.localizedDescription,
                 sortOrder: body.sortOrder ?? item.sortOrder,
                 updatedAt: '2026-04-17T00:40:00.000Z',
                 version: body.version + 1,
@@ -521,11 +496,8 @@ describe('SystemDictionaryScreen', () => {
           method: 'POST',
           body: JSON.stringify({
             code: 'MEMBERSHIP_LEVEL',
-            nameEn: 'Membership Level',
-            translations: {
-              en: 'Membership Level',
-            },
-            descriptionTranslations: {},
+            name: localizedFixture('Membership Level'),
+            description: localizedFixture(''),
             sortOrder: 0,
           }),
         }),
@@ -552,11 +524,8 @@ describe('SystemDictionaryScreen', () => {
           method: 'POST',
           body: JSON.stringify({
             code: 'INACTIVE',
-            nameEn: 'Inactive customer',
-            translations: {
-              en: 'Inactive customer',
-            },
-            descriptionTranslations: {},
+            name: localizedFixture('Inactive customer'),
+            description: localizedFixture(''),
             sortOrder: 0,
           }),
         }),
@@ -579,16 +548,8 @@ describe('SystemDictionaryScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({
-            nameEn: 'Currently active',
-            nameZh: '活跃客户',
-            descriptionEn: 'Currently active',
-            translations: {
-              en: 'Currently active',
-              zh_HANS: '活跃客户',
-            },
-            descriptionTranslations: {
-              en: 'Currently active',
-            },
+            name: localizedFixture('Currently active', { zh_HANS: '活跃客户' }),
+            description: localizedFixture('Currently active'),
             sortOrder: 0,
             version: 1,
           }),
@@ -687,17 +648,10 @@ describe('SystemDictionaryScreen', () => {
               id: 'item-vip',
               dictionaryCode: 'MEMBERSHIP_LEVEL',
               code: 'VIP',
-              nameEn: 'VIP member',
-              nameZh: null,
-              nameJa: null,
-              translations: {
-                en: 'VIP member',
-              },
-              name: 'VIP member',
-              descriptionEn: 'High-value customer tier',
-              descriptionZh: null,
-              descriptionJa: null,
-              descriptionTranslations: {},
+              name: localizedFixture('VIP member'),
+              localizedName: 'VIP member',
+              description: localizedFixture('High-value customer tier'),
+              localizedDescription: 'High-value customer tier',
               sortOrder: 10,
               isActive: false,
               extraData: null,
@@ -739,8 +693,8 @@ describe('SystemDictionaryScreen', () => {
   });
 
   it('renders localized system dictionary copy for zh locale', async () => {
-    localeState.currentLocale = 'zh';
-    localeState.selectedLocale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
+    localeState.locale = 'zh_HANS';
 
     const types: DictionaryTypeSummary[] = [
       {

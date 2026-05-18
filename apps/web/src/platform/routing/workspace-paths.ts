@@ -6,6 +6,8 @@ export interface WorkspaceSessionLike {
 export type TalentWorkspaceSection = 'overview' | 'customers' | 'homepage' | 'marshmallow' | 'reports' | 'settings';
 export type TalentSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
 export type TalentSettingsFocus = 'homepage-routing' | 'marshmallow-routing';
+export type PublicPresenceHomepageSurface = 'management' | 'templates' | 'components';
+export type PublicPresenceStudioFocus = 'overview' | 'release' | 'countdown';
 
 export interface TalentWorkspaceRoute {
   tenantId: string;
@@ -95,6 +97,96 @@ export function buildTalentWorkspaceSectionPath(
   }
 
   return `${buildTalentWorkspacePath(tenantId, talentId)}/${section}`;
+}
+
+export function buildPublicPresenceStudioEditorPath(
+  tenantId: string,
+  talentId: string,
+  templateId?: string | null,
+  focus?: PublicPresenceStudioFocus | null,
+) {
+  const params = new URLSearchParams();
+
+  if (templateId) {
+    params.set('templateId', templateId);
+  }
+
+  if (focus) {
+    params.set('focus', focus);
+  }
+
+  const query = params.toString();
+  const path = `/studio/public-presence/${tenantId}/${talentId}`;
+
+  return query ? `${path}?${query}` : path;
+}
+
+export function buildPublicPresenceHomepageSurfacePath(
+  tenantId: string,
+  talentId: string,
+  surface: PublicPresenceHomepageSurface = 'management',
+) {
+  const path = buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage');
+
+  if (surface === 'management') {
+    return path;
+  }
+
+  const params = new URLSearchParams();
+  params.set('surface', surface);
+
+  return `${path}?${params.toString()}`;
+}
+
+export function buildPublicPresenceTemplateAuthoringPath(
+  tenantId: string,
+  talentId: string,
+  templateId?: string | null,
+) {
+  const params = new URLSearchParams();
+
+  if (templateId) {
+    params.set('templateId', templateId);
+  }
+
+  const query = params.toString();
+  const path = `/studio/public-presence/${tenantId}/${talentId}/templates/new`;
+
+  return query ? `${path}?${query}` : path;
+}
+
+export function buildPublicPresenceComponentAuthoringPath(
+  tenantId: string,
+  talentId: string,
+  componentType?: string | null,
+) {
+  const params = new URLSearchParams();
+
+  if (componentType) {
+    params.set('componentType', componentType);
+  }
+
+  const query = params.toString();
+  const path = `/studio/public-presence/${tenantId}/${talentId}/components/new`;
+
+  return query ? `${path}?${query}` : path;
+}
+
+export function buildPublicPresenceStudioPreviewPath(
+  tenantId: string,
+  talentId: string,
+  templateId?: string | null,
+) {
+  const params = new URLSearchParams();
+
+  if (templateId) {
+    params.set('templateId', templateId);
+  }
+
+  const query = params.toString();
+  const path = `/studio/public-presence/${tenantId}/${talentId}/preview`;
+
+  return query ? `${path}?${query}` : path;
 }
 
 export function buildTalentSettingsPath(

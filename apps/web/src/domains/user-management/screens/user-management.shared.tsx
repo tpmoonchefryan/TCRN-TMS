@@ -2,7 +2,6 @@ import {
   isRbacRoleAvailableForScopeType,
   isRbacRoleAvailableForTenantTier,
   type RbacTenantTier,
-  resolveTrilingualLocaleFamily,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 import type { ReactNode } from 'react';
@@ -16,7 +15,6 @@ import type {
   SystemUserRoleAssignment,
 } from '@/domains/user-management/api/user-management.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   getPaginationRange,
   type PageSizeOption,
@@ -108,18 +106,9 @@ export function resolveScopedLabel(
 }
 
 export function resolveRoleDisplayName(detail: {
-  roleNameEn: string;
-  roleNameZh: string | null;
-  roleNameJa: string | null;
-}, locale: RuntimeLocale) {
-  return pickLocalizedName(
-    {
-      nameEn: detail.roleNameEn,
-      nameZh: detail.roleNameZh,
-      nameJa: detail.roleNameJa,
-    },
-    locale,
-  );
+  roleName: SystemRoleListItem['name'];
+}, locale: SupportedUiLocale) {
+  return pickLocalizedName({ name: detail.roleName }, locale);
 }
 
 export function filterAssignableRoles(
@@ -235,12 +224,12 @@ export function SummaryCard({
 export function ScopeAssignmentCard({
   assignment,
   sharedCopy,
-  currentLocale,
+  locale,
   children,
 }: Readonly<{
   assignment: SystemUserRoleAssignment;
   sharedCopy: UserManagementCopy['shared'];
-  currentLocale: RuntimeLocale;
+  locale: SupportedUiLocale;
   children?: ReactNode;
 }>) {
   return (
@@ -248,7 +237,7 @@ export function ScopeAssignmentCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-slate-900">
-            {resolveRoleDisplayName(assignment, currentLocale)}
+            {resolveRoleDisplayName(assignment, locale)}
           </p>
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{assignment.roleCode}</p>
         </div>
@@ -266,11 +255,11 @@ export function ScopeAssignmentCard({
       <p className="mt-1 text-xs text-slate-500">{assignment.scopePath || sharedCopy.tenantWideAssignment}</p>
       <p className="mt-2 text-xs text-slate-500">
         {sharedCopy.grantedLabel}{' '}
-        {formatUserManagementDateTime(assignment.grantedAt, currentLocale, sharedCopy.unavailable)}
+        {formatUserManagementDateTime(assignment.grantedAt, locale, sharedCopy.unavailable)}
         {assignment.expiresAt
           ? ` • ${sharedCopy.expiresLabel} ${formatUserManagementDateTime(
               assignment.expiresAt,
-              currentLocale,
+              locale,
               sharedCopy.unavailable,
             )}`
           : ''}
@@ -281,14 +270,14 @@ export function ScopeAssignmentCard({
 }
 
 function getUserManagementPaginationCopy(
-  locale: RuntimeLocale | SupportedUiLocale,
+  locale: SupportedUiLocale ,
   pagination: ApiPaginationMeta,
   itemCount: number,
 ) {
   const range = getPaginationRange(pagination, itemCount);
-  const localeFamily = resolveTrilingualLocaleFamily(locale);
+  const localeCode = locale;
 
-  if (localeFamily === 'zh') {
+  if ((localeCode === 'zh_HANS' || localeCode === 'zh_HANT')) {
     return {
       page: `第 ${pagination.page} / ${pagination.totalPages} 页`,
       range:
@@ -301,7 +290,7 @@ function getUserManagementPaginationCopy(
     };
   }
 
-  if (localeFamily === 'ja') {
+  if (localeCode === 'ja') {
     return {
       page: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
       range:
@@ -327,14 +316,14 @@ function getUserManagementPaginationCopy(
 }
 
 export function UserManagementPaginationFooter({
-  currentLocale,
+  locale,
   pagination,
   itemCount,
   onPageSizeChange,
   onPrevious,
   onNext,
 }: Readonly<{
-  currentLocale: RuntimeLocale | SupportedUiLocale;
+  locale: SupportedUiLocale ;
   pagination: ApiPaginationMeta;
   itemCount: number;
   pageSize: PageSizeOption;
@@ -342,7 +331,7 @@ export function UserManagementPaginationFooter({
   onPrevious: () => void;
   onNext: () => void;
 }>) {
-  const paginationCopy = getUserManagementPaginationCopy(currentLocale, pagination, itemCount);
+  const paginationCopy = getUserManagementPaginationCopy(locale, pagination, itemCount);
 
   return (
     <PaginationFooter

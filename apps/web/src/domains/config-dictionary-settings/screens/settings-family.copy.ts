@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  resolveTrilingualLocaleFamily,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { useMemo } from 'react';
 
 import type { ScopedConfigEntityType } from '@/domains/config-dictionary-settings/api/settings.api';
@@ -14,7 +11,7 @@ import {
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
 import type { DictionaryExplorerPanelCopy } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import type { ScopedConfigEntityWorkspaceCopy } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   pickLocaleText,
@@ -41,19 +38,8 @@ function buildExactText(
   };
 }
 
-function formatDateTimeValue(locale: SupportedUiLocale | RuntimeLocale, value: string, fallback: string) {
+function formatDateTimeValue(locale: SupportedUiLocale , value: string, fallback: string) {
   return formatLocaleDateTime(locale, value, fallback);
-}
-
-function getEffectiveSelectedLocale(
-  currentLocale: RuntimeLocale,
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveTrilingualLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
-
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
 }
 
 const COMMON = {
@@ -78,30 +64,7 @@ const COMMON = {
     defaultsCategory: 'Defaults',
     defaultsAndRoutesCategory: 'Defaults and routes',
     unavailable: 'Unavailable',
-  },
-  zh: {
-    currentTenant: '租户',
-    unknown: '未知',
-    unassigned: '未分配',
-    active: '启用',
-    inactive: '停用',
-    details: '详情',
-    configEntities: '配置实体管理',
-    settings: '设置',
-    dictionary: '系统词典',
-    reset: '重置',
-    saving: '保存中…',
-    source: '来源',
-    overriddenHere: '已在此处覆盖',
-    inheritedUnset: '继承 / 未设置',
-    notConfigured: '未配置',
-    settingsSectionsAriaLabel: '设置分区',
-    settingsCategoriesAriaLabel: '设置类别',
-    defaultsCategory: '默认值',
-    defaultsAndRoutesCategory: '默认值与路由',
-    unavailable: '不可用',
-  },
-  zh_HANS: {
+  },  zh_HANS: {
     currentTenant: '租户',
     unknown: '未知',
     unassigned: '未分配',
@@ -211,9 +174,9 @@ const COMMON = {
     defaultsAndRoutesCategory: 'Valeurs par defaut et routes',
     unavailable: 'Indisponible',
   },
-} satisfies Record<SupportedUiLocale | RuntimeLocale, Record<string, string>>;
+} satisfies Record<SupportedUiLocale , Record<string, string>>;
 
-const DICTIONARY_PANEL_COPY: Record<RuntimeLocale, DictionaryExplorerPanelCopy> = {
+const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCopy> = {
   en: {
     codeColumn: 'Code',
     localizedNameColumn: 'Localized Name',
@@ -234,11 +197,8 @@ const DICTIONARY_PANEL_COPY: Record<RuntimeLocale, DictionaryExplorerPanelCopy> 
     activeStatus: 'Active',
     inactiveStatus: 'Inactive',
     versionPrefix: 'v',
-    englishLabel: 'EN',
-    chineseLabel: 'ZH',
-    japaneseLabel: 'JA',
   },
-  zh: {
+  zh_HANS: {
     codeColumn: '代码',
     localizedNameColumn: '本地化名称',
     statusColumn: '状态',
@@ -258,9 +218,27 @@ const DICTIONARY_PANEL_COPY: Record<RuntimeLocale, DictionaryExplorerPanelCopy> 
     activeStatus: '启用',
     inactiveStatus: '停用',
     versionPrefix: 'v',
-    englishLabel: '英',
-    chineseLabel: '中',
-    japaneseLabel: '日',
+  },
+  zh_HANT: {
+    codeColumn: '代码',
+    localizedNameColumn: '本地化名称',
+    statusColumn: '状态',
+    updatedColumn: '更新时间',
+    actionsColumn: '操作',
+    defaultItemsTitle: '词典项',
+    defaultItemsDescription: '查看当前范围生效的受控词汇。',
+    searchAriaLabel: '搜索词典项',
+    searchPlaceholder: '按代码或本地化名称搜索',
+    includeInactiveAriaLabel: '包含停用词典项',
+    includeInactiveLabel: '包含停用项',
+    itemsUnavailableTitle: '词典项不可用',
+    itemsUnavailableFallback: '加载词典项失败。',
+    emptyItemsTitle: '没有匹配的词典项',
+    emptyItemsFilteredDescription: '当前搜索条件下没有匹配项。',
+    emptyItemsDefaultDescription: '该词典类型当前没有可见词条。',
+    activeStatus: '启用',
+    inactiveStatus: '停用',
+    versionPrefix: 'v',
   },
   ja: {
     codeColumn: 'コード',
@@ -282,9 +260,48 @@ const DICTIONARY_PANEL_COPY: Record<RuntimeLocale, DictionaryExplorerPanelCopy> 
     activeStatus: '有効',
     inactiveStatus: '無効',
     versionPrefix: 'v',
-    englishLabel: 'EN',
-    chineseLabel: 'ZH',
-    japaneseLabel: 'JA',
+  },
+  ko: {
+    codeColumn: 'Code',
+    localizedNameColumn: 'Localized Name',
+    statusColumn: 'Status',
+    updatedColumn: 'Updated',
+    actionsColumn: 'Actions',
+    defaultItemsTitle: 'Dictionary items',
+    defaultItemsDescription: 'Browse the effective controlled vocabulary used across downstream modules.',
+    searchAriaLabel: 'Search dictionary items',
+    searchPlaceholder: 'Search code or localized name',
+    includeInactiveAriaLabel: 'Include inactive dictionary items',
+    includeInactiveLabel: 'Include inactive',
+    itemsUnavailableTitle: 'Dictionary items unavailable',
+    itemsUnavailableFallback: 'Failed to load dictionary items.',
+    emptyItemsTitle: 'No dictionary items found',
+    emptyItemsFilteredDescription: 'No item matches the current search.',
+    emptyItemsDefaultDescription: 'This dictionary type does not contain any visible items yet.',
+    activeStatus: 'Active',
+    inactiveStatus: 'Inactive',
+    versionPrefix: 'v',
+  },
+  fr: {
+    codeColumn: 'Code',
+    localizedNameColumn: 'Localized Name',
+    statusColumn: 'Status',
+    updatedColumn: 'Updated',
+    actionsColumn: 'Actions',
+    defaultItemsTitle: 'Dictionary items',
+    defaultItemsDescription: 'Browse the effective controlled vocabulary used across downstream modules.',
+    searchAriaLabel: 'Search dictionary items',
+    searchPlaceholder: 'Search code or localized name',
+    includeInactiveAriaLabel: 'Include inactive dictionary items',
+    includeInactiveLabel: 'Include inactive',
+    itemsUnavailableTitle: 'Dictionary items unavailable',
+    itemsUnavailableFallback: 'Failed to load dictionary items.',
+    emptyItemsTitle: 'No dictionary items found',
+    emptyItemsFilteredDescription: 'No item matches the current search.',
+    emptyItemsDefaultDescription: 'This dictionary type does not contain any visible items yet.',
+    activeStatus: 'Active',
+    inactiveStatus: 'Inactive',
+    versionPrefix: 'v',
   },
 };
 
@@ -324,7 +341,7 @@ const LEGACY_SETTINGS_TEXT_OVERRIDES: Partial<Record<string, SettingsFamilyLocal
   'Translation management': buildExactText('Translation management', '翻译管理', '翻譯管理', '翻訳管理', '번역 관리', 'Gestion des traductions'),
 };
 
-const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy> = {
+const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceCopy> = {
   en: {
     visibleRecordsLabel: 'Visible Records',
     activeLabel: 'Active',
@@ -372,13 +389,9 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     codeLabel: 'Code *',
     codeValidation: 'Code must be 3-32 characters using only A-Z, 0-9, and _.',
     sortOrderLabel: 'Sort order',
-    nameEnglishLabel: 'Name (English) *',
-    nameChineseLabel: 'Name (Chinese)',
-    nameJapaneseLabel: 'Name (Japanese)',
+    nameBaseLabel: 'Name (English) *',
     englishNameRequired: 'English name is required.',
-    descriptionEnglishLabel: 'Description (English)',
-    descriptionChineseLabel: 'Description (Chinese)',
-    descriptionJapaneseLabel: 'Description (Japanese)',
+    descriptionBaseLabel: 'Description (English)',
     entitySpecificFieldsTitle: 'Entity-specific fields',
     entitySpecificFieldsDescription: 'Complete the fields required for this entity.',
     createSubmit: 'Create record',
@@ -416,7 +429,7 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     scopeTypeLabel: (scopeType) =>
       scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
   },
-  zh: {
+  zh_HANS: {
     visibleRecordsLabel: '可见记录',
     activeLabel: '启用中',
     inheritedLabel: '继承项',
@@ -462,13 +475,95 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     codeLabel: '代码 *',
     codeValidation: '代码必须为 3-32 位，且只能使用 A-Z、0-9 与 _。',
     sortOrderLabel: '排序',
-    nameEnglishLabel: '英文名称 *',
-    nameChineseLabel: '中文名称',
-    nameJapaneseLabel: '日文名称',
+    nameBaseLabel: '英文名称 *',
     englishNameRequired: '英文名称不能为空。',
-    descriptionEnglishLabel: '英文描述',
-    descriptionChineseLabel: '中文描述',
-    descriptionJapaneseLabel: '日文描述',
+    descriptionBaseLabel: '英文描述',
+    entitySpecificFieldsTitle: '实体专属字段',
+    entitySpecificFieldsDescription: '填写该实体需要的专属字段。',
+    createSubmit: '创建记录',
+    createPending: '正在创建记录…',
+    saveSubmit: '保存更改',
+    savePending: '正在保存更改…',
+    loadError: '加载当前范围配置实体失败。',
+    saveError: (entryLabel) => `保存${entryLabel}失败。`,
+    createSuccess: (entryLabel, code) => `${entryLabel} ${code} 已创建。`,
+    updateSuccess: (entryLabel, code) => `${entryLabel} ${code} 已更新。`,
+    deactivateTitle: (codeOrName) => `停用 ${codeOrName}？`,
+    deactivateDescription: '该操作会将记录标记为停用，但不会删除历史。',
+    deactivateConfirm: '确认停用',
+    deactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已停用。`,
+    reactivateTitle: (codeOrName) => `重新启用 ${codeOrName}？`,
+    reactivateDescription: '该操作会将记录恢复为启用状态。',
+    reactivateConfirm: '重新启用',
+    reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已重新启用。`,
+    disableInScopeTitle: (codeOrName) => `在当前范围停用 ${codeOrName}？`,
+    disableInScopeDescription: '仅在这里隐藏这条继承记录，不会修改来源记录。',
+    disableInScopeConfirm: '在此停用',
+    disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已在这里隐藏。`,
+    enableInScopeTitle: (codeOrName) => `在当前范围恢复 ${codeOrName}？`,
+    enableInScopeDescription: '让这条继承记录重新在这里显示。',
+    enableInScopeConfirm: '在此启用',
+    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已在这里恢复显示。`,
+    stateUpdateError: (entryLabel) => `更新${entryLabel}状态失败。`,
+    updatedAtSummary: (value) => `更新于 ${value}`,
+    inheritedFromScope: (scopeLabel) => `继承自${scopeLabel}`,
+    scopeOwned: '本层级维护',
+    requiredPill: '必填',
+    systemPill: '系统',
+    disabledHerePill: '已在此停用',
+    requiredField: (fieldLabel) => `${fieldLabel}不能为空。`,
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? '租户范围' : scopeType === 'subsidiary' ? '分目录范围' : '艺人范围',
+  },
+  zh_HANT: {
+    visibleRecordsLabel: '可见记录',
+    activeLabel: '启用中',
+    inheritedLabel: '继承项',
+    disabledHereLabel: '当前范围停用',
+    entityFamilyLabel: '实体类型',
+    entityFamilyAriaLabel: '实体类型',
+    searchLabel: '搜索',
+    searchAriaLabel: '搜索配置实体',
+    searchPlaceholder: (entryLabel) => `按代码或名称搜索${entryLabel}`,
+    refreshAriaLabel: '刷新配置列表',
+    currentScopeOnlyLabel: '仅看当前范围',
+    currentScopeOnlyAriaLabel: '仅看当前范围',
+    currentScopeOnlyDescription: (scopeLabel) => `隐藏继承记录，只查看当前${scopeLabel}直接维护的记录。`,
+    includeInactiveLabel: '包含停用记录',
+    includeInactiveAriaLabel: '包含停用记录',
+    includeInactiveDescription: '保留停用记录，方便在这里查看或重新启用。',
+    unavailableTitle: '配置实体不可用',
+    retryLabel: '重试',
+    codeColumn: '代码',
+    nameColumn: '名称',
+    scopeStateColumn: '范围 / 状态',
+    statusColumn: '状态',
+    actionsColumn: '操作',
+    emptyTitle: (entryLabel) => `当前没有返回${entryLabel}记录`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) => `当前${scopeLabel}下没有直接维护的${entryLabel}记录。`,
+    emptyFilteredDescription: (entryLabel) => `当前筛选条件下没有匹配的${entryLabel}记录。`,
+    emptyActionLabel: '创建第一条记录',
+    noCodeLabel: '无代码',
+    createdAtLabel: (value) => `创建于 ${value}`,
+    activeStatus: '启用',
+    inactiveStatus: '停用',
+    newRecordLabel: '新建记录',
+    editLabel: '编辑',
+    deactivateLabel: '停用',
+    reactivateLabel: '重新启用',
+    disableHereLabel: '在此停用',
+    enableHereLabel: '在此启用',
+    inheritedPill: '继承',
+    editorCreateTitle: (entryLabel) => `新建${entryLabel}`,
+    editorEditTitle: (_entryLabel, codeOrName) => `编辑 ${codeOrName}`,
+    editorDescription: (scopeLabel) => `这里的更改只会影响当前${scopeLabel}。`,
+    cancelLabel: '取消',
+    codeLabel: '代码 *',
+    codeValidation: '代码必须为 3-32 位，且只能使用 A-Z、0-9 与 _。',
+    sortOrderLabel: '排序',
+    nameBaseLabel: '英文名称 *',
+    englishNameRequired: '英文名称不能为空。',
+    descriptionBaseLabel: '英文描述',
     entitySpecificFieldsTitle: '实体专属字段',
     entitySpecificFieldsDescription: '填写该实体需要的专属字段。',
     createSubmit: '创建记录',
@@ -552,13 +647,9 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     codeLabel: 'コード *',
     codeValidation: 'コードは 3〜32 文字で、A-Z、0-9、_ のみ使用できます。',
     sortOrderLabel: '表示順',
-    nameEnglishLabel: '英語名 *',
-    nameChineseLabel: '中国語名',
-    nameJapaneseLabel: '日本語名',
+    nameBaseLabel: '英語名 *',
     englishNameRequired: '英語名は必須です。',
-    descriptionEnglishLabel: '英語説明',
-    descriptionChineseLabel: '中国語説明',
-    descriptionJapaneseLabel: '日本語説明',
+    descriptionBaseLabel: '英語説明',
     entitySpecificFieldsTitle: '専用フィールド',
     entitySpecificFieldsDescription: 'このエンティティに必要な専用項目を入力します。',
     createSubmit: 'レコードを作成',
@@ -596,14 +687,188 @@ const SCOPED_CONFIG_COPY: Record<RuntimeLocale, ScopedConfigEntityWorkspaceCopy>
     scopeTypeLabel: (scopeType) =>
       scopeType === 'tenant' ? 'テナントスコープ' : scopeType === 'subsidiary' ? '配下スコープ' : 'タレントスコープ',
   },
+  ko: {
+    visibleRecordsLabel: 'Visible Records',
+    activeLabel: 'Active',
+    inheritedLabel: 'Inherited',
+    disabledHereLabel: 'Disabled Here',
+    entityFamilyLabel: 'Entity family',
+    entityFamilyAriaLabel: 'Entity family',
+    searchLabel: 'Search',
+    searchAriaLabel: 'Search configuration entities',
+    searchPlaceholder: (entryLabel) => `Search ${entryLabel.toLowerCase()} by code or name`,
+    refreshAriaLabel: 'Refresh configuration list',
+    currentScopeOnlyLabel: 'Current scope only',
+    currentScopeOnlyAriaLabel: 'Current scope only',
+    currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+    includeInactiveLabel: 'Include inactive records',
+    includeInactiveAriaLabel: 'Include inactive records',
+    includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+    unavailableTitle: 'Configuration entities unavailable',
+    retryLabel: 'Retry',
+    codeColumn: 'Code',
+    nameColumn: 'Name',
+    scopeStateColumn: 'Scope / State',
+    statusColumn: 'Status',
+    actionsColumn: 'Actions',
+    emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) =>
+      `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
+    emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+    emptyActionLabel: 'Create the first record',
+    noCodeLabel: 'NO_CODE',
+    createdAtLabel: (value) => `Created ${value}`,
+    activeStatus: 'Active',
+    inactiveStatus: 'Inactive',
+    newRecordLabel: 'New record',
+    editLabel: 'Edit',
+    deactivateLabel: 'Deactivate',
+    reactivateLabel: 'Reactivate',
+    disableHereLabel: 'Disable here',
+    enableHereLabel: 'Enable here',
+    inheritedPill: 'Inherited',
+    editorCreateTitle: (entryLabel) => `Create ${entryLabel}`,
+    editorEditTitle: (_entryLabel, codeOrName) => `Edit ${codeOrName}`,
+    editorDescription: (scopeLabel) => `Changes here affect only this ${scopeLabel}.`,
+    cancelLabel: 'Cancel',
+    codeLabel: 'Code *',
+    codeValidation: 'Code must be 3-32 characters using only A-Z, 0-9, and _.',
+    sortOrderLabel: 'Sort order',
+    nameBaseLabel: 'Name (English) *',
+    englishNameRequired: 'English name is required.',
+    descriptionBaseLabel: 'Description (English)',
+    entitySpecificFieldsTitle: 'Entity-specific fields',
+    entitySpecificFieldsDescription: 'Complete the fields required for this entity.',
+    createSubmit: 'Create record',
+    createPending: 'Creating record…',
+    saveSubmit: 'Save changes',
+    savePending: 'Saving changes…',
+    loadError: 'Failed to load configuration entities for this scope.',
+    saveError: (entryLabel) => `Failed to save ${entryLabel.toLowerCase()}.`,
+    createSuccess: (entryLabel, code) => `${entryLabel} ${code} created.`,
+    updateSuccess: (entryLabel, code) => `${entryLabel} ${code} updated.`,
+    deactivateTitle: (codeOrName) => `Deactivate ${codeOrName}?`,
+    deactivateDescription: 'This marks the record inactive without deleting its history.',
+    deactivateConfirm: 'Deactivate',
+    deactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} deactivated.`,
+    reactivateTitle: (codeOrName) => `Reactivate ${codeOrName}?`,
+    reactivateDescription: 'This returns the record to active status.',
+    reactivateConfirm: 'Reactivate',
+    reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} reactivated.`,
+    disableInScopeTitle: (codeOrName) => `Disable ${codeOrName} in this scope?`,
+    disableInScopeDescription: 'Hide this inherited record here without changing the source record.',
+    disableInScopeConfirm: 'Disable in scope',
+    disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} hidden here.`,
+    enableInScopeTitle: (codeOrName) => `Enable ${codeOrName} in this scope?`,
+    enableInScopeDescription: 'Show this inherited record here again.',
+    enableInScopeConfirm: 'Enable in scope',
+    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} restored here.`,
+    stateUpdateError: (entryLabel) => `Failed to update ${entryLabel.toLowerCase()} state.`,
+    updatedAtSummary: (value) => `Updated ${value}`,
+    inheritedFromScope: (scopeLabel) => `Inherited from ${scopeLabel}`,
+    scopeOwned: 'Managed here',
+    requiredPill: 'Required',
+    systemPill: 'System',
+    disabledHerePill: 'Disabled here',
+    requiredField: (fieldLabel) => `${fieldLabel} is required.`,
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
+  },
+  fr: {
+    visibleRecordsLabel: 'Visible Records',
+    activeLabel: 'Active',
+    inheritedLabel: 'Inherited',
+    disabledHereLabel: 'Disabled Here',
+    entityFamilyLabel: 'Entity family',
+    entityFamilyAriaLabel: 'Entity family',
+    searchLabel: 'Search',
+    searchAriaLabel: 'Search configuration entities',
+    searchPlaceholder: (entryLabel) => `Search ${entryLabel.toLowerCase()} by code or name`,
+    refreshAriaLabel: 'Refresh configuration list',
+    currentScopeOnlyLabel: 'Current scope only',
+    currentScopeOnlyAriaLabel: 'Current scope only',
+    currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+    includeInactiveLabel: 'Include inactive records',
+    includeInactiveAriaLabel: 'Include inactive records',
+    includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+    unavailableTitle: 'Configuration entities unavailable',
+    retryLabel: 'Retry',
+    codeColumn: 'Code',
+    nameColumn: 'Name',
+    scopeStateColumn: 'Scope / State',
+    statusColumn: 'Status',
+    actionsColumn: 'Actions',
+    emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) =>
+      `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
+    emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+    emptyActionLabel: 'Create the first record',
+    noCodeLabel: 'NO_CODE',
+    createdAtLabel: (value) => `Created ${value}`,
+    activeStatus: 'Active',
+    inactiveStatus: 'Inactive',
+    newRecordLabel: 'New record',
+    editLabel: 'Edit',
+    deactivateLabel: 'Deactivate',
+    reactivateLabel: 'Reactivate',
+    disableHereLabel: 'Disable here',
+    enableHereLabel: 'Enable here',
+    inheritedPill: 'Inherited',
+    editorCreateTitle: (entryLabel) => `Create ${entryLabel}`,
+    editorEditTitle: (_entryLabel, codeOrName) => `Edit ${codeOrName}`,
+    editorDescription: (scopeLabel) => `Changes here affect only this ${scopeLabel}.`,
+    cancelLabel: 'Cancel',
+    codeLabel: 'Code *',
+    codeValidation: 'Code must be 3-32 characters using only A-Z, 0-9, and _.',
+    sortOrderLabel: 'Sort order',
+    nameBaseLabel: 'Name (English) *',
+    englishNameRequired: 'English name is required.',
+    descriptionBaseLabel: 'Description (English)',
+    entitySpecificFieldsTitle: 'Entity-specific fields',
+    entitySpecificFieldsDescription: 'Complete the fields required for this entity.',
+    createSubmit: 'Create record',
+    createPending: 'Creating record…',
+    saveSubmit: 'Save changes',
+    savePending: 'Saving changes…',
+    loadError: 'Failed to load configuration entities for this scope.',
+    saveError: (entryLabel) => `Failed to save ${entryLabel.toLowerCase()}.`,
+    createSuccess: (entryLabel, code) => `${entryLabel} ${code} created.`,
+    updateSuccess: (entryLabel, code) => `${entryLabel} ${code} updated.`,
+    deactivateTitle: (codeOrName) => `Deactivate ${codeOrName}?`,
+    deactivateDescription: 'This marks the record inactive without deleting its history.',
+    deactivateConfirm: 'Deactivate',
+    deactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} deactivated.`,
+    reactivateTitle: (codeOrName) => `Reactivate ${codeOrName}?`,
+    reactivateDescription: 'This returns the record to active status.',
+    reactivateConfirm: 'Reactivate',
+    reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} reactivated.`,
+    disableInScopeTitle: (codeOrName) => `Disable ${codeOrName} in this scope?`,
+    disableInScopeDescription: 'Hide this inherited record here without changing the source record.',
+    disableInScopeConfirm: 'Disable in scope',
+    disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} hidden here.`,
+    enableInScopeTitle: (codeOrName) => `Enable ${codeOrName} in this scope?`,
+    enableInScopeDescription: 'Show this inherited record here again.',
+    enableInScopeConfirm: 'Enable in scope',
+    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} restored here.`,
+    stateUpdateError: (entryLabel) => `Failed to update ${entryLabel.toLowerCase()} state.`,
+    updatedAtSummary: (value) => `Updated ${value}`,
+    inheritedFromScope: (scopeLabel) => `Inherited from ${scopeLabel}`,
+    scopeOwned: 'Managed here',
+    requiredPill: 'Required',
+    systemPill: 'System',
+    disabledHerePill: 'Disabled here',
+    requiredField: (fieldLabel) => `${fieldLabel} is required.`,
+    scopeTypeLabel: (scopeType) =>
+      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
+  },
 };
 
 type ConfigEntityCopyMap = Partial<Record<ScopedConfigEntityType, Partial<ConfigEntityCatalogEntry>>>;
 type ConfigFieldCopyMap = Partial<Record<string, Partial<ConfigEntityFieldDefinition>>>;
 
-const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<Record<SupportedUiLocale, ConfigEntityCopyMap>> = {
+const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Partial<Record<SupportedUiLocale, ConfigEntityCopyMap>> = {
   en: {},
-  zh: {
+  zh_HANS: {
     'business-segment': { label: '业务分段', description: '当前范围拥有的客户域业务线分段。' },
     'customer-status': { label: '客户状态', description: '供下游客户流程筛选与生命周期提示使用的状态标签。' },
     'address-type': { label: '地址类型', description: '客户与档案表单复用的地址分类值。' },
@@ -617,6 +882,21 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
     'profile-store': { label: '档案库', description: '租户级客户档案边界，用于艺人发布与客户访问。' },
     'custom-domain': { label: '自定义域名', description: '租户、分目录与艺人拥有的公开域名绑定，支持继承与 DNS 验证。' },
     consent: { label: '同意协议', description: '带有本地化内容与生效时间窗的同意协议。' },
+  },
+  zh_HANT: {
+    'business-segment': { label: '業務分段', description: '目前範圍擁有的客戶域業務線分段。' },
+    'customer-status': { label: '客戶狀態', description: '供下游客戶流程篩選與生命週期提示使用的狀態標籤。' },
+    'address-type': { label: '地址類型', description: '客戶與檔案表單複用的地址分類值。' },
+    'channel-category': { label: '渠道類別', description: '供溝通方式記錄繼承的高層渠道分組。' },
+    'communication-type': { label: '溝通方式', description: '下游客戶聯絡流程繼承的溝通方式。' },
+    'reason-category': { label: '原因分類', description: '客戶停用原因與營運選擇使用的頂層分類。' },
+    'inactivation-reason': { label: '停用原因', description: '掛在原因分類下的具體客戶停用原因。' },
+    'membership-class': { label: '會員類別', description: '目前租戶維護的會員類別頂層定義。' },
+    'membership-type': { label: '會員類型', description: '掛在會員類別下的會員類型定義。' },
+    'membership-level': { label: '會員層級', description: '掛在會員類型下的具體會員層級。' },
+    'profile-store': { label: '檔案庫', description: '租戶級客戶檔案邊界，用於藝人發布與客戶存取。' },
+    'custom-domain': { label: '自訂域名', description: '租戶、分目錄與藝人擁有的公開域名綁定，支援繼承與 DNS 驗證。' },
+    consent: { label: '同意協議', description: '帶有本地化內容與生效時間窗的同意協議。' },
   },
   ja: {
     'business-segment': { label: '事業セグメント', description: '現在のスコープが所有する顧客ドメインの事業区分です。' },
@@ -665,9 +945,9 @@ const CONFIG_ENTITY_COPY: Record<RuntimeLocale, ConfigEntityCopyMap> & Partial<R
   },
 };
 
-const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Record<SupportedUiLocale, ConfigFieldCopyMap>> = {
+const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial<Record<SupportedUiLocale, ConfigFieldCopyMap>> = {
   en: {},
-  zh: {
+  zh_HANS: {
     color: { label: '徽标颜色' },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
@@ -682,9 +962,24 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Rec
     expiresAt: { label: '失效时间' },
     contentUrl: { label: '托管内容 URL' },
     isRequired: { label: '需运营确认', description: '控制相关流程是否必须先确认这份协议。' },
-    contentMarkdownEn: { label: '内容（英文）' },
-    contentMarkdownZh: { label: '内容（中文）' },
-    contentMarkdownJa: { label: '内容（日文）' },
+    contentMarkdownBase: { label: 'Content base value' },
+  },
+  zh_HANT: {
+    color: { label: '徽標顏色' },
+    channelCategoryId: { label: '渠道類別' },
+    reasonCategoryId: { label: '原因分類' },
+    membershipClassId: { label: '會員類別' },
+    membershipTypeId: { label: '會員類型' },
+    externalControl: { label: '外部控制', description: '標記該會員類型是否由外部系統同步維護。' },
+    defaultRenewalDays: { label: '預設續期天數' },
+    rank: { label: '層級排序' },
+    badgeUrl: { label: '徽章 URL' },
+    consentVersion: { label: '協議版本' },
+    effectiveFrom: { label: '生效時間' },
+    expiresAt: { label: '失效時間' },
+    contentUrl: { label: '託管內容 URL' },
+    isRequired: { label: '需營運確認', description: '控制相關流程是否必須先確認這份協議。' },
+    contentMarkdownBase: { label: 'Content base value' },
   },
   ja: {
     color: { label: 'バッジ色' },
@@ -701,9 +996,7 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Rec
     expiresAt: { label: '有効終了' },
     contentUrl: { label: '公開コンテンツ URL' },
     isRequired: { label: '続行前に必須', description: '関連ワークフローを続ける前にこの同意確認が必要かを制御します。' },
-    contentMarkdownEn: { label: '内容（英語）' },
-    contentMarkdownZh: { label: '内容（中国語）' },
-    contentMarkdownJa: { label: '内容（日本語）' },
+    contentMarkdownBase: { label: 'Content base value' },
   },
   ko: {
     color: { label: '배지 색상' },
@@ -720,9 +1013,7 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Rec
     expiresAt: { label: '유효 종료' },
     contentUrl: { label: '호스팅 콘텐츠 URL' },
     isRequired: { label: '진행 전 필수', description: '관련 흐름을 계속하기 전에 이 동의 확인이 필요한지 제어합니다.' },
-    contentMarkdownEn: { label: '내용(영어)' },
-    contentMarkdownZh: { label: '내용(중국어)' },
-    contentMarkdownJa: { label: '내용(일본어)' },
+    contentMarkdownBase: { label: 'Content base value' },
   },
   fr: {
     color: { label: 'Couleur du badge' },
@@ -739,13 +1030,11 @@ const CONFIG_FIELD_COPY: Record<RuntimeLocale, ConfigFieldCopyMap> & Partial<Rec
     expiresAt: { label: 'Fin de validite' },
     contentUrl: { label: 'URL du contenu heberge' },
     isRequired: { label: 'Obligatoire avant de continuer', description: 'Controle si ce consentement doit etre confirme avant de poursuivre le flux associe.' },
-    contentMarkdownEn: { label: 'Contenu (anglais)' },
-    contentMarkdownZh: { label: 'Contenu (chinois)' },
-    contentMarkdownJa: { label: 'Contenu (japonais)' },
+    contentMarkdownBase: { label: 'Content base value' },
   },
 };
 
-export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale | RuntimeLocale) {
+export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale ) {
   if (locale === 'en') {
     return CONFIG_ENTITY_CATALOG;
   }
@@ -774,11 +1063,11 @@ export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale | Runt
 }
 
 export function useSettingsFamilyCopy() {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
+  const { locale } = useUiLocale();
+  const effectiveSelectedLocale = locale;
 
   return useMemo(() => {
-    const common = resolveLocaleRecord(effectiveSelectedLocale, COMMON, currentLocale);
+    const common = resolveLocaleRecord(effectiveSelectedLocale, COMMON);
     const text = (valueOrEn: SettingsFamilyLocalizedText | string, zh?: string, ja?: string) =>
       pickLocaleText(
         effectiveSelectedLocale,
@@ -795,15 +1084,14 @@ export function useSettingsFamilyCopy() {
       );
 
     return {
-      currentLocale,
-      selectedLocale: effectiveSelectedLocale,
+      locale: effectiveSelectedLocale,
       common,
       text,
-      dictionaryExplorerCopy: resolveLocaleRecord(effectiveSelectedLocale, DICTIONARY_PANEL_COPY, currentLocale),
-      scopedConfigCopy: resolveLocaleRecord(effectiveSelectedLocale, SCOPED_CONFIG_COPY, currentLocale),
+      dictionaryExplorerCopy: resolveLocaleRecord(effectiveSelectedLocale, DICTIONARY_PANEL_COPY),
+      scopedConfigCopy: resolveLocaleRecord(effectiveSelectedLocale, SCOPED_CONFIG_COPY),
       localizedConfigEntityCatalog: getLocalizedConfigEntityCatalog(effectiveSelectedLocale),
       formatDateTime: (value: string | null, fallback = common.unavailable) =>
         formatDateTimeValue(effectiveSelectedLocale, value || '', fallback),
     };
-  }, [currentLocale, effectiveSelectedLocale]);
+  }, [locale, effectiveSelectedLocale]);
 }

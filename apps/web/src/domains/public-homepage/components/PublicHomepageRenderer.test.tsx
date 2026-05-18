@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type PublicHomepageContent } from '@/domains/public-homepage/api/public-homepage.api';
 import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
-import { RuntimeLocaleProvider } from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -14,7 +14,7 @@ vi.mock('@/platform/runtime/session/session-provider', () => ({
 }));
 
 function renderWithLocale(ui: ReactElement) {
-  return render(<RuntimeLocaleProvider>{ui}</RuntimeLocaleProvider>);
+  return render(<UiLocaleProvider>{ui}</UiLocaleProvider>);
 }
 
 describe('PublicHomepageRenderer', () => {

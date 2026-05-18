@@ -5,7 +5,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -50,6 +50,27 @@ describe('ProfileStoreApplicationService', () => {
     mockChangeLogService,
   );
 
+  const defaultStoreName = createLocalizedText({
+    en: 'Default Profile Store',
+    zh_HANS: '默认档案库',
+    zh_HANT: '預設檔案庫',
+    ja: 'デフォルトプロフィールストア',
+    fr: 'Magasin de profils par défaut',
+  });
+  const defaultStoreDescription = createLocalizedText({
+    en: 'Primary customer profile store',
+    zh_HANS: '主要客户档案库',
+    zh_HANT: '主要客戶檔案庫',
+    ja: '主要な顧客プロフィールストア',
+    fr: 'Magasin principal des profils clients',
+  });
+  const emptyStoreDescription = createLocalizedText({
+    en: 'Default Profile Store',
+  });
+  const oldStoreName = createLocalizedText({ en: 'Old Name' });
+  const newStoreName = createLocalizedText({ en: 'New Name' });
+  const secondaryStoreName = createLocalizedText({ en: 'Secondary Store' });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockDatabaseService.calculatePaginationMeta).mockReturnValue({
@@ -67,14 +88,8 @@ describe('ProfileStoreApplicationService', () => {
       {
         id: 'store-1',
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Profile Store',
-        nameZh: null,
-        nameJa: null,
-        extraData: {
-          translations: {
-            fr: 'Magasin de profils par défaut',
-          },
-        },
+        name: defaultStoreName,
+        extraData: null,
         isDefault: true,
         isActive: true,
         createdAt: new Date('2026-04-14T00:00:00.000Z'),
@@ -90,13 +105,7 @@ describe('ProfileStoreApplicationService', () => {
         {
           id: 'store-1',
           code: 'DEFAULT_STORE',
-          name: 'Default Profile Store',
-          nameZh: null,
-          nameJa: null,
-          translations: {
-            en: 'Default Profile Store',
-            fr: 'Magasin de profils par défaut',
-          },
+          name: defaultStoreName,
           talentCount: 2,
           customerCount: 10,
           isDefault: true,
@@ -154,7 +163,7 @@ describe('ProfileStoreApplicationService', () => {
       service.create(
         {
           code: 'DEFAULT_STORE',
-          nameEn: 'Default Profile Store',
+          name: defaultStoreName,
         },
         context,
       ),
@@ -167,7 +176,7 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.create).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
+      name: defaultStoreName,
       isDefault: true,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
@@ -177,7 +186,7 @@ describe('ProfileStoreApplicationService', () => {
       service.create(
         {
           code: 'DEFAULT_STORE',
-          nameEn: 'Default Profile Store',
+          name: defaultStoreName,
           isDefault: true,
         },
         context,
@@ -185,7 +194,7 @@ describe('ProfileStoreApplicationService', () => {
     ).resolves.toEqual({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      name: 'Default Profile Store',
+      name: defaultStoreName,
       isDefault: true,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
@@ -195,25 +204,20 @@ describe('ProfileStoreApplicationService', () => {
       'tenant_test',
       {
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Profile Store',
-        nameZh: null,
-        nameJa: null,
-        descriptionEn: null,
-        descriptionZh: null,
-        descriptionJa: null,
-        extraData: null,
+        name: defaultStoreName,
+        description: defaultStoreName,
         isDefault: true,
       },
       'user-1',
     );
   });
 
-  it('persists managed translation maps into profile-store payloads and exposes them in detail responses', async () => {
+  it('persists localized profile-store payloads and exposes them in detail responses', async () => {
     vi.mocked(mockRepository.findByCode).mockResolvedValue(null);
     vi.mocked(mockRepository.create).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
+      name: defaultStoreName,
       isDefault: false,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
@@ -222,15 +226,8 @@ describe('ProfileStoreApplicationService', () => {
     await service.create(
       {
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Profile Store',
-        translations: {
-          fr: 'Magasin de profils par défaut',
-          zh_HANT: '預設檔案庫',
-        },
-        descriptionEn: 'Primary customer profile store',
-        descriptionTranslations: {
-          fr: 'Magasin principal des profils clients',
-        },
+        name: defaultStoreName,
+        description: defaultStoreDescription,
       },
       context,
     );
@@ -239,21 +236,8 @@ describe('ProfileStoreApplicationService', () => {
       'tenant_test',
       {
         code: 'DEFAULT_STORE',
-        nameEn: 'Default Profile Store',
-        nameZh: null,
-        nameJa: null,
-        descriptionEn: 'Primary customer profile store',
-        descriptionZh: null,
-        descriptionJa: null,
-        extraData: {
-          translations: {
-            fr: 'Magasin de profils par défaut',
-            zh_HANT: '預設檔案庫',
-          },
-          descriptionTranslations: {
-            fr: 'Magasin principal des profils clients',
-          },
-        },
+        name: defaultStoreName,
+        description: defaultStoreDescription,
         isDefault: false,
       },
       'user-1',
@@ -262,21 +246,9 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findById).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: '默认档案库',
-      nameJa: 'デフォルトプロフィールストア',
-      descriptionEn: 'Primary customer profile store',
-      descriptionZh: '主要客户档案库',
-      descriptionJa: '主要な顧客プロフィールストア',
-      extraData: {
-        translations: {
-          fr: 'Magasin de profils par défaut',
-          zh_HANT: '預設檔案庫',
-        },
-        descriptionTranslations: {
-          fr: 'Magasin principal des profils clients',
-        },
-      },
+      name: defaultStoreName,
+      description: defaultStoreDescription,
+      extraData: null,
       isDefault: false,
       isActive: true,
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
@@ -288,19 +260,8 @@ describe('ProfileStoreApplicationService', () => {
 
     await expect(service.findById('store-1', context)).resolves.toMatchObject({
       id: 'store-1',
-      translations: {
-        en: 'Default Profile Store',
-        zh_HANS: '默认档案库',
-        zh_HANT: '預設檔案庫',
-        ja: 'デフォルトプロフィールストア',
-        fr: 'Magasin de profils par défaut',
-      },
-      descriptionTranslations: {
-        en: 'Primary customer profile store',
-        zh_HANS: '主要客户档案库',
-        ja: '主要な顧客プロフィールストア',
-        fr: 'Magasin principal des profils clients',
-      },
+      name: defaultStoreName,
+      description: defaultStoreDescription,
     });
   });
 
@@ -308,12 +269,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Old Name',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: oldStoreName,
+      description: emptyStoreDescription,
       extraData: null,
       isActive: true,
       isDefault: true,
@@ -325,7 +282,7 @@ describe('ProfileStoreApplicationService', () => {
         'store-1',
         {
           version: 2,
-          nameEn: 'New Name',
+          name: { en: 'New Name' },
         },
         context,
       ),
@@ -336,12 +293,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: defaultStoreName,
+      description: emptyStoreDescription,
       extraData: null,
       isActive: true,
       isDefault: true,
@@ -365,12 +318,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: defaultStoreName,
+      description: emptyStoreDescription,
       extraData: null,
       isActive: true,
       isDefault: true,
@@ -393,12 +342,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'store-2',
       code: 'SECONDARY_STORE',
-      nameEn: 'Secondary Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: secondaryStoreName,
+      description: createLocalizedText({ en: 'Secondary Store' }),
       extraData: null,
       isActive: true,
       isDefault: false,
@@ -408,12 +353,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.update).mockResolvedValue({
       id: 'store-2',
       code: 'SECONDARY_STORE',
-      nameEn: 'Secondary Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: secondaryStoreName,
+      description: createLocalizedText({ en: 'Secondary Store' }),
       extraData: null,
       isActive: true,
       isDefault: true,
@@ -456,12 +397,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.findForUpdate).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: defaultStoreName,
+      description: emptyStoreDescription,
       extraData: null,
       isActive: true,
       isDefault: true,
@@ -470,12 +407,8 @@ describe('ProfileStoreApplicationService', () => {
     vi.mocked(mockRepository.update).mockResolvedValue({
       id: 'store-1',
       code: 'DEFAULT_STORE',
-      nameEn: 'Default Profile Store',
-      nameZh: null,
-      nameJa: null,
-      descriptionEn: null,
-      descriptionZh: null,
-      descriptionJa: null,
+      name: defaultStoreName,
+      description: emptyStoreDescription,
       extraData: null,
       isActive: true,
       isDefault: true,

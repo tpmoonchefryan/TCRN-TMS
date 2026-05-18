@@ -1,5 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
+
+import {
+  localizedTextOrderExpression,
+  localizedTextSearchExpression,
+} from '../../../platform/persistence/localized-text.persistence';
+
 export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 
 export interface TalentData {
@@ -8,14 +15,10 @@ export interface TalentData {
   profileStoreId: string | null;
   code: string;
   path: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   displayName: string;
-  descriptionEn: string | null;
-  descriptionZh: string | null;
-  descriptionJa: string | null;
+  description: LocalizedText;
   avatarUrl: string | null;
   homepagePath: string | null;
   timezone: string;
@@ -48,9 +51,7 @@ export interface TalentPublishReadiness {
 export interface TalentProfileStoreRecord {
   id: string;
   code: string;
-  nameEn: string;
-  nameZh: string | null;
-  nameJa: string | null;
+  name: LocalizedText;
   extraData: Record<string, unknown> | null;
   isDefault: boolean;
   piiProxyUrl: string | null;
@@ -92,14 +93,10 @@ export const TALENT_SELECT_FIELDS = `
   profile_store_id as "profileStoreId",
   code,
   path,
-  name_en as "nameEn",
-  name_zh as "nameZh",
-  name_ja as "nameJa",
+  name,
   extra_data as "extraData",
   display_name as "displayName",
-  description_en as "descriptionEn",
-  description_zh as "descriptionZh",
-  description_ja as "descriptionJa",
+  description,
   avatar_url as "avatarUrl",
   homepage_path as "homepagePath",
   timezone,
@@ -154,7 +151,7 @@ export const buildTalentListQuery = (options: TalentListOptions = {}) => {
   }
 
   if (search) {
-    whereClause += ` AND (code ILIKE $${paramIndex} OR name_en ILIKE $${paramIndex} OR display_name ILIKE $${paramIndex})`;
+    whereClause += ` AND (code ILIKE $${paramIndex} OR ${localizedTextSearchExpression('name', `$${paramIndex}`)} OR display_name ILIKE $${paramIndex})`;
     params.push(`%${search}%`);
     paramIndex += 1;
   }
@@ -170,7 +167,7 @@ export const buildTalentListQuery = (options: TalentListOptions = {}) => {
     const field = isDesc ? sort.substring(1) : sort;
     const fieldMap: Record<string, string> = {
       code: 'code',
-      name: 'name_en',
+      name: localizedTextOrderExpression('name'),
       displayName: 'display_name',
       createdAt: 'created_at',
     };

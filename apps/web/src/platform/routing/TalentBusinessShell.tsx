@@ -20,7 +20,7 @@ import {
   buildTenantProfileSecurityPath,
   type TalentWorkspaceSection,
 } from '@/platform/routing/workspace-paths';
-import { useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { type BrowserSession, useSession } from '@/platform/runtime/session/session-provider';
 import {
@@ -80,7 +80,7 @@ export function TalentBusinessShell({
   onSignOut,
   isSignOutPending = false,
 }: Readonly<TalentBusinessShellProps>) {
-  const { copy, selectedLocale, localeOptions, setLocale } = useRuntimeLocale();
+  const { copy, locale, localeOptions, setLocale } = useUiLocale();
   const { request } = useSession();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -152,7 +152,7 @@ export function TalentBusinessShell({
   const pageTitle = getTalentBusinessTitle(section, copy.talentBusiness.titles);
   const resolvedTalentName =
     talentName ||
-    pickLocaleText(selectedLocale, {
+    pickLocaleText(locale, {
       en: 'Talent workspace',
       zh_HANS: '艺人工作区',
       zh_HANT: '藝人工作區',
@@ -161,7 +161,7 @@ export function TalentBusinessShell({
       fr: 'Espace de travail talent',
     });
   const shellA11y = {
-    breadcrumb: pickLocaleText(selectedLocale, {
+    breadcrumb: pickLocaleText(locale, {
       en: 'Workspace breadcrumb',
       zh_HANS: '工作区面包屑',
       zh_HANT: '工作區麵包屑',
@@ -169,7 +169,7 @@ export function TalentBusinessShell({
       ko: '워크스페이스 이동 경로',
       fr: 'Fil d’Ariane de l’espace de travail',
     }),
-    openNavigation: pickLocaleText(selectedLocale, {
+    openNavigation: pickLocaleText(locale, {
       en: 'Open workspace navigation',
       zh_HANS: '打开工作区导航',
       zh_HANT: '開啟工作區導覽',
@@ -177,7 +177,7 @@ export function TalentBusinessShell({
       ko: '워크스페이스 탐색 열기',
       fr: 'Ouvrir la navigation de l’espace de travail',
     }),
-    closeNavigation: pickLocaleText(selectedLocale, {
+    closeNavigation: pickLocaleText(locale, {
       en: 'Close workspace navigation',
       zh_HANS: '关闭工作区导航',
       zh_HANT: '關閉工作區導覽',
@@ -250,11 +250,11 @@ export function TalentBusinessShell({
           rightArea={
             <div className="flex items-center gap-3">
               <LocaleSwitcher
-                currentLocale={selectedLocale}
+                locale={locale}
                 options={localeOptions}
                 onChange={setLocale}
                 ariaLabel={`${copy.common.languageSwitcherLabel}: ${
-                  localeOptions.find((o) => o.code === selectedLocale)?.label || selectedLocale
+                  localeOptions.find((o) => o.code === locale)?.label || locale
                 }`}
               />
               <AccountDropdownMenu

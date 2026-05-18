@@ -1,6 +1,6 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
+import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 import { Plus, RefreshCcw } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,15 +30,13 @@ import {
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
 import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
 import {
-  buildManagedTranslations,
-  countManagedLocaleValues,
-  extractManagedTranslations,
-  pickLegacyLocaleValue,
+  buildLocalizedTextPayload,
+  countLocaleValues,
+  extractLocalizedTextPayload,
   TranslationManagementDrawer,
   TranslationManagementTrigger,
 } from '@/domains/config-dictionary-settings/components/TranslationManagement';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import type { RuntimeLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
   pickLocaleText,
@@ -58,7 +56,7 @@ interface ScopedConfigEntityWorkspaceProps {
   requestEnvelope: RequestEnvelopeFn;
   scopeType: ConfigEntityScopeType;
   scopeId?: string;
-  locale?: SupportedUiLocale | RuntimeLocale;
+  locale?: SupportedUiLocale ;
   copy?: ScopedConfigEntityWorkspaceCopy;
   catalog?: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
 }
@@ -76,7 +74,7 @@ interface NoticeState {
   message: string;
 }
 
-interface ManagedTranslationDraft {
+interface LocaleValueDraft {
   content: Record<string, string>;
   description: Record<string, string>;
   name: Record<string, string>;
@@ -139,13 +137,9 @@ export interface ScopedConfigEntityWorkspaceCopy {
   codeLabel: string;
   codeValidation: string;
   sortOrderLabel: string;
-  nameEnglishLabel: string;
-  nameChineseLabel: string;
-  nameJapaneseLabel: string;
+  nameBaseLabel: string;
   englishNameRequired: string;
-  descriptionEnglishLabel: string;
-  descriptionChineseLabel: string;
-  descriptionJapaneseLabel: string;
+  descriptionBaseLabel: string;
   entitySpecificFieldsTitle: string;
   entitySpecificFieldsDescription: string;
   createSubmit: string;
@@ -230,13 +224,9 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
   codeLabel: 'Code *',
   codeValidation: 'Code must be 3-32 characters using only A-Z, 0-9, and _.',
   sortOrderLabel: 'Sort order',
-  nameEnglishLabel: 'Name (English) *',
-  nameChineseLabel: 'Name (Chinese)',
-  nameJapaneseLabel: 'Name (Japanese)',
+  nameBaseLabel: 'Name base value *',
   englishNameRequired: 'English name is required.',
-  descriptionEnglishLabel: 'Description (English)',
-  descriptionChineseLabel: 'Description (Chinese)',
-  descriptionJapaneseLabel: 'Description (Japanese)',
+  descriptionBaseLabel: 'Description base value',
   entitySpecificFieldsTitle: 'Entity-specific fields',
   entitySpecificFieldsDescription: 'Complete the fields required for this entity.',
   createSubmit: 'Create record',
@@ -383,7 +373,7 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
-function formatDateTime(locale: SupportedUiLocale | RuntimeLocale, value: string) {
+function formatDateTime(locale: SupportedUiLocale , value: string) {
   return formatLocaleDateTime(locale, value, value);
 }
 
@@ -428,12 +418,8 @@ function normalizeStringValue(value: DraftValue) {
 function createEmptyDraft(entry: ConfigEntityCatalogEntry) {
   const baseDraft: ConfigEntityDraft = {
     code: '',
-    nameEn: '',
-    nameZh: '',
-    nameJa: '',
-    descriptionEn: '',
-    descriptionZh: '',
-    descriptionJa: '',
+    nameBase: '',
+    descriptionBase: '',
     sortOrder: '0',
   };
 
@@ -448,12 +434,8 @@ function createDraftFromEntity(entry: ConfigEntityCatalogEntry, entity: ConfigEn
   const nextDraft = createEmptyDraft(entry);
 
   nextDraft.code = entity.code ?? '';
-  nextDraft.nameEn = entity.nameEn;
-  nextDraft.nameZh = entity.nameZh ?? '';
-  nextDraft.nameJa = entity.nameJa ?? '';
-  nextDraft.descriptionEn = entity.descriptionEn ?? '';
-  nextDraft.descriptionZh = entity.descriptionZh ?? '';
-  nextDraft.descriptionJa = entity.descriptionJa ?? '';
+  nextDraft.nameBase = entity.name.en;
+  nextDraft.descriptionBase = entity.description?.en ?? '';
   nextDraft.sortOrder = String(entity.sortOrder ?? 0);
 
   entry.fields.forEach((field) => {
@@ -486,7 +468,7 @@ function validateDraft(
     return copy.codeValidation;
   }
 
-  if (!normalizeStringValue(draft.nameEn)) {
+  if (!normalizeStringValue(draft.nameBase)) {
     return copy.englishNameRequired;
   }
 
@@ -512,22 +494,14 @@ function buildCreatePayload(
   draft: ConfigEntityDraft,
   scopeType: ConfigEntityScopeType,
   scopeId: string | undefined,
-  managedTranslations: ManagedTranslationDraft,
+  localeValues: LocaleValueDraft,
 ): CreateConfigEntityInput {
-  const nameEn = normalizeStringValue(draft.nameEn) || '';
-  const descriptionEn = normalizeStringValue(draft.descriptionEn);
-  const translations = buildManagedTranslations(nameEn, managedTranslations.name);
-  const descriptionTranslations = buildManagedTranslations(descriptionEn, managedTranslations.description);
+  const nameBase = normalizeStringValue(draft.nameBase) || '';
+  const descriptionBase = normalizeStringValue(draft.descriptionBase);
   const payload: CreateConfigEntityInput = {
     code: (normalizeStringValue(draft.code) || '').toUpperCase(),
-    nameEn,
-    nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-    nameJa: pickLegacyLocaleValue(translations, 'ja'),
-    translations,
-    descriptionEn,
-    descriptionZh: pickLegacyLocaleValue(descriptionTranslations, 'zh_HANS'),
-    descriptionJa: pickLegacyLocaleValue(descriptionTranslations, 'ja'),
-    descriptionTranslations,
+    name: buildLocalizedTextPayload(nameBase, localeValues.name),
+    description: buildLocalizedTextPayload(descriptionBase, localeValues.description),
     sortOrder: Number(normalizeStringValue(draft.sortOrder) || '0'),
     ownerType: scopeType,
   };
@@ -567,13 +541,9 @@ function buildCreatePayload(
   });
 
   if (entry.type === 'consent') {
-    const contentMarkdownEn = normalizeStringValue(draft.contentMarkdownEn);
-    const contentTranslations = buildManagedTranslations(contentMarkdownEn, managedTranslations.content);
+    const contentMarkdownBase = normalizeStringValue(draft.contentMarkdownBase);
 
-    payload.contentMarkdownEn = contentMarkdownEn;
-    payload.contentMarkdownZh = pickLegacyLocaleValue(contentTranslations, 'zh_HANS');
-    payload.contentMarkdownJa = pickLegacyLocaleValue(contentTranslations, 'ja');
-    payload.contentTranslations = contentTranslations;
+    payload.contentMarkdown = buildLocalizedTextPayload(contentMarkdownBase, localeValues.content);
   }
 
   return payload;
@@ -583,22 +553,14 @@ function buildUpdatePayload(
   entry: ConfigEntityCatalogEntry,
   draft: ConfigEntityDraft,
   version: number,
-  managedTranslations: ManagedTranslationDraft,
+  localeValues: LocaleValueDraft,
 ): UpdateConfigEntityInput {
-  const nameEn = normalizeStringValue(draft.nameEn) || '';
-  const descriptionEn = normalizeStringValue(draft.descriptionEn);
-  const translations = buildManagedTranslations(nameEn, managedTranslations.name);
-  const descriptionTranslations = buildManagedTranslations(descriptionEn, managedTranslations.description);
+  const nameBase = normalizeStringValue(draft.nameBase) || '';
+  const descriptionBase = normalizeStringValue(draft.descriptionBase);
   const payload: UpdateConfigEntityInput = {
     version,
-    nameEn,
-    nameZh: pickLegacyLocaleValue(translations, 'zh_HANS'),
-    nameJa: pickLegacyLocaleValue(translations, 'ja'),
-    translations,
-    descriptionEn,
-    descriptionZh: pickLegacyLocaleValue(descriptionTranslations, 'zh_HANS'),
-    descriptionJa: pickLegacyLocaleValue(descriptionTranslations, 'ja'),
-    descriptionTranslations,
+    name: buildLocalizedTextPayload(nameBase, localeValues.name),
+    description: buildLocalizedTextPayload(descriptionBase, localeValues.description),
     sortOrder: Number(normalizeStringValue(draft.sortOrder) || '0'),
   };
 
@@ -628,19 +590,15 @@ function buildUpdatePayload(
   });
 
   if (entry.type === 'consent') {
-    const contentMarkdownEn = normalizeStringValue(draft.contentMarkdownEn);
-    const contentTranslations = buildManagedTranslations(contentMarkdownEn, managedTranslations.content);
+    const contentMarkdownBase = normalizeStringValue(draft.contentMarkdownBase);
 
-    payload.contentMarkdownEn = contentMarkdownEn;
-    payload.contentMarkdownZh = pickLegacyLocaleValue(contentTranslations, 'zh_HANS');
-    payload.contentMarkdownJa = pickLegacyLocaleValue(contentTranslations, 'ja');
-    payload.contentTranslations = contentTranslations;
+    payload.contentMarkdown = buildLocalizedTextPayload(contentMarkdownBase, localeValues.content);
   }
 
   return payload;
 }
 
-function createEmptyManagedTranslations(): ManagedTranslationDraft {
+function createEmptyLocaleValueDraft(): LocaleValueDraft {
   return {
     content: {},
     description: {},
@@ -648,35 +606,26 @@ function createEmptyManagedTranslations(): ManagedTranslationDraft {
   };
 }
 
-function createManagedTranslationsFromEntity(
+function createLocaleValueDraftFromEntity(
   entry: ConfigEntityCatalogEntry,
   entity: ConfigEntityRecord | null,
-): ManagedTranslationDraft {
+): LocaleValueDraft {
   if (!entity) {
-    return createEmptyManagedTranslations();
+    return createEmptyLocaleValueDraft();
   }
 
   return {
-    name: extractManagedTranslations(entity.nameEn, entity.translations, {
-      zh_HANS: entity.nameZh,
-      ja: entity.nameJa,
-    }),
-    description: extractManagedTranslations(entity.descriptionEn, entity.descriptionTranslations, {
-      zh_HANS: entity.descriptionZh,
-      ja: entity.descriptionJa,
-    }),
+    name: extractLocalizedTextPayload(entity.name),
+    description: extractLocalizedTextPayload(entity.description ?? undefined),
     content:
       entry.type === 'consent'
-        ? extractManagedTranslations(entity.contentMarkdownEn, entity.contentTranslations, {
-            zh_HANS: entity.contentMarkdownZh,
-            ja: entity.contentMarkdownJa,
-          })
+        ? extractLocalizedTextPayload(entity.contentMarkdown ?? undefined)
         : {},
   };
 }
 
 function renderScopeSummary(
-  locale: SupportedUiLocale | RuntimeLocale,
+  locale: SupportedUiLocale ,
   entity: ConfigEntityRecord,
   copy: ScopedConfigEntityWorkspaceCopy,
   scopeType: ConfigEntityScopeType,
@@ -887,8 +836,8 @@ export function ScopedConfigEntityWorkspace({
   const [editorMode, setEditorMode] = useState<'closed' | 'create' | 'edit'>('closed');
   const [editorTarget, setEditorTarget] = useState<ConfigEntityRecord | null>(null);
   const [draft, setDraft] = useState<ConfigEntityDraft>(() => createEmptyDraft(catalog[DEFAULT_CONFIG_ENTITY_TYPE]));
-  const [managedTranslations, setManagedTranslations] = useState<ManagedTranslationDraft>(
-    createEmptyManagedTranslations(),
+  const [localeValues, setLocaleValues] = useState<LocaleValueDraft>(
+    createEmptyLocaleValueDraft(),
   );
   const [isTranslationsOpen, setIsTranslationsOpen] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
@@ -903,41 +852,17 @@ export function ScopedConfigEntityWorkspace({
   const effectiveCurrentScopeOnly = supportsLocalScopeOnly ? currentScopeOnly : false;
   const inheritedOnlyNotice =
     !canManageSelectedTypeInCurrentScope
-      ? pickLocaleText(locale, {
-          en: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`,
-          zh: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`,
-          ja: `${selectedEntry.label} はテナントスコープでのみ管理でき、この画面では継承結果の確認のみ可能です。`,
-        })
+      ? pickLocaleText(locale, { en: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`, zh_HANS: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`, zh_HANT: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`, ja: `${selectedEntry.label} はテナントスコープでのみ管理でき、この画面では継承結果の確認のみ可能です。`, ko: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`, fr: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.` })
       : null;
   const translationEditorCopy =
     {
-      closeButtonAriaLabel: pickLocaleText(locale, {
-        en: 'Close translation management drawer',
-        zh: '关闭翻译管理抽屉',
-        ja: '翻訳管理ドロワーを閉じる',
-      }),
-      description: pickLocaleText(locale, {
-        en: 'Keep English in the main fields and add translated values only when needed.',
-        zh: '主字段保留英文；只有需要额外语种时再补充翻译值。',
-        ja: '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。',
-      }),
-      helper: pickLocaleText(locale, {
-        en: 'Translation management',
-        zh: '翻译管理',
-        ja: '翻訳管理',
-      }),
-      title: pickLocaleText(locale, {
-        en: 'Translation management',
-        zh: '翻译管理',
-        ja: '翻訳管理',
-      }),
+      closeButtonAriaLabel: pickLocaleText(locale, { en: 'Close translation management drawer', zh_HANS: '关闭翻译管理抽屉', zh_HANT: '关闭翻译管理抽屉', ja: '翻訳管理ドロワーを閉じる', ko: 'Close translation management drawer', fr: 'Close translation management drawer' }),
+      description: pickLocaleText(locale, { en: 'Keep English in the main fields and add translated values only when needed.', zh_HANS: '主字段保留英文；只有需要额外语种时再补充翻译值。', zh_HANT: '主字段保留英文；只有需要额外语种时再补充翻译值。', ja: '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。', ko: 'Keep English in the main fields and add translated values only when needed.', fr: 'Keep English in the main fields and add translated values only when needed.' }),
+      helper: pickLocaleText(locale, { en: 'Translation management', zh_HANS: '翻译管理', zh_HANT: '翻译管理', ja: '翻訳管理', ko: 'Translation management', fr: 'Translation management' }),
+      title: pickLocaleText(locale, { en: 'Translation management', zh_HANS: '翻译管理', zh_HANT: '翻译管理', ja: '翻訳管理', ko: 'Translation management', fr: 'Translation management' }),
     };
   const editorDrawerCopy = {
-    closeButtonAriaLabel: pickLocaleText(locale, {
-      en: 'Close configuration record drawer',
-      zh: '关闭配置记录抽屉',
-      ja: '設定レコードドロワーを閉じる',
-    }),
+    closeButtonAriaLabel: pickLocaleText(locale, { en: 'Close configuration record drawer', zh_HANS: '关闭配置记录抽屉', zh_HANT: '关闭配置记录抽屉', ja: '設定レコードドロワーを閉じる', ko: 'Close configuration record drawer', fr: 'Close configuration record drawer' }),
   };
 
   const translationSections = useMemo(() => {
@@ -949,54 +874,42 @@ export function ScopedConfigEntityWorkspace({
       values: Record<string, string>;
     }> = [
       {
-        baseValue: typeof draft.nameEn === 'string' ? draft.nameEn : '',
+        baseValue: typeof draft.nameBase === 'string' ? draft.nameBase : '',
         id: 'name',
-        label: pickLocaleText(locale, {
-          en: 'Name',
-          zh: '名称',
-          ja: '名称',
-        }),
-        values: managedTranslations.name,
+        label: pickLocaleText(locale, { en: 'Name', zh_HANS: '名称', zh_HANT: '名称', ja: '名称', ko: 'Name', fr: 'Name' }),
+        values: localeValues.name,
       },
     ];
 
     if (selectedType !== 'consent') {
       sections.push({
-        baseValue: typeof draft.descriptionEn === 'string' ? draft.descriptionEn : '',
+        baseValue: typeof draft.descriptionBase === 'string' ? draft.descriptionBase : '',
         id: 'description',
         kind: 'textarea',
-        label: pickLocaleText(locale, {
-          en: 'Description',
-          zh: '描述',
-          ja: '説明',
-        }),
-        values: managedTranslations.description,
+        label: pickLocaleText(locale, { en: 'Description', zh_HANS: '描述', zh_HANT: '描述', ja: '説明', ko: 'Description', fr: 'Description' }),
+        values: localeValues.description,
       });
     }
 
     if (selectedType === 'consent') {
       sections.push({
-        baseValue: typeof draft.contentMarkdownEn === 'string' ? draft.contentMarkdownEn : '',
+        baseValue: typeof draft.contentMarkdownBase === 'string' ? draft.contentMarkdownBase : '',
         id: 'content',
         kind: 'textarea',
-        label: pickLocaleText(locale, {
-          en: 'Consent content',
-          zh: '同意内容',
-          ja: '同意本文',
-        }),
-        values: managedTranslations.content,
+        label: pickLocaleText(locale, { en: 'Consent content', zh_HANS: '同意内容', zh_HANT: '同意内容', ja: '同意本文', ko: 'Consent content', fr: 'Consent content' }),
+        values: localeValues.content,
       });
     }
 
     return sections;
   }, [
-    draft.contentMarkdownEn,
-    draft.descriptionEn,
-    draft.nameEn,
+    draft.contentMarkdownBase,
+    draft.descriptionBase,
+    draft.nameBase,
     locale,
-    managedTranslations.content,
-    managedTranslations.description,
-    managedTranslations.name,
+    localeValues.content,
+    localeValues.description,
+    localeValues.name,
     selectedType,
   ]);
 
@@ -1004,7 +917,7 @@ export function ScopedConfigEntityWorkspace({
     setEditorMode('closed');
     setEditorTarget(null);
     setDraft(createEmptyDraft(selectedEntry));
-    setManagedTranslations(createEmptyManagedTranslations());
+    setLocaleValues(createEmptyLocaleValueDraft());
     setIsTranslationsOpen(false);
     setEditorError(null);
   }, [selectedEntry]);
@@ -1245,7 +1158,7 @@ export function ScopedConfigEntityWorkspace({
           setParentOptions(
             parentRecords.map((record) => ({
               id: record.id,
-              name: record.name,
+              name: record.localizedName,
             })),
           );
         }
@@ -1280,7 +1193,7 @@ export function ScopedConfigEntityWorkspace({
     setEditorMode('create');
     setEditorTarget(null);
     setDraft(createEmptyDraft(selectedEntry));
-    setManagedTranslations(createEmptyManagedTranslations());
+    setLocaleValues(createEmptyLocaleValueDraft());
     setIsTranslationsOpen(false);
   }
 
@@ -1290,7 +1203,7 @@ export function ScopedConfigEntityWorkspace({
     setEditorMode('edit');
     setEditorTarget(entity);
     setDraft(createDraftFromEntity(selectedEntry, entity));
-    setManagedTranslations(createManagedTranslationsFromEntity(selectedEntry, entity));
+    setLocaleValues(createLocaleValueDraftFromEntity(selectedEntry, entity));
     setIsTranslationsOpen(false);
   }
 
@@ -1299,7 +1212,7 @@ export function ScopedConfigEntityWorkspace({
     setEditorTarget(null);
     setEditorError(null);
     setDraft(createEmptyDraft(selectedEntry));
-    setManagedTranslations(createEmptyManagedTranslations());
+    setLocaleValues(createEmptyLocaleValueDraft());
     setIsTranslationsOpen(false);
   }
 
@@ -1320,17 +1233,17 @@ export function ScopedConfigEntityWorkspace({
           request,
           selectedType,
           editorTarget.id,
-          buildUpdatePayload(selectedEntry, draft, editorTarget.version, managedTranslations),
+          buildUpdatePayload(selectedEntry, draft, editorTarget.version, localeValues),
         );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.updateSuccess(selectedEntry.label, editorTarget.code ?? editorTarget.name),
+          message: resolvedCopy.updateSuccess(selectedEntry.label, editorTarget.code ?? editorTarget.localizedName),
         });
       } else {
         await createConfigEntity(
           request,
           selectedType,
-          buildCreatePayload(selectedEntry, draft, scopeType, scopeId, managedTranslations),
+          buildCreatePayload(selectedEntry, draft, scopeType, scopeId, localeValues),
         );
         setNotice({
           tone: 'success',
@@ -1369,8 +1282,8 @@ export function ScopedConfigEntityWorkspace({
     if (entityIsInherited && entity.canDisable && scopeType !== 'tenant' && !isTenantGlobalEntityType(selectedType)) {
       setConfirmState({
         title: entity.isDisabledHere
-          ? resolvedCopy.enableInScopeTitle(entity.code ?? entity.name)
-          : resolvedCopy.disableInScopeTitle(entity.code ?? entity.name),
+          ? resolvedCopy.enableInScopeTitle(entity.code ?? entity.localizedName)
+          : resolvedCopy.disableInScopeTitle(entity.code ?? entity.localizedName),
         description: entity.isDisabledHere ? resolvedCopy.enableInScopeDescription : resolvedCopy.disableInScopeDescription,
         confirmText: entity.isDisabledHere ? resolvedCopy.enableInScopeConfirm : resolvedCopy.disableInScopeConfirm,
         intent: entity.isDisabledHere ? 'primary' : 'danger',
@@ -1388,8 +1301,8 @@ export function ScopedConfigEntityWorkspace({
 
     setConfirmState({
       title: entity.isActive
-        ? resolvedCopy.deactivateTitle(entity.code ?? entity.name)
-        : resolvedCopy.reactivateTitle(entity.code ?? entity.name),
+        ? resolvedCopy.deactivateTitle(entity.code ?? entity.localizedName)
+        : resolvedCopy.reactivateTitle(entity.code ?? entity.localizedName),
       description: entity.isActive ? resolvedCopy.deactivateDescription : resolvedCopy.reactivateDescription,
       confirmText: entity.isActive ? resolvedCopy.deactivateConfirm : resolvedCopy.reactivateConfirm,
       intent: entity.isActive ? 'danger' : 'primary',
@@ -1416,13 +1329,13 @@ export function ScopedConfigEntityWorkspace({
         await deactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.deactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.deactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
         });
       } else if (confirmState.action === 'reactivate') {
         await reactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.reactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.reactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
         });
       } else if (confirmState.action === 'disable') {
         if (scopeType === 'tenant' || !scopeId) {
@@ -1432,7 +1345,7 @@ export function ScopedConfigEntityWorkspace({
         await disableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.disableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.disableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
         });
       } else {
         if (scopeType === 'tenant' || !scopeId) {
@@ -1442,7 +1355,7 @@ export function ScopedConfigEntityWorkspace({
         await enableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
         setNotice({
           tone: 'success',
-          message: resolvedCopy.enableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.name),
+          message: resolvedCopy.enableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
         });
       }
 
@@ -1479,38 +1392,14 @@ export function ScopedConfigEntityWorkspace({
   const disabledHereCount = records.filter((record) => record.isDisabledHere).length;
   const pageRange = getPaginationRange(pagination, records.length);
   const paginationCopy = {
-    page: pickLocaleText(locale, {
-      en: `Page ${pagination.page} of ${pagination.totalPages}`,
-      zh: `第 ${pagination.page} / ${pagination.totalPages} 页`,
-      ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
-    }),
+    page: pickLocaleText(locale, { en: `Page ${pagination.page} of ${pagination.totalPages}`, zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`, zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`, ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`, ko: `Page ${pagination.page} of ${pagination.totalPages}`, fr: `Page ${pagination.page} of ${pagination.totalPages}` }),
     range:
       pagination.totalCount === 0
-        ? pickLocaleText(locale, {
-            en: 'No records are currently visible.',
-            zh: '当前没有可显示的记录。',
-            ja: '現在表示できるレコードはありません。',
-          })
-        : pickLocaleText(locale, {
-            en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
-            zh: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
-            ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
-          }),
-    pageSize: pickLocaleText(locale, {
-      en: 'Rows per page',
-      zh: '每页条目',
-      ja: '表示件数',
-    }),
-    previous: pickLocaleText(locale, {
-      en: 'Previous',
-      zh: '上一页',
-      ja: '前へ',
-    }),
-    next: pickLocaleText(locale, {
-      en: 'Next',
-      zh: '下一页',
-      ja: '次へ',
-    }),
+        ? pickLocaleText(locale, { en: 'No records are currently visible.', zh_HANS: '当前没有可显示的记录。', zh_HANT: '当前没有可显示的记录。', ja: '現在表示できるレコードはありません。', ko: 'No records are currently visible.', fr: 'No records are currently visible.' })
+        : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}` }),
+    pageSize: pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条目', zh_HANT: '每页条目', ja: '表示件数', ko: 'Rows per page', fr: 'Rows per page' }),
+    previous: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
+    next: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
   };
 
   if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE) {
@@ -1619,11 +1508,7 @@ export function ScopedConfigEntityWorkspace({
               </button>
             ) : (
               <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
-                {pickLocaleText(locale, {
-                  en: 'Inherited review only',
-                  zh: '仅查看继承结果',
-                  ja: '継承確認のみ',
-                })}
+                {pickLocaleText(locale, { en: 'Inherited review only', zh_HANS: '仅查看继承结果', zh_HANT: '仅查看继承结果', ja: '継承確認のみ', ko: 'Inherited review only', fr: 'Inherited review only' })}
               </span>
             )}
           </div>
@@ -1790,8 +1675,8 @@ export function ScopedConfigEntityWorkspace({
                     </td>
                     <td className="px-6 py-4 align-top">
                       <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{entity.name}</p>
-                        {entity.description ? <p className="text-sm leading-6 text-slate-600">{entity.description}</p> : null}
+                        <p className="text-sm font-semibold text-slate-950">{entity.localizedName}</p>
+                        {entity.localizedDescription ? <p className="text-sm leading-6 text-slate-600">{entity.localizedDescription}</p> : null}
                       </div>
                     </td>
                     <td className="px-6 py-4 align-top">
@@ -1816,7 +1701,7 @@ export function ScopedConfigEntityWorkspace({
                               type="button"
                               onClick={() => beginEdit(entity)}
                               className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.name}`}
+                              aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
                             >
                               {resolvedCopy.editLabel}
                             </button>
@@ -1825,7 +1710,7 @@ export function ScopedConfigEntityWorkspace({
                               onClick={() => queueToggle(entity)}
                               disabled={entity.isSystem}
                               className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.name}`}
+                              aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
                             >
                               {entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel}
                             </button>
@@ -1835,7 +1720,7 @@ export function ScopedConfigEntityWorkspace({
                             type="button"
                             onClick={() => queueToggle(entity)}
                             className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                            aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.name}`}
+                            aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
                           >
                             {entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel}
                           </button>
@@ -1946,30 +1831,30 @@ export function ScopedConfigEntityWorkspace({
                 <p className="text-sm leading-6 text-slate-600">{translationEditorCopy.description}</p>
               </div>
               <TranslationManagementTrigger
-                count={countManagedLocaleValues(translationSections)}
+                count={countLocaleValues(translationSections)}
                 onClick={() => setIsTranslationsOpen(true)}
               />
             </div>
           </div>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{resolvedCopy.nameEnglishLabel}</span>
+            <span className="text-sm font-semibold text-slate-900">{resolvedCopy.nameBaseLabel}</span>
             <input
-              aria-label={resolvedCopy.nameEnglishLabel}
+              aria-label={resolvedCopy.nameBaseLabel}
               type="text"
-              value={typeof draft.nameEn === 'string' ? draft.nameEn : ''}
-              onChange={(event) => updateDraft('nameEn', event.target.value)}
+              value={typeof draft.nameBase === 'string' ? draft.nameBase : ''}
+              onChange={(event) => updateDraft('nameBase', event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
             />
           </label>
 
           {selectedType !== 'consent' ? (
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{resolvedCopy.descriptionEnglishLabel}</span>
+              <span className="text-sm font-semibold text-slate-900">{resolvedCopy.descriptionBaseLabel}</span>
               <textarea
-                aria-label={resolvedCopy.descriptionEnglishLabel}
-                value={typeof draft.descriptionEn === 'string' ? draft.descriptionEn : ''}
-                onChange={(event) => updateDraft('descriptionEn', event.target.value)}
+                aria-label={resolvedCopy.descriptionBaseLabel}
+                value={typeof draft.descriptionBase === 'string' ? draft.descriptionBase : ''}
+                onChange={(event) => updateDraft('descriptionBase', event.target.value)}
                 rows={3}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
               />
@@ -1998,11 +1883,9 @@ export function ScopedConfigEntityWorkspace({
         title={translationEditorCopy.title}
         description={translationEditorCopy.description}
         closeButtonAriaLabel={translationEditorCopy.closeButtonAriaLabel}
-        request={request}
-        requestEnvelope={requestEnvelope}
         sections={translationSections}
         onChange={(sectionId, localeCode, value) => {
-          setManagedTranslations((current) => {
+          setLocaleValues((current) => {
             if (sectionId === 'description') {
               return {
                 ...current,

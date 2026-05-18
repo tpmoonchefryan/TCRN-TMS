@@ -1,6 +1,6 @@
-import {
-  resolveTrilingualLocaleFamily,
-  type SupportedUiLocale,
+import type {
+  LocalizedText,
+  SupportedUiLocale,
 } from '@tcrn/shared';
 
 import type {
@@ -15,14 +15,22 @@ import type {
   SecurityScopeType,
   SecurityTab,
 } from '@/domains/security-management/api/security-management.api';
-import { type RuntimeLocale, useRuntimeLocale } from '@/platform/runtime/locale/locale-provider';
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
+  pickLocaleText,
   resolveLocaleRecord,
 } from '@/platform/runtime/locale/locale-text';
-import { resolveLocalizedLabel } from '@/platform/runtime/translations/managed-translations';
 
-type SecurityLocale = SupportedUiLocale | RuntimeLocale;
+type SecurityLocale = SupportedUiLocale ;
+
+function isChineseLocale(locale: string) {
+  return locale === 'zh_HANS' || locale === 'zh_HANT';
+}
+
+function isJapaneseLocale(locale: string) {
+  return locale === 'ja';
+}
 
 const COPY = {
   en: {
@@ -342,7 +350,322 @@ const COPY = {
       },
     },
   },
-  zh: {
+  zh_HANS: {
+    common: {
+      cancel: '取消',
+      confirmAction: '确认操作',
+      confirm: '确认',
+      never: '从未',
+      noReason: '未记录原因',
+      all: '全部',
+      active: '启用',
+      inactive: '停用',
+      inherited: '继承',
+      disabledHere: '在此停用',
+      blocked: '已阻止',
+      allowed: '已允许',
+      loading: '加载中…',
+    },
+    header: {
+      eyebrowPrefix: '工作区',
+      title: '安全',
+      descriptionPrefix: '管理',
+      descriptionSuffix: '的安全规则、IP 访问与安全活动。',
+    },
+    summary: {
+      scopeLensLabel: '当前视图',
+      scopeLensHint: '当前页面展示的规则层级。',
+      blocklistLabel: '内容拦截',
+      blocklistHint: '当前可编辑的内容拦截规则数量。',
+      externalLabel: '外链拦截',
+      externalHint: '当前可见的外部 URL/域名模式。',
+      blockedIpsLabel: '被阻止 IP',
+      blockedIpsHint: '当前限流阻止数量。',
+    },
+    tabs: {
+      blocklist: '内容拦截',
+      externalBlocklist: '外链拦截',
+      ipAccess: 'IP 访问',
+      runtimeSignals: '概览',
+    },
+    scopeLens: {
+      scopeType: '层级',
+      scopeTypeAriaLabel: '安全层级',
+      scopeId: '组织对象',
+      scopeIdAriaLabel: '组织对象',
+      tenantHint: '租户级规则不需要额外选择对象。',
+      scopedHint: '选择需要查看的分目录或艺人。',
+      tenantPlaceholder: '租户级',
+      scopedPlaceholder: '选择对象',
+      chooseOption: '选择对象',
+      loadingOptions: '正在加载组织对象…',
+      emptyOptions: '暂无可选对象',
+      unresolvedSelection: '对象不可用',
+    },
+    sections: {
+      blocklistList: {
+        title: '受保护内容拦截',
+        description: '查看当前层级的内容拦截规则，并按需调整本层覆盖规则。',
+        unavailable: '内容拦截不可用',
+        emptyTitle: '当前范围没有内容拦截规则',
+        emptyDescription: '切换当前视图，或创建第一条规则。',
+        quickAddLabel: '关键词模式',
+        quickAddPlaceholder: '逐条添加关键词模式',
+        quickAddAction: '添加一条',
+        quickAddPending: '添加中…',
+        batchAddAction: '批量添加 / 导入',
+        columns: ['条目', '归属', '严重级别', '用途', '状态', '操作'],
+      },
+      blocklistEditor: {
+        createTitle: '创建内容拦截规则',
+        updateTitle: '更新内容拦截规则',
+        description: '编辑当前选中规则，或在此范围创建新规则。',
+        newRule: '添加规则',
+        createRule: '创建规则',
+        closeButtonAriaLabel: '关闭内容拦截规则抽屉',
+        saveChanges: '保存修改',
+        creating: '创建中…',
+        saving: '保存中…',
+        loadingTitle: '正在加载规则详情',
+        loadingDescription: '正在获取所选规则，随后编辑器会变为可编辑。',
+        translationManagement: {
+          trigger: '翻译管理',
+          title: '内容拦截规则翻译',
+          baseValueLabel: '基础规则名称（英文）',
+          save: '保存',
+          cancel: '取消',
+          closeButtonAriaLabel: '关闭内容拦截规则翻译抽屉',
+          empty: '当前尚未配置额外语言翻译。',
+          summary: (count: number) => `已配置 ${count} 个额外语言值。`,
+          languageLoadError: '暂时无法加载语言选项，已回退为受支持的界面语言。',
+        },
+      },
+      blocklistTest: {
+        title: '规则测试台',
+        description: '在保存修改前，用当前草稿或选中规则测试示例文本。',
+        run: '测试规则',
+        pending: '测试中…',
+        sampleText: '示例文本',
+        placeholder: '粘贴要测试的内容。',
+      },
+      blocklistBatch: {
+        title: '批量添加内容拦截模式',
+        description: '每行粘贴一条关键词模式。重复行会在发起创建前跳过。',
+        inputLabel: '模式列表',
+        inputPlaceholder: '每行一条模式',
+        previewReady: '可添加',
+        previewDuplicates: '重复行',
+        previewInvalid: '无效行',
+        emptyPreview: '粘贴模式后会在这里显示批量预览。',
+        submit: '添加模式',
+        pending: '添加中…',
+        closeButtonAriaLabel: '关闭批量添加内容拦截模式抽屉',
+      },
+      externalList: {
+        title: '分范围外链拦截',
+        description: '查看当前层级的外链规则，并保持继承覆盖可见。',
+        unavailable: '外链拦截不可用',
+        emptyTitle: '没有外链拦截模式',
+        emptyDescription: '当前范围暂未暴露任何外链拦截条目。',
+        batchDeactivate: '批量停用',
+        batchDeactivateTitle: '停用所有当前可见的外链模式？',
+        batchDeactivateDescription: '这会对当前范围内所有可见的外链规则写入停用状态。',
+        batchDeactivateConfirm: '停用可见规则',
+        batchDeactivatePending: '停用中…',
+        batchDeactivateSuccess: '已停用当前可见的外链模式。',
+        columns: ['模式', '归属', '严重级别', '状态', '操作'],
+      },
+      externalEditor: {
+        createTitle: '创建外链模式',
+        updateTitle: '更新外链模式',
+        description: '在同一处管理继承与本地外链拦截规则。',
+        newPattern: '添加模式',
+        create: '创建模式',
+        closeButtonAriaLabel: '关闭外链模式抽屉',
+        update: '保存修改',
+        creating: '创建中…',
+        saving: '保存中…',
+        loadingTitle: '正在加载外链规则详情',
+        loadingDescription: '正在获取所选外链规则，随后编辑器会变为可编辑。',
+        translationManagement: {
+          trigger: '翻译管理',
+          title: '外链模式翻译',
+          baseValueLabel: '基础模式名称（英文）',
+          save: '保存',
+          cancel: '取消',
+          closeButtonAriaLabel: '关闭外链模式翻译抽屉',
+          empty: '当前尚未配置额外语言翻译。',
+          summary: (count: number) => `已配置 ${count} 个额外语言值。`,
+          languageLoadError: '暂时无法加载语言选项，已回退为受支持的界面语言。',
+        },
+      },
+      ipRules: {
+        listTitle: 'IP 访问规则',
+        listDescription: '在同一页查看、创建和移除租户 IP 访问规则。',
+        unavailable: 'IP 访问规则不可用',
+        emptyTitle: '尚未配置 IP 规则',
+        emptyDescription: '为当前租户创建第一条白名单或黑名单规则。',
+        columns: ['模式', '类型', '范围', '命中', '状态', '操作'],
+        newRule: '添加 IP 规则',
+        createTitle: '创建 IP 规则',
+        createDescription: '创建明确的允许或拒绝规则。',
+        create: '创建 IP 规则',
+        closeButtonAriaLabel: '关闭 IP 规则抽屉',
+        creating: '创建中…',
+        probeTitle: '策略检查',
+        probeDescription: '在更新处理流程前，用当前策略检查候选 IP。',
+        probe: '检查访问',
+        probing: '检查中…',
+      },
+      runtimeSignals: {
+        title: '安全概览',
+        description: '优先查看当前视图的活跃拦截、只读策略探测，以及限流、IP 和指纹信号。',
+        activeBlocksTitle: '活跃拦截',
+        activeBlocksHint: '当前被阻止的 IP 与过去 24 小时被阻止的请求。',
+        policyProbeTitle: '只读策略探测',
+        policyProbeHint: '检查候选 IP 访问结果，不修改任何策略规则。',
+        fingerprintTitle: '设备指纹',
+        fingerprintHint: '仅登录后可见',
+        fingerprintLoading: '正在加载指纹…',
+        fingerprintShort: '短指纹',
+        fingerprintFull: '完整指纹',
+        fingerprintGenerated: '生成时间',
+        rateLimitTitle: '限流情况',
+        rateLimitHint: '近期流量压力',
+        rateLimitLoading: '正在加载限流统计…',
+        requests24h: '24 小时请求数',
+        requests24hHint: '当前观察到的受限流影响流量。',
+        blocked24h: '24 小时阻止数',
+        blocked24hHint: '被当前策略阻止的请求数。',
+        complianceTitle: '档案库可见性',
+        complianceHint: '当前可见的客户档案库',
+        complianceLoading: '正在加载档案库摘要…',
+        visibleStores: '可见档案库',
+        visibleStoresHint: '当前视图中可见的档案库数量。',
+        endpointsTitle: '高压端点',
+        endpointsDescription: '用这些计数器把请求压力定位到具体端点。',
+        endpointsUnavailable: '限流统计不可用',
+        endpointsEmptyTitle: '没有端点遥测',
+        endpointsEmptyDescription: 'Redis 没有返回任何活跃端点计数。',
+        endpointsColumns: ['端点', '方法', '当前值', '限制', '重置倒计时'],
+        topIpsTitle: '高压 IP 与档案库',
+        topIpsDescription: '对照查看近期 IP 压力和当前视图可见的档案库。',
+        topIpsEmptyTitle: '没有 IP 遥测',
+        topIpsEmptyDescription: 'Redis 没有返回任何排序后的 IP 流量样本。',
+        topIpsColumns: ['IP', '请求数', '阻止', '最近出现'],
+        profileStoresUnavailable: '档案库摘要不可用',
+        profileStoresEmptyTitle: '未返回档案库',
+        profileStoresEmptyDescription: '当前视图没有返回任何档案库记录。',
+        profileStoresTalents: '艺人',
+        profileStoresTalentsHint: '绑定到该档案库的艺人数量。',
+        profileStoresCustomers: '客户',
+        profileStoresCustomersHint: '隔离在此的客户档案数量。',
+      },
+    },
+    fields: {
+      ownerType: '生效层级',
+      ownerId: '组织对象',
+      ruleName: '规则名称',
+      category: '分类',
+      pattern: '模式',
+      patternType: '模式类型',
+      severity: '严重级别',
+      action: '动作',
+      replacement: '替换文本',
+      scopes: '用途范围',
+      scopesHint: '仅用于迁移的高级回退。把不受支持的旧 token 填在这里；主流程使用结构化范围构建器。',
+      sortOrder: '排序',
+      description: '说明',
+      inherit: '向子范围继承',
+      forceUse: '对子范围强制使用',
+      ipRuleType: '规则类型',
+      ipRuleScope: '流量入口',
+      ipPattern: 'IP / CIDR',
+      expiresAt: '过期时间',
+      reason: '原因',
+      probeIp: 'IP',
+      probeScope: '流量入口',
+      sampleText: '示例文本',
+    },
+    placeholders: {
+      scopeUuid: '选择组织对象',
+      ruleName: '敏感词拦截',
+      category: 'profanity',
+      pattern: 'badword',
+      replacement: '***',
+      scopes: 'marshmallow',
+      externalRuleName: 'Discord 邀请拦截',
+      externalCategory: 'spam',
+      externalPattern: 'discord\\.gg/',
+      externalReplacement: '[filtered]',
+      ipPattern: '192.168.1.10 或 10.0.0.0/8',
+      ipReason: '填写此 IP 限制存在的原因。',
+      probeIp: '203.0.113.10',
+      sampleText: '粘贴要测试的内容。',
+    },
+    actions: {
+      edit: '编辑',
+      disableHere: '在此停用',
+      reEnable: '重新启用',
+      deleteRule: '删除规则',
+      deletePattern: '删除模式',
+      delete: '删除',
+    },
+    dialogs: {
+      disableInheritedTitlePrefix: '停用继承规则',
+      disableInheritedDescription: '上游规则会保持不变，但当前范围将停止执行它。',
+      disabling: '停用中…',
+      reEnableTitlePrefix: '重新启用',
+      reEnableDescription: '这会在当前范围恢复继承规则。',
+      reEnabling: '重新启用中…',
+      deleteTitlePrefix: '删除',
+      deleteRuleDescription: '这会从当前范围永久移除该规则。',
+      deletePatternDescription: '这会从当前范围永久移除该外链模式。',
+      deleting: '删除中…',
+      deleteIpDescription: '这会停用 IP 访问规则，并从内存缓存中清除。',
+      discardChangesTitle: '放弃未保存的安全更改？',
+      discardChangesDescription: '当前编辑器有未保存的更改。要放弃这些更改并继续吗？',
+      discardChangesConfirm: '放弃更改',
+    },
+    options: {
+      scopeType: {
+        tenant: '租户',
+        subsidiary: '分目录',
+        talent: '艺人',
+      },
+      blocklistPatternType: {
+        keyword: '关键词',
+        regex: '正则',
+        wildcard: '通配符',
+      },
+      externalPatternType: {
+        domain: '域名',
+        url_regex: 'URL 正则',
+        keyword: '关键词',
+      },
+      severity: {
+        low: '低',
+        medium: '中',
+        high: '高',
+      },
+      action: {
+        reject: '拒绝',
+        flag: '标记',
+        replace: '替换',
+      },
+      ipRuleType: {
+        blacklist: '黑名单',
+        whitelist: '白名单',
+      },
+      ipRuleScope: {
+        admin: '管理后台',
+        api: 'API',
+        public: '公开域',
+        global: '全局',
+      },
+    },
+  },
+  zh_HANT: {
     common: {
       cancel: '取消',
       confirmAction: '确认操作',
@@ -974,36 +1297,656 @@ const COPY = {
       },
     },
   },
+  ko: {
+    common: {
+      cancel: 'Cancel',
+      confirmAction: 'Confirm action',
+      confirm: 'Confirm',
+      never: 'Never',
+      noReason: 'No reason recorded',
+      all: 'all',
+      active: 'active',
+      inactive: 'inactive',
+      inherited: 'inherited',
+      disabledHere: 'disabled here',
+      blocked: 'blocked',
+      allowed: 'allowed',
+      loading: 'Loading…',
+    },
+    header: {
+      eyebrowPrefix: 'Workspace',
+      title: 'Security',
+      descriptionPrefix: 'Manage security rules, IP access, and activity for',
+      descriptionSuffix: '.',
+    },
+    summary: {
+      scopeLensLabel: 'Current view',
+      scopeLensHint: 'The level currently shown on this page.',
+      blocklistLabel: 'Blocklist',
+      blocklistHint: 'Editable content blocklist entries in view.',
+      externalLabel: 'External',
+      externalHint: 'External URL/domain patterns currently visible.',
+      blockedIpsLabel: 'Blocked IPs',
+      blockedIpsHint: 'Current rate-limit block count.',
+    },
+    tabs: {
+      blocklist: 'Blocklist',
+      externalBlocklist: 'External Blocklist',
+      ipAccess: 'IP Access',
+      runtimeSignals: 'Overview',
+    },
+    scopeLens: {
+      scopeType: 'Level',
+      scopeTypeAriaLabel: 'Security level',
+      scopeId: 'Organization entry',
+      scopeIdAriaLabel: 'Organization entry',
+      tenantHint: 'Tenant-wide rules do not need an extra selection.',
+      scopedHint: 'Choose the subsidiary or talent you want to review.',
+      tenantPlaceholder: 'Tenant-wide',
+      scopedPlaceholder: 'Select an entry',
+      chooseOption: 'Choose an entry',
+      loadingOptions: 'Loading organization entries…',
+      emptyOptions: 'No entries available',
+      unresolvedSelection: 'Unavailable entry',
+    },
+    sections: {
+      blocklistList: {
+        title: 'Protected Content Blocklist',
+        description:
+          'Review content blocklist rules for the current level and adjust local overrides.',
+        unavailable: 'Blocklist unavailable',
+        emptyTitle: 'No blocklist entries in this scope',
+        emptyDescription: 'Change the current view or create the first rule.',
+        quickAddLabel: 'Keyword pattern',
+        quickAddPlaceholder: 'Add one keyword pattern',
+        quickAddAction: 'Add one',
+        quickAddPending: 'Adding…',
+        batchAddAction: 'Batch add / import',
+        columns: ['Entry', 'Owner', 'Severity', 'Usage', 'State', 'Actions'],
+      },
+      blocklistEditor: {
+        createTitle: 'Create Blocklist Rule',
+        updateTitle: 'Update Blocklist Rule',
+        description: 'Edit the selected rule or create a new one for this scope.',
+        newRule: 'Add rule',
+        createRule: 'Create rule',
+        closeButtonAriaLabel: 'Close blocklist rule drawer',
+        saveChanges: 'Save changes',
+        creating: 'Creating…',
+        saving: 'Saving…',
+        loadingTitle: 'Loading blocklist detail',
+        loadingDescription: 'Fetching the selected rule before the editor becomes writable.',
+        translationManagement: {
+          trigger: 'Translation management',
+          title: 'Blocklist rule translations',
+          baseValueLabel: 'Base rule name (English)',
+          save: 'Save',
+          cancel: 'Cancel',
+          closeButtonAriaLabel: 'Close blocklist rule translations drawer',
+          empty: 'No additional translations configured yet.',
+          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+        },
+      },
+      blocklistTest: {
+        title: 'Rule Test Bench',
+        description: 'Test sample text against the current draft or selected rule before saving changes.',
+        run: 'Test rule',
+        pending: 'Testing…',
+        sampleText: 'Sample text',
+        placeholder: 'Paste the content you want to test.',
+      },
+      blocklistBatch: {
+        title: 'Batch Add Blocklist Patterns',
+        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        inputLabel: 'Patterns',
+        inputPlaceholder: 'one pattern per line',
+        previewReady: 'Ready to add',
+        previewDuplicates: 'Duplicate lines',
+        previewInvalid: 'Invalid lines',
+        emptyPreview: 'Paste patterns to preview the batch import.',
+        submit: 'Add patterns',
+        pending: 'Adding…',
+        closeButtonAriaLabel: 'Close batch add blocklist patterns drawer',
+      },
+      externalList: {
+        title: 'Scoped External Blocklist',
+        description:
+          'Review external link rules for the selected level, including inherited entries.',
+        unavailable: 'External blocklist unavailable',
+        emptyTitle: 'No external blocklist patterns',
+        emptyDescription: 'This scope does not currently expose any external blocklist entries.',
+        batchDeactivate: 'Batch deactivate',
+        batchDeactivateTitle: 'Deactivate all visible external patterns?',
+        batchDeactivateDescription: 'Disable every visible external rule for the selected level.',
+        batchDeactivateConfirm: 'Deactivate visible rules',
+        batchDeactivatePending: 'Deactivating…',
+        batchDeactivateSuccess: 'Visible external patterns were deactivated.',
+        columns: ['Pattern', 'Owner', 'Severity', 'State', 'Actions'],
+      },
+      externalEditor: {
+        createTitle: 'Create External Pattern',
+        updateTitle: 'Update External Pattern',
+        description: 'Create or update external blocklist rules for the selected level.',
+        newPattern: 'Add pattern',
+        create: 'Create pattern',
+        closeButtonAriaLabel: 'Close external pattern drawer',
+        update: 'Save changes',
+        creating: 'Creating…',
+        saving: 'Saving…',
+        loadingTitle: 'Loading external blocklist detail',
+        loadingDescription: 'Fetching the selected external rule before the editor becomes writable.',
+        translationManagement: {
+          trigger: 'Translation management',
+          title: 'External pattern translations',
+          baseValueLabel: 'Base pattern name (English)',
+          save: 'Save',
+          cancel: 'Cancel',
+          closeButtonAriaLabel: 'Close external pattern translations drawer',
+          empty: 'No additional translations configured yet.',
+          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+        },
+      },
+      ipRules: {
+        listTitle: 'IP Access Rules',
+        listDescription: 'Review, create, and remove tenant IP access rules on one page.',
+        unavailable: 'IP access rules unavailable',
+        emptyTitle: 'No IP rules configured',
+        emptyDescription: 'Create the first whitelist or blacklist rule for this tenant.',
+        columns: ['Pattern', 'Type', 'Scope', 'Hits', 'State', 'Actions'],
+        newRule: 'Add IP rule',
+        createTitle: 'Create IP Rule',
+        createDescription: 'Create an explicit allow or deny rule.',
+        create: 'Create IP rule',
+        closeButtonAriaLabel: 'Close IP rule drawer',
+        creating: 'Creating…',
+        probeTitle: 'Policy check',
+        probeDescription: 'Check a candidate IP against the current policy before updating your response steps.',
+        probe: 'Check access',
+        probing: 'Checking…',
+      },
+      runtimeSignals: {
+        title: 'Security Overview',
+        description: 'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
+        activeBlocksTitle: 'Active blocks',
+        activeBlocksHint: 'Currently blocked IPs and requests blocked in the last 24 hours.',
+        policyProbeTitle: 'Read-only policy probe',
+        policyProbeHint: 'Check candidate IP access without changing policy rules.',
+        fingerprintTitle: 'Device fingerprint',
+        fingerprintHint: 'Authenticated-only signal',
+        fingerprintLoading: 'Loading fingerprint…',
+        fingerprintShort: 'Short',
+        fingerprintFull: 'Full',
+        fingerprintGenerated: 'Generated',
+        rateLimitTitle: 'Traffic throttling',
+        rateLimitHint: 'Recent traffic pressure',
+        rateLimitLoading: 'Loading rate-limit stats…',
+        requests24h: 'Requests 24h',
+        requests24hHint: 'Observed rate-limited traffic volume.',
+        blocked24h: 'Blocked 24h',
+        blocked24hHint: 'Requests blocked by current policies.',
+        complianceTitle: 'Archive visibility',
+        complianceHint: 'Visible customer archive stores',
+        complianceLoading: 'Loading archive summary…',
+        visibleStores: 'Visible stores',
+        visibleStoresHint: 'Archive stores currently visible in this view.',
+        endpointsTitle: 'Busiest endpoints',
+        endpointsDescription: 'Use these counters to tie request pressure back to concrete endpoints.',
+        endpointsUnavailable: 'Rate-limit stats unavailable',
+        endpointsEmptyTitle: 'No endpoint telemetry',
+        endpointsEmptyDescription: 'No active endpoint counters were returned from Redis.',
+        endpointsColumns: ['Endpoint', 'Method', 'Current', 'Limit', 'Reset In'],
+        topIpsTitle: 'Top IPs & archive stores',
+        topIpsDescription: 'Compare recent IP pressure with the archive stores visible in this view.',
+        topIpsEmptyTitle: 'No IP telemetry',
+        topIpsEmptyDescription: 'Redis did not return any ranked IP traffic samples.',
+        topIpsColumns: ['IP', 'Requests', 'Blocked', 'Last Seen'],
+        profileStoresUnavailable: 'Archive summary unavailable',
+        profileStoresEmptyTitle: 'No archive stores returned',
+        profileStoresEmptyDescription: 'No archive store records were returned for this view.',
+        profileStoresTalents: 'Talents',
+        profileStoresTalentsHint: 'Talent bindings using this store.',
+        profileStoresCustomers: 'Customers',
+        profileStoresCustomersHint: 'Customer archives isolated here.',
+      },
+    },
+    fields: {
+      ownerType: 'Applies to',
+      ownerId: 'Organization entry',
+      ruleName: 'Rule name',
+      category: 'Category',
+      pattern: 'Pattern',
+      patternType: 'Pattern type',
+      severity: 'Severity',
+      action: 'Action',
+      replacement: 'Replacement',
+      scopes: 'Scopes',
+      scopesHint: 'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
+      sortOrder: 'Sort order',
+      description: 'Description',
+      inherit: 'Inherit into child scopes',
+      forceUse: 'Force use for child scopes',
+      ipRuleType: 'Rule type',
+      ipRuleScope: 'Traffic surface',
+      ipPattern: 'IP / CIDR',
+      expiresAt: 'Expires at',
+      reason: 'Reason',
+      probeIp: 'IP',
+      probeScope: 'Traffic surface',
+      sampleText: 'Sample text',
+    },
+    placeholders: {
+      scopeUuid: 'Select an organization entry',
+      ruleName: 'Profanity rejection',
+      category: 'profanity',
+      pattern: 'badword',
+      replacement: '***',
+      scopes: 'marshmallow',
+      externalRuleName: 'Discord invite filter',
+      externalCategory: 'spam',
+      externalPattern: 'discord\\.gg/',
+      externalReplacement: '[filtered]',
+      ipPattern: '192.168.1.10 or 10.0.0.0/8',
+      ipReason: 'Why this IP restriction exists.',
+      probeIp: '203.0.113.10',
+      sampleText: 'Paste the content you want to test.',
+    },
+    actions: {
+      edit: 'Edit',
+      disableHere: 'Disable here',
+      reEnable: 'Re-enable',
+      deleteRule: 'Delete rule',
+      deletePattern: 'Delete pattern',
+      delete: 'Delete',
+    },
+    dialogs: {
+      disableInheritedTitlePrefix: 'Disable inherited rule',
+      disableInheritedDescription: 'The upstream rule will stay intact, but this scope will stop enforcing it.',
+      disabling: 'Disabling…',
+      reEnableTitlePrefix: 'Re-enable',
+      reEnableDescription: 'This restores the inherited rule for the selected level.',
+      reEnabling: 'Re-enabling…',
+      deleteTitlePrefix: 'Delete',
+      deleteRuleDescription: 'This permanently removes the rule from the selected level.',
+      deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
+      deleting: 'Deleting…',
+      deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      discardChangesTitle: 'Discard unsaved security changes?',
+      discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
+      discardChangesConfirm: 'Discard changes',
+    },
+    options: {
+      scopeType: {
+        tenant: 'Tenant',
+        subsidiary: 'Subsidiary',
+        talent: 'Talent',
+      },
+      blocklistPatternType: {
+        keyword: 'Keyword',
+        regex: 'Regex',
+        wildcard: 'Wildcard',
+      },
+      externalPatternType: {
+        domain: 'Domain',
+        url_regex: 'URL regex',
+        keyword: 'Keyword',
+      },
+      severity: {
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High',
+      },
+      action: {
+        reject: 'Reject',
+        flag: 'Flag',
+        replace: 'Replace',
+      },
+      ipRuleType: {
+        blacklist: 'Blacklist',
+        whitelist: 'Whitelist',
+      },
+      ipRuleScope: {
+        admin: 'Admin',
+        api: 'API',
+        public: 'Public',
+        global: 'Global',
+      },
+    },
+  },
+  fr: {
+    common: {
+      cancel: 'Cancel',
+      confirmAction: 'Confirm action',
+      confirm: 'Confirm',
+      never: 'Never',
+      noReason: 'No reason recorded',
+      all: 'all',
+      active: 'active',
+      inactive: 'inactive',
+      inherited: 'inherited',
+      disabledHere: 'disabled here',
+      blocked: 'blocked',
+      allowed: 'allowed',
+      loading: 'Loading…',
+    },
+    header: {
+      eyebrowPrefix: 'Workspace',
+      title: 'Security',
+      descriptionPrefix: 'Manage security rules, IP access, and activity for',
+      descriptionSuffix: '.',
+    },
+    summary: {
+      scopeLensLabel: 'Current view',
+      scopeLensHint: 'The level currently shown on this page.',
+      blocklistLabel: 'Blocklist',
+      blocklistHint: 'Editable content blocklist entries in view.',
+      externalLabel: 'External',
+      externalHint: 'External URL/domain patterns currently visible.',
+      blockedIpsLabel: 'Blocked IPs',
+      blockedIpsHint: 'Current rate-limit block count.',
+    },
+    tabs: {
+      blocklist: 'Blocklist',
+      externalBlocklist: 'External Blocklist',
+      ipAccess: 'IP Access',
+      runtimeSignals: 'Overview',
+    },
+    scopeLens: {
+      scopeType: 'Level',
+      scopeTypeAriaLabel: 'Security level',
+      scopeId: 'Organization entry',
+      scopeIdAriaLabel: 'Organization entry',
+      tenantHint: 'Tenant-wide rules do not need an extra selection.',
+      scopedHint: 'Choose the subsidiary or talent you want to review.',
+      tenantPlaceholder: 'Tenant-wide',
+      scopedPlaceholder: 'Select an entry',
+      chooseOption: 'Choose an entry',
+      loadingOptions: 'Loading organization entries…',
+      emptyOptions: 'No entries available',
+      unresolvedSelection: 'Unavailable entry',
+    },
+    sections: {
+      blocklistList: {
+        title: 'Protected Content Blocklist',
+        description:
+          'Review content blocklist rules for the current level and adjust local overrides.',
+        unavailable: 'Blocklist unavailable',
+        emptyTitle: 'No blocklist entries in this scope',
+        emptyDescription: 'Change the current view or create the first rule.',
+        quickAddLabel: 'Keyword pattern',
+        quickAddPlaceholder: 'Add one keyword pattern',
+        quickAddAction: 'Add one',
+        quickAddPending: 'Adding…',
+        batchAddAction: 'Batch add / import',
+        columns: ['Entry', 'Owner', 'Severity', 'Usage', 'State', 'Actions'],
+      },
+      blocklistEditor: {
+        createTitle: 'Create Blocklist Rule',
+        updateTitle: 'Update Blocklist Rule',
+        description: 'Edit the selected rule or create a new one for this scope.',
+        newRule: 'Add rule',
+        createRule: 'Create rule',
+        closeButtonAriaLabel: 'Close blocklist rule drawer',
+        saveChanges: 'Save changes',
+        creating: 'Creating…',
+        saving: 'Saving…',
+        loadingTitle: 'Loading blocklist detail',
+        loadingDescription: 'Fetching the selected rule before the editor becomes writable.',
+        translationManagement: {
+          trigger: 'Translation management',
+          title: 'Blocklist rule translations',
+          baseValueLabel: 'Base rule name (English)',
+          save: 'Save',
+          cancel: 'Cancel',
+          closeButtonAriaLabel: 'Close blocklist rule translations drawer',
+          empty: 'No additional translations configured yet.',
+          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+        },
+      },
+      blocklistTest: {
+        title: 'Rule Test Bench',
+        description: 'Test sample text against the current draft or selected rule before saving changes.',
+        run: 'Test rule',
+        pending: 'Testing…',
+        sampleText: 'Sample text',
+        placeholder: 'Paste the content you want to test.',
+      },
+      blocklistBatch: {
+        title: 'Batch Add Blocklist Patterns',
+        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        inputLabel: 'Patterns',
+        inputPlaceholder: 'one pattern per line',
+        previewReady: 'Ready to add',
+        previewDuplicates: 'Duplicate lines',
+        previewInvalid: 'Invalid lines',
+        emptyPreview: 'Paste patterns to preview the batch import.',
+        submit: 'Add patterns',
+        pending: 'Adding…',
+        closeButtonAriaLabel: 'Close batch add blocklist patterns drawer',
+      },
+      externalList: {
+        title: 'Scoped External Blocklist',
+        description:
+          'Review external link rules for the selected level, including inherited entries.',
+        unavailable: 'External blocklist unavailable',
+        emptyTitle: 'No external blocklist patterns',
+        emptyDescription: 'This scope does not currently expose any external blocklist entries.',
+        batchDeactivate: 'Batch deactivate',
+        batchDeactivateTitle: 'Deactivate all visible external patterns?',
+        batchDeactivateDescription: 'Disable every visible external rule for the selected level.',
+        batchDeactivateConfirm: 'Deactivate visible rules',
+        batchDeactivatePending: 'Deactivating…',
+        batchDeactivateSuccess: 'Visible external patterns were deactivated.',
+        columns: ['Pattern', 'Owner', 'Severity', 'State', 'Actions'],
+      },
+      externalEditor: {
+        createTitle: 'Create External Pattern',
+        updateTitle: 'Update External Pattern',
+        description: 'Create or update external blocklist rules for the selected level.',
+        newPattern: 'Add pattern',
+        create: 'Create pattern',
+        closeButtonAriaLabel: 'Close external pattern drawer',
+        update: 'Save changes',
+        creating: 'Creating…',
+        saving: 'Saving…',
+        loadingTitle: 'Loading external blocklist detail',
+        loadingDescription: 'Fetching the selected external rule before the editor becomes writable.',
+        translationManagement: {
+          trigger: 'Translation management',
+          title: 'External pattern translations',
+          baseValueLabel: 'Base pattern name (English)',
+          save: 'Save',
+          cancel: 'Cancel',
+          closeButtonAriaLabel: 'Close external pattern translations drawer',
+          empty: 'No additional translations configured yet.',
+          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+        },
+      },
+      ipRules: {
+        listTitle: 'IP Access Rules',
+        listDescription: 'Review, create, and remove tenant IP access rules on one page.',
+        unavailable: 'IP access rules unavailable',
+        emptyTitle: 'No IP rules configured',
+        emptyDescription: 'Create the first whitelist or blacklist rule for this tenant.',
+        columns: ['Pattern', 'Type', 'Scope', 'Hits', 'State', 'Actions'],
+        newRule: 'Add IP rule',
+        createTitle: 'Create IP Rule',
+        createDescription: 'Create an explicit allow or deny rule.',
+        create: 'Create IP rule',
+        closeButtonAriaLabel: 'Close IP rule drawer',
+        creating: 'Creating…',
+        probeTitle: 'Policy check',
+        probeDescription: 'Check a candidate IP against the current policy before updating your response steps.',
+        probe: 'Check access',
+        probing: 'Checking…',
+      },
+      runtimeSignals: {
+        title: 'Security Overview',
+        description: 'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
+        activeBlocksTitle: 'Active blocks',
+        activeBlocksHint: 'Currently blocked IPs and requests blocked in the last 24 hours.',
+        policyProbeTitle: 'Read-only policy probe',
+        policyProbeHint: 'Check candidate IP access without changing policy rules.',
+        fingerprintTitle: 'Device fingerprint',
+        fingerprintHint: 'Authenticated-only signal',
+        fingerprintLoading: 'Loading fingerprint…',
+        fingerprintShort: 'Short',
+        fingerprintFull: 'Full',
+        fingerprintGenerated: 'Generated',
+        rateLimitTitle: 'Traffic throttling',
+        rateLimitHint: 'Recent traffic pressure',
+        rateLimitLoading: 'Loading rate-limit stats…',
+        requests24h: 'Requests 24h',
+        requests24hHint: 'Observed rate-limited traffic volume.',
+        blocked24h: 'Blocked 24h',
+        blocked24hHint: 'Requests blocked by current policies.',
+        complianceTitle: 'Archive visibility',
+        complianceHint: 'Visible customer archive stores',
+        complianceLoading: 'Loading archive summary…',
+        visibleStores: 'Visible stores',
+        visibleStoresHint: 'Archive stores currently visible in this view.',
+        endpointsTitle: 'Busiest endpoints',
+        endpointsDescription: 'Use these counters to tie request pressure back to concrete endpoints.',
+        endpointsUnavailable: 'Rate-limit stats unavailable',
+        endpointsEmptyTitle: 'No endpoint telemetry',
+        endpointsEmptyDescription: 'No active endpoint counters were returned from Redis.',
+        endpointsColumns: ['Endpoint', 'Method', 'Current', 'Limit', 'Reset In'],
+        topIpsTitle: 'Top IPs & archive stores',
+        topIpsDescription: 'Compare recent IP pressure with the archive stores visible in this view.',
+        topIpsEmptyTitle: 'No IP telemetry',
+        topIpsEmptyDescription: 'Redis did not return any ranked IP traffic samples.',
+        topIpsColumns: ['IP', 'Requests', 'Blocked', 'Last Seen'],
+        profileStoresUnavailable: 'Archive summary unavailable',
+        profileStoresEmptyTitle: 'No archive stores returned',
+        profileStoresEmptyDescription: 'No archive store records were returned for this view.',
+        profileStoresTalents: 'Talents',
+        profileStoresTalentsHint: 'Talent bindings using this store.',
+        profileStoresCustomers: 'Customers',
+        profileStoresCustomersHint: 'Customer archives isolated here.',
+      },
+    },
+    fields: {
+      ownerType: 'Applies to',
+      ownerId: 'Organization entry',
+      ruleName: 'Rule name',
+      category: 'Category',
+      pattern: 'Pattern',
+      patternType: 'Pattern type',
+      severity: 'Severity',
+      action: 'Action',
+      replacement: 'Replacement',
+      scopes: 'Scopes',
+      scopesHint: 'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
+      sortOrder: 'Sort order',
+      description: 'Description',
+      inherit: 'Inherit into child scopes',
+      forceUse: 'Force use for child scopes',
+      ipRuleType: 'Rule type',
+      ipRuleScope: 'Traffic surface',
+      ipPattern: 'IP / CIDR',
+      expiresAt: 'Expires at',
+      reason: 'Reason',
+      probeIp: 'IP',
+      probeScope: 'Traffic surface',
+      sampleText: 'Sample text',
+    },
+    placeholders: {
+      scopeUuid: 'Select an organization entry',
+      ruleName: 'Profanity rejection',
+      category: 'profanity',
+      pattern: 'badword',
+      replacement: '***',
+      scopes: 'marshmallow',
+      externalRuleName: 'Discord invite filter',
+      externalCategory: 'spam',
+      externalPattern: 'discord\\.gg/',
+      externalReplacement: '[filtered]',
+      ipPattern: '192.168.1.10 or 10.0.0.0/8',
+      ipReason: 'Why this IP restriction exists.',
+      probeIp: '203.0.113.10',
+      sampleText: 'Paste the content you want to test.',
+    },
+    actions: {
+      edit: 'Edit',
+      disableHere: 'Disable here',
+      reEnable: 'Re-enable',
+      deleteRule: 'Delete rule',
+      deletePattern: 'Delete pattern',
+      delete: 'Delete',
+    },
+    dialogs: {
+      disableInheritedTitlePrefix: 'Disable inherited rule',
+      disableInheritedDescription: 'The upstream rule will stay intact, but this scope will stop enforcing it.',
+      disabling: 'Disabling…',
+      reEnableTitlePrefix: 'Re-enable',
+      reEnableDescription: 'This restores the inherited rule for the selected level.',
+      reEnabling: 'Re-enabling…',
+      deleteTitlePrefix: 'Delete',
+      deleteRuleDescription: 'This permanently removes the rule from the selected level.',
+      deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
+      deleting: 'Deleting…',
+      deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      discardChangesTitle: 'Discard unsaved security changes?',
+      discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
+      discardChangesConfirm: 'Discard changes',
+    },
+    options: {
+      scopeType: {
+        tenant: 'Tenant',
+        subsidiary: 'Subsidiary',
+        talent: 'Talent',
+      },
+      blocklistPatternType: {
+        keyword: 'Keyword',
+        regex: 'Regex',
+        wildcard: 'Wildcard',
+      },
+      externalPatternType: {
+        domain: 'Domain',
+        url_regex: 'URL regex',
+        keyword: 'Keyword',
+      },
+      severity: {
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High',
+      },
+      action: {
+        reject: 'Reject',
+        flag: 'Flag',
+        replace: 'Replace',
+      },
+      ipRuleType: {
+        blacklist: 'Blacklist',
+        whitelist: 'Whitelist',
+      },
+      ipRuleScope: {
+        admin: 'Admin',
+        api: 'API',
+        public: 'Public',
+        global: 'Global',
+      },
+    },
+  },
 } as const;
 
 export type SecurityManagementCopy = (typeof COPY)['en'];
-const SECURITY_COPY_RECORD = COPY as unknown as Record<RuntimeLocale, SecurityManagementCopy>;
+const SECURITY_COPY_RECORD = COPY as unknown as Record<SupportedUiLocale, SecurityManagementCopy>;
 
-function resolveSecurityLocaleFamily(locale: SecurityLocale) {
-  return resolveTrilingualLocaleFamily(locale);
+function resolveSecurityCopy(locale: SecurityLocale) {
+  return resolveLocaleRecord(locale, SECURITY_COPY_RECORD) as SecurityManagementCopy;
 }
 
-function resolveSecurityCopy(locale: SecurityLocale, familyFallback?: RuntimeLocale) {
-  return resolveLocaleRecord(locale, SECURITY_COPY_RECORD, familyFallback) as SecurityManagementCopy;
-}
 
-function getEffectiveSelectedLocale(
-  currentLocale: RuntimeLocale,
-  selectedLocale: SupportedUiLocale | undefined,
-): SupportedUiLocale {
-  if (selectedLocale && resolveSecurityLocaleFamily(selectedLocale) === currentLocale) {
-    return selectedLocale;
-  }
-
-  return currentLocale === 'zh' ? 'zh_HANS' : currentLocale;
-}
 
 export function useSecurityManagementCopy() {
-  const { currentLocale, selectedLocale } = useRuntimeLocale();
-  const effectiveSelectedLocale = getEffectiveSelectedLocale(currentLocale, selectedLocale);
-  const copy = resolveSecurityCopy(effectiveSelectedLocale, currentLocale);
+  const { locale } = useUiLocale();
+  const copy = resolveSecurityCopy(locale);
 
-  return { currentLocale, selectedLocale: effectiveSelectedLocale, copy };
+  return { locale, copy };
 }
 
 export function formatSecurityDateTime(locale: SecurityLocale, value: string | null | undefined, fallback: string) {
@@ -1011,10 +1954,8 @@ export function formatSecurityDateTime(locale: SecurityLocale, value: string | n
 }
 
 interface SecurityLocalizedNameLike {
-  nameEn?: string | null;
-  nameZh?: string | null;
-  nameJa?: string | null;
-  translations?: Record<string, string> | null;
+  name?: LocalizedText | null;
+  localizedName?: string | null;
   code?: string | null;
 }
 
@@ -1036,13 +1977,13 @@ function resolveSecuritySeverity(severity: string | undefined): BlocklistSeverit
 
 export function formatSecurityHeaderDescription(locale: SecurityLocale, workspaceName: string) {
   const copy = resolveSecurityCopy(locale);
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `${copy.header.descriptionPrefix}${workspaceName}${copy.header.descriptionSuffix}`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${workspaceName}${copy.header.descriptionSuffix}`;
   }
 
@@ -1059,23 +2000,13 @@ export function pickSecurityLocalizedName(
   value: SecurityLocalizedNameLike,
   fallback = '',
 ) {
-  const baseFallback = value.nameEn || value.nameZh || value.nameJa || value.code || fallback;
-  const localeFamily = resolveTrilingualLocaleFamily(locale);
-  const normalizedLocale = localeFamily === 'zh' ? (locale === 'zh_HANT' ? 'zh_HANT' : 'zh_HANS') : locale;
+  const baseFallback = value.localizedName || value.code || fallback;
 
-  if (value.translations && Object.keys(value.translations).length > 0) {
-    return resolveLocalizedLabel(value.translations, normalizedLocale, baseFallback);
+  if (!value.name) {
+    return baseFallback;
   }
 
-  if (localeFamily === 'zh') {
-    return value.nameZh || value.nameEn || value.nameJa || value.code || fallback;
-  }
-
-  if (localeFamily === 'ja') {
-    return value.nameJa || value.nameEn || value.nameZh || value.code || fallback;
-  }
-
-  return baseFallback;
+  return pickLocaleText(locale, value.name) || baseFallback;
 }
 
 export function getSecuritySeverityLabel(locale: SecurityLocale, severity: BlocklistSeverity) {
@@ -1121,13 +2052,13 @@ export function getSecurityTabLabel(locale: SecurityLocale, tab: SecurityTab) {
 }
 
 export function formatSecurityBlocklistSaveSuccess(locale: SecurityLocale, mode: 'create' | 'edit') {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return mode === 'create' ? '已创建内容拦截规则。' : '已更新内容拦截规则。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return mode === 'create' ? '遮断ルールを作成しました。' : '遮断ルールを更新しました。';
   }
 
@@ -1135,13 +2066,13 @@ export function formatSecurityBlocklistSaveSuccess(locale: SecurityLocale, mode:
 }
 
 export function getSecurityBlocklistSaveError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '保存内容拦截规则失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '遮断ルールの保存に失敗しました。';
   }
 
@@ -1149,13 +2080,13 @@ export function getSecurityBlocklistSaveError(locale: SecurityLocale) {
 }
 
 export function formatSecurityExternalSaveSuccess(locale: SecurityLocale, mode: 'create' | 'edit') {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return mode === 'create' ? '已创建外链拦截规则。' : '已更新外链拦截规则。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return mode === 'create' ? '外部遮断ルールを作成しました。' : '外部遮断ルールを更新しました。';
   }
 
@@ -1163,13 +2094,13 @@ export function formatSecurityExternalSaveSuccess(locale: SecurityLocale, mode: 
 }
 
 export function getSecurityExternalSaveError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '保存外链拦截规则失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '外部遮断ルールの保存に失敗しました。';
   }
 
@@ -1177,13 +2108,13 @@ export function getSecurityExternalSaveError(locale: SecurityLocale) {
 }
 
 export function formatSecurityDisableSuccess(locale: SecurityLocale, name: string) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `已在当前层级隐藏 ${name}。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${name} をこの階層で非表示にしました。`;
   }
 
@@ -1191,13 +2122,13 @@ export function formatSecurityDisableSuccess(locale: SecurityLocale, name: strin
 }
 
 export function formatSecurityReEnableSuccess(locale: SecurityLocale, name: string) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `已在当前层级恢复显示 ${name}。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${name} をこの階層で再表示しました。`;
   }
 
@@ -1205,13 +2136,13 @@ export function formatSecurityReEnableSuccess(locale: SecurityLocale, name: stri
 }
 
 export function formatSecurityDeleteSuccess(locale: SecurityLocale, name: string) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `已删除 ${name}。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${name} を削除しました。`;
   }
 
@@ -1219,14 +2150,14 @@ export function formatSecurityDeleteSuccess(locale: SecurityLocale, name: string
 }
 
 export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result: BlocklistTestResult) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
   if (!result.matched) {
-    if (localeFamily === 'zh') {
+    if (isChineseLocale(localeFamily)) {
       return '当前示例未命中任何规则。';
     }
 
-    if (localeFamily === 'ja') {
+    if (isJapaneseLocale(localeFamily)) {
       return '現在のサンプルに一致するルールはありませんでした。';
     }
 
@@ -1244,11 +2175,11 @@ export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result
   );
   const category = firstMatch?.category || '—';
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `检测到 ${result.matches.length} 条匹配，生效动作：${action}，严重级别：${severity}，分类：${category}。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${result.matches.length} 件の一致を検出しました。適用動作: ${action}、重大度: ${severity}、分類: ${category}。`;
   }
 
@@ -1256,13 +2187,13 @@ export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result
 }
 
 export function getSecurityBlocklistTestError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '测试当前示例与拦截规则失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '現在のサンプルと遮断ルールの照合に失敗しました。';
   }
 
@@ -1273,25 +2204,25 @@ export function getSecurityBlocklistTestValidationError(
   locale: SecurityLocale,
   field: 'pattern' | 'sampleText',
 ) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
   if (field === 'pattern') {
-    if (localeFamily === 'zh') {
+    if (isChineseLocale(localeFamily)) {
       return '请先填写要测试的模式。';
     }
 
-    if (localeFamily === 'ja') {
+    if (isJapaneseLocale(localeFamily)) {
       return '先に検証するパターンを入力してください。';
     }
 
     return 'Enter a pattern before testing the rule.';
   }
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '请先填写示例文本，再测试规则。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return 'ルールを検証する前にサンプルテキストを入力してください。';
   }
 
@@ -1299,13 +2230,13 @@ export function getSecurityBlocklistTestValidationError(
 }
 
 export function getSecurityBlocklistQuickAddError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '请先输入要添加的关键词模式。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '追加するキーワードパターンを入力してください。';
   }
 
@@ -1313,13 +2244,13 @@ export function getSecurityBlocklistQuickAddError(locale: SecurityLocale) {
 }
 
 export function getSecurityBlocklistBatchValidationError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '请至少保留一条可添加的模式。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '追加可能なパターンを 1 件以上残してください。';
   }
 
@@ -1331,15 +2262,15 @@ export function formatSecurityBlocklistBatchResult(
   createdCount: number,
   failedCount: number,
 ) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return failedCount === 0
       ? `已添加 ${createdCount} 条内容拦截模式。`
       : `已添加 ${createdCount} 条内容拦截模式，失败 ${failedCount} 条。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return failedCount === 0
       ? `${createdCount} 件の遮断パターンを追加しました。`
       : `${createdCount} 件の遮断パターンを追加し、${failedCount} 件が失敗しました。`;
@@ -1351,13 +2282,13 @@ export function formatSecurityBlocklistBatchResult(
 }
 
 export function formatSecurityIpRuleCreateSuccess(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '已创建 IP 访问规则。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return 'IP アクセスルールを作成しました。';
   }
 
@@ -1365,13 +2296,13 @@ export function formatSecurityIpRuleCreateSuccess(locale: SecurityLocale) {
 }
 
 export function getSecurityIpRuleCreateError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '创建 IP 访问规则失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return 'IP アクセスルールの作成に失敗しました。';
   }
 
@@ -1379,13 +2310,13 @@ export function getSecurityIpRuleCreateError(locale: SecurityLocale) {
 }
 
 export function formatSecurityIpRuleDeleteSuccess(locale: SecurityLocale, pattern: string) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `已将 ${pattern} 从 IP 访问控制中移除。`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${pattern} を IP アクセス制御から削除しました。`;
   }
 
@@ -1393,29 +2324,29 @@ export function formatSecurityIpRuleDeleteSuccess(locale: SecurityLocale, patter
 }
 
 export function formatSecurityIpCheckResult(locale: SecurityLocale, result: IpAccessCheckResult) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
   const matchedRuleType = result.matchedRule
     ? getSecurityIpRuleTypeLabel(locale, result.matchedRule.ruleType)
     : null;
 
   if (result.allowed) {
     if (result.matchedRule && matchedRuleType) {
-      if (localeFamily === 'zh') {
+      if (isChineseLocale(localeFamily)) {
         return `已允许，命中 ${matchedRuleType} 规则 ${result.matchedRule.ipPattern}。`;
       }
 
-      if (localeFamily === 'ja') {
+      if (isJapaneseLocale(localeFamily)) {
         return `許可されました。${matchedRuleType} ルール ${result.matchedRule.ipPattern} が適用されました。`;
       }
 
       return `Allowed by ${matchedRuleType} rule ${result.matchedRule.ipPattern}.`;
     }
 
-    if (localeFamily === 'zh') {
+    if (isChineseLocale(localeFamily)) {
       return '已允许，未命中任何阻止规则。';
     }
 
-    if (localeFamily === 'ja') {
+    if (isJapaneseLocale(localeFamily)) {
       return '許可されました。遮断ルールに一致しませんでした。';
     }
 
@@ -1423,22 +2354,22 @@ export function formatSecurityIpCheckResult(locale: SecurityLocale, result: IpAc
   }
 
   if (result.reason) {
-    if (localeFamily === 'zh') {
+    if (isChineseLocale(localeFamily)) {
       return `已阻止，原因：${result.reason}。`;
     }
 
-    if (localeFamily === 'ja') {
+    if (isJapaneseLocale(localeFamily)) {
       return `遮断されました。理由: ${result.reason}。`;
     }
 
     return `Blocked because ${result.reason}.`;
   }
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '已阻止。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return '遮断されました。';
   }
 
@@ -1446,13 +2377,13 @@ export function formatSecurityIpCheckResult(locale: SecurityLocale, result: IpAc
 }
 
 export function getSecurityIpCheckError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '评估 IP 访问失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return 'IP アクセスの評価に失敗しました。';
   }
 
@@ -1460,13 +2391,13 @@ export function getSecurityIpCheckError(locale: SecurityLocale) {
 }
 
 export function getSecurityMutationError(locale: SecurityLocale) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return '安全修改失败。';
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return 'セキュリティ変更に失敗しました。';
   }
 
@@ -1478,14 +2409,14 @@ export function formatSecurityRuleHits(
   hitCount: number,
   lastHitAt: string | null | undefined,
 ) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
   const lastHit = formatSecurityDateTime(locale, lastHitAt, resolveSecurityCopy(locale).common.never);
 
-  if (localeFamily === 'zh') {
+  if (isChineseLocale(localeFamily)) {
     return `${hitCount} 次命中 · 上次命中 ${lastHit}`;
   }
 
-  if (localeFamily === 'ja') {
+  if (isJapaneseLocale(localeFamily)) {
     return `${hitCount} 件ヒット · 最終ヒット ${lastHit}`;
   }
 
@@ -1493,9 +2424,9 @@ export function formatSecurityRuleHits(
 }
 
 export function formatSecurityResetIn(locale: SecurityLocale, seconds: number) {
-  const localeFamily = resolveSecurityLocaleFamily(locale);
+  const localeFamily = locale;
 
-  if (localeFamily === 'zh' || localeFamily === 'ja') {
+  if (isChineseLocale(localeFamily) || isJapaneseLocale(localeFamily)) {
     return `${seconds} 秒`;
   }
 

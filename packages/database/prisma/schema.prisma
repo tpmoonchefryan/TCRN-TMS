@@ -96,12 +96,8 @@ model GlobalConfig {
 model SystemDictionary {
   id            String   @id @default(uuid()) @db.Uuid
   code          String   @unique @db.VarChar(64)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -122,12 +118,8 @@ model SystemDictionaryItem {
   id             String   @id @default(uuid()) @db.Uuid
   dictionaryCode String   @map("dictionary_code") @db.VarChar(64)
   code           String   @db.VarChar(64)
-  nameEn         String   @map("name_en") @db.VarChar(255)
-  nameZh         String?  @map("name_zh") @db.VarChar(255)
-  nameJa         String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn  String?  @map("description_en") @db.Text
-  descriptionZh  String?  @map("description_zh") @db.Text
-  descriptionJa  String?  @map("description_ja") @db.Text
+  name           Json     @db.JsonB
+  description    Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   sortOrder      Int      @default(0) @map("sort_order")
   isActive       Boolean  @default(true) @map("is_active")
   extraData      Json?    @map("extra_data") @db.JsonB
@@ -149,19 +141,11 @@ model SystemDictionaryItem {
 model EmailTemplate {
   id          String   @id @default(uuid()) @db.Uuid
   code        String   @unique @db.VarChar(64)
-  nameEn      String   @map("name_en") @db.VarChar(128)
-  nameZh      String?  @map("name_zh") @db.VarChar(128)
-  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  name        Json     @db.JsonB
   extraData   Json?    @map("extra_data") @db.JsonB
-  subjectEn   String   @map("subject_en") @db.VarChar(255)
-  subjectZh   String?  @map("subject_zh") @db.VarChar(255)
-  subjectJa   String?  @map("subject_ja") @db.VarChar(255)
-  bodyHtmlEn  String   @map("body_html_en") @db.Text
-  bodyHtmlZh  String?  @map("body_html_zh") @db.Text
-  bodyHtmlJa  String?  @map("body_html_ja") @db.Text
-  bodyTextEn  String?  @map("body_text_en") @db.Text
-  bodyTextZh  String?  @map("body_text_zh") @db.Text
-  bodyTextJa  String?  @map("body_text_ja") @db.Text
+  subject     Json     @db.JsonB
+  bodyHtml    Json     @map("body_html") @db.JsonB
+  bodyText    Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @map("body_text") @db.JsonB
   variables   String[] @db.VarChar(64)
   category    String   @db.VarChar(32) // 'system' | 'business'
   isActive    Boolean  @default(true) @map("is_active")
@@ -186,13 +170,9 @@ model Subsidiary {
   code          String   @unique @db.VarChar(32)
   path          String   @db.VarChar(1024) // Materialized path: /sub1/sub2/
   depth         Int      @default(0) @db.SmallInt
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  name          Json     @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -220,14 +200,10 @@ model Talent {
   profileStoreId String?  @map("profile_store_id") @db.Uuid
   code           String   @unique @db.VarChar(32)
   path           String   @db.VarChar(1024) // Materialized path including self
-  nameEn         String   @map("name_en") @db.VarChar(255)
-  nameZh         String?  @map("name_zh") @db.VarChar(255)
-  nameJa         String?  @map("name_ja") @db.VarChar(255)
+  name           Json     @db.JsonB
   extraData      Json?    @map("extra_data") @db.JsonB
   displayName    String   @map("display_name") @db.VarChar(255)
-  descriptionEn  String?  @map("description_en") @db.Text
-  descriptionZh  String?  @map("description_zh") @db.Text
-  descriptionJa  String?  @map("description_ja") @db.Text
+  description    Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   avatarUrl      String?  @map("avatar_url") @db.VarChar(512)
   homepagePath   String?  @unique @map("homepage_path") @db.VarChar(128)
   marshmallowPath String? @unique @map("marshmallow_path") @db.VarChar(128)
@@ -349,9 +325,7 @@ model RecoveryCode {
 model Role {
   id          String   @id @default(uuid()) @db.Uuid
   code        String   @unique @db.VarChar(32)
-  nameEn      String   @map("name_en") @db.VarChar(128)
-  nameZh      String?  @map("name_zh") @db.VarChar(128)
-  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  name        Json     @db.JsonB
   description String?  @db.Text
   extraData   Json?    @map("extra_data") @db.JsonB
   isSystem    Boolean  @default(false) @map("is_system")
@@ -375,9 +349,7 @@ model Role {
 model Resource {
   id          String   @id @default(uuid()) @db.Uuid
   code        String   @unique @db.VarChar(64) // e.g., "customer.profile"
-  nameEn      String   @map("name_en") @db.VarChar(128)
-  nameZh      String?  @map("name_zh") @db.VarChar(128)
-  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  name        Json     @db.JsonB
   description String?  @db.Text
   module      String   @db.VarChar(32)
   sortOrder   Int      @default(0) @map("sort_order")
@@ -495,12 +467,8 @@ model DelegatedAdmin {
 model PiiServiceConfig {
   id                     String    @id @default(uuid()) @db.Uuid
   code                   String    @unique @db.VarChar(32)
-  nameEn                 String    @map("name_en") @db.VarChar(255)
-  nameZh                 String?   @map("name_zh") @db.VarChar(255)
-  nameJa                 String?   @map("name_ja") @db.VarChar(255)
-  descriptionEn          String?   @map("description_en") @db.Text
-  descriptionZh          String?   @map("description_zh") @db.Text
-  descriptionJa          String?   @map("description_ja") @db.Text
+  name                   Json      @db.JsonB
+  description            Json      @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   apiUrl                 String    @map("api_url") @db.VarChar(512)
   authType               String    @default("mtls") @map("auth_type") @db.VarChar(16) // 'mtls', 'api_key'
   mtlsClientCert         Bytes?    @map("mtls_client_cert") // KEK encrypted
@@ -530,12 +498,8 @@ model PiiServiceConfig {
 model ProfileStore {
   id                 String   @id @default(uuid()) @db.Uuid
   code               String   @unique @db.VarChar(32)
-  nameEn             String   @map("name_en") @db.VarChar(255)
-  nameZh             String?  @map("name_zh") @db.VarChar(255)
-  nameJa             String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn      String?  @map("description_en") @db.Text
-  descriptionZh      String?  @map("description_zh") @db.Text
-  descriptionJa      String?  @map("description_ja") @db.Text
+  name               Json     @db.JsonB
+  description        Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData          Json?    @map("extra_data") @db.JsonB
   piiProxyUrl        String?  @map("pii_proxy_url") @db.VarChar(512) // PII Proxy URL - when empty, PII fields are disabled
   piiServiceConfigId String?  @map("pii_service_config_id") @db.Uuid // Optional PII service config
@@ -797,12 +761,8 @@ model ChannelCategory {
   ownerType     String   @map("owner_type") @db.VarChar(16) // 'tenant', 'subsidiary', 'talent'
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -829,12 +789,8 @@ model BusinessSegment {
   ownerType     String   @map("owner_type") @db.VarChar(16) // 'tenant', 'subsidiary', 'talent'
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -861,12 +817,8 @@ model CommunicationType {
   code              String   @db.VarChar(32)
   channelCategory   String   @map("channel_category") @db.VarChar(16) // Legacy: 'phone', 'email', 'sns', 'other'
   channelCategoryId String?  @map("channel_category_id") @db.Uuid // New FK reference
-  nameEn            String   @map("name_en") @db.VarChar(255)
-  nameZh            String?  @map("name_zh") @db.VarChar(255)
-  nameJa            String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn     String?  @map("description_en") @db.Text
-  descriptionZh     String?  @map("description_zh") @db.Text
-  descriptionJa     String?  @map("description_ja") @db.Text
+  name              Json     @db.JsonB
+  description       Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData         Json?    @map("extra_data") @db.JsonB
   sortOrder         Int      @default(0) @map("sort_order")
   isActive          Boolean  @default(true) @map("is_active")
@@ -892,12 +844,8 @@ model AddressType {
   ownerType     String   @map("owner_type") @db.VarChar(16)
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -920,13 +868,9 @@ model CustomerStatus {
   ownerType     String   @map("owner_type") @db.VarChar(16)
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
+  name          Json     @db.JsonB
   color         String   @default("#808080") @db.VarChar(7)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -951,12 +895,8 @@ model ReasonCategory {
   ownerType     String   @map("owner_type") @db.VarChar(16)
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -982,12 +922,8 @@ model InactivationReason {
   ownerId          String?  @map("owner_id") @db.Uuid
   reasonCategoryId String   @map("reason_category_id") @db.Uuid
   code             String   @db.VarChar(32)
-  nameEn           String   @map("name_en") @db.VarChar(255)
-  nameZh           String?  @map("name_zh") @db.VarChar(255)
-  nameJa           String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn    String?  @map("description_en") @db.Text
-  descriptionZh    String?  @map("description_zh") @db.Text
-  descriptionJa    String?  @map("description_ja") @db.Text
+  name             Json     @db.JsonB
+  description      Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData        Json?    @map("extra_data") @db.JsonB
   sortOrder        Int      @default(0) @map("sort_order")
   isActive         Boolean  @default(true) @map("is_active")
@@ -1013,12 +949,8 @@ model MembershipClass {
   ownerType     String   @map("owner_type") @db.VarChar(16)
   ownerId       String?  @map("owner_id") @db.Uuid
   code          String   @db.VarChar(32)
-  nameEn        String   @map("name_en") @db.VarChar(255)
-  nameZh        String?  @map("name_zh") @db.VarChar(255)
-  nameJa        String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn String?  @map("description_en") @db.Text
-  descriptionZh String?  @map("description_zh") @db.Text
-  descriptionJa String?  @map("description_ja") @db.Text
+  name          Json     @db.JsonB
+  description   Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData     Json?    @map("extra_data") @db.JsonB
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -1043,12 +975,8 @@ model MembershipType {
   id                 String   @id @default(uuid()) @db.Uuid
   membershipClassId  String   @map("membership_class_id") @db.Uuid
   code               String   @db.VarChar(32)
-  nameEn             String   @map("name_en") @db.VarChar(255)
-  nameZh             String?  @map("name_zh") @db.VarChar(255)
-  nameJa             String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn      String?  @map("description_en") @db.Text
-  descriptionZh      String?  @map("description_zh") @db.Text
-  descriptionJa      String?  @map("description_ja") @db.Text
+  name               Json     @db.JsonB
+  description        Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData          Json?    @map("extra_data") @db.JsonB
   externalControl    Boolean  @default(false) @map("external_control")
   defaultRenewalDays Int      @default(30) @map("default_renewal_days")
@@ -1076,12 +1004,8 @@ model MembershipLevel {
   id               String   @id @default(uuid()) @db.Uuid
   membershipTypeId String   @map("membership_type_id") @db.Uuid
   code             String   @db.VarChar(32)
-  nameEn           String   @map("name_en") @db.VarChar(255)
-  nameZh           String?  @map("name_zh") @db.VarChar(255)
-  nameJa           String?  @map("name_ja") @db.VarChar(255)
-  descriptionEn    String?  @map("description_en") @db.Text
-  descriptionZh    String?  @map("description_zh") @db.Text
-  descriptionJa    String?  @map("description_ja") @db.Text
+  name             Json     @db.JsonB
+  description      Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
   extraData        Json?    @map("extra_data") @db.JsonB
   rank             Int      @default(0)
   color            String?  @db.VarChar(7)
@@ -1111,12 +1035,8 @@ model Consent {
   ownerId           String?   @map("owner_id") @db.Uuid
   code              String    @db.VarChar(32)
   consentVersion    String    @map("consent_version") @db.VarChar(16)
-  nameEn            String    @map("name_en") @db.VarChar(255)
-  nameZh            String?   @map("name_zh") @db.VarChar(255)
-  nameJa            String?   @map("name_ja") @db.VarChar(255)
-  contentMarkdownEn String?   @map("content_markdown_en") @db.Text
-  contentMarkdownZh String?   @map("content_markdown_zh") @db.Text
-  contentMarkdownJa String?   @map("content_markdown_ja") @db.Text
+  name              Json      @db.JsonB
+  contentMarkdown   Json      @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @map("content_markdown") @db.JsonB
   extraData         Json?     @map("extra_data") @db.JsonB
   contentUrl        String?   @map("content_url") @db.VarChar(512)
   effectiveFrom     DateTime  @map("effective_from") @db.Date
@@ -1143,9 +1063,7 @@ model Consent {
 model Consumer {
   id               String   @id @default(uuid()) @db.Uuid
   code             String   @unique @db.VarChar(32)
-  nameEn           String   @map("name_en") @db.VarChar(255)
-  nameZh           String?  @map("name_zh") @db.VarChar(255)
-  nameJa           String?  @map("name_ja") @db.VarChar(255)
+  name             Json     @db.JsonB
   consumerCategory String   @map("consumer_category") @db.VarChar(16) // 'internal', 'external', 'partner'
   contactName      String?  @map("contact_name") @db.VarChar(128)
   contactEmail     String?  @map("contact_email") @db.VarChar(255)
@@ -1177,9 +1095,7 @@ model Consumer {
 model SocialPlatform {
   id                 String   @id @default(uuid()) @db.Uuid
   code               String   @unique @db.VarChar(32) // e.g., 'BILIBILI', 'YOUTUBE'
-  nameEn             String   @map("name_en") @db.VarChar(255)
-  nameZh             String?  @map("name_zh") @db.VarChar(255)
-  nameJa             String?  @map("name_ja") @db.VarChar(255)
+  name               Json     @db.JsonB
   displayName        String   @map("display_name") @db.VarChar(64)
   iconUrl            String?  @map("icon_url") @db.VarChar(512)
   baseUrl            String?  @map("base_url") @db.VarChar(512)
@@ -1208,9 +1124,7 @@ model BlocklistEntry {
   ownerId       String?   @map("owner_id") @db.Uuid
   pattern       String    @db.VarChar(512)
   patternType   String    @default("keyword") @map("pattern_type") @db.VarChar(16) // 'keyword', 'regex', 'wildcard'
-  nameEn        String    @map("name_en") @db.VarChar(128)
-  nameZh        String?   @map("name_zh") @db.VarChar(128)
-  nameJa        String?   @map("name_ja") @db.VarChar(128)
+  name          Json      @db.JsonB
   extraData     Json?     @map("extra_data") @db.JsonB
   description   String?   @db.Text
   category      String?   @db.VarChar(64)
@@ -1544,14 +1458,8 @@ model MarshmallowConfig {
   theme                         Json     @default("{}") @db.JsonB
   // Custom avatar for marshmallow page
   avatarUrl                     String?  @map("avatar_url") @db.VarChar(512)
-  // Terms content (multi-language)
-  termsContentEn                String?  @map("terms_content_en") @db.Text
-  termsContentZh                String?  @map("terms_content_zh") @db.Text
-  termsContentJa                String?  @map("terms_content_ja") @db.Text
-  // Privacy content (multi-language)
-  privacyContentEn              String?  @map("privacy_content_en") @db.Text
-  privacyContentZh              String?  @map("privacy_content_zh") @db.Text
-  privacyContentJa              String?  @map("privacy_content_ja") @db.Text
+  termsContent                  Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @map("terms_content") @db.JsonB
+  privacyContent                Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @map("privacy_content") @db.JsonB
   // Custom domain settings
   customDomain                  String?  @unique @map("custom_domain") @db.VarChar(255)
   customDomainVerified          Boolean  @default(false) @map("custom_domain_verified")
@@ -1636,9 +1544,7 @@ model ExternalBlocklistPattern {
   ownerId     String?  @map("owner_id") @db.Uuid
   pattern     String   @db.VarChar(512)
   patternType String   @default("domain") @map("pattern_type") @db.VarChar(16) // 'domain', 'url_regex', 'keyword'
-  nameEn      String   @map("name_en") @db.VarChar(128)
-  nameZh      String?  @map("name_zh") @db.VarChar(128)
-  nameJa      String?  @map("name_ja") @db.VarChar(128)
+  name        Json     @db.JsonB
   extraData   Json?    @map("extra_data") @db.JsonB
   description String?  @db.Text
   category    String?  @db.VarChar(64)
@@ -1852,9 +1758,7 @@ model IntegrationAdapter {
   ownerId     String?  @map("owner_id") @db.Uuid
   platformId  String   @map("platform_id") @db.Uuid
   code        String   @db.VarChar(32)
-  nameEn      String   @map("name_en") @db.VarChar(255)
-  nameZh      String?  @map("name_zh") @db.VarChar(255)
-  nameJa      String?  @map("name_ja") @db.VarChar(255)
+  name        Json     @db.JsonB
   extraData   Json?    @map("extra_data") @db.JsonB
   adapterType String   @map("adapter_type") @db.VarChar(16) // 'oauth', 'api_key', 'webhook'
   inherit     Boolean  @default(true)
@@ -1894,9 +1798,7 @@ model AdapterConfig {
 model Webhook {
   id                  String    @id @default(uuid()) @db.Uuid
   code                String    @unique @db.VarChar(32)
-  nameEn              String    @map("name_en") @db.VarChar(255)
-  nameZh              String?   @map("name_zh") @db.VarChar(255)
-  nameJa              String?   @map("name_ja") @db.VarChar(255)
+  name                Json      @db.JsonB
   extraData           Json?     @map("extra_data") @db.JsonB
   url                 String    @db.VarChar(512)
   secret              String?   @db.VarChar(255) // Encrypted
