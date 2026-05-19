@@ -47,6 +47,8 @@ Template Center and Component Store may offer full-screen Web IDE plus preview a
 - validation/test suggestions;
 - documentation.
 
+Authoring proposals are source-bundle-first. Primary authored files should be code/markup/style/docs/tests, such as TS/TSX, safe HTML-like markup where supported, CSS, Markdown, and test fixtures. JSON is a sidecar contract for manifests, schemas, fixtures, validation output, and review metadata; AI must not reduce template/component authoring to JSON-only editing.
+
 AI must not:
 
 - write executable template/component code into tenant content;

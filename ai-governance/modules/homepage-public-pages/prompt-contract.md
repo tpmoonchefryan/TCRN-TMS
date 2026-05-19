@@ -38,13 +38,15 @@ For requests such as "create a new template", "add a custom component", or "buil
 Authoring proposals should include:
 
 - target: `template` or `component`;
-- files or modules to create or modify;
+- source-bundle files or modules to create or modify, with code/markup/style/docs/tests as the primary authoring surface;
 - registry manifest fields;
 - props schema or template section matrix;
 - fixture states for preview;
 - validation and test suggestions;
 - safety/policy notes;
 - human review requirements.
+
+JSON belongs to manifests, schemas, fixtures, validation output, and review metadata. It must not be the only or dominant format for template/component authoring unless the user explicitly asks for a manifest/schema-only edit.
 
 Authoring proposals must not:
 
