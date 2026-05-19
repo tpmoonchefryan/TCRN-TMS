@@ -45,6 +45,19 @@ export interface PublicPresenceStudioTemplateSummary {
 
 export interface PublicPresenceStudioStageSectionSummary {
   allowedComponents: string[];
+  collectionOperations: Array<{
+    addLabel: string;
+    canAdd: boolean;
+    canRemove: boolean;
+    canReorder: boolean;
+    collectionKey: string;
+    disabledReason?: string | null;
+    itemLabel: string;
+    maxItems?: number;
+    minItems?: number;
+    removeLabel: string;
+    reorderLabel: string;
+  }>;
   editabilityState: string;
   fallbackBehavior: string;
   fieldDefinitions: Array<{
@@ -263,6 +276,19 @@ function serializeStageSectionDefinition(
 ): PublicPresenceStudioStageSectionSummary {
   return {
     allowedComponents: [...definition.allowedComponents],
+    collectionOperations: (definition.collectionOperations ?? []).map((operation) => ({
+      addLabel: operation.addLabel,
+      canAdd: operation.canAdd,
+      canRemove: operation.canRemove,
+      canReorder: operation.canReorder,
+      collectionKey: operation.collectionKey,
+      disabledReason: operation.disabledReason ?? null,
+      itemLabel: operation.itemLabel,
+      maxItems: operation.maxItems,
+      minItems: operation.minItems,
+      removeLabel: operation.removeLabel,
+      reorderLabel: operation.reorderLabel,
+    })),
     editabilityState: definition.editabilityState,
     fallbackBehavior: definition.fallbackBehavior,
     fieldDefinitions: definition.fieldDefinitions.map((field) => ({

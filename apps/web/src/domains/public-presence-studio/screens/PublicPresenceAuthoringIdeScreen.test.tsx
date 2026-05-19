@@ -143,7 +143,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     const filesClose = within(filesDrawer).getByRole('button', { name: 'Close' });
     await waitFor(() => {
-      expect(document.activeElement).toBe(filesClose);
+      expect(document.activeElement).toBe(actionsButton);
     });
   });
 
@@ -202,5 +202,32 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(await screen.findByRole('option', { name: 'Everyday sample' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Safe launch sample' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Before reveal hold' })).toBeInTheDocument();
+  });
+
+  it('renders a standalone advanced IDE with mode switches and safe custom-html preview', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="custom-html"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    expect(screen.getAllByText('Advanced IDE')[0]).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Registry snippets' })).toBeInTheDocument();
+    expect(screen.getByTestId('ide-custom-html-preview')).toBeInTheDocument();
+    expect(screen.getByText('Safe custom page preview')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registry snippets' }));
+    expect(screen.getByRole('button', { name: 'Registry snippets' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Approved snippet preview')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Page source' }));
+    expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Structured page preview')).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@
 
 import {
   PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
+  PUBLIC_PRESENCE_SAFETY_POLICY,
   PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
   ThemePreset,
   type HomepageComponentType,
@@ -37,7 +38,9 @@ import {
   getPublicPresenceTemplateLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import {
+  buildPublicPresenceAdvancedIdePath,
   buildPublicPresenceComponentAuthoringPath,
+  buildPublicPresenceStudioEditorPath,
   buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
   buildPublicPresenceTemplateAuthoringPath,
@@ -45,10 +48,11 @@ import {
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
-type AuthoringTarget = 'template' | 'component';
+type AuthoringTarget = 'template' | 'component' | 'advanced';
 type PreviewViewport = 'desktop' | 'mobile';
 type FixtureMode = 'default' | 'unsafeFallback';
 type MobileAuthoringSurface = 'editor' | 'preview';
+type AdvancedPageMode = 'page-source' | 'custom-html' | 'registry-snippets';
 type MonacoEditorProps = {
   defaultLanguage?: string;
   height?: string | number;
@@ -66,6 +70,24 @@ interface VirtualFile {
   language: string;
   path: string;
 }
+
+interface ValidationItem {
+  level: 'pass' | 'warn';
+  message: string;
+}
+
+interface CustomHtmlPreviewState {
+  excerpt: string;
+  issues: string[];
+  srcDoc: string | null;
+}
+
+const CUSTOM_HTML_URL_BYPASS_PATTERN =
+  /(?:href|src)\s*=\s*["']?\s*(?:\/\/|\/\\|https?:\/\/[^"'\s]*@|https?:\/\/[^"'\s]*(?:%2f%2f|%5c%5c))/i;
+const CUSTOM_HTML_EXTERNAL_ASSET_PATTERN =
+  /^(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
+const CUSTOM_HTML_CSS_ASSET_PATTERN =
+  /@import|url\s*\(\s*['"]?\s*(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
 
 const MonacoEditor = dynamic<MonacoEditorProps>(
   async () => {
@@ -355,6 +377,30 @@ function buildTemplateFiles(
       contents: `export function ${templateId}Template() {\n  return {\n    templateId: '${templateId}',\n    locale: '${locale}',\n    sections: ${JSON.stringify(definition.defaultSectionOrder, null, 2)},\n  };\n}\n`,
     },
     {
+      path: 'src/slots.ts',
+      kind: 'code',
+      language: 'typescript',
+      contents: `export const ${templateId}Slots = ${JSON.stringify(definition.defaultSectionOrder, null, 2)};\n`,
+    },
+    {
+      path: 'src/theme.css',
+      kind: 'code',
+      language: 'css',
+      contents: `:root {\n  --page-accent: ${templateId === 'debutReveal' ? '#8b5cf6' : '#f472b6'};\n  --page-surface: ${templateId === 'debutReveal' ? '#f5f3ff' : '#fff7fb'};\n}\n\n.hero-shell {\n  border-radius: 2rem;\n  background: var(--page-surface);\n  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);\n}\n`,
+    },
+    {
+      path: 'docs/authoring.md',
+      kind: 'doc',
+      language: 'markdown',
+      contents: `# ${definition.label}\n\n- Use the source files for layout and slot composition.\n- Keep manifests and fixtures as sidecars for registry and preview checks.\n- Validate against the sample fan page before review.\n`,
+    },
+    {
+      path: 'tests/preview.spec.ts',
+      kind: 'code',
+      language: 'typescript',
+      contents: `import { describe, expect, it } from 'vitest';\n\ndescribe('${templateId} preview bundle', () => {\n  it('keeps the registry section order stable', () => {\n    expect(${JSON.stringify(definition.defaultSectionOrder)}.length).toBeGreaterThan(0);\n  });\n});\n`,
+    },
+    {
       path: 'manifest.json',
       kind: 'schema',
       language: 'json',
@@ -398,6 +444,24 @@ function buildComponentFiles(
       contents: `export const ${componentType}Definition = {\n  componentType: '${componentType}',\n  locale: '${locale}',\n  visualSupport: '${definition.visualSupport}',\n};\n`,
     },
     {
+      path: 'src/component.css',
+      kind: 'code',
+      language: 'css',
+      contents: `.component-frame {\n  border-radius: 1.5rem;\n  border: 1px solid rgba(148, 163, 184, 0.28);\n  background: rgba(255, 255, 255, 0.94);\n}\n`,
+    },
+    {
+      path: 'docs/usage.md',
+      kind: 'doc',
+      language: 'markdown',
+      contents: `# ${componentType}\n\n- Keep this block inside approved homepage slots.\n- Declare visual fields and collection operations in the sidecar contract.\n- Use fixtures to review fan-facing copy before release.\n`,
+    },
+    {
+      path: 'tests/component.spec.ts',
+      kind: 'code',
+      language: 'typescript',
+      contents: `import { describe, expect, it } from 'vitest';\n\ndescribe('${componentType} registry contract', () => {\n  it('keeps visual support declared for Studio', () => {\n    expect('${definition.visualSupport}').toBeTruthy();\n  });\n});\n`,
+    },
+    {
       path: 'manifest.json',
       kind: 'schema',
       language: 'json',
@@ -437,12 +501,214 @@ function buildComponentFiles(
   ];
 }
 
+function buildAdvancedFiles(
+  mode: AdvancedPageMode,
+  templateId: PublicPresenceTemplateId,
+  locale: string,
+): VirtualFile[] {
+  const template = PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId];
+
+  if (mode === 'custom-html') {
+    return [
+      {
+        path: 'src/index.html',
+        kind: 'code',
+        language: 'html',
+        contents: `<main class="fan-page">\n  <section class="hero">\n    <p class="eyebrow">${template.label}</p>\n    <h1>${pickLocaleText(locale, {
+          en: 'Design a safe custom fan page',
+          zh_HANS: '设计一个安全的定制粉丝页',
+          zh_HANT: '設計一個安全的客製粉絲頁',
+          ja: '安全なカスタムファンページを設計する',
+          ko: '안전한 커스텀 팬 페이지 만들기',
+          fr: 'Concevoir une fan page personnalisée et sûre',
+        })}</h1>\n    <p>${pickLocaleText(locale, {
+          en: 'Use static HTML and CSS only. Scripts, event handlers, unsafe iframes, and hidden tracking are blocked.',
+          zh_HANS: '这里只允许静态 HTML 和 CSS。脚本、事件处理器、不安全 iframe 与隐藏追踪都会被阻止。',
+          zh_HANT: '這裡只允許靜態 HTML 與 CSS。腳本、事件處理器、不安全 iframe 與隱藏追蹤都會被阻止。',
+          ja: 'ここでは静的な HTML と CSS のみ利用できます。スクリプト、イベント属性、危険な iframe、隠れた追跡はブロックされます。',
+          ko: '여기서는 정적 HTML과 CSS만 사용할 수 있습니다. 스크립트, 이벤트 핸들러, 위험한 iframe, 숨은 추적은 차단됩니다.',
+          fr: 'Ici, seuls le HTML et le CSS statiques sont autorisés. Les scripts, attributs d’événement, iframes non sûres et traqueurs cachés sont bloqués.',
+        })}</p>\n  </section>\n</main>\n`,
+      },
+      {
+        path: 'src/styles.css',
+        kind: 'code',
+        language: 'css',
+        contents: `.fan-page {\n  min-height: 100vh;\n  padding: 4rem 1.5rem;\n  background: linear-gradient(180deg, #fffaf4 0%, #fff 48%, #f7fbff 100%);\n  color: #1f2937;\n}\n\n.hero {\n  max-width: 42rem;\n  margin: 0 auto;\n  padding: 2rem;\n  border-radius: 2rem;\n  background: rgba(255,255,255,0.94);\n  box-shadow: 0 20px 60px rgba(15,23,42,0.08);\n}\n\n.eyebrow {\n  font-size: 0.875rem;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: #e11d48;\n}\n`,
+      },
+      {
+        path: 'docs/launch-checklist.md',
+        kind: 'doc',
+        language: 'markdown',
+        contents: `# Launch checklist\n\n- Keep the page static and fan-facing.\n- Move unsafe embeds or scripts into approved registry components instead.\n- Recheck mobile preview before review.\n`,
+      },
+      {
+        path: 'tests/safety.spec.ts',
+        kind: 'code',
+        language: 'typescript',
+        contents: `import { describe, expect, it } from 'vitest';\n\ndescribe('custom html safety', () => {\n  it('stays free from blocked executable tags', () => {\n    expect(['<script', '<iframe']).toContain('<script');\n  });\n});\n`,
+      },
+      {
+        path: 'safety/sanitizer.md',
+        kind: 'doc',
+        language: 'markdown',
+        contents: `# Safety contract\n\n- Allowed: static HTML, CSS, text, images, approved public links.\n- Blocked patterns: ${PUBLIC_PRESENCE_SAFETY_POLICY.htmlRules.forbiddenPatterns.join(', ')}\n- Preview uses the same safety filter as public output.\n`,
+      },
+      {
+        path: 'fixtures/default.json',
+        kind: 'fixture',
+        language: 'json',
+        contents: JSON.stringify({ mode, locale, templateId }, null, 2),
+      },
+    ];
+  }
+
+  if (mode === 'registry-snippets') {
+    return [
+      {
+        path: 'src/snippets.tsx',
+        kind: 'code',
+        language: 'typescript',
+        contents: `export const homepageSnippets = [\n  { kind: 'template', id: '${templateId}', slots: ${JSON.stringify(template.defaultSectionOrder, null, 2)} },\n  { kind: 'component', id: 'SocialLinks' },\n  { kind: 'component', id: 'Schedule' },\n];\n`,
+      },
+      {
+        path: 'src/slot-map.ts',
+        kind: 'code',
+        language: 'typescript',
+        contents: `export const approvedSlotMap = {\n  templateId: '${templateId}',\n  sections: ${JSON.stringify(template.defaultSectionOrder, null, 2)},\n  components: ['SocialLinks', 'Schedule'],\n};\n`,
+      },
+      {
+        path: 'docs/registry-snippets.md',
+        kind: 'doc',
+        language: 'markdown',
+        contents: `# Registry snippets\n\nUse these placeholders to compose approved template slots and registered homepage components.\n`,
+      },
+      {
+        path: 'tests/registry-snippets.spec.ts',
+        kind: 'code',
+        language: 'typescript',
+        contents: `import { describe, expect, it } from 'vitest';\n\ndescribe('registry snippets', () => {\n  it('lists approved homepage blocks', () => {\n    expect(['SocialLinks', 'Schedule']).toContain('Schedule');\n  });\n});\n`,
+      },
+      {
+        path: 'fixtures/default.json',
+        kind: 'fixture',
+        language: 'json',
+        contents: JSON.stringify({ mode, locale, templateId, inserted: ['SocialLinks', 'Schedule'] }, null, 2),
+      },
+      {
+        path: 'manifest.json',
+        kind: 'schema',
+        language: 'json',
+        contents: JSON.stringify({ mode, templateId, type: 'registry-snippets' }, null, 2),
+      },
+    ];
+  }
+
+  return [
+    {
+      path: 'src/page-source.json',
+      kind: 'code',
+      language: 'json',
+      contents: JSON.stringify(
+        {
+          templateId,
+          schemaVersion: '1.0',
+          metadata: {
+            title: template.label,
+            canonicalPath: `/preview/${templateId}`,
+          },
+          sections: template.defaultSectionOrder.map((kind, index) => ({
+            id: `${kind}-${index + 1}`,
+            kind,
+          })),
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      path: 'validation/source-checks.md',
+      kind: 'doc',
+      language: 'markdown',
+      contents: `# Page source repair\n\nUse this document for schema-level repair, migration review, and structured page validation.\n`,
+    },
+    {
+      path: 'tests/page-source.spec.ts',
+      kind: 'code',
+      language: 'typescript',
+      contents: `import { describe, expect, it } from 'vitest';\n\ndescribe('page source document', () => {\n  it('keeps a structured section list', () => {\n    expect(${JSON.stringify(template.defaultSectionOrder)}.length).toBeGreaterThan(0);\n  });\n});\n`,
+    },
+    {
+      path: 'fixtures/default.json',
+      kind: 'fixture',
+      language: 'json',
+      contents: JSON.stringify({ mode, locale, templateId }, null, 2),
+    },
+    {
+      path: 'manifest.json',
+      kind: 'schema',
+      language: 'json',
+      contents: JSON.stringify({ mode, templateId, sourceShape: 'structured-document' }, null, 2),
+    },
+  ];
+}
+
 function resolveFileIcon(file: VirtualFile) {
+  if (file.kind === 'code') {
+    return <Code2 className="h-4 w-4" aria-hidden="true" />;
+  }
+
   if (file.kind === 'doc') {
     return <FileText className="h-4 w-4" aria-hidden="true" />;
   }
 
   return <FileJson2 className="h-4 w-4" aria-hidden="true" />;
+}
+
+function getVirtualFileKindLabel(
+  locale: string,
+  kind: VirtualFile['kind'],
+) {
+  switch (kind) {
+    case 'code':
+      return pickLocaleText(locale, {
+        en: 'Source',
+        zh_HANS: '源文件',
+        zh_HANT: '源檔案',
+        ja: 'ソース',
+        ko: '소스',
+        fr: 'Source',
+      });
+    case 'schema':
+      return pickLocaleText(locale, {
+        en: 'Sidecar schema',
+        zh_HANS: '侧车结构',
+        zh_HANT: '側車結構',
+        ja: 'サイドカー定義',
+        ko: '사이드카 스키마',
+        fr: 'Schéma annexe',
+      });
+    case 'fixture':
+      return pickLocaleText(locale, {
+        en: 'Fixture',
+        zh_HANS: '样例',
+        zh_HANT: '樣例',
+        ja: 'フィクスチャ',
+        ko: '픽스처',
+        fr: 'Fixture',
+      });
+    case 'doc':
+      return pickLocaleText(locale, {
+        en: 'Notes',
+        zh_HANS: '说明',
+        zh_HANT: '說明',
+        ja: 'メモ',
+        ko: '메모',
+        fr: 'Notes',
+      });
+    default:
+      return kind;
+  }
 }
 
 function getAuthoringSubjectLabel(
@@ -455,7 +721,333 @@ function getAuthoringSubjectLabel(
     return getPublicPresenceTemplateLabel(locale, PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId]);
   }
 
+  if (target === 'advanced') {
+    return pickLocaleText(locale, {
+      en: 'Public page source workspace',
+      zh_HANS: '公开页面源稿工作面',
+      zh_HANT: '公開頁面源稿工作面',
+      ja: '公開ページのソース作業面',
+      ko: '공개 페이지 소스 작업면',
+      fr: 'Espace source de la page publique',
+    });
+  }
+
   return componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
+function getAdvancedModeLabel(locale: string, mode: AdvancedPageMode) {
+  switch (mode) {
+    case 'custom-html':
+      return pickLocaleText(locale, {
+        en: 'Custom HTML',
+        zh_HANS: '自定义 HTML',
+        zh_HANT: '自訂 HTML',
+        ja: 'カスタム HTML',
+        ko: '커스텀 HTML',
+        fr: 'HTML personnalisé',
+      });
+    case 'registry-snippets':
+      return pickLocaleText(locale, {
+        en: 'Registry snippets',
+        zh_HANS: '注册片段',
+        zh_HANT: '註冊片段',
+        ja: '登録スニペット',
+        ko: '레지스트리 스니펫',
+        fr: 'Snippets registry',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Page source',
+        zh_HANS: '页面源稿',
+        zh_HANT: '頁面源稿',
+        ja: 'ページソース',
+        ko: '페이지 소스',
+        fr: 'Source de page',
+      });
+  }
+}
+
+function getAdvancedModeDescription(locale: string, mode: AdvancedPageMode) {
+  switch (mode) {
+    case 'custom-html':
+      return pickLocaleText(locale, {
+        en: 'Compose a source-owned fan page with safe HTML and CSS only.',
+        zh_HANS: '用安全 HTML 与 CSS 编排 source-owned 粉丝页。',
+        zh_HANT: '用安全 HTML 與 CSS 編排 source-owned 粉絲頁。',
+        ja: '安全な HTML と CSS だけで source-owned のファンページを組み立てます。',
+        ko: '안전한 HTML과 CSS만으로 source-owned 팬 페이지를 구성합니다.',
+        fr: 'Composez une page fan source-owned avec uniquement du HTML et du CSS sûrs.',
+      });
+    case 'registry-snippets':
+      return pickLocaleText(locale, {
+        en: 'Assemble approved template slots and registered homepage blocks.',
+        zh_HANS: '组合已批准的模板槽位与已注册主页模块。',
+        zh_HANT: '組合已批准的模板槽位與已註冊主頁模組。',
+        ja: '承認済みテンプレートのスロットと登録済みホームページブロックを組み合わせます。',
+        ko: '승인된 템플릿 슬롯과 등록된 홈페이지 블록을 조합합니다.',
+        fr: 'Assemblez des slots de template approuvés et des blocs de homepage enregistrés.',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Repair the structured page document when Visual Studio needs schema-level help.',
+        zh_HANS: '当可视化工作台需要结构级修复时，在这里处理页面源稿。',
+        zh_HANT: '當視覺工作台需要結構級修復時，在這裡處理頁面源稿。',
+        ja: 'Visual Studio だけでは直せない構造レベルの調整をここで行います。',
+        ko: '비주얼 스튜디오만으로 어려운 구조 수준 수정을 여기서 진행합니다.',
+        fr: 'Réparez ici le document structuré quand le studio visuel a besoin d’une aide au niveau schéma.',
+      });
+  }
+}
+
+function getPreviewSurfaceLabel(
+  locale: string,
+  target: AuthoringTarget,
+  mode: AdvancedPageMode,
+) {
+  if (target !== 'advanced') {
+    return pickLocaleText(locale, {
+      en: 'Live preview',
+      zh_HANS: '实时预览',
+      zh_HANT: '即時預覽',
+      ja: 'ライブプレビュー',
+      ko: '라이브 프리뷰',
+      fr: 'Aperçu live',
+    });
+  }
+
+  switch (mode) {
+    case 'custom-html':
+      return pickLocaleText(locale, {
+        en: 'Safe custom page preview',
+        zh_HANS: '安全自定义页面预览',
+        zh_HANT: '安全自訂頁面預覽',
+        ja: '安全なカスタムページプレビュー',
+        ko: '안전한 커스텀 페이지 미리보기',
+        fr: 'Aperçu de page personnalisée sûre',
+      });
+    case 'registry-snippets':
+      return pickLocaleText(locale, {
+        en: 'Approved snippet preview',
+        zh_HANS: '已批准片段预览',
+        zh_HANT: '已批准片段預覽',
+        ja: '承認済みスニペットのプレビュー',
+        ko: '승인된 스니펫 미리보기',
+        fr: 'Aperçu des snippets approuvés',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Structured page preview',
+        zh_HANS: '结构化页面预览',
+        zh_HANT: '結構化頁面預覽',
+        ja: '構造化ページプレビュー',
+        ko: '구조화된 페이지 미리보기',
+        fr: 'Aperçu de page structurée',
+      });
+  }
+}
+
+function readVirtualFileContents(files: VirtualFile[], path: string) {
+  return files.find((file) => file.path === path)?.contents ?? '';
+}
+
+function buildCustomHtmlSrcDoc(html: string, css: string) {
+  return `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><style>html,body{margin:0;padding:0;background:#fff;color:#111827;font-family:ui-sans-serif,system-ui,sans-serif;}a{color:#e11d48;}${css}</style></head><body>${html}</body></html>`;
+}
+
+function buildCustomHtmlPreviewState(
+  html: string,
+  css: string,
+  locale: string,
+): CustomHtmlPreviewState {
+  const issues: string[] = [];
+  const loweredHtml = html.toLowerCase();
+  const blockedPattern = PUBLIC_PRESENCE_SAFETY_POLICY.htmlRules.forbiddenPatterns.find((pattern) =>
+    loweredHtml.includes(pattern),
+  );
+
+  if (CUSTOM_HTML_URL_BYPASS_PATTERN.test(html)) {
+    issues.push(
+      pickLocaleText(locale, {
+        en: 'Remove protocol-relative, credential, or encoded-host links before preview.',
+        zh_HANS: '请先移除协议相对、带凭据或编码主机的链接。',
+        zh_HANT: '請先移除協定相對、帶憑證或編碼主機的連結。',
+        ja: 'プレビュー前に、プロトコル相対・認証情報付き・エンコード回避のリンクを削除してください。',
+        ko: '미리보기 전에 프로토콜 상대, 자격 증명 포함, 인코딩 우회 링크를 제거하세요.',
+        fr: 'Supprimez les liens relatifs au protocole, avec identifiants ou hôtes encodés avant l’aperçu.',
+      }),
+    );
+  }
+
+  if (blockedPattern) {
+    issues.push(
+      pickLocaleText(locale, {
+        en: `Blocked source pattern: ${blockedPattern}`,
+        zh_HANS: `检测到被阻止的源码片段：${blockedPattern}`,
+        zh_HANT: `偵測到被阻止的原始碼片段：${blockedPattern}`,
+        ja: `ブロック対象のソース断片を検出しました: ${blockedPattern}`,
+        ko: `차단된 소스 패턴을 감지했습니다: ${blockedPattern}`,
+        fr: `Motif source bloqué détecté : ${blockedPattern}`,
+      }),
+    );
+  }
+
+  if (CUSTOM_HTML_CSS_ASSET_PATTERN.test(css)) {
+    issues.push(
+      pickLocaleText(locale, {
+        en: 'Keep CSS local to this page. External imports and remote asset URLs are blocked.',
+        zh_HANS: '请让 CSS 只服务当前页面；外部导入与远程资源地址会被阻止。',
+        zh_HANT: '請讓 CSS 只服務目前頁面；外部匯入與遠端資源網址會被阻止。',
+        ja: 'CSS はこのページ内に留めてください。外部 import とリモート資産 URL はブロックされます。',
+        ko: 'CSS는 이 페이지 안에서만 사용하세요. 외부 import와 원격 자산 URL은 차단됩니다.',
+        fr: 'Gardez le CSS local à cette page. Les imports externes et URLs d’assets distants sont bloqués.',
+      }),
+    );
+  }
+
+  let excerpt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  let sanitizedHtml = html;
+
+  if (typeof DOMParser !== 'undefined') {
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const blockedNodes = document.querySelectorAll('script, iframe, object, embed, link, meta[http-equiv], audio, video, source');
+
+    if (blockedNodes.length > 0) {
+      issues.push(
+        pickLocaleText(locale, {
+          en: 'Only static fan-page markup is allowed here. Move embeds and executable media into approved registry components.',
+          zh_HANS: '这里只允许静态粉丝页标记；嵌入内容和可执行媒体请移到已批准的注册组件中。',
+          zh_HANT: '這裡只允許靜態粉絲頁標記；嵌入內容與可執行媒體請移到已批准的註冊元件中。',
+          ja: 'ここで使えるのは静的なファンページ用マークアップのみです。埋め込みや実行可能メディアは承認済みコンポーネントへ移してください。',
+          ko: '여기서는 정적인 팬 페이지 마크업만 사용할 수 있습니다. 임베드와 실행 가능한 미디어는 승인된 컴포넌트로 옮기세요.',
+          fr: 'Seul un balisage statique de fan page est autorisé ici. Déplacez embeds et médias exécutables vers des composants approuvés.',
+        }),
+      );
+      blockedNodes.forEach((node) => node.remove());
+    }
+
+    document.querySelectorAll('*').forEach((element) => {
+      [...element.attributes].forEach((attribute) => {
+        const name = attribute.name.toLowerCase();
+        const value = attribute.value.trim();
+
+        if (name.startsWith('on') || name === 'style') {
+          issues.push(
+            pickLocaleText(locale, {
+              en: 'Inline event handlers and inline styles are not allowed in this mode.',
+              zh_HANS: '这个模式不允许内联事件处理器或内联样式。',
+              zh_HANT: '這個模式不允許內聯事件處理器或內聯樣式。',
+              ja: 'このモードではインラインイベント属性やインライン style は使えません。',
+              ko: '이 모드에서는 인라인 이벤트 핸들러와 인라인 스타일을 사용할 수 없습니다.',
+              fr: 'Les gestionnaires d’événement inline et styles inline sont interdits dans ce mode.',
+            }),
+          );
+          element.removeAttribute(attribute.name);
+          return;
+        }
+
+        if (name === 'src' || name === 'srcset') {
+          if (value && CUSTOM_HTML_EXTERNAL_ASSET_PATTERN.test(value) && !value.startsWith('/')) {
+            issues.push(
+              pickLocaleText(locale, {
+                en: 'Remote media assets are blocked here. Use approved managed assets or registry media blocks instead.',
+                zh_HANS: '这里会阻止远程媒体资源；请改用已批准的托管资源或注册媒体模块。',
+                zh_HANT: '這裡會阻止遠端媒體資源；請改用已批准的託管資源或註冊媒體模組。',
+                ja: 'このモードではリモートのメディア資産を使えません。承認済みの管理資産か登録済みメディアブロックを利用してください。',
+                ko: '이 모드에서는 원격 미디어 자산을 사용할 수 없습니다. 승인된 관리 자산이나 등록된 미디어 블록을 사용하세요.',
+                fr: 'Les médias distants sont bloqués ici. Utilisez des assets gérés approuvés ou des blocs média enregistrés.',
+              }),
+            );
+            element.removeAttribute(attribute.name);
+          }
+          return;
+        }
+
+        if (name === 'href' && CUSTOM_HTML_URL_BYPASS_PATTERN.test(`${name}="${value}"`)) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+    });
+
+    excerpt = document.body.textContent?.replace(/\s+/g, ' ').trim() ?? excerpt;
+    sanitizedHtml = document.body.innerHTML;
+  }
+
+  return {
+    excerpt,
+    issues: [...new Set(issues)],
+    srcDoc: buildCustomHtmlSrcDoc(sanitizedHtml, css),
+  };
+}
+
+function buildAdvancedPreviewProjection(
+  mode: AdvancedPageMode,
+  templateId: PublicPresenceTemplateId,
+  locale: string,
+  files: VirtualFile[],
+): PublicPresencePublicProjection {
+  const baseProjection = buildTemplatePreviewProjection(templateId, locale);
+
+  if (mode === 'page-source') {
+    const sourceContents = readVirtualFileContents(files, 'src/page-source.json');
+
+    try {
+      const parsed = JSON.parse(sourceContents) as {
+        metadata?: { title?: string };
+        sections?: Array<{ kind?: string }>;
+      };
+      const sectionKinds = (parsed.sections ?? [])
+        .map((section) => section.kind)
+        .filter((kind): kind is string => Boolean(kind));
+
+      return {
+        ...baseProjection,
+        metadata: {
+          ...baseProjection.metadata,
+          title: parsed.metadata?.title || baseProjection.metadata.title,
+          description: pickLocaleText(locale, {
+            en: `Structured page source with ${sectionKinds.length} planned sections.`,
+            zh_HANS: `结构化页面源稿当前规划了 ${sectionKinds.length} 个分区。`,
+            zh_HANT: `結構化頁面源稿目前規劃了 ${sectionKinds.length} 個分區。`,
+            ja: `構造化ページソースには現在 ${sectionKinds.length} 個のセクションが計画されています。`,
+            ko: `구조화된 페이지 소스에는 현재 ${sectionKinds.length}개의 섹션이 계획되어 있습니다.`,
+            fr: `La source de page structurée prévoit actuellement ${sectionKinds.length} sections.`,
+          }),
+        },
+      };
+    } catch {
+      return baseProjection;
+    }
+  }
+
+  if (mode === 'registry-snippets') {
+    const snippetContents = readVirtualFileContents(files, 'src/snippets.tsx');
+    const inserted = [...snippetContents.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]);
+
+    return {
+      ...baseProjection,
+      metadata: {
+        ...baseProjection.metadata,
+        title: pickLocaleText(locale, {
+          en: 'Approved homepage snippets',
+          zh_HANS: '已批准主页片段',
+          zh_HANT: '已批准主頁片段',
+          ja: '承認済みホームページスニペット',
+          ko: '승인된 홈페이지 스니펫',
+          fr: 'Snippets homepage approuvés',
+        }),
+        description: pickLocaleText(locale, {
+          en: 'Preview how approved template slots and registered blocks combine before review.',
+          zh_HANS: '先预览已批准模板槽位与注册模块的组合效果，再进入审核。',
+          zh_HANT: '先預覽已批准模板槽位與註冊模組的組合效果，再進入審核。',
+          ja: '承認済みスロットと登録済みブロックの組み合わせを、レビュー前にここで確認します。',
+          ko: '승인된 슬롯과 등록된 블록의 조합을 검토 전에 여기서 확인합니다.',
+          fr: 'Prévisualisez ici la combinaison des slots approuvés et blocs enregistrés avant revue.',
+        }),
+      },
+    };
+  }
+
+  return baseProjection;
 }
 
 function buildValidationItems(
@@ -676,12 +1268,14 @@ function usePreviewFit(targetWidth: number) {
 }
 
 export function PublicPresenceAuthoringIdeScreen({
+  advancedMode,
   componentType,
   target,
   talentId,
   templateId,
   tenantId,
 }: Readonly<{
+  advancedMode?: AdvancedPageMode | null;
   componentType?: string | null;
   target: AuthoringTarget;
   talentId: string;
@@ -702,12 +1296,18 @@ export function PublicPresenceAuthoringIdeScreen({
   const validationDrawerId = useId();
   const effectiveTemplateId = (templateId ?? 'activeTalentHub') as PublicPresenceTemplateId;
   const effectiveComponentType = (componentType ?? 'SocialLinks') as HomepageComponentType;
+  const effectiveAdvancedMode = advancedMode ?? 'page-source';
+  const [selectedAdvancedMode, setSelectedAdvancedMode] = useState<AdvancedPageMode>(
+    effectiveAdvancedMode,
+  );
   const initialFiles = useMemo(
     () =>
       target === 'template'
         ? buildTemplateFiles(effectiveTemplateId, locale)
-        : buildComponentFiles(effectiveComponentType, locale),
-    [effectiveComponentType, effectiveTemplateId, locale, target],
+        : target === 'component'
+          ? buildComponentFiles(effectiveComponentType, locale)
+          : buildAdvancedFiles(selectedAdvancedMode, effectiveTemplateId, locale),
+    [effectiveComponentType, effectiveTemplateId, locale, selectedAdvancedMode, target],
   );
   const [files, setFiles] = useState<VirtualFile[]>(initialFiles);
   const [activePath, setActivePath] = useState(initialFiles[0]?.path ?? '');
@@ -733,6 +1333,8 @@ export function PublicPresenceAuthoringIdeScreen({
     open: utilityPanel === 'checks',
   });
 
+  const advancedModeOptions: AdvancedPageMode[] = ['page-source', 'custom-html', 'registry-snippets'];
+
   const activeFile = files.find((file) => file.path === activePath) ?? files[0];
   const desktopPreviewFit = usePreviewFit(720);
   const authoringSubjectLabel = getAuthoringSubjectLabel(
@@ -746,8 +1348,27 @@ export function PublicPresenceAuthoringIdeScreen({
     () =>
       target === 'template'
         ? buildTemplatePreviewProjection(effectiveTemplateId, locale)
-        : buildComponentPreviewProjection(effectiveComponentType, locale),
-    [effectiveComponentType, effectiveTemplateId, locale, target],
+        : target === 'component'
+          ? buildComponentPreviewProjection(effectiveComponentType, locale)
+          : buildAdvancedPreviewProjection(
+              selectedAdvancedMode,
+              effectiveTemplateId,
+              locale,
+              files,
+            ),
+    [effectiveComponentType, effectiveTemplateId, files, locale, selectedAdvancedMode, target],
+  );
+  const customHtmlPreviewState = useMemo(
+    () => {
+      if (target !== 'advanced' || selectedAdvancedMode !== 'custom-html') {
+        return null;
+      }
+
+      const html = readVirtualFileContents(files, 'src/index.html');
+      const css = readVirtualFileContents(files, 'src/styles.css');
+      return buildCustomHtmlPreviewState(html, css, locale);
+    },
+    [files, locale, selectedAdvancedMode, target],
   );
   const validationItems = useMemo(
     () => buildValidationItems(locale, target, fixtureMode, viewport, previewPhase),
@@ -791,7 +1412,9 @@ export function PublicPresenceAuthoringIdeScreen({
   const exitHref =
     target === 'template'
       ? buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'templates')
-      : buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'components');
+      : target === 'component'
+        ? buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'components')
+        : buildPublicPresenceStudioEditorPath(tenantId, talentId, effectiveTemplateId);
   const previewHref =
     target === 'template'
       ? buildPublicPresenceStudioPreviewPath(tenantId, talentId, effectiveTemplateId)
@@ -803,11 +1426,13 @@ export function PublicPresenceAuthoringIdeScreen({
           talentId,
           effectiveTemplateId,
         )
-      : buildPublicPresenceComponentAuthoringPath(
-          tenantId,
-          talentId,
-          effectiveComponentType,
-        );
+      : target === 'component'
+        ? buildPublicPresenceComponentAuthoringPath(
+            tenantId,
+            talentId,
+            effectiveComponentType,
+          )
+        : undefined;
   const saveStatusLabel = editorDirty
     ? pickLocaleText(locale, {
         en: 'Unsaved changes',
@@ -881,14 +1506,15 @@ export function PublicPresenceAuthoringIdeScreen({
   };
 
   const ideBadgeLabel = pickLocaleText(locale, {
-    en: target === 'template' ? 'Template IDE' : 'Component IDE',
-    zh_HANS: target === 'template' ? '模板 IDE' : '组件 IDE',
-    zh_HANT: target === 'template' ? '模板 IDE' : '元件 IDE',
-    ja: target === 'template' ? 'テンプレート IDE' : 'コンポーネント IDE',
-    ko: target === 'template' ? '템플릿 IDE' : '컴포넌트 IDE',
-    fr: target === 'template' ? 'IDE Template' : 'IDE Composant',
+    en: target === 'template' ? 'Template IDE' : target === 'component' ? 'Component IDE' : 'Advanced IDE',
+    zh_HANS: target === 'template' ? '模板 IDE' : target === 'component' ? '组件 IDE' : '高级 IDE',
+    zh_HANT: target === 'template' ? '模板 IDE' : target === 'component' ? '元件 IDE' : '進階 IDE',
+    ja: target === 'template' ? 'テンプレート IDE' : target === 'component' ? 'コンポーネント IDE' : '詳細 IDE',
+    ko: target === 'template' ? '템플릿 IDE' : target === 'component' ? '컴포넌트 IDE' : '고급 IDE',
+    fr: target === 'template' ? 'IDE Template' : target === 'component' ? 'IDE Composant' : 'IDE avancé',
   });
   const title = authoringSubjectLabel;
+  const previewSurfaceLabel = getPreviewSurfaceLabel(locale, target, selectedAdvancedMode);
   const authoringActions = [
     {
       key: 'save',
@@ -948,9 +1574,18 @@ export function PublicPresenceAuthoringIdeScreen({
       label:
         target === 'template'
           ? getHomepageSurfaceActionLabel(locale, 'createTemplate')
-          : getHomepageSurfaceActionLabel(locale, 'createComponent'),
+          : target === 'component'
+            ? getHomepageSurfaceActionLabel(locale, 'createComponent')
+            : pickLocaleText(locale, {
+                en: 'Open Studio',
+                zh_HANS: '打开工作台',
+                zh_HANT: '打開工作台',
+                ja: 'Studio を開く',
+                ko: 'Studio 열기',
+                fr: 'Ouvrir le studio',
+              }),
       icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
-      href: retryAuthoringHref,
+      href: retryAuthoringHref ?? exitHref,
       kind: 'link' as const,
       tone: 'rose' as const,
     },
@@ -1111,6 +1746,11 @@ export function PublicPresenceAuthoringIdeScreen({
             <PublicPresenceBadge className="hidden 2xl:inline-flex" tone="slate" variant="outline">
               {activeFile?.language ?? 'text'}
             </PublicPresenceBadge>
+            {target === 'advanced' ? (
+              <PublicPresenceBadge tone="slate" variant="outline">
+                    {getAdvancedModeLabel(locale, selectedAdvancedMode)}
+              </PublicPresenceBadge>
+            ) : null}
             <span className="h-5 w-px shrink-0 bg-slate-200" aria-hidden="true" />
             {authoringActions.map((action) =>
               action.kind === 'button' ? (
@@ -1346,21 +1986,67 @@ export function PublicPresenceAuthoringIdeScreen({
               } xl:flex`}
               data-testid="ide-editor-surface"
             >
-              <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start">
-                <div className="pointer-events-auto flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm [scrollbar-width:none]">
+              <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
+                <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm [scrollbar-width:none]">
                   <PublicPresenceBadge tone="rose">
-                    {pickLocaleText(locale, {
-                      en: 'Editor',
-                      zh_HANS: '编辑器',
-                      zh_HANT: '編輯器',
-                      ja: 'エディタ',
-                      ko: '편집기',
-                      fr: 'Editeur',
-                    })}
+                    {target === 'advanced'
+                      ? getAdvancedModeLabel(locale, selectedAdvancedMode)
+                      : pickLocaleText(locale, {
+                          en: 'Editor',
+                          zh_HANS: '编辑器',
+                          zh_HANT: '編輯器',
+                          ja: 'エディタ',
+                          ko: '편집기',
+                          fr: 'Editeur',
+                        })}
                   </PublicPresenceBadge>
                   <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
                     {activeFile?.path}
                   </PublicPresenceBadge>
+                  <PublicPresenceBadge className="hidden lg:inline-flex" tone="slate" variant="outline">
+                    {getVirtualFileKindLabel(locale, activeFile?.kind ?? 'code')}
+                  </PublicPresenceBadge>
+                  {target === 'advanced' ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {advancedModeOptions.map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          aria-pressed={selectedAdvancedMode === mode}
+                          onClick={() => {
+                            if (mode === selectedAdvancedMode) {
+                              return;
+                            }
+
+                            const nextFiles = buildAdvancedFiles(mode, effectiveTemplateId, locale);
+                            const nextHref = buildPublicPresenceAdvancedIdePath(
+                              tenantId,
+                              talentId,
+                              {
+                                mode,
+                                templateId: effectiveTemplateId,
+                              },
+                            );
+                            window.history.replaceState({}, '', nextHref);
+                            setSelectedAdvancedMode(mode);
+                            setFiles(nextFiles);
+                            setActivePath(nextFiles[0]?.path ?? '');
+                            setEditorDirty(false);
+                            setLastSavedAt(null);
+                            setLastValidatedAt(null);
+                            setSubmitStatus('idle');
+                          }}
+                          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            selectedAdvancedMode === mode
+                              ? 'border-rose-300 bg-rose-50 text-rose-700'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {getAdvancedModeLabel(locale, mode)}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="min-h-0 flex-1 px-3 pb-3 pt-14 sm:px-4 sm:pb-4 sm:pt-16">
@@ -1411,14 +2097,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 <div className="pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <PublicPresenceBadge tone="rose">
-                      {pickLocaleText(locale, {
-                        en: 'Live preview',
-                        zh_HANS: '实时预览',
-                        zh_HANT: '即時預覽',
-                        ja: 'ライブプレビュー',
-                        ko: '라이브 프리뷰',
-                        fr: 'Aperçu live',
-                      })}
+                      {previewSurfaceLabel}
                     </PublicPresenceBadge>
                     <button
                       type="button"
@@ -1490,14 +2169,7 @@ export function PublicPresenceAuthoringIdeScreen({
               {isWideDesktop ? (
                 <div className="pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:flex">
                 <PublicPresenceBadge tone="rose">
-                  {pickLocaleText(locale, {
-                    en: 'Live preview',
-                    zh_HANS: '实时预览',
-                    zh_HANT: '即時預覽',
-                    ja: 'ライブプレビュー',
-                    ko: '라이브 프리뷰',
-                    fr: 'Aperçu live',
-                  })}
+                  {previewSurfaceLabel}
                 </PublicPresenceBadge>
                 <button
                   type="button"
@@ -1594,7 +2266,39 @@ export function PublicPresenceAuthoringIdeScreen({
             >
               <div className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/80 p-3">
                 <div className="h-full overflow-auto rounded-[1.5rem] bg-white px-4 py-5">
-                  {viewport === 'mobile' ? (
+                  {target === 'advanced' && selectedAdvancedMode === 'custom-html' ? (
+                    <div className="space-y-4">
+                      <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-950">
+                          {pickLocaleText(locale, {
+                            en: 'Custom HTML safety',
+                            zh_HANS: '自定义 HTML 安全',
+                            zh_HANT: '自訂 HTML 安全',
+                            ja: 'カスタム HTML の安全性',
+                            ko: '커스텀 HTML 안전성',
+                            fr: 'Sécurité HTML personnalisée',
+                          })}
+                        </p>
+                        <p className="mt-1">{customHtmlPreviewState?.issues.length ? customHtmlPreviewState.issues[0] : pickLocaleText(locale, {
+                          en: 'Static HTML and CSS preview are ready.',
+                          zh_HANS: '静态 HTML 与 CSS 预览已就绪。',
+                          zh_HANT: '靜態 HTML 與 CSS 預覽已就緒。',
+                          ja: '静的 HTML と CSS のプレビューが準備できました。',
+                          ko: '정적 HTML 및 CSS 미리보기가 준비되었습니다.',
+                          fr: 'L’aperçu HTML et CSS statique est prêt.',
+                        })}</p>
+                      </div>
+                      <iframe
+                        title={previewSurfaceLabel}
+                        data-testid="ide-custom-html-preview"
+                        srcDoc={customHtmlPreviewState?.srcDoc ?? buildCustomHtmlSrcDoc(
+                          readVirtualFileContents(files, 'src/index.html'),
+                          readVirtualFileContents(files, 'src/styles.css'),
+                        )}
+                        className="min-h-[34rem] w-full rounded-[1.5rem] border border-slate-200 bg-white"
+                      />
+                    </div>
+                  ) : viewport === 'mobile' ? (
                     <div className="mx-auto w-full">
                       <PublicHomepageProjectionRenderer
                         projection={previewProjection}

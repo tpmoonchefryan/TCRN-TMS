@@ -10,6 +10,7 @@ import {
   buildDefaultWorkspacePath,
   buildPublicPresenceStudioEditorPath,
   buildPublicPresenceTemplateAuthoringPath,
+  buildPublicPresenceAdvancedIdePath,
   buildPublicPresenceComponentAuthoringPath,
   buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
@@ -151,6 +152,15 @@ describe('workspace-paths', () => {
     );
     expect(buildPublicPresenceTemplateAuthoringPath('tenant-3', 'talent-8', 'debutReveal')).toBe(
       '/studio/public-presence/tenant-3/talent-8/templates/new?templateId=debutReveal',
+    );
+    expect(buildPublicPresenceAdvancedIdePath('tenant-3', 'talent-8')).toBe(
+      '/studio/public-presence/tenant-3/talent-8/advanced',
+    );
+    expect(buildPublicPresenceAdvancedIdePath('tenant-3', 'talent-8', {
+      mode: 'custom-html',
+      templateId: 'activeTalentHub',
+    })).toBe(
+      '/studio/public-presence/tenant-3/talent-8/advanced?templateId=activeTalentHub&mode=custom-html',
     );
     expect(buildPublicPresenceComponentAuthoringPath('tenant-3', 'talent-8')).toBe(
       '/studio/public-presence/tenant-3/talent-8/components/new',

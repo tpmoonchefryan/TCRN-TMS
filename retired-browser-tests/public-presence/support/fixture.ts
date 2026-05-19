@@ -104,6 +104,7 @@ export function buildPublicPresenceRoutes() {
   const studioBase = `/studio/public-presence/${tenantId}/${talentId}`;
 
   return {
+    advancedIde: `${studioBase}/advanced?templateId=activeTalentHub&mode=page-source`,
     componentIde: `${studioBase}/components/new?componentType=SocialLinks`,
     componentStore: `${fixture.routes.homepageManagement}?surface=components`,
     homepageManagement: fixture.routes.homepageManagement,

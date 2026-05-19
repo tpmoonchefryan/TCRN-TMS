@@ -23,6 +23,7 @@ import {
   PUBLIC_PRESENCE_URL_CATEGORIES,
   PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES,
   type PublicPresenceComponentDefinition,
+  type PublicPresenceCollectionOperationDefinition,
   type PublicPresenceContentHashPolicy,
   type PublicPresenceFieldDefinition,
   type PublicPresenceSafetyPolicy,
@@ -33,6 +34,10 @@ import {
 const createFieldDefinition = (
   input: PublicPresenceFieldDefinition,
 ): PublicPresenceFieldDefinition => input;
+
+const createCollectionOperationDefinition = (
+  input: PublicPresenceCollectionOperationDefinition,
+): PublicPresenceCollectionOperationDefinition => input;
 
 const createComponentFieldDefinitions = (prefix: string) => ({
   displayName: createFieldDefinition({
@@ -513,6 +518,19 @@ export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
     kind: 'officialChannels',
     purpose: 'Provide validated official social and channel destinations.',
     allowedComponents: ['SocialLinks'],
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addChannel',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'platforms',
+        itemLabel: 'channel',
+        minItems: 0,
+        removeLabel: 'removeChannel',
+        reorderLabel: 'reorderChannels',
+      }),
+    ],
     slotRules: ['officialLinksOnly'],
     phaseVisibility: ['always'],
     editabilityState: 'validEditable',
@@ -525,6 +543,19 @@ export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
     kind: 'stageSchedule',
     purpose: 'Expose a bounded official schedule contract.',
     allowedComponents: ['Schedule'],
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addEvent',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'events',
+        itemLabel: 'scheduleEntry',
+        minItems: 0,
+        removeLabel: 'removeEvent',
+        reorderLabel: 'reorderEvents',
+      }),
+    ],
     slotRules: ['boundedScheduleOnly'],
     phaseVisibility: ['always'],
     editabilityState: 'validEditable',
@@ -549,6 +580,19 @@ export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
     kind: 'goodsSupport',
     purpose: 'Bound goods and support destinations to explicit slots and validated URLs.',
     allowedComponents: ['LinkButton'],
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addGoodsLink',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'components',
+        itemLabel: 'goodsLink',
+        minItems: 0,
+        removeLabel: 'removeGoodsLink',
+        reorderLabel: 'reorderGoodsLinks',
+      }),
+    ],
     slotRules: ['validatedGoodsSupportActions'],
     phaseVisibility: ['always'],
     editabilityState: 'validEditable',
@@ -579,6 +623,19 @@ export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
     sourcePolicy: 'registryOwned',
     validationRules: ['structuredAgencyNotes'],
     fallbackBehavior: 'safePlaceholder',
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addNote',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'notes',
+        itemLabel: 'agencyNote',
+        minItems: 0,
+        removeLabel: 'removeNote',
+        reorderLabel: 'reorderNotes',
+      }),
+    ],
     fieldDefinitions: [sectionField.notes],
   },
   fanActions: {
@@ -591,6 +648,19 @@ export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
     sourcePolicy: 'registryOwned',
     validationRules: ['typedFanActions'],
     fallbackBehavior: 'safePlaceholder',
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addAction',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'actions',
+        itemLabel: 'fanAction',
+        minItems: 0,
+        removeLabel: 'removeAction',
+        reorderLabel: 'reorderActions',
+      }),
+    ],
     fieldDefinitions: [sectionField.actions],
   },
   milestoneUnlocks: {
@@ -1028,6 +1098,19 @@ export const PUBLIC_PRESENCE_COMPONENT_DEFINITIONS: Record<
       weekOf: '',
       events: [],
     },
+    collectionOperations: [
+      createCollectionOperationDefinition({
+        addLabel: 'addEvent',
+        canAdd: true,
+        canRemove: true,
+        canReorder: true,
+        collectionKey: 'events',
+        itemLabel: 'scheduleEntry',
+        minItems: 0,
+        removeLabel: 'removeEvent',
+        reorderLabel: 'reorderEvents',
+      }),
+    ],
     fieldDefinitions: [
       createFieldDefinition({
         fieldKey: 'title',

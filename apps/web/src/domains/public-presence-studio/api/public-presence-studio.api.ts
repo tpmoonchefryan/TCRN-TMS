@@ -17,6 +17,19 @@ export interface PublicPresenceStudioTemplateSummary {
 
 export interface PublicPresenceStudioStageSectionSummary {
   allowedComponents: string[];
+  collectionOperations: Array<{
+    addLabel: string;
+    canAdd: boolean;
+    canRemove: boolean;
+    canReorder: boolean;
+    collectionKey: string;
+    disabledReason?: string | null;
+    itemLabel: string;
+    maxItems?: number;
+    minItems?: number;
+    removeLabel: string;
+    reorderLabel: string;
+  }>;
   editabilityState: string;
   fallbackBehavior: string;
   fieldDefinitions: Array<{

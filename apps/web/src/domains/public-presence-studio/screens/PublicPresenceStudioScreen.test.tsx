@@ -334,6 +334,7 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
     stageSections: [
       {
         allowedComponents: [],
+        collectionOperations: [],
         editabilityState: 'validEditable',
         fallbackBehavior: 'safePlaceholder',
         fieldDefinitions: [
@@ -377,6 +378,19 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       },
       {
         allowedComponents: ['SocialLinks'],
+        collectionOperations: [
+          {
+            addLabel: 'addChannel',
+            canAdd: true,
+            canRemove: true,
+            canReorder: true,
+            collectionKey: 'platforms',
+            itemLabel: 'channel',
+            minItems: 0,
+            removeLabel: 'removeChannel',
+            reorderLabel: 'reorderChannels',
+          },
+        ],
         editabilityState: 'validEditable',
         fallbackBehavior: 'safePlaceholder',
         fieldDefinitions: [],
@@ -387,6 +401,19 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       },
       {
         allowedComponents: ['Schedule'],
+        collectionOperations: [
+          {
+            addLabel: 'addEvent',
+            canAdd: true,
+            canRemove: true,
+            canReorder: true,
+            collectionKey: 'events',
+            itemLabel: 'scheduleEntry',
+            minItems: 0,
+            removeLabel: 'removeEvent',
+            reorderLabel: 'reorderEvents',
+          },
+        ],
         editabilityState: 'validEditable',
         fallbackBehavior: 'safePlaceholder',
         fieldDefinitions: [],
@@ -397,6 +424,19 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       },
       {
         allowedComponents: [],
+        collectionOperations: [
+          {
+            addLabel: 'addAction',
+            canAdd: true,
+            canRemove: true,
+            canReorder: true,
+            collectionKey: 'actions',
+            itemLabel: 'fanAction',
+            minItems: 0,
+            removeLabel: 'removeAction',
+            reorderLabel: 'reorderActions',
+          },
+        ],
         editabilityState: 'validEditable',
         fallbackBehavior: 'safePlaceholder',
         fieldDefinitions: [
@@ -416,6 +456,7 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       },
       {
         allowedComponents: ['BilibiliDynamic'],
+        collectionOperations: [],
         editabilityState: 'validLocked',
         fallbackBehavior: 'lockedSourceOwned',
         fieldDefinitions: [],
@@ -733,6 +774,139 @@ describe('PublicPresenceStudioScreen', () => {
     expect(displayNameInput).toHaveFocus();
     expect(screen.getAllByText('Unsaved').length).toBeGreaterThan(0);
     expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
+  });
+
+  it('does not expose a source editor inside visual studio and links Advanced to a standalone route', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <PublicPresenceStudioScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+
+    expect(screen.queryByRole('textbox', { name: /source schema/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save source/i })).not.toBeInTheDocument();
+
+    const advancedLink = screen.getByRole('link', { name: 'Advanced' });
+    expect(advancedLink).toHaveAttribute('href', '/studio/public-presence/tenant-1/talent-1/advanced?templateId=activeTalentHub&mode=page-source');
+  });
+
+  it('dismisses save success feedback after a short timeout while keeping the saved badge', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      if (path === '/api/v1/talents/talent-1/public-presence/draft' && init?.method === 'PATCH') {
+        return buildWorkspace();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    const user = userEvent.setup();
+
+    render(
+      <PublicPresenceStudioScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await user.click(screen.getByRole('button', { name: 'Stage Sections' }));
+    await user.click(screen.getAllByTestId('stage-row-firstEncounter')[0]);
+    const stagePanel = (await screen.findAllByTestId('stage-section-panel'))[0];
+    const displayNameInput = within(stagePanel).getAllByRole('textbox')[0];
+    await user.type(displayNameInput, ' updated');
+    await user.click(screen.getAllByRole('button', { name: 'Save draft' })[0]);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Draft saved.');
+
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Draft saved.')).not.toBeInTheDocument();
+      },
+      { timeout: 7000 },
+    );
+    expect(screen.getAllByText('Saved').length).toBeGreaterThan(0);
+  });
+
+  it('shows delete controls for repeatable schedule entries', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace({
+          draftVersion: {
+            ...buildWorkspace().draftVersion,
+            document: {
+              ...buildWorkspace().draftVersion.document,
+              sections: [
+                ...buildWorkspace().draftVersion.document.sections,
+                {
+                  components: [
+                    {
+                      id: 'schedule-1',
+                      props: {
+                        events: [{ day: 'Mon', time: '19:00', title: 'Showcase' }],
+                        title: 'Weekly schedule',
+                        weekOf: '2026-05-18',
+                      },
+                      type: 'Schedule',
+                      visible: true,
+                    },
+                  ],
+                  id: 'stage-schedule-1',
+                  kind: 'stageSchedule',
+                  title: 'Stage Schedule',
+                },
+              ],
+              templateId: 'activeTalentHub',
+            },
+          },
+        });
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <PublicPresenceStudioScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    fireEvent.click(screen.getByRole('button', { name: 'Stage Sections' }));
+    fireEvent.click(screen.getByTestId('stage-row-stageSchedule'));
+
+    const stagePanel = (await screen.findAllByTestId('stage-section-panel'))[0];
+    expect(within(stagePanel).getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('keeps ordinary mobile manage sheets free from design-rationale copy', async () => {

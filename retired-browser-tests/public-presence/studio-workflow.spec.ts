@@ -40,7 +40,14 @@ test('studio workflow keeps canvas mounted and side surfaces scoped', async ({
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
   await leftRail.getByRole('button', { name: /Readiness/i }).click();
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
-  await leftRail.getByRole('button', { name: /Advanced/i }).click();
+  const advancedLink = leftRail.getByRole('link', { name: /Advanced/i });
+  await expect(advancedLink).toHaveAttribute('href', /\/advanced\?templateId=activeTalentHub&mode=page-source$/);
+  await advancedLink.click();
+  await expect(page).toHaveURL(/\/advanced\?templateId=activeTalentHub&mode=page-source$/);
+  await waitForRouteReady(page, page.getByTestId('ide-editor-surface'), 'Advanced IDE');
+  await page.goto(routes.studioActive);
+  await waitForRouteReady(page, page.getByTestId('canvas-stage'), 'Public Page Studio workflow after Advanced IDE');
+  await leftRail.getByRole('button', { name: /Readiness/i }).click();
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
 
   await recordPanelStacking(page, routes.studioActive, [

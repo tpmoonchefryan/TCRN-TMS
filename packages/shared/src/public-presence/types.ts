@@ -363,6 +363,20 @@ export interface PublicPresenceFieldDefinition {
   fallbackPolicy: PublicPresenceFallbackPolicy;
 }
 
+export interface PublicPresenceCollectionOperationDefinition {
+  addLabel: string;
+  canAdd: boolean;
+  canRemove: boolean;
+  canReorder: boolean;
+  collectionKey: string;
+  itemLabel: string;
+  maxItems?: number;
+  minItems?: number;
+  removeLabel: string;
+  reorderLabel: string;
+  disabledReason?: string | null;
+}
+
 export interface PublicPresenceTemplateDefinition {
   templateId: PublicPresenceTemplateId;
   registryVersion: string;
@@ -382,6 +396,7 @@ export interface PublicPresenceStageSectionDefinition {
   kind: PublicPresenceStageSectionKind;
   purpose: string;
   allowedComponents: Array<HomepageComponentType | string>;
+  collectionOperations?: PublicPresenceCollectionOperationDefinition[];
   slotRules: string[];
   phaseVisibility: PublicPresencePhaseVisibility[];
   editabilityState: PublicPresenceValidationState;
@@ -399,6 +414,7 @@ export interface PublicPresenceComponentDefinition {
   publicProjectionMode: PublicPresenceProjectionMode;
   propsSchemaKey: string;
   defaultProps: Record<string, unknown>;
+  collectionOperations?: PublicPresenceCollectionOperationDefinition[];
   fieldDefinitions: PublicPresenceFieldDefinition[];
   unknownFieldPolicy: PublicPresenceUnknownFieldPolicy;
   lockedSourceOwnedPolicy: PublicPresenceFallbackPolicy;

@@ -8,6 +8,7 @@ export type TalentSettingsSection = 'details' | 'config-entities' | 'settings' |
 export type TalentSettingsFocus = 'homepage-routing' | 'marshmallow-routing';
 export type PublicPresenceHomepageSurface = 'management' | 'templates' | 'components';
 export type PublicPresenceStudioFocus = 'overview' | 'release' | 'countdown';
+export type PublicPresenceAdvancedIdeMode = 'page-source' | 'custom-html' | 'registry-snippets';
 
 export interface TalentWorkspaceRoute {
   tenantId: string;
@@ -171,6 +172,30 @@ export function buildPublicPresenceTemplateAuthoringPath(
 
   const query = params.toString();
   const path = `/studio/public-presence/${tenantId}/${talentId}/templates/new`;
+
+  return query ? `${path}?${query}` : path;
+}
+
+export function buildPublicPresenceAdvancedIdePath(
+  tenantId: string,
+  talentId: string,
+  options: {
+    mode?: PublicPresenceAdvancedIdeMode | null;
+    templateId?: string | null;
+  } = {},
+) {
+  const params = new URLSearchParams();
+
+  if (options.templateId) {
+    params.set('templateId', options.templateId);
+  }
+
+  if (options.mode) {
+    params.set('mode', options.mode);
+  }
+
+  const query = params.toString();
+  const path = `/studio/public-presence/${tenantId}/${talentId}/advanced`;
 
   return query ? `${path}?${query}` : path;
 }
