@@ -640,6 +640,61 @@ describe('PublicPresenceStudioScreen', () => {
     });
   });
 
+  it('stabilizes the stage panel query when opening a section from query-backed drawer state', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    currentSearch = 'templateId=activeTalentHub&leftPanel=sections';
+
+    const screenProps = {
+      initialTemplateId: 'activeTalentHub',
+      talentId: 'talent-1',
+      tenantId: 'tenant-1',
+    };
+    const { rerender } = render(<PublicPresenceStudioScreen {...screenProps} />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    fireEvent.click(
+      within(screen.getAllByTestId('stage-card-firstEncounter')[0]).getByRole('button', {
+        name: 'Edit: First Encounter',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
+    });
+
+    const replaceCallCountAfterOpen = replace.mock.calls.length;
+    rerender(<PublicPresenceStudioScreen {...screenProps} />);
+    rerender(<PublicPresenceStudioScreen {...screenProps} />);
+
+    await waitFor(() => {
+      expect(currentSearch).toContain('templateId=activeTalentHub');
+      expect(currentSearch).toContain('leftPanel=sections');
+      expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
+    });
+
+    const followUpUrls = replace.mock.calls
+      .slice(replaceCallCountAfterOpen)
+      .map(([href]) => new URL(String(href), 'https://tcrn.local'));
+
+    expect(
+      followUpUrls.some((url) => (
+        url.searchParams.get('leftPanel') === 'sections'
+        && !url.searchParams.has('stagePanel')
+      )),
+    ).toBe(false);
+  });
+
   it('keeps ordinary mobile manage sheets free from design-rationale copy', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {

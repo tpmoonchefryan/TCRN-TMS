@@ -43,6 +43,7 @@ import {
   type RefObject,
   type ReactNode,
   startTransition,
+  useCallback,
   useEffect,
   useId,
   useMemo,
@@ -119,6 +120,7 @@ type LeftDrawerMode = 'sections' | 'release' | 'advanced' | 'persona';
 type MobileSheetMode = (typeof MOBILE_SHEET_QUERY_VALUES)[number];
 type PendingMobileSheetMode = MobileSheetMode | 'closed';
 type StagePanelMode = 'configure' | 'edit' | 'inspect';
+type PendingStagePanelState = StagePanelState | 'closed';
 type StudioEntryFocus = 'countdown' | 'overview' | 'release';
 
 const STUDIO_VIEWPORT_QUERY_VALUES = ['desktop', 'mobile'] as const;
@@ -157,6 +159,14 @@ function parseStagePanelSearchParam(value: string | null): StagePanelState | nul
 
 function serializeStagePanelSearchParam(value: StagePanelState | null) {
   return value ? `${value.mode}:${value.sectionKind}` : null;
+}
+
+function isSameStagePanel(
+  left: StagePanelState | null | undefined,
+  right: StagePanelState | null | undefined,
+) {
+  return (left?.mode ?? null) === (right?.mode ?? null)
+    && (left?.sectionKind ?? null) === (right?.sectionKind ?? null);
 }
 
 function getErrorMessage(_reason: unknown, fallback: string) {
@@ -883,6 +893,7 @@ function PublicPresenceStudioScreenInner({
   const [previewFocus, setPreviewFocus] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<StudioViewportMode>('desktop');
   const pendingMobileSheetRef = useRef<PendingMobileSheetMode | null>(null);
+  const pendingStagePanelRef = useRef<PendingStagePanelState | null>(null);
   const mobileManageSheetId = useId();
   const mobilePreviewToolsSheetId = useId();
   const leftDrawerId = useId();
@@ -1183,34 +1194,40 @@ function PublicPresenceStudioScreenInner({
     [currentTemplate, workspace?.stageSections],
   );
 
-  const closeMobileWorkbenchSheets = () => {
+  const closeMobileWorkbenchSheets = useCallback(() => {
     pendingMobileSheetRef.current = 'closed';
     setMobileManageOpen(false);
     setMobilePreviewToolsOpen(false);
-  };
+  }, []);
 
-  const openExclusiveMobileManageSheet = () => {
+  const closeStageWorkbenchPanel = useCallback(() => {
+    pendingStagePanelRef.current = 'closed';
+    setStagePanel(null);
+  }, []);
+
+  const openExclusiveMobileManageSheet = useCallback(() => {
     pendingMobileSheetRef.current = 'manage';
     setMobilePreviewToolsOpen(false);
     setMobileManageOpen(true);
-  };
+  }, []);
 
-  const openExclusiveMobilePreviewToolsSheet = () => {
+  const openExclusiveMobilePreviewToolsSheet = useCallback(() => {
     pendingMobileSheetRef.current = 'preview-tools';
     setMobileManageOpen(false);
     setMobilePreviewToolsOpen(true);
-  };
+  }, []);
 
-  const openWorkbenchDrawer = (mode: LeftDrawerMode) => {
+  const openWorkbenchDrawer = useCallback((mode: LeftDrawerMode) => {
     closeMobileWorkbenchSheets();
     setLeftDrawerMode(mode);
     setLeftDrawerOpen(true);
-  };
+  }, [closeMobileWorkbenchSheets]);
 
-  const openStageWorkbenchPanel = (nextPanel: StagePanelState) => {
+  const openStageWorkbenchPanel = useCallback((nextPanel: StagePanelState) => {
     closeMobileWorkbenchSheets();
+    pendingStagePanelRef.current = nextPanel;
     setStagePanel(nextPanel);
-  };
+  }, [closeMobileWorkbenchSheets]);
 
   useEffect(() => {
     setPreviewViewport((current) => (
@@ -1267,12 +1284,21 @@ function PublicPresenceStudioScreenInner({
       && orderedSections.some((section) => section.kind === queryState.stagePanel?.sectionKind)
       ? queryState.stagePanel
       : null;
+    const pendingStagePanel = pendingStagePanelRef.current;
+    const pendingTargetReached = pendingStagePanel === 'closed'
+      ? nextStagePanel === null
+      : pendingStagePanel !== null && isSameStagePanel(pendingStagePanel, nextStagePanel);
+
+    if (pendingTargetReached) {
+      pendingStagePanelRef.current = null;
+    }
+
+    if (pendingStagePanel !== null && !pendingTargetReached) {
+      return;
+    }
 
     setStagePanel((current) => (
-      (current?.mode ?? null) === (nextStagePanel?.mode ?? null)
-      && (current?.sectionKind ?? null) === (nextStagePanel?.sectionKind ?? null)
-        ? current
-        : nextStagePanel
+      isSameStagePanel(current, nextStagePanel) ? current : nextStagePanel
     ));
   }, [
     orderedSections,
@@ -1299,7 +1325,7 @@ function PublicPresenceStudioScreenInner({
       if (countdownSection) {
         setLeftDrawerMode('sections');
         setLeftDrawerOpen(true);
-        setStagePanel({ mode: 'edit', sectionKind: countdownSection.kind });
+        openStageWorkbenchPanel({ mode: 'edit', sectionKind: countdownSection.kind });
         setPreviewFocus(false);
         return;
       }
@@ -1307,7 +1333,14 @@ function PublicPresenceStudioScreenInner({
 
     setLeftDrawerMode('sections');
     setLeftDrawerOpen(false);
-  }, [editorDocument, initialFocus, orderedSections, queryState.hasExplicitWorkbenchState, workspace]);
+  }, [
+    editorDocument,
+    initialFocus,
+    openStageWorkbenchPanel,
+    orderedSections,
+    queryState.hasExplicitWorkbenchState,
+    workspace,
+  ]);
 
   useEffect(() => {
     if (!stagePanel) {
@@ -1317,9 +1350,9 @@ function PublicPresenceStudioScreenInner({
     const stillVisible = orderedSections.some((section) => section.kind === stagePanel.sectionKind);
 
     if (!stillVisible) {
-      setStagePanel(null);
+      closeStageWorkbenchPanel();
     }
-  }, [orderedSections, stagePanel]);
+  }, [closeStageWorkbenchPanel, orderedSections, stagePanel]);
 
   const selectedStageSection = orderedSections.find(
     (section) => section.kind === stagePanel?.sectionKind,
@@ -2527,7 +2560,7 @@ function PublicPresenceStudioScreenInner({
           </div>
           <button
             type="button"
-            onClick={() => setStagePanel(null)}
+            onClick={closeStageWorkbenchPanel}
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -3229,7 +3262,7 @@ function PublicPresenceStudioScreenInner({
   });
   const rightDrawerOverlay = useOverlayFocusManager({
     desktopBreakpoint: 1280,
-    onClose: () => setStagePanel(null),
+    onClose: closeStageWorkbenchPanel,
     open: showRightDrawer,
   });
   const leftDrawerContent = showLeftDrawer ? renderLeftDrawer() : null;
@@ -4066,7 +4099,7 @@ function PublicPresenceStudioScreenInner({
                   <button
                     type="button"
                     aria-label={drawerCloseLabel}
-                    onClick={() => setStagePanel(null)}
+                    onClick={closeStageWorkbenchPanel}
                     ref={rightDrawerOverlay.desktopInitialFocusRef}
                     className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
@@ -4086,7 +4119,7 @@ function PublicPresenceStudioScreenInner({
                 <button
                   type="button"
                   aria-label={drawerCloseLabel}
-                  onClick={() => setStagePanel(null)}
+                  onClick={closeStageWorkbenchPanel}
                   ref={rightDrawerOverlay.mobileInitialFocusRef}
                   className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                 >
