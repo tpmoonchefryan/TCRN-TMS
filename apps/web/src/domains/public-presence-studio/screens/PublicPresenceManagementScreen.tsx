@@ -23,6 +23,7 @@ import {
 import {
   formatPublicPresenceStudioDateTime,
   formatPublicPresenceStudioValidationSummary,
+  getHomepageSurfaceActionLabel,
   getHomepageSurfaceLabel,
   getPublicPresenceDocumentStateLabel,
   getPublicPresencePreviewPhaseLabel,
@@ -42,10 +43,12 @@ import {
   buildPublicPresenceStudioEditorPath,
   buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
+  buildTalentSettingsPath,
 } from '@/platform/routing/workspace-paths';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
+import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
 
 interface NoticeState {
   message: string;
@@ -55,7 +58,11 @@ interface NoticeState {
 type BadgeTone = 'error' | 'info' | 'success' | 'warning' | 'slate';
 
 function getErrorMessage(reason: unknown, fallback: string) {
-  return reason instanceof ApiRequestError ? reason.message : fallback;
+  if (reason instanceof ApiRequestError || reason instanceof Error) {
+    return reason.message;
+  }
+
+  return fallback;
 }
 
 function getValidationTone(
@@ -232,7 +239,17 @@ export function PublicPresenceManagementScreen({
       setNotice(null);
 
       try {
-        const nextWorkspace = await readPublicPresenceWorkspace(request, talentId);
+        const nextWorkspace = await withPublicPresenceRouteTimeout(
+          readPublicPresenceWorkspace(request, talentId),
+          pickLocaleText(locale, {
+            en: 'Homepage Management took too long to load. Refresh the page or confirm the local API is running.',
+            zh_HANS: '主页管理页加载时间过长。请刷新页面，或确认本地 API 已启动。',
+            zh_HANT: '主頁管理頁載入時間過長。請重新整理頁面，或確認本地 API 已啟動。',
+            ja: 'Homepage Management の読み込みに時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
+            ko: 'Homepage Management 로딩이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
+            fr: 'Homepage Management met trop de temps à charger. Actualisez la page ou vérifiez que l’API locale tourne bien.',
+          }),
+        );
 
         if (cancelled) {
           return;
@@ -313,6 +330,39 @@ export function PublicPresenceManagementScreen({
     ? [...workspace.workflowEvents]
       .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))[0] ?? null
     : null;
+  const activeManagementVersion = livePageVersion
+    ?? workspace?.pageVersions.find((version) => version.templateId === workspace.selectedTemplateId)
+    ?? workspace?.pageVersions[0]
+    ?? null;
+  const activeManagementTemplate = activeManagementVersion
+    ? workspace?.templates.find((template) => template.templateId === activeManagementVersion.templateId)
+    : null;
+  const managementRouteSettingsHref = buildTalentSettingsPath(tenantId, talentId, {
+    section: 'settings',
+    focus: 'homepage-routing',
+  });
+  const activeManagementEditorHref = activeManagementVersion
+    ? buildPublicPresenceStudioEditorPath(
+        tenantId,
+        talentId,
+        activeManagementVersion.templateId,
+      )
+    : buildPublicPresenceStudioEditorPath(tenantId, talentId);
+  const activeManagementPreviewHref = activeManagementVersion
+    ? buildPublicPresenceStudioPreviewPath(
+        tenantId,
+        talentId,
+        activeManagementVersion.templateId,
+      )
+    : buildPublicPresenceStudioPreviewPath(tenantId, talentId);
+  const activeManagementReleaseHref = activeManagementVersion
+    ? buildPublicPresenceStudioEditorPath(
+        tenantId,
+        talentId,
+        activeManagementVersion.templateId,
+        'release',
+      )
+    : buildPublicPresenceStudioEditorPath(tenantId, talentId, undefined, 'release');
 
   if (loading) {
     return (
@@ -362,9 +412,7 @@ export function PublicPresenceManagementScreen({
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-6">
-        <HomepageSurfaceMenu activeSurface="management" talentId={talentId} tenantId={tenantId} />
-
-        <PublicPresenceSurface className="space-y-4">
+        <PublicPresenceSurface className="space-y-4" data-testid="management-header">
           <div className="flex flex-wrap items-center gap-3">
             <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {pickLocaleText(locale, {
@@ -416,6 +464,122 @@ export function PublicPresenceManagementScreen({
             {notice.message}
           </div>
         ) : null}
+
+        <PublicPresenceSurface className="space-y-4" data-testid="management-command-strip">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <PublicPresenceBadge tone="rose" variant="outline">
+                  {activeManagementTemplate
+                    ? getPublicPresenceTemplateLabel(locale, activeManagementTemplate)
+                    : pickLocaleText(locale, {
+                        en: 'Current operator route',
+                        zh_HANS: '当前运营主线',
+                        zh_HANT: '目前營運主線',
+                        ja: '現在の運用導線',
+                        ko: '현재 운영 경로',
+                        fr: 'Parcours opérateur actuel',
+                      })}
+                </PublicPresenceBadge>
+                {livePageVersion ? (
+                  <PublicPresenceBadge tone="success" variant="outline">
+                    {pickLocaleText(locale, {
+                      en: 'Live now',
+                      zh_HANS: '当前在线',
+                      zh_HANT: '目前上線',
+                      ja: '現在公開中',
+                      ko: '현재 공개 중',
+                      fr: 'En ligne',
+                    })}
+                  </PublicPresenceBadge>
+                ) : null}
+                {scheduledPageVersion ? (
+                  <PublicPresenceBadge tone="info" variant="outline">
+                    {pickLocaleText(locale, {
+                      en: 'Scheduled handoff ready',
+                      zh_HANS: '已准备排程切换',
+                      zh_HANT: '已準備排程切換',
+                      ja: '予約切替の準備完了',
+                      ko: '예약 전환 준비됨',
+                      fr: 'Bascule planifiée prête',
+                    })}
+                  </PublicPresenceBadge>
+                ) : null}
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-semibold text-slate-950">
+                  {workspace.publicRoute?.canonicalPath ?? '-'}
+                </h2>
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                  {pickLocaleText(locale, {
+                    en: 'Keep live route, preview, review, routing, and SEO entry points in one compact strip before drilling into version details.',
+                    zh_HANS: '在进入版本细节前，先在这条紧凑工作带里处理 live route、预览、审核、routing 与 SEO 入口。',
+                    zh_HANT: '在進入版本細節前，先在這條緊湊工作帶裡處理 live route、預覽、審核、routing 與 SEO 入口。',
+                    ja: '版の詳細へ入る前に、このコンパクトなワーク帯で live route、プレビュー、審査、routing、SEO 入口をまとめて扱います。',
+                    ko: '버전 상세로 들어가기 전에 이 압축된 작업 띠에서 live route, 미리보기, 검토, routing, SEO 진입점을 함께 다룹니다.',
+                    fr: 'Avant d’entrer dans le détail des versions, gardez la route live, l’aperçu, la review, le routing et le SEO dans cette bande de commande compacte.',
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <ManagementActionLink
+                href={workspace.publicRoute?.canonicalPath ?? '#'}
+                icon={<Globe2 className="h-4 w-4" aria-hidden="true" />}
+                label={pickLocaleText(locale, {
+                  en: 'Open live public page',
+                  zh_HANS: '打开线上公共页',
+                  zh_HANT: '打開線上公開頁',
+                  ja: '公開中のページを開く',
+                  ko: '라이브 공개 페이지 열기',
+                  fr: 'Ouvrir la page publique live',
+                })}
+              />
+              <ManagementActionLink
+                href={activeManagementEditorHref}
+                icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
+                label={pickLocaleText(locale, {
+                  en: 'Edit current draft',
+                  zh_HANS: '编辑当前草稿',
+                  zh_HANT: '編輯目前草稿',
+                  ja: '現在のドラフトを編集',
+                  ko: '현재 드래프트 편집',
+                  fr: 'Éditer le brouillon actuel',
+                })}
+                tone="primary"
+              />
+              <ManagementActionLink
+                href={activeManagementPreviewHref}
+                icon={<MonitorPlay className="h-4 w-4" aria-hidden="true" />}
+                label={pickLocaleText(locale, {
+                  en: 'Preview current draft',
+                  zh_HANS: '预览当前草稿',
+                  zh_HANT: '預覽目前草稿',
+                  ja: '現在のドラフトをプレビュー',
+                  ko: '현재 드래프트 미리보기',
+                  fr: 'Prévisualiser le brouillon actuel',
+                })}
+              />
+              <ManagementActionLink
+                href={activeManagementReleaseHref}
+                icon={<Rocket className="h-4 w-4" aria-hidden="true" />}
+                label={getHomepageSurfaceActionLabel(locale, 'reviewPublish')}
+              />
+              <ManagementActionLink
+                href={managementRouteSettingsHref}
+                icon={<ArrowLeftRight className="h-4 w-4" aria-hidden="true" />}
+                label={getHomepageSurfaceActionLabel(locale, 'routeSettings')}
+              />
+              <ManagementActionLink
+                href={activeManagementEditorHref}
+                icon={<CircleGauge className="h-4 w-4" aria-hidden="true" />}
+                label={getHomepageSurfaceActionLabel(locale, 'seoBasics')}
+              />
+            </div>
+          </div>
+        </PublicPresenceSurface>
+
+        <HomepageSurfaceMenu activeSurface="management" talentId={talentId} tenantId={tenantId} />
 
         <div className="grid gap-4 lg:grid-cols-3">
           <SummaryCard
@@ -829,7 +993,7 @@ export function PublicPresenceManagementScreen({
               })}
             </p>
           </div>
-          <div className="grid gap-4">
+          <div className="grid gap-4" data-testid="management-version-list">
             {workspace.pageVersions.map((pageVersion) => {
               const template = workspace.templates.find(
                 (entry) => entry.templateId === pageVersion.templateId,

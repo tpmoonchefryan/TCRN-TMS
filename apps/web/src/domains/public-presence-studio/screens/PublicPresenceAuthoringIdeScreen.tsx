@@ -33,6 +33,7 @@ import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/comp
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
+  getPublicPresenceTemplateLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import {
   buildPublicPresenceComponentAuthoringPath,
@@ -40,7 +41,7 @@ import {
   buildPublicPresenceStudioPreviewPath,
   buildPublicPresenceTemplateAuthoringPath,
 } from '@/platform/routing/workspace-paths';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
 type AuthoringTarget = 'template' | 'component';
@@ -379,6 +380,19 @@ function resolveFileIcon(file: VirtualFile) {
   return <FileJson2 className="h-4 w-4" aria-hidden="true" />;
 }
 
+function getAuthoringSubjectLabel(
+  locale: string,
+  target: AuthoringTarget,
+  templateId: PublicPresenceTemplateId,
+  componentType: HomepageComponentType,
+) {
+  if (target === 'template') {
+    return getPublicPresenceTemplateLabel(locale, PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId]);
+  }
+
+  return componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
 function buildValidationItems(
   target: AuthoringTarget,
   fixtureMode: FixtureMode,
@@ -496,6 +510,10 @@ export function PublicPresenceAuthoringIdeScreen({
   );
   const [files, setFiles] = useState<VirtualFile[]>(initialFiles);
   const [activePath, setActivePath] = useState(initialFiles[0]?.path ?? '');
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'ready'>('idle');
   const mobileActionsOverlay = useOverlayFocusManager({
     onClose: () => setMobileActionsOpen(false),
     open: mobileActionsOpen,
@@ -515,6 +533,12 @@ export function PublicPresenceAuthoringIdeScreen({
 
   const activeFile = files.find((file) => file.path === activePath) ?? files[0];
   const desktopPreviewFit = usePreviewFit(720);
+  const authoringSubjectLabel = getAuthoringSubjectLabel(
+    locale,
+    target,
+    effectiveTemplateId,
+    effectiveComponentType,
+  );
   const previewProjection = useMemo<PublicPresencePublicProjection>(
     () =>
       target === 'template'
@@ -526,6 +550,24 @@ export function PublicPresenceAuthoringIdeScreen({
     () => buildValidationItems(target, fixtureMode, viewport, previewPhase),
     [fixtureMode, previewPhase, target, viewport],
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) {
+      return;
+    }
+
+    setViewport('mobile');
+  }, []);
+
+  useEffect(() => {
+    setFiles(initialFiles);
+    setActivePath(initialFiles[0]?.path ?? '');
+    setEditorDirty(false);
+    setLastSavedAt(null);
+    setLastValidatedAt(null);
+    setSubmitStatus('idle');
+  }, [initialFiles]);
+
   const exitHref =
     target === 'template'
       ? buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'templates')
@@ -546,6 +588,77 @@ export function PublicPresenceAuthoringIdeScreen({
           talentId,
           effectiveComponentType,
         );
+  const saveStatusLabel = editorDirty
+    ? pickLocaleText(locale, {
+        en: 'Unsaved changes',
+        zh_HANS: '有未保存更改',
+        zh_HANT: '有未儲存變更',
+        ja: '未保存の変更あり',
+        ko: '저장되지 않은 변경 있음',
+        fr: 'Modifications non enregistrées',
+      })
+    : pickLocaleText(locale, {
+        en: 'Draft saved',
+        zh_HANS: '草稿已保存',
+        zh_HANT: '草稿已儲存',
+        ja: 'ドラフト保存済み',
+        ko: '드래프트 저장됨',
+        fr: 'Brouillon enregistré',
+      });
+  const validationStatusLabel = lastValidatedAt && !editorDirty
+    ? pickLocaleText(locale, {
+        en: 'Validation refreshed',
+        zh_HANS: '验证已刷新',
+        zh_HANT: '驗證已刷新',
+        ja: '検証を更新済み',
+        ko: '검증 갱신됨',
+        fr: 'Validation rafraîchie',
+      })
+    : pickLocaleText(locale, {
+        en: 'Validation needed',
+        zh_HANS: '需要验证',
+        zh_HANT: '需要驗證',
+        ja: '検証が必要',
+        ko: '검증 필요',
+        fr: 'Validation requise',
+      });
+  const formattedSavedAt = formatLocaleDateTime(locale, lastSavedAt, pickLocaleText(locale, {
+    en: 'Not saved in this session',
+    zh_HANS: '本会话尚未保存',
+    zh_HANT: '本工作階段尚未儲存',
+    ja: 'このセッションではまだ保存していません',
+    ko: '이번 세션에서는 아직 저장하지 않았습니다',
+    fr: 'Pas encore enregistré dans cette session',
+  }));
+  const formattedValidatedAt = formatLocaleDateTime(locale, lastValidatedAt, pickLocaleText(locale, {
+    en: 'Validation has not run yet',
+    zh_HANS: '尚未运行验证',
+    zh_HANT: '尚未執行驗證',
+    ja: 'まだ検証を実行していません',
+    ko: '아직 검증을 실행하지 않았습니다',
+    fr: 'La validation n’a pas encore été lancée',
+  }));
+
+  const handleSaveDraft = () => {
+    setLastSavedAt(new Date().toISOString());
+    setEditorDirty(false);
+    setSubmitStatus('idle');
+  };
+
+  const handleValidate = () => {
+    setLastValidatedAt(new Date().toISOString());
+    setUtilityPanel('checks');
+    setSubmitStatus('idle');
+  };
+
+  const handleSubmit = () => {
+    if (!lastValidatedAt || editorDirty) {
+      setUtilityPanel('checks');
+      return;
+    }
+
+    setSubmitStatus('ready');
+  };
 
   const ideBadgeLabel = pickLocaleText(locale, {
     en: target === 'template' ? 'Template IDE' : 'Component IDE',
@@ -555,14 +668,7 @@ export function PublicPresenceAuthoringIdeScreen({
     ko: target === 'template' ? '템플릿 IDE' : '컴포넌트 IDE',
     fr: target === 'template' ? 'IDE Template' : 'IDE Composant',
   });
-  const title = pickLocaleText(locale, {
-    en: target === 'template' ? 'Add Template' : 'Add Component',
-    zh_HANS: target === 'template' ? '新增模板' : '新增组件',
-    zh_HANT: target === 'template' ? '新增模板' : '新增元件',
-    ja: target === 'template' ? 'テンプレートを追加' : 'コンポーネントを追加',
-    ko: target === 'template' ? '템플릿 추가' : '컴포넌트 추가',
-    fr: target === 'template' ? 'Ajouter un template' : 'Ajouter un composant',
-  });
+  const title = authoringSubjectLabel;
   const authoringActions = [
     {
       key: 'save',
@@ -621,8 +727,8 @@ export function PublicPresenceAuthoringIdeScreen({
       key: 'retry-authoring',
       label:
         target === 'template'
-          ? getHomepageSurfaceActionLabel(locale, 'addTemplate')
-          : getHomepageSurfaceActionLabel(locale, 'addComponent'),
+          ? getHomepageSurfaceActionLabel(locale, 'createTemplate')
+          : getHomepageSurfaceActionLabel(locale, 'createComponent'),
       icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
       href: retryAuthoringHref,
       kind: 'link' as const,
@@ -760,6 +866,18 @@ export function PublicPresenceAuthoringIdeScreen({
             <PublicPresenceBadge tone="slate" variant="outline">
               {title}
             </PublicPresenceBadge>
+            <PublicPresenceBadge
+              tone={editorDirty ? 'warning' : 'success'}
+              variant="outline"
+            >
+              {saveStatusLabel}
+            </PublicPresenceBadge>
+            <PublicPresenceBadge
+              tone={lastValidatedAt && !editorDirty ? 'success' : 'warning'}
+              variant="outline"
+            >
+              {validationStatusLabel}
+            </PublicPresenceBadge>
             <PublicPresenceBadge className="hidden 2xl:inline-flex" tone="slate" variant="outline">
               {activeFile?.path}
             </PublicPresenceBadge>
@@ -772,7 +890,23 @@ export function PublicPresenceAuthoringIdeScreen({
                 <button
                   key={action.key}
                   type="button"
-                  className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  disabled={
+                    action.key === 'save'
+                      ? !editorDirty
+                      : action.key === 'submit'
+                        ? editorDirty || !lastValidatedAt
+                        : false
+                  }
+                  onClick={() => {
+                    if (action.key === 'save') {
+                      handleSaveDraft();
+                    } else if (action.key === 'validate') {
+                      handleValidate();
+                    } else if (action.key === 'submit') {
+                      handleSubmit();
+                    }
+                  }}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {action.icon}
                   <span>{action.label}</span>
@@ -852,14 +986,39 @@ export function PublicPresenceAuthoringIdeScreen({
                 })}
               </button>
             </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <PublicPresenceBadge tone={editorDirty ? 'warning' : 'success'} variant="outline">
+                {saveStatusLabel}
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone={lastValidatedAt && !editorDirty ? 'success' : 'warning'} variant="outline">
+                {validationStatusLabel}
+              </PublicPresenceBadge>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {authoringActions.map((action) =>
                 action.kind === 'button' ? (
                   <button
                     key={action.key}
                     type="button"
-                    onClick={() => setMobileActionsOpen(false)}
-                    className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    disabled={
+                      action.key === 'save'
+                        ? !editorDirty
+                        : action.key === 'submit'
+                          ? editorDirty || !lastValidatedAt
+                          : false
+                    }
+                    onClick={() => {
+                      if (action.key === 'save') {
+                        handleSaveDraft();
+                      } else if (action.key === 'validate') {
+                        handleValidate();
+                      } else if (action.key === 'submit') {
+                        handleSubmit();
+                      }
+
+                      setMobileActionsOpen(false);
+                    }}
+                    className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {action.icon}
                     <span>{action.label}</span>
@@ -1004,6 +1163,8 @@ export function PublicPresenceAuthoringIdeScreen({
                           ),
                         );
                       });
+                      setEditorDirty(true);
+                      setSubmitStatus('idle');
                     }}
                   />
                 </div>
@@ -1503,6 +1664,43 @@ export function PublicPresenceAuthoringIdeScreen({
                     fr: 'Fermer',
                   })}
                 </button>
+              </div>
+              <div className="mb-4 grid gap-2" data-testid="ide-validation-status">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">{saveStatusLabel}</p>
+                  <p className="mt-1">{formattedSavedAt}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">{validationStatusLabel}</p>
+                  <p className="mt-1">{formattedValidatedAt}</p>
+                </div>
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm ${
+                    submitStatus === 'ready'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {submitStatus === 'ready'
+                      ? pickLocaleText(locale, {
+                          en: 'Ready to submit',
+                          zh_HANS: '可提交审核',
+                          zh_HANT: '可提交審核',
+                          ja: 'レビュー提出の準備完了',
+                          ko: '검토 제출 준비 완료',
+                          fr: 'Prêt à soumettre',
+                        })
+                      : pickLocaleText(locale, {
+                          en: 'Validate after each edit before submit',
+                          zh_HANS: '每次编辑后先验证，再提交审核',
+                          zh_HANT: '每次編輯後先驗證，再提交審核',
+                          ja: '提出前に編集ごとに検証してください',
+                          ko: '제출 전에는 편집마다 먼저 검증하세요',
+                          fr: 'Validez après chaque modification avant de soumettre',
+                        })}
+                  </p>
+                </div>
               </div>
               <div className="space-y-3">
                 {validationItems.map((item) => (

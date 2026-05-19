@@ -608,6 +608,37 @@ describe('PublicPresenceStudioScreen', () => {
     expect(screen.getAllByText('Active Talent Hub')[0]).toBeInTheDocument();
   });
 
+  it('preserves an explicit default template query while syncing studio state', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    currentSearch = 'templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter';
+
+    render(
+      <PublicPresenceStudioScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await waitFor(() => {
+      expect(currentSearch).toContain('templateId=activeTalentHub');
+      expect(currentSearch).toContain('leftPanel=sections');
+      expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
+    });
+  });
+
   it('keeps ordinary mobile manage sheets free from design-rationale copy', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {
@@ -654,5 +685,83 @@ describe('PublicPresenceStudioScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview tools' }));
     expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
+  });
+
+  it('switches between mobile manage and preview tools sheets from the active sheet surface', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+
+    fireEvent.click(screen.getByTestId('studio-mobile-manage-button'));
+
+    const manageSheet = screen.getByTestId('studio-mobile-manage-sheet');
+    fireEvent.click(within(manageSheet).getByRole('button', { name: 'Preview tools' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('studio-mobile-manage-sheet')).not.toBeInTheDocument();
+    });
+
+    const previewToolsSheet = screen.getByTestId('studio-mobile-preview-tools-sheet');
+    expect(currentSearch).toContain('sheet=preview-tools');
+    expect(screen.getByRole('button', { name: 'Preview tools' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+
+    fireEvent.click(within(previewToolsSheet).getByRole('button', { name: 'Manage' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('studio-mobile-preview-tools-sheet')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('studio-mobile-manage-sheet')).toBeInTheDocument();
+    expect(screen.getByTestId('studio-mobile-manage-button')).toHaveAttribute('aria-expanded', 'true');
+    expect(currentSearch).toContain('sheet=manage');
+  });
+
+  it('keeps mobile sheet query state mutually exclusive on restore', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    currentSearch = 'viewport=mobile&sheet=manage';
+    const { unmount } = render(
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    expect(screen.getByTestId('studio-mobile-manage-sheet')).toBeInTheDocument();
+    expect(screen.queryByTestId('studio-mobile-preview-tools-sheet')).not.toBeInTheDocument();
+    expect(currentSearch).toContain('sheet=manage');
+
+    unmount();
+    currentSearch = 'viewport=mobile&sheet=preview-tools';
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
+    expect(screen.queryByTestId('studio-mobile-manage-sheet')).not.toBeInTheDocument();
+    expect(currentSearch).toContain('sheet=preview-tools');
   });
 });

@@ -13,6 +13,7 @@ import {
   buildPublicPresenceComponentAuthoringPath,
   buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
+  mergePathSearchParams,
   buildSubsidiaryBusinessPath,
   buildTalentSettingsPath,
   buildTalentWorkspacePath,
@@ -121,6 +122,17 @@ describe('workspace-paths', () => {
     );
     expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal', 'release')).toBe(
       '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal&focus=release',
+    );
+    expect(
+      mergePathSearchParams(
+        buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'activeTalentHub'),
+        {
+          leftPanel: 'sections',
+          stagePanel: 'edit:firstEncounter',
+        },
+      ),
+    ).toBe(
+      '/studio/public-presence/tenant-3/talent-8?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter',
     );
     expect(buildPublicPresenceStudioPreviewPath('tenant-3', 'talent-8', 'activeTalentHub')).toBe(
       '/studio/public-presence/tenant-3/talent-8/preview?templateId=activeTalentHub',

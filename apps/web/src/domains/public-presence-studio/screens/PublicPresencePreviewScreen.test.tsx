@@ -270,6 +270,34 @@ describe('PublicPresencePreviewScreen', () => {
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
   });
 
+  it('builds the section edit link from a single query string', async () => {
+    render(<PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />);
+
+    await screen.findByTestId('preview-topbar');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Inspect sections' })[0]);
+
+    expect(await screen.findByRole('link', { name: 'Edit this section' })).toHaveAttribute(
+      'href',
+      '/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter',
+    );
+  });
+
+  it('preserves an explicit default template query while syncing preview state', async () => {
+    currentSearch = 'templateId=activeTalentHub&viewport=mobile';
+
+    render(
+      <PublicPresencePreviewScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('preview-canvas-stage');
+    expect(currentSearch).toContain('templateId=activeTalentHub');
+    expect(currentSearch).toContain('viewport=mobile');
+  });
+
   it('keeps mobile preview details behind a dedicated tools sheet', async () => {
     const { container } = render(
       <PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />,

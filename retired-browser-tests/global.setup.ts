@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 
 import type { FullConfig } from '@playwright/test';
@@ -12,9 +13,57 @@ import {
 
 import { writeWebSmokeFixture } from './fixtures/web-smoke-fixture';
 
-const FIXTURE_PASSWORD = 'TestPassword123!';
+const FIXTURE_PASSWORD = process.env.DEV_ACCEPTANCE_CORP_PASSWORD?.trim() || 'TestPassword123!';
+const DETERMINISTIC_UAT_CORP_PASSWORD = process.env.DEV_ACCEPTANCE_CORP_PASSWORD?.trim()
+  || 'EvidencePass123!';
+
+function ensureUatAcceptanceCredentials() {
+  execFileSync(
+    'pnpm',
+    [
+      '--dir',
+      'packages/database',
+      'exec',
+      'tsx',
+      '--tsconfig',
+      'scripts/tsconfig.json',
+      'scripts/ensure-uat-acceptance-users.ts',
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: 'pipe',
+    },
+  );
+
+  execFileSync(
+    'pnpm',
+    [
+      '--dir',
+      'packages/database',
+      'exec',
+      'tsx',
+      '--tsconfig',
+      'scripts/tsconfig.json',
+      'scripts/set-tenant-user-password.ts',
+      '--schema',
+      'tenant_uat_corp',
+      '--username',
+      'corp_admin',
+      '--password',
+      DETERMINISTIC_UAT_CORP_PASSWORD,
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: 'pipe',
+    },
+  );
+}
 
 export default async function globalSetup(_config: FullConfig): Promise<void> {
+  ensureUatAcceptanceCredentials();
+
   const prisma = new PrismaClient();
   let tenantFixture: Awaited<ReturnType<typeof createTestTenantFixture>> | null = null;
 
@@ -163,12 +212,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
             allowed_reactions,
             theme,
             avatar_url,
-            terms_content_en,
-            terms_content_zh,
-            terms_content_ja,
-            privacy_content_en,
-            privacy_content_zh,
-            privacy_content_ja,
+            terms_content,
+            privacy_content,
             version,
             created_at,
             updated_at
@@ -195,13 +240,9 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
             false,
             ARRAY[]::text[],
             $6::jsonb,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
+            null,
+            $7::jsonb,
+            $8::jsonb,
             1,
             now(),
             now()
@@ -213,6 +254,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       'Type your question here',
       'Question received.',
       JSON.stringify({}),
+      JSON.stringify({ en: '', zh_HANS: '', zh_HANT: '', ja: '', ko: '', fr: '' }),
+      JSON.stringify({ en: '', zh_HANS: '', zh_HANT: '', ja: '', ko: '', fr: '' }),
     );
 
     await writeWebSmokeFixture({

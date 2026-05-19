@@ -16,11 +16,13 @@ import {
   Package2,
   Plus,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 import { PublicPresenceBadge, PublicPresenceShell, PublicPresenceSurface } from '@/domains/public-presence';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
   getHomepageSurfaceLabel,
@@ -213,6 +215,21 @@ function SurfaceCommandLink({
   );
 }
 
+function buildScopedActionLabel(
+  _locale: SupportedUiLocale,
+  action: string,
+  subject: string,
+) {
+  return `${action}: ${subject}`;
+}
+
+function getComponentDisplayName(
+  _locale: SupportedUiLocale,
+  componentType: HomepageComponentType,
+) {
+  return componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
 export function useHomepageSurfaceNavigation(
   tenantId: string,
   talentId: string,
@@ -278,8 +295,8 @@ export function HomepageSurfaceMenu({
   const items = useHomepageSurfaceNavigation(tenantId, talentId);
 
   return (
-    <PublicPresenceSurface className="space-y-4">
-      <div className="space-y-2">
+    <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="homepage-surface-menu">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
             {pickLocaleText(locale, {
@@ -291,25 +308,32 @@ export function HomepageSurfaceMenu({
               fr: 'Homepage',
             })}
           </PublicPresenceBadge>
+          <p className="text-sm text-slate-600">
+            {pickLocaleText(locale, {
+              en: 'Switch between live operations, templates, and components.',
+              zh_HANS: '在运营、模板与组件之间快速切换。',
+              zh_HANT: '在營運、模板與元件之間快速切換。',
+              ja: '運用、テンプレート、コンポーネントを素早く切り替えます。',
+              ko: '운영, 템플릿, 컴포넌트 사이를 빠르게 전환합니다.',
+              fr: 'Basculez rapidement entre opérations, templates et composants.',
+            })}
+          </p>
         </div>
-        <h2 className="text-lg font-semibold text-slate-950">
-          {getHomepageSurfaceActionLabel(locale, 'homepageMenu')}
-        </h2>
       </div>
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="flex flex-wrap items-center gap-2">
         {items.map((item) => (
           <Link
             key={item.id}
             href={item.href}
             aria-current={activeSurface === item.id ? 'page' : undefined}
-            className={`rounded-3xl border px-4 py-4 text-left transition ${
+            className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
               activeSurface === item.id
                 ? 'border-rose-300 bg-rose-50'
                 : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
             }`}
+            title={item.description}
           >
-            <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+            <span className="text-slate-950">{item.label}</span>
           </Link>
         ))}
       </div>
@@ -326,17 +350,23 @@ export function TemplateCenterScreen({
 }>) {
   const { locale } = useUiLocale();
   const [inspectTemplateId, setInspectTemplateId] = useState<PublicPresenceTemplateId | null>(null);
+  const inspectTemplateDrawerId = useId();
   const templates = Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS);
   const inspectTemplate = inspectTemplateId
     ? PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[inspectTemplateId]
     : null;
+  const inspectTemplateOpen = Boolean(inspectTemplate);
+  const inspectTemplateOverlay = useOverlayFocusManager({
+    onClose: () => setInspectTemplateId(null),
+    open: inspectTemplateOpen,
+  });
 
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-6">
         <HomepageSurfaceMenu activeSurface="templates" talentId={talentId} tenantId={tenantId} />
 
-        <PublicPresenceSurface className="space-y-4">
+        <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="template-center-topbar">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -350,14 +380,14 @@ export function TemplateCenterScreen({
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
                 {getHomepageSurfaceLabel(locale, 'templates')}
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 {pickLocaleText(locale, {
-                  en: 'Browse homepage layouts, inspect section order, and open the full-screen authoring IDE when you need a new layout package.',
-                  zh_HANS: '浏览主页布局、检查分区顺序，并在需要新布局包时打开全屏创作 IDE。',
-                  zh_HANT: '瀏覽主頁版型、檢查分區順序，並在需要新布局包時打開全螢幕創作 IDE。',
-                  ja: 'ホームページレイアウトを確認し、セクション順を点検し、新しいレイアウトパッケージが必要なときは全画面 IDE を開きます。',
-                  ko: '홈페이지 레이아웃을 살펴보고 섹션 순서를 점검한 뒤, 새 레이아웃 패키지가 필요할 때 전체 화면 IDE를 엽니다.',
-                  fr: 'Parcourez les layouts de homepage, inspectez l’ordre des sections et ouvrez l’IDE plein ecran lorsqu’un nouveau package de layout est necessaire.',
+                  en: 'Inspect section order, compare launch use cases, and jump straight into authoring when you need a new template pass.',
+                  zh_HANS: '检查分区顺序、比较上线用途，并在需要新模板时直接进入创作。',
+                  zh_HANT: '檢查分區順序、比較上線用途，並在需要新模板時直接進入創作。',
+                  ja: 'セクション順と公開用途を確認し、新しいテンプレートが必要ならそのまま制作へ進みます。',
+                  ko: '섹션 순서와 공개 용도를 비교하고, 새 템플릿이 필요하면 바로 제작으로 이동합니다.',
+                  fr: 'Inspectez l’ordre des sections, comparez les usages de lancement et passez directement à l’authoring quand un nouveau template est nécessaire.',
                 })}
               </p>
             </div>
@@ -370,10 +400,14 @@ export function TemplateCenterScreen({
           </div>
         </PublicPresenceSurface>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-4 lg:grid-cols-2" data-testid="template-center-catalog">
             {templates.map((template) => (
-              <PublicPresenceSurface key={template.templateId} className="space-y-4">
+              <PublicPresenceSurface
+                key={template.templateId}
+                className="space-y-4"
+                data-testid={`template-card-${template.templateId}`}
+              >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <PublicPresenceBadge tone="rose" variant="outline">
@@ -450,20 +484,38 @@ export function TemplateCenterScreen({
                   <SurfaceCommandLink
                     href={buildPublicPresenceStudioPreviewPath(tenantId, talentId, template.templateId)}
                     icon={<Eye className="h-4 w-4" aria-hidden="true" />}
-                    label={getHomepageSurfaceActionLabel(locale, 'viewPreview')}
+                    label={buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'viewPreview'),
+                      getPublicPresenceTemplateLabel(locale, template),
+                    )}
                   />
                   <button
                     type="button"
-                    onClick={() => setInspectTemplateId(template.templateId)}
+                    aria-controls={inspectTemplateDrawerId}
+                    aria-expanded={inspectTemplateId === template.templateId}
+                    ref={inspectTemplateId === template.templateId ? inspectTemplateOverlay.fallbackTriggerRef : undefined}
+                    onClick={(event) => {
+                      inspectTemplateOverlay.registerTrigger(event.currentTarget);
+                      setInspectTemplateId(template.templateId);
+                    }}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                    {getHomepageSurfaceActionLabel(locale, 'inspect')}
+                    {buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'inspect'),
+                      getPublicPresenceTemplateLabel(locale, template),
+                    )}
                   </button>
                   <SurfaceCommandLink
                     href={buildPublicPresenceTemplateAuthoringPath(tenantId, talentId, template.templateId)}
                     icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
-                    label={getHomepageSurfaceActionLabel(locale, 'addTemplate')}
+                    label={buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'openTemplateIde'),
+                      getPublicPresenceTemplateLabel(locale, template),
+                    )}
                     tone="primary"
                   />
                 </div>
@@ -471,26 +523,43 @@ export function TemplateCenterScreen({
             ))}
           </div>
 
-          <PublicPresenceSurface className="space-y-4" variant="inset">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-slate-950">
-                {getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
-              </h2>
-              <p className="text-sm leading-6 text-slate-600">
-                {inspectTemplate
-                  ? getPublicPresenceTemplateUseCase(locale, inspectTemplate)
-                  : pickLocaleText(locale, {
-                      en: 'Choose a template card to inspect section order, editable persona kit fields, and readiness rules.',
-                      zh_HANS: '选择一个模板卡片，检查分区顺序、可编辑的人设字段与就绪规则。',
-                      zh_HANT: '選擇一個模板卡片，檢查分區順序、可編輯的人設欄位與就緒規則。',
-                      ja: 'テンプレートカードを選択すると、セクション順、編集可能な Persona Kit 項目、準備ルールを確認できます。',
-                      ko: '템플릿 카드를 선택하면 섹션 순서, 편집 가능한 Persona Kit 필드, 준비 규칙을 확인할 수 있습니다.',
-                      fr: 'Choisissez une carte de template pour inspecter l’ordre des sections, les champs Persona Kit modifiables et les regles de readiness.',
-                    })}
-              </p>
-            </div>
+          {inspectTemplate ? (
+            <PublicPresenceSurface
+              aria-label={getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
+              aria-modal={false}
+              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[calc(100vh-7rem)] xl:w-full"
+              data-testid="template-inspect-drawer"
+              id={inspectTemplateDrawerId}
+              role="dialog"
+              variant="inset"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    {getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
+                  </h2>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {getPublicPresenceTemplateUseCase(locale, inspectTemplate)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={pickLocaleText(locale, {
+                    en: 'Close template inspection',
+                    zh_HANS: '关闭模板检查',
+                    zh_HANT: '關閉模板檢查',
+                    ja: 'テンプレート確認を閉じる',
+                    ko: '템플릿 검토 닫기',
+                    fr: 'Fermer l’inspection du template',
+                  })}
+                  onClick={() => setInspectTemplateId(null)}
+                  ref={inspectTemplateOverlay.desktopInitialFocusRef}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
 
-            {inspectTemplate ? (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <PublicPresenceBadge tone="rose">
@@ -553,8 +622,26 @@ export function TemplateCenterScreen({
                   </p>
                 </div>
               </div>
-            ) : null}
-          </PublicPresenceSurface>
+            </PublicPresenceSurface>
+          ) : (
+            <PublicPresenceSurface className="space-y-4" variant="inset">
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-slate-950">
+                  {getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
+                </h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {pickLocaleText(locale, {
+                    en: 'Choose a template card to inspect section order, editable persona kit fields, and readiness rules.',
+                    zh_HANS: '选择一个模板卡片，检查分区顺序、可编辑的人设字段与就绪规则。',
+                    zh_HANT: '選擇一個模板卡片，檢查分區順序、可編輯的人設欄位與就緒規則。',
+                    ja: 'テンプレートカードを選択すると、セクション順、編集可能な Persona Kit 項目、準備ルールを確認できます。',
+                    ko: '템플릿 카드를 선택하면 섹션 순서, 편집 가능한 Persona Kit 필드, 준비 규칙을 확인할 수 있습니다.',
+                    fr: 'Choisissez une carte de template pour inspecter l’ordre des sections, les champs Persona Kit modifiables et les regles de readiness.',
+                  })}
+                </p>
+              </div>
+            </PublicPresenceSurface>
+          )}
         </div>
       </div>
     </PublicPresenceShell>
@@ -570,17 +657,23 @@ export function ComponentStoreScreen({
 }>) {
   const { locale } = useUiLocale();
   const [inspectComponentType, setInspectComponentType] = useState<HomepageComponentType | null>(null);
+  const inspectComponentDrawerId = useId();
   const components = Object.values(PUBLIC_PRESENCE_COMPONENT_DEFINITIONS);
   const inspectComponent = inspectComponentType
     ? PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[inspectComponentType]
     : null;
+  const inspectComponentOpen = Boolean(inspectComponentType);
+  const inspectComponentOverlay = useOverlayFocusManager({
+    onClose: () => setInspectComponentType(null),
+    open: inspectComponentOpen,
+  });
 
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-6">
         <HomepageSurfaceMenu activeSurface="components" talentId={talentId} tenantId={tenantId} />
 
-        <PublicPresenceSurface className="space-y-4">
+        <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="component-store-topbar">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -594,14 +687,14 @@ export function ComponentStoreScreen({
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
                 {getHomepageSurfaceLabel(locale, 'components')}
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 {pickLocaleText(locale, {
-                  en: 'Review building blocks, confirm how far Studio editing reaches, and open the full-screen authoring IDE for new component work.',
-                  zh_HANS: '检查构件，确认 Studio 编辑可到达的范围，并为新组件工作打开全屏创作 IDE。',
-                  zh_HANT: '檢查構件，確認 Studio 編輯可到達的範圍，並為新元件工作打開全螢幕創作 IDE。',
-                  ja: 'コンポーネントを確認し、Studio 編集の届く範囲を把握し、新しいコンポーネント作業では全画面 IDE を開きます。',
-                  ko: '컴포넌트를 검토하고 Studio 편집이 닿는 범위를 확인한 뒤, 새 컴포넌트 작업을 위해 전체 화면 IDE를 엽니다.',
-                  fr: 'Examinez les composants, confirmez jusqu’ou va l’edition Studio et ouvrez l’IDE plein ecran pour un nouveau composant.',
+                  en: 'Browse fan-facing building blocks, compare their preview roles, and open authoring only when a new component pass is needed.',
+                  zh_HANS: '浏览面向粉丝的构件，对比它们在预览中的角色，并只在需要新组件时进入创作。',
+                  zh_HANT: '瀏覽面向粉絲的構件，比對它們在預覽中的角色，並只在需要新元件時進入創作。',
+                  ja: 'ファン向けの構成要素を確認し、プレビューでの役割を比べ、新しいコンポーネントが必要な時だけ制作へ進みます。',
+                  ko: '팬 대상 빌딩 블록을 살펴보고 프리뷰 역할을 비교한 뒤, 새 컴포넌트가 필요할 때만 제작으로 이동합니다.',
+                  fr: 'Parcourez les briques fan-facing, comparez leur rôle dans l’aperçu et ouvrez l’authoring seulement lorsqu’un nouveau composant est nécessaire.',
                 })}
               </p>
             </div>
@@ -614,35 +707,36 @@ export function ComponentStoreScreen({
           </div>
         </PublicPresenceSurface>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-4 lg:grid-cols-2" data-testid="component-store-catalog">
             {components.map((component) => (
-              <PublicPresenceSurface key={component.componentType} className="space-y-4">
+              <PublicPresenceSurface
+                key={component.componentType}
+                className="space-y-4"
+                data-testid={`component-card-${component.componentType}`}
+              >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <PublicPresenceBadge tone="rose" variant="outline">
-                      {component.componentType}
+                      {getComponentDisplayName(locale, component.componentType)}
                     </PublicPresenceBadge>
-                    <PublicPresenceBadge
-                      tone={component.visualSupport === 'supported' ? 'success' : 'warning'}
-                      variant="outline"
-                    >
+                    <PublicPresenceBadge tone="slate" variant="outline">
                       {component.visualSupport === 'supported'
                         ? pickLocaleText(locale, {
-                            en: 'Studio editing ready',
-                            zh_HANS: '可视编辑可用',
-                            zh_HANT: '視覺編輯可用',
-                            ja: 'Studio 編集対応',
-                            ko: 'Studio 편집 지원',
-                            fr: 'Pret pour l’edition Studio',
+                            en: 'Launch staple',
+                            zh_HANS: '常用主页组件',
+                            zh_HANT: '常用主頁元件',
+                            ja: '定番ホームページ要素',
+                            ko: '기본 홈페이지 요소',
+                            fr: 'Composant de base pour la page',
                           })
                         : pickLocaleText(locale, {
-                            en: 'Advanced only',
-                            zh_HANS: '仅限高级区',
-                            zh_HANT: '僅限進階區',
-                            ja: 'Advanced のみ',
-                            ko: 'Advanced 전용',
-                            fr: 'Advanced uniquement',
+                            en: 'Special moment',
+                            zh_HANS: '特殊场景组件',
+                            zh_HANT: '特殊場景元件',
+                            ja: '特別な場面向け',
+                            ko: '특수 장면용',
+                            fr: 'Composant pour moment special',
                           })}
                     </PublicPresenceBadge>
                   </div>
@@ -666,43 +760,30 @@ export function ComponentStoreScreen({
                     <p>
                       <span className="font-semibold text-slate-900">
                         {pickLocaleText(locale, {
-                          en: 'Editable fields:',
-                          zh_HANS: '可编辑字段：',
-                          zh_HANT: '可編輯欄位：',
-                          ja: '編集可能項目:',
-                          ko: '편집 가능한 필드:',
-                          fr: 'Champs modifiables :',
-                        })}
-                      </span>{' '}
-                      {component.fieldDefinitions.filter((field) => field.visualEditable).length}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-slate-900">
-                        {pickLocaleText(locale, {
-                          en: 'Editing boundary:',
-                          zh_HANS: '编辑边界：',
-                          zh_HANT: '編輯邊界：',
-                          ja: '編集境界:',
-                          ko: '편집 경계:',
-                          fr: 'Limite d’edition :',
+                          en: 'Fan moment:',
+                          zh_HANS: '适合场景：',
+                          zh_HANT: '適合場景：',
+                          ja: '向いている場面:',
+                          ko: '잘 맞는 장면:',
+                          fr: 'Moment fan :',
                         })}
                       </span>{' '}
                       {component.visualSupport === 'supported'
                         ? pickLocaleText(locale, {
-                            en: 'Editable in Studio',
-                            zh_HANS: '可在 Studio 编辑',
-                            zh_HANT: '可在 Studio 編輯',
-                            ja: 'Studio で編集可能',
-                            ko: 'Studio에서 편집 가능',
-                            fr: 'Modifiable dans Studio',
+                            en: 'Fast homepage assembly for everyday fan visits',
+                            zh_HANS: '适合日常粉丝访问场景的快速主页搭建',
+                            zh_HANT: '適合日常粉絲造訪場景的快速主頁搭建',
+                            ja: '日常的なファン訪問向けホームページを素早く整える場面',
+                            ko: '일상적인 팬 방문용 홈페이지를 빠르게 꾸릴 때',
+                            fr: 'Monter rapidement une page pour les visites fan du quotidien',
                           })
                         : pickLocaleText(locale, {
-                            en: 'Handled in Advanced',
-                            zh_HANS: '在 Advanced 中处理',
-                            zh_HANT: '在 Advanced 中處理',
-                            ja: 'Advanced で扱います',
-                            ko: 'Advanced에서 처리',
-                            fr: 'Traite dans Advanced',
+                            en: 'Protected reveals, embeds, or specialized fan moments',
+                            zh_HANS: '适合受保护的揭晓内容、嵌入模块或特殊粉丝场景',
+                            zh_HANT: '適合受保護的揭曉內容、嵌入模組或特殊粉絲場景',
+                            ja: '保護された公開コンテンツ、埋め込み、特別なファン向け演出',
+                            ko: '보호된 공개 콘텐츠, 임베드, 특수 팬 장면에 적합',
+                            fr: 'Conçu pour les reveals protégés, les embeds ou les moments fan spécialisés',
                           })}
                     </p>
                   </div>
@@ -711,20 +792,38 @@ export function ComponentStoreScreen({
                   <SurfaceCommandLink
                     href={buildPublicPresenceStudioPreviewPath(tenantId, talentId)}
                     icon={<Eye className="h-4 w-4" aria-hidden="true" />}
-                    label={getHomepageSurfaceActionLabel(locale, 'viewPreview')}
+                    label={buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'viewPreview'),
+                      getComponentDisplayName(locale, component.componentType),
+                    )}
                   />
                   <button
                     type="button"
-                    onClick={() => setInspectComponentType(component.componentType)}
+                    aria-controls={inspectComponentDrawerId}
+                    aria-expanded={inspectComponentType === component.componentType}
+                    ref={inspectComponentType === component.componentType ? inspectComponentOverlay.fallbackTriggerRef : undefined}
+                    onClick={(event) => {
+                      inspectComponentOverlay.registerTrigger(event.currentTarget);
+                      setInspectComponentType(component.componentType);
+                    }}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                    {getHomepageSurfaceActionLabel(locale, 'inspect')}
+                    {buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'inspect'),
+                      getComponentDisplayName(locale, component.componentType),
+                    )}
                   </button>
                   <SurfaceCommandLink
                     href={buildPublicPresenceComponentAuthoringPath(tenantId, talentId, component.componentType)}
                     icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
-                    label={getHomepageSurfaceActionLabel(locale, 'addComponent')}
+                    label={buildScopedActionLabel(
+                      locale,
+                      getHomepageSurfaceActionLabel(locale, 'openComponentIde'),
+                      getComponentDisplayName(locale, component.componentType),
+                    )}
                     tone="primary"
                   />
                 </div>
@@ -732,29 +831,48 @@ export function ComponentStoreScreen({
             ))}
           </div>
 
-          <PublicPresenceSurface className="space-y-4" variant="inset">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-slate-950">
-                {getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
-              </h2>
-              <p className="text-sm leading-6 text-slate-600">
-                {inspectComponent
-                  ? resolveText(locale, COMPONENT_PREVIEW_COPY[inspectComponent.componentType])
-                  : pickLocaleText(locale, {
-                      en: 'Choose a component card to inspect its editing range, preview role, and protected behavior.',
-                      zh_HANS: '选择一个组件卡片，检查它的编辑范围、预览角色与受保护行为。',
-                      zh_HANT: '選擇一個元件卡片，檢查它的編輯範圍、預覽角色與受保護行為。',
-                      ja: 'コンポーネントカードを選択すると、編集範囲、プレビュー上の役割、保護された挙動を確認できます。',
-                      ko: '컴포넌트 카드를 선택하면 편집 범위, 프리뷰 역할, 보호된 동작을 확인할 수 있습니다.',
-                      fr: 'Choisissez une carte de composant pour inspecter sa portée d’edition, son rôle d’aperçu et son comportement protégé.',
-                    })}
-              </p>
-            </div>
+          {inspectComponent ? (
+            <PublicPresenceSurface
+              aria-label={getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
+              aria-modal={false}
+              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[calc(100vh-7rem)] xl:w-full"
+              data-testid="component-inspect-drawer"
+              id={inspectComponentDrawerId}
+              role="dialog"
+              variant="inset"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    {getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
+                  </h2>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {resolveText(locale, COMPONENT_PREVIEW_COPY[inspectComponent.componentType])}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={pickLocaleText(locale, {
+                    en: 'Close component inspection',
+                    zh_HANS: '关闭组件检查',
+                    zh_HANT: '關閉元件檢查',
+                    ja: 'コンポーネント確認を閉じる',
+                    ko: '컴포넌트 검토 닫기',
+                    fr: 'Fermer l’inspection du composant',
+                  })}
+                  onClick={() => setInspectComponentType(null)}
+                  ref={inspectComponentOverlay.desktopInitialFocusRef}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
 
-            {inspectComponent ? (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <PublicPresenceBadge tone="rose">{inspectComponent.componentType}</PublicPresenceBadge>
+                  <PublicPresenceBadge tone="rose">
+                    {getComponentDisplayName(locale, inspectComponent.componentType)}
+                  </PublicPresenceBadge>
                   <PublicPresenceBadge tone="slate" variant="outline">
                     {inspectComponent.visualSupport === 'supported'
                       ? pickLocaleText(locale, {
@@ -779,6 +897,19 @@ export function ComponentStoreScreen({
                   <p>
                     <span className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
+                        en: 'Component ID:',
+                        zh_HANS: '组件标识：',
+                        zh_HANT: '元件識別：',
+                        ja: 'コンポーネント ID:',
+                        ko: '컴포넌트 ID:',
+                        fr: 'ID du composant :',
+                      })}
+                    </span>{' '}
+                    {inspectComponent.componentType}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-900">
+                      {pickLocaleText(locale, {
                         en: 'Live preview:',
                         zh_HANS: '实时预览：',
                         zh_HANT: '即時預覽：',
@@ -787,7 +918,7 @@ export function ComponentStoreScreen({
                         fr: 'Aperçu live :',
                       })}
                     </span>{' '}
-                    {inspectComponent.rendererSupport ? 'yes' : 'no'}
+                      {inspectComponent.rendererSupport ? 'yes' : 'no'}
                   </p>
                   <p>
                     <span className="font-semibold text-slate-900">
@@ -833,8 +964,26 @@ export function ComponentStoreScreen({
                   </p>
                 </div>
               </div>
-            ) : null}
-          </PublicPresenceSurface>
+            </PublicPresenceSurface>
+          ) : (
+            <PublicPresenceSurface className="space-y-4" variant="inset">
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-slate-950">
+                  {getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
+                </h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {pickLocaleText(locale, {
+                    en: 'Choose a component card to inspect its editing range, preview role, and protected behavior.',
+                    zh_HANS: '选择一个组件卡片，检查它的编辑范围、预览角色与受保护行为。',
+                    zh_HANT: '選擇一個元件卡片，檢查它的編輯範圍、預覽角色與受保護行為。',
+                    ja: 'コンポーネントカードを選択すると、編集範囲、プレビュー上の役割、保護された挙動を確認できます。',
+                    ko: '컴포넌트 카드를 선택하면 편집 범위, 프리뷰 역할, 보호된 동작을 확인할 수 있습니다.',
+                    fr: 'Choisissez une carte de composant pour inspecter sa portée d’edition, son rôle d’aperçu et son comportement protégé.',
+                  })}
+                </p>
+              </div>
+            </PublicPresenceSurface>
+          )}
         </div>
       </div>
     </PublicPresenceShell>

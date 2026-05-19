@@ -46,6 +46,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -99,6 +100,7 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
 import {
   mergeUrlSearchParams,
   parseBooleanSearchParam,
@@ -114,6 +116,8 @@ import { useSession } from '@/platform/runtime/session/session-provider';
 
 type StudioViewportMode = 'desktop' | 'mobile';
 type LeftDrawerMode = 'sections' | 'release' | 'advanced' | 'persona';
+type MobileSheetMode = (typeof MOBILE_SHEET_QUERY_VALUES)[number];
+type PendingMobileSheetMode = MobileSheetMode | 'closed';
 type StagePanelMode = 'configure' | 'edit' | 'inspect';
 type StudioEntryFocus = 'countdown' | 'overview' | 'release';
 
@@ -156,7 +160,7 @@ function serializeStagePanelSearchParam(value: StagePanelState | null) {
 }
 
 function getErrorMessage(_reason: unknown, fallback: string) {
-  return fallback;
+  return _reason instanceof Error ? _reason.message : fallback;
 }
 
 function toPrettyJson(value: unknown) {
@@ -697,6 +701,10 @@ function StudioSectionCard({
     : issueCount > 0
       ? 'info'
       : 'success';
+  const sectionLabel = getPublicPresenceStageSectionLabel(locale, section);
+  const scopedEditLabel = `${copy.stageSections.editAction}: ${sectionLabel}`;
+  const scopedConfigureLabel = `${copy.stageSections.configureAction}: ${sectionLabel}`;
+  const scopedInspectLabel = `${copy.stageSections.inspectAction}: ${sectionLabel}`;
 
   return (
     <div
@@ -707,7 +715,7 @@ function StudioSectionCard({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <PublicPresenceBadge tone="rose" variant="outline">
-              {getPublicPresenceStageSectionLabel(locale, section)}
+              {sectionLabel}
             </PublicPresenceBadge>
             <PublicPresenceBadge tone={tone} variant="outline">
               {getPublicPresenceEditabilityStateLabel(locale, section.editabilityState)}
@@ -736,34 +744,37 @@ function StudioSectionCard({
           type="button"
           aria-controls={editorDrawerId}
           aria-expanded={editExpanded}
+          aria-label={scopedEditLabel}
           ref={editExpanded ? onDrawerFallbackTriggerRef : undefined}
           onClick={(event) => onEdit(event.currentTarget)}
           className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
         >
           <PencilLine className="h-4 w-4" aria-hidden="true" />
-          {copy.stageSections.editAction}
+          {scopedEditLabel}
         </button>
         <button
           type="button"
           aria-controls={editorDrawerId}
           aria-expanded={configureExpanded}
+          aria-label={scopedConfigureLabel}
           ref={configureExpanded ? onDrawerFallbackTriggerRef : undefined}
           onClick={(event) => onConfigure(event.currentTarget)}
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           <Settings2 className="h-4 w-4" aria-hidden="true" />
-          {copy.stageSections.configureAction}
+          {scopedConfigureLabel}
         </button>
         <button
           type="button"
           aria-controls={editorDrawerId}
           aria-expanded={inspectExpanded}
+          aria-label={scopedInspectLabel}
           ref={inspectExpanded ? onDrawerFallbackTriggerRef : undefined}
           onClick={(event) => onInspect(event.currentTarget)}
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-          {copy.stageSections.inspectAction}
+          {scopedInspectLabel}
         </button>
       </div>
     </div>
@@ -871,6 +882,7 @@ function PublicPresenceStudioScreenInner({
   const [mobilePreviewToolsOpen, setMobilePreviewToolsOpen] = useState(false);
   const [previewFocus, setPreviewFocus] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<StudioViewportMode>('desktop');
+  const pendingMobileSheetRef = useRef<PendingMobileSheetMode | null>(null);
   const mobileManageSheetId = useId();
   const mobilePreviewToolsSheetId = useId();
   const leftDrawerId = useId();
@@ -923,10 +935,20 @@ function PublicPresenceStudioScreenInner({
       setError(null);
 
       try {
-        const result = await readPublicPresenceWorkspace(
-          request,
-          talentId,
-          selectedTemplateId,
+        const result = await withPublicPresenceRouteTimeout(
+          readPublicPresenceWorkspace(
+            request,
+            talentId,
+            selectedTemplateId,
+          ),
+          pickLocaleText(locale, {
+            en: 'Public Page Studio took too long to load. Refresh the page or confirm the local API is running.',
+            zh_HANS: 'Public Page Studio 加载时间过长。请刷新页面，或确认本地 API 已启动。',
+            zh_HANT: 'Public Page Studio 載入時間過長。請重新整理頁面，或確認本地 API 已啟動。',
+            ja: 'Public Page Studio の読み込みに時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
+            ko: 'Public Page Studio 로딩이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
+            fr: 'Public Page Studio met trop de temps à charger. Actualisez la page ou vérifiez que l’API locale tourne bien.',
+          }),
         );
 
         if (cancelled) {
@@ -967,11 +989,21 @@ function PublicPresenceStudioScreenInner({
       setPreviewError(null);
 
       try {
-        const result = await readPublicPresenceDraftPreview(
-          request,
-          talentId,
-          previewPhase,
-          selectedTemplateId,
+        const result = await withPublicPresenceRouteTimeout(
+          readPublicPresenceDraftPreview(
+            request,
+            talentId,
+            previewPhase,
+            selectedTemplateId,
+          ),
+          pickLocaleText(locale, {
+            en: 'Studio fan preview took too long to refresh. Refresh the page or confirm the local API is running.',
+            zh_HANS: 'Studio 粉丝预览刷新时间过长。请刷新页面，或确认本地 API 已启动。',
+            zh_HANT: 'Studio 粉絲預覽刷新時間過長。請重新整理頁面，或確認本地 API 已啟動。',
+            ja: 'Studio ファンプレビューの更新に時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
+            ko: 'Studio 팬 미리보기 새로고침이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
+            fr: 'Le fan preview Studio met trop de temps à se rafraîchir. Actualisez la page ou vérifiez que l’API locale tourne bien.',
+          }),
         );
 
         await preloadPublicHomepageProjectionMedia(result);
@@ -1136,6 +1168,7 @@ function PublicPresenceStudioScreenInner({
   const currentTemplate = workspace?.templates.find(
     (template) => template.templateId === (workspace?.selectedTemplateId ?? selectedTemplateId),
   ) ?? null;
+  const persistTemplateQuery = searchParams.has('templateId') || selectedTemplateId !== 'activeTalentHub';
   const currentSnapshot = workspace?.draftVersion?.validationSnapshot ?? null;
   const currentDraftHash = workspace?.draftVersion?.contentHash ?? null;
   const currentDocumentState = workspace?.draftVersion?.documentState ?? 'draft';
@@ -1149,6 +1182,35 @@ function PublicPresenceStudioScreenInner({
     () => sortSectionsForTemplate(currentTemplate, workspace?.stageSections ?? []),
     [currentTemplate, workspace?.stageSections],
   );
+
+  const closeMobileWorkbenchSheets = () => {
+    pendingMobileSheetRef.current = 'closed';
+    setMobileManageOpen(false);
+    setMobilePreviewToolsOpen(false);
+  };
+
+  const openExclusiveMobileManageSheet = () => {
+    pendingMobileSheetRef.current = 'manage';
+    setMobilePreviewToolsOpen(false);
+    setMobileManageOpen(true);
+  };
+
+  const openExclusiveMobilePreviewToolsSheet = () => {
+    pendingMobileSheetRef.current = 'preview-tools';
+    setMobileManageOpen(false);
+    setMobilePreviewToolsOpen(true);
+  };
+
+  const openWorkbenchDrawer = (mode: LeftDrawerMode) => {
+    closeMobileWorkbenchSheets();
+    setLeftDrawerMode(mode);
+    setLeftDrawerOpen(true);
+  };
+
+  const openStageWorkbenchPanel = (nextPanel: StagePanelState) => {
+    closeMobileWorkbenchSheets();
+    setStagePanel(nextPanel);
+  };
 
   useEffect(() => {
     setPreviewViewport((current) => (
@@ -1164,13 +1226,24 @@ function PublicPresenceStudioScreenInner({
     const nextMobileManageOpen = queryState.mobileSheet === 'manage';
     const nextMobilePreviewToolsOpen = queryState.mobileSheet === 'preview-tools';
     const nextLeftDrawerMode = queryState.leftDrawerMode;
+    const nextQueryMobileSheet = queryState.mobileSheet ?? null;
+    const pendingMobileSheet = pendingMobileSheetRef.current;
+    const pendingTargetReached = pendingMobileSheet === 'closed'
+      ? nextQueryMobileSheet === null
+      : pendingMobileSheet !== null && pendingMobileSheet === nextQueryMobileSheet;
 
-    setMobileManageOpen((current) => (
-      current === nextMobileManageOpen ? current : nextMobileManageOpen
-    ));
-    setMobilePreviewToolsOpen((current) => (
-      current === nextMobilePreviewToolsOpen ? current : nextMobilePreviewToolsOpen
-    ));
+    if (pendingTargetReached) {
+      pendingMobileSheetRef.current = null;
+    }
+
+    if (pendingMobileSheet === null || pendingTargetReached) {
+      setMobileManageOpen((current) => (
+        current === nextMobileManageOpen ? current : nextMobileManageOpen
+      ));
+      setMobilePreviewToolsOpen((current) => (
+        current === nextMobilePreviewToolsOpen ? current : nextMobilePreviewToolsOpen
+      ));
+    }
 
     if (nextLeftDrawerMode) {
       setLeftDrawerMode((current) => (
@@ -3090,15 +3163,15 @@ function PublicPresenceStudioScreenInner({
                   onDrawerFallbackTriggerRef={rightDrawerOverlay.fallbackTriggerRef}
                   onConfigure={(target) => {
                     rightDrawerOverlay.registerTrigger(target);
-                    setStagePanel({ mode: 'configure', sectionKind: section.kind });
+                    openStageWorkbenchPanel({ mode: 'configure', sectionKind: section.kind });
                   }}
                   onEdit={(target) => {
                     rightDrawerOverlay.registerTrigger(target);
-                    setStagePanel({ mode: 'edit', sectionKind: section.kind });
+                    openStageWorkbenchPanel({ mode: 'edit', sectionKind: section.kind });
                   }}
                   onInspect={(target) => {
                     rightDrawerOverlay.registerTrigger(target);
-                    setStagePanel({ mode: 'inspect', sectionKind: section.kind });
+                    openStageWorkbenchPanel({ mode: 'inspect', sectionKind: section.kind });
                   }}
                   section={section}
                   summary={summaryValue}
@@ -3111,7 +3184,7 @@ function PublicPresenceStudioScreenInner({
             onClick={() => {
               void handleSaveVisualDocument();
             }}
-            disabled={saving || !editorDocument}
+            disabled={saving || !editorDocument || !visualDraftDirty}
             className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? (
@@ -3126,6 +3199,14 @@ function PublicPresenceStudioScreenInner({
     );
   };
 
+  const visualDraftDirty = useMemo(() => {
+    if (!editorDocument || !workspace?.draftVersion?.document) {
+      return false;
+    }
+
+    return JSON.stringify(editorDocument) !== JSON.stringify(workspace.draftVersion.document);
+  }, [editorDocument, workspace?.draftVersion?.document]);
+
   const currentValidationSummary = formatPublicPresenceStudioValidationSummary(
     locale,
     currentSnapshot?.issueCounts ?? null,
@@ -3139,11 +3220,11 @@ function PublicPresenceStudioScreenInner({
     open: showLeftDrawer,
   });
   const mobileManageOverlay = useOverlayFocusManager({
-    onClose: () => setMobileManageOpen(false),
+    onClose: closeMobileWorkbenchSheets,
     open: mobileManageOpen,
   });
   const mobilePreviewToolsOverlay = useOverlayFocusManager({
-    onClose: () => setMobilePreviewToolsOpen(false),
+    onClose: closeMobileWorkbenchSheets,
     open: mobilePreviewToolsOpen,
   });
   const rightDrawerOverlay = useOverlayFocusManager({
@@ -3242,7 +3323,7 @@ function PublicPresenceStudioScreenInner({
           ? 'preview-tools'
           : null,
       stagePanel: !previewFocus ? serializeStagePanelSearchParam(stagePanel) : null,
-      templateId: selectedTemplateId === 'activeTalentHub' ? null : selectedTemplateId,
+      templateId: persistTemplateQuery ? selectedTemplateId : null,
       viewport: previewViewport === 'desktop' ? null : previewViewport,
     }).toString();
 
@@ -3268,6 +3349,7 @@ function PublicPresenceStudioScreenInner({
     searchParams,
     selectedTemplateId,
     stagePanel,
+    persistTemplateQuery,
     workspace?.draftVersion,
   ]);
 
@@ -3346,7 +3428,7 @@ function PublicPresenceStudioScreenInner({
                 ref={mobileManageOverlay.fallbackTriggerRef}
                 onClick={(event) => {
                   mobileManageOverlay.registerTrigger(event.currentTarget);
-                  setMobileManageOpen(true);
+                  openExclusiveMobileManageSheet();
                 }}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
@@ -3450,7 +3532,7 @@ function PublicPresenceStudioScreenInner({
               </div>
               <button
                 type="button"
-                onClick={() => setMobileManageOpen(false)}
+                onClick={closeMobileWorkbenchSheets}
                 ref={mobileManageOverlay.mobileInitialFocusRef}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
@@ -3466,6 +3548,27 @@ function PublicPresenceStudioScreenInner({
               </button>
             </div>
             <div className="grid gap-2">
+              <button
+                type="button"
+                aria-controls={mobilePreviewToolsSheetId}
+                aria-expanded={mobilePreviewToolsOpen}
+                aria-haspopup="dialog"
+                onClick={(event) => {
+                  mobilePreviewToolsOverlay.registerTrigger(event.currentTarget);
+                  openExclusiveMobilePreviewToolsSheet();
+                }}
+                className="inline-flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/60 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+              >
+                <span>{pickLocaleText(locale, {
+                  en: 'Preview tools',
+                  zh_HANS: '预览工具',
+                  zh_HANT: '預覽工具',
+                  ja: 'プレビュー操作',
+                  ko: '미리보기 도구',
+                  fr: 'Outils aperçu',
+                })}</span>
+                <Settings2 className="h-4 w-4" aria-hidden="true" />
+              </button>
               <Link
                 href={managementHref}
                 className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
@@ -3557,8 +3660,7 @@ function PublicPresenceStudioScreenInner({
                         return;
                       }
 
-                      setLeftDrawerMode(mode);
-                      setLeftDrawerOpen(true);
+                      openWorkbenchDrawer(mode);
                     }}
                     className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
                       isActive
@@ -3635,7 +3737,7 @@ function PublicPresenceStudioScreenInner({
                     ref={mobilePreviewToolsOverlay.fallbackTriggerRef}
                     onClick={(event) => {
                       mobilePreviewToolsOverlay.registerTrigger(event.currentTarget);
-                      setMobilePreviewToolsOpen(true);
+                      openExclusiveMobilePreviewToolsSheet();
                     }}
                     className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
                       mobilePreviewToolsOpen
@@ -3827,7 +3929,7 @@ function PublicPresenceStudioScreenInner({
                   onClick={() => {
                     void handleSaveVisualDocument();
                   }}
-                  disabled={saving}
+                  disabled={saving || !visualDraftDirty}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {saving ? (
@@ -3888,7 +3990,7 @@ function PublicPresenceStudioScreenInner({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setMobilePreviewToolsOpen(false)}
+                    onClick={closeMobileWorkbenchSheets}
                     ref={mobilePreviewToolsOverlay.mobileInitialFocusRef}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
@@ -3904,6 +4006,27 @@ function PublicPresenceStudioScreenInner({
                   </button>
                 </div>
                 <div className="grid gap-3">
+                  <button
+                    type="button"
+                    aria-controls={mobileManageSheetId}
+                    aria-expanded={mobileManageOpen}
+                    aria-haspopup="dialog"
+                    onClick={(event) => {
+                      mobileManageOverlay.registerTrigger(event.currentTarget);
+                      openExclusiveMobileManageSheet();
+                    }}
+                    className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                  >
+                    <span>{pickLocaleText(locale, {
+                      en: 'Manage',
+                      zh_HANS: '管理',
+                      zh_HANT: '管理',
+                      ja: '管理',
+                      ko: '관리',
+                      fr: 'Gérer',
+                    })}</span>
+                    <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
                   <PublicPresenceBadge tone="slate" variant="outline">
                     {currentTemplate
                       ? getPublicPresenceTemplateLabel(locale, currentTemplate)

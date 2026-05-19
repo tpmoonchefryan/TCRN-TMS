@@ -19,7 +19,8 @@ export function useOverlayFocusManager({
     if (!open) {
       if (wasOpenRef.current) {
         wasOpenRef.current = false;
-        (openerRef.current ?? fallbackTriggerRef.current)?.focus();
+        const connectedOpener = openerRef.current?.isConnected ? openerRef.current : null;
+        (connectedOpener ?? fallbackTriggerRef.current)?.focus();
       }
 
       return;

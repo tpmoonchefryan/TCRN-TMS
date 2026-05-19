@@ -1,4 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = fileURLToPath(new URL('.', import.meta.url));
+
+for (const envFile of ['.env.local', '.env']) {
+  const envPath = resolve(repoRoot, envFile);
+
+  if (existsSync(envPath)) {
+    process.loadEnvFile(envPath);
+  }
+}
 
 const apiPort = Number(process.env.E2E_API_PORT || 4100);
 const webPort = Number(process.env.E2E_WEB_PORT || 3100);

@@ -35,5 +35,8 @@ describe('public-presence-studio.catalog', () => {
     expect(container.textContent).not.toMatch(
       /registry|policy coverage|props schema|AI allowlist|renderer|Visual Mode|code-owned|governance/i,
     );
+    expect(container.textContent).not.toMatch(
+      /Studio handling|Handled from Advanced only|Studio editing ready|Advanced only|editing stops/i,
+    );
   });
 });

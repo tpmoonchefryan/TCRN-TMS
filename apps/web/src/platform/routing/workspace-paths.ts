@@ -121,6 +121,26 @@ export function buildPublicPresenceStudioEditorPath(
   return query ? `${path}?${query}` : path;
 }
 
+export function mergePathSearchParams(
+  path: string,
+  updates: Record<string, string | null | undefined>,
+) {
+  const url = new URL(path, 'https://tcrn.local');
+
+  Object.entries(updates).forEach(([key, value]) => {
+    if (!value) {
+      url.searchParams.delete(key);
+      return;
+    }
+
+    url.searchParams.set(key, value);
+  });
+
+  const query = url.searchParams.toString();
+
+  return query ? `${url.pathname}?${query}` : url.pathname;
+}
+
 export function buildPublicPresenceHomepageSurfacePath(
   tenantId: string,
   talentId: string,

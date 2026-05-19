@@ -46,6 +46,7 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
 import {
   mergeUrlSearchParams,
   parseBooleanSearchParam,
@@ -54,6 +55,7 @@ import {
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildPublicPresenceStudioEditorPath,
+  mergePathSearchParams,
   buildTalentWorkspaceSectionPath,
 } from '@/platform/routing/workspace-paths';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
@@ -72,7 +74,11 @@ const PREVIEW_VIEWPORT_QUERY_VALUES = ['desktop', 'mobile'] as const;
 const PREVIEW_MOBILE_SHEET_VALUES = ['tools'] as const;
 
 function getErrorMessage(reason: unknown, fallback: string) {
-  return reason instanceof ApiRequestError ? reason.message : fallback;
+  if (reason instanceof ApiRequestError || reason instanceof Error) {
+    return reason.message;
+  }
+
+  return fallback;
 }
 
 function resolveCurrentTemplate(
@@ -137,10 +143,20 @@ export function PublicPresencePreviewScreen({
       setWorkspaceError(null);
 
       try {
-        const result = await readPublicPresenceWorkspace(
-          request,
-          talentId,
-          selectedTemplateId,
+        const result = await withPublicPresenceRouteTimeout(
+          readPublicPresenceWorkspace(
+            request,
+            talentId,
+            selectedTemplateId,
+          ),
+          pickLocaleText(locale, {
+            en: 'Preview route took too long to load. Refresh the page or confirm the local API is running.',
+            zh_HANS: '预览路由加载时间过长。请刷新页面，或确认本地 API 已启动。',
+            zh_HANT: '預覽路由載入時間過長。請重新整理頁面，或確認本地 API 已啟動。',
+            ja: 'プレビュールートの読み込みに時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
+            ko: '미리보기 라우트 로딩이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
+            fr: 'La route d’aperçu met trop de temps à charger. Actualisez la page ou vérifiez que l’API locale tourne bien.',
+          }),
         );
 
         if (cancelled) {
@@ -184,11 +200,21 @@ export function PublicPresencePreviewScreen({
       setPreviewError(null);
 
       try {
-        const result = await readPublicPresenceDraftPreview(
-          request,
-          talentId,
-          previewPhase,
-          workspace.selectedTemplateId ?? selectedTemplateId,
+        const result = await withPublicPresenceRouteTimeout(
+          readPublicPresenceDraftPreview(
+            request,
+            talentId,
+            previewPhase,
+            workspace.selectedTemplateId ?? selectedTemplateId,
+          ),
+          pickLocaleText(locale, {
+            en: 'Fan preview took too long to refresh. Refresh the page or confirm the local API is running.',
+            zh_HANS: '粉丝预览刷新时间过长。请刷新页面，或确认本地 API 已启动。',
+            zh_HANT: '粉絲預覽刷新時間過長。請重新整理頁面，或確認本地 API 已啟動。',
+            ja: 'ファンプレビューの更新に時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
+            ko: '팬 미리보기 새로고침이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
+            fr: 'Le fan preview met trop de temps à se rafraîchir. Actualisez la page ou vérifiez que l’API locale tourne bien.',
+          }),
         );
 
         await preloadPublicHomepageProjectionMedia(result);
@@ -298,6 +324,20 @@ export function PublicPresencePreviewScreen({
   );
   const managementHref = buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage');
   const currentTemplateId = workspace?.selectedTemplateId ?? selectedTemplateId;
+  const persistTemplateQuery = searchParams.has('templateId') || currentTemplateId !== 'activeTalentHub';
+  const selectedSectionEditorHref = selectedPreviewSection
+    ? mergePathSearchParams(
+      buildPublicPresenceStudioEditorPath(
+        tenantId,
+        talentId,
+        currentTemplateId,
+      ),
+      {
+        leftPanel: 'sections',
+        stagePanel: `edit:${selectedPreviewSection.kind}`,
+      },
+    )
+    : editorHref;
 
   useEffect(() => {
     if (!previewProjection?.sections.length) {
@@ -332,7 +372,7 @@ export function PublicPresencePreviewScreen({
         mobilePreviewToolsOpen && previewViewport === 'mobile' && !detailsOpen
           ? 'tools'
           : null,
-      templateId: currentTemplateId === 'activeTalentHub' ? null : currentTemplateId,
+      templateId: persistTemplateQuery ? currentTemplateId : null,
       viewport: previewViewport === 'desktop' ? null : previewViewport,
     }).toString();
 
@@ -354,6 +394,7 @@ export function PublicPresencePreviewScreen({
     searchKey,
     searchParams,
     selectedPreviewSectionId,
+    persistTemplateQuery,
     workspace?.draftVersion,
   ]);
   const previewStatusLabel = previewLoading
@@ -1076,6 +1117,20 @@ export function PublicPresencePreviewScreen({
                     <p className="text-sm leading-6 text-slate-600">
                       {copy.fanPreview.validationMarkersPrefix}: {selectedPreviewSection.validationIssueIds.length}
                     </p>
+                    <Link
+                      href={selectedSectionEditorHref}
+                      className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                    >
+                      <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
+                      {pickLocaleText(locale, {
+                        en: 'Edit this section',
+                        zh_HANS: '编辑这个分区',
+                        zh_HANT: '編輯這個分區',
+                        ja: 'このセクションを編集',
+                        ko: '이 섹션 편집',
+                        fr: 'Éditer cette section',
+                      })}
+                    </Link>
                     {selectedPreviewSection.fallbackBehavior === 'lockedSourceOwned' ? (
                       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                         {copy.fanPreview.lockedOverlay}
