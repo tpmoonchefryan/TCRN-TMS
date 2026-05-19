@@ -109,7 +109,9 @@ test('studio field matrix exercises visible editable controls and restores unsav
 
   await recordRouteTiming(routes.studioActive, elapsedMs);
   await recordViewport(routes.studioActive, 'desktop-1280x720');
-  await runCopyScan(page, routes.studioActive);
+  await runCopyScan(page, routes.studioActive, {
+    extraPatterns: ['fallback'],
+  });
   await assertNoUnqualifiedDuplicateControls(page, routes.studioActive);
   await captureRouteEvidence(page, 'studio-active-desktop', testInfo);
 
@@ -117,19 +119,18 @@ test('studio field matrix exercises visible editable controls and restores unsav
   const stageSectionDrawer = page.getByTestId('studio-left-drawer-desktop');
   await expect(stageSectionDrawer).toBeVisible();
 
-  const stageCards = stageSectionDrawer.locator('[data-testid^="stage-card-"]');
-  const stageCount = await stageCards.count();
+  const stageRows = stageSectionDrawer.locator('[data-testid^="stage-row-"]');
+  const stageCount = await stageRows.count();
   let mutatedFieldCount = 0;
   let restoredFieldCount = 0;
 
   expect(stageCount).toBeGreaterThan(0);
 
   for (let index = 0; index < stageCount; index += 1) {
-    const card = stageCards.nth(index);
-    const sectionName = (await card.locator('span').first().textContent())?.trim() || `section-${index + 1}`;
-    const editButton = card.getByRole('button', { name: new RegExp('^Edit:') }).first();
+    const row = stageRows.nth(index);
+    const sectionName = ((await row.textContent()) ?? '').replace(/\s+/g, ' ').trim() || `section-${index + 1}`;
 
-    await editButton.click();
+    await row.click();
 
     const panel = page.getByTestId('studio-right-drawer-desktop');
     await expect(panel).toBeVisible();
@@ -170,7 +171,9 @@ test('studio field matrix exercises visible editable controls and restores unsav
 
     if (sectionMutations > 0) {
       mutatedFieldCount += sectionMutations;
-      await expect(page.getByTestId('bottom-preview-bar').getByRole('button', { name: 'Save draft' })).toBeEnabled();
+      await expect(
+        page.getByTestId('studio-topbar').getByRole('button', { name: 'Save draft' }),
+      ).toBeEnabled();
       restoredFieldCount += await resetVisibleFields(panel);
     }
   }
@@ -183,5 +186,7 @@ test('studio field matrix exercises visible editable controls and restores unsav
 
   await page.reload();
   await waitForRouteReady(page, page.getByTestId('canvas-stage'), 'Public Page Studio reload');
-  await expect(page.getByTestId('bottom-preview-bar').getByRole('button', { name: 'Save draft' })).toBeDisabled();
+  await expect(
+    page.getByTestId('studio-topbar').getByRole('button', { name: 'Save draft' }),
+  ).toBeDisabled();
 });

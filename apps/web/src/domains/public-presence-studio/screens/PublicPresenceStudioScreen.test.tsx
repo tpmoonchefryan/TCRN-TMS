@@ -1,5 +1,6 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PublicPresenceProjection } from '@tcrn/shared';
 
@@ -16,7 +17,7 @@ const localeState = {
 const STUDIO_RENDER_TIMEOUT = 15_000;
 const STUDIO_TEST_TIMEOUT = 20_000;
 const ORDINARY_COPY_BOUNDARY_PATTERN =
-  /\bcanvas\b|admin chrome|topbar compact|first work surface|first surface/i;
+  /\bcanvas\b|admin chrome|topbar compact|first work surface|first surface|\bfallback\b/i;
 
 vi.setConfig({
   testTimeout: STUDIO_TEST_TIMEOUT,
@@ -468,6 +469,11 @@ describe('PublicPresenceStudioScreen', () => {
     localeState.locale = 'en';
     pathname = '/studio/public-presence/tenant-1/talent-1';
     currentSearch = '';
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1440,
+      writable: true,
+    });
     resetPublicHomepageProjectionMediaPreloadCache();
     replace.mockImplementation((href: string) => {
       const resolved = new URL(href, 'https://tcrn.local');
@@ -663,11 +669,7 @@ describe('PublicPresenceStudioScreen', () => {
     const { rerender } = render(<PublicPresenceStudioScreen {...screenProps} />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    fireEvent.click(
-      within(screen.getAllByTestId('stage-card-firstEncounter')[0]).getByRole('button', {
-        name: 'Edit: First Encounter',
-      }),
-    );
+    fireEvent.click(screen.getAllByTestId('stage-row-firstEncounter')[0]);
 
     await waitFor(() => {
       expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
@@ -693,6 +695,44 @@ describe('PublicPresenceStudioScreen', () => {
         && !url.searchParams.has('stagePanel')
       )),
     ).toBe(false);
+  });
+
+  it('keeps focus in the selected section field while typing', async () => {
+    const user = userEvent.setup();
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    currentSearch = 'templateId=activeTalentHub&leftPanel=sections';
+
+    render(
+      <PublicPresenceStudioScreen
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await user.click(screen.getAllByTestId('stage-row-firstEncounter')[0]);
+
+    const stagePanel = (await screen.findAllByTestId('stage-section-panel'))[0];
+    const displayNameInput = within(stagePanel).getAllByRole('textbox')[0];
+    await user.click(displayNameInput);
+    await user.type(displayNameInput, ' Aki Stage');
+
+    expect(displayNameInput).toHaveFocus();
+    expect(screen.getAllByText('Unsaved').length).toBeGreaterThan(0);
+    expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
   });
 
   it('keeps ordinary mobile manage sheets free from design-rationale copy', async () => {
@@ -785,6 +825,44 @@ describe('PublicPresenceStudioScreen', () => {
     expect(screen.getByTestId('studio-mobile-manage-sheet')).toBeInTheDocument();
     expect(screen.getByTestId('studio-mobile-manage-button')).toHaveAttribute('aria-expanded', 'true');
     expect(currentSearch).toContain('sheet=manage');
+  });
+
+  it('replaces the mobile sections sheet with a single section editor sheet', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+      writable: true,
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    fireEvent.click(within(screen.getByTestId('left-rail')).getByRole('button', { name: 'Stage Sections' }));
+
+    const sectionsSheet = screen.getByRole('dialog', { name: 'Stage sections panel' });
+    fireEvent.click(within(sectionsSheet).getByTestId('stage-row-firstEncounter'));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Stage sections panel' })).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('dialog', { name: 'Edit section panel' })).toBeInTheDocument();
+    expect(screen.queryByTestId('studio-mobile-manage-sheet')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('studio-mobile-preview-tools-sheet')).not.toBeInTheDocument();
+    expect(currentSearch).not.toContain('leftPanel=sections');
+    expect(currentSearch).toContain('stagePanel=edit%3AfirstEncounter');
   });
 
   it('keeps mobile sheet query state mutually exclusive on restore', async () => {

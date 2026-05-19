@@ -35,11 +35,12 @@ test('studio workflow keeps canvas mounted and side surfaces scoped', async ({
   await recordViewportMetric(page, routes.studioActive, 'canvas-stage', page.getByTestId('canvas-stage'));
   await expect(page.getByTestId('canvas-stage')).toBeVisible();
 
-  await page.getByRole('button', { name: /Persona/i }).click();
+  const leftRail = page.getByTestId('left-rail');
+  await leftRail.getByRole('button', { name: /Persona/i }).click();
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
-  await page.getByRole('button', { name: /Readiness/i }).click();
+  await leftRail.getByRole('button', { name: /Readiness/i }).click();
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
-  await page.getByRole('button', { name: /Advanced/i }).click();
+  await leftRail.getByRole('button', { name: /Advanced/i }).click();
   await expect(page.getByTestId('studio-left-drawer-desktop')).toBeVisible();
 
   await recordPanelStacking(page, routes.studioActive, [
@@ -80,6 +81,17 @@ test('studio workflow keeps canvas mounted and side surfaces scoped', async ({
   await page.goto(`${routes.studioActive}?viewport=mobile&sheet=manage`);
   await waitForRouteReady(page, page.getByTestId('canvas-stage'), 'Public Page Studio mobile workflow deep-linked manage');
   await expect(page.getByTestId('studio-mobile-manage-sheet')).toBeVisible();
+  await expect(page.getByTestId('studio-mobile-preview-tools-sheet')).toHaveCount(0);
+  await page.getByTestId('studio-mobile-manage-sheet').getByRole('button', { name: /^Close$/i }).click();
+  await expect(page.getByTestId('studio-mobile-manage-sheet')).toHaveCount(0);
+
+  await page.getByTestId('left-rail').getByRole('button', { name: /Stage Sections/i }).click();
+  const mobileSectionsSheet = page.getByRole('dialog', { name: /Stage sections panel/i });
+  await expect(mobileSectionsSheet).toBeVisible();
+  await mobileSectionsSheet.getByTestId('stage-row-firstEncounter').click();
+  await expect(page.getByRole('dialog', { name: /Stage sections panel/i })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: /Edit section panel/i })).toBeVisible();
+  await expect(page.getByTestId('studio-mobile-manage-sheet')).toHaveCount(0);
   await expect(page.getByTestId('studio-mobile-preview-tools-sheet')).toHaveCount(0);
 
   await recordViewport(routes.studioActive, 'mobile-390x844');

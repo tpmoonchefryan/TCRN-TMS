@@ -35,8 +35,17 @@ export function useOverlayFocusManager({
       const target = prefersDesktopFocus
         ? desktopInitialFocusRef.current ?? mobileInitialFocusRef.current
         : mobileInitialFocusRef.current ?? desktopInitialFocusRef.current;
+      const activeElement = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+      const shouldMoveFocus = activeElement === null
+        || activeElement === document.body
+        || activeElement === openerRef.current
+        || activeElement === fallbackTriggerRef.current;
 
-      target?.focus();
+      if (shouldMoveFocus) {
+        target?.focus();
+      }
     }, 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {

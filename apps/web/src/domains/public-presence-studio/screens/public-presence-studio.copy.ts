@@ -386,9 +386,9 @@ const COPY = {
       simulatePhase: 'Phase',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
-      fallbacksLabel: 'Preview safeguards',
+      fallbacksLabel: 'Preview protection',
       fallbacksHint:
-        'Shows where safety rules simplified or removed unsafe public output.',
+        'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: 'Resolved phase',
       resolvedPhaseHint:
         'This is the phase the server would currently show to fans.',
@@ -655,7 +655,7 @@ const COPY = {
       simulatePhase: '阶段',
       unsavedWarning: '当前预览展示的是最近一次保存的草稿。请先保存修改再刷新粉丝视图。',
       fallbacksLabel: '预览保护',
-      fallbacksHint: '展示安全规则在哪些位置简化或移除了不安全公开输出。',
+      fallbacksHint: '展示安全规则在哪些位置简化或移除了高风险公开输出。',
       resolvedPhaseLabel: '解析阶段',
       resolvedPhaseHint: '这就是服务端当前会向粉丝展示的阶段。',
       validationMarkersPrefix: '就绪标记',
@@ -917,7 +917,7 @@ const COPY = {
       simulatePhase: '阶段',
       unsavedWarning: '当前预览展示的是最近一次保存的草稿。请先保存修改再刷新粉丝视图。',
       fallbacksLabel: '预览保护',
-      fallbacksHint: '展示安全规则在哪些位置简化或移除了不安全公开输出。',
+      fallbacksHint: '展示安全规则在哪些位置简化或移除了高风险公开输出。',
       resolvedPhaseLabel: '解析阶段',
       resolvedPhaseHint: '这就是服务端当前会向粉丝展示的阶段。',
       validationMarkersPrefix: '就绪标记',
@@ -1181,7 +1181,7 @@ const COPY = {
       simulatePhase: 'フェーズ',
       unsavedWarning: 'プレビューには最後に保存したドラフトが表示されています。変更を保存してからファン向け表示を更新してください。',
       fallbacksLabel: 'プレビュー保護',
-      fallbacksHint: '安全ルールにより簡略化または削除された公開出力を示します。',
+      fallbacksHint: '安全ルールにより簡略化または非表示になった高リスクの公開出力を示します。',
       resolvedPhaseLabel: '解決済みフェーズ',
       resolvedPhaseHint: '現在サーバーがファンに見せるフェーズです。',
       validationMarkersPrefix: '公開準備マーカー',
@@ -1453,9 +1453,9 @@ const COPY = {
       simulatePhase: 'Phase',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
-      fallbacksLabel: 'Preview safeguards',
+      fallbacksLabel: 'Preview protection',
       fallbacksHint:
-        'Shows where safety rules simplified or removed unsafe public output.',
+        'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: 'Resolved phase',
       resolvedPhaseHint:
         'This is the phase the server would currently show to fans.',
@@ -1732,9 +1732,9 @@ const COPY = {
       simulatePhase: 'Phase',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
-      fallbacksLabel: 'Preview safeguards',
+      fallbacksLabel: 'Preview protection',
       fallbacksHint:
-        'Shows where safety rules simplified or removed unsafe public output.',
+        'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: 'Resolved phase',
       resolvedPhaseHint:
         'This is the phase the server would currently show to fans.',
@@ -1852,7 +1852,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: 'Revealed',
     liveLaunch: 'Live launch',
     postLaunch: 'Post launch',
-    expiredFallback: 'Expired fallback',
+    expiredFallback: 'After campaign',
     always: 'Always',
   },
   zh_HANS: {
@@ -1863,7 +1863,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: '已揭晓',
     liveLaunch: '正式上线',
     postLaunch: '上线后',
-    expiredFallback: '过期回退',
+    expiredFallback: '活动结束后',
     always: '始终',
   },
   zh_HANT: {
@@ -1874,7 +1874,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: '已揭晓',
     liveLaunch: '正式上线',
     postLaunch: '上线后',
-    expiredFallback: '过期回退',
+    expiredFallback: '活動結束後',
     always: '始终',
   },
   ja: {
@@ -1885,7 +1885,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: '公開済み',
     liveLaunch: '本番公開',
     postLaunch: '公開後',
-    expiredFallback: '期限切れフォールバック',
+    expiredFallback: '公開終了後',
     always: '常時',
   },
   ko: {
@@ -1896,7 +1896,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: 'Revealed',
     liveLaunch: 'Live launch',
     postLaunch: 'Post launch',
-    expiredFallback: 'Expired fallback',
+    expiredFallback: 'After campaign',
     always: 'Always',
   },
   fr: {
@@ -1907,7 +1907,7 @@ const PREVIEW_PHASE_LABELS: LocaleCopyRecord<
     revealed: 'Revealed',
     liveLaunch: 'Live launch',
     postLaunch: 'Post launch',
-    expiredFallback: 'Expired fallback',
+    expiredFallback: 'Après la campagne',
     always: 'Always',
   },
 };
