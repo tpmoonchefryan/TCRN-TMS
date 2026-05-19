@@ -1,6 +1,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PublicPresenceProjection } from '@tcrn/shared';
 
 import { resetPublicHomepageProjectionMediaPreloadCache } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicPresenceStudioScreen } from '@/domains/public-presence-studio/screens/PublicPresenceStudioScreen';
@@ -763,5 +764,40 @@ describe('PublicPresenceStudioScreen', () => {
     expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
     expect(screen.queryByTestId('studio-mobile-manage-sheet')).not.toBeInTheDocument();
     expect(currentSearch).toContain('sheet=preview-tools');
+  });
+
+  it('shows a preview refresh state instead of a saved-draft waiting empty state when draft preview is still loading', async () => {
+    let resolvePreview: ((value: PublicPresenceProjection) => void) | null = null;
+
+    mockRequest.mockImplementation((path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return Promise.resolve(buildWorkspace());
+      }
+
+      if (isPreviewRequest(path)) {
+        return new Promise((resolve) => {
+          resolvePreview = resolve as (value: PublicPresenceProjection) => void;
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled request: ${path}`));
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    expect(screen.getByText('Refreshing fan preview')).toBeInTheDocument();
+    expect(screen.queryByText('Fan preview is waiting for a saved draft')).not.toBeInTheDocument();
+
+    const settlePreview = resolvePreview as ((value: PublicPresenceProjection) => void) | null;
+    expect(settlePreview).not.toBeNull();
+    if (!settlePreview) {
+      throw new Error('Preview resolver was not captured');
+    }
+    settlePreview(buildPreview() as PublicPresenceProjection);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-public-preview')).toBeInTheDocument();
+    });
   });
 });

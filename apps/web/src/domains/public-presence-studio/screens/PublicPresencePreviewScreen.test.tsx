@@ -211,6 +211,18 @@ function buildPreview() {
         avatar: null,
         primaryAction: null,
       },
+      {
+        id: 'social-links',
+        kind: 'officialChannels',
+        sectionType: 'socialLinks',
+        visibility: 'visible',
+        fallbackBehavior: 'safePlaceholder',
+        validationIssueIds: [],
+        title: null,
+        links: [],
+        layout: 'horizontal',
+        style: 'pill',
+      },
     ],
     actions: [],
     media: [],
@@ -353,5 +365,18 @@ describe('PublicPresencePreviewScreen', () => {
       expect(screen.queryByTestId('preview-side-rail')).not.toBeInTheDocument();
       expect(document.activeElement).toBe(inspectButton);
     });
+  });
+
+  it('gives preview inspector entries unique section identity and keeps desktop inspector sticky', async () => {
+    render(<PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />);
+
+    await screen.findByTestId('preview-topbar');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Inspect sections' })[0]);
+
+    const inspector = await screen.findByTestId('preview-side-rail');
+    expect(inspector.className).toMatch(/lg:sticky/);
+    expect(screen.getByRole('button', { name: '1. Hero: First Encounter' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '2. Social links: Official Channels' })).toBeInTheDocument();
+    expect(screen.getByText('Section 1')).toBeInTheDocument();
   });
 });

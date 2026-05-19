@@ -26,6 +26,7 @@ import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens
 import {
   getHomepageSurfaceActionLabel,
   getHomepageSurfaceLabel,
+  getPublicPresenceFieldLabel,
   getPublicPresenceStageSectionLabel,
   getPublicPresenceTemplateLabel,
   getPublicPresenceTemplateUseCase,
@@ -101,28 +102,28 @@ const COMPONENT_PREVIEW_COPY: Record<HomepageComponentType, LocalizedText> = {
     'Bloc video integre officiel',
   ),
   RichText: buildExactText(
-    'Reference note block kept read-only',
-    '保持只读的参考备注块',
-    '保持唯讀的參考備註塊',
-    '読み取り専用で保つ参考ノート',
-    '읽기 전용으로 유지되는 참고 노트 블록',
-    'Bloc de note de reference conserve en lecture seule',
+    'Reference note block',
+    '参考备注块',
+    '參考備註塊',
+    '参考ノートブロック',
+    '참고 노트 블록',
+    'Bloc de note de reference',
   ),
   LinkButton: buildExactText(
-    'Action link with typed destination rules',
-    '带有类型化目标规则的动作链接',
-    '帶有型別化目標規則的動作連結',
-    '宛先ルール付きアクションリンク',
-    '유형화된 목적지 규칙이 있는 액션 링크',
-    'Lien d’action avec regles de destination typees',
+    'Action button for key fan destinations',
+    '用于关键粉丝去向的动作按钮',
+    '用於關鍵粉絲去向的動作按鈕',
+    '大切なファン導線へつなぐアクションボタン',
+    '중요한 팬 동선으로 연결하는 액션 버튼',
+    'Bouton d’action pour les destinations fan importantes',
   ),
   MarshmallowWidget: buildExactText(
-    'Fan interaction bridge with bounded controls',
-    '带边界控制的粉丝互动桥接组件',
-    '帶邊界控制的粉絲互動橋接元件',
-    '制御範囲つきファン交流モジュール',
-    '경계 제어가 있는 팬 상호작용 브리지',
-    'Pont d’interaction fan avec controles bornes',
+    'Fan interaction block',
+    '粉丝互动模块',
+    '粉絲互動模組',
+    'ファン交流ブロック',
+    '팬 상호작용 블록',
+    'Bloc d’interaction fan',
   ),
   Schedule: buildExactText(
     'Structured stage schedule list',
@@ -133,12 +134,12 @@ const COMPONENT_PREVIEW_COPY: Record<HomepageComponentType, LocalizedText> = {
     'Liste de planning de scene structuree',
   ),
   MusicPlayer: buildExactText(
-    'Locked audio module managed outside Studio editing',
-    '锁定的音频模块，在 Studio 编辑之外管理',
-    '鎖定的音訊模組，在 Studio 編輯之外管理',
-    'Studio 編集の外側で管理するロック済み音声モジュール',
-    'Studio 편집 밖에서 관리되는 잠금 오디오 모듈',
-    'Module audio verrouille gere hors de l’edition Studio',
+    'Featured audio moment',
+    '精选音频时刻',
+    '精選音訊時刻',
+    '注目の音声モーメント',
+    '주목할 오디오 순간',
+    'Moment audio mis en avant',
   ),
   LiveStatus: buildExactText(
     'Live or launch state banner',
@@ -149,28 +150,28 @@ const COMPONENT_PREVIEW_COPY: Record<HomepageComponentType, LocalizedText> = {
     'Banniere d’etat live ou lancement',
   ),
   Divider: buildExactText(
-    'Locked separator',
-    '锁定分隔线',
-    '鎖定分隔線',
-    'ロック済み区切り線',
-    '잠금 구분선',
-    'Separateur verrouille',
+    'Section divider',
+    '分区分隔线',
+    '分區分隔線',
+    'セクション区切り',
+    '섹션 구분선',
+    'Separateur de section',
   ),
   Spacer: buildExactText(
-    'Locked spacing block',
-    '锁定留白模块',
-    '鎖定留白模組',
-    'ロック済み余白ブロック',
-    '잠금 여백 블록',
-    'Bloc d’espacement verrouille',
+    'Breathing room spacer',
+    '留白间距块',
+    '留白間距塊',
+    '余白スペーサー',
+    '여백 스페이서',
+    'Bloc d’espacement',
   ),
   BilibiliDynamic: buildExactText(
-    'Locked official updates feed',
-    '锁定的官方动态流',
-    '鎖定的官方動態流',
-    'ロック済み公式更新フィード',
-    '잠금 상태의 공식 업데이트 피드',
-    'Flux de mises a jour officielles verrouille',
+    'Official updates feed',
+    '官方动态流',
+    '官方動態流',
+    '公式更新フィード',
+    '공식 업데이트 피드',
+    'Flux de mises a jour officielles',
   ),
 };
 
@@ -187,6 +188,104 @@ function getLocaleCoverageLabel(locale: SupportedUiLocale) {
     ko: `${SUPPORTED_UI_LOCALES.length}개 UI 언어 지원`,
     fr: `${SUPPORTED_UI_LOCALES.length} langues prises en charge`,
   });
+}
+
+function getComponentSupportBadgeLabel(
+  locale: SupportedUiLocale,
+  visualSupport: (typeof PUBLIC_PRESENCE_COMPONENT_DEFINITIONS)[HomepageComponentType]['visualSupport'],
+) {
+  return visualSupport === 'supported'
+    ? pickLocaleText(locale, {
+        en: 'Easy to tailor',
+        zh_HANS: '容易定制',
+        zh_HANT: '容易客製',
+        ja: '調整しやすい',
+        ko: '쉽게 다듬기',
+        fr: 'Facile a ajuster',
+      })
+    : pickLocaleText(locale, {
+        en: 'Custom-crafted',
+        zh_HANS: '适合定制创作',
+        zh_HANT: '適合客製創作',
+        ja: 'カスタム向け',
+        ko: '맞춤 제작용',
+        fr: 'Pour une création sur mesure',
+      });
+}
+
+function getComponentFanMomentCopy(
+  locale: SupportedUiLocale,
+  visualSupport: (typeof PUBLIC_PRESENCE_COMPONENT_DEFINITIONS)[HomepageComponentType]['visualSupport'],
+) {
+  return visualSupport === 'supported'
+    ? pickLocaleText(locale, {
+        en: 'Everyday homepage visits and familiar fan touchpoints.',
+        zh_HANS: '适合日常主页访问与常用粉丝触点。',
+        zh_HANT: '適合日常主頁造訪與常用粉絲觸點。',
+        ja: '日常のホームページ訪問や定番のファン接点に向いています。',
+        ko: '일상적인 홈페이지 방문과 익숙한 팬 접점에 잘 맞습니다.',
+        fr: 'Idéal pour les visites du quotidien et les points de contact fan habituels.',
+      })
+    : pickLocaleText(locale, {
+        en: 'Reveal-day moments, embeds, or special fan features.',
+        zh_HANS: '适合揭晓日内容、嵌入模块或特殊粉丝玩法。',
+        zh_HANT: '適合揭曉日內容、嵌入模組或特殊粉絲玩法。',
+        ja: '公開当日の演出、埋め込み、特別なファン向け機能に向いています。',
+        ko: '공개 당일 연출, 임베드, 특별한 팬 기능에 잘 맞습니다.',
+        fr: 'Pensé pour les moments de reveal, les embeds ou les fonctions fan spéciales.',
+      });
+}
+
+function getComponentAdjustmentCopy(
+  locale: SupportedUiLocale,
+  component: (typeof PUBLIC_PRESENCE_COMPONENT_DEFINITIONS)[HomepageComponentType],
+) {
+  const editableLabels = component.fieldDefinitions
+    .filter((field) => field.visualEditable)
+    .map((field) => getPublicPresenceFieldLabel(locale, field.fieldKey));
+
+  if (editableLabels.length === 0) {
+    return pickLocaleText(locale, {
+      en: 'Use this block as designed on the homepage, or open the Component IDE when you need a custom version.',
+      zh_HANS: '可以直接按现成样式放到主页上；如果需要定制版本，再打开组件 IDE。',
+      zh_HANT: '可以直接按現成樣式放到主頁上；若需要客製版本，再打開元件 IDE。',
+      ja: 'このブロックはそのままホームページで使えます。独自版が必要なときだけコンポーネント IDE を開きます。',
+      ko: '이 블록은 기본 형태로 바로 쓸 수 있고, 맞춤 버전이 필요할 때만 컴포넌트 IDE를 엽니다.',
+      fr: 'Utilisez ce bloc tel quel sur la page, puis ouvrez l’IDE composant seulement si vous avez besoin d’une version sur mesure.',
+    });
+  }
+
+  return pickLocaleText(locale, {
+    en: `Creators can adjust ${editableLabels.join(', ')} before the block goes live.`,
+    zh_HANS: `创作者可以在上线前调整 ${editableLabels.join('、')}。`,
+    zh_HANT: `創作者可以在上線前調整 ${editableLabels.join('、')}。`,
+    ja: `公開前に ${editableLabels.join('、')} を調整できます。`,
+    ko: `공개 전에 ${editableLabels.join(', ')} 항목을 조정할 수 있습니다.`,
+    fr: `Les créateurs peuvent ajuster ${editableLabels.join(', ')} avant la mise en ligne.`,
+  });
+}
+
+function getComponentNextStepCopy(
+  locale: SupportedUiLocale,
+  component: (typeof PUBLIC_PRESENCE_COMPONENT_DEFINITIONS)[HomepageComponentType],
+) {
+  return component.fieldDefinitions.some((field) => field.visualEditable)
+    ? pickLocaleText(locale, {
+        en: 'Next step: open the Component IDE to tailor the block and review the live sample.',
+        zh_HANS: '下一步：打开组件 IDE，定制这个模块并查看实时样例。',
+        zh_HANT: '下一步：打開元件 IDE，客製這個模組並查看即時樣例。',
+        ja: '次の一歩: コンポーネント IDE を開いて、このブロックを整えながらライブサンプルを確認します。',
+        ko: '다음 단계: 컴포넌트 IDE를 열어 이 블록을 다듬고 라이브 샘플을 확인합니다.',
+        fr: 'Étape suivante : ouvrez l’IDE composant pour ajuster ce bloc et revoir l’échantillon live.',
+      })
+    : pickLocaleText(locale, {
+        en: 'Next step: open the Component IDE only when this homepage moment needs a custom-crafted version.',
+        zh_HANS: '下一步：只有在这个主页场景需要定制版本时，再打开组件 IDE。',
+        zh_HANT: '下一步：只有在這個主頁場景需要客製版本時，再打開元件 IDE。',
+        ja: '次の一歩: このホームページ演出に独自版が必要なときだけコンポーネント IDE を開きます。',
+        ko: '다음 단계: 이 홈페이지 장면에 맞춤 버전이 필요할 때만 컴포넌트 IDE를 엽니다.',
+        fr: 'Étape suivante : ouvrez l’IDE composant seulement si ce moment de page demande une version sur mesure.',
+      });
 }
 
 function SurfaceCommandLink({
@@ -269,12 +368,12 @@ export function useHomepageSurfaceNavigation(
         href: buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'components'),
         label: getHomepageSurfaceLabel(locale, 'components'),
         description: pickLocaleText(locale, {
-          en: 'Curated building blocks, protected behavior, and component authoring entry.',
-          zh_HANS: '精选构件、受保护行为与组件创作入口。',
-          zh_HANT: '精選構件、受保護行為與元件創作入口。',
-          ja: '厳選コンポーネント、保護された挙動、コンポーネント制作入口。',
-          ko: '큐레이션된 컴포넌트, 보호된 동작, 컴포넌트 제작 진입점.',
-          fr: 'Composants choisis, comportement protege et entree d’auteur de composant.',
+          en: 'Homepage building blocks, live samples, and component authoring entry.',
+          zh_HANS: '主页构件、实时样例与组件创作入口。',
+          zh_HANT: '主頁構件、即時樣例與元件創作入口。',
+          ja: 'ホームページ構成ブロック、ライブサンプル、コンポーネント制作入口。',
+          ko: '홈페이지 블록, 라이브 샘플, 컴포넌트 제작 진입점.',
+          fr: 'Blocs de page, échantillons live et entrée d’authoring composant.',
         }),
       },
     ],
@@ -295,30 +394,18 @@ export function HomepageSurfaceMenu({
   const items = useHomepageSurfaceNavigation(tenantId, talentId);
 
   return (
-    <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="homepage-surface-menu">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
-            {pickLocaleText(locale, {
-              en: 'Homepage',
-              zh_HANS: '主页',
-              zh_HANT: '主頁',
-              ja: 'ホームページ',
-              ko: '홈페이지',
-              fr: 'Homepage',
-            })}
-          </PublicPresenceBadge>
-          <p className="text-sm text-slate-600">
-            {pickLocaleText(locale, {
-              en: 'Switch between live operations, templates, and components.',
-              zh_HANS: '在运营、模板与组件之间快速切换。',
-              zh_HANT: '在營運、模板與元件之間快速切換。',
-              ja: '運用、テンプレート、コンポーネントを素早く切り替えます。',
-              ko: '운영, 템플릿, 컴포넌트 사이를 빠르게 전환합니다.',
-              fr: 'Basculez rapidement entre opérations, templates et composants.',
-            })}
-          </p>
-        </div>
+    <PublicPresenceSurface className="space-y-3 px-4 py-3" data-testid="homepage-surface-menu">
+      <div className="flex flex-wrap items-center gap-2">
+        <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
+          {pickLocaleText(locale, {
+            en: 'Homepage',
+            zh_HANS: '主页',
+            zh_HANT: '主頁',
+            ja: 'ホームページ',
+            ko: '홈페이지',
+            fr: 'Homepage',
+          })}
+        </PublicPresenceBadge>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {items.map((item) => (
@@ -363,31 +450,29 @@ export function TemplateCenterScreen({
 
   return (
     <PublicPresenceShell decorationDensity="calm">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <HomepageSurfaceMenu activeSurface="templates" talentId={talentId} tenantId={tenantId} />
 
-        <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="template-center-topbar">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
-                  {getHomepageSurfaceLabel(locale, 'templates')}
-                </PublicPresenceBadge>
-                <PublicPresenceBadge tone="slate" variant="outline">
-                  {getLocaleCoverageLabel(locale)}
-                </PublicPresenceBadge>
-              </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+        <PublicPresenceSurface
+          className="sticky top-4 z-20 px-4 py-3"
+          data-testid="template-center-topbar"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
                 {getHomepageSurfaceLabel(locale, 'templates')}
-              </h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {getLocaleCoverageLabel(locale)}
+              </PublicPresenceBadge>
+              <p className="text-sm font-medium text-slate-600">
                 {pickLocaleText(locale, {
-                  en: 'Inspect section order, compare launch use cases, and jump straight into authoring when you need a new template pass.',
-                  zh_HANS: '检查分区顺序、比较上线用途，并在需要新模板时直接进入创作。',
-                  zh_HANT: '檢查分區順序、比較上線用途，並在需要新模板時直接進入創作。',
-                  ja: 'セクション順と公開用途を確認し、新しいテンプレートが必要ならそのまま制作へ進みます。',
-                  ko: '섹션 순서와 공개 용도를 비교하고, 새 템플릿이 필요하면 바로 제작으로 이동합니다.',
-                  fr: 'Inspectez l’ordre des sections, comparez les usages de lancement et passez directement à l’authoring quand un nouveau template est nécessaire.',
+                  en: 'Curated layouts for launch and always-on fan pages.',
+                  zh_HANS: '面向上线与常驻粉丝主页的精选布局。',
+                  zh_HANT: '面向上線與常駐粉絲主頁的精選版型。',
+                  ja: '公開演出用と常設ファンページ向けの厳選レイアウト。',
+                  ko: '런치와 상시 팬 페이지를 위한 큐레이션 레이아웃.',
+                  fr: 'Layouts choisis pour les lancements et les pages fan permanentes.',
                 })}
               </p>
             </div>
@@ -670,31 +755,29 @@ export function ComponentStoreScreen({
 
   return (
     <PublicPresenceShell decorationDensity="calm">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <HomepageSurfaceMenu activeSurface="components" talentId={talentId} tenantId={tenantId} />
 
-        <PublicPresenceSurface className="space-y-3 px-4 py-4" data-testid="component-store-topbar">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <PublicPresenceBadge icon={<Package2 className="h-4 w-4" aria-hidden="true" />} tone="rose">
-                  {getHomepageSurfaceLabel(locale, 'components')}
-                </PublicPresenceBadge>
-                <PublicPresenceBadge tone="slate" variant="outline">
-                  {getLocaleCoverageLabel(locale)}
-                </PublicPresenceBadge>
-              </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+        <PublicPresenceSurface
+          className="sticky top-4 z-20 px-4 py-3"
+          data-testid="component-store-topbar"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <PublicPresenceBadge icon={<Package2 className="h-4 w-4" aria-hidden="true" />} tone="rose">
                 {getHomepageSurfaceLabel(locale, 'components')}
-              </h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {getLocaleCoverageLabel(locale)}
+              </PublicPresenceBadge>
+              <p className="text-sm font-medium text-slate-600">
                 {pickLocaleText(locale, {
-                  en: 'Browse fan-facing building blocks, compare their preview roles, and open authoring only when a new component pass is needed.',
-                  zh_HANS: '浏览面向粉丝的构件，对比它们在预览中的角色，并只在需要新组件时进入创作。',
-                  zh_HANT: '瀏覽面向粉絲的構件，比對它們在預覽中的角色，並只在需要新元件時進入創作。',
-                  ja: 'ファン向けの構成要素を確認し、プレビューでの役割を比べ、新しいコンポーネントが必要な時だけ制作へ進みます。',
-                  ko: '팬 대상 빌딩 블록을 살펴보고 프리뷰 역할을 비교한 뒤, 새 컴포넌트가 필요할 때만 제작으로 이동합니다.',
-                  fr: 'Parcourez les briques fan-facing, comparez leur rôle dans l’aperçu et ouvrez l’authoring seulement lorsqu’un nouveau composant est nécessaire.',
+                  en: 'Homepage building blocks for everyday visits, launches, and special fan moments.',
+                  zh_HANS: '面向日常访问、上线时刻与特殊粉丝场景的主页构件。',
+                  zh_HANT: '面向日常造訪、上線時刻與特殊粉絲場景的主頁構件。',
+                  ja: '日常の訪問、公開の瞬間、特別なファン体験に使うホームページ構成ブロックです。',
+                  ko: '일상 방문, 런치 순간, 특별한 팬 장면을 위한 홈페이지 블록입니다.',
+                  fr: 'Des blocs de page pour les visites du quotidien, les lancements et les moments fan spéciaux.',
                 })}
               </p>
             </div>
@@ -746,12 +829,12 @@ export function ComponentStoreScreen({
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
                     <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Preview role',
-                        zh_HANS: '预览角色',
-                        zh_HANT: '預覽角色',
-                        ja: 'プレビュー上の役割',
-                        ko: '프리뷰 역할',
-                        fr: 'Rôle dans l’aperçu',
+                        en: 'What fans notice',
+                        zh_HANS: '粉丝首先会注意到',
+                        zh_HANT: '粉絲首先會注意到',
+                        ja: 'ファンが最初に受け取る印象',
+                        ko: '팬이 먼저 느끼는 요소',
+                        fr: 'Ce que les fans remarquent',
                       })}
                     </p>
                     <p className="mt-2">{resolveText(locale, COMPONENT_PREVIEW_COPY[component.componentType])}</p>
@@ -760,31 +843,15 @@ export function ComponentStoreScreen({
                     <p>
                       <span className="font-semibold text-slate-900">
                         {pickLocaleText(locale, {
-                          en: 'Fan moment:',
-                          zh_HANS: '适合场景：',
-                          zh_HANT: '適合場景：',
-                          ja: '向いている場面:',
-                          ko: '잘 맞는 장면:',
-                          fr: 'Moment fan :',
+                          en: 'Best for:',
+                          zh_HANS: '适合用于：',
+                          zh_HANT: '適合用於：',
+                          ja: '向いている使い方:',
+                          ko: '잘 맞는 상황:',
+                          fr: 'Idéal pour :',
                         })}
                       </span>{' '}
-                      {component.visualSupport === 'supported'
-                        ? pickLocaleText(locale, {
-                            en: 'Fast homepage assembly for everyday fan visits',
-                            zh_HANS: '适合日常粉丝访问场景的快速主页搭建',
-                            zh_HANT: '適合日常粉絲造訪場景的快速主頁搭建',
-                            ja: '日常的なファン訪問向けホームページを素早く整える場面',
-                            ko: '일상적인 팬 방문용 홈페이지를 빠르게 꾸릴 때',
-                            fr: 'Monter rapidement une page pour les visites fan du quotidien',
-                          })
-                        : pickLocaleText(locale, {
-                            en: 'Protected reveals, embeds, or specialized fan moments',
-                            zh_HANS: '适合受保护的揭晓内容、嵌入模块或特殊粉丝场景',
-                            zh_HANT: '適合受保護的揭曉內容、嵌入模組或特殊粉絲場景',
-                            ja: '保護された公開コンテンツ、埋め込み、特別なファン向け演出',
-                            ko: '보호된 공개 콘텐츠, 임베드, 특수 팬 장면에 적합',
-                            fr: 'Conçu pour les reveals protégés, les embeds ou les moments fan spécialisés',
-                          })}
+                      {getComponentFanMomentCopy(locale, component.visualSupport)}
                     </p>
                   </div>
                 </div>
@@ -874,93 +941,61 @@ export function ComponentStoreScreen({
                     {getComponentDisplayName(locale, inspectComponent.componentType)}
                   </PublicPresenceBadge>
                   <PublicPresenceBadge tone="slate" variant="outline">
-                    {inspectComponent.visualSupport === 'supported'
-                      ? pickLocaleText(locale, {
-                          en: 'Studio ready',
-                          zh_HANS: 'Studio 就绪',
-                          zh_HANT: 'Studio 就緒',
-                          ja: 'Studio 対応',
-                          ko: 'Studio 지원',
-                          fr: 'Pret pour Studio',
-                        })
-                      : pickLocaleText(locale, {
-                          en: 'Advanced handling',
-                          zh_HANS: 'Advanced 处理',
-                          zh_HANT: 'Advanced 處理',
-                          ja: 'Advanced 対応',
-                          ko: 'Advanced 처리',
-                          fr: 'Gestion Advanced',
-                        })}
+                    {getComponentSupportBadgeLabel(locale, inspectComponent.visualSupport)}
                   </PublicPresenceBadge>
                 </div>
                 <div className="space-y-3 text-sm text-slate-600">
                   <p>
                     <span className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Component ID:',
-                        zh_HANS: '组件标识：',
-                        zh_HANT: '元件識別：',
-                        ja: 'コンポーネント ID:',
-                        ko: '컴포넌트 ID:',
-                        fr: 'ID du composant :',
+                        en: 'What fans notice:',
+                        zh_HANS: '粉丝会看到：',
+                        zh_HANT: '粉絲會看到：',
+                        ja: 'ファンに届く印象:',
+                        ko: '팬이 보게 되는 모습:',
+                        fr: 'Ce que les fans verront :',
                       })}
                     </span>{' '}
-                    {inspectComponent.componentType}
+                    {resolveText(locale, COMPONENT_PREVIEW_COPY[inspectComponent.componentType])}
                   </p>
                   <p>
                     <span className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Live preview:',
-                        zh_HANS: '实时预览：',
-                        zh_HANT: '即時預覽：',
-                        ja: 'ライブプレビュー:',
-                        ko: '라이브 프리뷰:',
-                        fr: 'Aperçu live :',
+                        en: 'Best for:',
+                        zh_HANS: '适合用于：',
+                        zh_HANT: '適合用於：',
+                        ja: '向いている使い方:',
+                        ko: '잘 맞는 상황:',
+                        fr: 'Idéal pour :',
                       })}
                     </span>{' '}
-                      {inspectComponent.rendererSupport ? 'yes' : 'no'}
+                    {getComponentFanMomentCopy(locale, inspectComponent.visualSupport)}
                   </p>
                   <p>
                     <span className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Editable fields:',
-                        zh_HANS: '可编辑字段：',
-                        zh_HANT: '可編輯欄位：',
-                        ja: '編集可能項目:',
-                        ko: '편집 가능한 필드:',
-                        fr: 'Champs modifiables :',
+                        en: 'Creators can adjust:',
+                        zh_HANS: '创作者可调整：',
+                        zh_HANT: '創作者可調整：',
+                        ja: '調整できる内容:',
+                        ko: '조정할 수 있는 내용:',
+                        fr: 'Les créateurs peuvent ajuster :',
                       })}
                     </span>{' '}
-                    {inspectComponent.fieldDefinitions.filter((field) => field.visualEditable).length}
+                    {getComponentAdjustmentCopy(locale, inspectComponent)}
                   </p>
                   <p>
                     <span className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Protected behavior:',
-                        zh_HANS: '受保护行为：',
-                        zh_HANT: '受保護行為：',
-                        ja: '保護された挙動:',
-                        ko: '보호된 동작:',
-                        fr: 'Comportement protégé :',
+                        en: 'Next step:',
+                        zh_HANS: '下一步：',
+                        zh_HANT: '下一步：',
+                        ja: '次の一歩:',
+                        ko: '다음 단계:',
+                        fr: 'Étape suivante :',
                       })}
                     </span>{' '}
-                    {inspectComponent.visualSupport === 'supported'
-                      ? pickLocaleText(locale, {
-                          en: 'Studio edits stay within approved fields.',
-                          zh_HANS: 'Studio 编辑保持在已批准字段内。',
-                          zh_HANT: 'Studio 編輯保持在已批准欄位內。',
-                          ja: 'Studio 編集は承認済み項目の範囲に留まります。',
-                          ko: 'Studio 편집은 승인된 필드 범위 안에 머뭅니다.',
-                          fr: 'Les modifications Studio restent dans les champs approuvés.',
-                        })
-                      : pickLocaleText(locale, {
-                          en: 'This block stays protected and is handled from Advanced.',
-                          zh_HANS: '这个模块保持受保护状态，并从 Advanced 处理。',
-                          zh_HANT: '這個模組保持受保護狀態，並從 Advanced 處理。',
-                          ja: 'このブロックは保護されたまま Advanced から扱います。',
-                          ko: '이 블록은 보호된 상태로 Advanced에서 다룹니다.',
-                          fr: 'Ce bloc reste protégé et se traite depuis Advanced.',
-                        })}
+                    {getComponentNextStepCopy(locale, inspectComponent)}
                   </p>
                 </div>
               </div>
@@ -973,12 +1008,12 @@ export function ComponentStoreScreen({
                 </h2>
                 <p className="text-sm leading-6 text-slate-600">
                   {pickLocaleText(locale, {
-                    en: 'Choose a component card to inspect its editing range, preview role, and protected behavior.',
-                    zh_HANS: '选择一个组件卡片，检查它的编辑范围、预览角色与受保护行为。',
-                    zh_HANT: '選擇一個元件卡片，檢查它的編輯範圍、預覽角色與受保護行為。',
-                    ja: 'コンポーネントカードを選択すると、編集範囲、プレビュー上の役割、保護された挙動を確認できます。',
-                    ko: '컴포넌트 카드를 선택하면 편집 범위, 프리뷰 역할, 보호된 동작을 확인할 수 있습니다.',
-                    fr: 'Choisissez une carte de composant pour inspecter sa portée d’edition, son rôle d’aperçu et son comportement protégé.',
+                    en: 'Choose a component card to see what fans notice first, when to use it, and what creators can tailor.',
+                    zh_HANS: '选择一个组件卡片，查看粉丝首先会看到什么、适合什么场景，以及创作者能调整什么。',
+                    zh_HANT: '選擇一個元件卡片，查看粉絲首先會看到什麼、適合什麼場景，以及創作者能調整什麼。',
+                    ja: 'コンポーネントカードを選ぶと、ファンが最初に受け取る印象、向いている使い方、調整できる内容を確認できます。',
+                    ko: '컴포넌트 카드를 선택하면 팬이 먼저 보게 될 모습, 잘 맞는 장면, 조정할 수 있는 내용을 확인할 수 있습니다.',
+                    fr: 'Choisissez une carte pour voir ce que les fans remarquent d’abord, quand l’utiliser et ce que le créateur peut ajuster.',
                   })}
                 </p>
               </div>

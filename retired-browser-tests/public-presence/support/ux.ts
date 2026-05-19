@@ -9,6 +9,10 @@ function normalizeText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function buildArtifactPath(name: string, extension: 'png' | 'html' | 'json') {
   return path.resolve(getEvidenceRoot(), `${name}.${extension}`);
 }
@@ -125,8 +129,10 @@ export async function runCopyScan(
   route: string,
   {
     allowSchemaTerms = false,
+    extraPatterns = [],
   }: {
     allowSchemaTerms?: boolean;
+    extraPatterns?: string[];
   } = {},
 ) {
   const bodyText = normalizeText(
@@ -146,7 +152,9 @@ export async function runCopyScan(
     patterns.push('props schema', 'editable fields', 'editing boundary', 'registry');
   }
 
-  const findings = patterns.filter((pattern) => new RegExp(pattern, 'i').test(bodyText));
+  patterns.push(...extraPatterns);
+
+  const findings = patterns.filter((pattern) => new RegExp(escapeRegExp(pattern), 'i').test(bodyText));
 
   updateMentalModelProof((current) => ({
     ...current,
@@ -154,6 +162,7 @@ export async function runCopyScan(
       ...current.copyScanResults,
       {
         allowSchemaTerms,
+        extraPatterns,
         findings,
         route,
       },

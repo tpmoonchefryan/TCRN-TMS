@@ -33,6 +33,7 @@ import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/comp
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
+  getPublicPresencePreviewPhaseLabel,
   getPublicPresenceTemplateLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import {
@@ -86,15 +87,44 @@ const MonacoEditor = dynamic<MonacoEditorProps>(
 
 function buildTemplatePreviewProjection(
   templateId: PublicPresenceTemplateId,
+  locale: string,
 ): PublicPresencePublicProjection {
   const title =
     templateId === 'debutReveal'
-      ? 'Mika Debut Countdown'
-      : 'Aki Rosenthal Official Hub';
+      ? pickLocaleText(locale, {
+          en: 'Mika Debut Countdown',
+          zh_HANS: 'Mika 出道倒计时',
+          zh_HANT: 'Mika 出道倒數',
+          ja: 'Mika デビューカウントダウン',
+          ko: 'Mika 데뷔 카운트다운',
+          fr: 'Compte à rebours des débuts de Mika',
+        })
+      : pickLocaleText(locale, {
+          en: 'Aki Rosenthal Official Hub',
+          zh_HANS: 'Aki Rosenthal 官方主页',
+          zh_HANT: 'Aki Rosenthal 官方主頁',
+          ja: 'Aki Rosenthal 公式ハブ',
+          ko: 'Aki Rosenthal 공식 허브',
+          fr: 'Hub officiel d’Aki Rosenthal',
+        });
   const description =
     templateId === 'debutReveal'
-      ? 'Countdown-safe fan page with reveal controls.'
-      : 'Always-on official public presence for active fans.';
+      ? pickLocaleText(locale, {
+          en: 'Countdown-ready fan page with reveal pacing controls.',
+          zh_HANS: '适合倒计时阶段、带揭晓节奏控制的粉丝页。',
+          zh_HANT: '適合倒數階段、帶揭曉節奏控制的粉絲頁。',
+          ja: 'カウントダウン期間に使う、公開演出のテンポを整えたファンページです。',
+          ko: '카운트다운 기간에 맞춰 공개 흐름을 조정한 팬 페이지입니다.',
+          fr: 'Une page fan pensée pour le compte à rebours avec un rythme de reveal maîtrisé.',
+        })
+      : pickLocaleText(locale, {
+          en: 'Always-on official homepage for active fans.',
+          zh_HANS: '面向活跃粉丝的常驻官方主页。',
+          zh_HANT: '面向活躍粉絲的常駐官方主頁。',
+          ja: 'アクティブなファン向けに常時公開する公式ホームページです。',
+          ko: '활발한 팬을 위한 상시 공개 공식 홈페이지입니다.',
+          fr: 'Une page officielle toujours disponible pour les fans actifs.',
+        });
 
   return {
     projectionSchemaVersion: '1.0',
@@ -167,7 +197,23 @@ function buildTemplatePreviewProjection(
           id: 'cta-1',
           slot: 'launch',
           label:
-            templateId === 'debutReveal' ? 'Open reveal room' : 'Watch stream',
+            templateId === 'debutReveal'
+              ? pickLocaleText(locale, {
+                  en: 'Open reveal room',
+                  zh_HANS: '打开揭晓房间',
+                  zh_HANT: '打開揭曉房間',
+                  ja: '公開ルームを開く',
+                  ko: '리빌 룸 열기',
+                  fr: 'Ouvrir la salle de reveal',
+                })
+              : pickLocaleText(locale, {
+                  en: 'Watch stream',
+                  zh_HANS: '观看直播',
+                  zh_HANT: '觀看直播',
+                  ja: '配信を見る',
+                  ko: '스트림 보기',
+                  fr: 'Regarder le stream',
+                }),
           href: 'https://example.com/launch',
           providerId: null,
           category: 'launchUrl',
@@ -206,7 +252,26 @@ function buildTemplatePreviewProjection(
 
 function buildComponentPreviewProjection(
   componentType: HomepageComponentType,
+  locale: string,
 ): PublicPresencePublicProjection {
+  const readableName = componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  const sampleTitle = pickLocaleText(locale, {
+    en: `${readableName} sample page`,
+    zh_HANS: `${readableName} 样例页`,
+    zh_HANT: `${readableName} 樣例頁`,
+    ja: `${readableName} サンプルページ`,
+    ko: `${readableName} 샘플 페이지`,
+    fr: `Page exemple ${readableName}`,
+  });
+  const sampleDescription = pickLocaleText(locale, {
+    en: `Use this sample to review how ${readableName} feels on the homepage.`,
+    zh_HANS: `用这个样例检查 ${readableName} 放在主页上的观感。`,
+    zh_HANT: `用這個樣例檢查 ${readableName} 放在主頁上的觀感。`,
+    ja: `${readableName} をホームページに置いたときの見え方をこのサンプルで確認します。`,
+    ko: `${readableName}가 홈페이지에 놓였을 때의 인상을 이 샘플로 확인합니다.`,
+    fr: `Utilisez cet exemple pour vérifier l’effet de ${readableName} sur la page d’accueil.`,
+  });
+
   return {
     projectionSchemaVersion: '1.0',
     resolvedRevealPhase: 'always',
@@ -218,8 +283,8 @@ function buildComponentPreviewProjection(
       domainHostname: null,
     },
     metadata: {
-      title: `${componentType} fixture`,
-      description: `Fixture preview for ${componentType}.`,
+      title: sampleTitle,
+      description: sampleDescription,
       canonicalPath: `/preview/component/${componentType}`,
       ogImage: null,
       ogImageAlt: null,
@@ -267,8 +332,8 @@ function buildComponentPreviewProjection(
         visibility: 'visible',
         fallbackBehavior: 'safePlaceholder',
         validationIssueIds: [],
-        title: `${componentType} fixture`,
-        description: `Preview sample for ${componentType}.`,
+        title: sampleTitle,
+        description: sampleDescription,
       },
     ],
     actions: [],
@@ -394,6 +459,7 @@ function getAuthoringSubjectLabel(
 }
 
 function buildValidationItems(
+  locale: string,
   target: AuthoringTarget,
   fixtureMode: FixtureMode,
   viewport: PreviewViewport,
@@ -404,21 +470,156 @@ function buildValidationItems(
       level: 'pass',
       message:
         target === 'template'
-          ? 'Layout order and slots stay in code while Studio edits only the approved fields.'
-          : 'Component behavior stays inside its approved editing range from this workbench.',
+          ? pickLocaleText(locale, {
+              en: 'Template structure stays steady while the sample homepage refreshes with your edits.',
+              zh_HANS: '模板结构保持稳定，样例主页会随着你的编辑一起刷新。',
+              zh_HANT: '模板結構保持穩定，樣例主頁會隨著你的編輯一起刷新。',
+              ja: 'テンプレート構成は安定したまま、サンプルホームページだけが編集に合わせて更新されます。',
+              ko: '템플릿 구조는 안정적으로 유지되고, 샘플 홈페이지만 편집에 맞춰 새로 고쳐집니다.',
+              fr: 'La structure du template reste stable pendant que la page exemple se met à jour avec vos modifications.',
+            })
+          : pickLocaleText(locale, {
+              en: 'This block keeps its homepage role while the sample page refreshes with your edits.',
+              zh_HANS: '这个模块会保持自己的主页角色，同时样例页会随着你的编辑刷新。',
+              zh_HANT: '這個模組會保持自己的主頁角色，同時樣例頁會隨著你的編輯刷新。',
+              ja: 'このブロックはホームページ上の役割を保ったまま、サンプルページだけが編集に合わせて更新されます。',
+              ko: '이 블록은 홈페이지 역할을 유지하고, 샘플 페이지만 편집에 맞춰 새로 고쳐집니다.',
+              fr: 'Ce bloc garde son rôle sur la page pendant que la page exemple se met à jour avec vos modifications.',
+            }),
     },
     {
       level: fixtureMode === 'unsafeFallback' ? 'warn' : 'pass',
       message:
         fixtureMode === 'unsafeFallback'
-          ? 'Protected fallback sample is selected so the preview shows the safe fan-facing state.'
-          : 'Default sample is active for the current preview pass.',
+          ? pickLocaleText(locale, {
+              en: 'Safe launch sample is active so you can review the more cautious fan-facing version.',
+              zh_HANS: '当前启用了安全上线样例，方便你检查更稳妥的粉丝页版本。',
+              zh_HANT: '目前啟用了安全上線樣例，方便你檢查更穩妥的粉絲頁版本。',
+              ja: 'より慎重なファン向け表示を確認できるよう、安全寄りの公開サンプルを表示しています。',
+              ko: '보다 신중한 팬용 버전을 확인할 수 있도록 안전 런치 샘플이 켜져 있습니다.',
+              fr: 'L’échantillon de lancement prudent est actif pour vérifier la version fan la plus sûre.',
+            })
+          : pickLocaleText(locale, {
+              en: 'Everyday sample content is active for this preview.',
+              zh_HANS: '当前预览使用的是日常样例内容。',
+              zh_HANT: '目前預覽使用的是日常樣例內容。',
+              ja: 'このプレビューでは日常向けのサンプル内容を表示しています。',
+              ko: '이 미리보기에는 일상용 샘플 콘텐츠가 적용되어 있습니다.',
+              fr: 'Le contenu d’exemple du quotidien est actif pour cet aperçu.',
+            }),
     },
     {
       level: 'pass',
-      message: `Preview controls are running in ${viewport} mode at the ${previewPhase} phase in this workspace.`,
+      message: pickLocaleText(locale, {
+        en: `Viewing the ${getPreviewViewportLabel(locale, viewport)} preview in the ${getAuthoringPhaseLabel(locale, previewPhase)} state.`,
+        zh_HANS: `当前查看的是 ${getPreviewViewportLabel(locale, viewport)} 预览，状态为 ${getAuthoringPhaseLabel(locale, previewPhase)}。`,
+        zh_HANT: `目前查看的是 ${getPreviewViewportLabel(locale, viewport)} 預覽，狀態為 ${getAuthoringPhaseLabel(locale, previewPhase)}。`,
+        ja: `現在は ${getPreviewViewportLabel(locale, viewport)} プレビューで、状態は ${getAuthoringPhaseLabel(locale, previewPhase)} です。`,
+        ko: `지금은 ${getPreviewViewportLabel(locale, viewport)} 미리보기에서 ${getAuthoringPhaseLabel(locale, previewPhase)} 상태를 보고 있습니다.`,
+        fr: `Vous regardez l’aperçu ${getPreviewViewportLabel(locale, viewport)} dans l’état ${getAuthoringPhaseLabel(locale, previewPhase)}.`,
+      }),
     },
   ] as const;
+}
+
+function getFixtureModeLabel(locale: string, fixtureMode: FixtureMode) {
+  return fixtureMode === 'unsafeFallback'
+    ? pickLocaleText(locale, {
+        en: 'Safe launch sample',
+        zh_HANS: '安全上线样例',
+        zh_HANT: '安全上線樣例',
+        ja: '安全寄りの公開サンプル',
+        ko: '안전 런치 샘플',
+        fr: 'Échantillon de lancement prudent',
+      })
+    : pickLocaleText(locale, {
+        en: 'Everyday sample',
+        zh_HANS: '日常样例',
+        zh_HANT: '日常樣例',
+        ja: '日常向けサンプル',
+        ko: '일상 샘플',
+        fr: 'Échantillon du quotidien',
+      });
+}
+
+function getSampleContentLabel(locale: string) {
+  return pickLocaleText(locale, {
+    en: 'Sample content',
+    zh_HANS: '样例内容',
+    zh_HANT: '樣例內容',
+    ja: 'サンプル内容',
+    ko: '샘플 콘텐츠',
+    fr: 'Contenu d’exemple',
+  });
+}
+
+function getRevealStateLabel(locale: string) {
+  return pickLocaleText(locale, {
+    en: 'Reveal state',
+    zh_HANS: '揭晓状态',
+    zh_HANT: '揭曉狀態',
+    ja: '公開状態',
+    ko: '공개 상태',
+    fr: 'État de reveal',
+  });
+}
+
+function getPreviewViewportLabel(locale: string, viewport: PreviewViewport) {
+  return viewport === 'desktop'
+    ? pickLocaleText(locale, {
+        en: 'Desktop',
+        zh_HANS: '桌面端',
+        zh_HANT: '桌面端',
+        ja: '桌面版',
+        ko: '데스크톱',
+        fr: 'desktop',
+      })
+    : pickLocaleText(locale, {
+        en: 'Mobile',
+        zh_HANS: '移动端',
+        zh_HANT: '行動端',
+        ja: 'モバイル',
+        ko: '모바일',
+        fr: 'mobile',
+      });
+}
+
+function getMobileSurfaceStatusLabel(locale: string, mobileSurface: MobileAuthoringSurface) {
+  return mobileSurface === 'preview'
+    ? pickLocaleText(locale, {
+        en: 'Previewing output',
+        zh_HANS: '正在预览输出',
+        zh_HANT: '正在預覽輸出',
+        ja: '出力をプレビュー中',
+        ko: '출력을 미리보는 중',
+        fr: 'Aperçu du résultat',
+      })
+    : pickLocaleText(locale, {
+        en: 'Editing code',
+        zh_HANS: '正在编辑代码',
+        zh_HANT: '正在編輯程式碼',
+        ja: 'コードを編集中',
+        ko: '코드를 편집하는 중',
+        fr: 'Édition du code',
+      });
+}
+
+function getAuthoringPhaseLabel(
+  locale: string,
+  previewPhase: PublicPresencePhaseVisibility,
+) {
+  if (previewPhase === 'preRevealHold') {
+    return pickLocaleText(locale, {
+      en: 'Before reveal hold',
+      zh_HANS: '揭晓前保持',
+      zh_HANT: '揭曉前保持',
+      ja: '公開前ホールド',
+      ko: '공개 전 유지',
+      fr: 'Avant la reveal, maintien',
+    });
+  }
+
+  return getPublicPresencePreviewPhaseLabel(locale, previewPhase);
 }
 
 function usePreviewFit(targetWidth: number) {
@@ -514,6 +715,7 @@ export function PublicPresenceAuthoringIdeScreen({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'ready'>('idle');
+  const [isWideDesktop, setIsWideDesktop] = useState(false);
   const mobileActionsOverlay = useOverlayFocusManager({
     onClose: () => setMobileActionsOpen(false),
     open: mobileActionsOpen,
@@ -539,16 +741,17 @@ export function PublicPresenceAuthoringIdeScreen({
     effectiveTemplateId,
     effectiveComponentType,
   );
+  const mobileSurfaceStatusLabel = getMobileSurfaceStatusLabel(locale, mobileSurface);
   const previewProjection = useMemo<PublicPresencePublicProjection>(
     () =>
       target === 'template'
-        ? buildTemplatePreviewProjection(effectiveTemplateId)
-        : buildComponentPreviewProjection(effectiveComponentType),
-    [effectiveComponentType, effectiveTemplateId, target],
+        ? buildTemplatePreviewProjection(effectiveTemplateId, locale)
+        : buildComponentPreviewProjection(effectiveComponentType, locale),
+    [effectiveComponentType, effectiveTemplateId, locale, target],
   );
   const validationItems = useMemo(
-    () => buildValidationItems(target, fixtureMode, viewport, previewPhase),
-    [fixtureMode, previewPhase, target, viewport],
+    () => buildValidationItems(locale, target, fixtureMode, viewport, previewPhase),
+    [fixtureMode, locale, previewPhase, target, viewport],
   );
 
   useEffect(() => {
@@ -557,6 +760,23 @@ export function PublicPresenceAuthoringIdeScreen({
     }
 
     setViewport('mobile');
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncDesktopLayout = () => {
+      setIsWideDesktop(window.innerWidth >= 1280);
+    };
+
+    syncDesktopLayout();
+    window.addEventListener('resize', syncDesktopLayout);
+
+    return () => {
+      window.removeEventListener('resize', syncDesktopLayout);
+    };
   }, []);
 
   useEffect(() => {
@@ -848,6 +1068,13 @@ export function PublicPresenceAuthoringIdeScreen({
                 })}
               </button>
             </div>
+            <div
+              className="rounded-2xl border border-slate-200 bg-white/96 px-3 py-2 text-sm font-medium text-slate-700"
+              data-testid="ide-mobile-surface-status"
+              role="status"
+            >
+              {mobileSurfaceStatusLabel}
+            </div>
           </div>
 
           <div className="hidden flex-wrap items-center gap-2 xl:flex">
@@ -1098,7 +1325,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
                     setUtilityPanel((current) => (current === item.key ? null : item.key as 'files' | 'checks'));
                   }}
-                  className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                  className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border px-3 transition md:h-11 md:w-11 md:px-0 ${
                     isActive
                       ? 'border-rose-300 bg-rose-50 text-rose-700'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -1106,6 +1333,7 @@ export function PublicPresenceAuthoringIdeScreen({
                   title={item.label}
                 >
                   {item.icon}
+                  <span className="text-xs font-semibold md:hidden">{item.label}</span>
                 </button>
               );
             })}
@@ -1179,85 +1407,88 @@ export function PublicPresenceAuthoringIdeScreen({
             data-testid="ide-preview-surface"
           >
             <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
-              <div className="pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:hidden">
-                <div className="flex items-center justify-between gap-2">
-                  <PublicPresenceBadge tone="rose">
-                    {pickLocaleText(locale, {
-                      en: 'Live preview',
-                      zh_HANS: '实时预览',
-                      zh_HANT: '即時預覽',
-                      ja: 'ライブプレビュー',
-                      ko: '라이브 프리뷰',
-                      fr: 'Aperçu live',
-                    })}
-                  </PublicPresenceBadge>
-                  <button
-                    type="button"
-                    data-testid="ide-mobile-preview-options-button"
-                    aria-controls={mobilePreviewOptionsSheetId}
-                    aria-expanded={mobilePreviewOptionsOpen}
-                    aria-haspopup="dialog"
-                    ref={mobilePreviewOptionsOverlay.fallbackTriggerRef}
-                    onClick={(event) => {
-                      mobilePreviewOptionsOverlay.registerTrigger(event.currentTarget);
-                      setMobilePreviewOptionsOpen(true);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                  >
-                    {pickLocaleText(locale, {
-                      en: 'Preview options',
-                      zh_HANS: '预览选项',
-                      zh_HANT: '預覽選項',
-                      ja: 'プレビュー設定',
-                      ko: '미리보기 옵션',
-                      fr: 'Options aperçu',
-                    })}
-                  </button>
+              {!isWideDesktop ? (
+                <div className="pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <PublicPresenceBadge tone="rose">
+                      {pickLocaleText(locale, {
+                        en: 'Live preview',
+                        zh_HANS: '实时预览',
+                        zh_HANT: '即時預覽',
+                        ja: 'ライブプレビュー',
+                        ko: '라이브 프리뷰',
+                        fr: 'Aperçu live',
+                      })}
+                    </PublicPresenceBadge>
+                    <button
+                      type="button"
+                      data-testid="ide-mobile-preview-options-button"
+                      aria-controls={mobilePreviewOptionsSheetId}
+                      aria-expanded={mobilePreviewOptionsOpen}
+                      aria-haspopup="dialog"
+                      ref={mobilePreviewOptionsOverlay.fallbackTriggerRef}
+                      onClick={(event) => {
+                        mobilePreviewOptionsOverlay.registerTrigger(event.currentTarget);
+                        setMobilePreviewOptionsOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      {pickLocaleText(locale, {
+                        en: 'Preview options',
+                        zh_HANS: '预览选项',
+                        zh_HANT: '預覽選項',
+                        ja: 'プレビュー設定',
+                        ko: '미리보기 옵션',
+                        fr: 'Options aperçu',
+                      })}
+                    </button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={viewport === 'desktop'}
+                      onClick={() => setViewport('desktop')}
+                      className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                        viewport === 'desktop'
+                          ? 'border-rose-300 bg-rose-50 text-rose-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <PlaySquare className="h-4 w-4" aria-hidden="true" />
+                      {pickLocaleText(locale, {
+                        en: 'Desktop',
+                        zh_HANS: '桌面端',
+                        zh_HANT: '桌面端',
+                        ja: 'デスクトップ',
+                        ko: '데스크톱',
+                        fr: 'Desktop',
+                      })}
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={viewport === 'mobile'}
+                      onClick={() => setViewport('mobile')}
+                      className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                        viewport === 'mobile'
+                          ? 'border-rose-300 bg-rose-50 text-rose-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Smartphone className="h-4 w-4" aria-hidden="true" />
+                      {pickLocaleText(locale, {
+                        en: 'Mobile',
+                        zh_HANS: '移动端',
+                        zh_HANT: '行動端',
+                        ja: 'モバイル',
+                        ko: '모바일',
+                        fr: 'Mobile',
+                      })}
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    aria-pressed={viewport === 'desktop'}
-                    onClick={() => setViewport('desktop')}
-                    className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-                      viewport === 'desktop'
-                        ? 'border-rose-300 bg-rose-50 text-rose-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <PlaySquare className="h-4 w-4" aria-hidden="true" />
-                    {pickLocaleText(locale, {
-                      en: 'Desktop',
-                      zh_HANS: '桌面端',
-                      zh_HANT: '桌面端',
-                      ja: 'デスクトップ',
-                      ko: '데스크톱',
-                      fr: 'Desktop',
-                    })}
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={viewport === 'mobile'}
-                    onClick={() => setViewport('mobile')}
-                    className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-                      viewport === 'mobile'
-                        ? 'border-rose-300 bg-rose-50 text-rose-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Smartphone className="h-4 w-4" aria-hidden="true" />
-                    {pickLocaleText(locale, {
-                      en: 'Mobile',
-                      zh_HANS: '移动端',
-                      zh_HANT: '行動端',
-                      ja: 'モバイル',
-                      ko: '모바일',
-                      fr: 'Mobile',
-                    })}
-                  </button>
-                </div>
-              </div>
-              <div className="pointer-events-auto hidden min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:flex">
+              ) : null}
+              {isWideDesktop ? (
+                <div className="pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:flex">
                 <PublicPresenceBadge tone="rose">
                   {pickLocaleText(locale, {
                     en: 'Live preview',
@@ -1310,34 +1541,20 @@ export function PublicPresenceAuthoringIdeScreen({
                 </button>
                 <label className="text-sm">
                   <span className="sr-only">
-                    {pickLocaleText(locale, {
-                      en: 'Fixture',
-                      zh_HANS: '夹具',
-                      zh_HANT: '夾具',
-                      ja: 'フィクスチャ',
-                      ko: '픽스처',
-                      fr: 'Fixture',
-                    })}
+                    {getSampleContentLabel(locale)}
                   </span>
                   <select
                     value={fixtureMode}
                     onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
                     className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
                   >
-                    <option value="default">default</option>
-                    <option value="unsafeFallback">unsafeFallback</option>
+                    <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
+                    <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
                   </select>
                 </label>
                 <label className="text-sm">
                   <span className="sr-only">
-                    {pickLocaleText(locale, {
-                      en: 'Phase',
-                      zh_HANS: '阶段',
-                      zh_HANT: '階段',
-                      ja: 'フェーズ',
-                      ko: '단계',
-                      fr: 'Phase',
-                    })}
+                    {getRevealStateLabel(locale)}
                   </span>
                   <select
                     value={previewPhase}
@@ -1357,12 +1574,16 @@ export function PublicPresenceAuthoringIdeScreen({
                       'expiredFallback',
                     ].map((phase) => (
                       <option key={phase} value={phase}>
-                        {phase}
+                        {getAuthoringPhaseLabel(
+                          locale,
+                          phase as PublicPresencePhaseVisibility,
+                        )}
                       </option>
                     ))}
                   </select>
                 </label>
-              </div>
+                </div>
+              ) : null}
             </div>
 
             <div
@@ -1442,12 +1663,12 @@ export function PublicPresenceAuthoringIdeScreen({
                   </h2>
                   <p className="text-sm text-slate-600">
                     {pickLocaleText(locale, {
-                      en: 'Choose fixture, phase, and viewport options here.',
-                      zh_HANS: '在这里选择夹具、阶段和视口选项。',
-                      zh_HANT: '在這裡選擇夾具、階段與視口選項。',
-                      ja: 'ここでフィクスチャ、フェーズ、ビューポート設定を選びます。',
-                      ko: '여기에서 픽스처, 단계, 뷰포트 옵션을 선택합니다.',
-                      fr: 'Choisissez ici les options de fixture, phase et viewport.',
+                      en: 'Choose the sample content and reveal state you want to review here.',
+                      zh_HANS: '在这里选择要检查的样例内容与揭晓状态。',
+                      zh_HANT: '在這裡選擇要檢查的樣例內容與揭曉狀態。',
+                      ja: 'ここで確認したいサンプル内容と公開状態を選びます。',
+                      ko: '여기에서 확인할 샘플 콘텐츠와 공개 상태를 고릅니다.',
+                      fr: 'Choisissez ici le contenu d’exemple et l’état de reveal à vérifier.',
                     })}
                   </p>
                 </div>
@@ -1471,34 +1692,20 @@ export function PublicPresenceAuthoringIdeScreen({
               <div className="grid gap-3">
                 <label className="text-sm">
                   <span className="mb-2 block font-medium text-slate-700">
-                    {pickLocaleText(locale, {
-                      en: 'Fixture',
-                      zh_HANS: '夹具',
-                      zh_HANT: '夾具',
-                      ja: 'フィクスチャ',
-                      ko: '픽스처',
-                      fr: 'Fixture',
-                    })}
+                    {getSampleContentLabel(locale)}
                   </span>
                   <select
                     value={fixtureMode}
                     onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
                   >
-                    <option value="default">default</option>
-                    <option value="unsafeFallback">unsafeFallback</option>
+                    <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
+                    <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
                   </select>
                 </label>
                 <label className="text-sm">
                   <span className="mb-2 block font-medium text-slate-700">
-                    {pickLocaleText(locale, {
-                      en: 'Phase',
-                      zh_HANS: '阶段',
-                      zh_HANT: '階段',
-                      ja: 'フェーズ',
-                      ko: '단계',
-                      fr: 'Phase',
-                    })}
+                    {getRevealStateLabel(locale)}
                   </span>
                   <select
                     value={previewPhase}
@@ -1518,7 +1725,10 @@ export function PublicPresenceAuthoringIdeScreen({
                       'expiredFallback',
                     ].map((phase) => (
                       <option key={phase} value={phase}>
-                        {phase}
+                        {getAuthoringPhaseLabel(
+                          locale,
+                          phase as PublicPresencePhaseVisibility,
+                        )}
                       </option>
                     ))}
                   </select>
@@ -1558,12 +1768,12 @@ export function PublicPresenceAuthoringIdeScreen({
                   </h2>
                   <p className="text-sm leading-6 text-slate-600">
                     {pickLocaleText(locale, {
-                      en: 'Code, manifest, schema, fixture, and validation notes stay together here.',
-                      zh_HANS: '代码、manifest、schema、fixture 与校验说明都集中在这里。',
-                      zh_HANT: '程式碼、manifest、schema、fixture 與驗證說明都集中在這裡。',
-                      ja: 'コード、manifest、schema、fixture、検証メモをここにまとめます。',
-                      ko: '코드, 매니페스트, 스키마, 픽스처, 검증 메모가 여기에 함께 있습니다.',
-                      fr: 'Le code, les manifests, schemas, fixtures et notes de validation restent ici.',
+                      en: 'Open the working files for this draft, its sample content, and the launch checklist here.',
+                      zh_HANS: '这里汇总了这个草稿的工作文件、样例内容与上线检查清单。',
+                      zh_HANT: '這裡彙整了這個草稿的工作檔案、樣例內容與上線檢查清單。',
+                      ja: 'この草稿の作業ファイル、サンプル内容、公開前チェックをここにまとめています。',
+                      ko: '이 초안의 작업 파일, 샘플 콘텐츠, 런치 체크리스트를 여기에서 확인합니다.',
+                      fr: 'Retrouvez ici les fichiers de travail du brouillon, son contenu d’exemple et la checklist de lancement.',
                     })}
                   </p>
                 </div>

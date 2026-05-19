@@ -60,14 +60,27 @@ test('template center and component store keep catalog actions scoped and inspec
   await assertNoUnqualifiedDuplicateControls(page, routes.componentStore);
   await expect(page.getByRole('link', { name: 'Add Component' })).toHaveCount(1);
   await expect(page.locator('body')).not.toContainText(
-    /ProfileCard|props schema|editable fields|editing boundary|Studio handling|Handled from Advanced only|Studio editing ready|Advanced only/i,
+    /ProfileCard|props schema|editable fields|editing boundary|Studio handling|Handled from Advanced only|Studio editing ready|Advanced only|protected behavior|Component ID:|Live preview:|editing range|Studio ready|Advanced handling|typed destination rules|bounded controls|outside Studio editing|locked audio module|read-only|locked separator|locked spacing block|locked official updates feed/i,
   );
   await captureRouteEvidence(page, 'component-store-desktop', testInfo);
 
   const inspectComponentButton = page.getByRole('button', { name: /Inspect: Social Links/i });
   await inspectComponentButton.click();
   await expect(page.getByTestId('component-inspect-drawer')).toBeVisible();
-  await expect(page.getByTestId('component-inspect-drawer')).toContainText('Component ID');
+  await runCopyScan(page, `${routes.componentStore}#inspect-social-links`, {
+    extraPatterns: [
+      'protected behavior',
+      'editing range',
+      'Studio ready',
+      'Advanced handling',
+      'Component ID:',
+      'Live preview:',
+      'Editable fields:',
+    ],
+  });
+  await expect(page.getByTestId('component-inspect-drawer')).not.toContainText(
+    /protected behavior|editing range|Studio ready|Advanced handling|Component ID:|Live preview:|Editable fields:/i,
+  );
   await page.getByRole('button', { name: /Close component inspection/i }).click();
   await expect(page.getByTestId('component-inspect-drawer')).toBeHidden();
   await expect(inspectComponentButton).toBeFocused();

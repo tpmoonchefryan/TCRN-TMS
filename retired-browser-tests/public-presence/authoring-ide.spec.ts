@@ -85,5 +85,32 @@ test('template and component IDEs keep editor-first layout and visible save/vali
   await expect(
     page.getByTestId('ide-preview-surface').getByRole('button', { name: 'Mobile' }).first(),
   ).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('ide-mobile-preview-options-button').click();
+  await expect(page.getByTestId('ide-mobile-preview-options-sheet')).toBeVisible();
+  await runCopyScan(page, `${routes.componentIde}#mobile-preview-options`, {
+    allowSchemaTerms: true,
+    extraPatterns: [
+      'Fallback safety sample',
+      'Choose fixture, phase, and viewport options here.',
+      'Preview controls are running in',
+    ],
+  });
+  await expect(page.getByTestId('ide-mobile-preview-options-sheet')).not.toContainText(
+    /Fallback safety sample|Choose fixture, phase, and viewport options here|Preview controls are running in/i,
+  );
+  await page.getByTestId('ide-mobile-preview-options-sheet').getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByTestId('ide-mobile-preview-options-sheet')).toBeHidden();
+
+  await page.getByRole('button', { name: 'Files' }).first().click();
+  await expect(page.getByTestId('ide-file-drawer')).toBeVisible();
+  await runCopyScan(page, `${routes.componentIde}#files-drawer`, {
+    allowSchemaTerms: true,
+    extraPatterns: [
+      'Code, manifest, schema, fixture, and validation notes stay together here.',
+    ],
+  });
+  await expect(page.getByTestId('ide-file-drawer')).not.toContainText(
+    /Code, manifest, schema, fixture, and validation notes stay together here/i,
+  );
   await captureRouteEvidence(page, 'component-ide-mobile', testInfo);
 });

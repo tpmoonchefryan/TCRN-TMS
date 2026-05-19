@@ -142,6 +142,27 @@ function ManagementActionLink({
   );
 }
 
+function ManagementActionButton({
+  icon,
+  label,
+  onClick,
+}: Readonly<{
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 function SummaryCard({
   hint,
   label,
@@ -363,6 +384,54 @@ export function PublicPresenceManagementScreen({
         'release',
       )
     : buildPublicPresenceStudioEditorPath(tenantId, talentId, undefined, 'release');
+  const liveRouteValue = workspace?.publicRoute?.canonicalPath ?? '-';
+
+  const handleCopyLiveRoute = () => {
+    const canonicalPath = workspace?.publicRoute?.canonicalPath;
+
+    if (!canonicalPath || !navigator.clipboard?.writeText) {
+      setNotice({
+        message: pickLocaleText(locale, {
+          en: 'Unable to copy the live route from this browser.',
+          zh_HANS: '当前浏览器无法复制线上路由。',
+          zh_HANT: '目前瀏覽器無法複製線上路由。',
+          ja: 'このブラウザーでは公開ルートをコピーできません。',
+          ko: '이 브라우저에서는 라이브 라우트를 복사할 수 없습니다.',
+          fr: 'Impossible de copier la route en ligne depuis ce navigateur.',
+        }),
+        tone: 'error',
+      });
+      return;
+    }
+
+    void navigator.clipboard.writeText(canonicalPath)
+      .then(() => {
+        setNotice({
+          message: pickLocaleText(locale, {
+            en: 'Live route copied.',
+            zh_HANS: '已复制线上路由。',
+            zh_HANT: '已複製線上路由。',
+            ja: '公開ルートをコピーしました。',
+            ko: '라이브 라우트를 복사했습니다.',
+            fr: 'La route en ligne a ete copiee.',
+          }),
+          tone: 'info',
+        });
+      })
+      .catch(() => {
+        setNotice({
+          message: pickLocaleText(locale, {
+            en: 'Unable to copy the live route from this browser.',
+            zh_HANS: '当前浏览器无法复制线上路由。',
+            zh_HANT: '目前瀏覽器無法複製線上路由。',
+            ja: 'このブラウザーでは公開ルートをコピーできません。',
+            ko: '이 브라우저에서는 라이브 라우트를 복사할 수 없습니다.',
+            fr: 'Impossible de copier la route en ligne depuis ce navigateur.',
+          }),
+          tone: 'error',
+        });
+      });
+  };
 
   if (loading) {
     return (
@@ -412,62 +481,29 @@ export function PublicPresenceManagementScreen({
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-6">
-        <PublicPresenceSurface className="space-y-4" data-testid="management-header">
-          <div className="flex flex-wrap items-center gap-3">
-            <PublicPresenceBadge icon={<Sparkles />} tone="rose">
-              {pickLocaleText(locale, {
-                en: 'Public Presence Management',
-                zh_HANS: 'Public Presence 管理',
-                zh_HANT: 'Public Presence 管理',
-                ja: 'Public Presence 管理',
-                ko: 'Public Presence 관리',
-                fr: 'Gestion Public Presence',
-              })}
-            </PublicPresenceBadge>
-            <PublicPresenceBadge tone="slate" variant="outline">
-              {session?.tenantName ?? tenantId}
-            </PublicPresenceBadge>
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-              {pickLocaleText(locale, {
-                en: 'Homepage control room',
-                zh_HANS: '主页控制台',
-                zh_HANT: '主頁控制台',
-                ja: 'ホームページ運用コントロール',
-                ko: '홈페이지 운영 컨트롤 룸',
-                fr: 'Salle de controle de la page publique',
-              })}
-            </h1>
-            <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              {pickLocaleText(locale, {
-                en: 'Use this page to inspect release state, route settings, SEO basics, and jump into the standalone editor or standalone preview for each page version.',
-                zh_HANS: '在这里查看发布状态、路由设置、SEO 摘要，并进入每个页面版本的独立编辑器或独立预览。',
-                zh_HANT: '在這裡查看發佈狀態、路由設定、SEO 摘要，並進入每個頁面版本的獨立編輯器或獨立預覽。',
-                ja: 'ここでは公開状態、ルート設定、SEO の基本情報を確認し、各ページバージョンの全画面エディタや全画面プレビューへ移動できます。',
-                ko: '여기에서 공개 상태, 라우트 설정, SEO 기본값을 확인하고 각 페이지 버전의 독립 편집기 또는 독립 미리보기로 이동할 수 있습니다.',
-                fr: 'Cette page permet de verifier l’etat de publication, les routes, les bases SEO et d’ouvrir l’editeur ou l’aperçu autonome de chaque version.',
-              })}
-            </p>
-          </div>
-        </PublicPresenceSurface>
-
-        {notice ? (
-          <div
-            role="alert"
-            className={`rounded-3xl border px-4 py-3 text-sm ${
-              notice.tone === 'error'
-                ? 'border-rose-200 bg-rose-50 text-rose-800'
-                : 'border-sky-200 bg-sky-50 text-sky-800'
-            }`}
-          >
-            {notice.message}
-          </div>
-        ) : null}
-
         <PublicPresenceSurface className="space-y-4" data-testid="management-command-strip">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <PublicPresenceBadge icon={<Sparkles />} tone="rose">
+                  {pickLocaleText(locale, {
+                    en: 'Public Presence Management',
+                    zh_HANS: 'Public Presence 管理',
+                    zh_HANT: 'Public Presence 管理',
+                    ja: 'Public Presence 管理',
+                    ko: 'Public Presence 관리',
+                    fr: 'Gestion Public Presence',
+                  })}
+                </PublicPresenceBadge>
+                <PublicPresenceBadge tone="slate" variant="outline">
+                  {session?.tenantName ?? tenantId}
+                </PublicPresenceBadge>
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                  {getHomepageSurfaceLabel(locale, 'management')}
+                </h1>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <PublicPresenceBadge tone="rose" variant="outline">
                   {activeManagementTemplate
@@ -507,17 +543,45 @@ export function PublicPresenceManagementScreen({
                 ) : null}
               </div>
               <div className="space-y-1">
-                <h2 className="text-2xl font-semibold text-slate-950">
-                  {workspace.publicRoute?.canonicalPath ?? '-'}
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {pickLocaleText(locale, {
+                      en: 'Live route',
+                      zh_HANS: '线上路由',
+                      zh_HANT: '線上路由',
+                      ja: '公開ルート',
+                      ko: '라이브 라우트',
+                      fr: 'Route en ligne',
+                    })}
+                  </span>
+                  <code
+                    className="block max-w-full truncate rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-900 sm:max-w-[28rem]"
+                    data-testid="management-live-route-value"
+                    title={liveRouteValue}
+                  >
+                    {liveRouteValue}
+                  </code>
+                  <ManagementActionButton
+                    icon={<CalendarClock className="h-4 w-4" aria-hidden="true" />}
+                    label={pickLocaleText(locale, {
+                      en: 'Copy live route',
+                      zh_HANS: '复制线上路由',
+                      zh_HANT: '複製線上路由',
+                      ja: '公開ルートをコピー',
+                      ko: '라이브 라우트 복사',
+                      fr: 'Copier la route live',
+                    })}
+                    onClick={handleCopyLiveRoute}
+                  />
+                </div>
                 <p className="max-w-3xl text-sm leading-6 text-slate-600">
                   {pickLocaleText(locale, {
-                    en: 'Keep live route, preview, review, routing, and SEO entry points in one compact strip before drilling into version details.',
-                    zh_HANS: '在进入版本细节前，先在这条紧凑工作带里处理 live route、预览、审核、routing 与 SEO 入口。',
-                    zh_HANT: '在進入版本細節前，先在這條緊湊工作帶裡處理 live route、預覽、審核、routing 與 SEO 入口。',
-                    ja: '版の詳細へ入る前に、このコンパクトなワーク帯で live route、プレビュー、審査、routing、SEO 入口をまとめて扱います。',
-                    ko: '버전 상세로 들어가기 전에 이 압축된 작업 띠에서 live route, 미리보기, 검토, routing, SEO 진입점을 함께 다룹니다.',
-                    fr: 'Avant d’entrer dans le détail des versions, gardez la route live, l’aperçu, la review, le routing et le SEO dans cette bande de commande compacte.',
+                    en: 'Handle the live route, public preview, editing, and review actions here before drilling into version details.',
+                    zh_HANS: '在进入版本细节前，先在这里处理线上路由、公开预览、编辑与审核动作。',
+                    zh_HANT: '在進入版本細節前，先在這裡處理線上路由、公開預覽、編輯與審核動作。',
+                    ja: '版の詳細へ入る前に、公開ルート、公開プレビュー、編集、レビューの操作をここでまとめて進めます。',
+                    ko: '버전 상세로 들어가기 전에 라이브 라우트, 공개 미리보기, 편집, 검토 작업을 여기에서 먼저 처리합니다.',
+                    fr: 'Traitez ici la route live, l’aperçu public, l’édition et la review avant d’ouvrir le détail des versions.',
                   })}
                 </p>
               </div>
@@ -579,7 +643,47 @@ export function PublicPresenceManagementScreen({
           </div>
         </PublicPresenceSurface>
 
+        {notice ? (
+          <div
+            role="alert"
+            className={`rounded-3xl border px-4 py-3 text-sm ${
+              notice.tone === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-800'
+                : 'border-sky-200 bg-sky-50 text-sky-800'
+            }`}
+          >
+            {notice.message}
+          </div>
+        ) : null}
+
         <HomepageSurfaceMenu activeSurface="management" talentId={talentId} tenantId={tenantId} />
+
+        <PublicPresenceSurface
+          className="space-y-2"
+          data-testid="management-header"
+          variant="inset"
+        >
+          <h2 className="text-lg font-semibold text-slate-950">
+            {pickLocaleText(locale, {
+              en: 'Quick management guide',
+              zh_HANS: '快速操作说明',
+              zh_HANT: '快速操作說明',
+              ja: 'クイック操作ガイド',
+              ko: '빠른 운영 안내',
+              fr: 'Guide d’action rapide',
+            })}
+          </h2>
+          <p className="max-w-3xl text-sm leading-6 text-slate-600">
+            {pickLocaleText(locale, {
+              en: 'Check release state, route settings, and SEO summaries here, then open the standalone editor or preview when you need deeper work.',
+              zh_HANS: '先在这里检查发布状态、路由设置与 SEO 摘要，需要深入处理时再进入独立编辑器或独立预览。',
+              zh_HANT: '先在這裡檢查發佈狀態、路由設定與 SEO 摘要，需要深入處理時再進入獨立編輯器或獨立預覽。',
+              ja: 'まずここで公開状態、ルート設定、SEO 概要を確認し、深い作業が必要な時だけ全画面エディタやプレビューへ進みます。',
+              ko: '먼저 여기에서 공개 상태, 라우트 설정, SEO 요약을 확인하고, 더 깊은 작업이 필요할 때만 독립 편집기나 미리보기로 이동합니다.',
+              fr: 'Vérifiez ici l’état de publication, les routes et le résumé SEO, puis ouvrez l’éditeur ou l’aperçu autonome seulement pour le travail détaillé.',
+            })}
+          </p>
+        </PublicPresenceSurface>
 
         <div className="grid gap-4 lg:grid-cols-3">
           <SummaryCard
@@ -959,12 +1063,12 @@ export function PublicPresenceManagementScreen({
             >
               <Globe2 className="h-4 w-4" aria-hidden="true" />
               {pickLocaleText(locale, {
-                en: 'Open live public page',
-                zh_HANS: '打开线上公共页',
-                zh_HANT: '打開線上公開頁',
-                ja: '公開ページを開く',
-                ko: '라이브 공개 페이지 열기',
-                fr: 'Ouvrir la page publique en ligne',
+                en: 'Open route in new tab',
+                zh_HANS: '在新标签页打开路由',
+                zh_HANT: '在新分頁開啟路由',
+                ja: '新しいタブでルートを開く',
+                ko: '새 탭에서 라우트 열기',
+                fr: 'Ouvrir la route dans un nouvel onglet',
               })}
             </Link>
           </PublicPresenceSurface>

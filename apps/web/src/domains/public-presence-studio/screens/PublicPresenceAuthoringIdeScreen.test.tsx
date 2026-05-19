@@ -5,6 +5,8 @@ import { PublicPresenceAuthoringIdeScreen } from '@/domains/public-presence-stud
 
 const ORDINARY_COPY_BOUNDARY_PATTERN =
   /\bcanvas\b|admin chrome|topbar compact|first work surface|first surface/i;
+const ORDINARY_IMPLEMENTATION_COPY_PATTERN =
+  /Fallback safety sample|Choose fixture, phase, and viewport options here|Code, manifest, schema, fixture, and validation notes stay together here|Preview controls are running in .* mode at the .* phase/i;
 
 vi.setConfig({
   testTimeout: 15_000,
@@ -167,5 +169,38 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
     expect(screen.getByTestId('ide-mobile-preview-options-sheet')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
+    expect(container.textContent).not.toMatch(ORDINARY_IMPLEMENTATION_COPY_PATTERN);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('ide-mobile-preview-options-sheet')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    expect(screen.getByTestId('ide-file-drawer')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(ORDINARY_IMPLEMENTATION_COPY_PATTERN);
+  });
+
+  it('keeps mobile authoring state and fixture labels creator-readable', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="component"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        componentType="SocialLinks"
+      />,
+    );
+
+    expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Editing code');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
+    expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
+
+    fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
+    expect(screen.getByText('Sample content')).toBeInTheDocument();
+    expect(screen.getByText('Reveal state')).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Everyday sample' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Safe launch sample' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Before reveal hold' })).toBeInTheDocument();
   });
 });

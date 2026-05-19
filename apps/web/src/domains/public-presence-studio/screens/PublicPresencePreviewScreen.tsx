@@ -73,6 +73,71 @@ const PREVIEW_VIEWPORTS: PreviewViewportMode[] = [
 const PREVIEW_VIEWPORT_QUERY_VALUES = ['desktop', 'mobile'] as const;
 const PREVIEW_MOBILE_SHEET_VALUES = ['tools'] as const;
 
+function getPreviewSectionIdentity(
+  locale: string,
+  section: PublicPresenceProjection['sections'][number],
+  index: number,
+) {
+  const label = getPublicPresenceStageSectionLabel(locale, section);
+  const roleTitle = (() => {
+    switch (section.kind) {
+      case 'firstEncounter':
+        return pickLocaleText(locale, {
+          en: 'Hero',
+          zh_HANS: '首屏',
+          zh_HANT: '首屏',
+          ja: 'ヒーロー',
+          ko: '히어로',
+          fr: 'Hero',
+        });
+      case 'officialChannels':
+        return pickLocaleText(locale, {
+          en: 'Social links',
+          zh_HANS: '社交链接',
+          zh_HANT: '社交連結',
+          ja: 'ソーシャルリンク',
+          ko: '소셜 링크',
+          fr: 'Liens sociaux',
+        });
+      case 'fanActions':
+        return pickLocaleText(locale, {
+          en: 'Fan action',
+          zh_HANS: '粉丝动作',
+          zh_HANT: '粉絲動作',
+          ja: 'ファンアクション',
+          ko: '팬 액션',
+          fr: 'Action fan',
+        });
+      case 'agencyNotes':
+        return pickLocaleText(locale, {
+          en: 'Agency note',
+          zh_HANS: '运营备注',
+          zh_HANT: '營運備註',
+          ja: '運用メモ',
+          ko: '운영 메모',
+          fr: 'Note d’operation',
+        });
+      default:
+        return 'title' in section && typeof section.title === 'string' && section.title.trim().length > 0
+          ? section.title.trim()
+          : label;
+    }
+  })();
+
+  return {
+    badge: pickLocaleText(locale, {
+      en: `Section ${index + 1}`,
+      zh_HANS: `分区 ${index + 1}`,
+      zh_HANT: `分區 ${index + 1}`,
+      ja: `セクション ${index + 1}`,
+      ko: `섹션 ${index + 1}`,
+      fr: `Section ${index + 1}`,
+    }),
+    buttonLabel: `${index + 1}. ${roleTitle}: ${label}`,
+    title: roleTitle,
+  };
+}
+
 function getErrorMessage(reason: unknown, fallback: string) {
   if (reason instanceof ApiRequestError || reason instanceof Error) {
     return reason.message;
@@ -1037,7 +1102,7 @@ export function PublicPresencePreviewScreen({
                   fr: 'Inspecteur aperçu',
                 })}
                 aria-modal={false}
-                className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:!absolute lg:inset-y-4 lg:right-4 lg:left-auto lg:w-[20rem]"
+                className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:sticky lg:top-20 lg:ml-auto lg:w-[20rem]"
                 data-testid="preview-side-rail"
                 id={detailsSurfaceId}
                 role="dialog"
@@ -1075,28 +1140,41 @@ export function PublicPresencePreviewScreen({
                 </div>
                 {previewProjection?.sections.length ? (
                   <div className="space-y-3">
-                    {previewProjection.sections.map((section) => (
-                      <button
-                        key={section.id}
-                        type="button"
-                        onClick={() => setSelectedPreviewSectionId(section.id)}
-                        aria-pressed={selectedPreviewSectionId === section.id}
-                        className={`w-full rounded-3xl border px-4 py-3 text-left transition ${
-                          selectedPreviewSectionId === section.id
-                            ? 'border-rose-300 bg-rose-50'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <PublicPresenceBadge tone="rose">
-                            {getPublicPresenceStageSectionLabel(locale, section)}
-                          </PublicPresenceBadge>
-                          <PublicPresenceBadge tone="slate" variant="outline">
-                            {copy.fanPreview.validationMarkersPrefix} {section.validationIssueIds.length}
-                          </PublicPresenceBadge>
-                        </div>
-                      </button>
-                    ))}
+                    {previewProjection.sections.map((section, index) => {
+                      const identity = getPreviewSectionIdentity(locale, section, index);
+
+                      return (
+                        <button
+                          key={section.id}
+                          type="button"
+                          onClick={() => setSelectedPreviewSectionId(section.id)}
+                          aria-label={identity.buttonLabel}
+                          aria-pressed={selectedPreviewSectionId === section.id}
+                          className={`w-full rounded-3xl border px-4 py-3 text-left transition ${
+                            selectedPreviewSectionId === section.id
+                              ? 'border-rose-300 bg-rose-50'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <PublicPresenceBadge tone="slate" variant="outline">
+                                {identity.badge}
+                              </PublicPresenceBadge>
+                              <PublicPresenceBadge tone="rose">
+                                {getPublicPresenceStageSectionLabel(locale, section)}
+                              </PublicPresenceBadge>
+                              <PublicPresenceBadge tone="slate" variant="outline">
+                                {copy.fanPreview.validationMarkersPrefix} {section.validationIssueIds.length}
+                              </PublicPresenceBadge>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-950">
+                              {identity.title}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm leading-6 text-slate-600">

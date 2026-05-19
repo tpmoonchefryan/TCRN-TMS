@@ -262,8 +262,8 @@ describe('PublicPresenceManagementScreen', () => {
   });
 
   it.each([
-    ['fr', 'Salle de controle de la page publique'],
-    ['ko', '홈페이지 운영 컨트롤 룸'],
+    ['fr', 'Gestion de la page d’accueil'],
+    ['ko', '홈페이지 관리'],
   ])('renders localized management copy for %s and keeps standalone launch links', async (locale, heading) => {
     localeState.locale = locale;
 
@@ -322,5 +322,21 @@ describe('PublicPresenceManagementScreen', () => {
     expect(container.textContent).not.toMatch(
       /projection|content hash|runtime|policy version|workflow event id|registry/i,
     );
+  });
+
+  it('keeps the live route compact and action-first for the management command strip', async () => {
+    render(<PublicPresenceManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    const routeValue = await screen.findByTestId('management-live-route-value');
+    const commandStrip = screen.getByTestId('management-command-strip');
+    const helpPanel = screen.getByTestId('management-header');
+    expect(routeValue).toHaveTextContent('/tenant-1/aki/homepage');
+    expect(routeValue).toHaveClass('truncate');
+    expect(routeValue).toHaveClass('sm:max-w-[28rem]');
+    expect(screen.getByRole('link', { name: 'Open live public page' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy live route' })).toBeInTheDocument();
+    expect(
+      commandStrip.compareDocumentPosition(helpPanel) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

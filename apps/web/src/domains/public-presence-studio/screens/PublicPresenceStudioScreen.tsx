@@ -3872,8 +3872,9 @@ function PublicPresenceStudioScreenInner({
               ) : (
                 <div className="flex min-h-[calc(100vh-8rem)] flex-1 items-center justify-center px-4 pt-16">
                   <PublicPresenceStateView
-                    description={copy.state.previewWaitingDescription}
-                    title={copy.state.previewWaitingTitle}
+                    description={copy.state.previewLoadingDescription}
+                    icon={<RefreshCcw className="animate-spin" />}
+                    title={copy.state.previewLoadingTitle}
                     tone="info"
                   />
                 </div>
